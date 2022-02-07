@@ -21,7 +21,7 @@ var Processor = Contract.Processor(nil,
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
-func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
+func storeBlob(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("blob.storeBlob.begin")
 	state := ctx.State()
 	params := ctx.Params()
@@ -59,11 +59,11 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 	directory.MustSetAt(blobHash[:], EncodeSize(totalSize))
 
 	ctx.Event(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes))
-	return ret, nil
+	return ret
 }
 
 // getBlobInfo return lengths of all fields in the blob
-func getBlobInfo(ctx iscp.SandboxView) (dict.Dict, error) {
+func getBlobInfo(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 
 	blobHash := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetHashValue(ParamHash)
@@ -74,10 +74,10 @@ func getBlobInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 		ret.Set(kv.Key(field), value)
 		return true
 	})
-	return ret, nil
+	return ret
 }
 
-func getBlobField(ctx iscp.SandboxView) (dict.Dict, error) {
+func getBlobField(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
 
@@ -86,33 +86,26 @@ func getBlobField(ctx iscp.SandboxView) (dict.Dict, error) {
 	field := params.MustGetBytes(ParamField)
 
 	blobValues := GetBlobValuesR(state, blobHash)
-	if blobValues.MustLen() == 0 {
-		return nil, fmt.Errorf("blob with hash %s has not been found", blobHash.String())
-	}
+	ctx.Requiref(blobValues.MustLen() != 0, "blob with hash %s has not been found", blobHash.String())
 	value := blobValues.MustGetAt(field)
-	if value == nil {
-		return nil, fmt.Errorf("'blob field %s value not found", string(field))
-	}
+	ctx.Requiref(value != nil, "'blob field %s value not found", string(field))
 	ret := dict.New()
 	ret.Set(ParamBytes, value)
-	return ret, nil
+	return ret
 }
 
-func listBlobs(ctx iscp.SandboxView) (dict.Dict, error) {
+func listBlobs(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
 	GetDirectoryR(ctx.State()).MustIterate(func(hash []byte, totalSize []byte) bool {
 		ret.Set(kv.Key(hash), totalSize)
 		return true
 	})
-	return ret, nil
+	return ret
 }
 
 func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
-	r, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetMaxBlobSize.Hname(), nil, nil)
-	if err != nil {
-		ctx.Log().Panicf("error getting max blob size, %v", err)
-	}
+	r := ctx.Call(governance.Contract.Hname(), governance.FuncGetMaxBlobSize.Hname(), nil, nil)
 	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSizeUint32), 0)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)

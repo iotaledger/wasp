@@ -28,7 +28,7 @@ func (s *SoloBackend) Signer() *cryptolib.KeyPair {
 
 func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
 	_, err := s.Chain.PostRequestSync(
-		solo.NewCallParamsFromDic(scName, funName, args).WithTransfers(transfer),
+		solo.NewCallParamsFromDic(scName, funName, args).WithAssets(transfer),
 		s.pvtKey,
 	)
 	return err
@@ -36,7 +36,7 @@ func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp
 
 func (s *SoloBackend) PostOffLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
 	_, err := s.Chain.PostRequestOffLedger(
-		solo.NewCallParamsFromDic(scName, funName, args).WithTransfers(transfer),
+		solo.NewCallParamsFromDic(scName, funName, args).WithAssets(transfer),
 		s.pvtKey,
 	)
 	return err

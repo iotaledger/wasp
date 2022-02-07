@@ -61,7 +61,7 @@ type (
 		Hname() iscp.Hname
 	}
 
-	Handler func(ctx iscp.Sandbox) (dict.Dict, error)
+	Handler func(ctx iscp.Sandbox) dict.Dict
 
 	// EntryPointInfo holds basic information about a full entry point
 	EntryPointInfo struct{ Name string }
@@ -71,7 +71,7 @@ type (
 		Handler Handler
 	}
 
-	ViewHandler func(ctx iscp.SandboxView) (dict.Dict, error)
+	ViewHandler func(ctx iscp.SandboxView) dict.Dict
 
 	// ViewEntryPointInfo holds basic information about a view entry point
 	ViewEntryPointInfo struct {
@@ -103,7 +103,7 @@ func (ep *EntryPointInfo) Hname() iscp.Hname {
 	return iscp.Hn(ep.Name)
 }
 
-func (h *EntryPointHandler) Call(ctx interface{}) (dict.Dict, error) {
+func (h *EntryPointHandler) Call(ctx interface{}) dict.Dict {
 	return h.Handler(ctx.(iscp.Sandbox))
 }
 
@@ -133,7 +133,7 @@ func (ep *ViewEntryPointInfo) Hname() iscp.Hname {
 	return iscp.Hn(ep.Name)
 }
 
-func (h *ViewEntryPointHandler) Call(ctx interface{}) (dict.Dict, error) {
+func (h *ViewEntryPointHandler) Call(ctx interface{}) dict.Dict {
 	return h.Handler(ctx.(iscp.SandboxView))
 }
 
@@ -154,9 +154,9 @@ var (
 	FuncDefaultInitializer = Func("initializer")
 )
 
-func defaultInitFunc(ctx iscp.Sandbox) (dict.Dict, error) {
+func defaultInitFunc(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
-	return nil, nil
+	return nil
 }
 
 type ContractProcessor struct {

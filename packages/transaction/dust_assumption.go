@@ -53,11 +53,13 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
 
 	aliasOutput := &iotago.AliasOutput{
-		AliasID:              iotago.AliasID{},
-		Amount:               1000,
-		StateController:      addr,
-		GovernanceController: addr,
-		StateMetadata:        state.OriginStateHash().Bytes(),
+		AliasID:       iotago.AliasID{},
+		Amount:        1000,
+		StateMetadata: state.OriginStateHash().Bytes(),
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: addr},
+			&iotago.GovernorAddressUnlockCondition{Address: addr},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: addr,
@@ -80,7 +82,7 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			}},
 		},
 		nil,
-		nil,
+		iscp.SendOptions{},
 		rent,
 	)
 	return o.VByteCost(rent, nil)

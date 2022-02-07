@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as coreaccounts from "wasmlib/coreaccounts"
 import * as coregovernance from "wasmlib/coregovernance"
 import * as sc from "./index";
@@ -32,11 +33,12 @@ export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainCon
 
     counter.setValue(counter.value() + 1);
 
-    let parms = wasmlib.ScMutableMap.create();
-    parms.getInt64(wasmlib.Key32.fromString(sc.ParamIntValue)).setValue(paramInt);
-    let ret = ctx.call(hnameContract, hnameEP, parms, null);
-    let retVal = ret.getInt64(wasmlib.Key32.fromString(sc.ResultIntValue));
-    f.results.intValue().setValue(retVal.value());
+    let params = new wasmlib.ScDict([]);
+    const key = wasmtypes.stringToBytes(sc.ParamIntValue);
+    params.set(key, wasmtypes.int64ToBytes(paramInt))
+    let ret = ctx.call(hnameContract, hnameEP, params, null);
+    let retVal = wasmtypes.int64FromBytes(ret.get(key));
+    f.results.intValue().setValue(retVal);
 }
 
 export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.CheckContextFromFullEPContext): void {
@@ -54,8 +56,8 @@ export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext
 export function funcGetMintedSupply(ctx: wasmlib.ScFuncContext, f: sc.GetMintedSupplyContext): void {
     let minted = ctx.minted();
     let mintedColors = minted.colors();
-    ctx.require(mintedColors.length() == 1, "test only supports one minted color");
-    let color = mintedColors.getColor(0).value();
+    ctx.require(mintedColors.length == 1, "test only supports one minted color");
+    let color = mintedColors[0];
     let amount = minted.balance(color);
     f.results.mintedSupply().setValue(amount);
     f.results.mintedColor().setValue(color);
@@ -73,14 +75,14 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
 }
 
 export function funcPassTypesFull(ctx: wasmlib.ScFuncContext, f: sc.PassTypesFullContext): void {
-    let hash = ctx.utility().hashBlake2b(wasmlib.Convert.fromString(sc.ParamHash));
+    let hash = ctx.utility().hashBlake2b(wasmtypes.stringToBytes(sc.ParamHash));
     ctx.require(f.params.hash().value().equals(hash), "Hash wrong");
     ctx.require(f.params.int64().value() == 42, "int64 wrong");
     ctx.require(f.params.int64Zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == sc.ParamString, "string wrong");
     ctx.require(f.params.stringZero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value().equals(wasmlib.ScHname.fromName(sc.ParamHname)), "Hname wrong");
-    ctx.require(f.params.hnameZero().value().equals(new wasmlib.ScHname(0)), "Hname-0 wrong");
+    ctx.require(f.params.hname().value().equals(ctx.utility().hname(sc.ParamHname)), "Hname wrong");
+    ctx.require(f.params.hnameZero().value().equals(new wasmtypes.ScHname(0)), "Hname-0 wrong");
 }
 
 export function funcRunRecursion(ctx: wasmlib.ScFuncContext, f: sc.RunRecursionContext): void {
@@ -98,8 +100,8 @@ export function funcRunRecursion(ctx: wasmlib.ScFuncContext, f: sc.RunRecursionC
 }
 
 export function funcSendToAddress(ctx: wasmlib.ScFuncContext, f: sc.SendToAddressContext): void {
-    let balances = wasmlib.ScTransfers.fromBalances(ctx.balances());
-    ctx.transferToAddress(f.params.address().value(), balances);
+    let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
+    ctx.transferToAddress(f.params.address().value(), transfer);
 }
 
 export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): void {
@@ -109,9 +111,9 @@ export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): voi
 export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void {
     let spawnName = sc.ScName + "_spawned";
     let spawnDescr = "spawned contract description";
-    ctx.deploy(f.params.progHash().value(), spawnName, spawnDescr, null);
+    ctx.deployContract(f.params.progHash().value(), spawnName, spawnDescr, null);
 
-    let spawnHname = wasmlib.ScHname.fromName(spawnName);
+    let spawnHname = ctx.utility().hname(spawnName);
     for (let i = 0; i < 5; i++) {
         ctx.call(spawnHname, sc.HFuncIncCounter, null, null);
     }
@@ -139,8 +141,8 @@ export function funcTestChainOwnerIDFull(ctx: wasmlib.ScFuncContext, f: sc.TestC
 
 export function funcTestEventLogDeploy(ctx: wasmlib.ScFuncContext, f: sc.TestEventLogDeployContext): void {
     // deploy the same contract with another name
-    let programHash = ctx.utility().hashBlake2b(wasmlib.Convert.fromString("testcore"));
-    ctx.deploy(programHash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", null);
+    let programHash = ctx.utility().hashBlake2b(wasmtypes.stringToBytes("testcore"));
+    ctx.deployContract(programHash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", null);
 }
 
 export function funcTestEventLogEventData(ctx: wasmlib.ScFuncContext, f: sc.TestEventLogEventDataContext): void {
@@ -207,14 +209,14 @@ export function viewJustView(ctx: wasmlib.ScViewContext, f: sc.JustViewContext):
 }
 
 export function viewPassTypesView(ctx: wasmlib.ScViewContext, f: sc.PassTypesViewContext): void {
-    let hash = ctx.utility().hashBlake2b(wasmlib.Convert.fromString(sc.ParamHash));
+    let hash = ctx.utility().hashBlake2b(wasmtypes.stringToBytes(sc.ParamHash));
     ctx.require(f.params.hash().value().equals(hash), "Hash wrong");
     ctx.require(f.params.int64().value() == 42, "int64 wrong");
     ctx.require(f.params.int64Zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == sc.ParamString, "string wrong");
     ctx.require(f.params.stringZero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value().equals(wasmlib.ScHname.fromName(sc.ParamHname)), "Hname wrong");
-    ctx.require(f.params.hnameZero().value().equals(new wasmlib.ScHname(0)), "Hname-0 wrong");
+    ctx.require(f.params.hname().value().equals(ctx.utility().hname(sc.ParamHname)), "Hname wrong");
+    ctx.require(f.params.hnameZero().value().equals(new wasmtypes.ScHname(0)), "Hname-0 wrong");
 }
 
 export function viewTestCallPanicViewEPFromView(ctx: wasmlib.ScViewContext, f: sc.TestCallPanicViewEPFromViewContext): void {

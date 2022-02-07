@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	DEBUG           = func() bool { return false }()
-	FORCE_SKIP_WASM = func() bool { return true }()
+const (
+	DEBUG           = false
+	FORCE_SKIP_WASM = true
 )
 
 const (
@@ -51,7 +51,7 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Add
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(userAddr, 0)).WithGasBudget(1_000)
+		root.ParamDeployer, iscp.NewAgentID(userAddr, 0)).WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	return user, userAddr, iscp.NewAgentID(userAddr, 0)
@@ -61,34 +61,32 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
 		test(t, false)
 	})
-	if !FORCE_SKIP_WASM && (len(skipWasm) == 0 || !skipWasm[0]) {
-		t.Run(fmt.Sprintf("run Wasm version of %s", t.Name()), func(t *testing.T) {
-			test(t, true)
-		})
-	} else {
+	if FORCE_SKIP_WASM || (len(skipWasm) > 0 && skipWasm[0]) {
 		t.Logf("skipped Wasm version of '%s'", t.Name())
+		return
 	}
+	t.Run(fmt.Sprintf("run Wasm version of %s", t.Name()), func(t *testing.T) {
+		test(t, true)
+	})
 }
 
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) (*iscp.AgentID, uint64) {
+// WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) *iscp.AgentID {
 	var err error
-	var extraToken uint64
 	if !FORCE_SKIP_WASM && runWasm {
 		err = chain.DeployWasmContract(user, ScName, WasmFileTestcore)
-		extraToken = 1
 	} else {
 		err = chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
-		extraToken = 0
 	}
 	require.NoError(t, err)
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)
-	return deployed, extraToken
+	return deployed
 }
 
 func TestSetup1(t *testing.T) { run2(t, testSetup1) }

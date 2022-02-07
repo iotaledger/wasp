@@ -2,6 +2,7 @@ package solo
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"sort"
 
@@ -154,13 +155,11 @@ type foundryParams struct {
 	maxSupply *big.Int
 }
 
-// CreateFoundryGasBudgetIotas always takes 1000 iotas as gas budget and assets for the call
+// CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and assets for the call
 const (
-	CreateFoundryGasBudgetIotas   = 1000
-	MintTokensGasBudgetIotas      = 1000
-	DestroyTokensGasBudgetIotas   = 1000
-	SendToL2AccountGasBudgetIotas = 1000
-	DestroyFoundryGasBudgetIotas  = 1000
+	DestroyTokensGasBudgetIotas   = 100_000
+	SendToL2AccountGasBudgetIotas = 100_000
+	DestroyFoundryGasBudgetIotas  = 100_000
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -186,6 +185,8 @@ func (fp *foundryParams) WithTag(tag *iotago.TokenTag) *foundryParams {
 	return fp
 }
 
+const allowanceForFoundryDustDeposit = 1000
+
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
 	if fp.sch != nil {
@@ -202,8 +203,12 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 		user = fp.user
 	}
 	req := NewCallParamsFromDic(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
-		WithGasBudget(CreateFoundryGasBudgetIotas).
-		AddAssetsIotas(CreateFoundryGasBudgetIotas)
+		WithAllowance(iscp.NewAssetsIotas(allowanceForFoundryDustDeposit))
+	gas, _, err := fp.ch.EstimateGasOnLedger(req, user, true)
+	if err != nil {
+		return 0, iotago.NativeTokenID{}, err
+	}
+	req.WithGasBudget(gas)
 	res, err := fp.ch.PostRequestSync(req, user)
 
 	retSN := uint32(0)
@@ -240,13 +245,17 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-	).
-		WithGasBudget(MintTokensGasBudgetIotas).
-		AddAssetsIotas(MintTokensGasBudgetIotas)
+	)
+	g, _, err := ch.EstimateGasOnLedger(req, user, true)
+	if err != nil {
+		return err
+	}
+
+	req.WithGasBudget(g)
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
 	}
-	_, err := ch.PostRequestSync(req, user)
+	_, err = ch.PostRequestSync(req, user)
 	return err
 }
 
@@ -273,7 +282,7 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 		accounts.ParamDestroyTokens, true,
 	).WithGasBudget(DestroyTokensGasBudgetIotas).AddAssetsIotas(1000)
 	req.AddAssetsNativeTokens(tokenID, amount)
-	req.AddNativeTokensAllowance(tokenID, amount)
+	req.AddAllowanceNativeTokens(tokenID, amount)
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
 	}
@@ -283,14 +292,12 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 
 // DepositAssetsToL2 deposits assets on user's on-chain account
 func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddAssets(assets).
-		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGasOnLedger(req, user)
-	require.NoError(ch.Env.T, err)
-
-	req.WithGasBudget(gas * 2)
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithAssets(assets).
+			WithGasBudget(math.MaxUint64),
+		user,
+	)
 	return err
 }
 
@@ -309,18 +316,13 @@ func (ch *Chain) MustDepositIotasToL2(amount uint64, user *cryptolib.KeyPair) {
 func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddIotas(feeIotas)
-	reqEstimate := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-		AddAssets(sumAssets).
-		AddAllowance(toSend).
-		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-		AddAssets(sumAssets).
-		WithGasBudget(gas).
-		AddAllowance(toSend)
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
+			AddAssets(sumAssets).
+			AddAllowance(toSend).
+			WithGasBudget(math.MaxUint64),
+		user,
+	)
 	return err
 }
 

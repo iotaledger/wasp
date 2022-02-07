@@ -14,7 +14,7 @@ import (
 // setFeePolicy sets the global fee policy for the chain in serialized form
 // Input:
 // - governance.ParamFeePolicyBytes must contain bytes of the policy record
-func setFeePolicy(ctx iscp.Sandbox) (dict.Dict, error) {
+func setFeePolicy(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("governance.setFeePolicy: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -23,14 +23,14 @@ func setFeePolicy(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.RequireNoError(err)
 
 	ctx.State().Set(governance.VarGasFeePolicyBytes, data)
-	return nil, nil
+	return nil
 }
 
 // getFeeInfo returns fee policy in serialized form
-func getFeePolicy(ctx iscp.SandboxView) (dict.Dict, error) {
+func getFeePolicy(ctx iscp.SandboxView) dict.Dict {
 	gp := governance.GetGasFeePolicy(ctx.State())
 
 	ret := dict.New()
 	ret.Set(governance.ParamFeePolicyBytes, gp.Bytes())
-	return ret, nil
+	return ret
 }

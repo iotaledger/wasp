@@ -106,7 +106,7 @@ func TestRequestIsProcessed(t *testing.T) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -127,7 +127,7 @@ func TestRequestReceipt(t *testing.T) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -154,7 +154,7 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -177,7 +177,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 

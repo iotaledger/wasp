@@ -6,9 +6,7 @@ var structsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use wasmlib::*;
-use wasmlib::host::*;
-$#if typedefs useTypeDefs
+$#if core useCrate useWasmLib
 $#each structs structType
 `,
 	// *******************************
@@ -21,16 +19,16 @@ $#each struct structField
 
 impl $StrName {
     pub fn from_bytes(bytes: &[u8]) -> $StrName {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         $StrName {
 $#each struct structDecode
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
+        let mut enc = WasmEncoder::new();
 $#each struct structEncode
-        return encode.data();
+        enc.buf()
     }
 }
 $#set mut Immutable
@@ -44,37 +42,36 @@ $#emit structMethods
 `,
 	// *******************************
 	"structDecode": `
-            $fld_name$fld_pad : decode.$fld_type(),
+            $fld_name$fld_pad : $fld_type$+_decode(&mut dec),
 `,
 	// *******************************
 	"structEncode": `
-		encode.$fld_type($fldRef$+self.$fld_name);
+		$fld_type$+_encode(&mut enc, $fldRef$+self.$fld_name);
 `,
 	// *******************************
 	"structMethods": `
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct $mut$StrName {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl $mut$StrName {
 $#if mut structMethodDelete
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 $#if mut structMethodSetValue
 
     pub fn value(&self) -> $StrName {
-        $StrName::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        $StrName::from_bytes(&self.proxy.get())
     }
 }
 `,
 	// *******************************
 	"structMethodDelete": `
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
 `,
@@ -82,7 +79,7 @@ $#if mut structMethodSetValue
 	"structMethodSetValue": `
 
     pub fn set_value(&self, value: &$StrName) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 `,
 }

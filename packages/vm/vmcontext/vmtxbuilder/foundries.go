@@ -1,16 +1,13 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math/big"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/util"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 func (txb *AnchorTransactionBuilder) CreateNewFoundry(
@@ -19,15 +16,14 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	maxSupply *big.Int,
 	metadata []byte,
 ) (uint32, uint64) {
-	if maxSupply.Cmp(big.NewInt(0)) <= 0 {
+	if maxSupply.Cmp(util.Big0) <= 0 {
 		panic(ErrCreateFoundryMaxSupplyMustBePositive)
 	}
-	if maxSupply.Cmp(abi.MaxUint256) > 0 {
+	if maxSupply.Cmp(util.MaxUint256) > 0 {
 		panic(ErrCreateFoundryMaxSupplyTooBig)
 	}
 
 	f := &iotago.FoundryOutput{
-		Address:           txb.anchorOutput.AliasID.ToAddress(),
 		Amount:            0,
 		NativeTokens:      nil,
 		SerialNumber:      txb.nextFoundrySerialNumber(),
@@ -35,7 +31,10 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		CirculatingSupply: big.NewInt(0),
 		MaximumSupply:     maxSupply,
 		TokenScheme:       scheme,
-		Blocks:            nil,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress()},
+		},
+		Blocks: nil,
 	}
 	if len(metadata) > 0 {
 		f.Blocks = iotago.FeatureBlocks{&iotago.MetadataFeatureBlock{
@@ -47,7 +46,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, ErrNotEnoughIotaBalance)
 	if err != nil {
-		panic(ErrNotEnoughFundsForInternalDustDeposit)
+		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,
@@ -73,7 +72,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	}
 	// check the supply bounds
 	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
-	if newSupply.Cmp(big.NewInt(0)) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
+	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
 		panic(ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
@@ -226,7 +225,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, foundry is not expected not contain native tokens")
 	case f1.MaximumSupply.Cmp(f2.MaximumSupply) != 0:
 		panic("identicalFoundries: inconsistency, maximum supply is immutable")
-	case !f1.Address.Equal(f2.Address):
+	case !f1.Ident().Equal(f2.Ident()):
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
 	case f1.TokenScheme != f2.TokenScheme:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")

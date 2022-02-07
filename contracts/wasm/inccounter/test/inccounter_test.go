@@ -4,12 +4,13 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -145,14 +146,52 @@ func TestIncrementLocalStatePost(t *testing.T) {
 	checkStateCounter(t, ctx, nil)
 }
 
-func TestLeb128(t *testing.T) {
+func TestVliCodec(t *testing.T) {
 	wasmhost.DisableWasmTimeout = true
 	ctx := setupTest(t)
 	wasmhost.DisableWasmTimeout = false
 
-	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
-	testLeb128.Func.TransferIotas(1).Post()
+	f := inccounter.ScFuncs.TestVliCodec(ctx)
+	f.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
+}
+
+func TestVluCodec(t *testing.T) {
+	wasmhost.DisableWasmTimeout = true
+	ctx := setupTest(t)
+	wasmhost.DisableWasmTimeout = false
+
+	f := inccounter.ScFuncs.TestVluCodec(ctx)
+	f.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+}
+
+func TestVli(t *testing.T) {
+	ctx := setupTest(t)
+
+	for i := int64(-200); i < 200; i++ {
+		vli := inccounter.ScFuncs.GetVli(ctx)
+		vli.Params.Ni64().SetValue(i)
+		vli.Func.Call()
+		require.NoError(t, ctx.Err)
+		fmt.Printf("Bytes: %s\n", vli.Results.Str().Value())
+		require.Equal(t, i, vli.Results.Ni64().Value())
+		require.Equal(t, i, vli.Results.Xi64().Value())
+	}
+}
+
+func TestVlu(t *testing.T) {
+	ctx := setupTest(t)
+
+	for i := uint64(0); i < 400; i++ {
+		vli := inccounter.ScFuncs.GetVlu(ctx)
+		vli.Params.Nu64().SetValue(i)
+		vli.Func.Call()
+		require.NoError(t, ctx.Err)
+		fmt.Printf("Bytes: %s\n", vli.Results.Str().Value())
+		require.Equal(t, i, vli.Results.Nu64().Value())
+		require.Equal(t, i, vli.Results.Xu64().Value())
+	}
 }
 
 func TestLoop(t *testing.T) {

@@ -142,8 +142,8 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
 		string(governance.ParamChainOwner), newOwnerAgentID,
-	).WithGasBudget(1000).
-		AddAssetsIotas(1000)
+	).WithGasBudget(100_000).
+		AddAssetsIotas(100_000)
 
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -152,8 +152,8 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
 	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).
-		WithGasBudget(1000).
-		AddAssetsIotas(1000)
+		WithGasBudget(100_000).
+		AddAssetsIotas(100_000)
 
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)

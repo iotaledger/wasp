@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -15,10 +16,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 type CallParams struct {
@@ -59,6 +60,11 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
+func (r *CallParams) WithAllowance(allowance *iscp.Assets) *CallParams {
+	r.allowance = allowance.Clone()
+	return r
+}
+
 func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
@@ -68,23 +74,28 @@ func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddIotaAllowance(amount uint64) *CallParams {
+func (r *CallParams) AddAllowanceIotas(amount uint64) *CallParams {
 	return r.AddAllowance(iscp.NewAssets(amount, nil))
 }
 
-func (r *CallParams) AddNativeTokensAllowanceVect(tokens ...*iotago.NativeToken) *CallParams {
+func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
 	return r.AddAllowance(&iscp.Assets{
 		Tokens: tokens,
 	})
 }
 
-func (r *CallParams) AddNativeTokensAllowance(id *iotago.NativeTokenID, amount interface{}) *CallParams {
+func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
 	return r.AddAllowance(&iscp.Assets{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+}
+
+func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+	r.assets = assets.Clone()
+	return r
 }
 
 func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
@@ -115,8 +126,17 @@ func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount
 	})
 }
 
+func (r *CallParams) GasBudget() uint64 {
+	return r.gasBudget
+}
+
 func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
 	r.gasBudget = gasBudget
+	return r
+}
+
+func (r *CallParams) WithMaxAffordableGasBudget() *CallParams {
+	r.gasBudget = math.MaxUint64
 	return r
 }
 
@@ -169,6 +189,10 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
+	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
+	if L1Iotas == 0 {
+		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
+	}
 	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
 	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
 
@@ -186,7 +210,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
-			Options: nil,
+			Options: iscp.SendOptions{},
 		}},
 		RentStructure:                ch.Env.utxoDB.RentStructure(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
@@ -195,6 +219,9 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		return nil, err
 	}
 
+	if tx.Essence.Outputs[0].Deposit() == 0 {
+		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustDustDeposit: true}")
+	}
 	return tx, err
 }
 
@@ -266,8 +293,10 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	if len(results) == 0 {
+		return nil, xerrors.Errorf("request was skipped")
+	}
 	res := results[0]
-	ch.lastReceipt = res.Receipt
 	return res.Return, res.Error
 }
 
@@ -279,8 +308,48 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	return tx, res, receipt.Error()
 }
 
+// LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
-	return ch.lastReceipt
+	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
+	if len(lastBlockReceipts) == 0 {
+		return nil
+	}
+	return lastBlockReceipts[len(lastBlockReceipts)-1]
+}
+
+func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {
+	if keyPair == nil {
+		keyPair = &ch.OriginatorPrivateKey
+	}
+	agentID := iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0)
+	policy := ch.GetGasFeePolicy()
+	available := uint64(0)
+	if policy.GasFeeTokenID == nil {
+		available = ch.L2Iotas(agentID)
+		if req.assets != nil {
+			available += req.assets.Iotas
+		}
+		if req.allowance != nil {
+			available -= req.allowance.Iotas
+		}
+	} else {
+		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
+		if req.assets != nil {
+			n.Add(n, req.assets.AmountNativeToken(policy.GasFeeTokenID))
+		}
+		if req.allowance != nil {
+			n.Sub(n, req.allowance.AmountNativeToken(policy.GasFeeTokenID))
+		}
+		if n.IsUint64() {
+			available = n.Uint64()
+		} else {
+			available = math.MaxUint64
+		}
+	}
+	if available < fee {
+		return xerrors.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
+	}
+	return nil
 }
 
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
@@ -292,47 +361,39 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	results := ch.runRequestsSync(reqs, "post")
 	res := results[0]
-	ch.lastReceipt = res.Receipt
 	return tx, res.Receipt, res.Return, res.Error
-}
-
-// SimulateRequestOnLedger executes the given on-ledger request without
-// committing any changes in the ledger.
-// It can be used to estimate the gas needed to run the request
-func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	r, err := ch.requestFromParams(req, keyPair)
-	if err != nil {
-		return nil, err
-	}
-	return ch.simulateRequest(r), nil
-}
-
-// SimulateRequestOffLedger executes the given off-ledger request without
-// committing any changes in the ledger.
-// It can be used to estimate the gas needed to run the request
-func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	return ch.simulateRequest(r), nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequestOnLedger(req, keyPair)
+// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
+	if len(useFakeBudget) > 0 && useFakeBudget[0] {
+		req.WithGasBudget(math.MaxUint64)
+	}
+	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
 		return 0, 0, err
 	}
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
+	res := ch.estimateGas(r)
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequestOffLedger(req, keyPair)
-	if err != nil {
-		return 0, 0, err
+// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
+	if len(useMaxBalance) > 0 && useMaxBalance[0] {
+		req.WithGasBudget(math.MaxUint64)
 	}
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
+	if keyPair == nil {
+		keyPair = &ch.OriginatorPrivateKey
+	}
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	res := ch.estimateGas(r)
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
 // callViewFull calls the view entry point of the smart contract
@@ -372,7 +433,7 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 	}
 	deadline = time.Now().Add(maxw)
 	for {
-		mstats := ch.mempool.Info()
+		mstats := ch.MempoolInfo()
 		if p(mstats) {
 			return true
 		}
@@ -382,6 +443,22 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+const waitUntilMempoolIsEmptyDefaultTimeout = 5 * time.Second
+
+func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
+	realTimeout := waitUntilMempoolIsEmptyDefaultTimeout
+	if len(timeout) > 0 {
+		realTimeout = timeout[0]
+	}
+	startTime := time.Now()
+	ret := ch.mempool.WaitInBufferEmpty(timeout...)
+	if !ret {
+		return false
+	}
+	remainingTimeout := realTimeout - time.Since(startTime)
+	return ch.mempool.WaitPoolEmpty(remainingTimeout)
 }
 
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
@@ -394,5 +471,5 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 
 // MempoolInfo returns stats about the chain mempool
 func (ch *Chain) MempoolInfo() mempool.MempoolInfo {
-	return ch.mempool.Info()
+	return ch.mempool.Info(ch.Env.GlobalTime())
 }

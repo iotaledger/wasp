@@ -6,19 +6,9 @@ var paramsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-$#if core useCrate useWasmLib
-$#if core useCoreContract
-$#if core useHost paramsUses
-$#each func paramsFunc
-`,
-	// *******************************
-	"paramsUses": `
-use wasmlib::host::*;
-
+$#if core useCoreContract useWasmLib
 use crate::*;
-use crate::keys::*;
-$#if structs useStructs
-$#if typedefs useTypeDefs
+$#each func paramsFunc
 `,
 	// *******************************
 	"paramsFunc": `
@@ -37,9 +27,9 @@ $#if param paramsProxyStruct
 $#set TypeName $mut$FuncName$+Params
 $#each param proxyContainers
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct $TypeName {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl $TypeName {

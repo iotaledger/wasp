@@ -1,14 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity >=0.8.5;
+pragma solidity >=0.8.11;
 
-// ISCP addresses are 33 bytes which is sadly larger than EVM's bytes32 type, so
-// it will use two 32-byte slots.
-struct ISCPAddress {
-	bytes1  typeId;
-	bytes32 digest;
-}
+// Assuming that ChainID is AliasID which is 20 bytes
+type ISCPChainID is bytes20;
 
 address constant ISCP_CONTRACT_ADDRESS = 0x0000000000000000000000000000000000001074;
 address constant ISCP_YUL_ADDRESS      = 0x0000000000000000000000000000000000001075;
@@ -17,9 +13,9 @@ address constant ISCP_YUL_ADDRESS      = 0x0000000000000000000000000000000000001
 contract ISCP {
 
 	// The ChainID of the underlying ISCP chain
-    ISCPAddress chainId;
+    ISCPChainID chainId;
 
-	function getChainId() public view returns (ISCPAddress memory) {
+	function getChainId() public view returns (ISCPChainID) {
 		return chainId;
 	}
 }

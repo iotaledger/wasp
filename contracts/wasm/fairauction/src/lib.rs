@@ -10,38 +10,51 @@
 
 use fairauction::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
+use crate::structs::*;
+use crate::typedefs::*;
 
 mod consts;
 mod contract;
-mod keys;
 mod params;
 mod results;
 mod state;
 mod structs;
 mod typedefs;
+
 mod fairauction;
+
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_FINALIZE_AUCTION,
+    	FUNC_PLACE_BID,
+    	FUNC_SET_OWNER_MARGIN,
+    	FUNC_START_AUCTION,
+    	VIEW_GET_INFO,
+	],
+    funcs: &[
+    	func_finalize_auction_thunk,
+    	func_place_bid_thunk,
+    	func_set_owner_margin_thunk,
+    	func_start_auction_thunk,
+	],
+    views: &[
+    	view_get_info_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
 
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_FINALIZE_AUCTION, func_finalize_auction_thunk);
-    exports.add_func(FUNC_PLACE_BID,        func_place_bid_thunk);
-    exports.add_func(FUNC_SET_OWNER_MARGIN, func_set_owner_margin_thunk);
-    exports.add_func(FUNC_START_AUCTION,    func_start_auction_thunk);
-    exports.add_view(VIEW_GET_INFO,         view_get_info_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct FinalizeAuctionContext {
@@ -51,18 +64,14 @@ pub struct FinalizeAuctionContext {
 
 fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcFinalizeAuction");
+	let f = FinalizeAuctionContext {
+		params: ImmutableFinalizeAuctionParams { proxy: params_proxy() },
+		state: MutableFairAuctionState { proxy: state_proxy() },
+	};
 
 	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
-	let f = FinalizeAuctionContext {
-		params: ImmutableFinalizeAuctionParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableFairAuctionState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	ctx.require(f.params.color().exists(), "missing mandatory color");
 	func_finalize_auction(ctx, &f);
 	ctx.log("fairauction.funcFinalizeAuction ok");
@@ -76,12 +85,8 @@ pub struct PlaceBidContext {
 fn func_place_bid_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcPlaceBid");
 	let f = PlaceBidContext {
-		params: ImmutablePlaceBidParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableFairAuctionState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutablePlaceBidParams { proxy: params_proxy() },
+		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.color().exists(), "missing mandatory color");
 	func_place_bid(ctx, &f);
@@ -95,18 +100,14 @@ pub struct SetOwnerMarginContext {
 
 fn func_set_owner_margin_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcSetOwnerMargin");
+	let f = SetOwnerMarginContext {
+		params: ImmutableSetOwnerMarginParams { proxy: params_proxy() },
+		state: MutableFairAuctionState { proxy: state_proxy() },
+	};
 
 	// only SC creator can set owner margin
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	let f = SetOwnerMarginContext {
-		params: ImmutableSetOwnerMarginParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableFairAuctionState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	ctx.require(f.params.owner_margin().exists(), "missing mandatory ownerMargin");
 	func_set_owner_margin(ctx, &f);
 	ctx.log("fairauction.funcSetOwnerMargin ok");
@@ -120,12 +121,8 @@ pub struct StartAuctionContext {
 fn func_start_auction_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcStartAuction");
 	let f = StartAuctionContext {
-		params: ImmutableStartAuctionParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableFairAuctionState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableStartAuctionParams { proxy: params_proxy() },
+		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.color().exists(), "missing mandatory color");
 	ctx.require(f.params.minimum_bid().exists(), "missing mandatory minimumBid");
@@ -142,17 +139,12 @@ pub struct GetInfoContext {
 fn view_get_info_thunk(ctx: &ScViewContext) {
 	ctx.log("fairauction.viewGetInfo");
 	let f = GetInfoContext {
-		params: ImmutableGetInfoParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableGetInfoResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableFairAuctionState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableGetInfoParams { proxy: params_proxy() },
+		results: MutableGetInfoResults { proxy: results_proxy() },
+		state: ImmutableFairAuctionState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.color().exists(), "missing mandatory color");
 	view_get_info(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("fairauction.viewGetInfo ok");
 }

@@ -3,7 +3,10 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 // Follows ERC-721 standard as closely as possible
 // https//eips.Ethereum.Org/EIPS/eip-721
@@ -18,12 +21,12 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 // set the required base URI, to which the base58 encoded token ID will be concatenated
 const baseURI = "my/special/base/uri/"
 
-var zero = wasmlib.ScAgentID{}
+var zero = wasmtypes.ScAgentID{}
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
 // checks if caller is owner, or one of its delegated operators
-func canOperate(state MutableErc721State, caller, owner wasmlib.ScAgentID) bool {
+func canOperate(state MutableErc721State, caller, owner wasmtypes.ScAgentID) bool {
 	if caller == owner {
 		return true
 	}
@@ -33,7 +36,7 @@ func canOperate(state MutableErc721State, caller, owner wasmlib.ScAgentID) bool 
 }
 
 // checks if caller is owner, or one of its delegated operators, or approved account for tokenID
-func canTransfer(state MutableErc721State, caller, owner wasmlib.ScAgentID, tokenID wasmlib.ScHash) bool {
+func canTransfer(state MutableErc721State, caller, owner wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) bool {
 	if canOperate(state, caller, owner) {
 		return true
 	}
@@ -43,7 +46,7 @@ func canTransfer(state MutableErc721State, caller, owner wasmlib.ScAgentID, toke
 }
 
 // common code for safeTransferFrom and transferFrom
-func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasmlib.ScAgentID, tokenID wasmlib.ScHash) {
+func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) {
 	tokenOwner := state.Owners().GetAgentID(tokenID)
 	ctx.Require(tokenOwner.Exists(), "tokenID does not exist")
 
@@ -52,7 +55,7 @@ func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasm
 		"not owner, operator, or approved")
 
 	ctx.Require(owner == from, "from is not owner")
-	// TODO ctx.Requiref(to == <check-if-is-a-valid-address> , "invalid 'to' agentid")
+	// TODO ctx.Require(to == <check-if-is-a-valid-address> , "invalid 'to' agentid")
 
 	balanceFrom := state.Balances().GetUint64(from)
 	balanceTo := state.Balances().GetUint64(to)

@@ -10,243 +10,248 @@ import * as sc from "./index";
 
 export class ApproveCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncApprove);
-	params: sc.MutableApproveParams = new sc.MutableApproveParams();
+	params: sc.MutableApproveParams = new sc.MutableApproveParams(wasmlib.ScView.nilProxy);
 }
 
 export class ApproveContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class BurnCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncBurn);
-	params: sc.MutableBurnParams = new sc.MutableBurnParams();
+	params: sc.MutableBurnParams = new sc.MutableBurnParams(wasmlib.ScView.nilProxy);
 }
 
 export class BurnContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableBurnParams = new sc.ImmutableBurnParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableBurnParams = new sc.ImmutableBurnParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class InitCall {
 	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
-	params: sc.MutableInitParams = new sc.MutableInitParams();
+	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
 }
 
 export class InitContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class MintCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMint);
-	params: sc.MutableMintParams = new sc.MutableMintParams();
+	params: sc.MutableMintParams = new sc.MutableMintParams(wasmlib.ScView.nilProxy);
 }
 
 export class MintContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableMintParams = new sc.ImmutableMintParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableMintParams = new sc.ImmutableMintParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class SafeTransferFromCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSafeTransferFrom);
-	params: sc.MutableSafeTransferFromParams = new sc.MutableSafeTransferFromParams();
+	params: sc.MutableSafeTransferFromParams = new sc.MutableSafeTransferFromParams(wasmlib.ScView.nilProxy);
 }
 
 export class SafeTransferFromContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableSafeTransferFromParams = new sc.ImmutableSafeTransferFromParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableSafeTransferFromParams = new sc.ImmutableSafeTransferFromParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class SetApprovalForAllCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetApprovalForAll);
-	params: sc.MutableSetApprovalForAllParams = new sc.MutableSetApprovalForAllParams();
+	params: sc.MutableSetApprovalForAllParams = new sc.MutableSetApprovalForAllParams(wasmlib.ScView.nilProxy);
 }
 
 export class SetApprovalForAllContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableSetApprovalForAllParams = new sc.ImmutableSetApprovalForAllParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableSetApprovalForAllParams = new sc.ImmutableSetApprovalForAllParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class TransferFromCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferFrom);
-	params: sc.MutableTransferFromParams = new sc.MutableTransferFromParams();
+	params: sc.MutableTransferFromParams = new sc.MutableTransferFromParams(wasmlib.ScView.nilProxy);
 }
 
 export class TransferFromContext {
 	events: sc.Erc721Events = new sc.Erc721Events();
-	params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
-	state: sc.MutableErc721State = new sc.MutableErc721State();
+	params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams(wasmlib.paramsProxy());
+	state: sc.MutableErc721State = new sc.MutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class BalanceOfCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalanceOf);
-	params: sc.MutableBalanceOfParams = new sc.MutableBalanceOfParams();
-	results: sc.ImmutableBalanceOfResults = new sc.ImmutableBalanceOfResults();
+	params: sc.MutableBalanceOfParams = new sc.MutableBalanceOfParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableBalanceOfResults = new sc.ImmutableBalanceOfResults(wasmlib.ScView.nilProxy);
 }
 
 export class BalanceOfContext {
-	params: sc.ImmutableBalanceOfParams = new sc.ImmutableBalanceOfParams();
-	results: sc.MutableBalanceOfResults = new sc.MutableBalanceOfResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	params: sc.ImmutableBalanceOfParams = new sc.ImmutableBalanceOfParams(wasmlib.paramsProxy());
+	results: sc.MutableBalanceOfResults = new sc.MutableBalanceOfResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class GetApprovedCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetApproved);
-	params: sc.MutableGetApprovedParams = new sc.MutableGetApprovedParams();
-	results: sc.ImmutableGetApprovedResults = new sc.ImmutableGetApprovedResults();
+	params: sc.MutableGetApprovedParams = new sc.MutableGetApprovedParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetApprovedResults = new sc.ImmutableGetApprovedResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetApprovedContext {
-	params: sc.ImmutableGetApprovedParams = new sc.ImmutableGetApprovedParams();
-	results: sc.MutableGetApprovedResults = new sc.MutableGetApprovedResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	params: sc.ImmutableGetApprovedParams = new sc.ImmutableGetApprovedParams(wasmlib.paramsProxy());
+	results: sc.MutableGetApprovedResults = new sc.MutableGetApprovedResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class IsApprovedForAllCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIsApprovedForAll);
-	params: sc.MutableIsApprovedForAllParams = new sc.MutableIsApprovedForAllParams();
-	results: sc.ImmutableIsApprovedForAllResults = new sc.ImmutableIsApprovedForAllResults();
+	params: sc.MutableIsApprovedForAllParams = new sc.MutableIsApprovedForAllParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableIsApprovedForAllResults = new sc.ImmutableIsApprovedForAllResults(wasmlib.ScView.nilProxy);
 }
 
 export class IsApprovedForAllContext {
-	params: sc.ImmutableIsApprovedForAllParams = new sc.ImmutableIsApprovedForAllParams();
-	results: sc.MutableIsApprovedForAllResults = new sc.MutableIsApprovedForAllResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	params: sc.ImmutableIsApprovedForAllParams = new sc.ImmutableIsApprovedForAllParams(wasmlib.paramsProxy());
+	results: sc.MutableIsApprovedForAllResults = new sc.MutableIsApprovedForAllResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class NameCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewName);
-	results: sc.ImmutableNameResults = new sc.ImmutableNameResults();
+	results: sc.ImmutableNameResults = new sc.ImmutableNameResults(wasmlib.ScView.nilProxy);
 }
 
 export class NameContext {
-	results: sc.MutableNameResults = new sc.MutableNameResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	results: sc.MutableNameResults = new sc.MutableNameResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class OwnerOfCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewOwnerOf);
-	params: sc.MutableOwnerOfParams = new sc.MutableOwnerOfParams();
-	results: sc.ImmutableOwnerOfResults = new sc.ImmutableOwnerOfResults();
+	params: sc.MutableOwnerOfParams = new sc.MutableOwnerOfParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableOwnerOfResults = new sc.ImmutableOwnerOfResults(wasmlib.ScView.nilProxy);
 }
 
 export class OwnerOfContext {
-	params: sc.ImmutableOwnerOfParams = new sc.ImmutableOwnerOfParams();
-	results: sc.MutableOwnerOfResults = new sc.MutableOwnerOfResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	params: sc.ImmutableOwnerOfParams = new sc.ImmutableOwnerOfParams(wasmlib.paramsProxy());
+	results: sc.MutableOwnerOfResults = new sc.MutableOwnerOfResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class SymbolCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewSymbol);
-	results: sc.ImmutableSymbolResults = new sc.ImmutableSymbolResults();
+	results: sc.ImmutableSymbolResults = new sc.ImmutableSymbolResults(wasmlib.ScView.nilProxy);
 }
 
 export class SymbolContext {
-	results: sc.MutableSymbolResults = new sc.MutableSymbolResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	results: sc.MutableSymbolResults = new sc.MutableSymbolResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class TokenURICall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTokenURI);
-	params: sc.MutableTokenURIParams = new sc.MutableTokenURIParams();
-	results: sc.ImmutableTokenURIResults = new sc.ImmutableTokenURIResults();
+	params: sc.MutableTokenURIParams = new sc.MutableTokenURIParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableTokenURIResults = new sc.ImmutableTokenURIResults(wasmlib.ScView.nilProxy);
 }
 
 export class TokenURIContext {
-	params: sc.ImmutableTokenURIParams = new sc.ImmutableTokenURIParams();
-	results: sc.MutableTokenURIResults = new sc.MutableTokenURIResults();
-	state: sc.ImmutableErc721State = new sc.ImmutableErc721State();
+	params: sc.ImmutableTokenURIParams = new sc.ImmutableTokenURIParams(wasmlib.paramsProxy());
+	results: sc.MutableTokenURIResults = new sc.MutableTokenURIResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableErc721State = new sc.ImmutableErc721State(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
-    static approve(ctx: wasmlib.ScFuncCallContext): ApproveCall {
-        let f = new ApproveCall();
-        f.func.setPtrs(f.params, null);
+    static approve(_ctx: wasmlib.ScFuncCallContext): ApproveCall {
+        const f = new ApproveCall();
+		f.params = new sc.MutableApproveParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static burn(ctx: wasmlib.ScFuncCallContext): BurnCall {
-        let f = new BurnCall();
-        f.func.setPtrs(f.params, null);
+    static burn(_ctx: wasmlib.ScFuncCallContext): BurnCall {
+        const f = new BurnCall();
+		f.params = new sc.MutableBurnParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static init(ctx: wasmlib.ScFuncCallContext): InitCall {
-        let f = new InitCall();
-        f.func.setPtrs(f.params, null);
+    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
+        const f = new InitCall();
+		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static mint(ctx: wasmlib.ScFuncCallContext): MintCall {
-        let f = new MintCall();
-        f.func.setPtrs(f.params, null);
+    static mint(_ctx: wasmlib.ScFuncCallContext): MintCall {
+        const f = new MintCall();
+		f.params = new sc.MutableMintParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static safeTransferFrom(ctx: wasmlib.ScFuncCallContext): SafeTransferFromCall {
-        let f = new SafeTransferFromCall();
-        f.func.setPtrs(f.params, null);
+    static safeTransferFrom(_ctx: wasmlib.ScFuncCallContext): SafeTransferFromCall {
+        const f = new SafeTransferFromCall();
+		f.params = new sc.MutableSafeTransferFromParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static setApprovalForAll(ctx: wasmlib.ScFuncCallContext): SetApprovalForAllCall {
-        let f = new SetApprovalForAllCall();
-        f.func.setPtrs(f.params, null);
+    static setApprovalForAll(_ctx: wasmlib.ScFuncCallContext): SetApprovalForAllCall {
+        const f = new SetApprovalForAllCall();
+		f.params = new sc.MutableSetApprovalForAllParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static transferFrom(ctx: wasmlib.ScFuncCallContext): TransferFromCall {
-        let f = new TransferFromCall();
-        f.func.setPtrs(f.params, null);
+    static transferFrom(_ctx: wasmlib.ScFuncCallContext): TransferFromCall {
+        const f = new TransferFromCall();
+		f.params = new sc.MutableTransferFromParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static balanceOf(ctx: wasmlib.ScViewCallContext): BalanceOfCall {
-        let f = new BalanceOfCall();
-        f.func.setPtrs(f.params, f.results);
+    static balanceOf(_ctx: wasmlib.ScViewCallContext): BalanceOfCall {
+        const f = new BalanceOfCall();
+		f.params = new sc.MutableBalanceOfParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableBalanceOfResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getApproved(ctx: wasmlib.ScViewCallContext): GetApprovedCall {
-        let f = new GetApprovedCall();
-        f.func.setPtrs(f.params, f.results);
+    static getApproved(_ctx: wasmlib.ScViewCallContext): GetApprovedCall {
+        const f = new GetApprovedCall();
+		f.params = new sc.MutableGetApprovedParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetApprovedResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static isApprovedForAll(ctx: wasmlib.ScViewCallContext): IsApprovedForAllCall {
-        let f = new IsApprovedForAllCall();
-        f.func.setPtrs(f.params, f.results);
+    static isApprovedForAll(_ctx: wasmlib.ScViewCallContext): IsApprovedForAllCall {
+        const f = new IsApprovedForAllCall();
+		f.params = new sc.MutableIsApprovedForAllParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableIsApprovedForAllResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static name(ctx: wasmlib.ScViewCallContext): NameCall {
-        let f = new NameCall();
-        f.func.setPtrs(null, f.results);
+    static name(_ctx: wasmlib.ScViewCallContext): NameCall {
+        const f = new NameCall();
+		f.results = new sc.ImmutableNameResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static ownerOf(ctx: wasmlib.ScViewCallContext): OwnerOfCall {
-        let f = new OwnerOfCall();
-        f.func.setPtrs(f.params, f.results);
+    static ownerOf(_ctx: wasmlib.ScViewCallContext): OwnerOfCall {
+        const f = new OwnerOfCall();
+		f.params = new sc.MutableOwnerOfParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableOwnerOfResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static symbol(ctx: wasmlib.ScViewCallContext): SymbolCall {
-        let f = new SymbolCall();
-        f.func.setPtrs(null, f.results);
+    static symbol(_ctx: wasmlib.ScViewCallContext): SymbolCall {
+        const f = new SymbolCall();
+		f.results = new sc.ImmutableSymbolResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static tokenURI(ctx: wasmlib.ScViewCallContext): TokenURICall {
-        let f = new TokenURICall();
-        f.func.setPtrs(f.params, f.results);
+    static tokenURI(_ctx: wasmlib.ScViewCallContext): TokenURICall {
+        const f = new TokenURICall();
+		f.params = new sc.MutableTokenURIParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableTokenURIResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

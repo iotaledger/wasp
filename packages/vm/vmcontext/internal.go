@@ -1,6 +1,8 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"math"
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -70,7 +71,7 @@ func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 }
 
 func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
-	vmctx.GasBurn(gas.BurnGetBalance)
+	vmctx.GasBurn(gas.BurnCodeGetBalance)
 
 	var ret uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
@@ -80,7 +81,7 @@ func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 }
 
 func (vmctx *VMContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	vmctx.GasBurn(gas.BurnGetBalance)
+	vmctx.GasBurn(gas.BurnCodeGetBalance)
 
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
@@ -98,7 +99,7 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID
 }
 
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
-	vmctx.GasBurn(gas.BurnGetBalance)
+	vmctx.GasBurn(gas.BurnCodeGetBalance)
 
 	var ret *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
@@ -108,6 +109,21 @@ func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 		}
 	})
 	return ret
+}
+
+func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
+		// iotas are used as gas tokens
+		return vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+	}
+	// native tokens are used for gas fee
+	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
+	// to pay for gas chain is configured to use some native token, not IOTA
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
+	if tokensAvailableBig.IsUint64() {
+		return tokensAvailableBig.Uint64()
+	}
+	return math.MaxUint64
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
@@ -158,7 +174,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
-	vmctx.GasBurn(gas.BurnEmitEventFixed)
+	vmctx.GasBurn(gas.BurnCodeEmitEventFixed)
 
 	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
 		panic(ErrTooManyEvents)
@@ -180,6 +196,8 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 
 // updateOffLedgerRequestMaxAssumedNonce updates stored nonce for off ledger requests
 func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
+	vmctx.gasBurnEnable(false)
+	defer vmctx.gasBurnEnable(true)
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.SaveMaxAssumedNonce(
 			s,
@@ -197,6 +215,6 @@ func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {
-		panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 }

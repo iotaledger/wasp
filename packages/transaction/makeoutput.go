@@ -46,7 +46,7 @@ func MakeExtendedOutput(
 	senderAddress iotago.Address,
 	assets *iscp.Assets,
 	metadata *iscp.RequestMetadata,
-	options *iscp.SendOptions,
+	options iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
 	disableAutoAdjustDustDeposit ...bool,
 ) *iotago.ExtendedOutput {
@@ -54,10 +54,11 @@ func MakeExtendedOutput(
 		assets = &iscp.Assets{}
 	}
 	ret := &iotago.ExtendedOutput{
-		Address:      targetAddress,
 		Amount:       assets.Iotas,
 		NativeTokens: assets.Tokens,
-		Blocks:       iotago.FeatureBlocks{},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: targetAddress},
+		},
 	}
 	if senderAddress != nil {
 		ret.Blocks = append(ret.Blocks, &iotago.SenderFeatureBlock{
@@ -69,9 +70,24 @@ func MakeExtendedOutput(
 			Data: metadata.Bytes(),
 		})
 	}
-
-	if options != nil {
-		panic(" send options FeatureBlocks not implemented yet")
+	if options.Timelock != nil {
+		cond := &iotago.TimelockUnlockCondition{
+			MilestoneIndex: options.Timelock.MilestoneIndex,
+		}
+		if !options.Timelock.Time.IsZero() {
+			cond.UnixTime = uint32(options.Timelock.Time.Unix())
+		}
+		ret.Conditions = append(ret.Conditions, cond)
+	}
+	if options.Expiration != nil {
+		cond := &iotago.ExpirationUnlockCondition{
+			MilestoneIndex: options.Expiration.MilestoneIndex,
+			ReturnAddress:  options.Expiration.ReturnAddress,
+		}
+		if !options.Expiration.Time.IsZero() {
+			cond.UnixTime = uint32(options.Expiration.Time.Unix())
+		}
+		ret.Conditions = append(ret.Conditions, cond)
 	}
 
 	// Adjust to minimum dust deposit, if needed

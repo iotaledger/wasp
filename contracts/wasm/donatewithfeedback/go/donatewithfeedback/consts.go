@@ -7,12 +7,12 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "donatewithfeedback"
 	ScDescription = ""
-	HScName       = wasmlib.ScHname(0x696d7f66)
+	HScName       = wasmtypes.ScHname(0x696d7f66)
 )
 
 const (
@@ -46,8 +46,8 @@ const (
 )
 
 const (
-	HFuncDonate       = wasmlib.ScHname(0xdc9b133a)
-	HFuncWithdraw     = wasmlib.ScHname(0x9dcc0f41)
-	HViewDonation     = wasmlib.ScHname(0xbdb245ba)
-	HViewDonationInfo = wasmlib.ScHname(0xc8f7c726)
+	HFuncDonate       = wasmtypes.ScHname(0xdc9b133a)
+	HFuncWithdraw     = wasmtypes.ScHname(0x9dcc0f41)
+	HViewDonation     = wasmtypes.ScHname(0xbdb245ba)
+	HViewDonationInfo = wasmtypes.ScHname(0xc8f7c726)
 )

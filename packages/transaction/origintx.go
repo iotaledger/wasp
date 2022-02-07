@@ -29,10 +29,12 @@ func NewChainOriginTransaction(
 	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
 
 	aliasOutput := &iotago.AliasOutput{
-		Amount:               deposit,
-		StateController:      stateControllerAddress,
-		GovernanceController: governanceControllerAddress,
-		StateMetadata:        state.OriginStateHash().Bytes(),
+		Amount:        deposit,
+		StateMetadata: state.OriginStateHash().Bytes(),
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
+			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: walletAddr,

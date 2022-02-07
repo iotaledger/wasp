@@ -2,12 +2,12 @@ name: TokenRegistry
 description: ""
 structs:
   Token:
-    created: Int64 // creation timestamp
+    created: Uint64 // creation timestamp
     description: String // description what minted token represents
     mintedBy: AgentID // original minter
     owner: AgentID // current owner
-    supply: Int64 // amount of tokens originally minted
-    updated: Int64 // last update timestamp
+    supply: Uint64 // amount of tokens originally minted
+    updated: Uint64 // last update timestamp
     userDefined: String // any user defined text
 typedefs: {}
 state:

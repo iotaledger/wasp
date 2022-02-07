@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"golang.org/x/xerrors"
 )
 
 type Assert struct {
@@ -28,7 +29,12 @@ func (a Assert) Requiref(cond bool, format string, args ...interface{}) {
 }
 
 func (a Assert) RequireNoError(err error, str ...string) {
-	a.Requiref(err == nil, fmt.Sprintf("%s %v", strings.Join(str, " "), err))
+	if err != nil {
+		if len(str) > 0 {
+			panic(xerrors.Errorf("%s: %w", strings.Join(str, " "), err))
+		}
+		panic(err)
+	}
 }
 
 func (a Assert) RequireChainOwner(ctx iscp.Sandbox, name ...string) {

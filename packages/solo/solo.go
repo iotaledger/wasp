@@ -6,7 +6,6 @@ package solo
 import (
 	"math/big"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
@@ -31,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
 )
@@ -55,8 +53,6 @@ type Solo struct {
 	ledgerMutex                  sync.RWMutex
 	chains                       map[iscp.ChainID]*Chain
 	vmRunner                     vm.VMRunner
-	publisherWG                  sync.WaitGroup
-	publisherEnabled             atomic.Bool
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
 }
@@ -128,8 +124,6 @@ func defaultInitOptions() *InitOptions {
 // New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-// If solo is used for unit testing, 't' should be the *testing.T instance;
-// otherwise it can be either nil or an instance created with NewTestContext.
 func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
@@ -168,6 +162,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
 		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
+
+	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
+	}))
+
 	return ret
 }
 
@@ -207,9 +206,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
 	var originatorAddr iotago.Address
-	var origKeyPair cryptolib.KeyPair
 	if chainOriginator == nil {
-		origKeyPair, originatorAddr = env.utxoDB.NewKeyPairByIndex(1) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
+		origKeyPair := cryptolib.NewKeyPair()
+		originatorAddr = cryptolib.Ed25519AddressFromPubKey(origKeyPair.PublicKey)
 		chainOriginator = &origKeyPair
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
@@ -274,21 +273,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		proc:                   processors.MustNew(env.processorConfig),
 		Log:                    chainlog,
 	}
-	ret.mempool = mempool.New(ret.StateReader, chainlog, metrics.DefaultChainMetrics())
+	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
-
-	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
-		if !env.publisherEnabled.Load() {
-			return
-		}
-		msg := msgType + " " + strings.Join(parts, " ")
-		env.publisherWG.Add(1)
-		go func() {
-			chainlog.Infof("SOLO PUBLISHER (test %s):: '%s'", env.T.Name(), msg)
-			env.publisherWG.Done()
-		}()
-	}))
 
 	outs, ids = env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
@@ -350,6 +337,27 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 	return ret
 }
 
+func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	ch.mempool.ReceiveRequests(reqs...)
+}
+
+// AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
+// then waits for the in-buffer to be empty, before resuming VM execution
+func (env *Solo) AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch *Chain, reqs []iscp.Request, timeout ...time.Duration) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	ch.mempool.ReceiveRequests(reqs...)
+	ch.mempool.WaitInBufferEmpty(timeout...)
+}
+
 // EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
 func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	env.glbMutex.RLock()
@@ -373,16 +381,6 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-// EnablePublisher enables Solo publisher
-func (env *Solo) EnablePublisher(enable bool) {
-	env.publisherEnabled.Store(enable)
-}
-
-// WaitPublisher waits until all messages are published
-func (env *Solo) WaitPublisher() {
-	env.publisherWG.Wait()
-}
-
 func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
 	outs, ids := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
@@ -397,8 +395,8 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	timeAssumption := ch.Env.GlobalTime()
-	ready := ch.mempool.ReadyNow(timeAssumption.Time)
+	now := ch.Env.GlobalTime()
+	ready := ch.mempool.ReadyNow(now)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
@@ -406,8 +404,8 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	ret := make([]iscp.Request, 0)
 	for _, req := range ready[:batchSize] {
 		if !req.IsOffLedger() {
-			timeData := req.AsOnLedger().Features().TimeLock()
-			if timeData != nil && timeData.Time.After(timeAssumption.Time) {
+			onLedgerReq := req.AsOnLedger()
+			if !iscp.RequestIsUnlockable(onLedgerReq, ch.ChainID.AsAddress(), now) {
 				continue
 			}
 		}
@@ -452,7 +450,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 // BacklogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) BacklogLen() int {
-	mstats := ch.mempool.Info()
+	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 

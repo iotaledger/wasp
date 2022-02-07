@@ -73,7 +73,7 @@ var depositCmd = &cobra.Command{
 			return SCClient(accounts.Contract.Hname()).PostRequest(
 				accounts.FuncDeposit.Name,
 				chainclient.PostRequestParams{
-					Transfer: parseColoredBalances(args),
+					Transfer: parseAssets(args),
 				},
 			)
 		})

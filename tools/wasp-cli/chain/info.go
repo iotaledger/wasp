@@ -79,10 +79,11 @@ var infoCmd = &cobra.Command{
 				log.Printf("Delegated owner: %s\n", delegated.String())
 			}
 
-			feeColor, defaultOwnerFee, defaultValidatorFee, err := governance.GetDefaultFeeInfo(info)
-			log.Check(err)
-			log.Printf("Default owner fee: %d %s\n", defaultOwnerFee, feeColor.String())
-			log.Printf("Default validator fee: %d %s\n", defaultValidatorFee, feeColor.String())
+			// TODO fees will be changed
+			// feeColor, defaultOwnerFee, defaultValidatorFee, err := governance.GetDefaultFeeInfo(info)
+			// log.Check(err)
+			// log.Printf("Default owner fee: %d %s\n", defaultOwnerFee, feeColor.String())
+			// log.Printf("Default validator fee: %d %s\n", defaultValidatorFee, feeColor.String())
 		}
 	},
 }

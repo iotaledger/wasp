@@ -1,6 +1,7 @@
 package viewcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -8,7 +9,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -76,8 +76,8 @@ func (s *sandboxview) Assets() *iscp.Assets {
 	panic("not implemented")
 }
 
-func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
-	return s.vctx.CallView(contractHname, entryPoint, params)
+func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
+	return s.vctx.callView(contractHname, entryPoint, params)
 }
 
 func (s *sandboxview) ChainID() *iscp.ChainID {
@@ -85,9 +85,7 @@ func (s *sandboxview) ChainID() *iscp.ChainID {
 }
 
 func (s *sandboxview) ChainOwnerID() *iscp.AgentID {
-	r, err := s.Call(governance.Contract.Hname(), getChainInfoHname, nil)
-	a := assert.NewAssert(s.Log())
-	a.RequireNoError(err)
+	r := s.Call(governance.Contract.Hname(), getChainInfoHname, nil)
 	res := kvdecoder.New(r, s.Log())
 	return res.MustGetAgentID(governance.VarChainOwnerID)
 }
@@ -130,10 +128,10 @@ func (s *sandboxview) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...int) {
-	s.gasBurned += burnCode.Value(par...)
+func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...uint64) {
+	s.gasBurned += burnCode.Cost(par...)
 	if s.gasBurned > s.gasBudget {
-		panic(coreutil.ErrorGasBudgetExceeded)
+		panic(vmcontext.ErrGasBudgetExceeded)
 	}
 }
 

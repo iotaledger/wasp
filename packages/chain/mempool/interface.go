@@ -10,13 +10,14 @@ type Mempool interface {
 	ReceiveRequests(reqs ...iscp.Request)
 	ReceiveRequest(req iscp.Request) bool
 	RemoveRequests(reqs ...iscp.RequestID)
-	ReadyNow(currentTime ...time.Time) []iscp.Request
-	ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
+	ReadyNow(currentTime iscp.TimeData) []iscp.Request
+	ReadyFromIDs(currentTime iscp.TimeData, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
 	HasRequest(id iscp.RequestID) bool
 	GetRequest(id iscp.RequestID) iscp.Request
-	Info() MempoolInfo
+	Info(currentTime iscp.TimeData) MempoolInfo
 	WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool // for testing
 	WaitInBufferEmpty(timeout ...time.Duration) bool                       // for testing
+	WaitPoolEmpty(timeout ...time.Duration) bool                           // for testing
 	Close()
 }
 

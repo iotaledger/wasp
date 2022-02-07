@@ -2,15 +2,15 @@ package sbtestsc
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 iotas back to the caller
-func testSplitFunds(ctx iscp.Sandbox) (dict.Dict, error) {
+func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Iotas >= 200 {
 		// claim 200 iotas from allowance at a time
 		// send back to caller's address
@@ -23,15 +23,15 @@ func testSplitFunds(ctx iscp.Sandbox) (dict.Dict, error) {
 			},
 		)
 	}
-	return nil, nil
+	return nil
 }
 
 // testSplitFundsNativeTokens calls Send for each Native token
-func testSplitFundsNativeTokens(ctx iscp.Sandbox) (dict.Dict, error) {
+func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 	// claims all iotas from allowance
 	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAssetsIotas(ctx.AllowanceAvailable().Iotas))
 	for _, token := range ctx.AllowanceAvailable().Tokens {
-		for ctx.AllowanceAvailable().AmountNativeToken(&token.ID).Cmp(big.NewInt(0)) > 0 {
+		for ctx.AllowanceAvailable().AmountNativeToken(&token.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
@@ -47,10 +47,10 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) (dict.Dict, error) {
 			)
 		}
 	}
-	return nil, nil
+	return nil
 }
 
-func pingAllowanceBack(ctx iscp.Sandbox) (dict.Dict, error) {
+func pingAllowanceBack(ctx iscp.Sandbox) dict.Dict {
 	// assert caller is L1 address, not a SC
 	ctx.Requiref(!ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) && ctx.Caller().Hname() == 0,
 		"pingAllowanceBack: caller expected to be a L1 address")
@@ -58,7 +58,7 @@ func pingAllowanceBack(ctx iscp.Sandbox) (dict.Dict, error) {
 	toSend := ctx.AllowanceAvailable()
 	if toSend.IsEmpty() {
 		// nothing to send back, NOP
-		return nil, nil
+		return nil
 	}
 	// claim all transfer to the current account
 	left := ctx.TransferAllowedFunds(ctx.AccountID())
@@ -72,11 +72,11 @@ func pingAllowanceBack(ctx iscp.Sandbox) (dict.Dict, error) {
 			Assets:        toSend,
 		},
 	)
-	return nil, nil
+	return nil
 }
 
 // testEstimateMinimumDust returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
-func testEstimateMinimumDust(ctx iscp.Sandbox) (dict.Dict, error) {
+func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 	provided := ctx.AllowanceAvailable().Iotas
 
 	requestParams := iscp.RequestParameters{
@@ -88,9 +88,9 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) (dict.Dict, error) {
 		AdjustToMinimumDustDeposit: true,
 	}
 
-	required, _ := ctx.EstimateRequiredDustDeposit(requestParams)
+	required := ctx.EstimateRequiredDustDeposit(requestParams)
 	if provided < required {
 		panic("not enough funds")
 	}
-	return nil, nil
+	return nil
 }

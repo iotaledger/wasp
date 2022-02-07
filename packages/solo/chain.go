@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -118,38 +119,19 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
-
-	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
-	// We have to have some iotas even in estimate mode, otherwise we cannot create transaction
-	const minimumIotasForEstimate = 100_000
-
-	// estimate gas
-	userIotas := ch.Env.L1Iotas(userAddr)
-	if userIotas < minimumIotasForEstimate {
-		return hashing.HashValue{}, xerrors.Errorf("expected at least %d iotas on user L1 account", minimumIotasForEstimate)
+	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
+	g, _, err := ch.EstimateGasOffLedger(req, nil, true)
+	if err != nil {
+		return [32]byte{}, err
 	}
-	// estimate gas budget and iotas needed
-	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		AddAssetsIotas(minimumIotasForEstimate).
-		WithGasBudget(minimumIotasForEstimate)
-	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	// check if user has required iotas on L2
-	userIotasL2 := ch.L2Iotas(iscp.NewAgentID(userAddr, 0))
-	if userIotasL2 < gasFeeEstimate*2 {
-		err = xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
-		return hashing.HashValue{}, err
-	}
-	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		WithGasBudget(gasBudgetEstimate * 2) // double the estimate, to be on the safe side
+	req.WithGasBudget(g)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
 	if resBin == nil {
-		err = fmt.Errorf("internal error: no hash returned")
+		err = xerrors.Errorf("internal error: no hash returned")
 		return
 	}
 	ret, err = codec.DecodeHashValue(resBin)
@@ -223,9 +205,6 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
-	if user == nil {
-		user = &ch.OriginatorPrivateKey
-	}
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,
@@ -233,22 +212,11 @@ func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHas
 	for k, v := range parseParams(params) {
 		par[k] = v
 	}
-	reqEstimate := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
-		WithGasBudget(100_000).
-		AddAssetsIotas(10_000)
-	gasEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
-	userIotasL2 := ch.L2Iotas(iscp.NewAgentID(userAddr, 0))
-	if userIotasL2 < gasFeeEstimate*2 {
-		return xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
-	}
-
-	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
-		WithGasBudget(gasEstimate)
-
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
+			WithGasBudget(math.MaxUint64),
+		user,
+	)
 	return err
 }
 
@@ -414,9 +382,16 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 }
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.RequestReceipt {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.RequestReceipt {
+	var blockIdx uint32
+	if len(blockIndex) == 0 {
+		blockIdx = ch.GetLatestBlockInfo().BlockIndex
+	} else {
+		blockIdx = blockIndex[0]
+	}
+
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceiptsForBlock.Name,
-		blocklog.ParamBlockIndex, blockIndex)
+		blocklog.ParamBlockIndex, blockIdx)
 	if err != nil {
 		return nil
 	}
@@ -427,7 +402,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.Reque
 		require.NoError(ch.Env.T, err)
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
 		require.NoError(ch.Env.T, err)
-		ret[i].WithBlockData(blockIndex, uint16(i))
+		ret[i].WithBlockData(blockIdx, uint16(i))
 	}
 	return ret
 }
@@ -494,7 +469,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).AddAssetsIotas(1)
+	)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -503,7 +478,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).AddAssetsIotas(1)
+	)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -559,7 +534,20 @@ func (a *L1L2AddressAssets) String() string {
 	return fmt.Sprintf("Address: %s\nL1 assets:\n  %s\nL2 assets:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
 }
 
-func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
+func getAddr(addrOrKeypair interface{}) iotago.Address {
+	switch a := addrOrKeypair.(type) {
+	case iotago.Address:
+		return a
+	case *cryptolib.KeyPair:
+		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+	case cryptolib.KeyPair:
+		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+	}
+	panic(xerrors.Errorf("getAddr: wrong type %T", addrOrKeypair))
+}
+
+func (ch *Chain) L1L2Funds(addrOrKeypair interface{}) *L1L2AddressAssets {
+	addr := getAddr(addrOrKeypair)
 	return &L1L2AddressAssets{
 		Address:  addr,
 		AssetsL1: ch.Env.L1Assets(addr),

@@ -12,7 +12,8 @@ import (
 
 func PostTransaction(tx *iotago.Transaction) {
 	WithTransaction(func() (*iotago.Transaction, error) {
-		return tx, config.GoshimmerClient().PostTransaction(tx)
+		panic("TODO implement")
+		// return tx, config.GoshimmerClient().PostTransaction(tx)
 	})
 }
 
@@ -22,7 +23,8 @@ func WithTransaction(f func() (*iotago.Transaction, error)) *iotago.Transaction 
 	logTx(tx, nil)
 
 	if config.WaitForCompletion {
-		log.Check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
+		panic("TODO implement")
+		// log.Check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
 	}
 
 	return tx
@@ -31,7 +33,7 @@ func WithTransaction(f func() (*iotago.Transaction, error)) *iotago.Transaction 
 func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*iscp.OffLedgerRequestData, error)) {
 	req, err := f()
 	log.Check(err)
-	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().Base58())
+	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
 		log.Check(config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute))
 	}

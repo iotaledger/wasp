@@ -7,7 +7,7 @@
 
 package timestamp
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type NowCall struct {
 	Func *wasmlib.ScFunc
@@ -28,6 +28,6 @@ func (sc Funcs) Now(ctx wasmlib.ScFuncCallContext) *NowCall {
 
 func (sc Funcs) GetTimestamp(ctx wasmlib.ScViewCallContext) *GetTimestampCall {
 	f := &GetTimestampCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetTimestamp)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

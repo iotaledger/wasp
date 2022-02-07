@@ -5,16 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableHelloWorldState extends wasmlib.ScMapID {
+export class ImmutableHelloWorldState extends wasmtypes.ScProxy {
 }
 
-export class MutableHelloWorldState extends wasmlib.ScMapID {
+export class MutableHelloWorldState extends wasmtypes.ScProxy {
     asImmutable(): sc.ImmutableHelloWorldState {
-		const imm = new sc.ImmutableHelloWorldState();
-		imm.mapID = this.mapID;
-		return imm;
+		return new sc.ImmutableHelloWorldState(this.proxy);
 	}
 }

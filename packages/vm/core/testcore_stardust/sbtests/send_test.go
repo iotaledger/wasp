@@ -24,7 +24,7 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAssetsIotas(10_000_000).
-		AddIotaAllowance(40_000). // 40k iotas = 200 outputs
+		AddAllowanceIotas(40_000). // 40k iotas = 200 outputs
 		WithGasBudget(10_000_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
@@ -48,7 +48,7 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	// this will SUCCEED because it will result in 4 = 800/200 outputs in the single call
 	const allowance = 800
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddIotaAllowance(allowance).
+		AddAllowanceIotas(allowance).
 		WithGasBudget(200_000)
 	tx, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
@@ -73,8 +73,8 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	// this will FAIL because it will result in 1000/200 = 5 outputs in the single call
 	const allowance = 1000
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddIotaAllowance(allowance).
-		WithGasBudget(200_000)
+		AddAllowanceIotas(allowance).
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -102,7 +102,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).
-		WithGasBudget(200_000)
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -156,31 +156,28 @@ func testPingIotas1(t *testing.T, w bool) {
 	const expectedBack = 1_000
 	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
-	reqEstimate := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(100_000).
-		AddIotaAllowance(expectedBack).
-		WithGasBudget(100_000)
-
-	gasEstimate, feeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(t, err)
-	t.Logf("gasEstimate: %d, feeEstimate: %d", gasEstimate, feeEstimate)
-
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(feeEstimate + expectedBack).
-		AddIotaAllowance(expectedBack).
-		WithGasBudget(gasEstimate)
+		AddAssetsIotas(expectedBack + 1_000). // add extra iotas besides allowance in order to estimate the gas fees
+		AddAllowanceIotas(expectedBack)
+
+	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
+	require.NoError(t, err)
+	req.
+		WithAssets(iscp.NewAssetsIotas(expectedBack + gasFee)).
+		WithGasBudget(gas)
 
 	_, err = ch.PostRequestSync(req, user)
 	require.NoError(t, err)
-	rec := ch.LastReceipt()
+	receipt := ch.LastReceipt()
 
 	userFundsAfter := ch.L1L2Funds(userAddr)
 	commonAfter := ch.L2CommonAccountAssets()
-	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", rec, userFundsAfter, commonAfter)
+	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-feeEstimate)
-	require.EqualValues(t, int(commonBefore.Iotas+rec.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, feeEstimate-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
+	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-receipt.GasFeeCharged)
+	require.EqualValues(t, int(commonBefore.Iotas+receipt.GasFeeCharged), int(commonAfter.Iotas))
+	require.EqualValues(t, solo.Saldo-receipt.GasFeeCharged, userFundsAfter.AssetsL1.Iotas)
+	require.Zero(t, userFundsAfter.AssetsL2.Iotas)
 }
 
 func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }

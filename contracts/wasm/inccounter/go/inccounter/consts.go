@@ -7,23 +7,31 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "inccounter"
 	ScDescription = ""
-	HScName       = wasmlib.ScHname(0xaf2438e9)
+	HScName       = wasmtypes.ScHname(0xaf2438e9)
 )
 
 const (
 	ParamCounter    = "counter"
 	ParamDelay      = "delay"
 	ParamDummy      = "dummy"
+	ParamNi64       = "ni64"
+	ParamNu64       = "nu64"
 	ParamNumRepeats = "numRepeats"
 )
 
 const (
+	ResultBuf     = "buf"
 	ResultCounter = "counter"
+	ResultNi64    = "ni64"
+	ResultNu64    = "nu64"
+	ResultStr     = "str"
+	ResultXi64    = "xi64"
+	ResultXu64    = "xu64"
 )
 
 const (
@@ -43,24 +51,30 @@ const (
 	FuncLocalStateSandboxCall  = "localStateSandboxCall"
 	FuncPostIncrement          = "postIncrement"
 	FuncRepeatMany             = "repeatMany"
-	FuncTestLeb128             = "testLeb128"
+	FuncTestVliCodec           = "testVliCodec"
+	FuncTestVluCodec           = "testVluCodec"
 	FuncWhenMustIncrement      = "whenMustIncrement"
 	ViewGetCounter             = "getCounter"
+	ViewGetVli                 = "getVli"
+	ViewGetVlu                 = "getVlu"
 )
 
 const (
-	HFuncCallIncrement          = wasmlib.ScHname(0xeb5dcacd)
-	HFuncCallIncrementRecurse5x = wasmlib.ScHname(0x8749fbff)
-	HFuncEndlessLoop            = wasmlib.ScHname(0x365f0929)
-	HFuncIncrement              = wasmlib.ScHname(0xd351bd12)
-	HFuncIncrementWithDelay     = wasmlib.ScHname(0xa235bba7)
-	HFuncInit                   = wasmlib.ScHname(0x1f44d644)
-	HFuncLocalStateInternalCall = wasmlib.ScHname(0xecfc5d33)
-	HFuncLocalStatePost         = wasmlib.ScHname(0x3fd54d13)
-	HFuncLocalStateSandboxCall  = wasmlib.ScHname(0x7bd22c53)
-	HFuncPostIncrement          = wasmlib.ScHname(0x81c772f5)
-	HFuncRepeatMany             = wasmlib.ScHname(0x4ff450d3)
-	HFuncTestLeb128             = wasmlib.ScHname(0xd8364cb9)
-	HFuncWhenMustIncrement      = wasmlib.ScHname(0xb4c3e7a6)
-	HViewGetCounter             = wasmlib.ScHname(0xb423e607)
+	HFuncCallIncrement          = wasmtypes.ScHname(0xeb5dcacd)
+	HFuncCallIncrementRecurse5x = wasmtypes.ScHname(0x8749fbff)
+	HFuncEndlessLoop            = wasmtypes.ScHname(0x365f0929)
+	HFuncIncrement              = wasmtypes.ScHname(0xd351bd12)
+	HFuncIncrementWithDelay     = wasmtypes.ScHname(0xa235bba7)
+	HFuncInit                   = wasmtypes.ScHname(0x1f44d644)
+	HFuncLocalStateInternalCall = wasmtypes.ScHname(0xecfc5d33)
+	HFuncLocalStatePost         = wasmtypes.ScHname(0x3fd54d13)
+	HFuncLocalStateSandboxCall  = wasmtypes.ScHname(0x7bd22c53)
+	HFuncPostIncrement          = wasmtypes.ScHname(0x81c772f5)
+	HFuncRepeatMany             = wasmtypes.ScHname(0x4ff450d3)
+	HFuncTestVliCodec           = wasmtypes.ScHname(0xd5356012)
+	HFuncTestVluCodec           = wasmtypes.ScHname(0x9f7f63e6)
+	HFuncWhenMustIncrement      = wasmtypes.ScHname(0xb4c3e7a6)
+	HViewGetCounter             = wasmtypes.ScHname(0xb423e607)
+	HViewGetVli                 = wasmtypes.ScHname(0x0ee16f89)
+	HViewGetVlu                 = wasmtypes.ScHname(0x54d624e6)
 )

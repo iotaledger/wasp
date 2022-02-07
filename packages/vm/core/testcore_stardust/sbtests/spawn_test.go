@@ -12,12 +12,12 @@ import (
 
 func TestSpawn(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	_, _ = setupTestSandboxSC(t, ch, nil, false)
+	setupTestSandboxSC(t, ch, nil, false)
 
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSpawn.Name).
-		WithGasBudget(10_000)
+		WithGasBudget(100_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

@@ -3,13 +3,14 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+
 	"github.com/iotaledger/wasp/packages/kv"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -63,26 +64,14 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
 	}
-	var unverified bool
+
 	var maxAssumed uint64
-
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		// check the account. It must exist
-		// TODO optimize: check the account balances and fetch nonce in one call
-		// off-ledger account must exist, i.e. it should have non zero balance on the chain
-
-		if b := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); b.IsEmpty() {
-			// TODO check minimum balance. Requiref some minimum balance
-			unverified = true
-			return
-		}
 		// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
 		// It is checking if nonce is not too old. See replay-off-ledger.md
 		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAddress())
 	})
-	if unverified {
-		return xerrors.Errorf("unverified account for off-ledger request: %s", vmctx.req.SenderAccount())
-	}
+
 	nonce := vmctx.req.AsOffLedger().Nonce()
 	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
 		maxAssumed, OffLedgerNonceStrictOrderTolerance, nonce)
@@ -111,7 +100,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 		return err
 	}
 	if vmctx.txbuilder.InputsAreFull() {
-		return vmtxbuilder.ErrInputLimitExceeded
+		return exceptions.ErrInputLimitExceeded
 	}
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
@@ -132,8 +121,10 @@ func (vmctx *VMContext) checkInternalOutput() error {
 func (vmctx *VMContext) checkReasonTimeLock() error {
 	lock := vmctx.req.AsOnLedger().Features().TimeLock()
 	if lock != nil {
-		if lock.Time.Before(vmctx.finalStateTimestamp) {
-			return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
+		if !lock.Time.IsZero() {
+			if vmctx.finalStateTimestamp.Before(lock.Time) {
+				return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
+			}
 		}
 		if lock.MilestoneIndex != 0 && vmctx.task.TimeAssumption.MilestoneIndex < lock.MilestoneIndex {
 			return xerrors.Errorf("can't be consumed due to lock until milestone index #%v", vmctx.task.TimeAssumption.MilestoneIndex)
@@ -172,7 +163,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	output, _ := vmctx.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix:    uint64(vmctx.finalStateTimestamp.Unix()),
+		ConfUnix:    uint32(vmctx.finalStateTimestamp.Unix()),
 		ConfMsIndex: vmctx.task.TimeAssumption.MilestoneIndex,
 	})
 

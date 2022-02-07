@@ -18,6 +18,9 @@ var (
 
 // capitalize first letter
 func capitalize(name string) string {
+	if name == "" {
+		return ""
+	}
 	return upper(name[:1]) + name[1:]
 }
 
@@ -92,6 +95,9 @@ func snake(name string) string {
 
 // uncapitalize first letter
 func uncapitalize(name string) string {
+	if name == "" {
+		return ""
+	}
 	return lower(name[:1]) + name[1:]
 }
 

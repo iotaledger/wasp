@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,8 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscpcontract"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscptest"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -28,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
 )
 
@@ -84,7 +82,12 @@ type ethCallOptions struct {
 }
 
 func initEVMChain(t testing.TB, evmFlavor *coreutil.ContractInfo, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
-	env := solo.New(t, true, true).WithNativeContract(evmflavors.Processors[evmFlavor.Name])
+	env := solo.New(t, &solo.InitOptions{
+		AutoAdjustDustDeposit: true,
+		Debug:                 true,
+		PrintStackTrace:       true,
+	}).
+		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
@@ -119,7 +122,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
-		opt.wallet = &e.soloChain.OriginatorKeyPair
+		opt.wallet = &e.soloChain.OriginatorPrivateKey
 	}
 	if opt.transfer == 0 {
 		opt.transfer = 1
@@ -133,8 +136,13 @@ func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, par
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
 	opt := e.parseIotaCallOptions(opts)
+	req := e.buildSoloRequest(funName, opt.transfer, params...)
+	gas, gasFee, err := e.soloChain.EstimateGasOnLedger(req, opt.wallet, true)
+	if err != nil {
+		return nil, err
+	}
 	return e.soloChain.PostRequestSync(
-		e.buildSoloRequest(funName, opt.transfer, params...),
+		req.WithGasBudget(gas).AddAssetsIotas(gasFee),
 		opt.wallet,
 	)
 }
@@ -255,7 +263,8 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	value := big.NewInt(0)
 
-	gas := e.estimateGas(ethereum.CallMsg{
+	// estimate EVM gas
+	evmGas := e.estimateGas(ethereum.CallMsg{
 		From:     creatorAddress,
 		GasPrice: evm.GasPrice,
 		Value:    value,
@@ -263,7 +272,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	})
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, gas, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, evmGas, evm.GasPrice, data),
 		e.signer(),
 		e.faucetKey,
 	)
@@ -272,19 +281,19 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	// deposit gas fee
-	_, err = e.soloChain.PostRequestSync(
-		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddAssetsIotas(gas/e.getGasPerIotas()),
-		nil,
-	)
-	require.NoError(e.t, err)
+	// estimate ISCP gas
+	req := solo.NewCallParamsFromDic(e.evmFlavor.Name, evm.FuncSendTransaction.Name, dict.Dict{
+		evm.FieldTransactionData: txdata,
+	})
+	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
 
 	// send EVM tx
-	_, err = e.soloChain.PostRequestOffLedger(
+	_, err = e.soloChain.PostRequestSync(
 		solo.NewCallParamsFromDic(e.evmFlavor.Name, evm.FuncSendTransaction.Name, dict.Dict{
 			evm.FieldTransactionData: txdata,
-		}),
+		}).
+			WithGasBudget(iscpGas).
+			AddAssetsIotas(evmGas/e.getGasPerIotas()+iscpGasFee),
 		nil,
 	)
 	require.NoError(e.t, err)
@@ -322,7 +331,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 		opt.sender = e.creator
 	}
 	if opt.iota.wallet == nil {
-		opt.iota.wallet = &e.chain.soloChain.OriginatorKeyPair
+		opt.iota.wallet = &e.chain.soloChain.OriginatorPrivateKey
 	}
 	if opt.gasLimit == 0 {
 		opt.gasLimit = e.chain.estimateGas(e.callMsg(ethereum.CallMsg{
@@ -359,9 +368,10 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 }
 
 type callFnResult struct {
-	tx             *types.Transaction
-	receipt        *types.Receipt
-	iotaChargedFee uint64
+	tx                 *types.Transaction
+	evmReceipt         *types.Receipt
+	evmChargedFeeIotas uint64
+	iscpReceipt        *blocklog.RequestReceipt
 }
 
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (res callFnResult, err error) {
@@ -375,7 +385,9 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 		return
 	}
 
-	res.iotaChargedFee, err = codec.DecodeUint64(result.MustGet(evm.FieldGasFee))
+	res.iscpReceipt = e.chain.soloChain.LastReceipt()
+
+	res.evmChargedFeeIotas, err = codec.DecodeUint64(result.MustGet(evm.FieldGasFee))
 	require.NoError(e.chain.t, err)
 
 	gasUsed, err := codec.DecodeUint64(result.MustGet(evm.FieldGasUsed))
@@ -384,10 +396,10 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	receiptResult, err := e.chain.callView(evm.FuncGetReceipt.Name, evm.FieldTransactionHash, tx.Hash().Bytes())
 	require.NoError(e.chain.t, err)
 
-	res.receipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evm.FieldResult))
+	res.evmReceipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evm.FieldResult))
 	require.NoError(e.chain.t, err)
 
-	require.EqualValues(e.chain.t, res.receipt.GasUsed, gasUsed)
+	require.EqualValues(e.chain.t, res.evmReceipt.GasUsed, gasUsed)
 	return
 }
 
@@ -413,12 +425,11 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 }
 
 func (i *iscpTestContractInstance) getChainID() *iscp.ChainID {
-	type r struct {
-		Result iscpcontract.ISCPAddress
-	}
-	var v r
+	var v [iscp.ChainIDLength]byte
 	i.callView(nil, "getChainId", nil, &v)
-	return iscpcontract.ChainIDFromISCPAddress(v.Result)
+	chainID, err := iscp.ChainIDFromBytes(v[:])
+	require.NoError(i.chain.t, err)
+	return chainID
 }
 
 func (i *iscpTestContractInstance) triggerEvent(s string) (res callFnResult, err error) {

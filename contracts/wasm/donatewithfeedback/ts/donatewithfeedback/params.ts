@@ -5,41 +5,41 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableDonateParams extends wasmlib.ScMapID {
-    feedback(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamFeedback));
+export class ImmutableDonateParams extends wasmtypes.ScProxy {
+    feedback(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamFeedback));
 	}
 }
 
-export class MutableDonateParams extends wasmlib.ScMapID {
-    feedback(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamFeedback));
+export class MutableDonateParams extends wasmtypes.ScProxy {
+    feedback(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamFeedback));
 	}
 }
 
-export class ImmutableWithdrawParams extends wasmlib.ScMapID {
-    amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+export class ImmutableWithdrawParams extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 }
 
-export class MutableWithdrawParams extends wasmlib.ScMapID {
-    amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+export class MutableWithdrawParams extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 }
 
-export class ImmutableDonationParams extends wasmlib.ScMapID {
-    nr(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNr));
+export class ImmutableDonationParams extends wasmtypes.ScProxy {
+    nr(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamNr));
 	}
 }
 
-export class MutableDonationParams extends wasmlib.ScMapID {
-    nr(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNr));
+export class MutableDonationParams extends wasmtypes.ScProxy {
+    nr(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamNr));
 	}
 }

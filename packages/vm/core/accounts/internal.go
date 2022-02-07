@@ -194,7 +194,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %v", agentID.String(), ErrNotEnoughFunds))
+		panic(xerrors.Errorf(" debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
 	}
 	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
@@ -256,7 +256,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 
 func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, assets *iscp.Assets) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %w", fromAgentID.String(), ErrNotEnoughFunds))
+		panic(xerrors.Errorf(" agentID: %s. %v. assets: %s", fromAgentID, ErrNotEnoughFunds, assets))
 	}
 }
 
@@ -501,7 +501,6 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
 	ret := &iotago.FoundryOutput{
-		Address:           chainID.AsAddress(),
 		Amount:            rec.Amount,
 		NativeTokens:      nil,
 		SerialNumber:      sn,
@@ -509,7 +508,10 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		TokenTag:          rec.TokenTag,
 		CirculatingSupply: rec.CirculatingSupply,
 		MaximumSupply:     rec.MaximumSupply,
-		Blocks:            nil,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+		},
+		Blocks: nil,
 	}
 	return ret, rec.BlockIndex, rec.OutputIndex
 }
@@ -635,11 +637,14 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 	}
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
 	ret := &iotago.ExtendedOutput{
-		Address: chainID.AsAddress(),
-		Amount:  tokenRec.DustIotas,
+		Amount: tokenRec.DustIotas,
 		NativeTokens: iotago.NativeTokens{{
-			*tokenID, tokenRec.Amount,
+			ID:     *tokenID,
+			Amount: tokenRec.Amount,
 		}},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: chainID.AsAddress(),
