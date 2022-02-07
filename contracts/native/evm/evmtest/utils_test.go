@@ -426,7 +426,7 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 
 func (i *iscpTestContractInstance) getChainID() *iscp.ChainID {
 	var v [iscp.ChainIDLength]byte
-	i.callView(nil, "getChainId", nil, &v)
+	i.callView(nil, "getChainID", nil, &v)
 	chainID, err := iscp.ChainIDFromBytes(v[:])
 	require.NoError(i.chain.t, err)
 	return chainID
