@@ -20,9 +20,7 @@ import (
 
 var (
 	ErrNotEnoughFunds               = xerrors.New("not enough funds")
-	ErrNotEnoughIotas               = xerrors.New("not enough iotas")
 	ErrNotEnoughIotasForDustDeposit = xerrors.New("not enough iotas for dust deposit")
-	ErrNotEnoughNativeTokens        = xerrors.New("not enough native tokens")
 	ErrNotEnoughAllowance           = xerrors.New("not enough allowance")
 	ErrBadAmount                    = xerrors.New("bad native asset amount")
 	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")

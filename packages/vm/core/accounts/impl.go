@@ -276,7 +276,7 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	// update L2 ledger and transit foundry UTXO
 	var dustAdjustment int64
 	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
-		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets) // FIXME not correct wrt available tokens for gas fee
 		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
 		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
