@@ -56,8 +56,8 @@ func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
 //	return ed25519Sig, nil
 //}
 
-func NewKeyPairFromSeed(seed Seed) KeyPair {
-	var seedByte [SeedSize]byte = seed
+func NewKeyPairFromSeed(seed *Seed) KeyPair {
+	var seedByte [SeedSize]byte = *seed
 
 	privateKey := crypto.NewKeyFromSeed(seedByte[:])
 

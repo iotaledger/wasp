@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 // peeringNetDynamic provides a behavior of a network with dynamically
@@ -35,7 +35,7 @@ type peeringNetDynamicHandlerEntry struct {
 type peeringNetDynamicHandler interface {
 	handleSendMessage(
 		msg *peeringMsg,
-		dstPubKey *ed25519.PublicKey,
+		dstPubKey *cryptolib.PublicKey,
 		nextHandlers []peeringNetDynamicHandlerEntry,
 		callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
 		log *logger.Logger,
@@ -82,7 +82,7 @@ func (pndT *PeeringNetDynamic) WithDelayingChannel(id *string, delayFrom, delayT
 	return pndT
 }
 
-func (pndT *PeeringNetDynamic) WithPeerDisconnected(id *string, peerPubKey *ed25519.PublicKey) *PeeringNetDynamic {
+func (pndT *PeeringNetDynamic) WithPeerDisconnected(id *string, peerPubKey *cryptolib.PublicKey) *PeeringNetDynamic {
 	pndT.addHandlerEntry(peeringNetDynamicHandlerEntry{
 		id,
 		&peeringNetDynamicHandlerPeerDisconnected{
@@ -115,7 +115,7 @@ func (pndT *PeeringNetDynamic) RemoveHandler(id string) bool {
 }
 
 // Run implements PeeringNetBehavior.
-func (pndT *PeeringNetDynamic) AddLink(inCh, outCh chan *peeringMsg, dstPubKey *ed25519.PublicKey) {
+func (pndT *PeeringNetDynamic) AddLink(inCh, outCh chan *peeringMsg, dstPubKey *cryptolib.PublicKey) {
 	closeCh := make(chan bool)
 	pndT.closeChs = append(pndT.closeChs, closeCh)
 	go pndT.recvLoop(inCh, outCh, closeCh, dstPubKey)
@@ -128,7 +128,7 @@ func (pndT *PeeringNetDynamic) Close() {
 	}
 }
 
-func (pndT *PeeringNetDynamic) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan bool, dstPubKey *ed25519.PublicKey) {
+func (pndT *PeeringNetDynamic) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan bool, dstPubKey *cryptolib.PublicKey) {
 	for {
 		select {
 		case <-closeCh:
@@ -165,7 +165,7 @@ type peeringNetDynamicHandlerLosingChannel struct {
 
 func (lcT *peeringNetDynamicHandlerLosingChannel) handleSendMessage(
 	msg *peeringMsg,
-	dstPubKey *ed25519.PublicKey,
+	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
 	log *logger.Logger,
@@ -183,7 +183,7 @@ type peeringNetDynamicHandlerRepeatingChannel struct {
 
 func (rcT *peeringNetDynamicHandlerRepeatingChannel) handleSendMessage(
 	msg *peeringMsg,
-	dstPubKey *ed25519.PublicKey,
+	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
 	log *logger.Logger,
@@ -205,7 +205,7 @@ type peeringNetDynamicHandlerDelayingChannel struct {
 
 func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 	msg *peeringMsg,
-	dstPubKey *ed25519.PublicKey,
+	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
 	log *logger.Logger,
@@ -228,12 +228,12 @@ func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 }
 
 type peeringNetDynamicHandlerPeerDisconnected struct {
-	peerPubKey *ed25519.PublicKey
+	peerPubKey *cryptolib.PublicKey
 }
 
 func (pdT *peeringNetDynamicHandlerPeerDisconnected) handleSendMessage(
 	msg *peeringMsg,
-	dstPubKey *ed25519.PublicKey,
+	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
 	log *logger.Logger,

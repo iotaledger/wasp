@@ -13,7 +13,7 @@ package peering
 import (
 	"bytes"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -35,7 +35,7 @@ type PeerMessageNet struct {
 
 type PeerMessageIn struct {
 	PeerMessageData
-	SenderPubKey *ed25519.PublicKey
+	SenderPubKey *cryptolib.PublicKey
 }
 
 type PeerMessageGroupIn struct {

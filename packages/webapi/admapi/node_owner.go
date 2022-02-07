@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"net/http"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -54,7 +56,7 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 
 	//
 	// Check, if supplied node PubKey matches.
-	if !bytes.Equal(nodeIdentity.PublicKey.Bytes(), reqNodePubKeyBytes) {
+	if !bytes.Equal(nodeIdentity.PublicKey, reqNodePubKeyBytes) {
 		return &httperrors.HTTPError{Code: 400, Message: "Wrong NodePubKey"}
 	}
 
@@ -62,12 +64,12 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 	// Check, if owner is presented in the configuration.
 	nodeOwnerAddresses := parameters.GetStringSlice(parameters.NodeOwnerAddresses)
 	ownerAuthorized := false
-	for _, nodeOwnerAddress := range nodeOwnerAddresses {
-		nodeOwnerAddress, err := ledgerstate.AddressFromBase58EncodedString(nodeOwnerAddress)
+	for _, nodeOwnerAddressStr := range nodeOwnerAddresses {
+		_, nodeOwnerAddress, err := iotago.ParseBech32(nodeOwnerAddressStr)
 		if err != nil {
 			continue
 		}
-		if bytes.Equal(reqOwnerAddress.Bytes(), nodeOwnerAddress.Bytes()) {
+		if bytes.Equal(iscp.BytesFromAddress(reqOwnerAddress), iscp.BytesFromAddress(nodeOwnerAddress)) {
 			ownerAuthorized = true
 			break
 		}

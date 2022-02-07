@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
@@ -22,12 +22,12 @@ type DomainWithFallback struct {
 	net       peering.NetworkProvider
 	dom       peering.PeerDomainProvider
 	fallback  bool
-	mainPeers []*ed25519.PublicKey
+	mainPeers []*cryptolib.PublicKey
 	log       *logger.Logger
 }
 
 func NewDomainWithFallback(peeringID peering.PeeringID, net peering.NetworkProvider, log *logger.Logger) (*DomainWithFallback, error) {
-	dom, err := net.PeerDomain(peeringID, make([]*ed25519.PublicKey, 0))
+	dom, err := net.PeerDomain(peeringID, make([]*cryptolib.PublicKey, 0))
 	if err != nil {
 		return nil, xerrors.Errorf("unable to allocate peer domain: %w", err)
 	}
@@ -38,7 +38,7 @@ func NewDomainWithFallback(peeringID peering.PeeringID, net peering.NetworkProvi
 		net:       net,
 		dom:       dom,
 		fallback:  false,
-		mainPeers: make([]*ed25519.PublicKey, 0),
+		mainPeers: make([]*cryptolib.PublicKey, 0),
 		log:       log,
 	}
 	go df.run()
@@ -63,9 +63,9 @@ func (df *DomainWithFallback) run() {
 
 // SetMainPeers updates the peer list as it is reported by the chain.
 // We exclude the self peer here, because we use this to send messages to other nodes.
-func (df *DomainWithFallback) SetMainPeers(peers []*ed25519.PublicKey) {
+func (df *DomainWithFallback) SetMainPeers(peers []*cryptolib.PublicKey) {
 	selfPubKey := df.net.Self().PubKey()
-	otherPeers := make([]*ed25519.PublicKey, 0)
+	otherPeers := make([]*cryptolib.PublicKey, 0)
 	for i := range peers {
 		if *peers[i] != *selfPubKey {
 			otherPeers = append(otherPeers, peers[i])
@@ -96,10 +96,10 @@ func (df *DomainWithFallback) GetFallbackMode() bool {
 }
 
 func (df *DomainWithFallback) updateDomainPeers() {
-	var peers []*ed25519.PublicKey
+	var peers []*cryptolib.PublicKey
 	if df.fallback {
 		selfPubKey := df.net.Self().PubKey()
-		allTrusted := make([]*ed25519.PublicKey, 0)
+		allTrusted := make([]*cryptolib.PublicKey, 0)
 		for _, n := range df.net.PeerStatus() {
 			if n.IsAlive() && *n.PubKey() != *selfPubKey {
 				allTrusted = append(allTrusted, n.PubKey())
@@ -126,10 +126,10 @@ func (df *DomainWithFallback) Close() {
 	df.ctxCancel()
 }
 
-func (df *DomainWithFallback) GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey {
+func (df *DomainWithFallback) GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey {
 	return df.dom.GetRandomOtherPeers(upToNumPeers)
 }
 
-func (df *DomainWithFallback) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msgType byte, msgData []byte) {
+func (df *DomainWithFallback) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver, msgType byte, msgData []byte) {
 	df.dom.SendMsgByPubKey(pubKey, msgReceiver, msgType, msgData)
 }

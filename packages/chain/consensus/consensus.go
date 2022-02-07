@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -28,7 +29,7 @@ type consensus struct {
 	chain                            chain.ChainCore
 	committee                        chain.Committee
 	committeePeerGroup               peering.GroupProvider
-	mempool                          chain.Mempool
+	mempool                          mempool.Mempool
 	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
@@ -62,7 +63,7 @@ type consensus struct {
 	eventACSMsgPipe                  pipe.Pipe
 	eventVMResultMsgPipe             pipe.Pipe
 	eventTimerMsgPipe                pipe.Pipe
-	assert                           assert.Assert
+	assert                           *assert.Assert
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
@@ -82,7 +83,7 @@ const (
 
 func New(
 	chainCore chain.ChainCore,
-	mempool chain.Mempool,
+	mempool mempool.Mempool,
 	committee chain.Committee,
 	peerGroup peering.GroupProvider,
 	nodeConn chain.ChainNodeConnection,
@@ -123,9 +124,10 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
-	})
+	panic("TODO implement") // AttachToInclusionStateReceived needs to be refactored
+	// ret.nodeConn.AttachToInclusionStateReceived(func(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
+	// 	ret.EnqueueInclusionsStateMsg(txID, inclusionState)
+	// })
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
@@ -274,7 +276,7 @@ func (c *consensus) refreshConsensusInfo() {
 	}
 	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
-		Mempool:    c.mempool.Info(),
+		Mempool:    c.mempool.Info(iscp.TimeData{Time: time.Now()}),
 		TimerTick:  int(c.lastTimerTick.Load()),
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+

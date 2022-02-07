@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -24,8 +23,8 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 		doneCh <- true
 	}()
 	// peerNetI, peerIdentities := testpeers.SetupKeys(2)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
 	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
@@ -46,8 +45,8 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
 	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
@@ -83,8 +82,8 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
 	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
@@ -148,8 +147,8 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) { //nolint:dupl
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
 	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
@@ -173,8 +172,8 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) { //nolint:dupl
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
 	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
@@ -198,8 +197,8 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
 	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
@@ -227,9 +226,9 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 	durationsD := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
 	go testRecvLoop(outChD, &durationsD, stopCh)
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
-	disPeerIdentity := ed25519.GenerateKeyPair()
+	srcPeerIdentity := cryptolib.GenerateKeyPair()
+	dstPeerIdentity := cryptolib.GenerateKeyPair()
+	disPeerIdentity := cryptolib.GenerateKeyPair()
 	connectedNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	disconnectedNode := peeringNode{netID: "disconnected", identity: &disPeerIdentity}
 	//

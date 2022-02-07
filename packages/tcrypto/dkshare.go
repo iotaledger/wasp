@@ -5,10 +5,10 @@ package tcrypto
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"

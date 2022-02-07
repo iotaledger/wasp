@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -24,21 +24,21 @@ import (
 )
 
 type stateManager struct {
-	ready                  *ready.Ready
-	store                  kvstore.KVStore
-	chain                  chain.ChainCore
+	ready                       *ready.Ready
+	store                       kvstore.KVStore
+	chain                       chain.ChainCore
 	domain                      *DomainWithFallback
 	nodeConn                    chain.ChainNodeConnection
-	pullStateRetryTime     time.Time
-	solidState             state.VirtualStateAccess
-	stateOutput            *iotago.AliasOutput
-	stateOutputTimestamp   time.Time
-	currentSyncData        atomic.Value
-	notifiedAnchorOutputID iotago.OutputID
-	syncingBlocks          *syncingBlocks
+	pullStateRetryTime          time.Time
+	solidState                  state.VirtualStateAccess
+	stateOutput                 *iotago.AliasOutput
+	stateOutputTimestamp        time.Time
+	currentSyncData             atomic.Value
+	notifiedAnchorOutputID      iotago.OutputID
+	syncingBlocks               *syncingBlocks
 	receivePeerMessagesAttachID interface{}
-	timers                 StateManagerTimers
-	log                    *logger.Logger
+	timers                      StateManagerTimers
+	log                         *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgPipe       pipe.Pipe
@@ -112,7 +112,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			return
 		}
 		sm.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
-			GetBlockMsg: *msg,
+			GetBlockMsg:  *msg,
 			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	case peerMsgTypeBlock:
@@ -122,7 +122,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			return
 		}
 		sm.EnqueueBlockMsg(&messages.BlockMsgIn{
-			BlockMsg:    *msg,
+			BlockMsg:     *msg,
 			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	default:
@@ -130,7 +130,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 	}
 }
 
-func (sm *stateManager) SetChainPeers(peers []*ed25519.PublicKey) {
+func (sm *stateManager) SetChainPeers(peers []*cryptolib.PublicKey) {
 	sm.domain.SetMainPeers(peers)
 }
 

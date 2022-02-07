@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -36,6 +36,10 @@ type ChainCore interface {
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
+}
+
+type ChainCoreMocked interface {
+	ChainCore
 
 	// FIXME these methods should not be part of the chain interface just for the need of mocking
 	//  Mocking interfaces should be available only in the testing environment
@@ -89,7 +93,7 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-	GetRandomValidators(upToN int) []*ed25519.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
+	GetRandomValidators(upToN int) []*cryptolib.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
 type (
@@ -144,7 +148,7 @@ type StateManager interface {
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, iotago.OutputID)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
-	SetChainPeers(peers []*ed25519.PublicKey)
+	SetChainPeers(peers []*cryptolib.PublicKey)
 	Close()
 }
 
@@ -235,7 +239,7 @@ type CommitteeInfo struct {
 
 type PeerStatus struct {
 	Index     int
-	PubKey    *ed25519.PublicKey
+	PubKey    *cryptolib.PublicKey
 	NetID     string
 	Connected bool
 }

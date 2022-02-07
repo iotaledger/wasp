@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
@@ -71,7 +71,7 @@ func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
 }
 
 // PeerIndexByNetID implements peering.GroupProvider.
-func (g *groupImpl) PeerIndexByPubKey(peerPubKey *ed25519.PublicKey) (uint16, error) {
+func (g *groupImpl) PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error) {
 	for i := range g.nodes {
 		if *g.nodes[i].PubKey() == *peerPubKey {
 			return uint16(i), nil
@@ -80,7 +80,7 @@ func (g *groupImpl) PeerIndexByPubKey(peerPubKey *ed25519.PublicKey) (uint16, er
 	return NotInGroup, errors.New("peer not found by pubKey")
 }
 
-func (g *groupImpl) PubKeyByIndex(index uint16) (*ed25519.PublicKey, error) {
+func (g *groupImpl) PubKeyByIndex(index uint16) (*cryptolib.PublicKey, error) {
 	if index < uint16(len(g.nodes)) {
 		return g.nodes[index].PubKey(), nil
 	}

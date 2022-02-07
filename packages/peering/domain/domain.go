@@ -7,17 +7,17 @@ import (
 	"crypto/rand"
 	"sync"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type DomainImpl struct {
 	netProvider peering.NetworkProvider
-	nodes       map[ed25519.PublicKey]peering.PeerSender
+	nodes       map[cryptolib.PublicKey]peering.PeerSender
 	permutation *util.Permutation16
-	permPubKeys []*ed25519.PublicKey
+	permPubKeys []*cryptolib.PublicKey
 	peeringID   peering.PeeringID
 	attachIDs   []interface{}
 	log         *logger.Logger
@@ -30,7 +30,7 @@ var _ peering.PeerDomainProvider = &DomainImpl{}
 func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
 	ret := &DomainImpl{
 		netProvider: netProvider,
-		nodes:       make(map[ed25519.PublicKey]peering.PeerSender),
+		nodes:       make(map[cryptolib.PublicKey]peering.PeerSender),
 		permutation: nil, // Will be set in ret.reshufflePeers().
 		permPubKeys: nil, // Will be set in ret.reshufflePeers().
 		peeringID:   peeringID,
@@ -45,7 +45,7 @@ func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.Peerin
 	return ret
 }
 
-func (d *DomainImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msgType byte, msgData []byte) {
+func (d *DomainImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver, msgType byte, msgData []byte) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	peer, ok := d.nodes[*pubKey]
@@ -61,27 +61,27 @@ func (d *DomainImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msg
 	})
 }
 
-func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey {
+func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	if upToNumPeers > len(d.permPubKeys) {
 		upToNumPeers = len(d.permPubKeys)
 	}
-	ret := make([]*ed25519.PublicKey, upToNumPeers)
+	ret := make([]*cryptolib.PublicKey, upToNumPeers)
 	for i := range ret {
 		ret[i] = d.permPubKeys[d.permutation.Next()]
 	}
 	return ret
 }
 
-func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
+func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 	d.mutex.RLock()
-	oldPeers := make(map[ed25519.PublicKey]peering.PeerSender) // A copy, to avoid keeping the lock.
+	oldPeers := make(map[cryptolib.PublicKey]peering.PeerSender) // A copy, to avoid keeping the lock.
 	for k, v := range d.nodes {
 		oldPeers[k] = v
 	}
 	d.mutex.RUnlock()
-	nodes := make(map[ed25519.PublicKey]peering.PeerSender) // Will collect the new set of nodes.
+	nodes := make(map[cryptolib.PublicKey]peering.PeerSender) // Will collect the new set of nodes.
 	changed := false
 	//
 	// Add new peers.
@@ -135,7 +135,7 @@ func (d *DomainImpl) ReshufflePeers(seedBytes ...[]byte) {
 }
 
 func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
-	d.permPubKeys = make([]*ed25519.PublicKey, 0, len(d.nodes))
+	d.permPubKeys = make([]*cryptolib.PublicKey, 0, len(d.nodes))
 	for pubKey := range d.nodes {
 		peerPubKey := pubKey
 		if peerPubKey != *d.netProvider.Self().PubKey() { // Do not include self to the permutation.

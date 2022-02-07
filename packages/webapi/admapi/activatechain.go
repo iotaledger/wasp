@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -122,20 +122,20 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	chainNodes := chain.GetChainNodes()
-	peeringStatus := make(map[ed25519.PublicKey]peering.PeerStatusProvider)
+	peeringStatus := make(map[cryptolib.PublicKey]peering.PeerStatusProvider)
 	for _, n := range w.network.PeerStatus() {
 		peeringStatus[*n.PubKey()] = n
 	}
-	candidateNodes := make(map[ed25519.PublicKey]*governance.AccessNodeInfo)
+	candidateNodes := make(map[cryptolib.PublicKey]*governance.AccessNodeInfo)
 	for _, n := range chain.GetCandidateNodes() {
-		pubKey, _, err := ed25519.PublicKeyFromBytes(n.NodePubKey)
+		pubKey, _, err := cryptolib.PublicKeyFromBytes(n.NodePubKey)
 		if err != nil {
 			return err
 		}
 		candidateNodes[pubKey] = n
 	}
 
-	inChainNodes := make(map[ed25519.PublicKey]bool)
+	inChainNodes := make(map[cryptolib.PublicKey]bool)
 
 	//
 	// Committee nodes.
@@ -167,9 +167,9 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 
 func makeCmtNodes(
 	dkShare *tcrypto.DKShare,
-	peeringStatus map[ed25519.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[ed25519.PublicKey]*governance.AccessNodeInfo,
-	inChainNodes map[ed25519.PublicKey]bool,
+	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
+	inChainNodes map[cryptolib.PublicKey]bool,
 ) []*model.ChainNodeStatus {
 	cmtNodes := make([]*model.ChainNodeStatus, 0)
 	for _, cmtNodePubKey := range dkShare.NodePubKeys {
@@ -182,9 +182,9 @@ func makeCmtNodes(
 func makeAcnNodes(
 	dkShare *tcrypto.DKShare,
 	chainNodes []peering.PeerStatusProvider,
-	peeringStatus map[ed25519.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[ed25519.PublicKey]*governance.AccessNodeInfo,
-	inChainNodes map[ed25519.PublicKey]bool,
+	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
+	inChainNodes map[cryptolib.PublicKey]bool,
 ) []*model.ChainNodeStatus {
 	acnNodes := make([]*model.ChainNodeStatus, 0)
 	for _, chainNode := range chainNodes {
@@ -206,13 +206,13 @@ func makeAcnNodes(
 }
 
 func makeCndNodes(
-	peeringStatus map[ed25519.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[ed25519.PublicKey]*governance.AccessNodeInfo,
-	inChainNodes map[ed25519.PublicKey]bool,
+	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
+	inChainNodes map[cryptolib.PublicKey]bool,
 ) ([]*model.ChainNodeStatus, error) {
 	cndNodes := make([]*model.ChainNodeStatus, 0)
 	for _, c := range candidateNodes {
-		pubKey, _, err := ed25519.PublicKeyFromBytes(c.NodePubKey)
+		pubKey, _, err := cryptolib.PublicKeyFromBytes(c.NodePubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -225,9 +225,9 @@ func makeCndNodes(
 }
 
 func makeChainNodeStatus(
-	pubKey *ed25519.PublicKey,
-	peeringStatus map[ed25519.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[ed25519.PublicKey]*governance.AccessNodeInfo,
+	pubKey *cryptolib.PublicKey,
+	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
 ) *model.ChainNodeStatus {
 	cns := model.ChainNodeStatus{
 		Node: model.PeeringNodeStatus{

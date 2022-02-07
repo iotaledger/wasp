@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
 	"golang.org/x/crypto/blake2b"
@@ -16,7 +17,7 @@ const (
 
 type Seed [SeedSize]byte
 
-func (seed *Seed) SubSeed(n uint64) Seed {
+func (seed *Seed) SubSeed(n uint64) *Seed {
 	subSeed := make([]byte, SeedSize)
 
 	indexBytes := make([]byte, 8)
@@ -28,12 +29,12 @@ func (seed *Seed) SubSeed(n uint64) Seed {
 	return SeedFromByteArray(subSeed)
 }
 
-func SeedFromByteArray(seedData []byte) Seed {
+func SeedFromByteArray(seedData []byte) *Seed {
 	var seed Seed
 
 	copy(seed[:], seedData)
 
-	return seed
+	return &seed
 }
 
 func NewSeed() Seed {

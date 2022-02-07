@@ -9,8 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
 )
@@ -157,7 +159,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	node0 := env.NewMockedNode(0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
 	node0.StartTimer()
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey})
 	env.AddNode(node0)
 	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node0.PubKey=%v", node0.PubKey.String())
 
@@ -168,8 +170,8 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	node1 := env.NewMockedNode(1, NewStateManagerTimers())
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
-	node1.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
+	node1.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
 	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node1.PubKey=%v", node1.PubKey.String())
 
@@ -181,7 +183,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 	env, _ := NewMockedEnv(numberOfCatchingPeers+1, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	allPubKeys := make([]*ed25519.PublicKey, 0)
+	allPubKeys := make([]*cryptolib.PublicKey, 0)
 
 	node0 := env.NewMockedNode(0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
@@ -225,7 +227,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	node0 := env.NewMockedNode(0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
 	node0.StartTimer()
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey})
 	env.AddNode(node0)
 
 	const targetBlockIndex = 10
@@ -236,8 +238,8 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	node1 := env.NewMockedNode(1, NewStateManagerTimers())
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
-	node1.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
+	node1.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
 
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
@@ -349,7 +351,7 @@ func TestCruelWorld(t *testing.T) {
 		env.AddNode(nodes[i])
 	}
 
-	var disconnectedNodes []*ed25519.PublicKey
+	var disconnectedNodes []*cryptolib.PublicKey
 	var mutex sync.Mutex
 	go func() { // Connection cutter
 		for {

@@ -212,7 +212,7 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 }
 
 // Sign signs essence
-func (r *OffLedgerRequestData) Sign(key cryptolib.KeyPair) {
+func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 	r.publicKey = key.PublicKey
 	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }

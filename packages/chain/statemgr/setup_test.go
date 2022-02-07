@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -40,18 +39,18 @@ type MockedEnv struct {
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
-	NodePubKeys       []*ed25519.PublicKey
+	NodePubKeys       []*cryptolib.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
 	ChainID           *iscp.ChainID
 	mutex             sync.Mutex
-	Nodes             map[ed25519.PublicKey]*MockedNode
+	Nodes             map[cryptolib.PublicKey]*MockedNode
 	push              bool
 }
 
 type MockedNode struct {
-	PubKey          *ed25519.PublicKey
+	PubKey          *cryptolib.PublicKey
 	Env             *MockedEnv
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
@@ -82,7 +81,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 		Ledger:            utxodb.New(),
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		Nodes:             make(map[ed25519.PublicKey]*MockedNode),
+		Nodes:             make(map[cryptolib.PublicKey]*MockedNode),
 	}
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err := ret.Ledger.RequestFunds(ret.OriginatorAddress)
