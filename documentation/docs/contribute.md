@@ -29,10 +29,36 @@ Before creating the Pull Request ensure that:
     go test -tags rocksdb,builtin_static ./...
     ```
 
+    or
+
+    ```bash
+    make test
+    ```
+
+    If the changes are major, please run even the heavy tests:
+
+    ```bash
+    make test-full
+    ```
+
+    Note, that these tests might take longer to run (they timeout after 60 minutes). Also note that `TestSpamOffledger` should only be run with `database.inMemory` set to `false`. See `tools/cluster/tests/spam_test.go` for details.
+
 - there are no linting violations (instructions on how to setup linting below):
 
     ```bash
     golangci-lint run
+    ```
+
+    or
+
+    ```bash
+    make lint
+    ```
+
+    Note, that linter is run each time you run
+
+    ```bash
+    make
     ```
 
 ### Lint Setup
