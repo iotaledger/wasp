@@ -4,7 +4,7 @@
 import {panic} from "../sandbox";
 import {WasmDecoder, WasmEncoder} from "./codec";
 import {Proxy} from "./proxy";
-import {addressDecode, addressEncode, addressFromBytes, ScAddress, ScAddressLength} from "./scaddress";
+import {addressDecode, addressEncode, addressFromBytes, ScAddress, ScAddressAlias, ScAddressLength} from "./scaddress";
 import {hnameDecode, hnameEncode, hnameFromBytes, ScHname} from "./schname";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -66,9 +66,8 @@ export function agentIDFromBytes(buf: u8[]): ScAgentID {
     if (buf.length != ScAgentIDLength) {
         panic("invalid AgentID length");
     }
-    // max ledgerstate.AliasAddressType
-    if (buf[0] > 2) {
-        panic("invalid AgentID: address type > 2");
+    if (buf[0] > ScAddressAlias) {
+        panic("invalid AgentID address type");
     }
     return new ScAgentID(
         addressFromBytes(buf.slice(0, ScAddressLength)),

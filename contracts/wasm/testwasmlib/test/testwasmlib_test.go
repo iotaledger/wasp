@@ -161,7 +161,7 @@ func TestInvalidTypeParams(t *testing.T) {
 	for param, values := range invalidValues {
 		for index, value := range values {
 			t.Run("InvalidType "+param+" "+strconv.Itoa(index), func(t *testing.T) {
-				invalidParam := fmt.Sprintf("invalid %s%s:", strings.ToUpper(param[:1]), param[1:])
+				invalidParam := fmt.Sprintf("invalid %s%s", strings.ToUpper(param[:1]), param[1:])
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 					param, value,
 				).WithIotas(1)

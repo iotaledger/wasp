@@ -21,7 +21,8 @@ func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) ledgerstate.A
 
 func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID {
 	address := agentID.Address()
-	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(agentID.Hname()))
+	hname := agentID.Hname()
+	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
 func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {

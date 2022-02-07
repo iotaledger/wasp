@@ -29,6 +29,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dividend"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen-test",
+ "wasmlib",
+ "wee_alloc",
+]
+
+[[package]]
 name = "donatewithfeedback"
 version = "0.1.0"
 dependencies = [
@@ -133,16 +143,6 @@ name = "memory_units"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
-
-[[package]]
-name = "myworld"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen-test",
- "wasmlib",
- "wee_alloc",
-]
 
 [[package]]
 name = "proc-macro2"

@@ -4,7 +4,7 @@
 import {panic} from "../sandbox";
 import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
 import {Proxy} from "./proxy";
-import {addressFromBytes, ScAddress} from "./scaddress";
+import {addressFromBytes, ScAddress, ScAddressAlias} from "./scaddress";
 import {bytesCompare} from "./scbytes";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -46,14 +46,13 @@ export function chainIDEncode(enc: WasmEncoder, value: ScChainID): void {
 export function chainIDFromBytes(buf: u8[]): ScChainID {
     if (buf.length == 0) {
         const chainID =  new ScChainID();
-        chainID.id[0] = 2; // ledgerstate.AliasAddressType
+        chainID.id[0] = ScAddressAlias;
         return chainID;
     }
     if (buf.length != ScChainIDLength) {
         panic("invalid ChainID length");
     }
-    // must be ledgerstate.AliasAddressType
-    if (buf[0] != 2) {
+    if (buf[0] != ScAddressAlias) {
         panic("invalid ChainID: not an alias address");
     }
     return chainIDFromBytesUnchecked(buf);
