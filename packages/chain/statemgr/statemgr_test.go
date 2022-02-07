@@ -10,17 +10,16 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	// iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
 )
 
 //---------------------------------------------
 //Tests if state manager is started and initialized correctly
 func TestEnv(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, true)
+	env, _ := NewMockedEnv(2, t, false)
 	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
 
@@ -57,7 +56,7 @@ func TestEnv(t *testing.T) {
 }
 
 func TestGetInitialState(t *testing.T) {
-	env, originTx := NewMockedEnv(1, t, false)
+	env, originOutput := NewMockedEnv(1, t, false)
 	node := NewMockedNode(env, 0, NewStateManagerTimers())
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
@@ -66,14 +65,11 @@ func TestGetInitialState(t *testing.T) {
 
 	node.StartTimer()
 
-	_ /*originOut*/, _ /*originOutId*/, err := utxodb.GetSingleChainedAliasOutput(originTx)
-	require.NoError(t, err)
-
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
 
 	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
-	// TODO require.True(t, originOut.Compare(manager.stateOutput) == 0)
+	require.True(t, iscp.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.solidState.StateCommitment(), state.OriginStateHash())
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
@@ -81,7 +77,7 @@ func TestGetInitialState(t *testing.T) {
 }
 
 func TestGetNextState(t *testing.T) {
-	env, originTx := NewMockedEnv(1, t, false)
+	env, originOutput := NewMockedEnv(1, t, false)
 	timers := NewStateManagerTimers()
 	timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
 	node := NewMockedNode(env, 0, timers)
@@ -92,14 +88,11 @@ func TestGetNextState(t *testing.T) {
 
 	node.StartTimer()
 
-	_ /*originOut*/, _ /*originOutID*/, err := utxodb.GetSingleChainedAliasOutput(originTx)
-	require.NoError(t, err)
-
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
 
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node, 0)
-	//TODO require.True(t, originOut.Compare(manager.stateOutput) == 0)
+	require.True(t, iscp.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.solidState.StateCommitment(), state.OriginStateHash())
 
@@ -114,13 +107,13 @@ func TestGetNextState(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, currSH[:], currOH[:])
 
-	node.StateTransition.NextState(currentState, currentStateOutput, time.Now())
+	node.NextState(currentState, currentStateOutput)
 	waitSyncBlockIndexAndCheck(3*time.Second, t, node, 1)
 
 	soh, err := manager.stateOutput.GetStateCommitment()
 	require.NoError(t, err)
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
-	require.EqualValues(t, manager.solidState.StateCommitment().Bytes(), soh)
+	require.EqualValues(t, manager.solidState.StateCommitment().Bytes(), soh.Bytes())
 	require.False(t, manager.syncingBlocks.hasBlockCandidates())
 }
 
@@ -236,7 +229,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 
 	const targetBlockIndex = 10
 	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	//node0.NodeConn.OnPullConfirmedOutput(func(outputID *iotago.UTXOInput) {})
+	node0.NodeConn.SetPullConfirmedOutputAllowed(false)
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
 	node1 := NewMockedNode(env, 1, NewStateManagerTimers())

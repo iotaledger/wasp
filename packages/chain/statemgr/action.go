@@ -87,7 +87,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"hash", nextState.StateCommitment(),
-		"output", approvingOutputID,
+		"output", iscp.OID(approvingOutputID),
 	)
 
 	block, err := nextState.ExtractBlock()

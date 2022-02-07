@@ -53,7 +53,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret := &MockedNode{
 		PubKey:     nodePubKey,
 		Env:        env,
-		NodeConn:   testchain.NewMockedNodeConnection("Node_"+nodePubKeyStr, env.Ledger),
+		NodeConn:   testchain.NewMockedNodeConnection("Node_"+nodePubKeyStr, env.Ledger, log),
 		store:      mapdb.NewMapDB(),
 		stateSync:  coreutil.NewChainStateSync(),
 		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
@@ -69,67 +69,30 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	/*ret.ChainPeers.Attach(peering.PeerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
-		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderPubKey.String(), peerMsg.MsgType)
-		switch peerMsg.MsgType {
-		case peerMsgTypeGetBlock:
-			msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			ret.StateManager.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
-				GetBlockMsg:  *msg,
-				SenderPubKey: peerMsg.SenderPubKey,
-			})
-		case peerMsgTypeBlock:
-			msg, err := messages.NewBlockMsg(peerMsg.MsgData)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			ret.StateManager.EnqueueBlockMsg(&messages.BlockMsgIn{
-				BlockMsg:     *msg,
-				SenderPubKey: peerMsg.SenderPubKey,
-			})
-		}
-	})*/
 	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
-	/*ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.StateKeyPair)
-	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *iotago.Transaction) {
-		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
-		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
-		require.NoError(env.T, err)
-		go ret.StateManager.EnqueueStateCandidateMsg(vstate, stateOutput.ID())
-		go ret.NodeConn.PostTransaction(tx)
-	})
-	ret.NodeConn.OnPostTransaction(func(tx *iotago.Transaction) {
-		txID, err := tx.ID()
-		require.NoError(env.T, err)
-		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", txID)
-		env.PostTransactionToLedger(tx)
-	})
-	ret.NodeConn.OnPullState(func() {
-		log.Debugf("MockedNode.OnPullState request received")
-		response := env.PullStateFromLedger()
-		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
-		go ret.StateManager.EnqueueStateMsg(response)
-	})
-	ret.NodeConn.OnPullConfirmedOutput(func(outputID *iotago.UTXOInput) {
-		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
-		response := env.PullConfirmedOutputFromLedger(outputID)
-		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
-		go ret.StateManager.EnqueueOutputMsg(response, outputID.ID())
-	})*/
 	ret.NodeConn.AttachToUnspentAliasOutputReceived(func(chainOutput *iscp.AliasOutputWithID, timestamp time.Time) {
+		ret.Log.Debugf("Alias output received %v: enqueing state message", iscp.OID(chainOutput.ID()))
 		ret.StateManager.EnqueueStateMsg(&messages.StateMsg{
 			ChainOutput: chainOutput,
 			Timestamp:   timestamp,
 		})
 	})
-	ret.NodeConn.AttachToTransactionReceived(func(*iotago.Transaction) {
-		//TODO
-		//ret.StateManager.EnqueueStateMsg
+	ret.NodeConn.AttachToTransactionReceived(func(tx *iotago.Transaction) {
+		ret.Log.Debugf("Transaction received")
+		for index, output := range tx.Essence.Outputs {
+			aliasOutput, ok := output.(*iotago.AliasOutput)
+			if ok {
+				ret.Log.Debugf("Transaction received, alias output found")
+				txID, err := tx.ID()
+				require.NoError(env.T, err)
+				outputID := iotago.OutputIDFromTransactionIDAndIndex(*txID, uint16(index)).UTXOInput()
+				ret.Log.Debugf("Transaction %v received, alias output %v found, enqueing state message", txID, outputID)
+				go ret.StateManager.EnqueueStateMsg(&messages.StateMsg{
+					ChainOutput: iscp.NewAliasOutputWithID(aliasOutput, outputID),
+					Timestamp:   time.Now(),
+				})
+			}
+		}
 	})
 	return ret
 }
@@ -165,7 +128,7 @@ func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
 	node.ChainCore.OnStateTransition(func(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, nil, node.Log)
 		if msg.ChainOutput.GetStateIndex() < limit {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput, time.Now())
+			go node.NextState(msg.VirtualState, msg.ChainOutput)
 		}
 	})
 }
@@ -175,5 +138,13 @@ func (node *MockedNode) OnStateTransitionDoNothing() {
 }
 
 func (node *MockedNode) MakeNewStateTransition() {
-	node.StateTransition.NextState(node.StateManager.(*stateManager).solidState, node.StateManager.(*stateManager).stateOutput, time.Now())
+	node.NextState(node.StateManager.(*stateManager).solidState, node.StateManager.(*stateManager).stateOutput)
+}
+
+func (node *MockedNode) NextState(vstate state.VirtualStateAccess, chainOutput *iscp.AliasOutputWithID) {
+	node.Log.Debugf("NextState: from state %d, output ID %v", vstate.BlockIndex(), iscp.OID(chainOutput.ID()))
+	nextState, tx, aliasOutputID := testchain.NextState(node.Env.T, node.Env.StateKeyPair, vstate, chainOutput, time.Now())
+	go node.NodeConn.PostTransaction(tx)
+	go node.StateManager.EnqueueStateCandidateMsg(nextState, aliasOutputID)
+	node.Log.Debugf("NextState: result state %d, output ID %v", nextState.BlockIndex(), iscp.OID(aliasOutputID))
 }

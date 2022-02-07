@@ -3,14 +3,20 @@ package testchain
 import (
 	// "strings"
 	"testing"
+	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	// "github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	// "github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
-	// "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 type MockedVMRunner struct {
@@ -55,4 +61,77 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	// r.log.Debugf("mockedVMRunner: new state produced: stateIndex: #%d state hash: %s, essence hash: %s stateOutput: %s\n essence : %s",
 	//	r.nextState.BlockIndex(), r.nextState.Hash().String(), essenceHash.String(), iscp.OID(newOut.ID()), task.ResultTransactionEssence.String())
 	task.OnFinish(nil, nil, nil)*/
+}
+
+func NextState(
+	t *testing.T,
+	chainKey *ed25519.KeyPair,
+	vs state.VirtualStateAccess,
+	chainOutput *iscp.AliasOutputWithID,
+	ts time.Time,
+	/*reqs ...iscp.Calldata,*/
+) (nextvs state.VirtualStateAccess, tx *iotago.Transaction, aliasOutputID *iotago.UTXOInput) {
+	if chainKey != nil {
+		require.True(t, chainOutput.GetStateAddress().Equal(cryptolib.Ed25519AddressFromPubKey(cryptolib.HivePublicKeyToCryptolibPublicKey(chainKey.PublicKey))))
+	}
+
+	nextvs = vs.Copy()
+	prevBlockIndex := vs.BlockIndex()
+	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
+
+	counterBin, err := nextvs.KVStore().Get(counterKey)
+	require.NoError(t, err)
+
+	counter, err := codec.DecodeUint64(counterBin, 0)
+	require.NoError(t, err)
+
+	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
+
+	suCounter := state.NewStateUpdate()
+	counterBin = codec.EncodeUint64(counter + 1)
+	suCounter.Mutations().Set(counterKey, counterBin)
+
+	/*suReqs := state.NewStateUpdate()
+	for i, req := range reqs {
+		key := kv.Key(blocklog.NewRequestLookupKey(vs.BlockIndex()+1, uint16(i)).Bytes())
+		suReqs.Mutations().Set(key, req.ID().Bytes())
+	}*/
+
+	nextvs.ApplyStateUpdates(suBlockIndex, suCounter /*, suReqs*/)
+	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
+
+	consumedOutput := chainOutput.GetAliasOutput()
+	aliasID := consumedOutput.AliasID
+	txEssence := &iotago.TransactionEssence{
+		Inputs: []iotago.Input{chainOutput.ID()},
+		Outputs: []iotago.Output{
+			&iotago.AliasOutput{
+				Amount:               consumedOutput.Amount,
+				NativeTokens:         consumedOutput.NativeTokens,
+				AliasID:              aliasID,
+				StateController:      consumedOutput.StateController,
+				GovernanceController: consumedOutput.GovernanceController,
+				StateIndex:           consumedOutput.StateIndex + 1,
+				StateMetadata:        nextvs.StateCommitment().Bytes(),
+				FoundryCounter:       consumedOutput.FoundryCounter,
+				Blocks:               consumedOutput.Blocks,
+			},
+		},
+		Payload: nil,
+	}
+	signatures, err := txEssence.Sign(iotago.AddressKeys{
+		Address: chainOutput.GetStateAddress(),
+		Keys:    cryptolib.HivePrivateKeyToCryptolibPrivateKey(chainKey.PrivateKey),
+	})
+	require.NoError(t, err)
+	tx = &iotago.Transaction{
+		Essence:      txEssence,
+		UnlockBlocks: []iotago.UnlockBlock{&iotago.SignatureUnlockBlock{Signature: signatures[0]}},
+	}
+
+	txID, err := tx.ID()
+	require.NoError(t, err)
+	aliasOutputID = iotago.OutputIDFromTransactionIDAndIndex(*txID, 0).UTXOInput()
+
+	return nextvs, tx, aliasOutputID
 }
