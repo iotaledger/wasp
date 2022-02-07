@@ -4,6 +4,7 @@
 package domain
 
 import (
+	"bytes"
 	"crypto/rand"
 	"sync"
 
@@ -15,7 +16,7 @@ import (
 
 type DomainImpl struct {
 	netProvider peering.NetworkProvider
-	nodes       map[cryptolib.PublicKey]peering.PeerSender
+	nodes       map[*cryptolib.PublicKey]peering.PeerSender
 	permutation *util.Permutation16
 	permPubKeys []*cryptolib.PublicKey
 	peeringID   peering.PeeringID
@@ -30,7 +31,7 @@ var _ peering.PeerDomainProvider = &DomainImpl{}
 func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
 	ret := &DomainImpl{
 		netProvider: netProvider,
-		nodes:       make(map[cryptolib.PublicKey]peering.PeerSender),
+		nodes:       make(map[*cryptolib.PublicKey]peering.PeerSender),
 		permutation: nil, // Will be set in ret.reshufflePeers().
 		permPubKeys: nil, // Will be set in ret.reshufflePeers().
 		peeringID:   peeringID,
@@ -39,7 +40,7 @@ func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.Peerin
 		mutex:       &sync.RWMutex{},
 	}
 	for _, sender := range initialNodes {
-		ret.nodes[*sender.PubKey()] = sender
+		ret.nodes[sender.PubKey()] = sender
 	}
 	ret.reshufflePeers()
 	return ret
@@ -48,9 +49,9 @@ func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.Peerin
 func (d *DomainImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver, msgType byte, msgData []byte) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	peer, ok := d.nodes[*pubKey]
+	peer, ok := d.nodes[pubKey]
 	if !ok {
-		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.String())
+		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey)
 		return
 	}
 	peer.SendMsg(&peering.PeerMessageData{
@@ -76,40 +77,40 @@ func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKe
 
 func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 	d.mutex.RLock()
-	oldPeers := make(map[cryptolib.PublicKey]peering.PeerSender) // A copy, to avoid keeping the lock.
+	oldPeers := make(map[*cryptolib.PublicKey]peering.PeerSender) // A copy, to avoid keeping the lock.
 	for k, v := range d.nodes {
 		oldPeers[k] = v
 	}
 	d.mutex.RUnlock()
-	nodes := make(map[cryptolib.PublicKey]peering.PeerSender) // Will collect the new set of nodes.
+	nodes := make(map[*cryptolib.PublicKey]peering.PeerSender) // Will collect the new set of nodes.
 	changed := false
 	//
 	// Add new peers.
 	for _, newPeerPubKey := range newPeerPubKeys {
-		if _, isOldPeer := oldPeers[*newPeerPubKey]; isOldPeer {
+		if _, isOldPeer := oldPeers[newPeerPubKey]; isOldPeer {
 			continue // Old peers will be retained bellow.
 		}
 		newPeerSender, err := d.netProvider.PeerByPubKey(newPeerPubKey)
 		if err != nil {
-			d.log.Warnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey.String(), err)
+			d.log.Warnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey, err)
 			continue
 		}
 		changed = true
-		nodes[*newPeerSender.PubKey()] = newPeerSender
-		d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
+		nodes[newPeerSender.PubKey()] = newPeerSender
+		d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey(), newPeerSender.NetID())
 	}
 	//
 	// Remove peers that are not needed anymore and retain others.
 	for _, oldPeer := range oldPeers {
 		oldPeerDropped := true
-		if *oldPeer.PubKey() == *d.netProvider.Self().PubKey() {
+		if bytes.Equal(*oldPeer.PubKey(), *d.netProvider.Self().PubKey()) {
 			// We retain the current node in the domain all the time.
-			nodes[*oldPeer.PubKey()] = oldPeer
+			nodes[oldPeer.PubKey()] = oldPeer
 			oldPeerDropped = false
 		} else {
 			for _, newPeerPubKey := range newPeerPubKeys {
-				if *oldPeer.PubKey() == *newPeerPubKey {
-					nodes[*oldPeer.PubKey()] = oldPeer
+				if bytes.Equal(*oldPeer.PubKey(), *newPeerPubKey) {
+					nodes[oldPeer.PubKey()] = oldPeer
 					oldPeerDropped = false
 					break
 				}
@@ -117,7 +118,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 		}
 		if oldPeerDropped {
 			changed = true
-			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
+			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey(), oldPeer.NetID())
 		}
 	}
 	if changed {
@@ -138,8 +139,8 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 	d.permPubKeys = make([]*cryptolib.PublicKey, 0, len(d.nodes))
 	for pubKey := range d.nodes {
 		peerPubKey := pubKey
-		if peerPubKey != *d.netProvider.Self().PubKey() { // Do not include self to the permutation.
-			d.permPubKeys = append(d.permPubKeys, &peerPubKey)
+		if !bytes.Equal(*peerPubKey, *d.netProvider.Self().PubKey()) { // Do not include self to the permutation.
+			d.permPubKeys = append(d.permPubKeys, peerPubKey)
 		}
 	}
 	var seedB []byte
@@ -155,15 +156,15 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
 	attachID := d.netProvider.Attach(&d.peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		if *recv.SenderPubKey == *d.netProvider.Self().PubKey() {
+		if bytes.Equal(*recv.SenderPubKey, *d.netProvider.Self().PubKey()) {
 			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey)
 			return
 		}
-		_, ok := d.nodes[*recv.SenderPubKey]
+		_, ok := d.nodes[recv.SenderPubKey]
 		if !ok {
 			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: it does not belong to the peer domain.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey)
 			return
 		}
 		callback(recv)
