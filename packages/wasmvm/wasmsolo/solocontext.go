@@ -38,7 +38,7 @@ var (
 
 type SoloContext struct {
 	Chain       *solo.Chain
-	Convertor   SoloConvertor
+	Convertor   wasmhost.WasmConvertor
 	creator     *SoloAgent
 	Err         error
 	Hprog       hashing.HashValue
@@ -286,7 +286,7 @@ func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
 	var mintedColor wasmtypes.ScColor
 	var mintedAmount uint64
 	for c := range mintedAmounts {
-		mintedColor = ctx.Convertor.ScColor(c)
+		mintedColor = ctx.Convertor.ScColor(&c)
 		mintedAmount = mintedAmounts[c]
 		break
 	}
