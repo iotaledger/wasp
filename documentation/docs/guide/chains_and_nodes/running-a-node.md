@@ -64,6 +64,16 @@ You can build and install both `wasp` and `wasp-cli` by running:
 make install
 ```
 
+### macOS arm64 (M1 Apple Silicon)
+
+[`wasmtime-go`](https://github.com/bytecodealliance/wasmtime-go) hasn't supported macOS on arm64 yet, so you should build your own wasmtime library. You can follow the README in `wasmtime-go` to build the library.
+Once a wasmtime library is built, then you can run the following commands.
+
+```bash
+go mod edit -replace=github.com/bytecodealliance/wasmtime-go=<wasmtime-go path>
+make install
+```
+
 ### Microsoft Windows
 
 ```bash
