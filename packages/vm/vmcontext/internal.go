@@ -212,6 +212,9 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 
 // adjustL2IotasIfNeeded adjust L2 ledger for iotas if the L1 changed because of dust deposit changes
 func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account *iscp.AgentID) {
+	if adjustment == 0 {
+		return
+	}
 	err := util.CatchPanicReturnError(func() {
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 			accounts.AdjustAccountIotas(s, account, adjustment)

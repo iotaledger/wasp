@@ -88,6 +88,9 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	}
 	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
 	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req)
+	if dustAdjustment > 0 {
+		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
+	}
 
 	// if sender is specified, all assets goes to sender's account
 	// Otherwise it all goes to the common account and panics is logged in the SC call
@@ -103,6 +106,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// TNT outputs will use dust deposit from the caller
 	// TODO remove attack vector when iotas for dust deposit is not enough and the request keeps being skipped
 	vmctx.adjustL2IotasIfNeeded(dustAdjustment, account)
+
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
