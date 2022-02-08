@@ -9,30 +9,30 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncFinalizeAuction,
-    	sc.FuncPlaceBid,
-    	sc.FuncSetOwnerMargin,
-    	sc.FuncStartAuction,
-    	sc.ViewGetInfo,
-    ],
-    funcs: [
-    	funcFinalizeAuctionThunk,
-    	funcPlaceBidThunk,
-    	funcSetOwnerMarginThunk,
-    	funcStartAuctionThunk,
-    ],
-    views: [
-    	viewGetInfoThunk,
-    ],
+	names: [
+		sc.FuncFinalizeAuction,
+		sc.FuncPlaceBid,
+		sc.FuncSetOwnerMargin,
+		sc.FuncStartAuction,
+		sc.ViewGetInfo,
+	],
+	funcs: [
+		funcFinalizeAuctionThunk,
+		funcPlaceBidThunk,
+		funcSetOwnerMarginThunk,
+		funcStartAuctionThunk,
+	],
+	views: [
+		viewGetInfoThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
@@ -79,7 +79,7 @@ function funcStartAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetInfoThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("fairauction.viewGetInfo");
 	let f = new sc.GetInfoContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetInfoResults(results.asProxy());
 	ctx.require(f.params.color().exists(), "missing mandatory color");
 	sc.viewGetInfo(ctx, f);

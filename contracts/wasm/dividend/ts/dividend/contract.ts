@@ -69,38 +69,38 @@ export class GetOwnerContext {
 }
 
 export class ScFuncs {
-    static divide(_ctx: wasmlib.ScFuncCallContext): DivideCall {
-        return new DivideCall();
-    }
+	static divide(_ctx: wasmlib.ScFuncCallContext): DivideCall {
+		return new DivideCall();
+	}
 
-    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
-        const f = new InitCall();
+	static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall();
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static member(_ctx: wasmlib.ScFuncCallContext): MemberCall {
-        const f = new MemberCall();
+	static member(_ctx: wasmlib.ScFuncCallContext): MemberCall {
+		const f = new MemberCall();
 		f.params = new sc.MutableMemberParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static setOwner(_ctx: wasmlib.ScFuncCallContext): SetOwnerCall {
-        const f = new SetOwnerCall();
+	static setOwner(_ctx: wasmlib.ScFuncCallContext): SetOwnerCall {
+		const f = new SetOwnerCall();
 		f.params = new sc.MutableSetOwnerParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getFactor(_ctx: wasmlib.ScViewCallContext): GetFactorCall {
-        const f = new GetFactorCall();
+	static getFactor(_ctx: wasmlib.ScViewCallContext): GetFactorCall {
+		const f = new GetFactorCall();
 		f.params = new sc.MutableGetFactorParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetFactorResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getOwner(_ctx: wasmlib.ScViewCallContext): GetOwnerCall {
-        const f = new GetOwnerCall();
+	static getOwner(_ctx: wasmlib.ScViewCallContext): GetOwnerCall {
+		const f = new GetOwnerCall();
 		f.results = new sc.ImmutableGetOwnerResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

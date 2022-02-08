@@ -27,13 +27,13 @@ export class GetHelloWorldContext {
 }
 
 export class ScFuncs {
-    static helloWorld(_ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
-        return new HelloWorldCall();
-    }
+	static helloWorld(_ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
+		return new HelloWorldCall();
+	}
 
-    static getHelloWorld(_ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
-        const f = new GetHelloWorldCall();
+	static getHelloWorld(_ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
+		const f = new GetHelloWorldCall();
 		f.results = new sc.ImmutableGetHelloWorldResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

@@ -9,65 +9,65 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableDeployContractParams extends wasmtypes.ScProxy {
-    description(): wasmtypes.ScImmutableString {
+	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
-    programHash(): wasmtypes.ScImmutableHash {
+	programHash(): wasmtypes.ScImmutableHash {
 		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
 }
 
 export class MutableDeployContractParams extends wasmtypes.ScProxy {
-    description(): wasmtypes.ScMutableString {
+	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
-    programHash(): wasmtypes.ScMutableHash {
+	programHash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
 }
 
 export class ImmutableGrantDeployPermissionParams extends wasmtypes.ScProxy {
-    deployer(): wasmtypes.ScImmutableAgentID {
+	deployer(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamDeployer));
 	}
 }
 
 export class MutableGrantDeployPermissionParams extends wasmtypes.ScProxy {
-    deployer(): wasmtypes.ScMutableAgentID {
+	deployer(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamDeployer));
 	}
 }
 
 export class ImmutableRevokeDeployPermissionParams extends wasmtypes.ScProxy {
-    deployer(): wasmtypes.ScImmutableAgentID {
+	deployer(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamDeployer));
 	}
 }
 
 export class MutableRevokeDeployPermissionParams extends wasmtypes.ScProxy {
-    deployer(): wasmtypes.ScMutableAgentID {
+	deployer(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamDeployer));
 	}
 }
 
 export class ImmutableFindContractParams extends wasmtypes.ScProxy {
-    hname(): wasmtypes.ScImmutableHname {
+	hname(): wasmtypes.ScImmutableHname {
 		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHname));
 	}
 }
 
 export class MutableFindContractParams extends wasmtypes.ScProxy {
-    hname(): wasmtypes.ScMutableHname {
+	hname(): wasmtypes.ScMutableHname {
 		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamHname));
 	}
 }

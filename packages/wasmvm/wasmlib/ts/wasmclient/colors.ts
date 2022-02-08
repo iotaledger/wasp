@@ -1,4 +1,4 @@
-import { Buffer } from "./buffer";
+import {Buffer} from "./buffer";
 
 export class Colors {
     public static readonly IOTA_COLOR: string = "IOTA";

@@ -9,13 +9,13 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableGetTimestampResults extends wasmtypes.ScProxy {
-    timestamp(): wasmtypes.ScImmutableUint64 {
+	timestamp(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultTimestamp));
 	}
 }
 
 export class MutableGetTimestampResults extends wasmtypes.ScProxy {
-    timestamp(): wasmtypes.ScMutableUint64 {
+	timestamp(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultTimestamp));
 	}
 }

@@ -10,94 +10,94 @@ import * as sc from "./index";
 
 export class MapColorToImmutableAuction extends wasmtypes.ScProxy {
 
-    getAuction(key: wasmtypes.ScColor): sc.ImmutableAuction {
-        return new sc.ImmutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
-    }
+	getAuction(key: wasmtypes.ScColor): sc.ImmutableAuction {
+		return new sc.ImmutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
 export class MapColorToImmutableBidderList extends wasmtypes.ScProxy {
 
-    getBidderList(key: wasmtypes.ScColor): sc.ImmutableBidderList {
-        return new sc.ImmutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
-    }
+	getBidderList(key: wasmtypes.ScColor): sc.ImmutableBidderList {
+		return new sc.ImmutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
 export class MapColorToImmutableBids extends wasmtypes.ScProxy {
 
-    getBids(key: wasmtypes.ScColor): sc.ImmutableBids {
-        return new sc.ImmutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
-    }
+	getBids(key: wasmtypes.ScColor): sc.ImmutableBids {
+		return new sc.ImmutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
 export class ImmutableFairAuctionState extends wasmtypes.ScProxy {
-    auctions(): sc.MapColorToImmutableAuction {
+	auctions(): sc.MapColorToImmutableAuction {
 		return new sc.MapColorToImmutableAuction(this.proxy.root(sc.StateAuctions));
 	}
 
-    bidderList(): sc.MapColorToImmutableBidderList {
+	bidderList(): sc.MapColorToImmutableBidderList {
 		return new sc.MapColorToImmutableBidderList(this.proxy.root(sc.StateBidderList));
 	}
 
-    bids(): sc.MapColorToImmutableBids {
+	bids(): sc.MapColorToImmutableBids {
 		return new sc.MapColorToImmutableBids(this.proxy.root(sc.StateBids));
 	}
 
-    ownerMargin(): wasmtypes.ScImmutableUint64 {
+	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateOwnerMargin));
 	}
 }
 
 export class MapColorToMutableAuction extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getAuction(key: wasmtypes.ScColor): sc.MutableAuction {
-        return new sc.MutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
-    }
+	getAuction(key: wasmtypes.ScColor): sc.MutableAuction {
+		return new sc.MutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
 export class MapColorToMutableBidderList extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getBidderList(key: wasmtypes.ScColor): sc.MutableBidderList {
-        return new sc.MutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
-    }
+	getBidderList(key: wasmtypes.ScColor): sc.MutableBidderList {
+		return new sc.MutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
 export class MapColorToMutableBids extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getBids(key: wasmtypes.ScColor): sc.MutableBids {
-        return new sc.MutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
-    }
+	getBids(key: wasmtypes.ScColor): sc.MutableBids {
+		return new sc.MutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
 export class MutableFairAuctionState extends wasmtypes.ScProxy {
-    asImmutable(): sc.ImmutableFairAuctionState {
+	asImmutable(): sc.ImmutableFairAuctionState {
 		return new sc.ImmutableFairAuctionState(this.proxy);
 	}
 
-    auctions(): sc.MapColorToMutableAuction {
+	auctions(): sc.MapColorToMutableAuction {
 		return new sc.MapColorToMutableAuction(this.proxy.root(sc.StateAuctions));
 	}
 
-    bidderList(): sc.MapColorToMutableBidderList {
+	bidderList(): sc.MapColorToMutableBidderList {
 		return new sc.MapColorToMutableBidderList(this.proxy.root(sc.StateBidderList));
 	}
 
-    bids(): sc.MapColorToMutableBids {
+	bids(): sc.MapColorToMutableBids {
 		return new sc.MapColorToMutableBids(this.proxy.root(sc.StateBids));
 	}
 
-    ownerMargin(): wasmtypes.ScMutableUint64 {
+	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateOwnerMargin));
 	}
 }

@@ -27,13 +27,13 @@ export class GetTimestampContext {
 }
 
 export class ScFuncs {
-    static now(_ctx: wasmlib.ScFuncCallContext): NowCall {
-        return new NowCall();
-    }
+	static now(_ctx: wasmlib.ScFuncCallContext): NowCall {
+		return new NowCall();
+	}
 
-    static getTimestamp(_ctx: wasmlib.ScViewCallContext): GetTimestampCall {
-        const f = new GetTimestampCall();
+	static getTimestamp(_ctx: wasmlib.ScViewCallContext): GetTimestampCall {
+		const f = new GetTimestampCall();
 		f.results = new sc.ImmutableGetTimestampResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

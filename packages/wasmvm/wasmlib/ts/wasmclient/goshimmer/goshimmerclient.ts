@@ -1,23 +1,23 @@
-import { Buffer } from "../buffer";
+import {Buffer} from "../buffer";
 
-import { IFaucetRequest, IFaucetRequestContext, IFaucetResponse } from "./faucet/faucet_models";
-import { FaucetHelper } from "./faucet/faucet_helper";
+import {IFaucetRequest, IFaucetRequestContext, IFaucetResponse} from "./faucet/faucet_models";
+import {FaucetHelper} from "./faucet/faucet_helper";
 
-import { IUnspentOutputsRequest, IUnspentOutputsResponse } from "./models/unspent_outputs";
-import { IAllowedManaPledgeResponse } from "./models/mana";
+import {IUnspentOutputsRequest, IUnspentOutputsResponse} from "./models/unspent_outputs";
+import {IAllowedManaPledgeResponse} from "./models/mana";
 
-import { PoWWorkerManager } from "./pow_web_worker/pow_worker_manager";
+import {PoWWorkerManager} from "./pow_web_worker/pow_worker_manager";
 
 import * as requestSender from "../api_common/request_sender";
 
-import { Base58, getAddress, IKeyPair } from "../crypto";
+import {Base58, getAddress, IKeyPair} from "../crypto";
 
-import { IOnLedger, OnLedgerHelper } from "./models/on_ledger";
-import { ISendTransactionRequest, ISendTransactionResponse, ITransaction, Transaction } from "./models/transaction";
-import { Wallet } from "./wallet/wallet";
-import { Colors } from "../colors";
-import { AgentID, Configuration, Transfer } from "..";
-import { CoreAccountsService } from "../coreaccounts/service";
+import {IOnLedger, OnLedgerHelper} from "./models/on_ledger";
+import {ISendTransactionRequest, ISendTransactionResponse, ITransaction, Transaction} from "./models/transaction";
+import {Wallet} from "./wallet/wallet";
+import {Colors} from "../colors";
+import {AgentID, Configuration, Transfer} from "..";
+import {CoreAccountsService} from "../coreaccounts/service";
 
 interface GoShimmerClientConfiguration {
     APIUrl: string;
@@ -29,9 +29,9 @@ export class GoShimmerClient {
     private readonly goShimmerConfiguration: GoShimmerClientConfiguration;
     private readonly powManager: PoWWorkerManager = new PoWWorkerManager();
 
-    constructor(configuration : Configuration, coreAccountsService: CoreAccountsService) {
+    constructor(configuration: Configuration, coreAccountsService: CoreAccountsService) {
         this.coreAccountsService = coreAccountsService;
-        this.goShimmerConfiguration = { APIUrl: configuration.goShimmerApiUrl, SeedUnsafe: configuration.seed };
+        this.goShimmerConfiguration = {APIUrl: configuration.goShimmerApiUrl, SeedUnsafe: configuration.seed};
     }
 
     public async getIOTABalance(address: string): Promise<bigint> {
@@ -44,7 +44,7 @@ export class GoShimmerClient {
             color = Colors.IOTA_COLOR_STRING;
         }
 
-        const unspents = await this.unspentOutputs({ addresses: [address] });
+        const unspents = await this.unspentOutputs({addresses: [address]});
         const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 == address);
         if (!currentUnspent) throw new Error("current unspent not found");
 
@@ -136,7 +136,7 @@ export class GoShimmerClient {
         const address = getAddress(keyPair);
         const unspents = await wallet.getUnspentOutputs(address);
         const consumedOutputs = wallet.determineOutputsToConsume(unspents, transfer);
-        const { inputs, consumedFunds } = wallet.buildInputs(consumedOutputs);
+        const {inputs, consumedFunds} = wallet.buildInputs(consumedOutputs);
         const outputs = wallet.buildOutputs(address, chainId, transfer, consumedFunds);
 
         const tx: ITransaction = {

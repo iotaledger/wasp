@@ -9,73 +9,73 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableDonationResults extends wasmtypes.ScProxy {
-    amount(): wasmtypes.ScImmutableUint64 {
+	amount(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 
-    donator(): wasmtypes.ScImmutableAgentID {
+	donator(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultDonator));
 	}
 
-    error(): wasmtypes.ScImmutableString {
+	error(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultError));
 	}
 
-    feedback(): wasmtypes.ScImmutableString {
+	feedback(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultFeedback));
 	}
 
-    timestamp(): wasmtypes.ScImmutableUint64 {
+	timestamp(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultTimestamp));
 	}
 }
 
 export class MutableDonationResults extends wasmtypes.ScProxy {
-    amount(): wasmtypes.ScMutableUint64 {
+	amount(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 
-    donator(): wasmtypes.ScMutableAgentID {
+	donator(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultDonator));
 	}
 
-    error(): wasmtypes.ScMutableString {
+	error(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultError));
 	}
 
-    feedback(): wasmtypes.ScMutableString {
+	feedback(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultFeedback));
 	}
 
-    timestamp(): wasmtypes.ScMutableUint64 {
+	timestamp(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultTimestamp));
 	}
 }
 
 export class ImmutableDonationInfoResults extends wasmtypes.ScProxy {
-    count(): wasmtypes.ScImmutableUint32 {
+	count(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultCount));
 	}
 
-    maxDonation(): wasmtypes.ScImmutableUint64 {
+	maxDonation(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMaxDonation));
 	}
 
-    totalDonation(): wasmtypes.ScImmutableUint64 {
+	totalDonation(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultTotalDonation));
 	}
 }
 
 export class MutableDonationInfoResults extends wasmtypes.ScProxy {
-    count(): wasmtypes.ScMutableUint32 {
+	count(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultCount));
 	}
 
-    maxDonation(): wasmtypes.ScMutableUint64 {
+	maxDonation(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMaxDonation));
 	}
 
-    totalDonation(): wasmtypes.ScMutableUint64 {
+	totalDonation(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultTotalDonation));
 	}
 }

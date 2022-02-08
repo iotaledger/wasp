@@ -10,9 +10,9 @@ import * as sc from "./index";
 
 export class MapAgentIDToImmutableBool extends wasmtypes.ScProxy {
 
-    getBool(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBool {
-        return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getBool(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class ImmutableOperators extends MapAgentIDToImmutableBool {
@@ -20,13 +20,13 @@ export class ImmutableOperators extends MapAgentIDToImmutableBool {
 
 export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getBool(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBool {
-        return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getBool(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MutableOperators extends MapAgentIDToMutableBool {

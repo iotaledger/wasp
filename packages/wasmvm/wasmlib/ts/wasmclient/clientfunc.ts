@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import { IKeyPair } from "./crypto";
+import {IKeyPair} from "./crypto";
 
 export class ClientFunc {
     protected svc: wasmclient.Service;

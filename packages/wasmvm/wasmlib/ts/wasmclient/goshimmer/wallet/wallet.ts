@@ -1,9 +1,9 @@
-import { Base58, IKeyPair } from "../../crypto";
-import { Buffer } from "../../buffer";
-import { ITransaction, Transaction, IUnlockBlock } from "../models/transaction";
-import type { GoShimmerClient } from "../goshimmerclient";
-import type { IWalletAddressOutput, IWalletOutput } from "./wallet_models";
-import { ColorCollection, Colors } from "../../colors";
+import {Base58, IKeyPair} from "../../crypto";
+import {Buffer} from "../../buffer";
+import {ITransaction, IUnlockBlock, Transaction} from "../models/transaction";
+import type {GoShimmerClient} from "../goshimmerclient";
+import type {IWalletAddressOutput, IWalletOutput} from "./wallet_models";
+import {ColorCollection, Colors} from "../../colors";
 
 export type BuiltOutputResult = {
     [address: string]: {
@@ -18,6 +18,7 @@ export type ConsumedOutputs = {
 
 export class Wallet {
     private goShimmerClient: GoShimmerClient;
+
     constructor(client: GoShimmerClient) {
         this.goShimmerClient = client;
     }
@@ -33,7 +34,7 @@ export class Wallet {
     }
 
     public async getUnspentOutputs(address: string): Promise<Array<IWalletAddressOutput>> {
-        const unspents = await this.goShimmerClient.unspentOutputs({ addresses: [address] });
+        const unspents = await this.goShimmerClient.unspentOutputs({addresses: [address]});
 
         const usedAddresses = unspents.unspentOutputs.filter((u) => u.outputs.length > 0);
 
@@ -179,7 +180,7 @@ export class Wallet {
 
         inputs.sort((a, b) => Base58.decode(a).compare(Base58.decode(b)));
 
-        return { inputs, consumedFunds };
+        return {inputs, consumedFunds};
     }
 
     public unlockBlocks(

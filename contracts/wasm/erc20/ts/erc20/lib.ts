@@ -9,34 +9,34 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncApprove,
-    	sc.FuncInit,
-    	sc.FuncTransfer,
-    	sc.FuncTransferFrom,
-    	sc.ViewAllowance,
-    	sc.ViewBalanceOf,
-    	sc.ViewTotalSupply,
-    ],
-    funcs: [
-    	funcApproveThunk,
-    	funcInitThunk,
-    	funcTransferThunk,
-    	funcTransferFromThunk,
-    ],
-    views: [
-    	viewAllowanceThunk,
-    	viewBalanceOfThunk,
-    	viewTotalSupplyThunk,
-    ],
+	names: [
+		sc.FuncApprove,
+		sc.FuncInit,
+		sc.FuncTransfer,
+		sc.FuncTransferFrom,
+		sc.ViewAllowance,
+		sc.ViewBalanceOf,
+		sc.ViewTotalSupply,
+	],
+	funcs: [
+		funcApproveThunk,
+		funcInitThunk,
+		funcTransferThunk,
+		funcTransferFromThunk,
+	],
+	views: [
+		viewAllowanceThunk,
+		viewBalanceOfThunk,
+		viewTotalSupplyThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcApproveThunk(ctx: wasmlib.ScFuncContext): void {
@@ -79,7 +79,7 @@ function funcTransferFromThunk(ctx: wasmlib.ScFuncContext): void {
 function viewAllowanceThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc20.viewAllowance");
 	let f = new sc.AllowanceContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableAllowanceResults(results.asProxy());
 	ctx.require(f.params.account().exists(), "missing mandatory account");
 	ctx.require(f.params.delegation().exists(), "missing mandatory delegation");
@@ -91,7 +91,7 @@ function viewAllowanceThunk(ctx: wasmlib.ScViewContext): void {
 function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc20.viewBalanceOf");
 	let f = new sc.BalanceOfContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableBalanceOfResults(results.asProxy());
 	ctx.require(f.params.account().exists(), "missing mandatory account");
 	sc.viewBalanceOf(ctx, f);
@@ -102,7 +102,7 @@ function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
 function viewTotalSupplyThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc20.viewTotalSupply");
 	let f = new sc.TotalSupplyContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableTotalSupplyResults(results.asProxy());
 	sc.viewTotalSupply(ctx, f);
 	ctx.results(results);

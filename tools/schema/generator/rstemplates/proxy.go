@@ -21,11 +21,6 @@ $#if map proxyMap proxyMethods3
 $#if basetype proxyBaseType proxyOtherType
 `,
 	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyOtherType": `
-$#if typedef proxyTypeDef proxyStruct
-`,
-	// *******************************
 	"proxyArray": `
     pub fn $fld_name(&self) -> ArrayOf$mut$FldType {
 		ArrayOf$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
@@ -54,19 +49,9 @@ $#if this proxyMapThis proxyMapOther
 	}
 `,
 	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyTypeDef": `
-$#emit setVarType
-    pub fn $old_name(&self) -> $mut$OldType {
-		let sub_id = get_object_id(self.id, $varID, $varType);
-		$mut$OldType { obj_id: sub_id }
-	}
-`,
-	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyStruct": `
+	"proxyOtherType": `
     pub fn $fld_name(&self) -> $mut$FldType {
-		$mut$FldType { obj_id: self.id, key_id: $varID }
+		$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
 	}
 `,
 }

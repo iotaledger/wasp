@@ -7,29 +7,29 @@ $#emit importWasmLib
 $#emit importSc
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
+	names: [
 $#each func libExportName
-    ],
-    funcs: [
+	],
+	funcs: [
 $#each func libExportFunc
-    ],
-    views: [
+	],
+	views: [
 $#each func libExportView
-    ],
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 $#each func libThunk
 `,
 	// *******************************
 	"libExportName": `
-    	sc.$Kind$FuncName,
+		sc.$Kind$FuncName,
 `,
 	// *******************************
 	"libExportFunc": `
@@ -37,7 +37,7 @@ $#if func libExportFuncThunk
 `,
 	// *******************************
 	"libExportFuncThunk": `
-    	$kind$FuncName$+Thunk,
+		$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libExportView": `
@@ -45,7 +45,7 @@ $#if view libExportViewThunk
 `,
 	// *******************************
 	"libExportViewThunk": `
-    	$kind$FuncName$+Thunk,
+		$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libThunk": `
@@ -63,7 +63,7 @@ $#if result returnResultDict
 `,
 	// *******************************
 	"initResultsDict": `
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.Mutable$FuncName$+Results(results.asProxy());
 `,
 	// *******************************
