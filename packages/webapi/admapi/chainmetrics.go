@@ -103,6 +103,8 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 		TimeTransactionPosted:    time.Time{},
 		TimeTransactionSeen:      time.Time{},
 		TimeCompleted:            time.Time{},
+
+		CurrentStateIndex: 0,
 	}
 
 	adm.GET(routes.GetChainConsensusWorkflowStatus(":chainID"), cms.handleGetChainConsensusWorkflowStatus).

@@ -229,6 +229,7 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionPostedTime() time.Time
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
+	GetCurrentStateIndex() uint32
 }
 
 type ReadyListRecord struct {

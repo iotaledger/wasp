@@ -57,6 +57,11 @@
 				<td>{{ template "booleanValue" (not (.Status.IsInProgress)) }}</td>
 				<td>{{ (formatTimestampOrNever (.Status.GetCompletedTime)) }}</td>
 			</tr>
+            <tr>
+                <td>Current state index</td> 
+                <td>{{ .Status.GetCurrentStateIndex }}</td>
+                <td></td>
+            </tr>
 		</tbody>
 	</table>
 </div>

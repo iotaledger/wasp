@@ -28,14 +28,21 @@ type workflowStatus struct {
 	timeTransactionPosted    time.Time
 	timeTransactionSeen      time.Time
 	timeCompleted            time.Time
+
+	stateIndex uint32
 }
 
 var _ chain.ConsensusWorkflowStatus = &workflowStatus{}
 
-func newWorkflowStatus(stateReceived bool) *workflowStatus {
+func newWorkflowStatus(stateReceived bool, stateIndex ...uint32) *workflowStatus {
+	var i uint32
+	if len(stateIndex) > 0 {
+		i = stateIndex[0]
+	}
 	return &workflowStatus{
 		flagStateReceived: stateReceived,
 		flagInProgress:    stateReceived,
+		stateIndex:        i,
 	}
 }
 
@@ -77,6 +84,10 @@ func (wsT *workflowStatus) setTransactionSeen() {
 func (wsT *workflowStatus) setCompleted() {
 	wsT.flagInProgress = false
 	wsT.timeCompleted = time.Now()
+}
+
+func (wsT *workflowStatus) setCurrentStateIndex(i uint32) {
+	wsT.stateIndex = i
 }
 
 func (wsT *workflowStatus) IsStateReceived() bool {
@@ -145,4 +156,8 @@ func (wsT *workflowStatus) GetTransactionSeenTime() time.Time {
 
 func (wsT *workflowStatus) GetCompletedTime() time.Time {
 	return wsT.timeCompleted
+}
+
+func (wsT *workflowStatus) GetCurrentStateIndex() uint32 {
+	return wsT.stateIndex
 }
