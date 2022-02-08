@@ -53,11 +53,3 @@ func HiveKeyPairToCryptolibKeyPair(pk ed25519.KeyPair) KeyPair {
 		PublicKey:  HivePublicKeyToCryptolibPublicKey(pk.PublicKey),
 	}
 }
-
-/*func Sign(privateKey PrivateKey, message []byte) []byte {
-	return crypto.Sign(privateKey.asCrypto(), message)
-}
-
-func NewAddressKeysForEd25519Address(addr *iotago.Ed25519Address, prvKey PrivateKey) iotago.AddressKeys {
-	return iotago.NewAddressKeysForEd25519Address(addr, prvKey.asCrypto())
-}*/

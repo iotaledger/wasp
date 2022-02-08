@@ -1,10 +1,8 @@
 package cryptolib
 
 import (
-	//	cr "crypto"
 	crypto "crypto/ed25519"
 	"fmt"
-	//	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -62,22 +60,6 @@ func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
 	return iotago.NewInMemoryAddressSigner(addrKeys)
 }
 
-//func (k *KeyPair) Sign(message []byte) ([]byte, error) {
-//	return k.PrivateKey.Sign(nil, message, nil) // FIXME this is wrong
-//}
-//
-//func (a AddressSigner) Sign(addr iotago.Address, msg []byte) (signature iotago.Signature, err error) {
-//	kp := KeyPair(a)
-//	if !addr.Equal(Ed25519AddressFromPubKey(kp.PublicKey)) {
-//		return nil, fmt.Errorf("can't sign message for given Ed25519 address")
-//	}
-//	b, err := kp.Sign(msg)
-//	ed25519Sig := &iotago.Ed25519Signature{}
-//	copy(ed25519Sig.Signature[:], b)
-//	copy(ed25519Sig.PublicKey[:], kp.PublicKey)
-//	return ed25519Sig, nil
-//}
-
 func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
 	if len(privateKeyBytes) < PrivateKeySize {
 		return nil, fmt.Errorf("bytes too short")
@@ -90,15 +72,6 @@ func NewPrivateKeyFromSeed(seed Seed) PrivateKey {
 	var seedByte [SeedSize]byte = seed
 	return crypto.NewKeyFromSeed(seedByte[:])
 }
-
-//TODO
-/*func (pkT PrivateKey) asCrypto() crypto.PrivateKey {
-	return crypto.PrivateKey(pkT)
-}
-
-func (pkT PrivateKey) Sign(rand io.Reader, message []byte, opts cr.SignerOpts) (signature []byte, err error) {
-	return pkT.asCrypto().Sign(rand, message, opts)
-}*/
 
 func PublicKeyFromString(s string) (publicKey PublicKey, err error) {
 	b, err := base58.Decode(s)
@@ -116,16 +89,3 @@ func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 
 	return publicKeyBytes, nil
 }
-
-//TODO
-/*func (pkT PublicKey) Equal(pk PublicKey) bool {
-	return pkT.asCrypto().Equal(pk.asCrypto())
-}
-
-func (pkT PublicKey) asCrypto() crypto.PublicKey {
-	return crypto.PublicKey(pkT)
-}
-
-func (pkT PublicKey) String() string {
-	return base58.Encode(pkT)
-}*/
