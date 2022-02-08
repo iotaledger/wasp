@@ -175,96 +175,96 @@ export class MapValueContext {
 }
 
 export class ScFuncs {
-    static arrayAppend(_ctx: wasmlib.ScFuncCallContext): ArrayAppendCall {
-        const f = new ArrayAppendCall();
+	static arrayAppend(_ctx: wasmlib.ScFuncCallContext): ArrayAppendCall {
+		const f = new ArrayAppendCall();
 		f.params = new sc.MutableArrayAppendParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static arrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
-        const f = new ArrayClearCall();
+	static arrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
+		const f = new ArrayClearCall();
 		f.params = new sc.MutableArrayClearParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static arraySet(_ctx: wasmlib.ScFuncCallContext): ArraySetCall {
-        const f = new ArraySetCall();
+	static arraySet(_ctx: wasmlib.ScFuncCallContext): ArraySetCall {
+		const f = new ArraySetCall();
 		f.params = new sc.MutableArraySetParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static mapClear(_ctx: wasmlib.ScFuncCallContext): MapClearCall {
-        const f = new MapClearCall();
+	static mapClear(_ctx: wasmlib.ScFuncCallContext): MapClearCall {
+		const f = new MapClearCall();
 		f.params = new sc.MutableMapClearParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static mapSet(_ctx: wasmlib.ScFuncCallContext): MapSetCall {
-        const f = new MapSetCall();
+	static mapSet(_ctx: wasmlib.ScFuncCallContext): MapSetCall {
+		const f = new MapSetCall();
 		f.params = new sc.MutableMapSetParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static paramTypes(_ctx: wasmlib.ScFuncCallContext): ParamTypesCall {
-        const f = new ParamTypesCall();
+	static paramTypes(_ctx: wasmlib.ScFuncCallContext): ParamTypesCall {
+		const f = new ParamTypesCall();
 		f.params = new sc.MutableParamTypesParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static random(_ctx: wasmlib.ScFuncCallContext): RandomCall {
-        return new RandomCall();
-    }
+	static random(_ctx: wasmlib.ScFuncCallContext): RandomCall {
+		return new RandomCall();
+	}
 
-    static triggerEvent(_ctx: wasmlib.ScFuncCallContext): TriggerEventCall {
-        const f = new TriggerEventCall();
+	static triggerEvent(_ctx: wasmlib.ScFuncCallContext): TriggerEventCall {
+		const f = new TriggerEventCall();
 		f.params = new sc.MutableTriggerEventParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static arrayLength(_ctx: wasmlib.ScViewCallContext): ArrayLengthCall {
-        const f = new ArrayLengthCall();
+	static arrayLength(_ctx: wasmlib.ScViewCallContext): ArrayLengthCall {
+		const f = new ArrayLengthCall();
 		f.params = new sc.MutableArrayLengthParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableArrayLengthResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static arrayValue(_ctx: wasmlib.ScViewCallContext): ArrayValueCall {
-        const f = new ArrayValueCall();
+	static arrayValue(_ctx: wasmlib.ScViewCallContext): ArrayValueCall {
+		const f = new ArrayValueCall();
 		f.params = new sc.MutableArrayValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableArrayValueResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static blockRecord(_ctx: wasmlib.ScViewCallContext): BlockRecordCall {
-        const f = new BlockRecordCall();
+	static blockRecord(_ctx: wasmlib.ScViewCallContext): BlockRecordCall {
+		const f = new BlockRecordCall();
 		f.params = new sc.MutableBlockRecordParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBlockRecordResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static blockRecords(_ctx: wasmlib.ScViewCallContext): BlockRecordsCall {
-        const f = new BlockRecordsCall();
+	static blockRecords(_ctx: wasmlib.ScViewCallContext): BlockRecordsCall {
+		const f = new BlockRecordsCall();
 		f.params = new sc.MutableBlockRecordsParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBlockRecordsResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getRandom(_ctx: wasmlib.ScViewCallContext): GetRandomCall {
-        const f = new GetRandomCall();
+	static getRandom(_ctx: wasmlib.ScViewCallContext): GetRandomCall {
+		const f = new GetRandomCall();
 		f.results = new sc.ImmutableGetRandomResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static iotaBalance(_ctx: wasmlib.ScViewCallContext): IotaBalanceCall {
-        const f = new IotaBalanceCall();
+	static iotaBalance(_ctx: wasmlib.ScViewCallContext): IotaBalanceCall {
+		const f = new IotaBalanceCall();
 		f.results = new sc.ImmutableIotaBalanceResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static mapValue(_ctx: wasmlib.ScViewCallContext): MapValueCall {
-        const f = new MapValueCall();
+	static mapValue(_ctx: wasmlib.ScViewCallContext): MapValueCall {
+		const f = new MapValueCall();
 		f.params = new sc.MutableMapValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableMapValueResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

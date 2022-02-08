@@ -19,11 +19,6 @@ $#if map proxyMap proxyMethods3
 $#if basetype proxyBaseType proxyOtherType
 `,
 	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyOtherType": `
-$#if typedef proxyTypeDef proxyStruct
-`,
-	// *******************************
 	"proxyArray": `
 
 func (s $TypeName) $FldName() ArrayOf$mut$FldType {
@@ -57,20 +52,10 @@ func (s $TypeName) $FldName() wasmtypes.Sc$mut$FldType {
 }
 `,
 	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyTypeDef": `
-
-func (s $TypeName) $OldName() $mut$OldType {
-	subID := wasmlib.GetObjectID(s.id, $varID, $varType)
-	return $mut$OldType{objID: subID}
-}
-`,
-	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyStruct": `
+	"proxyOtherType": `
 
 func (s $TypeName) $FldName() $mut$FldType {
-	return $mut$FldType{objID: s.id, keyID: $varID}
+	return $mut$FldType{proxy: s.proxy.Root($Kind$FldName)}
 }
 `,
 }

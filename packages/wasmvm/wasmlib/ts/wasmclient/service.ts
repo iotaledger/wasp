@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import { Hash, IKeyPair } from "./crypto";
-import { IOnLedger } from "./goshimmer/models/on_ledger";
-import { Colors } from "./colors";
-import { Buffer } from "./buffer";
+import {Hash, IKeyPair} from "./crypto";
+import {IOnLedger} from "./goshimmer/models/on_ledger";
+import {Colors} from "./colors";
+import {Buffer} from "./buffer";
 
 export interface IEventHandler {
     callHandler(topic: string, params: string[]): void;

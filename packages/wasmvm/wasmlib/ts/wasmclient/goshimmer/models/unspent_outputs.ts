@@ -1,5 +1,5 @@
-import type { IResponse } from '../../api_common/response_models';
-import { ColorCollection } from '../../colors';
+import type {IResponse} from '../../api_common/response_models';
+import {ColorCollection} from '../../colors';
 
 export interface IUnspentOutputsRequest {
     addresses: string[];

@@ -5,7 +5,13 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScAddressLength = 33
+const (
+	ScAddressEd25519 byte = 0 // length 32
+	ScAddressNFT     byte = 1 // actually 16, length 20
+	ScAddressAlias   byte = 2 // actually 8, length 20
+
+	ScAddressLength = 33
+)
 
 type ScAddress struct {
 	id [ScAddressLength]byte
@@ -41,9 +47,8 @@ func AddressFromBytes(buf []byte) ScAddress {
 	if len(buf) != ScAddressLength {
 		panic("invalid Address length")
 	}
-	// max ledgerstate.AliasAddressType
-	if buf[0] > 2 {
-		panic("invalid Address: address type > 2")
+	if buf[0] > ScAddressAlias {
+		panic("invalid Address type")
 	}
 	return addressFromBytesUnchecked(buf)
 }

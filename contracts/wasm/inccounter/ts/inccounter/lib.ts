@@ -9,54 +9,54 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncCallIncrement,
-    	sc.FuncCallIncrementRecurse5x,
-    	sc.FuncEndlessLoop,
-    	sc.FuncIncrement,
-    	sc.FuncIncrementWithDelay,
-    	sc.FuncInit,
-    	sc.FuncLocalStateInternalCall,
-    	sc.FuncLocalStatePost,
-    	sc.FuncLocalStateSandboxCall,
-    	sc.FuncPostIncrement,
-    	sc.FuncRepeatMany,
-    	sc.FuncTestVliCodec,
-    	sc.FuncTestVluCodec,
-    	sc.FuncWhenMustIncrement,
-    	sc.ViewGetCounter,
-    	sc.ViewGetVli,
-    	sc.ViewGetVlu,
-    ],
-    funcs: [
-    	funcCallIncrementThunk,
-    	funcCallIncrementRecurse5xThunk,
-    	funcEndlessLoopThunk,
-    	funcIncrementThunk,
-    	funcIncrementWithDelayThunk,
-    	funcInitThunk,
-    	funcLocalStateInternalCallThunk,
-    	funcLocalStatePostThunk,
-    	funcLocalStateSandboxCallThunk,
-    	funcPostIncrementThunk,
-    	funcRepeatManyThunk,
-    	funcTestVliCodecThunk,
-    	funcTestVluCodecThunk,
-    	funcWhenMustIncrementThunk,
-    ],
-    views: [
-    	viewGetCounterThunk,
-    	viewGetVliThunk,
-    	viewGetVluThunk,
-    ],
+	names: [
+		sc.FuncCallIncrement,
+		sc.FuncCallIncrementRecurse5x,
+		sc.FuncEndlessLoop,
+		sc.FuncIncrement,
+		sc.FuncIncrementWithDelay,
+		sc.FuncInit,
+		sc.FuncLocalStateInternalCall,
+		sc.FuncLocalStatePost,
+		sc.FuncLocalStateSandboxCall,
+		sc.FuncPostIncrement,
+		sc.FuncRepeatMany,
+		sc.FuncTestVliCodec,
+		sc.FuncTestVluCodec,
+		sc.FuncWhenMustIncrement,
+		sc.ViewGetCounter,
+		sc.ViewGetVli,
+		sc.ViewGetVlu,
+	],
+	funcs: [
+		funcCallIncrementThunk,
+		funcCallIncrementRecurse5xThunk,
+		funcEndlessLoopThunk,
+		funcIncrementThunk,
+		funcIncrementWithDelayThunk,
+		funcInitThunk,
+		funcLocalStateInternalCallThunk,
+		funcLocalStatePostThunk,
+		funcLocalStateSandboxCallThunk,
+		funcPostIncrementThunk,
+		funcRepeatManyThunk,
+		funcTestVliCodecThunk,
+		funcTestVluCodecThunk,
+		funcWhenMustIncrementThunk,
+	],
+	views: [
+		viewGetCounterThunk,
+		viewGetVliThunk,
+		viewGetVluThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcCallIncrementThunk(ctx: wasmlib.ScFuncContext): void {
@@ -161,7 +161,7 @@ function funcWhenMustIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("inccounter.viewGetCounter");
 	let f = new sc.GetCounterContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetCounterResults(results.asProxy());
 	sc.viewGetCounter(ctx, f);
 	ctx.results(results);
@@ -171,7 +171,7 @@ function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetVliThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("inccounter.viewGetVli");
 	let f = new sc.GetVliContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetVliResults(results.asProxy());
 	ctx.require(f.params.ni64().exists(), "missing mandatory ni64");
 	sc.viewGetVli(ctx, f);
@@ -182,7 +182,7 @@ function viewGetVliThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetVluThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("inccounter.viewGetVlu");
 	let f = new sc.GetVluContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetVluResults(results.asProxy());
 	ctx.require(f.params.nu64().exists(), "missing mandatory nu64");
 	sc.viewGetVlu(ctx, f);

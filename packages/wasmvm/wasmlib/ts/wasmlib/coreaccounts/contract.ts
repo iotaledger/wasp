@@ -45,45 +45,45 @@ export class TotalAssetsCall {
 }
 
 export class ScFuncs {
-    static deposit(_ctx: wasmlib.ScFuncCallContext): DepositCall {
-        const f = new DepositCall();
+	static deposit(_ctx: wasmlib.ScFuncCallContext): DepositCall {
+		const f = new DepositCall();
 		f.params = new sc.MutableDepositParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static harvest(_ctx: wasmlib.ScFuncCallContext): HarvestCall {
-        const f = new HarvestCall();
+	static harvest(_ctx: wasmlib.ScFuncCallContext): HarvestCall {
+		const f = new HarvestCall();
 		f.params = new sc.MutableHarvestParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
-        return new WithdrawCall();
-    }
+	static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
+		return new WithdrawCall();
+	}
 
-    static accounts(_ctx: wasmlib.ScViewCallContext): AccountsCall {
-        const f = new AccountsCall();
+	static accounts(_ctx: wasmlib.ScViewCallContext): AccountsCall {
+		const f = new AccountsCall();
 		f.results = new sc.ImmutableAccountsResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static balance(_ctx: wasmlib.ScViewCallContext): BalanceCall {
-        const f = new BalanceCall();
+	static balance(_ctx: wasmlib.ScViewCallContext): BalanceCall {
+		const f = new BalanceCall();
 		f.params = new sc.MutableBalanceParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBalanceResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getAccountNonce(_ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
-        const f = new GetAccountNonceCall();
+	static getAccountNonce(_ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
+		const f = new GetAccountNonceCall();
 		f.params = new sc.MutableGetAccountNonceParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetAccountNonceResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static totalAssets(_ctx: wasmlib.ScViewCallContext): TotalAssetsCall {
-        const f = new TotalAssetsCall();
+	static totalAssets(_ctx: wasmlib.ScViewCallContext): TotalAssetsCall {
+		const f = new TotalAssetsCall();
 		f.results = new sc.ImmutableTotalAssetsResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

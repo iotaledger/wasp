@@ -10,9 +10,9 @@ import * as sc from "./index";
 
 export class MapAgentIDToImmutableUint64 extends wasmtypes.ScProxy {
 
-    getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableUint64 {
-        return new wasmtypes.ScImmutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableUint64 {
@@ -20,13 +20,13 @@ export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableUint64 {
 
 export class MapAgentIDToMutableUint64 extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScMutableUint64 {
-        return new wasmtypes.ScMutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MutableAllowancesForAgent extends MapAgentIDToMutableUint64 {

@@ -7,6 +7,10 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+pub const SC_ADDRESS_ED25519: u8 = 0;
+pub const SC_ADDRESS_NFT: u8 = 1;
+pub const SC_ADDRESS_ALIAS: u8 = 2;
+
 pub const SC_ADDRESS_LENGTH: usize = 33;
 
 #[derive(PartialEq, Clone)]
@@ -49,9 +53,8 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
     if buf.len() != SC_ADDRESS_LENGTH {
         panic("invalid Address length");
     }
-    // max ledgerstate.AliasAddressType
-    if buf[0] > 2 {
-        panic("invalid Address: address type > 2");
+    if buf[0] > SC_ADDRESS_ALIAS {
+        panic("invalid Address type");
     }
     ScAddress { id: buf.try_into().expect("WTF?") }
 }

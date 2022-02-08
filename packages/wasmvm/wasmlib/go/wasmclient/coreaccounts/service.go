@@ -10,13 +10,13 @@ package coreaccountsclient
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
-	ArgAgentID        = "a"
+	ArgAgentID = "a"
 	ArgWithdrawAmount = "m"
-	ArgWithdrawColor  = "c"
+	ArgWithdrawColor = "c"
 
 	ResAccountNonce = "n"
-	ResAgents       = "this"
-	ResBalances     = "this"
+	ResAgents = "this"
+	ResBalances = "this"
 )
 
 ///////////////////////////// deposit /////////////////////////////
@@ -79,10 +79,10 @@ type AccountsResults struct {
 }
 
 func (r *AccountsResults) Agents() map[wasmclient.AgentID][]byte {
-	res := make(map[wasmclient.AgentID][]byte)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToAgentID(key)] = r.res.ToBytes(val)
-	})
+    res := make(map[wasmclient.AgentID][]byte)
+    r.res.ForEach(func(key []byte, val []byte) {
+        res[r.res.ToAgentID(key)] = r.res.ToBytes(val)
+    })
 	return res
 }
 
@@ -108,10 +108,10 @@ type BalanceResults struct {
 }
 
 func (r *BalanceResults) Balances() map[wasmclient.Color]int64 {
-	res := make(map[wasmclient.Color]int64)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToColor(key)] = r.res.ToInt64(val)
-	})
+    res := make(map[wasmclient.Color]int64)
+    r.res.ForEach(func(key []byte, val []byte) {
+        res[r.res.ToColor(key)] = r.res.ToInt64(val)
+    })
 	return res
 }
 
@@ -156,10 +156,10 @@ type TotalAssetsResults struct {
 }
 
 func (r *TotalAssetsResults) Balances() map[wasmclient.Color]int64 {
-	res := make(map[wasmclient.Color]int64)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToColor(key)] = r.res.ToInt64(val)
-	})
+    res := make(map[wasmclient.Color]int64)
+    r.res.ForEach(func(key []byte, val []byte) {
+        res[r.res.ToColor(key)] = r.res.ToInt64(val)
+    })
 	return res
 }
 

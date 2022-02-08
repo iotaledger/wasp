@@ -1,5 +1,5 @@
-import { Buffer } from "../../buffer";
-import { SimpleBufferCursor } from "../utils/simple_buffer_cursor";
+import {Buffer} from "../../buffer";
+import {SimpleBufferCursor} from "../utils/simple_buffer_cursor";
 
 export interface OnLedgerArgument {
     key: string;

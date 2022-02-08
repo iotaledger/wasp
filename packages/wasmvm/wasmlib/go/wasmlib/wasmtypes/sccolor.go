@@ -5,7 +5,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScColorLength = 32
+const ScColorLength = 38
 
 type ScColor struct {
 	id [ScColorLength]byte

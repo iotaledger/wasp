@@ -9,13 +9,13 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableGetHelloWorldResults extends wasmtypes.ScProxy {
-    helloWorld(): wasmtypes.ScImmutableString {
+	helloWorld(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultHelloWorld));
 	}
 }
 
 export class MutableGetHelloWorldResults extends wasmtypes.ScProxy {
-    helloWorld(): wasmtypes.ScMutableString {
+	helloWorld(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultHelloWorld));
 	}
 }

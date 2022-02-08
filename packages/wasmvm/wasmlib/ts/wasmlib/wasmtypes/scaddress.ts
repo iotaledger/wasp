@@ -10,6 +10,10 @@ import {ScHname} from "./schname";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+export const ScAddressEd25519: u8 = 0;
+export const ScAddressNFT: u8 = 1;
+export const ScAddressAlias: u8 = 2;
+
 export const ScAddressLength = 33;
 
 export class ScAddress {
@@ -52,8 +56,7 @@ export function addressFromBytes(buf: u8[]): ScAddress {
     if (buf.length != ScAddressLength) {
         panic("invalid Address length");
     }
-    // max ledgerstate.AliasAddressType
-    if (buf[0] > 2) {
+    if (buf[0] > ScAddressAlias) {
         panic("invalid Address: address type > 2");
     }
     return addressFromBytesUnchecked(buf);

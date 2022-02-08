@@ -5,7 +5,6 @@ import {panic} from "../sandbox";
 import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
 import {Proxy} from "./proxy";
 import {bytesCompare} from "./scbytes";
-import {ScHashLength} from "./schash";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

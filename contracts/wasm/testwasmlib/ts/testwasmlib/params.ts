@@ -9,379 +9,379 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableArrayAppendParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
-    value(): wasmtypes.ScImmutableString {
+	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class MutableArrayAppendParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
-    value(): wasmtypes.ScMutableString {
+	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class ImmutableArrayClearParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableArrayClearParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class ImmutableArraySetParams extends wasmtypes.ScProxy {
-    index(): wasmtypes.ScImmutableUint32 {
+	index(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
-    value(): wasmtypes.ScImmutableString {
+	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class MutableArraySetParams extends wasmtypes.ScProxy {
-    index(): wasmtypes.ScMutableUint32 {
+	index(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
-    value(): wasmtypes.ScMutableString {
+	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class ImmutableMapClearParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableMapClearParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class ImmutableMapSetParams extends wasmtypes.ScProxy {
-    key(): wasmtypes.ScImmutableString {
+	key(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamKey));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
-    value(): wasmtypes.ScImmutableString {
+	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class MutableMapSetParams extends wasmtypes.ScProxy {
-    key(): wasmtypes.ScMutableString {
+	key(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamKey));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
-    value(): wasmtypes.ScMutableString {
+	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class MapStringToImmutableBytes extends wasmtypes.ScProxy {
 
-    getBytes(key: string): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.stringToBytes(key)));
-    }
+	getBytes(key: string): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
 }
 
 export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
-    address(): wasmtypes.ScImmutableAddress {
+	address(): wasmtypes.ScImmutableAddress {
 		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
 	}
 
-    agentID(): wasmtypes.ScImmutableAgentID {
+	agentID(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 
-    bool(): wasmtypes.ScImmutableBool {
+	bool(): wasmtypes.ScImmutableBool {
 		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamBool));
 	}
 
-    bytes(): wasmtypes.ScImmutableBytes {
+	bytes(): wasmtypes.ScImmutableBytes {
 		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamBytes));
 	}
 
-    chainID(): wasmtypes.ScImmutableChainID {
+	chainID(): wasmtypes.ScImmutableChainID {
 		return new wasmtypes.ScImmutableChainID(this.proxy.root(sc.ParamChainID));
 	}
 
-    color(): wasmtypes.ScImmutableColor {
+	color(): wasmtypes.ScImmutableColor {
 		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
 	}
 
-    hash(): wasmtypes.ScImmutableHash {
+	hash(): wasmtypes.ScImmutableHash {
 		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamHash));
 	}
 
-    hname(): wasmtypes.ScImmutableHname {
+	hname(): wasmtypes.ScImmutableHname {
 		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHname));
 	}
 
-    int16(): wasmtypes.ScImmutableInt16 {
+	int16(): wasmtypes.ScImmutableInt16 {
 		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ParamInt16));
 	}
 
-    int32(): wasmtypes.ScImmutableInt32 {
+	int32(): wasmtypes.ScImmutableInt32 {
 		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ParamInt32));
 	}
 
-    int64(): wasmtypes.ScImmutableInt64 {
+	int64(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamInt64));
 	}
 
-    int8(): wasmtypes.ScImmutableInt8 {
+	int8(): wasmtypes.ScImmutableInt8 {
 		return new wasmtypes.ScImmutableInt8(this.proxy.root(sc.ParamInt8));
 	}
 
-    param(): sc.MapStringToImmutableBytes {
+	param(): sc.MapStringToImmutableBytes {
 		return new sc.MapStringToImmutableBytes(this.proxy);
 	}
 
-    requestID(): wasmtypes.ScImmutableRequestID {
+	requestID(): wasmtypes.ScImmutableRequestID {
 		return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 
-    string(): wasmtypes.ScImmutableString {
+	string(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamString));
 	}
 
-    uint16(): wasmtypes.ScImmutableUint16 {
+	uint16(): wasmtypes.ScImmutableUint16 {
 		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ParamUint16));
 	}
 
-    uint32(): wasmtypes.ScImmutableUint32 {
+	uint32(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamUint32));
 	}
 
-    uint64(): wasmtypes.ScImmutableUint64 {
+	uint64(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamUint64));
 	}
 
-    uint8(): wasmtypes.ScImmutableUint8 {
+	uint8(): wasmtypes.ScImmutableUint8 {
 		return new wasmtypes.ScImmutableUint8(this.proxy.root(sc.ParamUint8));
 	}
 }
 
 export class MapStringToMutableBytes extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getBytes(key: string): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.stringToBytes(key)));
-    }
+	getBytes(key: string): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
 }
 
 export class MutableParamTypesParams extends wasmtypes.ScProxy {
-    address(): wasmtypes.ScMutableAddress {
+	address(): wasmtypes.ScMutableAddress {
 		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
 	}
 
-    agentID(): wasmtypes.ScMutableAgentID {
+	agentID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 
-    bool(): wasmtypes.ScMutableBool {
+	bool(): wasmtypes.ScMutableBool {
 		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamBool));
 	}
 
-    bytes(): wasmtypes.ScMutableBytes {
+	bytes(): wasmtypes.ScMutableBytes {
 		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamBytes));
 	}
 
-    chainID(): wasmtypes.ScMutableChainID {
+	chainID(): wasmtypes.ScMutableChainID {
 		return new wasmtypes.ScMutableChainID(this.proxy.root(sc.ParamChainID));
 	}
 
-    color(): wasmtypes.ScMutableColor {
+	color(): wasmtypes.ScMutableColor {
 		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 
-    hash(): wasmtypes.ScMutableHash {
+	hash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamHash));
 	}
 
-    hname(): wasmtypes.ScMutableHname {
+	hname(): wasmtypes.ScMutableHname {
 		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamHname));
 	}
 
-    int16(): wasmtypes.ScMutableInt16 {
+	int16(): wasmtypes.ScMutableInt16 {
 		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ParamInt16));
 	}
 
-    int32(): wasmtypes.ScMutableInt32 {
+	int32(): wasmtypes.ScMutableInt32 {
 		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ParamInt32));
 	}
 
-    int64(): wasmtypes.ScMutableInt64 {
+	int64(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamInt64));
 	}
 
-    int8(): wasmtypes.ScMutableInt8 {
+	int8(): wasmtypes.ScMutableInt8 {
 		return new wasmtypes.ScMutableInt8(this.proxy.root(sc.ParamInt8));
 	}
 
-    param(): sc.MapStringToMutableBytes {
+	param(): sc.MapStringToMutableBytes {
 		return new sc.MapStringToMutableBytes(this.proxy);
 	}
 
-    requestID(): wasmtypes.ScMutableRequestID {
+	requestID(): wasmtypes.ScMutableRequestID {
 		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 
-    string(): wasmtypes.ScMutableString {
+	string(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamString));
 	}
 
-    uint16(): wasmtypes.ScMutableUint16 {
+	uint16(): wasmtypes.ScMutableUint16 {
 		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ParamUint16));
 	}
 
-    uint32(): wasmtypes.ScMutableUint32 {
+	uint32(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamUint32));
 	}
 
-    uint64(): wasmtypes.ScMutableUint64 {
+	uint64(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamUint64));
 	}
 
-    uint8(): wasmtypes.ScMutableUint8 {
+	uint8(): wasmtypes.ScMutableUint8 {
 		return new wasmtypes.ScMutableUint8(this.proxy.root(sc.ParamUint8));
 	}
 }
 
 export class ImmutableTriggerEventParams extends wasmtypes.ScProxy {
-    address(): wasmtypes.ScImmutableAddress {
+	address(): wasmtypes.ScImmutableAddress {
 		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableTriggerEventParams extends wasmtypes.ScProxy {
-    address(): wasmtypes.ScMutableAddress {
+	address(): wasmtypes.ScMutableAddress {
 		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class ImmutableArrayLengthParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableArrayLengthParams extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class ImmutableArrayValueParams extends wasmtypes.ScProxy {
-    index(): wasmtypes.ScImmutableUint32 {
+	index(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableArrayValueParams extends wasmtypes.ScProxy {
-    index(): wasmtypes.ScMutableUint32 {
+	index(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class ImmutableBlockRecordParams extends wasmtypes.ScProxy {
-    blockIndex(): wasmtypes.ScImmutableUint32 {
+	blockIndex(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 
-    recordIndex(): wasmtypes.ScImmutableUint32 {
+	recordIndex(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamRecordIndex));
 	}
 }
 
 export class MutableBlockRecordParams extends wasmtypes.ScProxy {
-    blockIndex(): wasmtypes.ScMutableUint32 {
+	blockIndex(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 
-    recordIndex(): wasmtypes.ScMutableUint32 {
+	recordIndex(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamRecordIndex));
 	}
 }
 
 export class ImmutableBlockRecordsParams extends wasmtypes.ScProxy {
-    blockIndex(): wasmtypes.ScImmutableUint32 {
+	blockIndex(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
 export class MutableBlockRecordsParams extends wasmtypes.ScProxy {
-    blockIndex(): wasmtypes.ScMutableUint32 {
+	blockIndex(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
 export class ImmutableMapValueParams extends wasmtypes.ScProxy {
-    key(): wasmtypes.ScImmutableString {
+	key(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamKey));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableMapValueParams extends wasmtypes.ScProxy {
-    key(): wasmtypes.ScMutableString {
+	key(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamKey));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }

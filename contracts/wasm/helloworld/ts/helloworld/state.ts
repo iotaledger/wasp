@@ -12,7 +12,7 @@ export class ImmutableHelloWorldState extends wasmtypes.ScProxy {
 }
 
 export class MutableHelloWorldState extends wasmtypes.ScProxy {
-    asImmutable(): sc.ImmutableHelloWorldState {
+	asImmutable(): sc.ImmutableHelloWorldState {
 		return new sc.ImmutableHelloWorldState(this.proxy);
 	}
 }

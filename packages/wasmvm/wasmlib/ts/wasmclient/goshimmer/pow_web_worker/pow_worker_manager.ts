@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
-import type { Buffer } from '../../buffer';
+import {v4 as uuidv4} from 'uuid';
+import type {Buffer} from '../../buffer';
 import Worker from 'worker-loader!./pow.worker.ts';
 
 export interface PowWorkerRequest {
