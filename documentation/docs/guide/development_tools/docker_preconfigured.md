@@ -24,7 +24,7 @@ To diminish the time spent on configuration and research, we have created a dock
 
 Checkout the project, switch to 'develop' and start with docker-compose:
 
-```
+```shell
 git clone -b develop https://github.com/iotaledger/wasp.git
 cd tools/devnet
 docker-compose up
@@ -49,7 +49,7 @@ are available to the local machine.
 
 As all ports are locally available, this `wasp-cli.json` configuration is to be used:
 
-```
+```json
 {
   "goshimmer": {
     "api": "127.0.0.1:8080",
