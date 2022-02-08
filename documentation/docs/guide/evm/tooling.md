@@ -32,7 +32,7 @@ Re-using an existing Chain ID is not recommended and can be a security risk. For
 
 The Wasp CLI has some very basic functionalities to manage an EVM chain. Given the compatibility with existing tooling, only the basics are covered to get started with IOTA Smart Contracts and EVM. You can currently either run a JSON-RPC server, or deploy the EVM Chain itself on an IOTA Smart Contracts chain. To see the available options and configuration parameters simply run:
 
-```bash
+```shell
 wasp-cli chain evm
 ```
 

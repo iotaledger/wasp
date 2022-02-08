@@ -131,7 +131,7 @@ All state changes such as the `round started` ,`round ended`, `placed bets`, and
 
 #### Building the Contract
 
-```bash
+```shell
 cd contracts/wasm/fairroulette
 wasm-pack build 
 ```
@@ -264,12 +264,12 @@ This means that to get a proper value from a view call, you should use `readUInt
 #### Install Dependencies
 
 1. Go to your frontend directory ( contracts/wasm/fairroulette/frontend for example)
-    ```bash
+    ```shell
     cd  contracts/wasm/fairroulette/frontend
     ```
 2. Install dependencies running:
 
-    ```bash
+    ```shell
     npm install
     ```
    
@@ -277,7 +277,7 @@ This means that to get a proper value from a view call, you should use `readUInt
 
 The frontend requires that you create a config file. You can copy the template from `contracts/wasm/fairroulette/frontend/config.dev.sample.js`, and rename it to `config.dev.js` inside the same folder.
 
-```bash
+```shell
 cp config.dev.sample.js config.dev.js
 ```
 
@@ -285,7 +285,7 @@ Make sure to update the config values according to your setup.
 
 The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain).  You can get your chain id from your dashboard, or list all chains by running:
 
-```bash
+```shell
 wasp-cli chain list
 ```
 
@@ -297,7 +297,7 @@ wasp-cli chain list
 
 You can build the frontend by running the following commands:
 
-```bash
+```shell
 cd contracts/wasm/fairroulette/frontend
 npm run build_worker
 ```
@@ -313,7 +313,7 @@ You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#dep
 The deployment of a contract requires funds to be deposited to the **chain**. 
 You can do this by executing the following command from the directory where your Wasp node was configured: 
 
-```bash
+```shell
 wasp-cli chain deposit IOTA:10000
 ```
 
@@ -321,6 +321,6 @@ Make sure to [Build](#building-the-contract) the contract before deploying it.
 
 Now, you can deploy the contract with a wasmtime configuration.
 
-```bash
+```shell
 wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/wasm/fairroulette/pkg/fairroulette_bg.wasm
 ```
