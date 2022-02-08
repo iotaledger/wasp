@@ -5,20 +5,28 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//go:build wasm
 // +build wasm
 
 package main
 
-import "github.com/iotaledger/wasp/packages/vm/wasmvmhost"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost"
 
 import "github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
 
 func main() {
 }
 
+func init() {
+	wasmvmhost.ConnectWasmHost()
+}
+
+//export on_call
+func onCall(index int32) {
+	erc721.OnLoad(index)
+}
+
 //export on_load
 func onLoad() {
-	h := &wasmvmhost.WasmVMHost{}
-	h.ConnectWasmHost()
-	erc721.OnLoad()
+	erc721.OnLoad(-1)
 }

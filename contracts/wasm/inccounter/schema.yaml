@@ -12,7 +12,7 @@ funcs:
   increment: {}
   incrementWithDelay:
     params:
-      delay: Int32 // delay in seconds
+      delay: Uint32 // delay in seconds
   init:
     params:
       counter: Int64? // value to initialize state counter with
@@ -23,7 +23,8 @@ funcs:
   repeatMany:
     params:
       numRepeats: Int64? // number of times to recursively call myself
-  testLeb128: {}
+  testVliCodec: {}
+  testVluCodec: {}
   whenMustIncrement:
     params:
       dummy: Int64? // dummy param to prevent 'duplicate outputs not allowed'
@@ -31,3 +32,19 @@ views:
   getCounter:
     results:
       counter: Int64
+  getVli:
+    params:
+      ni64: Int64
+    results:
+      ni64: Int64
+      xi64: Int64
+      buf: Bytes
+      str: String
+  getVlu:
+    params:
+      nu64: Uint64
+    results:
+      nu64: Uint64
+      xu64: Uint64
+      buf: Bytes
+      str: String

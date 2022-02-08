@@ -7,12 +7,12 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "fairroulette"
 	ScDescription = ""
-	HScName       = wasmlib.ScHname(0xdf79d138)
+	HScName       = wasmtypes.ScHname(0xdf79d138)
 )
 
 const (
@@ -49,13 +49,13 @@ const (
 )
 
 const (
-	HFuncForcePayout       = wasmlib.ScHname(0x555a4c4f)
-	HFuncForceReset        = wasmlib.ScHname(0xa331951e)
-	HFuncPayWinners        = wasmlib.ScHname(0xfb2b0144)
-	HFuncPlaceBet          = wasmlib.ScHname(0xdfba7d1b)
-	HFuncPlayPeriod        = wasmlib.ScHname(0xcb94b293)
-	HViewLastWinningNumber = wasmlib.ScHname(0x2f5f09fe)
-	HViewRoundNumber       = wasmlib.ScHname(0x0dcfe520)
-	HViewRoundStartedAt    = wasmlib.ScHname(0x725de8b4)
-	HViewRoundStatus       = wasmlib.ScHname(0x145053b5)
+	HFuncForcePayout       = wasmtypes.ScHname(0x555a4c4f)
+	HFuncForceReset        = wasmtypes.ScHname(0xa331951e)
+	HFuncPayWinners        = wasmtypes.ScHname(0xfb2b0144)
+	HFuncPlaceBet          = wasmtypes.ScHname(0xdfba7d1b)
+	HFuncPlayPeriod        = wasmtypes.ScHname(0xcb94b293)
+	HViewLastWinningNumber = wasmtypes.ScHname(0x2f5f09fe)
+	HViewRoundNumber       = wasmtypes.ScHname(0x0dcfe520)
+	HViewRoundStartedAt    = wasmtypes.ScHname(0x725de8b4)
+	HViewRoundStatus       = wasmtypes.ScHname(0x145053b5)
 )

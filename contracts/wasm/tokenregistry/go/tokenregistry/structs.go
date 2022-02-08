@@ -7,74 +7,72 @@
 
 package tokenregistry
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Token struct {
-	Created     int64             // creation timestamp
-	Description string            // description what minted token represents
-	MintedBy    wasmlib.ScAgentID // original minter
-	Owner       wasmlib.ScAgentID // current owner
-	Supply      int64             // amount of tokens originally minted
-	Updated     int64             // last update timestamp
-	UserDefined string            // any user defined text
+	Created     uint64              // creation timestamp
+	Description string              // description what minted token represents
+	MintedBy    wasmtypes.ScAgentID // original minter
+	Owner       wasmtypes.ScAgentID // current owner
+	Supply      uint64              // amount of tokens originally minted
+	Updated     uint64              // last update timestamp
+	UserDefined string              // any user defined text
 }
 
-func NewTokenFromBytes(bytes []byte) *Token {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func NewTokenFromBytes(buf []byte) *Token {
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Token{}
-	data.Created = decode.Int64()
-	data.Description = decode.String()
-	data.MintedBy = decode.AgentID()
-	data.Owner = decode.AgentID()
-	data.Supply = decode.Int64()
-	data.Updated = decode.Int64()
-	data.UserDefined = decode.String()
-	decode.Close()
+	data.Created = wasmtypes.Uint64Decode(dec)
+	data.Description = wasmtypes.StringDecode(dec)
+	data.MintedBy = wasmtypes.AgentIDDecode(dec)
+	data.Owner = wasmtypes.AgentIDDecode(dec)
+	data.Supply = wasmtypes.Uint64Decode(dec)
+	data.Updated = wasmtypes.Uint64Decode(dec)
+	data.UserDefined = wasmtypes.StringDecode(dec)
+	dec.Close()
 	return data
 }
 
 func (o *Token) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Int64(o.Created).
-		String(o.Description).
-		AgentID(o.MintedBy).
-		AgentID(o.Owner).
-		Int64(o.Supply).
-		Int64(o.Updated).
-		String(o.UserDefined).
-		Data()
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint64Encode(enc, o.Created)
+	wasmtypes.StringEncode(enc, o.Description)
+	wasmtypes.AgentIDEncode(enc, o.MintedBy)
+	wasmtypes.AgentIDEncode(enc, o.Owner)
+	wasmtypes.Uint64Encode(enc, o.Supply)
+	wasmtypes.Uint64Encode(enc, o.Updated)
+	wasmtypes.StringEncode(enc, o.UserDefined)
+	return enc.Buf()
 }
 
 type ImmutableToken struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o ImmutableToken) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o ImmutableToken) Value() *Token {
-	return NewTokenFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewTokenFromBytes(o.proxy.Get())
 }
 
 type MutableToken struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o MutableToken) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 
 func (o MutableToken) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o MutableToken) SetValue(value *Token) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 
 func (o MutableToken) Value() *Token {
-	return NewTokenFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewTokenFromBytes(o.proxy.Get())
 }

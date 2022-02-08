@@ -36,7 +36,7 @@ import (
 	"testing"
 
 	"$module/go/$package"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,12 +48,10 @@ func TestDeploy(t *testing.T) {
 	// *******************************
 	"setupInitFunc": `
 $#set initFunc 
-$#set initMap 
 $#if init setInitFunc
 `,
 	// *******************************
 	"setInitFunc": `
 $#set initFunc Init
-$#set initMap , keyMap[:], idxMap[:]
 `,
 }

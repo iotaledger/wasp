@@ -13,11 +13,12 @@ func TestSpawn(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Spawn(ctx)
-		f.Params.ProgHash().SetValue(ctx.Convertor.ScHash(ctx.Hprog))
+		f.Params.ProgHash().SetValue(ctx.Convertor.ScHash(&ctx.Hprog))
 		f.Func.TransferIotas(1).Post()
 		require.NoError(t, ctx.Err)
 
-		ctxSpawn := ctx.SoloContextForCore(t, testcore.ScName+"_spawned", testcore.OnLoad)
+		spawnedName := testcore.ScName + "_spawned"
+		ctxSpawn := ctx.SoloContextForCore(t, spawnedName, testcore.OnLoad)
 		require.NoError(t, ctxSpawn.Err)
 		v := testcore.ScFuncs.GetCounter(ctxSpawn)
 		v.Func.Call()

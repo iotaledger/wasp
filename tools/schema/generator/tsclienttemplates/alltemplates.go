@@ -13,7 +13,6 @@ var Templates = []map[string]string{
 	config, // always first one
 	common,
 	eventsTs,
-	funcsTs,
 	indexTs,
 	serviceTs,
 }
@@ -103,7 +102,7 @@ import * as events from "./events"
 import * as service from "./service"
 `,
 	// *******************************
-	"importWasmLib": `
+	"importWasmClient": `
 import * as wasmclient from "wasmclient"
 `,
 }

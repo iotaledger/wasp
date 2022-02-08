@@ -7,20 +7,20 @@ use crate::*;
 use crate::contract::*;
 use crate::structs::*;
 
-const DURATION_DEFAULT: i32 = 60;
-const DURATION_MIN: i32 = 1;
-const DURATION_MAX: i32 = 120;
+const DURATION_DEFAULT: u32 = 60;
+const DURATION_MIN: u32 = 1;
+const DURATION_MAX: u32 = 120;
 const MAX_DESCRIPTION_LENGTH: usize = 150;
-const OWNER_MARGIN_DEFAULT: i64 = 50;
-const OWNER_MARGIN_MIN: i64 = 5;
-const OWNER_MARGIN_MAX: i64 = 100;
+const OWNER_MARGIN_DEFAULT: u64 = 50;
+const OWNER_MARGIN_MIN: u64 = 5;
+const OWNER_MARGIN_MAX: u64 = 100;
 
 pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
     let color = f.params.color().value();
     let current_auction = f.state.auctions().get_auction(&color);
     ctx.require(current_auction.exists(), "Missing auction info");
     let auction = current_auction.value();
-    if auction.highest_bid < 0 {
+    if auction.highest_bid == 0 {
         ctx.log(&("No one bid on ".to_string() + &color.to_string()));
         let mut owner_fee = auction.minimum_bid * auction.owner_margin / 1000;
         if owner_fee == 0 {
@@ -80,7 +80,7 @@ pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
         ctx.require(bid_amount >= auction.minimum_bid, "Insufficient bid amount");
         ctx.log(&("New bid from: ".to_string() + &caller.to_string()));
         let index = bidder_list.length();
-        bidder_list.get_agent_id(index).set_value(&caller);
+        bidder_list.append_agent_id().set_value(&caller);
         let bid = Bid {
             index: index,
             amount: bid_amount,
@@ -166,7 +166,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         deposit: deposit,
         description: description,
         duration: duration,
-        highest_bid: -1,
+        highest_bid: 0,
         highest_bidder: ScAgentID::from_bytes(&[0; 37]),
         minimum_bid: minimum_bid,
         num_tokens: num_tokens,
@@ -202,7 +202,7 @@ pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
     f.results.bidders().set_value(bidder_list.length());
 }
 
-fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, color: &ScColor, amount: i64) {
+fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, color: &ScColor, amount: u64) {
     if agent.is_address() {
         // send back to original Tangle address
         ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));

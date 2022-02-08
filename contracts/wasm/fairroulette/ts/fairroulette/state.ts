@@ -5,101 +5,91 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableBet {
-	objID: i32;
+export class ArrayOfImmutableBet extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	length(): u32 {
+		return this.proxy.length();
+	}
 
-    length(): i32 {
-        return wasmlib.getLength(this.objID);
-    }
-
-	getBet(index: i32): sc.ImmutableBet {
-		return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index));
+	getBet(index: u32): sc.ImmutableBet {
+		return new sc.ImmutableBet(this.proxy.index(index));
 	}
 }
 
-export class ImmutableFairRouletteState extends wasmlib.ScMapID {
-    bets(): sc.ArrayOfImmutableBet {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBets), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableBet(arrID);
+export class ImmutableFairRouletteState extends wasmtypes.ScProxy {
+	bets(): sc.ArrayOfImmutableBet {
+		return new sc.ArrayOfImmutableBet(this.proxy.root(sc.StateBets));
 	}
 
-    lastWinningNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateLastWinningNumber));
+	lastWinningNumber(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.StateLastWinningNumber));
 	}
 
-    playPeriod(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StatePlayPeriod));
+	playPeriod(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.StatePlayPeriod));
 	}
 
-    roundNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRoundNumber));
+	roundNumber(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.StateRoundNumber));
 	}
 
-    roundStartedAt(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStartedAt));
+	roundStartedAt(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.StateRoundStartedAt));
 	}
 
-    roundStatus(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStatus));
-	}
-}
-
-export class ArrayOfMutableBet {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    length(): i32 {
-        return wasmlib.getLength(this.objID);
-    }
-
-	getBet(index: i32): sc.MutableBet {
-		return new sc.MutableBet(this.objID, new wasmlib.Key32(index));
+	roundStatus(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.StateRoundStatus));
 	}
 }
 
-export class MutableFairRouletteState extends wasmlib.ScMapID {
-    asImmutable(): sc.ImmutableFairRouletteState {
-		const imm = new sc.ImmutableFairRouletteState();
-		imm.mapID = this.mapID;
-		return imm;
+export class ArrayOfMutableBet extends wasmtypes.ScProxy {
+
+	appendBet(): sc.MutableBet {
+		return new sc.MutableBet(this.proxy.append());
 	}
 
-    bets(): sc.ArrayOfMutableBet {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBets), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableBet(arrID);
+	clear(): void {
+		this.proxy.clearArray();
 	}
 
-    lastWinningNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateLastWinningNumber));
+	length(): u32 {
+		return this.proxy.length();
 	}
 
-    playPeriod(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StatePlayPeriod));
+	getBet(index: u32): sc.MutableBet {
+		return new sc.MutableBet(this.proxy.index(index));
+	}
+}
+
+export class MutableFairRouletteState extends wasmtypes.ScProxy {
+	asImmutable(): sc.ImmutableFairRouletteState {
+		return new sc.ImmutableFairRouletteState(this.proxy);
 	}
 
-    roundNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRoundNumber));
+	bets(): sc.ArrayOfMutableBet {
+		return new sc.ArrayOfMutableBet(this.proxy.root(sc.StateBets));
 	}
 
-    roundStartedAt(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStartedAt));
+	lastWinningNumber(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.StateLastWinningNumber));
 	}
 
-    roundStatus(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStatus));
+	playPeriod(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.StatePlayPeriod));
+	}
+
+	roundNumber(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.StateRoundNumber));
+	}
+
+	roundStartedAt(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.StateRoundStartedAt));
+	}
+
+	roundStatus(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.StateRoundStatus));
 	}
 }

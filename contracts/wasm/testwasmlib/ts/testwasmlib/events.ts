@@ -6,13 +6,14 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class TestWasmLibEvents {
 
-	test(address: wasmlib.ScAddress, name: string): void {
-		new wasmlib.EventEncoder("testwasmlib.test").
-		address(address).
-		string(name).
-		emit();
+	test(address: wasmtypes.ScAddress, name: string): void {
+		const evt = new wasmlib.EventEncoder("testwasmlib.test");
+		evt.encode(wasmtypes.addressToString(address));
+		evt.encode(wasmtypes.stringToString(name));
+		evt.emit();
 	}
 }

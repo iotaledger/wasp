@@ -2,16 +2,16 @@ name: DonateWithFeedback
 description: ""
 structs:
   Donation:
-    amount: Int64 // amount donated
+    amount: Uint64 // amount donated
     donator: AgentID // who donated
     error: String // error to be reported to donator if anything goes wrong
     feedback: String // the feedback for the person donated to
-    timestamp: Int64 // when the donation took place
+    timestamp: Uint64 // when the donation took place
 typedefs: {}
 state:
   log: Donation[]
-  maxDonation: Int64
-  totalDonation: Int64
+  maxDonation: Uint64
+  totalDonation: Uint64
 funcs:
   donate:
     params:
@@ -19,19 +19,19 @@ funcs:
   withdraw:
     access: creator // only SC creator can withdraw donated funds
     params:
-      amount: Int64? // amount to withdraw
+      amount: Uint64? // amount to withdraw
 views:
   donation:
     params:
-      nr: Int64
+      nr: Uint32
     results:
-      amount: Int64 // amount donated
+      amount: Uint64 // amount donated
       donator: AgentID // who donated
       error: String // error to be reported to donator if anything goes wrong
       feedback: String // the feedback for the person donated to
-      timestamp: Int64 // when the donation took place
+      timestamp: Uint64 // when the donation took place
   donationInfo:
     results:
-      count: Int64
-      maxDonation: Int64
-      totalDonation: Int64
+      count: Uint32
+      maxDonation: Uint64
+      totalDonation: Uint64

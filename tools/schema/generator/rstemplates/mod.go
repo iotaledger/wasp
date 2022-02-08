@@ -7,12 +7,28 @@ var modRs = map[string]string{
 
 pub use consts::*;
 pub use contract::*;
-pub use params::*;
-pub use results::*;
+$#set moduleName params
+$#if params pubUseModule
+$#set moduleName results
+$#if results pubUseModule
+$#set moduleName structs
+$#if structs pubUseModule
 
 pub mod consts;
 pub mod contract;
-pub mod params;
-pub mod results;
+$#set moduleName params
+$#if params pubModModule
+$#set moduleName results
+$#if results pubModModule
+$#set moduleName structs
+$#if structs pubModModule
+`,
+	// *******************************
+	"pubUseModule": `
+pub use $moduleName::*;
+`,
+	// *******************************
+	"pubModModule": `
+pub mod $moduleName;
 `,
 }

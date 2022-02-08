@@ -7,12 +7,12 @@
 
 package tokenregistry
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "tokenregistry"
 	ScDescription = ""
-	HScName       = wasmlib.ScHname(0xe1ba0c78)
+	HScName       = wasmtypes.ScHname(0xe1ba0c78)
 )
 
 const (
@@ -34,8 +34,8 @@ const (
 )
 
 const (
-	HFuncMintSupply        = wasmlib.ScHname(0x564349a7)
-	HFuncTransferOwnership = wasmlib.ScHname(0xbb9eb5af)
-	HFuncUpdateMetadata    = wasmlib.ScHname(0xa26b23b6)
-	HViewGetInfo           = wasmlib.ScHname(0xcfedba5f)
+	HFuncMintSupply        = wasmtypes.ScHname(0x564349a7)
+	HFuncTransferOwnership = wasmtypes.ScHname(0xbb9eb5af)
+	HFuncUpdateMetadata    = wasmtypes.ScHname(0xa26b23b6)
+	HViewGetInfo           = wasmtypes.ScHname(0xcfedba5f)
 )

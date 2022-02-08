@@ -16,16 +16,16 @@ use crate::structs::*;
 // Define some default configuration parameters.
 
 // The maximum number one can bet on. The range of numbers starts at 1.
-const MAX_NUMBER: i64 = 8;
+const MAX_NUMBER: u16 = 8;
 
 // The default playing period of one betting round in seconds.
-const DEFAULT_PLAY_PERIOD: i32 = 60;
+const DEFAULT_PLAY_PERIOD: u32 = 60;
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const ENABLE_SELF_POST: bool = true;
 
 // The number to divide nano seconds to seconds.
-const NANO_TIME_DIVIDER: i64 = 1_000_000_000;
+const NANO_TIME_DIVIDER: u64 = 1_000_000_000;
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
@@ -39,7 +39,8 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // Get the array of current bets from state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
 
-    for i in 0..bets.length() {
+    let nr_of_bets = bets.length();
+    for i in 0..nr_of_bets {
         let bet: Bet = bets.get_bet(i).value();
 
         if bet.better.address() == ctx.caller().address() {
@@ -48,8 +49,8 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     }
 
     // Since we are sure that the 'number' parameter actually exists we can
-    // retrieve its actual value into an i64.
-    let number: i64 = f.params.number().value();
+    // retrieve its actual value into an u16.
+    let number: u16 = f.params.number().value();
 
     // Require that the number is a valid number to bet on, otherwise panic out.
     ctx.require(number >= 1 && number <= MAX_NUMBER, "invalid number");
@@ -60,7 +61,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     let incoming: ScBalances = ctx.incoming();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: i64 = incoming.balance(&ScColor::IOTA);
+    let amount: u64 = incoming.balance(&ScColor::IOTA);
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");
@@ -74,20 +75,17 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
         number: number,
     };
 
-    // Determine what the next bet number is by retrieving the length of the bets array.
-    let bet_nr: i32 = bets.length();
-
     // Append the bet data to the bets array. The bet array will automatically take care
     // of serializing the bet struct into a bytes representation.
-    bets.get_bet(bet_nr).set_value(&bet);
+    bets.append_bet().set_value(&bet);
 
     f.events.bet(&bet.better.address(), bet.amount, bet.number);
 
     // Was this the first bet of this round?
-    if bet_nr == 0 {
+    if nr_of_bets == 0 {
         // Yes it was, query the state for the length of the playing period in seconds by
         // retrieving the playPeriod value from state storage
-        let mut play_period: i32 = f.state.play_period().value();
+        let mut play_period: u32 = f.state.play_period().value();
 
         // if the play period is less than 10 seconds we override it with the default duration.
         // Note that this will also happen when the play period was not set yet because in that
@@ -101,7 +99,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
             f.state.round_status().set_value(1);
 
             // timestamp is nanotime, divide by NANO_TIME_DIVIDER to get seconds => common unix timestamp
-            let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as i32;
+            let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as u32;
             f.state.round_started_at().set_value(timestamp);
 
             f.events.start();
@@ -133,7 +131,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
     // Here we determine the winning number for this round in the range of 1 thru MAX_NUMBER.
-    let winning_number: i64 = ctx.random(MAX_NUMBER - 1) + 1;
+    let winning_number: u16 = (ctx.random(MAX_NUMBER as u64 - 1) + 1) as u16;
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there
     // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -146,18 +144,18 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // Keep track of the total bet amount, the total win amount, and all the winners.
     // Note how we decided to keep the winners in a local vector instead of creating
     // yet another array in state storage or having to go through lockedBets again.
-    let mut total_bet_amount: i64 = 0_i64;
-    let mut total_win_amount: i64 = 0_i64;
+    let mut total_bet_amount: u64 = 0_u64;
+    let mut total_win_amount: u64 = 0_u64;
     let mut winners: Vec<Bet> = Vec::new();
 
     // Get the 'bets' array in state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
 
     // Determine the amount of bets in the 'bets' array.
-    let nr_bets: i32 = bets.length();
+    let nr_of_bets: u32 = bets.length();
 
     // Loop through all indexes of the 'bets' array.
-    for i in 0..nr_bets {
+    for i in 0..nr_of_bets {
         // Retrieve the bet stored at the next index
         let bet: Bet = bets.get_bet(i).value();
 
@@ -190,7 +188,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // a small percentage that would go to the owner of the smart contract as hosting payment.
 
     // Keep track of the total payout so we can calculate the remainder after truncation.
-    let mut total_payout: i64 = 0_i64;
+    let mut total_payout: u64 = 0_u64;
 
     // Loop through all winners.
     let size: usize = winners.len();
@@ -199,7 +197,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         let bet: &Bet = &winners[i];
 
         // Determine the proportional win amount (we could take our percentage here)
-        let payout: i64 = total_bet_amount * bet.amount / total_win_amount;
+        let payout: u64 = total_bet_amount * bet.amount / total_win_amount;
 
         // Anything to pay to the winner?
         if payout != 0 {
@@ -226,7 +224,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
     // The bank always wins :-P
-    let remainder: i64 = total_bet_amount - total_payout;
+    let remainder: u64 = total_bet_amount - total_payout;
     if remainder != 0 {
         // We have a remainder. First create a transfer for the remainder.
         let transfers: ScTransfers = ScTransfers::iotas(remainder);
@@ -258,7 +256,7 @@ pub fn func_force_reset(_ctx: &ScFuncContext, f: &ForceResetContext) {
 pub fn func_play_period(ctx: &ScFuncContext, f: &PlayPeriodContext) {
     // Since we are sure that the 'playPeriod' parameter actually exists we can
     // retrieve its actual value into an i32 value.
-    let play_period: i32 = f.params.play_period().value();
+    let play_period: u32 = f.params.play_period().value();
 
     // Require that the play period (in seconds) is not ridiculously low.
     // Otherwise, panic out with an error message.

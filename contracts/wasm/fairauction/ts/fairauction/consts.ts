@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "fairauction";
 export const ScDescription = "Decentralized auction to securely sell tokens to the highest bidder";
-export const HScName       = new wasmlib.ScHname(0x1b5c43b1);
+export const HScName       = new wasmtypes.ScHname(0x1b5c43b1);
 
 export const ParamColor       = "color";
 export const ParamDescription = "description";
@@ -41,8 +41,8 @@ export const FuncSetOwnerMargin  = "setOwnerMargin";
 export const FuncStartAuction    = "startAuction";
 export const ViewGetInfo         = "getInfo";
 
-export const HFuncFinalizeAuction = new wasmlib.ScHname(0x8d534ddc);
-export const HFuncPlaceBid        = new wasmlib.ScHname(0x9bd72fa9);
-export const HFuncSetOwnerMargin  = new wasmlib.ScHname(0x1774461a);
-export const HFuncStartAuction    = new wasmlib.ScHname(0xd5b7bacb);
-export const HViewGetInfo         = new wasmlib.ScHname(0xcfedba5f);
+export const HFuncFinalizeAuction = new wasmtypes.ScHname(0x8d534ddc);
+export const HFuncPlaceBid        = new wasmtypes.ScHname(0x9bd72fa9);
+export const HFuncSetOwnerMargin  = new wasmtypes.ScHname(0x1774461a);
+export const HFuncStartAuction    = new wasmtypes.ScHname(0xd5b7bacb);
+export const HViewGetInfo         = new wasmtypes.ScHname(0xcfedba5f);

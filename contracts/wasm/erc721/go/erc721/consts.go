@@ -7,12 +7,12 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "erc721"
 	ScDescription = "ERC-721 NFT PoC for IOTA Smart Contracts"
-	HScName       = wasmlib.ScHname(0xd967c216)
+	HScName       = wasmtypes.ScHname(0xd967c216)
 )
 
 const (
@@ -67,18 +67,18 @@ const (
 )
 
 const (
-	HFuncApprove           = wasmlib.ScHname(0xa0661268)
-	HFuncBurn              = wasmlib.ScHname(0x7bc1efb1)
-	HFuncInit              = wasmlib.ScHname(0x1f44d644)
-	HFuncMint              = wasmlib.ScHname(0xa29addcf)
-	HFuncSafeTransferFrom  = wasmlib.ScHname(0x130ce158)
-	HFuncSetApprovalForAll = wasmlib.ScHname(0xb8d8c776)
-	HFuncTransferFrom      = wasmlib.ScHname(0xd5e0a602)
-	HViewBalanceOf         = wasmlib.ScHname(0x67ef8df4)
-	HViewGetApproved       = wasmlib.ScHname(0xbe34b6ba)
-	HViewIsApprovedForAll  = wasmlib.ScHname(0x3251b0f0)
-	HViewName              = wasmlib.ScHname(0x0df7da3a)
-	HViewOwnerOf           = wasmlib.ScHname(0x1246f5ad)
-	HViewSymbol            = wasmlib.ScHname(0x3e93d19b)
-	HViewTokenURI          = wasmlib.ScHname(0x4e1a7397)
+	HFuncApprove           = wasmtypes.ScHname(0xa0661268)
+	HFuncBurn              = wasmtypes.ScHname(0x7bc1efb1)
+	HFuncInit              = wasmtypes.ScHname(0x1f44d644)
+	HFuncMint              = wasmtypes.ScHname(0xa29addcf)
+	HFuncSafeTransferFrom  = wasmtypes.ScHname(0x130ce158)
+	HFuncSetApprovalForAll = wasmtypes.ScHname(0xb8d8c776)
+	HFuncTransferFrom      = wasmtypes.ScHname(0xd5e0a602)
+	HViewBalanceOf         = wasmtypes.ScHname(0x67ef8df4)
+	HViewGetApproved       = wasmtypes.ScHname(0xbe34b6ba)
+	HViewIsApprovedForAll  = wasmtypes.ScHname(0x3251b0f0)
+	HViewName              = wasmtypes.ScHname(0x0df7da3a)
+	HViewOwnerOf           = wasmtypes.ScHname(0x1246f5ad)
+	HViewSymbol            = wasmtypes.ScHname(0x3e93d19b)
+	HViewTokenURI          = wasmtypes.ScHname(0x4e1a7397)
 )

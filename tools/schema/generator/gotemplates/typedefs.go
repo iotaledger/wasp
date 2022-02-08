@@ -3,7 +3,9 @@ package gotemplates
 var typedefsGo = map[string]string{
 	// *******************************
 	"typedefs.go": `
-$#emit goHeader
+$#emit goPackage
+
+$#emit importWasmTypes
 $#each typedef typedefProxy
 `,
 	// *******************************
@@ -33,97 +35,86 @@ $#if exist else typedefProxyArrayNew
 	"typedefProxyArrayNew": `
 
 type $proxy struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
-$#if mut typedefProxyArrayClear
+$#if mut typedefProxyArrayMut
 
-func (a $proxy) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a $proxy) Length() uint32 {
+	return a.proxy.Length()
 }
 $#if basetype typedefProxyArrayNewBaseType typedefProxyArrayNewOtherType
 $#set exist $proxy
 `,
 	// *******************************
-	"typedefProxyArrayClear": `
+	"typedefProxyArrayMut": `
+$#if basetype typedefProxyArrayAppendBaseType typedefProxyArrayAppendOtherType
 
 func (a $proxy) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
+}
+`,
+	// *******************************
+	"typedefProxyArrayAppendBaseType": `
+
+func (a $proxy) Append$FldType() wasmtypes.Sc$mut$FldType {
+	return wasmtypes.NewSc$mut$FldType(a.proxy.Append())
+}
+`,
+	// *******************************
+	"typedefProxyArrayAppendOtherType": `
+
+func (a $proxy) Append$FldType() $mut$FldType {
+	return $mut$FldType{proxy: a.proxy.Append()}
 }
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
 
-func (a $proxy) Get$FldType(index int32) wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(a.objID, wasmlib.Key32(index))
+func (a $proxy) Get$FldType(index uint32) wasmtypes.Sc$mut$FldType {
+	return wasmtypes.NewSc$mut$FldType(a.proxy.Index(index))
 }
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
-`,
-	// *******************************
-	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#emit setVarType
 
-func (a $proxy) Get$OldType(index int32) $mut$OldType {
-	subID := wasmlib.GetObjectID(a.objID, wasmlib.Key32(index), $varType)
-	return $mut$OldType{objID: subID}
-}
-`,
-	// *******************************
-	"typedefProxyArrayNewOtherTypeStruct": `
-
-func (a $proxy) Get$FldType(index int32) $mut$FldType {
-	return $mut$FldType{objID: a.objID, keyID: wasmlib.Key32(index)}
+func (a $proxy) Get$FldType(index uint32) $mut$FldType {
+	return $mut$FldType{proxy: a.proxy.Index(index)}
 }
 `,
 	// *******************************
 	"typedefProxyMap": `
-$#set proxy Map$fldMapKey$+To$mut$FldType
+$#set proxy Map$FldMapKey$+To$mut$FldType
 $#if exist else typedefProxyMapNew
 `,
 	// *******************************
 	"typedefProxyMapNew": `
 
 type $proxy struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
-$#if mut typedefProxyMapClear
+$#if mut typedefProxyMapMut
 $#if basetype typedefProxyMapNewBaseType typedefProxyMapNewOtherType
 $#set exist $proxy
 `,
 	// *******************************
-	"typedefProxyMapClear": `
+	"typedefProxyMapMut": `
 
 func (m $proxy) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
 
-func (m $proxy) Get$FldType(key $fldKeyLangType) wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(m.objID, $fldKeyToKey32)
+func (m $proxy) Get$FldType(key $fldKeyLangType) wasmtypes.Sc$mut$FldType {
+	return wasmtypes.NewSc$mut$FldType(m.proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key)))
 }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
-`,
-	// *******************************
-	"typedefProxyMapNewOtherTypeTypeDef": `
-$#emit setVarType
-
-func (m $proxy) Get$OldType(key $oldKeyLangType) $mut$OldType {
-	subID := wasmlib.GetObjectID(m.objID, $oldKeyToKey32, $varType)
-	return $mut$OldType{objID: subID}
-}
-`,
-	// *******************************
-	"typedefProxyMapNewOtherTypeStruct": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) $mut$FldType {
-	return $mut$FldType{objID: m.objID, keyID: $fldKeyToKey32}
+	return $mut$FldType{proxy: m.proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key))}
 }
 `,
 }

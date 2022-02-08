@@ -5,17 +5,17 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableGetHelloWorldResults extends wasmlib.ScMapID {
-    helloWorld(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultHelloWorld));
+export class ImmutableGetHelloWorldResults extends wasmtypes.ScProxy {
+	helloWorld(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultHelloWorld));
 	}
 }
 
-export class MutableGetHelloWorldResults extends wasmlib.ScMapID {
-    helloWorld(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultHelloWorld));
+export class MutableGetHelloWorldResults extends wasmtypes.ScProxy {
+	helloWorld(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultHelloWorld));
 	}
 }

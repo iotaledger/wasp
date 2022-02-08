@@ -4,19 +4,19 @@ structs:
   Auction:
     color: Color // color of tokens for sale
     creator: AgentID // issuer of start_auction transaction
-    deposit: Int64 // deposit by auction owner to cover the SC fees
+    deposit: Uint64 // deposit by auction owner to cover the SC fees
     description: String // auction description
-    duration: Int32 // auction duration in minutes
-    highestBid: Int64 // the current highest bid amount
+    duration: Uint32 // auction duration in minutes
+    highestBid: Uint64 // the current highest bid amount
     highestBidder: AgentID // the current highest bidder
-    minimumBid: Int64 // minimum bid amount
-    numTokens: Int64 // number of tokens for sale
-    ownerMargin: Int64 // auction owner's margin in promilles
-    whenStarted: Int64 // timestamp when auction started
+    minimumBid: Uint64 // minimum bid amount
+    numTokens: Uint64 // number of tokens for sale
+    ownerMargin: Uint64 // auction owner's margin in promilles
+    whenStarted: Uint64 // timestamp when auction started
   Bid:
-    amount: Int64 // cumulative amount of bids from same bidder
-    index: Int32 // index of bidder in bidder list
-    timestamp: Int64 // timestamp of most recent bid
+    amount: Uint64 // cumulative amount of bids from same bidder
+    index: Uint32 // index of bidder in bidder list
+    timestamp: Uint64 // timestamp of most recent bid
 typedefs:
   BidderList: AgentID[]
   Bids: map[AgentID]Bid
@@ -24,7 +24,7 @@ state:
   auctions: map[Color]Auction
   bidderList: map[Color]BidderList
   bids: map[Color]Bids
-  ownerMargin: Int64 // default auction owner's margin in promilles
+  ownerMargin: Uint64 // default auction owner's margin in promilles
 funcs:
   finalizeAuction:
     access: self // only SC itself can invoke this function
@@ -36,27 +36,27 @@ funcs:
   setOwnerMargin:
     access: creator // only SC creator can set owner margin
     params:
-      ownerMargin: Int64 // new SC owner margin in promilles
+      ownerMargin: Uint64 // new SC owner margin in promilles
   startAuction:
     params:
       color: Color // color of the tokens being auctioned
       description: String? // description of the tokens being auctioned
-      duration: Int32? // duration of auction in minutes
-      minimumBid: Int64 // minimum required amount for any bid
+      duration: Uint32? // duration of auction in minutes
+      minimumBid: Uint64 // minimum required amount for any bid
 views:
   getInfo:
     params:
       color: Color // color identifies the auction
     results:
-      bidders: Int32 // nr of bidders
+      bidders: Uint32 // nr of bidders
       color: Color // color of tokens for sale
       creator: AgentID // issuer of start_auction transaction
-      deposit: Int64 // deposit by auction owner to cover the SC fees
+      deposit: Uint64 // deposit by auction owner to cover the SC fees
       description: String // auction description
-      duration: Int32 // auction duration in minutes
-      highestBid: Int64 // the current highest bid amount
+      duration: Uint32 // auction duration in minutes
+      highestBid: Uint64 // the current highest bid amount
       highestBidder: AgentID // the current highest bidder
-      minimumBid: Int64 // minimum bid amount
-      numTokens: Int64 // number of tokens for sale
-      ownerMargin: Int64 // auction owner's margin in promilles
-      whenStarted: Int64 // timestamp when auction started
+      minimumBid: Uint64 // minimum bid amount
+      numTokens: Uint64 // number of tokens for sale
+      ownerMargin: Uint64 // auction owner's margin in promilles
+      whenStarted: Uint64 // timestamp when auction started
