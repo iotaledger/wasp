@@ -15,6 +15,11 @@ export class ScChainID {
     id: u8[] = zeroes(ScChainIDLength);
 
     public address(): ScAddress {
+        const address = new ScAddress();
+        address.id[0] = ScAddressAlias;
+        for (let i = 0; i < ScChainIDLength; i++) {
+            address.id[i + 1] = this.id[i];
+        }
         return addressFromBytes(this.id);
     }
 
@@ -45,15 +50,10 @@ export function chainIDEncode(enc: WasmEncoder, value: ScChainID): void {
 
 export function chainIDFromBytes(buf: u8[]): ScChainID {
     if (buf.length == 0) {
-        const chainID =  new ScChainID();
-        chainID.id[0] = ScAddressAlias;
-        return chainID;
+        return new ScChainID();
     }
     if (buf.length != ScChainIDLength) {
         panic("invalid ChainID length");
-    }
-    if (buf[0] != ScAddressAlias) {
-        panic("invalid ChainID: not an alias address");
     }
     return chainIDFromBytesUnchecked(buf);
 }

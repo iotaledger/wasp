@@ -5,47 +5,46 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:dupl
 package erc20
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-    	FuncApprove,
-    	FuncInit,
-    	FuncTransfer,
-    	FuncTransferFrom,
-    	ViewAllowance,
-    	ViewBalanceOf,
-    	ViewTotalSupply,
+		FuncApprove,
+		FuncInit,
+		FuncTransfer,
+		FuncTransferFrom,
+		ViewAllowance,
+		ViewBalanceOf,
+		ViewTotalSupply,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-    	funcApproveThunk,
-    	funcInitThunk,
-    	funcTransferThunk,
-    	funcTransferFromThunk,
+		funcApproveThunk,
+		funcInitThunk,
+		funcTransferThunk,
+		funcTransferFromThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-    	viewAllowanceThunk,
-    	viewBalanceOfThunk,
-    	viewTotalSupplyThunk,
+		viewAllowanceThunk,
+		viewBalanceOfThunk,
+		viewTotalSupplyThunk,
 	},
 }
 
 func OnLoad(index int32) {
 	if index >= 0 {
 		wasmlib.ScExportsCall(index, &exportMap)
-		return;
+		return
 	}
 
 	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ApproveContext struct {
-	Events  Erc20Events
-	Params  ImmutableApproveParams
-	State   MutableErc20State
+	Events Erc20Events
+	Params ImmutableApproveParams
+	State  MutableErc20State
 }
 
 func funcApproveThunk(ctx wasmlib.ScFuncContext) {
@@ -65,9 +64,9 @@ func funcApproveThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type InitContext struct {
-	Events  Erc20Events
-	Params  ImmutableInitParams
-	State   MutableErc20State
+	Events Erc20Events
+	Params ImmutableInitParams
+	State  MutableErc20State
 }
 
 func funcInitThunk(ctx wasmlib.ScFuncContext) {
@@ -87,9 +86,9 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TransferContext struct {
-	Events  Erc20Events
-	Params  ImmutableTransferParams
-	State   MutableErc20State
+	Events Erc20Events
+	Params ImmutableTransferParams
+	State  MutableErc20State
 }
 
 func funcTransferThunk(ctx wasmlib.ScFuncContext) {
@@ -109,9 +108,9 @@ func funcTransferThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TransferFromContext struct {
-	Events  Erc20Events
-	Params  ImmutableTransferFromParams
-	State   MutableErc20State
+	Events Erc20Events
+	Params ImmutableTransferFromParams
+	State  MutableErc20State
 }
 
 func funcTransferFromThunk(ctx wasmlib.ScFuncContext) {

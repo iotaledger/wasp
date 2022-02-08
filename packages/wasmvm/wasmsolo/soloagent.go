@@ -47,7 +47,7 @@ func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
 	}
 }
 
-func (a *SoloAgent) Mint(amount int64) (wasmtypes.ScColor, error) {
-	token, err := a.Env.MintTokens(a.Pair, uint64(amount))
+func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScColor, error) {
+	token, err := a.Env.MintTokens(a.Pair, amount)
 	return wasmhost.WasmConvertor{}.ScColor(&token), err
 }

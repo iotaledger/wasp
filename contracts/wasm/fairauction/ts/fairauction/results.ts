@@ -9,101 +9,101 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
-    bidders(): wasmtypes.ScImmutableUint32 {
+	bidders(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBidders));
 	}
 
-    color(): wasmtypes.ScImmutableColor {
+	color(): wasmtypes.ScImmutableColor {
 		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultColor));
 	}
 
-    creator(): wasmtypes.ScImmutableAgentID {
+	creator(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultCreator));
 	}
 
-    deposit(): wasmtypes.ScImmutableUint64 {
+	deposit(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultDeposit));
 	}
 
-    description(): wasmtypes.ScImmutableString {
+	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-    duration(): wasmtypes.ScImmutableUint32 {
+	duration(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultDuration));
 	}
 
-    highestBid(): wasmtypes.ScImmutableUint64 {
+	highestBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultHighestBid));
 	}
 
-    highestBidder(): wasmtypes.ScImmutableAgentID {
+	highestBidder(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultHighestBidder));
 	}
 
-    minimumBid(): wasmtypes.ScImmutableUint64 {
+	minimumBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMinimumBid));
 	}
 
-    numTokens(): wasmtypes.ScImmutableUint64 {
+	numTokens(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultNumTokens));
 	}
 
-    ownerMargin(): wasmtypes.ScImmutableUint64 {
+	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultOwnerMargin));
 	}
 
-    whenStarted(): wasmtypes.ScImmutableUint64 {
+	whenStarted(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultWhenStarted));
 	}
 }
 
 export class MutableGetInfoResults extends wasmtypes.ScProxy {
-    bidders(): wasmtypes.ScMutableUint32 {
+	bidders(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBidders));
 	}
 
-    color(): wasmtypes.ScMutableColor {
+	color(): wasmtypes.ScMutableColor {
 		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultColor));
 	}
 
-    creator(): wasmtypes.ScMutableAgentID {
+	creator(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultCreator));
 	}
 
-    deposit(): wasmtypes.ScMutableUint64 {
+	deposit(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultDeposit));
 	}
 
-    description(): wasmtypes.ScMutableString {
+	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-    duration(): wasmtypes.ScMutableUint32 {
+	duration(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultDuration));
 	}
 
-    highestBid(): wasmtypes.ScMutableUint64 {
+	highestBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultHighestBid));
 	}
 
-    highestBidder(): wasmtypes.ScMutableAgentID {
+	highestBidder(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultHighestBidder));
 	}
 
-    minimumBid(): wasmtypes.ScMutableUint64 {
+	minimumBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMinimumBid));
 	}
 
-    numTokens(): wasmtypes.ScMutableUint64 {
+	numTokens(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultNumTokens));
 	}
 
-    ownerMargin(): wasmtypes.ScMutableUint64 {
+	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultOwnerMargin));
 	}
 
-    whenStarted(): wasmtypes.ScMutableUint64 {
+	whenStarted(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultWhenStarted));
 	}
 }

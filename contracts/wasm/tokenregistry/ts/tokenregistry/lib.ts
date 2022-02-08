@@ -9,28 +9,28 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncMintSupply,
-    	sc.FuncTransferOwnership,
-    	sc.FuncUpdateMetadata,
-    	sc.ViewGetInfo,
-    ],
-    funcs: [
-    	funcMintSupplyThunk,
-    	funcTransferOwnershipThunk,
-    	funcUpdateMetadataThunk,
-    ],
-    views: [
-    	viewGetInfoThunk,
-    ],
+	names: [
+		sc.FuncMintSupply,
+		sc.FuncTransferOwnership,
+		sc.FuncUpdateMetadata,
+		sc.ViewGetInfo,
+	],
+	funcs: [
+		funcMintSupplyThunk,
+		funcTransferOwnershipThunk,
+		funcUpdateMetadataThunk,
+	],
+	views: [
+		viewGetInfoThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcMintSupplyThunk(ctx: wasmlib.ScFuncContext): void {

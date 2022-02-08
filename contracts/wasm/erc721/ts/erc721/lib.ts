@@ -9,48 +9,48 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncApprove,
-    	sc.FuncBurn,
-    	sc.FuncInit,
-    	sc.FuncMint,
-    	sc.FuncSafeTransferFrom,
-    	sc.FuncSetApprovalForAll,
-    	sc.FuncTransferFrom,
-    	sc.ViewBalanceOf,
-    	sc.ViewGetApproved,
-    	sc.ViewIsApprovedForAll,
-    	sc.ViewName,
-    	sc.ViewOwnerOf,
-    	sc.ViewSymbol,
-    	sc.ViewTokenURI,
-    ],
-    funcs: [
-    	funcApproveThunk,
-    	funcBurnThunk,
-    	funcInitThunk,
-    	funcMintThunk,
-    	funcSafeTransferFromThunk,
-    	funcSetApprovalForAllThunk,
-    	funcTransferFromThunk,
-    ],
-    views: [
-    	viewBalanceOfThunk,
-    	viewGetApprovedThunk,
-    	viewIsApprovedForAllThunk,
-    	viewNameThunk,
-    	viewOwnerOfThunk,
-    	viewSymbolThunk,
-    	viewTokenURIThunk,
-    ],
+	names: [
+		sc.FuncApprove,
+		sc.FuncBurn,
+		sc.FuncInit,
+		sc.FuncMint,
+		sc.FuncSafeTransferFrom,
+		sc.FuncSetApprovalForAll,
+		sc.FuncTransferFrom,
+		sc.ViewBalanceOf,
+		sc.ViewGetApproved,
+		sc.ViewIsApprovedForAll,
+		sc.ViewName,
+		sc.ViewOwnerOf,
+		sc.ViewSymbol,
+		sc.ViewTokenURI,
+	],
+	funcs: [
+		funcApproveThunk,
+		funcBurnThunk,
+		funcInitThunk,
+		funcMintThunk,
+		funcSafeTransferFromThunk,
+		funcSetApprovalForAllThunk,
+		funcTransferFromThunk,
+	],
+	views: [
+		viewBalanceOfThunk,
+		viewGetApprovedThunk,
+		viewIsApprovedForAllThunk,
+		viewNameThunk,
+		viewOwnerOfThunk,
+		viewSymbolThunk,
+		viewTokenURIThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcApproveThunk(ctx: wasmlib.ScFuncContext): void {
@@ -118,7 +118,7 @@ function funcTransferFromThunk(ctx: wasmlib.ScFuncContext): void {
 function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewBalanceOf");
 	let f = new sc.BalanceOfContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableBalanceOfResults(results.asProxy());
 	ctx.require(f.params.owner().exists(), "missing mandatory owner");
 	sc.viewBalanceOf(ctx, f);
@@ -129,7 +129,7 @@ function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetApprovedThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewGetApproved");
 	let f = new sc.GetApprovedContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetApprovedResults(results.asProxy());
 	ctx.require(f.params.tokenID().exists(), "missing mandatory tokenID");
 	sc.viewGetApproved(ctx, f);
@@ -140,7 +140,7 @@ function viewGetApprovedThunk(ctx: wasmlib.ScViewContext): void {
 function viewIsApprovedForAllThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewIsApprovedForAll");
 	let f = new sc.IsApprovedForAllContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableIsApprovedForAllResults(results.asProxy());
 	ctx.require(f.params.operator().exists(), "missing mandatory operator");
 	ctx.require(f.params.owner().exists(), "missing mandatory owner");
@@ -152,7 +152,7 @@ function viewIsApprovedForAllThunk(ctx: wasmlib.ScViewContext): void {
 function viewNameThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewName");
 	let f = new sc.NameContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableNameResults(results.asProxy());
 	sc.viewName(ctx, f);
 	ctx.results(results);
@@ -162,7 +162,7 @@ function viewNameThunk(ctx: wasmlib.ScViewContext): void {
 function viewOwnerOfThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewOwnerOf");
 	let f = new sc.OwnerOfContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableOwnerOfResults(results.asProxy());
 	ctx.require(f.params.tokenID().exists(), "missing mandatory tokenID");
 	sc.viewOwnerOf(ctx, f);
@@ -173,7 +173,7 @@ function viewOwnerOfThunk(ctx: wasmlib.ScViewContext): void {
 function viewSymbolThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewSymbol");
 	let f = new sc.SymbolContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableSymbolResults(results.asProxy());
 	sc.viewSymbol(ctx, f);
 	ctx.results(results);
@@ -183,7 +183,7 @@ function viewSymbolThunk(ctx: wasmlib.ScViewContext): void {
 function viewTokenURIThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("erc721.viewTokenURI");
 	let f = new sc.TokenURIContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableTokenURIResults(results.asProxy());
 	ctx.require(f.params.tokenID().exists(), "missing mandatory tokenID");
 	sc.viewTokenURI(ctx, f);

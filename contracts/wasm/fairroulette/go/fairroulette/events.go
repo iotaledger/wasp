@@ -5,14 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:gocritic
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
-type FairRouletteEvents struct {
-}
+type FairRouletteEvents struct{}
 
 func (e FairRouletteEvents) Bet(address wasmtypes.ScAddress, amount uint64, number uint16) {
 	evt := wasmlib.NewEventEncoder("fairroulette.bet")

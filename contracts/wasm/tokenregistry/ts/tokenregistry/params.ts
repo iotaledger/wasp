@@ -9,57 +9,57 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableMintSupplyParams extends wasmtypes.ScProxy {
-    description(): wasmtypes.ScImmutableString {
+	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
 
-    userDefined(): wasmtypes.ScImmutableString {
+	userDefined(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamUserDefined));
 	}
 }
 
 export class MutableMintSupplyParams extends wasmtypes.ScProxy {
-    description(): wasmtypes.ScMutableString {
+	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
 
-    userDefined(): wasmtypes.ScMutableString {
+	userDefined(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamUserDefined));
 	}
 }
 
 export class ImmutableTransferOwnershipParams extends wasmtypes.ScProxy {
-    color(): wasmtypes.ScImmutableColor {
+	color(): wasmtypes.ScImmutableColor {
 		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
 export class MutableTransferOwnershipParams extends wasmtypes.ScProxy {
-    color(): wasmtypes.ScMutableColor {
+	color(): wasmtypes.ScMutableColor {
 		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
 export class ImmutableUpdateMetadataParams extends wasmtypes.ScProxy {
-    color(): wasmtypes.ScImmutableColor {
+	color(): wasmtypes.ScImmutableColor {
 		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
 export class MutableUpdateMetadataParams extends wasmtypes.ScProxy {
-    color(): wasmtypes.ScMutableColor {
+	color(): wasmtypes.ScMutableColor {
 		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
 export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
-    color(): wasmtypes.ScImmutableColor {
+	color(): wasmtypes.ScImmutableColor {
 		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
 export class MutableGetInfoParams extends wasmtypes.ScProxy {
-    color(): wasmtypes.ScMutableColor {
+	color(): wasmtypes.ScMutableColor {
 		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 }

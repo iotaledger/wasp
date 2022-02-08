@@ -11,8 +11,8 @@ import {ScHname} from "./schname";
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScAddressEd25519: u8 = 0;
-export const ScAddressNFT    : u8 = 1;
-export const ScAddressAlias  : u8 = 2;
+export const ScAddressNFT: u8 = 1;
+export const ScAddressAlias: u8 = 2;
 
 export const ScAddressLength = 33;
 

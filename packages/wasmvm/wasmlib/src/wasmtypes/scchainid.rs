@@ -47,15 +47,10 @@ pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID) {
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
     if buf.len() == 0 {
-        let mut chain_id = ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
-        chain_id.id[0] = SC_ADDRESS_ALIAS;
-        return chain_id;
+        return ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
     }
     if buf.len() != SC_CHAIN_ID_LENGTH {
         panic("invalid ChainID length");
-    }
-    if buf[0] != SC_ADDRESS_ALIAS {
-        panic("invalid ChainID: not an alias address");
     }
     ScChainID { id: buf.try_into().expect("WTF?") }
 }

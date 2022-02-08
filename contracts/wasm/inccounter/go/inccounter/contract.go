@@ -10,63 +10,63 @@ package inccounter
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type CallIncrementCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type CallIncrementRecurse5xCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type EndlessLoopCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type IncrementCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type IncrementWithDelayCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableIncrementWithDelayParams
+	Func   *wasmlib.ScFunc
+	Params MutableIncrementWithDelayParams
 }
 
 type InitCall struct {
-	Func    *wasmlib.ScInitFunc
-	Params  MutableInitParams
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
 }
 
 type LocalStateInternalCallCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type LocalStatePostCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type LocalStateSandboxCallCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type PostIncrementCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type RepeatManyCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableRepeatManyParams
+	Func   *wasmlib.ScFunc
+	Params MutableRepeatManyParams
 }
 
 type TestVliCodecCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestVluCodecCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type WhenMustIncrementCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableWhenMustIncrementParams
+	Func   *wasmlib.ScFunc
+	Params MutableWhenMustIncrementParams
 }
 
 type GetCounterCall struct {

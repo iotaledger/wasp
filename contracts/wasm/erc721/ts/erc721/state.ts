@@ -10,136 +10,136 @@ import * as sc from "./index";
 
 export class MapHashToImmutableAgentID extends wasmtypes.ScProxy {
 
-    getAgentID(key: wasmtypes.ScHash): wasmtypes.ScImmutableAgentID {
-        return new wasmtypes.ScImmutableAgentID(this.proxy.key(wasmtypes.hashToBytes(key)));
-    }
+	getAgentID(key: wasmtypes.ScHash): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.key(wasmtypes.hashToBytes(key)));
+	}
 }
 
 export class MapAgentIDToImmutableOperators extends wasmtypes.ScProxy {
 
-    getOperators(key: wasmtypes.ScAgentID): sc.ImmutableOperators {
-        return new sc.ImmutableOperators(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getOperators(key: wasmtypes.ScAgentID): sc.ImmutableOperators {
+		return new sc.ImmutableOperators(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MapAgentIDToImmutableUint64 extends wasmtypes.ScProxy {
 
-    getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableUint64 {
-        return new wasmtypes.ScImmutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MapHashToImmutableString extends wasmtypes.ScProxy {
 
-    getString(key: wasmtypes.ScHash): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.key(wasmtypes.hashToBytes(key)));
-    }
+	getString(key: wasmtypes.ScHash): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.key(wasmtypes.hashToBytes(key)));
+	}
 }
 
 export class ImmutableErc721State extends wasmtypes.ScProxy {
-    approvedAccounts(): sc.MapHashToImmutableAgentID {
+	approvedAccounts(): sc.MapHashToImmutableAgentID {
 		return new sc.MapHashToImmutableAgentID(this.proxy.root(sc.StateApprovedAccounts));
 	}
 
-    approvedOperators(): sc.MapAgentIDToImmutableOperators {
+	approvedOperators(): sc.MapAgentIDToImmutableOperators {
 		return new sc.MapAgentIDToImmutableOperators(this.proxy.root(sc.StateApprovedOperators));
 	}
 
-    balances(): sc.MapAgentIDToImmutableUint64 {
+	balances(): sc.MapAgentIDToImmutableUint64 {
 		return new sc.MapAgentIDToImmutableUint64(this.proxy.root(sc.StateBalances));
 	}
 
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.StateName));
 	}
 
-    owners(): sc.MapHashToImmutableAgentID {
+	owners(): sc.MapHashToImmutableAgentID {
 		return new sc.MapHashToImmutableAgentID(this.proxy.root(sc.StateOwners));
 	}
 
-    symbol(): wasmtypes.ScImmutableString {
+	symbol(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.StateSymbol));
 	}
 
-    tokenURIs(): sc.MapHashToImmutableString {
+	tokenURIs(): sc.MapHashToImmutableString {
 		return new sc.MapHashToImmutableString(this.proxy.root(sc.StateTokenURIs));
 	}
 }
 
 export class MapHashToMutableAgentID extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getAgentID(key: wasmtypes.ScHash): wasmtypes.ScMutableAgentID {
-        return new wasmtypes.ScMutableAgentID(this.proxy.key(wasmtypes.hashToBytes(key)));
-    }
+	getAgentID(key: wasmtypes.ScHash): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.key(wasmtypes.hashToBytes(key)));
+	}
 }
 
 export class MapAgentIDToMutableOperators extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getOperators(key: wasmtypes.ScAgentID): sc.MutableOperators {
-        return new sc.MutableOperators(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getOperators(key: wasmtypes.ScAgentID): sc.MutableOperators {
+		return new sc.MutableOperators(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MapAgentIDToMutableUint64 extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScMutableUint64 {
-        return new wasmtypes.ScMutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
+	getUint64(key: wasmtypes.ScAgentID): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MapHashToMutableString extends wasmtypes.ScProxy {
 
-    clear(): void {
-        this.proxy.clearMap();
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    getString(key: wasmtypes.ScHash): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.key(wasmtypes.hashToBytes(key)));
-    }
+	getString(key: wasmtypes.ScHash): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.key(wasmtypes.hashToBytes(key)));
+	}
 }
 
 export class MutableErc721State extends wasmtypes.ScProxy {
-    asImmutable(): sc.ImmutableErc721State {
+	asImmutable(): sc.ImmutableErc721State {
 		return new sc.ImmutableErc721State(this.proxy);
 	}
 
-    approvedAccounts(): sc.MapHashToMutableAgentID {
+	approvedAccounts(): sc.MapHashToMutableAgentID {
 		return new sc.MapHashToMutableAgentID(this.proxy.root(sc.StateApprovedAccounts));
 	}
 
-    approvedOperators(): sc.MapAgentIDToMutableOperators {
+	approvedOperators(): sc.MapAgentIDToMutableOperators {
 		return new sc.MapAgentIDToMutableOperators(this.proxy.root(sc.StateApprovedOperators));
 	}
 
-    balances(): sc.MapAgentIDToMutableUint64 {
+	balances(): sc.MapAgentIDToMutableUint64 {
 		return new sc.MapAgentIDToMutableUint64(this.proxy.root(sc.StateBalances));
 	}
 
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.StateName));
 	}
 
-    owners(): sc.MapHashToMutableAgentID {
+	owners(): sc.MapHashToMutableAgentID {
 		return new sc.MapHashToMutableAgentID(this.proxy.root(sc.StateOwners));
 	}
 
-    symbol(): wasmtypes.ScMutableString {
+	symbol(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.StateSymbol));
 	}
 
-    tokenURIs(): sc.MapHashToMutableString {
+	tokenURIs(): sc.MapHashToMutableString {
 		return new sc.MapHashToMutableString(this.proxy.root(sc.StateTokenURIs));
 	}
 }

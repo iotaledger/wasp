@@ -106,7 +106,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 	require.Error(t, ctx.Err)
 
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61 * time.Minute, 1)
+	chain.Env.AdvanceClockBy(61*time.Minute, 1)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
@@ -129,7 +129,7 @@ func TestFaOneBid(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61 * time.Minute, 1)
+	chain.Env.AdvanceClockBy(61*time.Minute, 1)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)

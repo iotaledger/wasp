@@ -10,25 +10,25 @@ package fairroulette
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ForcePayoutCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ForceResetCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type PayWinnersCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type PlaceBetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutablePlaceBetParams
+	Func   *wasmlib.ScFunc
+	Params MutablePlaceBetParams
 }
 
 type PlayPeriodCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutablePlayPeriodParams
+	Func   *wasmlib.ScFunc
+	Params MutablePlayPeriodParams
 }
 
 type LastWinningNumberCall struct {

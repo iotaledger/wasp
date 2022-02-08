@@ -1,4 +1,4 @@
-import { Buffer } from "../../buffer";
+import {Buffer} from "../../buffer";
 
 export class SimpleBufferCursor {
     private _buffer: Buffer;

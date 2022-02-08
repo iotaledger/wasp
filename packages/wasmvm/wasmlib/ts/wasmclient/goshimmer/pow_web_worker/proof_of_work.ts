@@ -1,5 +1,5 @@
-import { blake2b } from 'blakejs';
-import { Buffer } from '../../buffer';
+import {blake2b} from 'blakejs';
+import {Buffer} from '../../buffer';
 
 export default class ProofOfWork {
     public static calculateProofOfWork(target: number, message: Buffer): number {

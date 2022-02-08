@@ -10,7 +10,7 @@ package helloworld
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type HelloWorldCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type GetHelloWorldCall struct {

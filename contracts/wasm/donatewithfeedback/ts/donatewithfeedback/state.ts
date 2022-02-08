@@ -10,9 +10,9 @@ import * as sc from "./index";
 
 export class ArrayOfImmutableDonation extends wasmtypes.ScProxy {
 
-    length(): u32 {
-        return this.proxy.length();
-    }
+	length(): u32 {
+		return this.proxy.length();
+	}
 
 	getDonation(index: u32): sc.ImmutableDonation {
 		return new sc.ImmutableDonation(this.proxy.index(index));
@@ -20,15 +20,15 @@ export class ArrayOfImmutableDonation extends wasmtypes.ScProxy {
 }
 
 export class ImmutableDonateWithFeedbackState extends wasmtypes.ScProxy {
-    log(): sc.ArrayOfImmutableDonation {
+	log(): sc.ArrayOfImmutableDonation {
 		return new sc.ArrayOfImmutableDonation(this.proxy.root(sc.StateLog));
 	}
 
-    maxDonation(): wasmtypes.ScImmutableUint64 {
+	maxDonation(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateMaxDonation));
 	}
 
-    totalDonation(): wasmtypes.ScImmutableUint64 {
+	totalDonation(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateTotalDonation));
 	}
 }
@@ -39,13 +39,13 @@ export class ArrayOfMutableDonation extends wasmtypes.ScProxy {
 		return new sc.MutableDonation(this.proxy.append());
 	}
 
-    clear(): void {
-        this.proxy.clearArray();
-    }
+	clear(): void {
+		this.proxy.clearArray();
+	}
 
-    length(): u32 {
-        return this.proxy.length();
-    }
+	length(): u32 {
+		return this.proxy.length();
+	}
 
 	getDonation(index: u32): sc.MutableDonation {
 		return new sc.MutableDonation(this.proxy.index(index));
@@ -53,19 +53,19 @@ export class ArrayOfMutableDonation extends wasmtypes.ScProxy {
 }
 
 export class MutableDonateWithFeedbackState extends wasmtypes.ScProxy {
-    asImmutable(): sc.ImmutableDonateWithFeedbackState {
+	asImmutable(): sc.ImmutableDonateWithFeedbackState {
 		return new sc.ImmutableDonateWithFeedbackState(this.proxy);
 	}
 
-    log(): sc.ArrayOfMutableDonation {
+	log(): sc.ArrayOfMutableDonation {
 		return new sc.ArrayOfMutableDonation(this.proxy.root(sc.StateLog));
 	}
 
-    maxDonation(): wasmtypes.ScMutableUint64 {
+	maxDonation(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateMaxDonation));
 	}
 
-    totalDonation(): wasmtypes.ScMutableUint64 {
+	totalDonation(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateTotalDonation));
 	}
 }
