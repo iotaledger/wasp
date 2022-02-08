@@ -9,32 +9,32 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncDivide,
-    	sc.FuncInit,
-    	sc.FuncMember,
-    	sc.FuncSetOwner,
-    	sc.ViewGetFactor,
-    	sc.ViewGetOwner,
-    ],
-    funcs: [
-    	funcDivideThunk,
-    	funcInitThunk,
-    	funcMemberThunk,
-    	funcSetOwnerThunk,
-    ],
-    views: [
-    	viewGetFactorThunk,
-    	viewGetOwnerThunk,
-    ],
+	names: [
+		sc.FuncDivide,
+		sc.FuncInit,
+		sc.FuncMember,
+		sc.FuncSetOwner,
+		sc.ViewGetFactor,
+		sc.ViewGetOwner,
+	],
+	funcs: [
+		funcDivideThunk,
+		funcInitThunk,
+		funcMemberThunk,
+		funcSetOwnerThunk,
+	],
+	views: [
+		viewGetFactorThunk,
+		viewGetOwnerThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcDivideThunk(ctx: wasmlib.ScFuncContext): void {
@@ -83,7 +83,7 @@ function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetFactorThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("dividend.viewGetFactor");
 	let f = new sc.GetFactorContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetFactorResults(results.asProxy());
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	sc.viewGetFactor(ctx, f);
@@ -94,7 +94,7 @@ function viewGetFactorThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetOwnerThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("dividend.viewGetOwner");
 	let f = new sc.GetOwnerContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetOwnerResults(results.asProxy());
 	sc.viewGetOwner(ctx, f);
 	ctx.results(results);

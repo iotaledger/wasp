@@ -8,55 +8,55 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Bet {
-    amount : u64 = 0; 
-    better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
-    number : u16 = 0; 
+	amount : u64 = 0; 
+	better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
+	number : u16 = 0; 
 
-    static fromBytes(buf: u8[]): Bet {
-        const dec = new wasmtypes.WasmDecoder(buf);
-        const data = new Bet();
-        data.amount = wasmtypes.uint64Decode(dec);
-        data.better = wasmtypes.agentIDDecode(dec);
-        data.number = wasmtypes.uint16Decode(dec);
-        dec.close();
-        return data;
-    }
+	static fromBytes(buf: u8[]): Bet {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new Bet();
+		data.amount = wasmtypes.uint64Decode(dec);
+		data.better = wasmtypes.agentIDDecode(dec);
+		data.number = wasmtypes.uint16Decode(dec);
+		dec.close();
+		return data;
+	}
 
-    bytes(): u8[] {
-        const enc = new wasmtypes.WasmEncoder();
-		    wasmtypes.uint64Encode(enc, this.amount);
-		    wasmtypes.agentIDEncode(enc, this.better);
-		    wasmtypes.uint16Encode(enc, this.number);
-        return enc.buf();
-    }
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.uint64Encode(enc, this.amount);
+		wasmtypes.agentIDEncode(enc, this.better);
+		wasmtypes.uint16Encode(enc, this.number);
+		return enc.buf();
+	}
 }
 
 export class ImmutableBet extends wasmtypes.ScProxy {
 
-    exists(): bool {
-        return this.proxy.exists();
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    value(): Bet {
-        return Bet.fromBytes(this.proxy.get());
-    }
+	value(): Bet {
+		return Bet.fromBytes(this.proxy.get());
+	}
 }
 
 export class MutableBet extends wasmtypes.ScProxy {
 
-    delete(): void {
-        this.proxy.delete();
-    }
+	delete(): void {
+		this.proxy.delete();
+	}
 
-    exists(): bool {
-        return this.proxy.exists();
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    setValue(value: Bet): void {
-        this.proxy.set(value.bytes());
-    }
+	setValue(value: Bet): void {
+		this.proxy.set(value.bytes());
+	}
 
-    value(): Bet {
-        return Bet.fromBytes(this.proxy.get());
-    }
+	value(): Bet {
+		return Bet.fromBytes(this.proxy.get());
+	}
 }

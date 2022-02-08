@@ -61,34 +61,34 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-    static finalizeAuction(_ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
-        const f = new FinalizeAuctionCall();
+	static finalizeAuction(_ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
+		const f = new FinalizeAuctionCall();
 		f.params = new sc.MutableFinalizeAuctionParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static placeBid(_ctx: wasmlib.ScFuncCallContext): PlaceBidCall {
-        const f = new PlaceBidCall();
+	static placeBid(_ctx: wasmlib.ScFuncCallContext): PlaceBidCall {
+		const f = new PlaceBidCall();
 		f.params = new sc.MutablePlaceBidParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static setOwnerMargin(_ctx: wasmlib.ScFuncCallContext): SetOwnerMarginCall {
-        const f = new SetOwnerMarginCall();
+	static setOwnerMargin(_ctx: wasmlib.ScFuncCallContext): SetOwnerMarginCall {
+		const f = new SetOwnerMarginCall();
 		f.params = new sc.MutableSetOwnerMarginParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static startAuction(_ctx: wasmlib.ScFuncCallContext): StartAuctionCall {
-        const f = new StartAuctionCall();
+	static startAuction(_ctx: wasmlib.ScFuncCallContext): StartAuctionCall {
+		const f = new StartAuctionCall();
 		f.params = new sc.MutableStartAuctionParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
-        const f = new GetInfoCall();
+	static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
+		const f = new GetInfoCall();
 		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetInfoResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

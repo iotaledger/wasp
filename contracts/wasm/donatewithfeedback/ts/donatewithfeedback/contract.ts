@@ -51,28 +51,28 @@ export class DonationInfoContext {
 }
 
 export class ScFuncs {
-    static donate(_ctx: wasmlib.ScFuncCallContext): DonateCall {
-        const f = new DonateCall();
+	static donate(_ctx: wasmlib.ScFuncCallContext): DonateCall {
+		const f = new DonateCall();
 		f.params = new sc.MutableDonateParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
-        const f = new WithdrawCall();
+	static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
+		const f = new WithdrawCall();
 		f.params = new sc.MutableWithdrawParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static donation(_ctx: wasmlib.ScViewCallContext): DonationCall {
-        const f = new DonationCall();
+	static donation(_ctx: wasmlib.ScViewCallContext): DonationCall {
+		const f = new DonationCall();
 		f.params = new sc.MutableDonationParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableDonationResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static donationInfo(_ctx: wasmlib.ScViewCallContext): DonationInfoCall {
-        const f = new DonationInfoCall();
+	static donationInfo(_ctx: wasmlib.ScViewCallContext): DonationInfoCall {
+		const f = new DonationInfoCall();
 		f.results = new sc.ImmutableDonationInfoResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

@@ -21,7 +21,7 @@ $#each func libExportView
 func OnLoad(index int32) {
 	if index >= 0 {
 		wasmlib.ScExportsCall(index, &exportMap)
-		return;
+		return
 	}
 
 	wasmlib.ScExportsExport(&exportMap)

@@ -22,7 +22,7 @@ $#if basetype proxyBaseType proxyOtherType
 `,
 	// *******************************
 	"proxyArray": `
-    $fldName(): sc.ArrayOf$mut$FldType {
+	$fldName(): sc.ArrayOf$mut$FldType {
 		return new sc.ArrayOf$mut$FldType(this.proxy.root(sc.$Kind$FldName));
 	}
 `,
@@ -32,25 +32,25 @@ $#if this proxyMapThis proxyMapOther
 `,
 	// *******************************
 	"proxyMapThis": `
-    $fldName(): sc.Map$FldMapKey$+To$mut$FldType {
+	$fldName(): sc.Map$FldMapKey$+To$mut$FldType {
 		return new sc.Map$FldMapKey$+To$mut$FldType(this.proxy);
 	}
 `,
 	// *******************************
 	"proxyMapOther": `
-    $fldName(): sc.Map$FldMapKey$+To$mut$FldType {
+	$fldName(): sc.Map$FldMapKey$+To$mut$FldType {
 		return new sc.Map$FldMapKey$+To$mut$FldType(this.proxy.root(sc.$Kind$FldName));
 	}
 `,
 	// *******************************
 	"proxyBaseType": `
-    $fldName(): wasmtypes.Sc$mut$FldType {
+	$fldName(): wasmtypes.Sc$mut$FldType {
 		return new wasmtypes.Sc$mut$FldType(this.proxy.root(sc.$Kind$FldName));
 	}
 `,
 	// *******************************
 	"proxyOtherType": `
-    $fldName(): sc.$mut$FldType {
+	$fldName(): sc.$mut$FldType {
 		return new sc.$mut$FldType(this.proxy.root(sc.$Kind$FldName));
 	}
 `,

@@ -35,34 +35,34 @@ export class GetContractRecordsCall {
 }
 
 export class ScFuncs {
-    static deployContract(_ctx: wasmlib.ScFuncCallContext): DeployContractCall {
-        const f = new DeployContractCall();
+	static deployContract(_ctx: wasmlib.ScFuncCallContext): DeployContractCall {
+		const f = new DeployContractCall();
 		f.params = new sc.MutableDeployContractParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static grantDeployPermission(_ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
-        const f = new GrantDeployPermissionCall();
+	static grantDeployPermission(_ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
+		const f = new GrantDeployPermissionCall();
 		f.params = new sc.MutableGrantDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static revokeDeployPermission(_ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
-        const f = new RevokeDeployPermissionCall();
+	static revokeDeployPermission(_ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
+		const f = new RevokeDeployPermissionCall();
 		f.params = new sc.MutableRevokeDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static findContract(_ctx: wasmlib.ScViewCallContext): FindContractCall {
-        const f = new FindContractCall();
+	static findContract(_ctx: wasmlib.ScViewCallContext): FindContractCall {
+		const f = new FindContractCall();
 		f.params = new sc.MutableFindContractParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableFindContractResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getContractRecords(_ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
-        const f = new GetContractRecordsCall();
+	static getContractRecords(_ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
+		const f = new GetContractRecordsCall();
 		f.results = new sc.ImmutableGetContractRecordsResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

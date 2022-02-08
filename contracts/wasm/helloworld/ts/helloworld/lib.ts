@@ -9,24 +9,24 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncHelloWorld,
-    	sc.ViewGetHelloWorld,
-    ],
-    funcs: [
-    	funcHelloWorldThunk,
-    ],
-    views: [
-    	viewGetHelloWorldThunk,
-    ],
+	names: [
+		sc.FuncHelloWorld,
+		sc.ViewGetHelloWorld,
+	],
+	funcs: [
+		funcHelloWorldThunk,
+	],
+	views: [
+		viewGetHelloWorldThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcHelloWorldThunk(ctx: wasmlib.ScFuncContext): void {
@@ -39,7 +39,7 @@ function funcHelloWorldThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetHelloWorldThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("helloworld.viewGetHelloWorld");
 	let f = new sc.GetHelloWorldContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetHelloWorldResults(results.asProxy());
 	sc.viewGetHelloWorld(ctx, f);
 	ctx.results(results);

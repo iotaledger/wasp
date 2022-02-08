@@ -166,92 +166,92 @@ export class TokenURIContext {
 }
 
 export class ScFuncs {
-    static approve(_ctx: wasmlib.ScFuncCallContext): ApproveCall {
-        const f = new ApproveCall();
+	static approve(_ctx: wasmlib.ScFuncCallContext): ApproveCall {
+		const f = new ApproveCall();
 		f.params = new sc.MutableApproveParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static burn(_ctx: wasmlib.ScFuncCallContext): BurnCall {
-        const f = new BurnCall();
+	static burn(_ctx: wasmlib.ScFuncCallContext): BurnCall {
+		const f = new BurnCall();
 		f.params = new sc.MutableBurnParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
-        const f = new InitCall();
+	static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall();
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static mint(_ctx: wasmlib.ScFuncCallContext): MintCall {
-        const f = new MintCall();
+	static mint(_ctx: wasmlib.ScFuncCallContext): MintCall {
+		const f = new MintCall();
 		f.params = new sc.MutableMintParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static safeTransferFrom(_ctx: wasmlib.ScFuncCallContext): SafeTransferFromCall {
-        const f = new SafeTransferFromCall();
+	static safeTransferFrom(_ctx: wasmlib.ScFuncCallContext): SafeTransferFromCall {
+		const f = new SafeTransferFromCall();
 		f.params = new sc.MutableSafeTransferFromParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static setApprovalForAll(_ctx: wasmlib.ScFuncCallContext): SetApprovalForAllCall {
-        const f = new SetApprovalForAllCall();
+	static setApprovalForAll(_ctx: wasmlib.ScFuncCallContext): SetApprovalForAllCall {
+		const f = new SetApprovalForAllCall();
 		f.params = new sc.MutableSetApprovalForAllParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static transferFrom(_ctx: wasmlib.ScFuncCallContext): TransferFromCall {
-        const f = new TransferFromCall();
+	static transferFrom(_ctx: wasmlib.ScFuncCallContext): TransferFromCall {
+		const f = new TransferFromCall();
 		f.params = new sc.MutableTransferFromParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static balanceOf(_ctx: wasmlib.ScViewCallContext): BalanceOfCall {
-        const f = new BalanceOfCall();
+	static balanceOf(_ctx: wasmlib.ScViewCallContext): BalanceOfCall {
+		const f = new BalanceOfCall();
 		f.params = new sc.MutableBalanceOfParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBalanceOfResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getApproved(_ctx: wasmlib.ScViewCallContext): GetApprovedCall {
-        const f = new GetApprovedCall();
+	static getApproved(_ctx: wasmlib.ScViewCallContext): GetApprovedCall {
+		const f = new GetApprovedCall();
 		f.params = new sc.MutableGetApprovedParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetApprovedResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static isApprovedForAll(_ctx: wasmlib.ScViewCallContext): IsApprovedForAllCall {
-        const f = new IsApprovedForAllCall();
+	static isApprovedForAll(_ctx: wasmlib.ScViewCallContext): IsApprovedForAllCall {
+		const f = new IsApprovedForAllCall();
 		f.params = new sc.MutableIsApprovedForAllParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableIsApprovedForAllResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static name(_ctx: wasmlib.ScViewCallContext): NameCall {
-        const f = new NameCall();
+	static name(_ctx: wasmlib.ScViewCallContext): NameCall {
+		const f = new NameCall();
 		f.results = new sc.ImmutableNameResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static ownerOf(_ctx: wasmlib.ScViewCallContext): OwnerOfCall {
-        const f = new OwnerOfCall();
+	static ownerOf(_ctx: wasmlib.ScViewCallContext): OwnerOfCall {
+		const f = new OwnerOfCall();
 		f.params = new sc.MutableOwnerOfParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableOwnerOfResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static symbol(_ctx: wasmlib.ScViewCallContext): SymbolCall {
-        const f = new SymbolCall();
+	static symbol(_ctx: wasmlib.ScViewCallContext): SymbolCall {
+		const f = new SymbolCall();
 		f.results = new sc.ImmutableSymbolResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static tokenURI(_ctx: wasmlib.ScViewCallContext): TokenURICall {
-        const f = new TokenURICall();
+	static tokenURI(_ctx: wasmlib.ScViewCallContext): TokenURICall {
+		const f = new TokenURICall();
 		f.params = new sc.MutableTokenURIParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableTokenURIResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

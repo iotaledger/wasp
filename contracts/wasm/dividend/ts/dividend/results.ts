@@ -9,25 +9,25 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableGetFactorResults extends wasmtypes.ScProxy {
-    factor(): wasmtypes.ScImmutableUint64 {
+	factor(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultFactor));
 	}
 }
 
 export class MutableGetFactorResults extends wasmtypes.ScProxy {
-    factor(): wasmtypes.ScMutableUint64 {
+	factor(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultFactor));
 	}
 }
 
 export class ImmutableGetOwnerResults extends wasmtypes.ScProxy {
-    owner(): wasmtypes.ScImmutableAgentID {
+	owner(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultOwner));
 	}
 }
 
 export class MutableGetOwnerResults extends wasmtypes.ScProxy {
-    owner(): wasmtypes.ScMutableAgentID {
+	owner(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultOwner));
 	}
 }

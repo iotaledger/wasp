@@ -6,7 +6,6 @@ package wasmhost
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -108,6 +107,7 @@ type WasmContextSandbox struct {
 	common  iscp.SandboxBase
 	ctx     iscp.Sandbox
 	ctxView iscp.SandboxView
+	cvt     WasmConvertor
 	wc      *WasmContext
 }
 
@@ -168,10 +168,8 @@ func (s *WasmContextSandbox) fnBlockContext(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	contract, err := iscp.HnameFromBytes(req.Contract.Bytes())
-	s.checkErr(err)
-	function, err := iscp.HnameFromBytes(req.Function.Bytes())
-	s.checkErr(err)
+	contract := s.cvt.IscpHname(req.Contract)
+	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
@@ -264,12 +262,9 @@ func (s *WasmContextSandbox) fnParams(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	req := wasmrequests.NewPostRequestFromBytes(args)
-	chainID, err := iscp.ChainIDFromBytes(req.ChainID.Bytes())
-	s.checkErr(err)
-	contract, err := iscp.HnameFromBytes(req.Contract.Bytes())
-	s.checkErr(err)
-	function, err := iscp.HnameFromBytes(req.Function.Bytes())
-	s.checkErr(err)
+	chainID := s.cvt.IscpChainID(&req.ChainID)
+	contract := s.cvt.IscpHname(req.Contract)
+	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
@@ -322,8 +317,7 @@ func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 // transfer tokens to address
 func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	req := wasmrequests.NewSendRequestFromBytes(args)
-	address, _, err := ledgerstate.AddressFromBytes(req.Address.Bytes())
-	s.checkErr(err)
+	address := s.cvt.IscpAddress(&req.Address)
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
 	s.checkErr(err)
 	if len(transfer) != 0 {
