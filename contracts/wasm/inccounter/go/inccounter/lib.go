@@ -5,64 +5,65 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package inccounter
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncCallIncrement,
-		FuncCallIncrementRecurse5x,
-		FuncEndlessLoop,
-		FuncIncrement,
-		FuncIncrementWithDelay,
-		FuncInit,
-		FuncLocalStateInternalCall,
-		FuncLocalStatePost,
-		FuncLocalStateSandboxCall,
-		FuncPostIncrement,
-		FuncRepeatMany,
-		FuncTestVliCodec,
-		FuncTestVluCodec,
-		FuncWhenMustIncrement,
-		ViewGetCounter,
-		ViewGetVli,
-		ViewGetVlu,
+    	FuncCallIncrement,
+    	FuncCallIncrementRecurse5x,
+    	FuncEndlessLoop,
+    	FuncIncrement,
+    	FuncIncrementWithDelay,
+    	FuncInit,
+    	FuncLocalStateInternalCall,
+    	FuncLocalStatePost,
+    	FuncLocalStateSandboxCall,
+    	FuncPostIncrement,
+    	FuncRepeatMany,
+    	FuncTestVliCodec,
+    	FuncTestVluCodec,
+    	FuncWhenMustIncrement,
+    	ViewGetCounter,
+    	ViewGetVli,
+    	ViewGetVlu,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcCallIncrementThunk,
-		funcCallIncrementRecurse5xThunk,
-		funcEndlessLoopThunk,
-		funcIncrementThunk,
-		funcIncrementWithDelayThunk,
-		funcInitThunk,
-		funcLocalStateInternalCallThunk,
-		funcLocalStatePostThunk,
-		funcLocalStateSandboxCallThunk,
-		funcPostIncrementThunk,
-		funcRepeatManyThunk,
-		funcTestVliCodecThunk,
-		funcTestVluCodecThunk,
-		funcWhenMustIncrementThunk,
+    	funcCallIncrementThunk,
+    	funcCallIncrementRecurse5xThunk,
+    	funcEndlessLoopThunk,
+    	funcIncrementThunk,
+    	funcIncrementWithDelayThunk,
+    	funcInitThunk,
+    	funcLocalStateInternalCallThunk,
+    	funcLocalStatePostThunk,
+    	funcLocalStateSandboxCallThunk,
+    	funcPostIncrementThunk,
+    	funcRepeatManyThunk,
+    	funcTestVliCodecThunk,
+    	funcTestVluCodecThunk,
+    	funcWhenMustIncrementThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewGetCounterThunk,
-		viewGetVliThunk,
-		viewGetVluThunk,
+    	viewGetCounterThunk,
+    	viewGetVliThunk,
+    	viewGetVluThunk,
 	},
 }
 
 func OnLoad(index int32) {
 	if index >= 0 {
 		wasmlib.ScExportsCall(index, &exportMap)
-		return
+		return;
 	}
 
 	wasmlib.ScExportsExport(&exportMap)
 }
 
 type CallIncrementContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcCallIncrementThunk(ctx wasmlib.ScFuncContext) {
@@ -77,7 +78,7 @@ func funcCallIncrementThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type CallIncrementRecurse5xContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcCallIncrementRecurse5xThunk(ctx wasmlib.ScFuncContext) {
@@ -92,7 +93,7 @@ func funcCallIncrementRecurse5xThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type EndlessLoopContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcEndlessLoopThunk(ctx wasmlib.ScFuncContext) {
@@ -107,7 +108,7 @@ func funcEndlessLoopThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type IncrementContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcIncrementThunk(ctx wasmlib.ScFuncContext) {
@@ -122,8 +123,8 @@ func funcIncrementThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type IncrementWithDelayContext struct {
-	Params ImmutableIncrementWithDelayParams
-	State  MutableIncCounterState
+	Params  ImmutableIncrementWithDelayParams
+	State   MutableIncCounterState
 }
 
 func funcIncrementWithDelayThunk(ctx wasmlib.ScFuncContext) {
@@ -142,8 +143,8 @@ func funcIncrementWithDelayThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type InitContext struct {
-	Params ImmutableInitParams
-	State  MutableIncCounterState
+	Params  ImmutableInitParams
+	State   MutableIncCounterState
 }
 
 func funcInitThunk(ctx wasmlib.ScFuncContext) {
@@ -161,7 +162,7 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type LocalStateInternalCallContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcLocalStateInternalCallThunk(ctx wasmlib.ScFuncContext) {
@@ -176,7 +177,7 @@ func funcLocalStateInternalCallThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type LocalStatePostContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcLocalStatePostThunk(ctx wasmlib.ScFuncContext) {
@@ -191,7 +192,7 @@ func funcLocalStatePostThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type LocalStateSandboxCallContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcLocalStateSandboxCallThunk(ctx wasmlib.ScFuncContext) {
@@ -206,7 +207,7 @@ func funcLocalStateSandboxCallThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PostIncrementContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcPostIncrementThunk(ctx wasmlib.ScFuncContext) {
@@ -221,8 +222,8 @@ func funcPostIncrementThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type RepeatManyContext struct {
-	Params ImmutableRepeatManyParams
-	State  MutableIncCounterState
+	Params  ImmutableRepeatManyParams
+	State   MutableIncCounterState
 }
 
 func funcRepeatManyThunk(ctx wasmlib.ScFuncContext) {
@@ -240,7 +241,7 @@ func funcRepeatManyThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TestVliCodecContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcTestVliCodecThunk(ctx wasmlib.ScFuncContext) {
@@ -255,7 +256,7 @@ func funcTestVliCodecThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TestVluCodecContext struct {
-	State MutableIncCounterState
+	State   MutableIncCounterState
 }
 
 func funcTestVluCodecThunk(ctx wasmlib.ScFuncContext) {
@@ -270,8 +271,8 @@ func funcTestVluCodecThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type WhenMustIncrementContext struct {
-	Params ImmutableWhenMustIncrementParams
-	State  MutableIncCounterState
+	Params  ImmutableWhenMustIncrementParams
+	State   MutableIncCounterState
 }
 
 func funcWhenMustIncrementThunk(ctx wasmlib.ScFuncContext) {

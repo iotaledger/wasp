@@ -1,9 +1,12 @@
 package wasmhost
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -13,15 +16,15 @@ type WasmConvertor struct{}
 func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) iotago.Address {
 	buf := wasmtypes.AddressToBytes(*address)
 	switch buf[0] {
-	case wasmtypes.AddressAlias:
+	case wasmtypes.ScAddressAlias:
 		iscpAliasAddress := new(iotago.AliasAddress)
 		copy((*iscpAliasAddress)[:], buf[1:])
 		return iscpAliasAddress
-	case wasmtypes.AddressEd25519:
+	case wasmtypes.ScAddressEd25519:
 		iscpEd25519Address := new(iotago.Ed25519Address)
 		copy((*iscpEd25519Address)[:], buf[1:])
 		return iscpEd25519Address
-	case wasmtypes.AddressNFT:
+	case wasmtypes.ScAddressNFT:
 		iscpNFTAddress := new(iotago.NFTAddress)
 		copy((*iscpNFTAddress)[:], buf[1:])
 		return iscpNFTAddress
@@ -36,6 +39,22 @@ func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID
 	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
+func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Assets {
+	iscpAssets := iscp.NewEmptyAssets()
+	for color, amount := range assets {
+		if color == wasmtypes.IOTA {
+			iscpAssets.Iotas = amount
+			continue
+		}
+		token := new(iotago.NativeToken)
+		copy(token.ID[:], color.Bytes())
+		token.Amount = new(big.Int)
+		token.Amount.SetUint64(amount)
+		iscpAssets.Tokens = append(iscpAssets.Tokens, token)
+	}
+	return iscpAssets
+}
+
 func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {
 	buf := wasmtypes.ChainIDToBytes(*chainID)
 	iscpChainID := new(iscp.ChainID)
@@ -43,7 +62,7 @@ func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID
 	return iscpChainID
 }
 
-//TODO
+//TODO switch WasmLib from Color to Token
 func (cvt WasmConvertor) IscpColor(color *wasmtypes.ScColor) *iotago.NativeTokenID {
 	buf := wasmtypes.ColorToBytes(*color)
 	iscpTokenID := new(iotago.NativeTokenID)
@@ -75,11 +94,11 @@ func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
 	scBuf := make([]byte, wasmtypes.ScAddressLength)
 	switch iotago.AddressType(buf[0]) {
 	case iotago.AddressAlias:
-		scBuf[0] = wasmtypes.AddressAlias
+		scBuf[0] = wasmtypes.ScAddressAlias
 	case iotago.AddressEd25519:
-		scBuf[0] = wasmtypes.AddressEd25519
+		scBuf[0] = wasmtypes.ScAddressEd25519
 	case iotago.AddressNFT:
-		scBuf[0] = wasmtypes.AddressNFT
+		scBuf[0] = wasmtypes.ScAddressNFT
 	default:
 		panic("invalid ISCP Address type")
 	}
@@ -91,12 +110,25 @@ func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {
 	return wasmtypes.NewScAgentID(cvt.ScAddress(agentID.Address()), cvt.ScHname(agentID.Hname()))
 }
 
+func (cvt WasmConvertor) ScBalances(assets *iscp.Assets) wasmlib.ScAssets {
+	scAssets := make(wasmlib.ScAssets)
+	if assets.Iotas != 0 {
+		scAssets[wasmtypes.IOTA] = assets.Iotas
+	}
+	for _, token := range assets.Tokens {
+		color := cvt.ScColor(&token.ID)
+		//TODO handle big.Int
+		scAssets[color] = token.Amount.Uint64()
+	}
+	return scAssets
+}
+
 func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
 }
 
-//TODO
-func (cvt WasmConvertor) ScColor(color iotago.NativeTokenID) wasmtypes.ScColor {
+//TODO switch WasmLib from Color to Token
+func (cvt WasmConvertor) ScColor(color *iotago.NativeTokenID) wasmtypes.ScColor {
 	return wasmtypes.ColorFromBytes(color[:])
 }
 

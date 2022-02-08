@@ -10,38 +10,38 @@ package erc721
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ApproveCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableApproveParams
+	Func    *wasmlib.ScFunc
+	Params  MutableApproveParams
 }
 
 type BurnCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableBurnParams
+	Func    *wasmlib.ScFunc
+	Params  MutableBurnParams
 }
 
 type InitCall struct {
-	Func   *wasmlib.ScInitFunc
-	Params MutableInitParams
+	Func    *wasmlib.ScInitFunc
+	Params  MutableInitParams
 }
 
 type MintCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMintParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMintParams
 }
 
 type SafeTransferFromCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSafeTransferFromParams
+	Func    *wasmlib.ScFunc
+	Params  MutableSafeTransferFromParams
 }
 
 type SetApprovalForAllCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetApprovalForAllParams
+	Func    *wasmlib.ScFunc
+	Params  MutableSetApprovalForAllParams
 }
 
 type TransferFromCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTransferFromParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTransferFromParams
 }
 
 type BalanceOfCall struct {

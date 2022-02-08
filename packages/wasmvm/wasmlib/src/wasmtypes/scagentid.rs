@@ -64,8 +64,8 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         panic("invalid AgentID length");
     }
     // max ledgerstate.AliasAddressType
-    if buf[0] > 2 {
-        panic("invalid AgentID: address type > 2");
+    if buf[0] > SC_ADDRESS_ALIAS {
+        panic("invalid AgentID address type");
     }
     ScAgentID {
         address: address_from_bytes(&buf[..SC_ADDRESS_LENGTH]),

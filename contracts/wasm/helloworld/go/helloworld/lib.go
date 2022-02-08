@@ -5,34 +5,35 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package helloworld
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncHelloWorld,
-		ViewGetHelloWorld,
+    	FuncHelloWorld,
+    	ViewGetHelloWorld,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcHelloWorldThunk,
+    	funcHelloWorldThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewGetHelloWorldThunk,
+    	viewGetHelloWorldThunk,
 	},
 }
 
 func OnLoad(index int32) {
 	if index >= 0 {
 		wasmlib.ScExportsCall(index, &exportMap)
-		return
+		return;
 	}
 
 	wasmlib.ScExportsExport(&exportMap)
 }
 
 type HelloWorldContext struct {
-	State MutableHelloWorldState
+	State   MutableHelloWorldState
 }
 
 func funcHelloWorldThunk(ctx wasmlib.ScFuncContext) {

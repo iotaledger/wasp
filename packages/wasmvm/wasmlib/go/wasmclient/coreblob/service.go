@@ -12,11 +12,11 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 const (
 	ArgBlobs = "this"
 	ArgField = "field"
-	ArgHash  = "hash"
+	ArgHash = "hash"
 
 	ResBlobSizes = "this"
-	ResBytes     = "bytes"
-	ResHash      = "hash"
+	ResBytes = "bytes"
+	ResHash = "hash"
 )
 
 ///////////////////////////// storeBlob /////////////////////////////
@@ -86,10 +86,10 @@ type GetBlobInfoResults struct {
 }
 
 func (r *GetBlobInfoResults) BlobSizes() map[string]int32 {
-	res := make(map[string]int32)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToString(key)] = r.res.ToInt32(val)
-	})
+    res := make(map[string]int32)
+    r.res.ForEach(func(key []byte, val []byte) {
+        res[r.res.ToString(key)] = r.res.ToInt32(val)
+    })
 	return res
 }
 
@@ -109,10 +109,10 @@ type ListBlobsResults struct {
 }
 
 func (r *ListBlobsResults) BlobSizes() map[wasmclient.Hash]int32 {
-	res := make(map[wasmclient.Hash]int32)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToHash(key)] = r.res.ToInt32(val)
-	})
+    res := make(map[wasmclient.Hash]int32)
+    r.res.ForEach(func(key []byte, val []byte) {
+        res[r.res.ToHash(key)] = r.res.ToInt32(val)
+    })
 	return res
 }
 

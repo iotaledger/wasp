@@ -10,20 +10,20 @@ package coreblocklogclient
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
-	ArgBlockIndex    = "n"
+	ArgBlockIndex = "n"
 	ArgContractHname = "h"
-	ArgFromBlock     = "f"
-	ArgRequestID     = "u"
-	ArgToBlock       = "t"
+	ArgFromBlock = "f"
+	ArgRequestID = "u"
+	ArgToBlock = "t"
 
-	ResBlockIndex             = "n"
-	ResBlockInfo              = "i"
-	ResEvent                  = "e"
-	ResGoverningAddress       = "g"
-	ResRequestID              = "u"
-	ResRequestIndex           = "r"
-	ResRequestProcessed       = "p"
-	ResRequestRecord          = "d"
+	ResBlockIndex = "n"
+	ResBlockInfo = "i"
+	ResEvent = "e"
+	ResGoverningAddress = "g"
+	ResRequestID = "u"
+	ResRequestIndex = "r"
+	ResRequestProcessed = "p"
+	ResRequestRecord = "d"
 	ResStateControllerAddress = "s"
 )
 

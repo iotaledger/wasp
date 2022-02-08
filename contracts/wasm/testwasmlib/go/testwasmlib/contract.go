@@ -10,42 +10,42 @@ package testwasmlib
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ArrayAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayAppendParams
 }
 
 type ArrayClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayClearParams
 }
 
 type ArraySetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArraySetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArraySetParams
 }
 
 type MapClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapClearParams
 }
 
 type MapSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapSetParams
 }
 
 type ParamTypesCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableParamTypesParams
+	Func    *wasmlib.ScFunc
+	Params  MutableParamTypesParams
 }
 
 type RandomCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type TriggerEventCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTriggerEventParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTriggerEventParams
 }
 
 type ArrayLengthCall struct {

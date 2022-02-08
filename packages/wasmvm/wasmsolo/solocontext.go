@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -34,17 +35,17 @@ var (
 )
 
 type SoloContext struct {
-	Chain     *solo.Chain
-	Convertor wasmhost.WasmConvertor
-	creator   *SoloAgent
-	Err       error
-	Hprog     hashing.HashValue
-	keyPair   *cryptolib.KeyPair
-	isRequest bool
-	mint      uint64
-	offLedger bool
-	scName    string
-	//fixme Tx          *ledgerstate.Transaction
+	Chain       *solo.Chain
+	Convertor   wasmhost.WasmConvertor
+	creator     *SoloAgent
+	Err         error
+	Hprog       hashing.HashValue
+	keyPair     *cryptolib.KeyPair
+	isRequest   bool
+	mint        uint64
+	offLedger   bool
+	scName      string
+	Tx          *iotago.Transaction
 	wc          *wasmhost.WasmContext
 	wasmHostOld wasmlib.ScHost
 }
@@ -178,7 +179,11 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		soloEnv = env[0]
 	}
 	if soloEnv == nil {
-		soloEnv = solo.New(t, &solo.InitOptions{Debug: SoloDebug, PrintStackTrace: SoloStackTracing, AutoAdjustDustDeposit: true})
+		soloEnv = solo.New(t, &solo.InitOptions{
+			Debug:                 SoloDebug,
+			PrintStackTrace:       SoloStackTracing,
+			AutoAdjustDustDeposit: true,
+		})
 	}
 	return soloEnv.NewChain(nil, chainName)
 }
@@ -207,20 +212,17 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 // The optional color parameter can be used to retrieve the balance for the specific color.
 // When color is omitted, wasmlib.IOTA is assumed.
 func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) uint64 {
-	panic("fixme")
-	//account := iscp.NewAgentID(agent.address, agent.hname)
-	//balances := ctx.Chain.GetAccountBalance(account)
-	//switch len(color) {
-	//case 0:
-	//	return balances.Get(colored.IOTA)
-	//case 1:
-	//	col, err := colored.ColorFromBytes(color[0].Bytes())
-	//	require.NoError(ctx.Chain.Env.T, err)
-	//	return balances.Get(col)
-	//default:
-	//	require.Fail(ctx.Chain.Env.T, "too many color arguments")
-	//	return 0
-	//}
+	account := iscp.NewAgentID(agent.address, agent.hname)
+	switch len(color) {
+	case 0:
+		return ctx.Chain.L2Iotas(account)
+	case 1:
+		token := ctx.Convertor.IscpColor(&color[0])
+		return ctx.Chain.L2NativeTokens(account, token).Uint64()
+	default:
+		require.Fail(ctx.Chain.Env.T, "too many color arguments")
+		return 0
+	}
 }
 
 func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
