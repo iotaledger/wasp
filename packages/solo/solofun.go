@@ -11,7 +11,7 @@ import (
 
 func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 	seed := cryptolib.SeedFromByteArray(hashing.HashData(env.utxoDB.Seed(), util.Int32To4Bytes(int32(index))).Bytes())
-	return &seed
+	return seed
 }
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme

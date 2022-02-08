@@ -19,7 +19,7 @@ func TestChainID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	chidback, err = ChainIDFromHex(chidHex)
+	chidback, err = ChainIDFromString(chidHex)
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 }

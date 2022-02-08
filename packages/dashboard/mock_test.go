@@ -5,8 +5,9 @@ package dashboard
 
 import (
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"testing"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -23,7 +24,7 @@ import (
 // waspServicesMock is a mock implementation of the WaspServices interface
 type waspServicesMock struct {
 	solo   *solo.Solo
-	chains map[[iotago.AddressLength]byte]*solo.Chain
+	chains map[[iotago.AliasIDLength]byte]*solo.Chain
 }
 
 var _ WaspServices = &waspServicesMock{}
@@ -94,7 +95,7 @@ func (w *waspServicesMock) GetChainRecord(chainID *iscp.ChainID) (*registry.Chai
 }
 
 func (w *waspServicesMock) CallView(chainID *iscp.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
-	ch, ok := w.chains[chainID.Array()]
+	ch, ok := w.chains[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
@@ -102,15 +103,15 @@ func (w *waspServicesMock) CallView(chainID *iscp.ChainID, scName, fname string,
 }
 
 func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error) {
-	_, ok := w.chains[chainID.Array()]
+	_, ok := w.chains[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
-	pubKey0, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey0, err := cryptolib.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
-	pubKey1, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey1, err := cryptolib.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 	address := cryptolib.Ed25519AddressFromPubKey(cryptolib.PublicKey{})
 
 	return &chain.CommitteeInfo{
-		Address:       &address,
+		Address:       address,
 		Size:          2,
 		Quorum:        1,
 		QuorumIsAlive: true,
@@ -159,17 +160,17 @@ type dashboardTestEnv struct {
 }
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
-	ch := e.solo.NewChain(cryptolib.KeyPair{}, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[ch.ChainID.Array()] = ch
+	ch := e.solo.NewChain(&cryptolib.KeyPair{}, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, false, true)
+	s := solo.New(t)
 	w := &waspServicesMock{
 		solo:   s,
-		chains: make(map[[iotago.AddressLength]byte]*solo.Chain),
+		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
 	}
 	d := Init(e, w, testlogger.NewLogger(t))
 	return &dashboardTestEnv{

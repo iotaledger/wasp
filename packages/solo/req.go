@@ -150,7 +150,7 @@ func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptol
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
 		WithTransfer(r.allowance).
 		WithGasBudget(r.gasBudget)
-	ret.Sign(*keyPair)
+	ret.Sign(keyPair)
 	return ret
 }
 

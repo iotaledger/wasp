@@ -15,7 +15,7 @@ import (
 
 func (c *WaspClient) NodeOwnershipCertificate(nodePubKey cryptolib.PublicKey, ownerAddress iotago.Address) (governance.NodeOwnershipCertificate, error) {
 	req := model.NodeOwnerCertificateRequest{
-		NodePubKey:   model.NewBytes(nodePubKey.Bytes()),
+		NodePubKey:   model.NewBytes(nodePubKey),
 		OwnerAddress: model.NewAddress(ownerAddress),
 	}
 	res := model.NodeOwnerCertificateResponse{}
