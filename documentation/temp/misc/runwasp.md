@@ -20,7 +20,7 @@ $ make install
 [`wasmtime-go`](https://github.com/bytecodealliance/wasmtime-go) hasn't supported macOS on arm64 yet, so you should build your own wasmtime library. You can follow the README in `wasmtime-go` to build the library.
 Once a wasmtime library is built, then you can run the following commands.
 
-```bash
+```shell
 $ git clone https://github.com/iotaledger/wasp.git
 $ cd wasp
 $ go mod edit -replace=github.com/bytecodealliance/wasmtime-go=<wasmtime-go path>

@@ -20,7 +20,7 @@ After going through the instructions on [Running a node](./running-a-node.md), y
 
 You can create a basic default configuration by running:
 
-```bash
+```shell
 wasp-cli init 
 ````
 

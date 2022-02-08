@@ -30,7 +30,7 @@ Once you know what your smart contract will be named, it is time to set up your 
 Simply navigate to the central smart contract folder, and run the schema tool's
 initialization function:
 
-```bash
+```shell
 schema -init MySmartContract
 ```
 
@@ -39,7 +39,7 @@ schema definition file inside this subfolder. Because a YAML file is easier to r
 edit manually, YAML is the default configuration file over JSON. If you prefer to use JSON
 instead, you can run the schema tool like this:
 
-```bash
+```shell
 schema -init MySmartContract -type=json
 ```
 
@@ -145,7 +145,7 @@ there to generate the initial code for the desired language:
 If you want to generate Go code, you should run the schema tool with the
 `-go` option like this:
 
-```bash
+```shell
 schema -go
 ```
 
@@ -155,7 +155,7 @@ schema -go
 If you want to generate Rust code, you should run the schema tool with the
 `-rust` option like this:
 
-```bash
+```shell
 schema -rust
 ```
 
@@ -165,7 +165,7 @@ schema -rust
 If you want to generate TypeScript code, you should run the schema tool with the
 `-ts` option like this:
 
-```bash
+```shell
 schema -ts
 ```
 
@@ -175,7 +175,7 @@ schema -ts
 If you want to generate more than one language your can simply specify multiple options.
 For example, to generate both Rust and Go code you would specify both options like this:
 
-```bash
+```shell
 schema -rust -go
 ```
 
@@ -195,7 +195,7 @@ that will compile successfully into a Wasm code file. You compile these as follo
 
 <TabItem value="go">
 
-```bash
+```shell
 tinygo build -target wasm wasmmain/main.go
 ```
 
@@ -210,7 +210,7 @@ After generating the Rust code, you should first modify the Cargo.toml file to y
 liking, and potentially add the new project to a Rust workspace. Cargo.toml will not be
 regenerated once it already exists. Then build the code as follows:
 
-```bash
+```shell
 wasm-pack build
 ```
 
@@ -221,7 +221,7 @@ regenerated and overwritten whenever the schema tool is run again.
 </TabItem>
 <TabItem value="ts">
 
-```bash
+```shell
 asc lib.ts --binaryFile output_ts.wasm --lib path/to/node_modules
 ```
 

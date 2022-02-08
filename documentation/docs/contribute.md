@@ -25,19 +25,19 @@ Before creating the Pull Request ensure that:
 
 - all the tests pass:
 
-    ```bash
+    ```shell
     go test -tags rocksdb,builtin_static ./...
     ```
 
     or
 
-    ```bash
+    ```shell
     make test
     ```
 
     If the changes are major, please run even the heavy tests:
 
-    ```bash
+    ```shell
     make test-full
     ```
 
@@ -45,19 +45,19 @@ Before creating the Pull Request ensure that:
 
 - there are no linting violations (instructions on how to setup linting below):
 
-    ```bash
+    ```shell
     golangci-lint run
     ```
 
     or
 
-    ```bash
+    ```shell
     make lint
     ```
 
     Note, that linter is run each time you run
 
-    ```bash
+    ```shell
     make
     ```
 
