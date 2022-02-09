@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -46,14 +45,13 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 	// retrieving init parameters
 	// -- chain ID
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
-	chainID := params.MustGetChainID(governance.ParamChainID)
-	chainDescription := params.MustGetString(governance.ParamDescription, "N/A")
-	feePolicyBytes := params.MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
+	chainID := ctx.ParamDecoder().MustGetChainID(governance.ParamChainID)
+	chainDescription := ctx.ParamDecoder().MustGetString(governance.ParamDescription, "N/A")
+	feePolicyBytes := ctx.ParamDecoder().MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
-	state.Set(governance.VarChainOwnerID, params.MustGetAgentID(governance.ParamChainOwner).Bytes())
+	state.Set(governance.VarChainOwnerID, ctx.ParamDecoder().MustGetAgentID(governance.ParamChainOwner).Bytes())
 	state.Set(governance.VarDescription, codec.EncodeString(chainDescription))
 
 	state.Set(governance.VarMaxBlobSize, codec.Encode(governance.DefaultMaxBlobSize))
