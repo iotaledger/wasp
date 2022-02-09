@@ -262,7 +262,7 @@ func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnParams(args []byte) []byte {
-	return s.common.Params().Bytes()
+	return s.common.Params().Dict.Bytes()
 }
 
 func (s *WasmContextSandbox) fnPost(args []byte) []byte {

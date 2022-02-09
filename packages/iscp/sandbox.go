@@ -20,9 +20,7 @@ type SandboxBase interface {
 	// AccountID returns the agentID of the current contract
 	AccountID() *AgentID
 	// Params returns the parameters of the current call
-	Params() dict.Dict
-	// ParamDecoder utility object for decoding parameters of the request
-	ParamDecoder() KVDecoder
+	Params() *Params
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
@@ -39,6 +37,11 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
+}
+
+type Params struct {
+	Dict dict.Dict
+	KVDecoder
 }
 
 type Helpers interface {

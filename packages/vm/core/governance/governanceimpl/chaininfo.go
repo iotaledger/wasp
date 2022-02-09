@@ -37,14 +37,14 @@ func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("governance.setContractFee: not authorized")
 
 	// max blob size
-	maxBlobSize := ctx.ParamDecoder().MustGetUint32(governance.ParamMaxBlobSizeUint32, 0)
+	maxBlobSize := ctx.Params().MustGetUint32(governance.ParamMaxBlobSizeUint32, 0)
 	if maxBlobSize > 0 {
 		ctx.State().Set(governance.VarMaxBlobSize, codec.Encode(maxBlobSize))
 		ctx.Event(fmt.Sprintf("[updated chain config] max blob size: %d", maxBlobSize))
 	}
 
 	// max event size
-	maxEventSize := ctx.ParamDecoder().MustGetUint16(governance.ParamMaxEventSizeUint16, 0)
+	maxEventSize := ctx.Params().MustGetUint16(governance.ParamMaxEventSizeUint16, 0)
 	if maxEventSize > 0 {
 		if maxEventSize < governance.MinEventSize {
 			// don't allow to set less than MinEventSize to prevent chain owner from bricking the chain
@@ -55,7 +55,7 @@ func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 	}
 
 	// max events per request
-	maxEventsPerReq := ctx.ParamDecoder().MustGetUint16(governance.ParamMaxEventsPerRequestUint16, 0)
+	maxEventsPerReq := ctx.Params().MustGetUint16(governance.ParamMaxEventsPerRequestUint16, 0)
 	if maxEventsPerReq > 0 {
 		if maxEventsPerReq < governance.MinEventsPerRequest {
 			maxEventsPerReq = governance.MinEventsPerRequest

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
@@ -68,9 +69,12 @@ const traceStack = false
 
 func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, allowance *iscp.Assets) {
 	ctx := &callContext{
-		caller:             vmctx.getToBeCaller(),
-		contract:           contract,
-		params:             params.Clone(),
+		caller:   vmctx.getToBeCaller(),
+		contract: contract,
+		params: iscp.Params{
+			Dict:      params,
+			KVDecoder: kvdecoder.New(params, vmctx.task.Log),
+		},
 		allowanceAvailable: allowance.Clone(), // we have to clone it because it will be mutated by TransferAllowedFunds
 	}
 	if traceStack {

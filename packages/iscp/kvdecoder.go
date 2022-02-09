@@ -10,6 +10,7 @@ import (
 
 // KVDecoder is interface with all kind of utility functions extracting and decoding values from the key/value map
 type KVDecoder interface {
+	kv.KVStoreReader
 	GetInt16(key kv.Key, def ...int16) (int16, error)
 	MustGetInt16(key kv.Key, def ...int16) int16
 	GetUint16(key kv.Key, def ...uint16) (uint16, error)

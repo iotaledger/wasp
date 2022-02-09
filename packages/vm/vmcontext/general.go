@@ -47,9 +47,9 @@ func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) Params() dict.Dict {
+func (vmctx *VMContext) Params() *iscp.Params {
 	vmctx.GasBurn(gas.BurnCodeGetContext)
-	return vmctx.getCallContext().params
+	return &vmctx.getCallContext().params
 }
 
 func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
