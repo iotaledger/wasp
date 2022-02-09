@@ -5,7 +5,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScAgentIDLength = ScAddressLength + ScHnameLength
+const ScAgentIDLength = ScBoolLength + ScAddressLength + ScHnameLength
 
 type ScAgentID struct {
 	address ScAddress
@@ -57,7 +57,10 @@ func AgentIDFromBytes(buf []byte) ScAgentID {
 	if len(buf) != ScAgentIDLength {
 		panic("invalid AgentID length")
 	}
-	if buf[0] > ScAddressAlias {
+	if buf[0] != 1 {
+		panic("invalid AgentID nil flag")
+	}
+	if buf[1] > ScAddressAlias {
 		panic("invalid AgentID address type")
 	}
 	return ScAgentID{

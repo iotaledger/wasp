@@ -62,7 +62,7 @@ func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID
 	return iscpChainID
 }
 
-//TODO switch WasmLib from Color to Token
+// TODO switch WasmLib from Color to Token
 func (cvt WasmConvertor) IscpColor(color *wasmtypes.ScColor) *iotago.NativeTokenID {
 	buf := wasmtypes.ColorToBytes(*color)
 	iscpTokenID := new(iotago.NativeTokenID)
@@ -117,7 +117,7 @@ func (cvt WasmConvertor) ScBalances(assets *iscp.Assets) wasmlib.ScAssets {
 	}
 	for _, token := range assets.Tokens {
 		color := cvt.ScColor(&token.ID)
-		//TODO handle big.Int
+		// TODO handle big.Int
 		scAssets[color] = token.Amount.Uint64()
 	}
 	return scAssets
@@ -127,7 +127,7 @@ func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
 }
 
-//TODO switch WasmLib from Color to Token
+// TODO switch WasmLib from Color to Token
 func (cvt WasmConvertor) ScColor(color *iotago.NativeTokenID) wasmtypes.ScColor {
 	return wasmtypes.ColorFromBytes(color[:])
 }

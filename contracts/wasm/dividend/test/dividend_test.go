@@ -74,7 +74,7 @@ func TestDivide1Member(t *testing.T) {
 	dividendMember(ctx, member1, 100)
 	require.NoError(t, ctx.Err)
 
-	require.EqualValues(t, 1, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
 	dividendDivide(ctx, 99)
 	require.NoError(t, ctx.Err)

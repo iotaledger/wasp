@@ -13,8 +13,8 @@ pub const SC_HNAME_LENGTH: usize = 4;
 pub struct ScHname(pub u32);
 
 impl ScHname {
-    pub fn new(buf: &[u8]) -> ScHname {
-        ScHname(uint32_from_bytes(buf))
+    pub fn new(name: &str]) -> ScHname {
+        hname_from_bytes(&host::sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
