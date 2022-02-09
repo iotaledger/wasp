@@ -84,19 +84,22 @@ func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error)
 
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	var err error
-	isNil, err := mu.ReadBool()
+	addrType, err := mu.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	if isNil {
+	if addrType == 0xff {
 		return &NilAgentID, nil
 	}
+	mu.ReadSeek(-1)
 	ret := &AgentID{}
 	if ret.a, err = AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
-		return nil, err
+	if addrType != 0 {
+		if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
+			return nil, err
+		}
 	}
 	return ret, nil
 }
@@ -153,8 +156,9 @@ func (a *AgentID) Hname() Hname {
 
 func (a *AgentID) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(a.IsNil())
 	if a.IsNil() {
+		// encode special value in address type byte that will never occur as address type
+		mu.WriteByte(0xff)
 		return mu.Bytes()
 	}
 	addressBytes, err := a.a.Serialize(serializer.DeSeriModeNoValidation, nil)
@@ -162,7 +166,10 @@ func (a *AgentID) Bytes() []byte {
 		return nil
 	}
 	mu.WriteBytes(addressBytes)
-	mu.Write(a.h)
+	// address type 0 always has hName zero, no need to encode hName
+	if addressBytes[0] != 0 {
+		mu.Write(a.h)
+	}
 	return mu.Bytes()
 }
 
