@@ -42,7 +42,7 @@ type ChainCore interface {
 	//  Mocking interfaces should be available only in the testing environment
 	// Most of these methods are made public for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
-	Enqueueiotago(chainOutput *iotago.AliasOutput, timestamp time.Time)
+	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
 	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
@@ -97,8 +97,8 @@ type Committee interface {
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
 	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
-	NodeConnectionHandleOutputFun             func(iotago.Output)
-	NodeConnectionHandleUnspentAliasOutputFun func(*iotago.AliasOutput, time.Time)
+	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
+	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
 )
 
 type NodeConnection interface {
@@ -112,7 +112,7 @@ type NodeConnection interface {
 
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID)
+	PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
 
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
@@ -132,7 +132,7 @@ type ChainNodeConnection interface {
 
 	PullState()
 	PullTransactionInclusionState(txid iotago.TransactionID)
-	PullConfirmedOutput(outputID iotago.OutputID)
+	PullConfirmedOutput(outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
 
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
@@ -149,8 +149,8 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(msg iotago.Output)
-	EnqueueStateCandidateMsg(state.VirtualStateAccess, iotago.OutputID)
+	EnqueueOutputMsg(iotago.Output, *iotago.UTXOInput)
+	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	SetChainPeers(peers []*ed25519.PublicKey)
@@ -183,8 +183,8 @@ type SyncInfo struct {
 	SyncedStateHash       hashing.HashValue
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
-	StateOutputID         iotago.OutputID
-	StateOutputHash       hashing.HashValue
+	StateOutputID         *iotago.UTXOInput
+	StateOutputCommitment hashing.HashValue
 	StateOutputTimestamp  time.Time
 }
 
@@ -237,7 +237,7 @@ type PeerStatus struct {
 
 type ChainTransitionEventData struct {
 	VirtualState    state.VirtualStateAccess
-	ChainOutput     *iotago.AliasOutput
+	ChainOutput     *iscp.AliasOutputWithID
 	OutputTimestamp time.Time
 }
 

@@ -29,7 +29,7 @@ func NewSimple(debug bool) *logger.Logger {
 
 // NewLogger produces a logger adjusted for test cases.
 func NewLogger(t *testing.T, timeLayout ...string) *logger.Logger {
-	return NewNamedLogger(t.Name())
+	return NewNamedLogger(t.Name(), timeLayout...)
 }
 
 // NewNamedLogger produces a logger adjusted for test cases.

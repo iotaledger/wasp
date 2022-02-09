@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
 	"golang.org/x/crypto/blake2b"

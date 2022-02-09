@@ -11,21 +11,21 @@ import (
 // Mock implementation of a ChainRecordRegistryProvider for testing purposes
 
 type ChainRecordRegistryProvider struct {
-	DB map[[iotago.Ed25519AddressBytesLength]byte]*registry.ChainRecord
+	DB map[iscp.ChainID]*registry.ChainRecord
 }
 
 func NewChainRecordRegistryProvider() *ChainRecordRegistryProvider {
 	return &ChainRecordRegistryProvider{
-		DB: map[[iotago.Ed25519AddressBytesLength]byte]*registry.ChainRecord{},
+		DB: map[iscp.ChainID]*registry.ChainRecord{},
 	}
 }
 
 func (p *ChainRecordRegistryProvider) SaveChainRecord(chainRecord *registry.ChainRecord) error {
-	p.DB[chainRecord.ChainID.Array()] = chainRecord
+	p.DB[*chainRecord.ChainID] = chainRecord
 	return nil
 }
 
 func (p *ChainRecordRegistryProvider) LoadChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error) {
-	ret := p.DB[chainID.Array()]
+	ret := p.DB[*chainID]
 	return ret, nil
 }

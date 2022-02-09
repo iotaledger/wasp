@@ -376,7 +376,7 @@ func (n *netImpl) Detach(attachID interface{}) {
 
 // PeerByPubKey implements peering.NetworkProvider.
 // NOTE: For now, only known nodes can be looked up by PubKey.
-func (n *netImpl) PeerByPubKey(peerPubKey *cryptolib.PublicKey) (peering.PeerSender, error) {
+func (n *netImpl) PeerByPubKey(peerPubKey *ed25519.PublicKey) (peering.PeerSender, error) {
 	return n.usePeer(peerPubKey)
 }
 

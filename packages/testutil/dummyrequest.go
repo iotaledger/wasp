@@ -12,6 +12,6 @@ func DummyOffledgerRequest(chainID *iscp.ChainID) *iscp.OffLedgerRequestData {
 	args := dict.Dict{}
 	req := iscp.NewOffLedgerRequest(chainID, contract, entrypoint, args, 0)
 	keys, _ := testkey.GenKeyAddr()
-	req.Sign(keys)
+	req.Sign(*keys)
 	return req
 }

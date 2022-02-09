@@ -27,40 +27,8 @@ type KeyPair struct {
 
 type AddressSigner KeyPair
 
-func (k *KeyPair) Valid() bool {
-	return len(k.PrivateKey) > 0
-}
-
-func (k *KeyPair) Verify(message, sig []byte) bool {
-	return Verify(k.PublicKey, message, sig)
-}
-
-func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
-	addrKeys := iotago.NewAddressKeysForEd25519Address(Ed25519AddressFromPubKey(k.PublicKey), k.PrivateKey)
-	return iotago.NewInMemoryAddressSigner(addrKeys)
-}
-
-//func (k *KeyPair) Sign(message []byte) ([]byte, error) {
-//	return k.PrivateKey.Sign(nil, message, nil) // FIXME this is wrong
-//}
-//
-//func (a AddressSigner) Sign(addr iotago.Address, msg []byte) (signature iotago.Signature, err error) {
-//	kp := KeyPair(a)
-//	if !addr.Equal(Ed25519AddressFromPubKey(kp.PublicKey)) {
-//		return nil, fmt.Errorf("can't sign message for given Ed25519 address")
-//	}
-//	b, err := kp.Sign(msg)
-//	ed25519Sig := &iotago.Ed25519Signature{}
-//	copy(ed25519Sig.Signature[:], b)
-//	copy(ed25519Sig.PublicKey[:], kp.PublicKey)
-//	return ed25519Sig, nil
-//}
-
 func NewKeyPairFromSeed(seed Seed) KeyPair {
-	var seedByte [SeedSize]byte = seed
-
-	privateKey := crypto.NewKeyFromSeed(seedByte[:])
-
+	privateKey := NewPrivateKeyFromSeed(seed)
 	return NewKeyPairFromPrivateKey(privateKey)
 }
 
@@ -79,9 +47,30 @@ func NewKeyPair() KeyPair {
 	return key
 }
 
-func Ed25519AddressFromPubKey(key PublicKey) *iotago.Ed25519Address {
-	ret := iotago.Ed25519AddressFromPubKey(key)
-	return &ret
+func (k *KeyPair) Valid() bool {
+	return len(k.PrivateKey) > 0
+}
+
+func (k *KeyPair) Verify(message, sig []byte) bool {
+	return Verify(k.PublicKey, message, sig)
+}
+
+func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
+	addrKeys := iotago.NewAddressKeysForEd25519Address(Ed25519AddressFromPubKey(k.PublicKey), k.PrivateKey)
+	return iotago.NewInMemoryAddressSigner(addrKeys)
+}
+
+func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
+	if len(privateKeyBytes) < PrivateKeySize {
+		return nil, fmt.Errorf("bytes too short")
+	}
+
+	return privateKeyBytes, nil
+}
+
+func NewPrivateKeyFromSeed(seed Seed) PrivateKey {
+	var seedByte [SeedSize]byte = seed
+	return crypto.NewKeyFromSeed(seedByte[:])
 }
 
 func PublicKeyFromString(s string) (publicKey PublicKey, err error) {
@@ -99,20 +88,4 @@ func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 	}
 
 	return publicKeyBytes, nil
-}
-
-func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
-	if len(privateKeyBytes) < PrivateKeySize {
-		return nil, fmt.Errorf("bytes too short")
-	}
-
-	return privateKeyBytes, nil
-}
-
-func Verify(publicKey PublicKey, message, sig []byte) bool {
-	return crypto.Verify(publicKey, message, sig)
-}
-
-func Sign(privateKey PrivateKey, message []byte) []byte {
-	return crypto.Sign(privateKey, message)
 }

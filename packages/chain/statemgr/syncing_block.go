@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
@@ -140,7 +139,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	return true, candidate
 }
 
-func (syncsT *syncingBlocks) approveBlockCandidates(output *iotago.AliasOutput) bool {
+func (syncsT *syncingBlocks) approveBlockCandidates(output *iscp.AliasOutputWithID) bool {
 	if output == nil {
 		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
 		return false
@@ -154,7 +153,7 @@ func (syncsT *syncingBlocks) approveBlockCandidates(output *iotago.AliasOutput) 
 		for blockHash, candidate := range sync.blockCandidates {
 			alreadyApproved := candidate.isApproved()
 			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
-				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), iscp.OID(candidate.getApprovingOutputID()), alreadyApproved)
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateCommitment().String(), iscp.OID(candidate.getApprovingOutputID()), alreadyApproved)
 			if !alreadyApproved {
 				candidate.approveIfRightOutput(output)
 				if candidate.isApproved() {
