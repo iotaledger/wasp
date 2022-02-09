@@ -214,13 +214,9 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 
 	// create UTXO
 	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
-
-	// dust deposit is taken from the allowance
-	// first is transferred to the common account then debited
-	commonAccount := commonaccount.Get(ctx.ChainID())
-	dustAssets := iscp.NewAssetsIotas(dustConsumed)
-	ctx.TransferAllowedFunds(commonAccount, dustAssets)
-	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
+	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
+	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
+	debitIotasFromAllowance(ctx, dustConsumed)
 
 	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
@@ -241,13 +237,13 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	ctx.Requiref(util.IsZeroBigInt(out.CirculatingSupply), "can't destroy foundry with positive circulating supply")
 
-	dustDepositFree := ctx.Privileged().DestroyFoundry(sn)
+	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
 	// the dust deposit goes to the caller's account
 	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-		Iotas: dustDepositFree,
+		Iotas: dustDepositReleased,
 	})
 	return nil
 }
@@ -273,7 +269,7 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "internal")
 
 	// accrue change on the caller's account
-	// update L2 ledger and transit foundry UTXO
+	// update native tokens on L2 ledger and transit foundry UTXO
 	var dustAdjustment int64
 	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
 		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
@@ -284,7 +280,14 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	}
 
 	// adjust iotas on L2 due to the possible change in dust deposit
-	AdjustAccountIotas(ctx.State(), commonaccount.Get(ctx.ChainID()), dustAdjustment)
+	switch {
+	case dustAdjustment < 0:
+		// dust deposit is taken from the allowance of the caller
+		debitIotasFromAllowance(ctx, uint64(-dustAdjustment))
+	case dustAdjustment > 0:
+		// dust deposit is returned to the caller account
+		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewAssetsIotas(uint64(dustAdjustment)))
+	}
 	return nil
 }
 

@@ -51,7 +51,7 @@ type NFT struct {
 type Calldata interface {
 	ID() RequestID
 	Params() dict.Dict
-	SenderAccount() *AgentID // returns CommonAccount if sender address is not available
+	SenderAccount() *AgentID // returns nil if sender address is not available
 	SenderAddress() iotago.Address
 	CallTarget() CallTarget
 	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type

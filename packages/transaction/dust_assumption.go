@@ -43,8 +43,8 @@ func (d *DustDepositAssumption) String() string {
 
 func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
 	return &DustDepositAssumption{
-		AnchorOutput:      aliasOutputDustDeposit(rent) + 50,
-		NativeTokenOutput: nativeTokenOutputDustDeposit(rent) + 50,
+		AnchorOutput:      aliasOutputDustDeposit(rent),
+		NativeTokenOutput: nativeTokenOutputDustDeposit(rent),
 	}
 }
 

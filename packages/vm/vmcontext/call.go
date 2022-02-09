@@ -92,7 +92,7 @@ func (vmctx *VMContext) getToBeCaller() *iscp.AgentID {
 		return vmctx.MyAgentID()
 	}
 	if vmctx.req == nil {
-		// core call (e.g. saving the anchor ID)
+		// e.g. saving the anchor ID
 		return vmctx.chainOwnerID
 	}
 	// request context

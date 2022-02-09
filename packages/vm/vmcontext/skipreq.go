@@ -3,7 +3,7 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 
 	"github.com/iotaledger/wasp/packages/kv"
 
@@ -100,7 +100,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 		return err
 	}
 	if vmctx.txbuilder.InputsAreFull() {
-		return exceptions.ErrInputLimitExceeded
+		return vmexceptions.ErrInputLimitExceeded
 	}
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
@@ -177,7 +177,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
 	if _, ok := vmctx.req.AsOnLedger().Features().ReturnAmount(); ok {
-		return xerrors.Errorf("return amount feature not supported in this version")
+		return xerrors.New("return amount feature not supported in this version")
 	}
 	return nil
 }
