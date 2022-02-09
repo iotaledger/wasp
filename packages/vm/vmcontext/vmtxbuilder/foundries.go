@@ -1,7 +1,7 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math/big"
 	"sort"
 
@@ -46,7 +46,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, ErrNotEnoughIotaBalance)
 	if err != nil {
-		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,
@@ -70,6 +70,10 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
 			ErrCantModifySupplyOfTheToken, tokenID.String(), f.in.MustNativeTokenID().String()))
 	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+	defer txb.mustCheckMessageSize()
+
 	// check the supply bounds
 	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
 	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
@@ -115,6 +119,10 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	if f.in == nil {
 		panic(ErrCantDestroyFoundryBeingCreated)
 	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+	defer txb.mustCheckMessageSize()
+
 	f.out = nil
 	// return dust deposit to accounts
 	txb.addDeltaIotasToTotal(f.in.Amount)

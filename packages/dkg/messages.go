@@ -16,7 +16,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -183,8 +184,8 @@ type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peeringID    peering.PeeringID
-	peerPubs     []cryptolib.PublicKey
-	initiatorPub cryptolib.PublicKey
+	peerPubs     []*ed25519.PublicKey
+	initiatorPub *ed25519.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
@@ -192,7 +193,7 @@ type initiatorInitMsg struct {
 
 type initiatorInitMsgIn struct {
 	initiatorInitMsg
-	SenderPubKey cryptolib.PublicKey
+	SenderPubKey *ed25519.PublicKey
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
@@ -252,21 +253,21 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if n, err = r.Read(m.peeringID[:]); err != nil {
 		return err
 	}
-	if n != ledgerstate.AddressLength {
+	if n != iotago.Ed25519AddressBytesLength {
 		return fmt.Errorf("error while reading peering ID: read %v bytes, expected %v bytes",
-			n, ledgerstate.AddressLength)
+			n, iotago.Ed25519AddressBytesLength)
 	}
 	var arrLen uint16
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.peerPubs = make([]cryptolib.PublicKey, arrLen)
+	m.peerPubs = make([]*ed25519.PublicKey, arrLen)
 	for i := range m.peerPubs {
 		var peerPubBytes []byte
 		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		peerPubKey, _, err := cryptolib.PublicKeyFromBytes(peerPubBytes)
+		peerPubKey, _, err := ed25519.PublicKeyFromBytes(peerPubBytes)
 		if err != nil {
 			return err
 		}
@@ -276,7 +277,7 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	initiatorPub, _, err := cryptolib.PublicKeyFromBytes(initiatorPubBytes)
+	initiatorPub, _, err := ed25519.PublicKeyFromBytes(initiatorPubBytes)
 	if err != nil {
 		return err
 	}
@@ -464,7 +465,7 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, m.sharedAddress.Bytes()); err != nil {
+	if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
 		return err
 	}
 	if err = util.WriteMarshaled(w, m.sharedPublic); err != nil {
@@ -486,7 +487,7 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = iotago.AddressFromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
 	m.sharedAddress = sharedAddress

@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -99,11 +98,9 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
 	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller())
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-
-	progHash := params.MustGetHashValue(root.ParamProgramHash)
-	description := params.MustGetString(root.ParamDescription, "N/A")
-	name := params.MustGetString(root.ParamName)
+	progHash := ctx.ParamDecoder().MustGetHashValue(root.ParamProgramHash)
+	description := ctx.ParamDecoder().MustGetString(root.ParamDescription, "N/A")
+	name := ctx.ParamDecoder().MustGetString(root.ParamName)
 	ctx.Requiref(name != "", "wrong name")
 
 	// pass to init function all params not consumed so far
@@ -136,8 +133,7 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 // Output:
 // - ParamData
 func findContract(ctx iscp.SandboxView) dict.Dict {
-	hname, err := kvdecoder.New(ctx.Params()).GetHname(root.ParamHname)
-	ctx.RequireNoError(err)
+	hname := ctx.ParamDecoder().MustGetHname(root.ParamHname)
 	rec := root.FindContract(ctx.State(), hname)
 	ret := dict.New()
 	found := rec != nil
@@ -154,7 +150,7 @@ func findContract(ctx iscp.SandboxView) dict.Dict {
 func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("root.grantDeployPermissions: not authorized")
 
-	deployer := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(root.ParamDeployer)
+	deployer := ctx.ParamDecoder().MustGetAgentID(root.ParamDeployer)
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
@@ -167,7 +163,7 @@ func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
 
-	deployer := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(root.ParamDeployer)
+	deployer := ctx.ParamDecoder().MustGetAgentID(root.ParamDeployer)
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
@@ -189,7 +185,7 @@ func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 
 func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
-	permissionsEnabled := kvdecoder.New(ctx.Params()).MustGetBool(root.ParamDeployPermissionsEnabled)
+	permissionsEnabled := ctx.ParamDecoder().MustGetBool(root.ParamDeployPermissionsEnabled)
 	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
 	return nil
 }

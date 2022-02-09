@@ -416,7 +416,7 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 
 func (r *OnLedgerRequestData) SenderAccount() *AgentID {
 	if r.SenderAddress() == nil || r.requestMetadata == nil {
-		return &NilAgentID
+		return nil
 	}
 	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract)
 }

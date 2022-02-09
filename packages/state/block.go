@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -15,10 +16,12 @@ import (
 )
 
 type blockImpl struct {
-	stateOutputID iotago.OutputID
+	stateOutputID *iotago.UTXOInput
 	stateUpdate   *stateUpdateImpl
 	blockIndex    uint32 // not persistent
 }
+
+var _ Block = &blockImpl{}
 
 // validates, enumerates and creates a block from array of state updates
 func newBlock(muts *buffered.Mutations) (Block, error) {
@@ -62,13 +65,13 @@ func (b *blockImpl) Bytes() []byte {
 func (b *blockImpl) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(b.ApprovingOutputID().UTXOInput()))
+	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(b.ApprovingOutputID()))
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret
 }
 
-func (b *blockImpl) ApprovingOutputID() iotago.OutputID {
+func (b *blockImpl) ApprovingOutputID() *iotago.UTXOInput {
 	return b.stateOutputID
 }
 
@@ -94,7 +97,7 @@ func (b *blockImpl) PreviousStateHash() hashing.HashValue {
 	return ph
 }
 
-func (b *blockImpl) SetApprovingOutputID(oid iotago.OutputID) {
+func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
 	b.stateOutputID = oid
 }
 
@@ -111,7 +114,7 @@ func (b *blockImpl) Write(w io.Writer) error {
 	if err := b.writeEssence(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(iscp.EncodeOutputID(b.stateOutputID)); err != nil {
+	if err := b.writeOutputID(w); err != nil {
 		return err
 	}
 	return nil
@@ -121,12 +124,23 @@ func (b *blockImpl) writeEssence(w io.Writer) error {
 	return b.stateUpdate.Write(w)
 }
 
+func (b *blockImpl) writeOutputID(w io.Writer) error {
+	if b.stateOutputID == nil {
+		return nil
+	}
+	serialized, err := b.stateOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(serialized)
+	return err
+}
+
 func (b *blockImpl) Read(r io.Reader) error {
 	if err := b.readEssence(r); err != nil {
 		return err
 	}
-
-	if n, err := r.Read(b.stateOutputID[:]); err != nil || n != len(b.stateOutputID) {
+	if err := b.readOutputID(r); err != nil {
 		return err
 	}
 	return nil
@@ -139,4 +153,12 @@ func (b *blockImpl) readEssence(r io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func (b *blockImpl) readOutputID(r io.Reader) error {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	b.stateOutputID = &iotago.UTXOInput{}
+	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
+	return err
 }

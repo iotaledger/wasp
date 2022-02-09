@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/crypto/ed25519"
 	"golang.org/x/xerrors"
@@ -118,14 +117,12 @@ func (a *AccessNodeInfo) Bytes() []byte {
 }
 
 func NewAccessNodeInfoFromAddCandidateNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-
 	ani := AccessNodeInfo{
-		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
+		NodePubKey:    ctx.ParamDecoder().MustGetBytes(ParamAccessNodeInfoPubKey),
 		ValidatorAddr: iscp.BytesFromAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
-		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
-		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
-		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
+		Certificate:   ctx.ParamDecoder().MustGetBytes(ParamAccessNodeInfoCertificate),
+		ForCommittee:  ctx.ParamDecoder().MustGetBool(ParamAccessNodeInfoForCommittee, false),
+		AccessAPI:     ctx.ParamDecoder().MustGetString(ParamAccessNodeInfoAccessAPI, ""),
 	}
 	return &ani
 }
@@ -140,11 +137,10 @@ func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 }
 
 func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	ani := AccessNodeInfo{
-		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
+		NodePubKey:    ctx.ParamDecoder().MustGetBytes(ParamAccessNodeInfoPubKey),
 		ValidatorAddr: iscp.BytesFromAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
-		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
+		Certificate:   ctx.ParamDecoder().MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani
 }

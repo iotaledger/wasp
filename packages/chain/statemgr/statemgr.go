@@ -15,6 +15,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -24,21 +25,21 @@ import (
 )
 
 type stateManager struct {
-	ready                  *ready.Ready
-	store                  kvstore.KVStore
-	chain                  chain.ChainCore
+	ready                       *ready.Ready
+	store                       kvstore.KVStore
+	chain                       chain.ChainCore
 	domain                      *DomainWithFallback
 	nodeConn                    chain.ChainNodeConnection
-	pullStateRetryTime     time.Time
-	solidState             state.VirtualStateAccess
-	stateOutput            *iotago.AliasOutput
-	stateOutputTimestamp   time.Time
-	currentSyncData        atomic.Value
-	notifiedAnchorOutputID iotago.OutputID
-	syncingBlocks          *syncingBlocks
+	pullStateRetryTime          time.Time
+	solidState                  state.VirtualStateAccess
+	stateOutput                 *iscp.AliasOutputWithID
+	stateOutputTimestamp        time.Time
+	currentSyncData             atomic.Value
+	notifiedAnchorOutputID      *iotago.UTXOInput
+	syncingBlocks               *syncingBlocks
 	receivePeerMessagesAttachID interface{}
-	timers                 StateManagerTimers
-	log                    *logger.Logger
+	timers                      StateManagerTimers
+	log                         *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgPipe       pipe.Pipe
@@ -109,7 +110,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			return
 		}
 		sm.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
-			GetBlockMsg: *msg,
+			GetBlockMsg:  *msg,
 			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	case peerMsgTypeBlock:
@@ -119,7 +120,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			return
 		}
 		sm.EnqueueBlockMsg(&messages.BlockMsgIn{
-			BlockMsg:    *msg,
+			BlockMsg:     *msg,
 			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	default:
@@ -221,7 +222,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-eventOutputMsgCh:
 			if ok {
-				sm.handleOutputMsg(msg.(iotago.Output))
+				sm.handleOutputMsg(msg.(*messages.OutputMsg))
 			} else {
 				eventOutputMsgCh = nil
 			}

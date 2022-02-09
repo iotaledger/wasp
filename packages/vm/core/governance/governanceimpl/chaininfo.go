@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -37,17 +36,15 @@ func getChainInfo(ctx iscp.SandboxView) dict.Dict {
 func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("governance.setContractFee: not authorized")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-
 	// max blob size
-	maxBlobSize := params.MustGetUint32(governance.ParamMaxBlobSizeUint32, 0)
+	maxBlobSize := ctx.ParamDecoder().MustGetUint32(governance.ParamMaxBlobSizeUint32, 0)
 	if maxBlobSize > 0 {
 		ctx.State().Set(governance.VarMaxBlobSize, codec.Encode(maxBlobSize))
 		ctx.Event(fmt.Sprintf("[updated chain config] max blob size: %d", maxBlobSize))
 	}
 
 	// max event size
-	maxEventSize := params.MustGetUint16(governance.ParamMaxEventSizeUint16, 0)
+	maxEventSize := ctx.ParamDecoder().MustGetUint16(governance.ParamMaxEventSizeUint16, 0)
 	if maxEventSize > 0 {
 		if maxEventSize < governance.MinEventSize {
 			// don't allow to set less than MinEventSize to prevent chain owner from bricking the chain
@@ -58,7 +55,7 @@ func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 	}
 
 	// max events per request
-	maxEventsPerReq := params.MustGetUint16(governance.ParamMaxEventsPerRequestUint16, 0)
+	maxEventsPerReq := ctx.ParamDecoder().MustGetUint16(governance.ParamMaxEventsPerRequestUint16, 0)
 	if maxEventsPerReq > 0 {
 		if maxEventsPerReq < governance.MinEventsPerRequest {
 			maxEventsPerReq = governance.MinEventsPerRequest
