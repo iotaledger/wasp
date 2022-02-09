@@ -40,7 +40,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		nil,
 		assets,
 		nil,
-		nil,
+		iscp.SendOptions{},
 		testdeserparams.RentStructure(),
 	)
 	if len(addIotasToDustMinimum) > 0 {
@@ -71,7 +71,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			TargetAddress:              tpkg.RandEd25519Address(),
 			Assets:                     assets,
 			Metadata:                   &iscp.SendMetadata{},
-			Options:                    nil,
+			Options:                    iscp.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
 		},
 		testdeserparams.DeSerializationParameters().RentStructure,
@@ -642,7 +642,7 @@ func TestDustDeposit(t *testing.T) {
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			nil,
+			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
 		require.Equal(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
@@ -654,7 +654,7 @@ func TestDustDeposit(t *testing.T) {
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			nil,
+			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
 		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
@@ -759,7 +759,7 @@ func TestSerDe(t *testing.T) {
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			nil,
+			iscp.SendOptions{},
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)

@@ -4,6 +4,7 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -16,8 +17,23 @@ import (
 )
 
 type sandboxView struct {
-	vmctx  *vmcontext.VMContext
-	assert *assert.Assert
+	vmctx           *vmcontext.VMContext
+	assertObj       *assert.Assert
+	paramDecoderObj iscp.KVDecoder
+}
+
+func (s *sandboxView) assert() *assert.Assert {
+	if s.assertObj == nil {
+		s.assertObj = assert.NewAssert(s.vmctx)
+	}
+	return s.assertObj
+}
+
+func (s *sandboxView) paramDecoder() iscp.KVDecoder {
+	if s.paramDecoderObj == nil {
+		s.paramDecoderObj = kvdecoder.New(s.vmctx.Params(), s.Log())
+	}
+	return s.paramDecoderObj
 }
 
 func (s *sandboxView) Assets() *iscp.Assets {
@@ -33,8 +49,7 @@ var _ iscp.SandboxView = &sandboxView{}
 func init() {
 	vmcontext.NewSandboxView = func(vmctx *vmcontext.VMContext) iscp.SandboxView {
 		return &sandboxView{
-			vmctx:  vmctx,
-			assert: assert.NewAssert(vmctx),
+			vmctx: vmctx,
 		}
 	}
 }
@@ -83,6 +98,10 @@ func (s *sandboxView) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
+func (s *sandboxView) ParamDecoder() iscp.KVDecoder {
+	return s.paramDecoder()
+}
+
 func (s *sandboxView) State() kv.KVStoreReader {
 	return s.vmctx.State()
 }
@@ -106,9 +125,9 @@ func (s *sandboxView) Budget() uint64 {
 // helper methods
 
 func (s *sandboxView) Requiref(cond bool, format string, args ...interface{}) {
-	s.assert.Requiref(cond, format, args...)
+	s.assert().Requiref(cond, format, args...)
 }
 
 func (s *sandboxView) RequireNoError(err error, str ...string) {
-	s.assert.RequireNoError(err, str...)
+	s.assert().RequireNoError(err, str...)
 }

@@ -4,6 +4,7 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -17,8 +18,9 @@ import (
 )
 
 type sandbox struct {
-	vmctx  *vmcontext.VMContext
-	assert *assert.Assert
+	vmctx           *vmcontext.VMContext
+	assertObj       *assert.Assert
+	paramDecoderObj iscp.KVDecoder
 }
 
 var _ iscp.Sandbox = &sandbox{}
@@ -26,10 +28,23 @@ var _ iscp.Sandbox = &sandbox{}
 func init() {
 	vmcontext.NewSandbox = func(vmctx *vmcontext.VMContext) iscp.Sandbox {
 		return &sandbox{
-			vmctx:  vmctx,
-			assert: assert.NewAssert(vmctx),
+			vmctx: vmctx,
 		}
 	}
+}
+
+func (s *sandbox) assert() *assert.Assert {
+	if s.assertObj == nil {
+		s.assertObj = assert.NewAssert(s.vmctx)
+	}
+	return s.assertObj
+}
+
+func (s *sandbox) paramDecoder() iscp.KVDecoder {
+	if s.paramDecoderObj == nil {
+		s.paramDecoderObj = kvdecoder.New(s.vmctx.Params(), s.Log())
+	}
+	return s.paramDecoderObj
 }
 
 func (s *sandbox) AccountID() *iscp.AgentID {
@@ -113,6 +128,10 @@ func (s *sandbox) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
+func (s *sandbox) ParamDecoder() iscp.KVDecoder {
+	return s.paramDecoder()
+}
+
 func (s *sandbox) Request() iscp.Calldata {
 	return s.vmctx.Request()
 }
@@ -152,11 +171,11 @@ func (s *sandbox) Budget() uint64 {
 // helper methods
 
 func (s *sandbox) Requiref(cond bool, format string, args ...interface{}) {
-	s.assert.Requiref(cond, format, args...)
+	s.assert().Requiref(cond, format, args...)
 }
 
 func (s *sandbox) RequireNoError(err error, str ...string) {
-	s.assert.RequireNoError(err, str...)
+	s.assert().RequireNoError(err, str...)
 }
 
 func (s *sandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID, str ...string) {
@@ -180,7 +199,7 @@ func (s *sandbox) RequireCaller(agentID *iscp.AgentID, str ...string) {
 }
 
 func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
-	s.RequireCaller(s.ChainOwnerID())
+	s.RequireCaller(s.ChainOwnerID(), str...)
 }
 
 func (s *sandbox) Privileged() iscp.Privileged {

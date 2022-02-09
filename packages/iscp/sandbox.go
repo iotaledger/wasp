@@ -21,6 +21,8 @@ type SandboxBase interface {
 	AccountID() *AgentID
 	// Params returns the parameters of the current call
 	Params() dict.Dict
+	// ParamDecoder utility object for decoding parameters of the request
+	ParamDecoder() KVDecoder
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain

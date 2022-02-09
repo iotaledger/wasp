@@ -21,11 +21,12 @@ import (
 )
 
 type sandboxview struct {
-	contractHname iscp.Hname
-	params        dict.Dict
-	state         kv.KVStoreReader
-	vctx          *Viewcontext
-	assert        *assert.Assert
+	contractHname   iscp.Hname
+	params          dict.Dict
+	state           kv.KVStoreReader
+	vctx            *Viewcontext
+	assertObj       *assert.Assert
+	paramDecoderObj iscp.KVDecoder
 	// gas related
 	gasBudget uint64
 	gasBurned uint64
@@ -41,8 +42,21 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 		contractHname: contractHname,
 		params:        params,
 		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
-		assert:        assert.NewAssert(vctx),
 	}
+}
+
+func (s *sandboxview) assert() *assert.Assert {
+	if s.assertObj == nil {
+		s.assertObj = assert.NewAssert(s.vctx)
+	}
+	return s.assertObj
+}
+
+func (s *sandboxview) paramDecoder() iscp.KVDecoder {
+	if s.paramDecoderObj == nil {
+		s.paramDecoderObj = kvdecoder.New(s.params, s.Log())
+	}
+	return s.paramDecoderObj
 }
 
 func (s *sandboxview) AccountID() *iscp.AgentID {
@@ -116,6 +130,10 @@ func (s *sandboxview) Params() dict.Dict {
 	return s.params
 }
 
+func (s *sandboxview) ParamDecoder() iscp.KVDecoder {
+	return s.paramDecoder()
+}
+
 func (s *sandboxview) State() kv.KVStoreReader {
 	return s.state
 }
@@ -147,9 +165,9 @@ func (s *sandboxview) gasBudgetLeft() uint64 {
 }
 
 func (s *sandboxview) Requiref(cond bool, format string, args ...interface{}) {
-	s.assert.Requiref(cond, format, args...)
+	s.assert().Requiref(cond, format, args...)
 }
 
 func (s *sandboxview) RequireNoError(err error, str ...string) {
-	s.assert.RequireNoError(err, str...)
+	s.assert().RequireNoError(err, str...)
 }
