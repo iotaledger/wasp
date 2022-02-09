@@ -62,8 +62,8 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 
-	targetAccount := ctx.ParamDecoder().MustGetAgentID(ParamAgentID)
-	forceOpenAccount := ctx.ParamDecoder().MustGetBool(ParamForceOpenAccount, false)
+	targetAccount := ctx.Params().MustGetAgentID(ParamAgentID)
+	forceOpenAccount := ctx.Params().MustGetBool(ParamForceOpenAccount, false)
 
 	if forceOpenAccount {
 		ctx.TransferAllowedFundsForceCreateTarget(targetAccount)
@@ -140,7 +140,7 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	checkLedger(state, "accounts.harvest.begin")
 	defer checkLedger(state, "accounts.harvest.exit")
 
-	bottomIotas := ctx.ParamDecoder().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
+	bottomIotas := ctx.Params().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
 	commonAccount := commonaccount.Get(ctx.ChainID())
 	toWithdraw := GetAccountAssets(state, commonAccount)
 	if toWithdraw.IsEmpty() {
@@ -159,7 +159,7 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 // - ParamAgentID
 func viewBalance(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewBalance")
-	aid, err := ctx.ParamDecoder().GetAgentID(ParamAgentID)
+	aid, err := ctx.Params().GetAgentID(ParamAgentID)
 	ctx.RequireNoError(err)
 	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
 }
@@ -176,7 +176,7 @@ func viewAccounts(ctx iscp.SandboxView) dict.Dict {
 }
 
 func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
-	account := ctx.ParamDecoder().MustGetAgentID(ParamAgentID)
+	account := ctx.Params().MustGetAgentID(ParamAgentID)
 	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
@@ -202,9 +202,9 @@ func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 
-	tokenScheme := ctx.ParamDecoder().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
-	tokenTag := ctx.ParamDecoder().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
-	tokenMaxSupply := ctx.ParamDecoder().MustGetBigInt(ParamMaxSupply)
+	tokenScheme := ctx.Params().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
+	tokenTag := ctx.Params().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
+	tokenMaxSupply := ctx.Params().MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
 	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
@@ -223,7 +223,7 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 // foundryDestroy destroys foundry if that is possible
 func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryDestroy")
-	sn := ctx.ParamDecoder().MustGetUint32(ParamFoundrySN)
+	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
@@ -247,12 +247,12 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
 func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
-	sn := ctx.ParamDecoder().MustGetUint32(ParamFoundrySN)
-	delta := ctx.ParamDecoder().MustGetBigInt(ParamSupplyDeltaAbs)
+	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
+	delta := ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs)
 	if util.IsZeroBigInt(delta) {
 		return nil
 	}
-	destroy := ctx.ParamDecoder().MustGetBool(ParamDestroyTokens, false)
+	destroy := ctx.Params().MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
@@ -287,7 +287,7 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 func foundryOutput(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryOutput")
 
-	sn := ctx.ParamDecoder().MustGetUint32(ParamFoundrySN)
+	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)

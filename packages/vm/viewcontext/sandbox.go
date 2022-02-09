@@ -21,12 +21,11 @@ import (
 )
 
 type sandboxview struct {
-	contractHname   iscp.Hname
-	params          dict.Dict
-	state           kv.KVStoreReader
-	vctx            *Viewcontext
-	assertObj       *assert.Assert
-	paramDecoderObj iscp.KVDecoder
+	contractHname iscp.Hname
+	params        iscp.Params
+	state         kv.KVStoreReader
+	vctx          *Viewcontext
+	assertObj     *assert.Assert
 	// gas related
 	gasBudget uint64
 	gasBurned uint64
@@ -40,8 +39,11 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 	return &sandboxview{
 		vctx:          vctx,
 		contractHname: contractHname,
-		params:        params,
-		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
+		params: iscp.Params{
+			Dict:      params,
+			KVDecoder: kvdecoder.New(params, vctx.log),
+		},
+		state: contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
 	}
 }
 
@@ -50,13 +52,6 @@ func (s *sandboxview) assert() *assert.Assert {
 		s.assertObj = assert.NewAssert(s.vctx)
 	}
 	return s.assertObj
-}
-
-func (s *sandboxview) paramDecoder() iscp.KVDecoder {
-	if s.paramDecoderObj == nil {
-		s.paramDecoderObj = kvdecoder.New(s.params, s.Log())
-	}
-	return s.paramDecoderObj
 }
 
 func (s *sandboxview) AccountID() *iscp.AgentID {
@@ -126,12 +121,8 @@ func (s *sandboxview) Log() iscp.LogInterface {
 	return s.vctx
 }
 
-func (s *sandboxview) Params() dict.Dict {
-	return s.params
-}
-
-func (s *sandboxview) ParamDecoder() iscp.KVDecoder {
-	return s.paramDecoder()
+func (s *sandboxview) Params() *iscp.Params {
+	return &s.params
 }
 
 func (s *sandboxview) State() kv.KVStoreReader {
