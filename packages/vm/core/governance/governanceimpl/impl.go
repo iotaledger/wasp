@@ -46,12 +46,12 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// retrieving init parameters
 	// -- chain ID
 
-	chainID := ctx.ParamDecoder().MustGetChainID(governance.ParamChainID)
-	chainDescription := ctx.ParamDecoder().MustGetString(governance.ParamDescription, "N/A")
-	feePolicyBytes := ctx.ParamDecoder().MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
+	chainID := ctx.Params().MustGetChainID(governance.ParamChainID)
+	chainDescription := ctx.Params().MustGetString(governance.ParamDescription, "N/A")
+	feePolicyBytes := ctx.Params().MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
-	state.Set(governance.VarChainOwnerID, ctx.ParamDecoder().MustGetAgentID(governance.ParamChainOwner).Bytes())
+	state.Set(governance.VarChainOwnerID, ctx.Params().MustGetAgentID(governance.ParamChainOwner).Bytes())
 	state.Set(governance.VarDescription, codec.EncodeString(chainDescription))
 
 	state.Set(governance.VarMaxBlobSize, codec.Encode(governance.DefaultMaxBlobSize))

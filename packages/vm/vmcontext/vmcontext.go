@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -73,7 +72,7 @@ type VMContext struct {
 type callContext struct {
 	caller             *iscp.AgentID // calling agent
 	contract           iscp.Hname    // called contract
-	params             dict.Dict     // params passed
+	params             iscp.Params   // params passed
 	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 

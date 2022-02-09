@@ -21,7 +21,7 @@ import (
 // governance transition. The state of the chain remains unchanged
 func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("rotateStateController")
-	newStateControllerAddr := ctx.ParamDecoder().MustGetAddress(governance.ParamStateControllerAddress)
+	newStateControllerAddr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	ctx.Requiref(amap.MustHasAt(iscp.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix))
@@ -53,7 +53,7 @@ func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 
 func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("addAllowedStateControllerAddress")
-	addr := ctx.ParamDecoder().MustGetAddress(governance.ParamStateControllerAddress)
+	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustSetAt(iscp.BytesFromAddress(addr), []byte{0xFF})
 	return nil
@@ -61,7 +61,7 @@ func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 
 func removeAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("removeAllowedStateControllerAddress")
-	addr := ctx.ParamDecoder().MustGetAddress(governance.ParamStateControllerAddress)
+	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustDelAt(iscp.BytesFromAddress(addr))
 	return nil
