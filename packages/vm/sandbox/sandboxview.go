@@ -37,11 +37,11 @@ func (s *sandboxView) paramDecoder() iscp.KVDecoder {
 }
 
 func (s *sandboxView) Assets() *iscp.Assets {
-	panic("implement me")
+	return s.vmctx.GetAssets(s.vmctx.AccountID())
 }
 
 func (s *sandboxView) Timestamp() int64 {
-	panic("implement me")
+	return s.vmctx.Timestamp()
 }
 
 var _ iscp.SandboxView = &sandboxView{}
@@ -59,11 +59,11 @@ func (s *sandboxView) AccountID() *iscp.AgentID {
 }
 
 func (s *sandboxView) BalanceIotas() uint64 {
-	panic("implement me")
+	return s.vmctx.GetIotaBalance(s.vmctx.AccountID())
 }
 
 func (s *sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
-	panic("implement me")
+	return s.vmctx.GetNativeTokenBalance(s.vmctx.AccountID(), id)
 }
 
 func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
