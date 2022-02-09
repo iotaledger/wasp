@@ -47,7 +47,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
 	a.RequireNoError(err)
 
-	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldGasLimit), evm.GasLimitDefault)
+	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldBlockGasLimit), evm.BlockGasLimitDefault)
 	a.RequireNoError(err)
 
 	blockKeepAmount, err := codec.DecodeInt32(ctx.Params().MustGet(evm.FieldBlockKeepAmount), evm.BlockKeepAmountDefault)
@@ -78,7 +78,7 @@ func mintBlock(ctx iscp.Sandbox) dict.Dict {
 }
 
 func applyTransaction(ctx iscp.Sandbox) dict.Dict {
-	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, blockTime uint32) *types.Receipt {
+	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, blockTime uint32, gasBudget uint64) (uint64, error) {
 		var emu *emulator.EVMEmulator
 		if blockTime > 0 {
 			// next block will be minted when mintBlock() is called (via timelocked request)
@@ -87,9 +87,8 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 			// next block will be minted when the ISCP block is closed
 			emu = getEmulatorInBlockContext(ctx)
 		}
-		receipt, err := emu.SendTransaction(tx)
-		ctx.RequireNoError(err)
-		return receipt
+		_, gasUsed, err := emu.SendTransaction(tx, gasBudget)
+		return gasUsed, err
 	})
 }
 

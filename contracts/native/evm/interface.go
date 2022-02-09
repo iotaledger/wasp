@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 var (
@@ -33,8 +34,8 @@ var (
 	FuncSetNextOwner   = coreutil.Func("setNextOwner")
 	FuncClaimOwnership = coreutil.Func("claimOwnership")
 	FuncGetOwner       = coreutil.ViewFunc("getOwner")
-	FuncSetGasPerIota  = coreutil.Func("setGasPerIota")
-	FuncGetGasPerIota  = coreutil.ViewFunc("getGasPerIota")
+	FuncSetGasRatio    = coreutil.Func("setGasRatio")
+	FuncGetGasRatio    = coreutil.ViewFunc("getGasRatio")
 	FuncSetBlockTime   = coreutil.Func("setBlockTime") // only implemented by evmlight
 	FuncMintBlock      = coreutil.Func("mintBlock")    // only implemented by evmlight
 )
@@ -56,10 +57,8 @@ const (
 	FieldBlockHash               = "bh"
 	FieldCallMsg                 = "c"
 	FieldNextEVMOwner            = "n"
-	FieldGasPerIota              = "w"
-	FieldGasFee                  = "f"
-	FieldGasUsed                 = "gu"
-	FieldGasLimit                = "gl"
+	FieldGasRatio                = "w"
+	FieldBlockGasLimit           = "gl"
 	FieldFilterQuery             = "fq"
 
 	// evmlight only:
@@ -71,11 +70,16 @@ const (
 const (
 	DefaultChainID = 1074 // IOTA -- get it?
 
-	DefaultGasPerIota uint64 = 1000
-	GasLimitDefault          = uint64(15000000)
+	BlockGasLimitDefault = uint64(15000000)
 
 	BlockKeepAll           = -1
 	BlockKeepAmountDefault = BlockKeepAll
 )
 
-var GasPrice = big.NewInt(0)
+var (
+	// Gas is charged in iotas, not ETH
+	GasPrice = big.NewInt(0)
+
+	// <ISC gas> = <EVM Gas> * <A> / <B>
+	DefaultGasRatio = util.Ratio32{A: 1, B: 1}
+)
