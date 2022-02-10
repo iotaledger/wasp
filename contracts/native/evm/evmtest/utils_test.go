@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscptest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
@@ -26,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
 )
@@ -70,15 +72,15 @@ type loopContractInstance struct {
 }
 
 type iotaCallOptions struct {
-	wallet   *cryptolib.KeyPair
-	transfer uint64
+	wallet *cryptolib.KeyPair
+	before func(*solo.CallParams)
 }
 
 type ethCallOptions struct {
 	iota     iotaCallOptions
 	sender   *ecdsa.PrivateKey
 	value    *big.Int
-	gasLimit uint64
+	gasLimit *uint64
 }
 
 func initEVMChain(t testing.TB, evmFlavor *coreutil.ContractInfo, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
@@ -124,27 +126,27 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	if opt.wallet == nil {
 		opt.wallet = &e.soloChain.OriginatorPrivateKey
 	}
-	if opt.transfer == 0 {
-		opt.transfer = 1
-	}
 	return opt
 }
 
-func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(e.evmFlavor.Name, funName, params...).AddAssetsIotas(transfer)
+func (e *evmChainInstance) buildSoloRequest(funName string, params ...interface{}) *solo.CallParams {
+	return solo.NewCallParams(e.evmFlavor.Name, funName, params...)
 }
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
 	opt := e.parseIotaCallOptions(opts)
-	req := e.buildSoloRequest(funName, opt.transfer, params...)
-	gas, gasFee, err := e.soloChain.EstimateGasOnLedger(req, opt.wallet, true)
-	if err != nil {
-		return nil, err
+	req := e.buildSoloRequest(funName, params...)
+	if opt.before != nil {
+		opt.before(req)
 	}
-	return e.soloChain.PostRequestSync(
-		req.WithGasBudget(gas).AddAssetsIotas(gasFee),
-		opt.wallet,
-	)
+	if req.GasBudget() == 0 {
+		gasBudget, gasFee, err := e.soloChain.EstimateGasOnLedger(req, opt.wallet, true)
+		if err != nil {
+			return nil, err
+		}
+		req.WithGasBudget(gasBudget).AddAssetsIotas(gasFee)
+	}
+	return e.soloChain.PostRequestSync(req, opt.wallet)
 }
 
 func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
@@ -176,16 +178,16 @@ func (e *evmChainInstance) getCode(addr common.Address) []byte {
 	return ret.MustGet(evm.FieldResult)
 }
 
-func (e *evmChainInstance) getGasPerIotas() uint64 {
-	ret, err := e.callView(evm.FuncGetGasPerIota.Name)
+func (e *evmChainInstance) getGasRatio() util.Ratio32 {
+	ret, err := e.callView(evm.FuncGetGasRatio.Name)
 	require.NoError(e.t, err)
-	gasPerIotas, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
+	ratio, err := codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
-	return gasPerIotas
+	return ratio
 }
 
-func (e *evmChainInstance) setGasPerIotas(newGasPerIota uint64, opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, evm.FuncSetGasPerIota.Name, evm.FieldGasPerIota, newGasPerIota)
+func (e *evmChainInstance) setGasRatio(newGasRatio util.Ratio32, opts ...iotaCallOptions) error {
+	_, err := e.postRequest(opts, evm.FuncSetGasRatio.Name, evm.FieldGasRatio, newGasRatio)
 	return err
 }
 
@@ -263,13 +265,15 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	value := big.NewInt(0)
 
-	// estimate EVM gas
-	evmGas := e.estimateGas(ethereum.CallMsg{
-		From:     creatorAddress,
-		GasPrice: evm.GasPrice,
-		Value:    value,
-		Data:     data,
-	})
+	var evmGas uint64 = 0
+	if e.evmFlavor.Name == evmchain.Contract.Name {
+		evmGas = e.estimateGas(ethereum.CallMsg{
+			From:     creatorAddress,
+			GasPrice: evm.GasPrice,
+			Value:    value,
+			Data:     data,
+		})
+	}
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, value, evmGas, evm.GasPrice, data),
@@ -281,21 +285,16 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	// estimate ISCP gas
 	req := solo.NewCallParamsFromDic(e.evmFlavor.Name, evm.FuncSendTransaction.Name, dict.Dict{
 		evm.FieldTransactionData: txdata,
 	})
+
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
+	require.NoError(e.t, err)
+	req.WithGasBudget(iscpGas).AddAssetsIotas(iscpGasFee)
 
 	// send EVM tx
-	_, err = e.soloChain.PostRequestSync(
-		solo.NewCallParamsFromDic(e.evmFlavor.Name, evm.FuncSendTransaction.Name, dict.Dict{
-			evm.FieldTransactionData: txdata,
-		}).
-			WithGasBudget(iscpGas).
-			AddAssetsIotas(evmGas/e.getGasPerIotas()+iscpGasFee),
-		nil,
-	)
+	_, err = e.soloChain.PostRequestSync(req, nil)
 	require.NoError(e.t, err)
 
 	return &evmContractInstance{
@@ -310,7 +309,7 @@ func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
 	ret, err := e.callView(evm.FuncEstimateGas.Name, evm.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
 	if err != nil {
 		e.t.Logf("%v", err)
-		return evm.GasLimitDefault - 1
+		return evm.BlockGasLimitDefault - 1
 	}
 	gas, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
@@ -333,15 +332,6 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 	if opt.iota.wallet == nil {
 		opt.iota.wallet = &e.chain.soloChain.OriginatorPrivateKey
 	}
-	if opt.gasLimit == 0 {
-		opt.gasLimit = e.chain.estimateGas(e.callMsg(ethereum.CallMsg{
-			From: crypto.PubkeyToAddress(opt.sender.PublicKey),
-			Data: callData,
-		}))
-	}
-	if opt.iota.transfer == 0 {
-		opt.iota.transfer = opt.gasLimit / e.chain.getGasPerIotas()
-	}
 	if opt.value == nil {
 		opt.value = big.NewInt(0)
 	}
@@ -357,7 +347,19 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 
 	nonce := e.chain.getNonce(senderAddress)
 
-	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callArguments)
+	var evmGas uint64 = 0
+	if opt.gasLimit != nil {
+		evmGas = *opt.gasLimit
+	} else if e.chain.evmFlavor.Name == evmchain.Contract.Name {
+		evmGas = e.chain.estimateGas(e.callMsg(ethereum.CallMsg{
+			From:     senderAddress,
+			GasPrice: evm.GasPrice,
+			Value:    opt.value,
+			Data:     callArguments,
+		}))
+	}
+
+	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, evmGas, evm.GasPrice, callArguments)
 
 	tx, err := types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 	require.NoError(e.chain.t, err)
@@ -368,10 +370,9 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 }
 
 type callFnResult struct {
-	tx                 *types.Transaction
-	evmReceipt         *types.Receipt
-	evmChargedFeeIotas uint64
-	iscpReceipt        *blocklog.RequestReceipt
+	tx          *types.Transaction
+	evmReceipt  *types.Receipt
+	iscpReceipt *blocklog.RequestReceipt
 }
 
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (res callFnResult, err error) {
@@ -380,18 +381,12 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	txdata, tx, opt := e.buildEthTxData(opts, fnName, args...)
 	res.tx = tx
 
-	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata)
+	_, err = e.chain.postRequest([]iotaCallOptions{opt.iota}, evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata)
 	if err != nil {
 		return
 	}
 
 	res.iscpReceipt = e.chain.soloChain.LastReceipt()
-
-	res.evmChargedFeeIotas, err = codec.DecodeUint64(result.MustGet(evm.FieldGasFee))
-	require.NoError(e.chain.t, err)
-
-	gasUsed, err := codec.DecodeUint64(result.MustGet(evm.FieldGasUsed))
-	require.NoError(e.chain.t, err)
 
 	receiptResult, err := e.chain.callView(evm.FuncGetReceipt.Name, evm.FieldTransactionHash, tx.Hash().Bytes())
 	require.NoError(e.chain.t, err)
@@ -399,7 +394,6 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	res.evmReceipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evm.FieldResult))
 	require.NoError(e.chain.t, err)
 
-	require.EqualValues(e.chain.t, res.evmReceipt.GasUsed, gasUsed)
 	return
 }
 
@@ -411,7 +405,7 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 	senderAddress := crypto.PubkeyToAddress(opt.sender.PublicKey)
 	callMsg := e.callMsg(ethereum.CallMsg{
 		From:     senderAddress,
-		Gas:      opt.gasLimit,
+		Gas:      0,
 		GasPrice: evm.GasPrice,
 		Value:    opt.value,
 		Data:     callArguments,

@@ -44,7 +44,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
 	a.RequireNoError(err)
 
-	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldGasLimit), evm.GasLimitDefault)
+	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldBlockGasLimit), evm.BlockGasLimitDefault)
 	a.RequireNoError(err)
 
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
@@ -61,11 +61,9 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 }
 
 func applyTransaction(ctx iscp.Sandbox) dict.Dict {
-	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, _ uint32) *types.Receipt {
-		emu := getEmulatorInBlockContext(ctx)
-		receipt, err := emu.SendTransaction(tx)
-		ctx.RequireNoError(err)
-		return receipt
+	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, _ uint32, gasBudget uint64) (uint64, error) {
+		_, gasUsed, error := getEmulatorInBlockContext(ctx).SendTransaction(tx, gasBudget)
+		return gasUsed, error
 	})
 }
 

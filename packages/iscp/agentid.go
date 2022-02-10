@@ -18,6 +18,8 @@ import (
 // TODO make this configurable
 const Bech32Prefix = iotago.PrefixMainnet
 
+const nilAgentID = 0xff
+
 // AgentID represents address on the ledger with optional hname
 // If address is and alias address and hname is != 0 the agent id is interpreted as
 // ad contract id
@@ -88,7 +90,8 @@ func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	if err != nil {
 		return nil, err
 	}
-	if addrType == 0xff {
+	// is this the special value (0xff) that indicates a nil agent id?
+	if addrType == nilAgentID {
 		return &NilAgentID, nil
 	}
 	mu.ReadSeek(-1)
@@ -96,10 +99,12 @@ func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	if ret.a, err = AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if addrType != 0 {
-		if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
-			return nil, err
-		}
+	if addrType == byte(iotago.AddressEd25519) {
+		// normal iota address always has hName zero, no need to encode hName
+		return ret, nil
+	}
+	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
@@ -157,8 +162,9 @@ func (a *AgentID) Hname() Hname {
 func (a *AgentID) Bytes() []byte {
 	mu := marshalutil.New()
 	if a.IsNil() {
-		// encode special value in address type byte that will never occur as address type
-		mu.WriteByte(0xff)
+		// encode special value (0xff) in address type byte
+		// the value will never occur as actual address type
+		mu.WriteByte(nilAgentID)
 		return mu.Bytes()
 	}
 	addressBytes, err := a.a.Serialize(serializer.DeSeriModeNoValidation, nil)
@@ -166,10 +172,11 @@ func (a *AgentID) Bytes() []byte {
 		return nil
 	}
 	mu.WriteBytes(addressBytes)
-	// address type 0 always has hName zero, no need to encode hName
-	if addressBytes[0] != 0 {
-		mu.Write(a.h)
+	if addressBytes[0] == byte(iotago.AddressEd25519) {
+		// normal iota address always has hName zero, no need to encode hName
+		return mu.Bytes()
 	}
+	mu.Write(a.h)
 	return mu.Bytes()
 }
 
