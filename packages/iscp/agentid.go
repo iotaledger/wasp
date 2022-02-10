@@ -99,8 +99,9 @@ func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	if ret.a, err = AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if addrType == byte(iotago.AddressEd25519) {
-		// normal iota address always has hName zero, no need to encode hName
+	// only alias address can have a non-zero hName
+	if addrType != byte(iotago.AddressAlias) {
+		// no need to decode a value that is always zero
 		return ret, nil
 	}
 	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
@@ -163,7 +164,7 @@ func (a *AgentID) Bytes() []byte {
 	mu := marshalutil.New()
 	if a.IsNil() {
 		// encode special value (0xff) in address type byte
-		// the value will never occur as actual address type
+		// this value will never occur as actual address type
 		mu.WriteByte(nilAgentID)
 		return mu.Bytes()
 	}
@@ -172,8 +173,9 @@ func (a *AgentID) Bytes() []byte {
 		return nil
 	}
 	mu.WriteBytes(addressBytes)
-	if addressBytes[0] == byte(iotago.AddressEd25519) {
-		// normal iota address always has hName zero, no need to encode hName
+	// only alias address can have a non-zero hName
+	if addressBytes[0] != byte(iotago.AddressAlias) {
+		// no need to encode a value that is always zero
 		return mu.Bytes()
 	}
 	mu.Write(a.h)

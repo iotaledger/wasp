@@ -9,7 +9,7 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.32.0
+	github.com/bytecodealliance/wasmtime-go v0.33.1
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220119141545-2dab9f1c12a5

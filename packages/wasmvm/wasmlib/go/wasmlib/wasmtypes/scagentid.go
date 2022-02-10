@@ -40,16 +40,19 @@ func (o ScAgentID) String() string {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// note: only alias address can have a non-zero hname
+// so there is no need to encode it when it is always zero
+
 func AgentIDDecode(dec *WasmDecoder) ScAgentID {
-	if dec.Peek() == ScAddressEd25519 {
-		return ScAgentID{address: AddressDecode(dec)}
+	if dec.Peek() == ScAddressAlias {
+		return ScAgentID{address: AddressDecode(dec), hname: HnameDecode(dec)}
 	}
-	return ScAgentID{address: AddressDecode(dec), hname: HnameDecode(dec)}
+	return ScAgentID{address: AddressDecode(dec)}
 }
 
 func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
 	AddressEncode(enc, value.address)
-	if value.address.Bytes()[0] != ScAddressEd25519 {
+	if value.address.Bytes()[0] == ScAddressAlias {
 		HnameEncode(enc, value.hname)
 	}
 }
@@ -75,12 +78,11 @@ func AgentIDFromBytes(buf []byte) ScAgentID {
 			address: AddressFromBytes(buf),
 		}
 	case ScAddressNFT:
-		if len(buf) != ScLengthNFT+ScHnameLength {
+		if len(buf) != ScLengthNFT {
 			panic("invalid AgentID length: NFT address")
 		}
 		return ScAgentID{
-			address: AddressFromBytes(buf[:ScLengthNFT]),
-			hname:   HnameFromBytes(buf[ScLengthNFT:]),
+			address: AddressFromBytes(buf),
 		}
 	case nilAgentID: // nil agent id
 		if len(buf) != 1 {
@@ -97,10 +99,10 @@ func AgentIDToBytes(value ScAgentID) []byte {
 		return []byte{nilAgentID}
 	}
 	buf := AddressToBytes(value.address)
-	if buf[0] == ScAddressEd25519 {
-		return buf
+	if buf[0] == ScAddressAlias {
+		buf = append(buf, HnameToBytes(value.hname)...)
 	}
-	return append(buf, HnameToBytes(value.hname)...)
+	return buf
 }
 
 func AgentIDToString(value ScAgentID) string {
