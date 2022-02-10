@@ -10,17 +10,17 @@ package coreaccounts
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DepositCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableDepositParams
+	Func   *wasmlib.ScFunc
+	Params MutableDepositParams
 }
 
 type HarvestCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableHarvestParams
+	Func   *wasmlib.ScFunc
+	Params MutableHarvestParams
 }
 
 type WithdrawCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type AccountsCall struct {
@@ -93,13 +93,13 @@ func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-    	FuncDeposit,
-    	FuncHarvest,
-    	FuncWithdraw,
-    	ViewAccounts,
-    	ViewBalance,
-    	ViewGetAccountNonce,
-    	ViewTotalAssets,
+		FuncDeposit,
+		FuncHarvest,
+		FuncWithdraw,
+		ViewAccounts,
+		ViewBalance,
+		ViewGetAccountNonce,
+		ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

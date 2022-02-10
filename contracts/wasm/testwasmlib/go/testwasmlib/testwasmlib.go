@@ -64,7 +64,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
 	}
 	if f.Params.Color().Exists() {
-		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
+		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
 		ctx.Require(f.Params.Color().Value() == color, "mismatch: Color")
 	}
 	if f.Params.Hash().Exists() {

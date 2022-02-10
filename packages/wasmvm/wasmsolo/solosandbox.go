@@ -79,8 +79,10 @@ func (s *SoloSandbox) Budget() uint64 {
 	panic("implement me")
 }
 
-var _ wasmhost.ISandbox = new(SoloSandbox)
-var _ iscp.Gas = new(SoloSandbox)
+var (
+	_ wasmhost.ISandbox = new(SoloSandbox)
+	_ iscp.Gas          = new(SoloSandbox)
+)
 
 func NewSoloSandbox(ctx *SoloContext) *SoloSandbox {
 	s := &SoloSandbox{ctx: ctx}
@@ -233,7 +235,7 @@ func (s *SoloSandbox) fnDeployContract(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnEntropy(args []byte) []byte {
-	return s.ctx.Chain.ChainID.Bytes()[1:]
+	return s.ctx.Chain.ChainID.Bytes()
 }
 
 func (s *SoloSandbox) fnEvent(args []byte) []byte {
@@ -279,7 +281,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
-	s.Tracef("POST c'%s' f'%s'", s.ctx.scName, funcName)
+	s.Tracef("POST %s.%s", s.ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
