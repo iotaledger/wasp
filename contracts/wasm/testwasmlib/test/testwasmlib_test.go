@@ -134,16 +134,16 @@ func TestInvalidSizeParams(t *testing.T) {
 
 			// no need to check bool/int8/uint8
 			if allLengths[index] != 1 {
-			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
+				pt := testwasmlib.ScFuncs.ParamTypes(ctx)
 				pt.Params.Param().GetBytes(param).SetValue(make([]byte, 1))
-			pt.Func.TransferIotas(1).Post()
-			require.Error(t, ctx.Err)
+				pt.Func.TransferIotas(1).Post()
+				require.Error(t, ctx.Err)
 				require.Contains(t, ctx.Err.Error(), invalidLength)
 
-			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
-			pt.Func.TransferIotas(1).Post()
-			require.Error(t, ctx.Err)
+				pt = testwasmlib.ScFuncs.ParamTypes(ctx)
+				pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
+				pt.Func.TransferIotas(1).Post()
+				require.Error(t, ctx.Err)
 				require.Contains(t, ctx.Err.Error(), invalidLength)
 			}
 
