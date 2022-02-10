@@ -91,19 +91,7 @@ func (cvt WasmConvertor) IscpRequestID(requestID *wasmtypes.ScRequestID) *iscp.R
 
 func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
 	buf := iscp.BytesFromAddress(address)
-	scBuf := make([]byte, wasmtypes.ScAddressLength)
-	switch iotago.AddressType(buf[0]) {
-	case iotago.AddressAlias:
-		scBuf[0] = wasmtypes.ScAddressAlias
-	case iotago.AddressEd25519:
-		scBuf[0] = wasmtypes.ScAddressEd25519
-	case iotago.AddressNFT:
-		scBuf[0] = wasmtypes.ScAddressNFT
-	default:
-		panic("invalid ISCP Address type")
-	}
-	copy(scBuf[1:], buf[1:])
-	return wasmtypes.AddressFromBytes(scBuf)
+	return wasmtypes.AddressFromBytes(buf)
 }
 
 func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
@@ -54,33 +55,33 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	*wasmsolo.GoWasm = false
 	*wasmsolo.TsWasm = false
 
-	//exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
-	//if exists {
-	//	wasmlib.ConnectHost(nil)
-	//	t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
-	//		test(t, true)
-	//	})
-	//}
-	//
-	//exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
-	//if exists {
-	//	*wasmsolo.GoWasm = true
-	//	wasmlib.ConnectHost(nil)
-	//	t.Run(fmt.Sprintf("run GO version of %s", t.Name()), func(t *testing.T) {
-	//		test(t, true)
-	//	})
-	//	*wasmsolo.GoWasm = false
-	//}
-	//
-	//exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
-	//if exists {
-	//	*wasmsolo.TsWasm = true
-	//	wasmlib.ConnectHost(nil)
-	//	t.Run(fmt.Sprintf("run TS version of %s", t.Name()), func(t *testing.T) {
-	//		test(t, true)
-	//	})
-	//	*wasmsolo.TsWasm = false
-	//}
+	exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
+	if exists {
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+	}
+
+	exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
+	if exists {
+		*wasmsolo.GoWasm = true
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run GO version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+		*wasmsolo.GoWasm = false
+	}
+
+	exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
+	if exists {
+		*wasmsolo.TsWasm = true
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run TS version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+		*wasmsolo.TsWasm = false
+	}
 
 	*wasmsolo.GoDebug = true
 	wasmlib.ConnectHost(nil)

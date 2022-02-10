@@ -28,7 +28,7 @@ const ( // TODO set back to false
 )
 
 var (
-	GoDebug    = flag.Bool("godebug", true, "debug go smart contract code")
+	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
 	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
 	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
@@ -98,6 +98,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(100_000_000, creator.Pair)
 	}
 	ctx.upload(keyPair)
 	if ctx.Err != nil {
@@ -126,11 +127,10 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	}
 
 	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
-	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, &ctx.Chain.OriginatorPrivateKey)
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
-
 	return ctx.init(onLoad)
 }
 
@@ -151,12 +151,19 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(100_000_000, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, scName, ctx.Hprog, params...)
+	if ctx.Err != nil {
+		return ctx
+	}
+
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}

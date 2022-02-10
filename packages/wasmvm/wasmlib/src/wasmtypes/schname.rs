@@ -13,7 +13,7 @@ pub const SC_HNAME_LENGTH: usize = 4;
 pub struct ScHname(pub u32);
 
 impl ScHname {
-    pub fn new(name: &str]) -> ScHname {
+    pub fn new(name: &str) -> ScHname {
         hname_from_bytes(&host::sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
     }
 

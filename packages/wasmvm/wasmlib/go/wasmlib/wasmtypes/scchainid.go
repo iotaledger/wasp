@@ -13,10 +13,8 @@ type ScChainID struct {
 
 // Address returns the alias address that the chain ID actually represents
 func (o ScChainID) Address() ScAddress {
-	buf := make([]byte, ScAddressLength)
-	buf[0] = ScAddressAlias
-	copy(buf[1:], o.id[:])
-	return AddressFromBytes(buf)
+	buf := []byte{ScAddressAlias}
+	return AddressFromBytes(append(buf, o.id[:]...))
 }
 
 func (o ScChainID) Bytes() []byte {

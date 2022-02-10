@@ -9,18 +9,14 @@ import {bytesCompare} from "./scbytes";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export const ScChainIDLength = 33;
+export const ScChainIDLength = 20;
 
 export class ScChainID {
     id: u8[] = zeroes(ScChainIDLength);
 
     public address(): ScAddress {
-        const address = new ScAddress();
-        address.id[0] = ScAddressAlias;
-        for (let i = 0; i < ScChainIDLength; i++) {
-            address.id[i + 1] = this.id[i];
-        }
-        return addressFromBytes(this.id);
+        const buf: u8[] = [ScAddressAlias];
+        return addressFromBytes(buf.concat(this.id));
     }
 
     public equals(other: ScChainID): bool {

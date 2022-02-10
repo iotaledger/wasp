@@ -15,14 +15,10 @@ pub struct ScChainID {
 }
 
 impl ScChainID {
-    pub fn new(buf: &[u8]) -> ScChainID {
-        chain_id_from_bytes(buf)
-    }
-
     pub fn address(&self) -> ScAddress {
         let mut buf = [0_u8; SC_ADDRESS_LENGTH];
         buf[0] = SC_ADDRESS_ALIAS;
-        buf[1..SC_CHAIN_ID_LENGTH+1].copy_from_slice(&self.id);
+        buf[1..SC_CHAIN_ID_LENGTH + 1].copy_from_slice(&self.id);
         address_from_bytes(&buf)
     }
 

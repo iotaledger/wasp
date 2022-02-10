@@ -5,12 +5,14 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScAgentIDLength = ScBoolLength + ScAddressLength + ScHnameLength
+const nilAgentID = 0xff
 
 type ScAgentID struct {
 	address ScAddress
 	hname   ScHname
 }
+
+var nilAgent = ScAgentID{}
 
 func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
 	return ScAgentID{address: address, hname: hname}
@@ -39,40 +41,66 @@ func (o ScAgentID) String() string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func AgentIDDecode(dec *WasmDecoder) ScAgentID {
-	return ScAgentID{
-		address: AddressDecode(dec),
-		hname:   HnameDecode(dec),
+	if dec.Peek() == ScAddressEd25519 {
+		return ScAgentID{address: AddressDecode(dec)}
 	}
+	return ScAgentID{address: AddressDecode(dec), hname: HnameDecode(dec)}
 }
 
 func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
 	AddressEncode(enc, value.address)
-	HnameEncode(enc, value.hname)
+	if value.address.Bytes()[0] != ScAddressEd25519 {
+		HnameEncode(enc, value.hname)
+	}
 }
 
 func AgentIDFromBytes(buf []byte) ScAgentID {
 	if len(buf) == 0 {
 		return ScAgentID{}
 	}
-	if len(buf) != ScAgentIDLength {
-		panic("invalid AgentID length")
-	}
-	if buf[0] != 1 {
-		panic("invalid AgentID nil flag")
-	}
-	if buf[1] > ScAddressAlias {
+	switch buf[0] {
+	case ScAddressAlias:
+		if len(buf) != ScLengthAlias+ScHnameLength {
+			panic("invalid AgentID length: Alias address")
+		}
+		return ScAgentID{
+			address: AddressFromBytes(buf[:ScLengthAlias]),
+			hname:   HnameFromBytes(buf[ScLengthAlias:]),
+		}
+	case ScAddressEd25519:
+		if len(buf) != ScLengthEd25519 {
+			panic("invalid AgentID length: Ed25519 address")
+		}
+		return ScAgentID{
+			address: AddressFromBytes(buf),
+		}
+	case ScAddressNFT:
+		if len(buf) != ScLengthNFT+ScHnameLength {
+			panic("invalid AgentID length: NFT address")
+		}
+		return ScAgentID{
+			address: AddressFromBytes(buf[:ScLengthNFT]),
+			hname:   HnameFromBytes(buf[ScLengthNFT:]),
+		}
+	case nilAgentID: // nil agent id
+		if len(buf) != 1 {
+			panic("invalid AgentID length: nil AgentID")
+		}
+		return ScAgentID{}
+	default:
 		panic("invalid AgentID address type")
-	}
-	return ScAgentID{
-		address: AddressFromBytes(buf[:ScAddressLength]),
-		hname:   HnameFromBytes(buf[ScAddressLength:]),
 	}
 }
 
 func AgentIDToBytes(value ScAgentID) []byte {
-	enc := NewWasmEncoder()
-	AgentIDEncode(enc, value)
-	return enc.Buf()
+	if value == nilAgent {
+		return []byte{nilAgentID}
+	}
+	buf := AddressToBytes(value.address)
+	if buf[0] == ScAddressEd25519 {
+		return buf
+	}
+	return append(buf, HnameToBytes(value.hname)...)
 }
 
 func AgentIDToString(value ScAgentID) string {
