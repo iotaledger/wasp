@@ -76,7 +76,7 @@ The schema tool will generate the following proxies in `typedefs.xx`:
 ```go
 package betting
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib"
 
 type ImmutableBettingRound = ArrayOfImmutableBet
 
@@ -227,7 +227,7 @@ definition in `state.xx`:
 ```go
 package betting
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib"
 
 type ArrayOfImmutableBettingRound struct {
     objID int32

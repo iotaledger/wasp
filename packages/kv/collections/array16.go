@@ -1,4 +1,3 @@
-//nolint:dupl
 package collections
 
 import (
@@ -6,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // Array16 represents a dynamic array stored in a kv.KVStore
@@ -37,27 +35,15 @@ func NewArray16ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray1
 
 const array16ElemKeyCode = byte('#')
 
-func (a *Array16) Immutable() *ImmutableArray16 {
-	return a.ImmutableArray16
-}
-
-func (a *ImmutableArray16) getSizeKey() kv.Key {
-	return array16SizeKey(a.name)
-}
-
 func array16SizeKey(name string) kv.Key {
 	return kv.Key(name)
-}
-
-func (a *ImmutableArray16) getArray16ElemKey(idx uint16) kv.Key {
-	return array16ElemKey(a.name, idx)
 }
 
 func array16ElemKey(name string, idx uint16) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
 	buf.WriteByte(array16ElemKeyCode)
-	_ = util.WriteUint16(&buf, idx)
+	buf.Write(uint16ToBytes(idx))
 	return kv.Key(buf.Bytes())
 }
 
@@ -73,11 +59,45 @@ func Array16RangeKeys(name string, length, from, to uint16) []kv.Key {
 	return keys
 }
 
+// use ULEB128 decoding so that WasmLib can use it as well
+func bytesToUint16(buf []byte) uint16 {
+	if (buf[0] & 0x80) == 0 {
+		return uint16(buf[0])
+	}
+	if (buf[1] & 0x80) == 0 {
+		return (uint16(buf[1]) << 7) | uint16(buf[0]&0x7f)
+	}
+	return (uint16(buf[2]) << 14) | (uint16(buf[1]&0x7f) << 7) | uint16(buf[0]&0x7f)
+}
+
+// use ULEB128 encoding so that WasmLib can decode it as well
+func uint16ToBytes(value uint16) []byte {
+	if value < 128 {
+		return []byte{byte(value)}
+	}
+	if value < 16384 {
+		return []byte{byte(value | 0x80), byte(value >> 7)}
+	}
+	return []byte{byte(value | 0x80), byte((value >> 7) | 0x80), byte(value >> 14)}
+}
+
+func (a *Array16) Immutable() *ImmutableArray16 {
+	return a.ImmutableArray16
+}
+
+func (a *ImmutableArray16) getSizeKey() kv.Key {
+	return array16SizeKey(a.name)
+}
+
+func (a *ImmutableArray16) getArray16ElemKey(idx uint16) kv.Key {
+	return array16ElemKey(a.name, idx)
+}
+
 func (a *Array16) setSize(n uint16) {
 	if n == 0 {
 		a.kvw.Del(a.getSizeKey())
 	} else {
-		a.kvw.Set(a.getSizeKey(), util.Uint16To2Bytes(n))
+		a.kvw.Set(a.getSizeKey(), uint16ToBytes(n))
 	}
 }
 
@@ -99,7 +119,7 @@ func (a *ImmutableArray16) Len() (uint16, error) {
 	if v == nil {
 		return 0, nil
 	}
-	return util.MustUint16From2Bytes(v), nil
+	return bytesToUint16(v), nil
 }
 
 func (a *ImmutableArray16) MustLen() uint16 {

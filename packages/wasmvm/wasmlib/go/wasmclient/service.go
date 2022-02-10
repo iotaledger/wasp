@@ -38,11 +38,11 @@ type IEventHandler interface {
 }
 
 type Service struct {
-	chainID       *iscp.ChainID
+	chainID    *iscp.ChainID
 	eventHandlers []IEventHandler
 	keyPair       *cryptolib.KeyPair
-	scHname       iscp.Hname
-	waspClient    *client.WaspClient
+	scHname    iscp.Hname
+	waspClient *client.WaspClient
 }
 
 func (s *Service) Init(svcClient *ServiceClient, chainID string, scHname uint32) (err error) {
@@ -95,7 +95,7 @@ func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer,
 	//}
 	//id := req.ID()
 	//return Request{id: &id}
-}
+	}
 
 //func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *ed25519.KeyPair) Request {
 //	// TODO implement

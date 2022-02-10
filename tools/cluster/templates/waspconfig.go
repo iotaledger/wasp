@@ -69,6 +69,10 @@ const WaspConfig = `
   "metrics": {
     "bindAddress": "0.0.0.0:{{.MetricsPort}}",
     "enabled": false
+  },
+  "wal": {
+    "directory": "wal",
+    "enabled": true
   }
 }
 `

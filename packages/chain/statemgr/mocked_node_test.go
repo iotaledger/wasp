@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -33,6 +34,8 @@ type MockedNode struct {
 type MockedStateManagerMetrics struct{}
 
 func (c *MockedStateManagerMetrics) RecordBlockSize(_ uint32, _ float64) {}
+
+func (c *MockedStateManagerMetrics) LastSeenStateIndex(_ uint32) {}
 
 func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *MockedNode {
 	nodePubKey := env.NodePubKeys[nodeIndex]
@@ -59,7 +62,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(store, stateSync)
 	})
-	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
+	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, wal.NewDefault(), timers)
 	ret.NodeConn.AttachToUnspentAliasOutputReceived(func(chainOutput *iscp.AliasOutputWithID, timestamp time.Time) {
 		ret.Log.Debugf("Alias output received %v: enqueing state message", iscp.OID(chainOutput.ID()))
 		ret.StateManager.EnqueueStateMsg(&messages.StateMsg{

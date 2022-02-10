@@ -53,11 +53,17 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 		if err != nil {
 			return nil, err
 		}
+		var cmtSize int
+		if cmtInfo == nil {
+			cmtSize = -1
+		} else {
+			cmtSize = len(cmtInfo.PeerStatus)
+		}
 		r[i] = &ChainOverview{
 			ChainID:       cr.ChainID,
 			Active:        cr.Active,
 			RootInfo:      rootInfo,
-			CommitteeSize: len(cmtInfo.PeerStatus),
+			CommitteeSize: cmtSize,
 			Error:         err,
 		}
 	}
