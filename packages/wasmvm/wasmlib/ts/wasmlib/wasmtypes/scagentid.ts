@@ -48,16 +48,19 @@ export class ScAgentID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// note: only alias address can have a non-zero hname
+// so there is no need to encode it when it is always zero
+
 export function agentIDDecode(dec: wasmtypes.WasmDecoder): ScAgentID {
-    if (dec.peek() == wasmtypes.ScAddressEd25519) {
-        return new ScAgentID(wasmtypes.addressDecode(dec), new wasmtypes.ScHname(0));
+    if (dec.peek() == wasmtypes.ScAddressAlias) {
+        return new ScAgentID(wasmtypes.addressDecode(dec), wasmtypes.hnameDecode(dec))
     }
-    return new ScAgentID(wasmtypes.addressDecode(dec), wasmtypes.hnameDecode(dec))
+    return new ScAgentID(wasmtypes.addressDecode(dec), new wasmtypes.ScHname(0));
 }
 
 export function agentIDEncode(enc: wasmtypes.WasmEncoder, value: ScAgentID): void {
     wasmtypes.addressEncode(enc, value._address);
-    if (value._address.id[0] != wasmtypes.ScAddressEd25519) {
+    if (value._address.id[0] == wasmtypes.ScAddressAlias) {
         wasmtypes.hnameEncode(enc, value._hname);
     }
 }
@@ -82,12 +85,10 @@ export function agentIDFromBytes(buf: u8[]): ScAgentID {
             return new ScAgentID(wasmtypes.addressFromBytes(buf), new wasmtypes.ScHname(0));
         }
         case wasmtypes.ScAddressNFT: {
-            if (buf.length != wasmtypes.ScLengthNFT + wasmtypes.ScHnameLength) {
+            if (buf.length != wasmtypes.ScLengthNFT) {
                 panic("invalid AgentID length: NFT address");
             }
-            const addr = wasmtypes.addressFromBytes(buf.slice(0, wasmtypes.ScLengthNFT));
-            const hname = wasmtypes.hnameFromBytes(buf.slice(wasmtypes.ScLengthNFT));
-            return new ScAgentID(addr, hname);
+            return new ScAgentID(wasmtypes.addressFromBytes(buf), new wasmtypes.ScHname(0));
         }
         case nilAgentID: {
             if (buf.length != 1) {
@@ -107,11 +108,11 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
     if (value.equals(nilAgent)) {
         return [nilAgentID]
     }
-    const buf = wasmtypes.addressToBytes(value._address);
-    if (buf[0] == wasmtypes.ScAddressEd25519) {
-        return buf
+    let buf = wasmtypes.addressToBytes(value._address);
+    if (buf[0] == wasmtypes.ScAddressAlias) {
+        buf = buf.concat(wasmtypes.hnameToBytes(value._hname))
     }
-    return buf.concat(wasmtypes.hnameToBytes(value._hname));
+    return buf;
 }
 
 export function agentIDToString(value: ScAgentID): string {
