@@ -34,6 +34,10 @@ func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
 	return wasmtypes.NewScAgentID(a.ScAddress(), wasmtypes.ScHname(a.hname))
 }
 
+func (a *SoloAgent) AgentID() *iscp.AgentID {
+	return iscp.NewAgentID(a.address, a.hname)
+}
+
 func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
 	switch len(color) {
 	case 0:

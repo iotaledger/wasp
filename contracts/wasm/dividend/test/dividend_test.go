@@ -40,10 +40,14 @@ func TestDeploy(t *testing.T) {
 
 func TestAddMemberOk(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx.Accounts()
 
 	member1 := ctx.NewSoloAgent()
+	ctx.Accounts(member1)
+
 	dividendMember(ctx, member1, 100)
 	require.NoError(t, ctx.Err)
+	ctx.Accounts(member1)
 }
 
 func TestAddMemberFailMissingAddress(t *testing.T) {
@@ -69,19 +73,25 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 
 func TestDivide1Member(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx.Accounts()
 
 	member1 := ctx.NewSoloAgent()
+	l1Old := member1.Balance()
+	require.EqualValues(t, 0, ctx.Balance(member1))
+
 	dividendMember(ctx, member1, 100)
 	require.NoError(t, ctx.Err)
-
-	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	ctx.Accounts(member1)
 
 	dividendDivide(ctx, 99)
 	require.NoError(t, ctx.Err)
+	ctx.Accounts(member1)
 
-	// 99 from divide() + 1 from the member() call
-	require.EqualValues(t, solo.Saldo+100, member1.Balance())
-	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	l1New := member1.Balance()
+	ctx.Accounts(member1)
+
+	require.EqualValues(t, 0, ctx.Balance(member1))
+	require.EqualValues(t, 100, l1New-l1Old)
 }
 
 func TestDivide2Members(t *testing.T) {

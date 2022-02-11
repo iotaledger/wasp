@@ -33,7 +33,7 @@ var (
 		testwasmlib.ParamUint32,
 		testwasmlib.ParamUint64,
 	}
-	allLengths    = []int{33, 37, 1, 20, 38, 32, 4, 1, 2, 4, 8, 34, 1, 2, 4, 8}
+	allLengths    = []int{33, 33, 1, 20, 38, 32, 4, 1, 2, 4, 8, 34, 1, 2, 4, 8}
 	invalidValues = map[string][][]byte{
 		testwasmlib.ParamAddress: {
 			append([]byte{3}, zeroHash...),
