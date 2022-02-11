@@ -33,7 +33,7 @@ var (
 		testwasmlib.ParamUint32,
 		testwasmlib.ParamUint64,
 	}
-	allLengths    = []int{33, 37, 1, 33, 32, 32, 4, 1, 2, 4, 8, 34, 1, 2, 4, 8}
+	allLengths    = []int{33, 33, 1, 20, 38, 32, 4, 1, 2, 4, 8, 34, 1, 2, 4, 8}
 	invalidValues = map[string][][]byte{
 		testwasmlib.ParamAddress: {
 			append([]byte{3}, zeroHash...),
@@ -88,7 +88,7 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Bool().SetValue(true)
 	pt.Params.Bytes().SetValue([]byte("these are bytes"))
 	pt.Params.ChainID().SetValue(ctx.ChainID())
-	pt.Params.Color().SetValue(wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite")))
+	pt.Params.Color().SetValue(wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple")))
 	pt.Params.Hash().SetValue(wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210")))
 	pt.Params.Hname().SetValue(testwasmlib.HScName)
 	pt.Params.Int8().SetValue(-123)
@@ -161,10 +161,10 @@ func TestInvalidTypeParams(t *testing.T) {
 	for param, values := range invalidValues {
 		for index, value := range values {
 			t.Run("InvalidType "+param+" "+strconv.Itoa(index), func(t *testing.T) {
-				invalidParam := fmt.Sprintf("invalid %s%s:", strings.ToUpper(param[:1]), param[1:])
+				invalidParam := fmt.Sprintf("invalid %s%s", strings.ToUpper(param[:1]), param[1:])
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 					param, value,
-				).AddAssetsIotas(1)
+				).AddAssetsIotas(1).WithMaxAffordableGasBudget()
 				_, err := ctx.Chain.PostRequestSync(req, nil)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), invalidParam)

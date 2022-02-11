@@ -3,7 +3,10 @@
 
 package model
 
-import "github.com/iotaledger/wasp/packages/peering"
+import (
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/mr-tron/base58"
+)
 
 // PeeringTrustedNode describes single node in the list of trusted peering nodes.
 type PeeringTrustedNode struct {
@@ -13,7 +16,7 @@ type PeeringTrustedNode struct {
 
 func NewPeeringTrustedNode(tp *peering.TrustedPeer) *PeeringTrustedNode {
 	return &PeeringTrustedNode{
-		PubKey: string(tp.PubKey),
+		PubKey: base58.Encode(tp.PubKey[:]),
 		NetID:  tp.NetID,
 	}
 }

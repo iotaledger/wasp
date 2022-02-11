@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_COLOR_LENGTH: usize = 32;
+pub const SC_COLOR_LENGTH: usize = 38;
 
 #[derive(PartialEq, Clone, Copy, Eq, Hash)]
 pub struct ScColor {
@@ -17,10 +17,6 @@ pub struct ScColor {
 impl ScColor {
     pub const IOTA: ScColor = ScColor { id: [0x00; SC_COLOR_LENGTH] };
     pub const MINT: ScColor = ScColor { id: [0xff; SC_COLOR_LENGTH] };
-
-    pub fn new(buf: &[u8]) -> ScColor {
-        color_from_bytes(buf)
-    }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         color_to_bytes(self)

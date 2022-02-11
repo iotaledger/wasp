@@ -1,8 +1,9 @@
 package viewcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"math/big"
+
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
@@ -44,6 +45,7 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 			KVDecoder: kvdecoder.New(params, vctx.log),
 		},
 		state: contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
+		gasBudget: 1_000_000, //TODO sensible upper limit for view calls
 	}
 }
 

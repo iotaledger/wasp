@@ -16,7 +16,7 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
 // and requests some tokens from the UTXODB faucet.
-// The amount of tokens is equal to solo.Saldo (=1000000) iotas
+// The amount of tokens is equal to solo.Saldo (=1000Mi) iotas
 // Returns signature scheme interface and public key in binary form
 func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
 	keyPair, addr := env.NewKeyPair(seed...)
