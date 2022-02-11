@@ -9,6 +9,7 @@ import (
 type serializable interface {
 	Read(r io.Reader) error
 	Write(w io.Writer)
+	String() string
 }
 
 type VectorCommitment interface {
@@ -26,17 +27,12 @@ type Node struct {
 	terminalCommitment TerminalCommitment
 }
 
-type CommitmentFactory struct {
-	NewVectorCommitment   func() VectorCommitment
-	NewTerminalCommitment func() TerminalCommitment
-}
-
 const (
 	hasTerminalValueFlag = 0x01
 	hasChildrenFlag      = 0x02
 )
 
-func (f *CommitmentFactory) NodeFromBytes(data []byte) (*Node, error) {
+func (f *TrieSetup) NodeFromBytes(data []byte) (*Node, error) {
 	ret := &Node{}
 	if err := ret.Read(bytes.NewReader(data), f); err != nil {
 		return nil, err
@@ -77,7 +73,7 @@ func (n *Node) Write(w io.Writer) {
 	}
 }
 
-func (n *Node) Read(r io.Reader, factory *CommitmentFactory) error {
+func (n *Node) Read(r io.Reader, factory *TrieSetup) error {
 	var err error
 	if n.pathFragment, err = util.ReadBytes16(r); err != nil {
 		return err
