@@ -291,6 +291,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	}
 	if req.Delay == 0 {
 		s.ctx.Send(iscp.RequestParameters{
+			AdjustToMinimumDustDeposit: true,
 			TargetAddress: s.ctx.Caller().Address(),
 			Assets:        assets,
 			Metadata:      metadata,
