@@ -539,9 +539,9 @@ func getAddr(addrOrKeypair interface{}) iotago.Address {
 	case iotago.Address:
 		return a
 	case *cryptolib.KeyPair:
-		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+		return a.GetPublicKey().AsEd25519Address()
 	case cryptolib.KeyPair:
-		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+		return a.GetPublicKey().AsEd25519Address()
 	}
 	panic(xerrors.Errorf("getAddr: wrong type %T", addrOrKeypair))
 }

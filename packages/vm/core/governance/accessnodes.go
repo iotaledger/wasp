@@ -24,9 +24,9 @@ type NodeOwnershipCertificate []byte
 
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) NodeOwnershipCertificate {
 	certData := bytes.Buffer{}
-	certData.Write(nodeKeyPair.PublicKey)
+	certData.Write(nodeKeyPair.GetPublicKey().AsBytes())
 	certData.Write(iscp.BytesFromAddress(ownerAddress))
-	result, err := nodeKeyPair.PrivateKey.Sign(nil, certData.Bytes(), crypto.Hash(0))
+	result, err := nodeKeyPair.GetPrivateKey().Sign(nil, certData.Bytes(), crypto.Hash(0))
 	if err != nil {
 		panic(err)
 	}
@@ -37,11 +37,11 @@ func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate 
 	return NodeOwnershipCertificate(data)
 }
 
-func (c NodeOwnershipCertificate) Verify(nodePubKey ed25519.PublicKey, ownerAddress iotago.Address) bool {
+func (c NodeOwnershipCertificate) Verify(nodePubKey cryptolib.PublicKey, ownerAddress iotago.Address) bool {
 	certData := bytes.Buffer{}
-	certData.Write(nodePubKey)
+	certData.Write(nodePubKey.AsBytes())
 	certData.Write(iscp.BytesFromAddress(ownerAddress))
-	return cryptolib.Verify(nodePubKey, certData.Bytes(), c.Bytes())
+	return nodePubKey.Verify(certData.Bytes(), c.Bytes())
 }
 
 func (c NodeOwnershipCertificate) Bytes() []byte {
@@ -158,7 +158,7 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 }
 
 func (a *AccessNodeInfo) ValidateCertificate(ctx iscp.Sandbox) bool {
-	nodePubKey, err := cryptolib.PublicKeyFromBytes(a.NodePubKey)
+	nodePubKey, err := cryptolib.NewPublicKeyFromBytes(a.NodePubKey)
 	if err != nil {
 		return false
 	}

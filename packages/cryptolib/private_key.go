@@ -1,8 +1,12 @@
 package cryptolib
 
 import (
+	cr "crypto"
 	crypto "crypto/ed25519"
 	"fmt"
+	"io"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type PrivateKey struct {
@@ -23,10 +27,22 @@ func NewPrivateKeyFromSeed(seed Seed) PrivateKey {
 	return PrivateKey{crypto.NewKeyFromSeed(seedByte[:])}
 }
 
-func (pkT PrivateKey) asCrypto() crypto.PrivateKey {
+func (pkT PrivateKey) isValid() bool {
+	return len(pkT.key) > 0
+}
+
+func (pkT PrivateKey) AsCrypto() crypto.PrivateKey {
 	return pkT.key
 }
 
 func (pkT PrivateKey) Public() PublicKey {
 	return newPublicKeyFromCrypto(pkT.key.Public().(crypto.PublicKey))
+}
+
+func (pkT PrivateKey) Sign(rand io.Reader, message []byte, opts cr.SignerOpts) ([]byte, error) {
+	return pkT.key.Sign(rand, message, opts)
+}
+
+func (pkT PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
+	return iotago.NewAddressKeysForEd25519Address(addr, pkT.key)
 }

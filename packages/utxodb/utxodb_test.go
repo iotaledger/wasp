@@ -58,8 +58,8 @@ func TestAddTransactionFail(t *testing.T) {
 func TestDoubleSpend(t *testing.T) {
 	keyPair1 := cryptolib.NewKeyPair()
 
-	addr1 := cryptolib.Ed25519AddressFromPubKey(keyPair1.PublicKey)
-	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(addr1, keyPair1.PrivateKey))
+	addr1 := keyPair1.GetPublicKey().AsEd25519Address()
+	key1Signer := iotago.NewInMemoryAddressSigner(keyPair1.GetPrivateKey().AddressKeysForEd25519Address(addr1))
 
 	addr2 := tpkg.RandEd25519Address()
 	addr3 := tpkg.RandEd25519Address()

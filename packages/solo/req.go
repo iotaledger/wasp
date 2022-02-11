@@ -189,12 +189,12 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
-	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
+	L1Iotas := ch.Env.L1Iotas(keyPair.GetPublicKey().AsEd25519Address())
 	if L1Iotas == 0 {
 		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
-	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
-	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
+	addr := keyPair.GetPublicKey().AsEd25519Address()
+	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(addr)
 
 	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
 		SenderKeyPair:    *keyPair,
@@ -321,7 +321,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
-	agentID := iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0)
+	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address(), 0)
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {

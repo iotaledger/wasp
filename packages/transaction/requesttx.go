@@ -27,7 +27,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 
-	senderAddress := cryptolib.Ed25519AddressFromPubKey(par.SenderKeyPair.PublicKey)
+	senderAddress := par.SenderKeyPair.GetPublicKey().AsEd25519Address()
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
@@ -80,7 +80,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		Inputs:  inputs,
 		Outputs: outputs,
 	}
-	sigs, err := essence.Sign(iotago.NewAddressKeysForEd25519Address(senderAddress, par.SenderKeyPair.PrivateKey))
+	sigs, err := essence.Sign(par.SenderKeyPair.GetPrivateKey().AddressKeysForEd25519Address(senderAddress))
 	if err != nil {
 		return nil, err
 	}

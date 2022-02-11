@@ -26,11 +26,11 @@ func NewPublicKeyFromString(s string) (publicKey PublicKey, err error) {
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from base58 string: %w", s, err)
 	}
-	publicKey, err = PublicKeyFromBytes(b)
+	publicKey, err = NewPublicKeyFromBytes(b)
 	return publicKey, err
 }
 
-func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
+func NewPublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 	if len(publicKeyBytes) < PublicKeySize {
 		return PublicKey{}, fmt.Errorf("bytes too short")
 	}
@@ -38,6 +38,10 @@ func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 }
 
 func (pkT PublicKey) asCrypto() crypto.PublicKey {
+	return pkT.key
+}
+
+func (pkT PublicKey) AsBytes() []byte {
 	return pkT.key
 }
 

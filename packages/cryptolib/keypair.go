@@ -31,8 +31,8 @@ func NewKeyPairFromPrivateKey(privateKey PrivateKey) KeyPair {
 	}
 }
 
-func (k *KeyPair) Valid() bool {
-	return len(k.privateKey.asCrypto()) > 0
+func (k *KeyPair) IsValid() bool {
+	return k.privateKey.isValid()
 }
 
 func (k *KeyPair) Verify(message, sig []byte) bool {
@@ -40,7 +40,7 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 }
 
 func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
-	addrKeys := iotago.NewAddressKeysForEd25519Address(k.publicKey.AsEd25519Address(), k.privateKey.asCrypto())
+	addrKeys := k.privateKey.AddressKeysForEd25519Address(k.publicKey.AsEd25519Address())
 	return iotago.NewInMemoryAddressSigner(addrKeys)
 }
 

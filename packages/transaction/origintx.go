@@ -26,7 +26,7 @@ func NewChainOriginTransaction(
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	walletAddr := keyPair.GetPublicKey().AsEd25519Address()
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
@@ -66,7 +66,7 @@ func NewChainOriginTransaction(
 		Inputs:  inputs,
 		Outputs: outputs,
 	}
-	sigs, err := essence.Sign(iotago.NewAddressKeysForEd25519Address(walletAddr, keyPair.PrivateKey))
+	sigs, err := essence.Sign(keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr))
 	if err != nil {
 		return nil, nil, err
 	}

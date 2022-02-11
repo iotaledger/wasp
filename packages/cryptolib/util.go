@@ -1,12 +1,12 @@
 package cryptolib
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+//	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
 // TODO: remove all these functions
 
-func CryptolibPublicKeyToHivePublicKey(pk PublicKey) ed25519.PublicKey { // nolint:revive
+/*func CryptolibPublicKeyToHivePublicKey(pk PublicKey) ed25519.PublicKey { // nolint:revive
 	var result ed25519.PublicKey
 	copy(result[:], pk.asCrypto())
 	return result
@@ -42,4 +42,4 @@ func HiveKeyPairToCryptolibKeyPair(pk ed25519.KeyPair) KeyPair {
 		privateKey: HivePrivateKeyToCryptolibPrivateKey(pk.PrivateKey),
 		publicKey:  HivePublicKeyToCryptolibPublicKey(pk.PublicKey),
 	}
-}
+}*/

@@ -12,6 +12,6 @@ func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address)
 	} else {
 		keyPair = cryptolib.NewKeyPair()
 	}
-	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	addr := keyPair.GetPublicKey().AsEd25519Address()
 	return &keyPair, addr
 }
