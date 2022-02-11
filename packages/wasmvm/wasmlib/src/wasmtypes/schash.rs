@@ -15,10 +15,6 @@ pub struct ScHash {
 }
 
 impl ScHash {
-    pub fn new(buf: &[u8]) -> ScHash {
-        hash_from_bytes(buf)
-    }
-
     pub fn to_bytes(&self) -> Vec<u8> {
         hash_to_bytes(self)
     }

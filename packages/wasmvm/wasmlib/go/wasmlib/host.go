@@ -26,6 +26,9 @@ func init() {
 	wasmtypes.Base58Encode = func(buf []byte) string {
 		return string(Sandbox(FnUtilsBase58Encode, buf))
 	}
+	wasmtypes.NewScHname = func(name string) wasmtypes.ScHname {
+		return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(name)))
+	}
 }
 
 func ConnectHost(h ScHost) ScHost {

@@ -51,6 +51,14 @@ export class WasmDecoder {
         return value;
     }
 
+    // peeks at the next byte in the byte buffer
+    peek(): u8 {
+        if (this.buf.length == 0) {
+            panic("insufficient peek bytes");
+        }
+        return this.buf[0];
+    }
+
     // Variable Length Integer decoder, uses modified LEB128
     vliDecode(bits: i32): i64 {
         let b = this.byte();

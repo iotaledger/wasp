@@ -167,7 +167,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         description: description,
         duration: duration,
         highest_bid: 0,
-        highest_bidder: ScAgentID::from_bytes(&[0; 37]),
+        highest_bidder: agent_id_from_bytes(&[]),
         minimum_bid: minimum_bid,
         num_tokens: num_tokens,
         owner_margin: owner_margin,

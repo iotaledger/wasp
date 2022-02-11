@@ -98,6 +98,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(100_000_000, creator.Pair)
 	}
 	ctx.upload(keyPair)
 	if ctx.Err != nil {
@@ -125,6 +126,11 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, ctx.Creator().Pair)
+	if ctx.Err != nil {
+		return ctx
+	}
 	return ctx.init(onLoad)
 }
 
@@ -145,12 +151,19 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(100_000_000, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, scName, ctx.Hprog, params...)
+	if ctx.Err != nil {
+		return ctx
+	}
+
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -185,7 +198,9 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 			AutoAdjustDustDeposit: true,
 		})
 	}
-	return soloEnv.NewChain(nil, chainName)
+	chain := soloEnv.NewChain(nil, chainName)
+	chain.MustDepositIotasToL2(100_000_000, &chain.OriginatorPrivateKey)
+	return chain
 }
 
 // Account returns a SoloAgent for the smart contract associated with ctx
@@ -204,7 +219,7 @@ func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
-	//TODO is milestones 1 a good value?
+	// TODO is milestones 1 a good value?
 	ctx.Chain.Env.AdvanceClockBy(step, 1)
 }
 
@@ -215,10 +230,16 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 	account := iscp.NewAgentID(agent.address, agent.hname)
 	switch len(color) {
 	case 0:
-		return ctx.Chain.L2Iotas(account)
+		iotas := ctx.Chain.L2Iotas(account)
+		return iotas
 	case 1:
+		if color[0] == wasmtypes.IOTA {
+			iotas := ctx.Chain.L2Iotas(account)
+			return iotas
+		}
 		token := ctx.Convertor.IscpColor(&color[0])
-		return ctx.Chain.L2NativeTokens(account, token).Uint64()
+		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
+		return tokens
 	default:
 		require.Fail(ctx.Chain.Env.T, "too many color arguments")
 		return 0
@@ -280,7 +301,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 
 // Minted returns the color and amount of newly minted tokens
 func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
-	panic("fixme")
+	panic("fixme: soloContext.Minted")
 	//t := ctx.Chain.Env.T
 	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
