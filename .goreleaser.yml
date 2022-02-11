@@ -12,8 +12,10 @@ builds:
       - -tags=builtin_static,rocksdb
     goos:
       - linux
-      - windows
-      - darwin
+      # Disabled until the grocksdb supports darwin and windows:
+      # See: https://github.com/gohornet/grocksdb/commit/0ad7d027aa822e322cd81b2ef7e6696b675472b6
+      # - windows
+      # - darwin
     goarch:
       - amd64
 
@@ -39,7 +41,7 @@ archives:
         format: zip
     wrap_in_directory: true
     files:
-      - readme.md
+      - README.md
       - config.json
       - LICENSE
 
