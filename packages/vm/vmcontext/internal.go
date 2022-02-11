@@ -1,7 +1,9 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"math"
 	"math/big"
 
@@ -147,10 +149,21 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
 }
 
-func (vmctx *VMContext) writeReceiptToBlockLog(errProvided *iscp.Error) *blocklog.RequestReceipt {
+func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
+	var receiptError error
+
+	if errProvided != nil {
+		if _, ok := errProvided.(*vmerrors.Error); !ok {
+			// TODO MAKE IT WORK HERE
+			receiptError = commonerrors.ErrUntypedError.Create(errProvided)
+		} else {
+			receiptError = errProvided
+		}
+	}
+
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.req,
-		Error:         errProvided,
+		Error:         receiptError,
 		GasBudget:     vmctx.gasBudgetAdjusted,
 		GasBurned:     vmctx.gasBurned,
 		GasFeeCharged: vmctx.gasFeeCharged,
@@ -209,7 +222,7 @@ func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 			accounts.AdjustAccountIotas(s, commonaccount.Get(vmctx.ChainID()), adjustment)
 		})
-	}, accounts.ErrNotEnoughFunds)
+	}, accounts.ErrNotEnoughFunds.Create())
 	if err != nil {
 		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}

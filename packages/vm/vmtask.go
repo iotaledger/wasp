@@ -53,7 +53,7 @@ type VMTask struct {
 	// Results contains one result for each non-skipped request
 	Results []*RequestResult
 	// If not nil, VMError is a fatal error that prevented the execution of the task
-	VMError *iscp.Error
+	VMError error
 }
 
 type RequestResult struct {
@@ -62,7 +62,7 @@ type RequestResult struct {
 	// Return is the return value of the call
 	Return dict.Dict
 	// Error is the error produced by the call, if any
-	Error *iscp.Error
+	Error error
 	// Receipt is the receipt produced after executing the request
 	Receipt *blocklog.RequestReceipt
 }

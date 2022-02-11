@@ -393,10 +393,6 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
 
-	if ret1.Error != nil {
-		ret1.Error.MessageFormat, _ = resultDecoder.GetString(blocklog.ParamErrorMessageFormat)
-	}
-
 	require.NoError(ch.Env.T, err)
 	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
@@ -417,9 +413,6 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.Reque
 		data, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
-		if ret[i].Error != nil {
-			ret[i].Error.MessageFormat, _ = ch.GetErrorMessageFormat(ret[i].Error.PrefixId, ret[i].Error.Id)
-		}
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIndex, uint16(i))
 	}

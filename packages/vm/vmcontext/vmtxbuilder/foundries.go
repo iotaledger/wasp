@@ -44,7 +44,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	f.Amount = f.VByteCost(txb.rentStructure, nil)
 	err := util.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
-	}, ErrNotEnoughIotaBalance)
+	}, ErrNotEnoughIotaBalance.Create())
 	if err != nil {
 		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}

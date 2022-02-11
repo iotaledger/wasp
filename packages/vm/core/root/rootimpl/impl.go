@@ -8,6 +8,7 @@ package rootimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -70,8 +71,12 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// passing dust assumptions
 	extParams.Set(accounts.ParamDustDepositAssumptionsBin, ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin))
 	mustStoreAndInitCoreContract(ctx, accounts.Contract, extParams)
+
 	// store 'blocklog' into the registry and run init
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, nil)
+
+	// store 'errors' into the registry and run init
+	mustStoreAndInitCoreContract(ctx, errors.Contract, nil)
 
 	// store 'governance' into the registry and run init
 	// passing init parameters

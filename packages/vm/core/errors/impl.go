@@ -5,6 +5,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"math"
 )
 
@@ -19,11 +21,21 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 }
 
 func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
+	ctx.Log().Debugf("Registering error")
 	e := NewStateErrorCollectionWriter(ctx.State(), ctx.Caller().Hname())
 
 	params := kvdecoder.New(ctx.Params())
-	errorId := params.MustGetUint16(ParamErrorId)
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)
+
+	if len(errorMessageFormat) == 0 {
+		panic("error message is empty")
+	}
+
+	errorId, err := vmerrors.GetErrorIdFromMessageFormat(errorMessageFormat)
+
+	if err != nil {
+		panic(err)
+	}
 
 	errorDefinition, err := e.Register(errorId, errorMessageFormat)
 
@@ -41,15 +53,15 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 func funcGetErrorMessageFormat(ctx iscp.SandboxView) dict.Dict {
 	params := kvdecoder.New(ctx.Params())
 
-	contract := params.MustGetHname(ParamContractHname)
+	contract := params.MustGetUint32(ParamContractHname)
 	errorId := params.MustGetUint16(ParamErrorId)
 
-	var e IErrorCollection
+	var e commonerrors.IErrorCollection
 
 	if contract == math.MaxUint32 {
-		e = globalErrorCollection
+		e = commonerrors.GetGlobalErrorCollection()
 	} else {
-		e = NewStateErrorCollectionReader(ctx.State(), contract)
+		e = NewStateErrorCollectionReader(ctx.State(), iscp.Hname(contract))
 	}
 
 	errorDefinition, err := e.Get(errorId)

@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -210,12 +211,21 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	vmctx.GasBurn(gas.BurnCodeDeployContract)
 }
 
-func (vmctx *VMContext) RegisterError(errorId uint16, messageFormat string) {
-	vmctx.Debugf("vmcontext.RegisterError: errorId: %v, messageFormat: '%s'", errorId, messageFormat)
+func (vmctx *VMContext) RegisterError(messageFormat string) uint16 {
+	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
 	params := dict.New()
-	params.Set(errors.ParamErrorId, codec.EncodeUint16(errorId))
 	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
 
-	vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	result := vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	data := kvdecoder.New(result)
+
+	errorAdded := data.MustGetBool(errors.ParamErrorDefinitionAdded)
+	errorId := data.MustGetUint16(errors.ParamErrorId)
+
+	if errorAdded {
+		vmctx.Debugf("vmcontext.RegisterError: errorId: '%v'", errorId)
+	}
+
+	return errorId
 }

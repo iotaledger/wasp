@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -10,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -18,6 +18,7 @@ import (
 
 var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractProcessor{
 	root.Contract.ProgramHash:       rootimpl.Processor,
+	errors.Contract.ProgramHash:     errors.Processor,
 	accounts.Contract.ProgramHash:   accounts.Processor,
 	blob.Contract.ProgramHash:       blob.Processor,
 	blocklog.Contract.ProgramHash:   blocklog.Processor,

@@ -1,21 +1,29 @@
 package util
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"golang.org/x/xerrors"
+	errorlib "errors"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
 
-func CatchPanicReturnError(fun func(), catchErrors ...*errors.Error) *errors.Error {
-	var err *errors.Error
+func CatchPanicReturnError(fun func(), catchErrors ...error) error {
+	var err error
 	func() {
 		defer func() {
 			r := recover()
 			if r == nil {
 				return
 			}
+			if err1, ok := r.(*vmerrors.Error); ok {
+				for _, targetError := range catchErrors {
+					if err1.Error() == targetError.Error() {
+						err = targetError
+						return
+					}
+				}
+			}
 			if err1, ok := r.(error); ok {
 				for _, targetError := range catchErrors {
-					if xerrors.Is(err1, targetError) {
+					if errorlib.Is(err1, targetError) {
 						err = targetError
 						return
 					}

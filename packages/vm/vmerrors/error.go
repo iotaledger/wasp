@@ -1,24 +1,29 @@
-package iscp
+package vmerrors
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"golang.org/x/xerrors"
 	"hash/crc32"
 )
 
 type ErrorDefinition struct {
-	prefixId      Hname
+	prefixId      uint32
 	id            uint16
 	messageFormat string
+}
+
+func NewErrorDefinition(prefixId uint32, errorId uint16, messageFormat string) *ErrorDefinition {
+	return &ErrorDefinition{prefixId: prefixId, id: errorId, messageFormat: messageFormat}
 }
 
 func (e *ErrorDefinition) Error() string {
 	return e.messageFormat
 }
 
-func (e *ErrorDefinition) PrefixId() Hname {
+func (e *ErrorDefinition) PrefixId() uint32 {
 	return e.prefixId
 }
 
@@ -30,7 +35,7 @@ func (e *ErrorDefinition) MessageFormat() string {
 	return e.messageFormat
 }
 
-func (e *ErrorDefinition) Create(params ...interface{}) *Error {
+func (e *ErrorDefinition) Create(params ...interface{}) error {
 	return &Error{
 		PrefixId:      e.PrefixId(),
 		Id:            e.Id(),
@@ -39,8 +44,13 @@ func (e *ErrorDefinition) Create(params ...interface{}) *Error {
 	}
 }
 
-func (e *ErrorDefinition) Panic(params ...interface{}) Error {
-	panic(*e.Create(params...))
+func (e *ErrorDefinition) CreateTyped(params ...interface{}) *Error {
+	err := e.Create(params...)
+	return err.(*Error)
+}
+
+func (e *ErrorDefinition) Panic(params ...interface{}) {
+	panic(e.Create(params...))
 }
 
 func (e *ErrorDefinition) Serialize(mu *marshalutil.MarshalUtil) {
@@ -61,15 +71,12 @@ func (e *ErrorDefinition) Bytes() []byte {
 func ErrorDefinitionFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ErrorDefinition, error) {
 	var err error
 	var messageLength uint16
-	var prefixId uint32
 
 	e := ErrorDefinition{}
 
-	if prefixId, err = mu.ReadUint32(); err != nil {
+	if e.prefixId, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
-
-	e.prefixId = Hname(prefixId)
 
 	if e.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -89,7 +96,7 @@ func ErrorDefinitionFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ErrorDefiniti
 }
 
 type Error struct {
-	PrefixId      Hname
+	PrefixId      uint32
 	Id            uint16
 	MessageFormat string
 	Params        []interface{}
@@ -142,7 +149,7 @@ func (e *Error) serializeParams(mu *marshalutil.MarshalUtil) error {
 func (e *Error) Serialize(mu *marshalutil.MarshalUtil) error {
 	hash := e.Hash()
 
-	mu.WriteUint32(uint32(e.PrefixId)).
+	mu.WriteUint32(e.PrefixId).
 		WriteUint16(e.Id).
 		WriteUint32(hash)
 
@@ -176,16 +183,13 @@ type ErrorMessageResolver func(*Error) (string, error)
 
 func ErrorFromBytes(mu *marshalutil.MarshalUtil, errorMessageResolver ErrorMessageResolver) (*Error, error) {
 	var err error
-	var prefixId uint32
 	var hash uint32
 
 	blockError := Error{}
 
-	if prefixId, err = mu.ReadUint32(); err != nil {
+	if blockError.PrefixId, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
-
-	blockError.PrefixId = Hname(prefixId)
 
 	if blockError.Id, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -214,4 +218,34 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil, errorMessageResolver ErrorMessa
 	}
 
 	return &blockError, nil
+}
+
+func GetErrorIdFromMessageFormat(messageFormat string) (uint16, error) {
+	messageFormatHash := hashing.HashStrings(messageFormat).Bytes()
+	mu := marshalutil.New(messageFormatHash)
+
+	errorId, err := mu.ReadUint16()
+
+	return errorId, err
+}
+
+func IsDefinition(error Error, definition ErrorDefinition) bool {
+	if error.Id == definition.Id() && error.PrefixId == definition.PrefixId() {
+		return true
+	}
+
+	return false
+}
+
+func Is(error *Error, errorComp *Error) bool {
+	if error.Id == errorComp.Id &&
+		error.PrefixId == errorComp.PrefixId {
+		return true
+	}
+
+	return false
+}
+
+func Panic(definition ErrorDefinition, params ...interface{}) {
+	panic(definition.Create(params...))
 }

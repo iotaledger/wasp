@@ -327,13 +327,13 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 	return recBin, true
 }
 
-func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, *RequestReceipt, uint32, uint16, bool) {
+func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
 
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(ctx.State(), prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
 	if lookupKeyListBin == nil {
-		return nil, nil, 0, 0, false
+		return nil, 0, 0, false
 	}
 	a := assert.NewAssert(ctx.Log())
 	lookupKeyList, err := RequestLookupKeyListFromBytes(lookupKeyListBin)
@@ -345,10 +345,10 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 
 		a.RequireNoError(err)
 		if rec.Request.ID() == reqID {
-			return recBin, rec, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
+			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
 		}
 	}
-	return nil, nil, 0, 0, false
+	return nil, 0, 0, false
 }
 
 func GetUTXOInput(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {

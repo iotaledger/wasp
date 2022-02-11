@@ -12,7 +12,7 @@ const (
 	CoreContractBlob            = "blob"
 	CoreContractEventlog        = "eventlog"
 	CoreContractBlocklog        = "blocklog"
-	CoreContractError           = "error"
+	CoreContractError           = "errors"
 	CoreContractGovernance      = "governance"
 	CoreEPRotateStateController = "rotateStateController"
 )

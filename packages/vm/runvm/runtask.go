@@ -6,8 +6,12 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
+
+var ErrUndefinedError = commonerrors.RegisterGlobalError("&%v")
 
 type VMRunner struct{}
 
@@ -18,7 +22,17 @@ func (r VMRunner) Run(task *vm.VMTask) {
 		coreutil.ErrorStateInvalidated.Create(),
 	)
 	if err != nil {
-		task.VMError = err
+
+		switch e := err.(type) {
+		case *vmerrors.Error:
+			task.VMError = e
+		case error:
+			// May require a different error type here?
+			task.VMError = ErrUndefinedError.Create(e)
+		default:
+			task.VMError = ErrUndefinedError.Create(e)
+		}
+
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
 }

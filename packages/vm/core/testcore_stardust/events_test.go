@@ -16,6 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func a(ctx iscp.Sandbox) dict.Dict {
+	for i := 0; i < nEvents; i++ {
+		ctx.Log().Debugf("HIAISDAISDI")
+		ctx.Event(fmt.Sprintf("testing many events %d", i))
+	}
+	return nil
+}
+
 var (
 	nEvents                = int(governance.DefaultMaxEventsPerRequest + 1000)
 	bigEventSize           = int(governance.DefaultMaxEventSize + 1000)
@@ -26,15 +34,11 @@ var (
 	funcBigEvent   = coreutil.Func("bigevent")
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
-		funcManyEvents.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-			for i := 0; i < nEvents; i++ {
-				ctx.Event(fmt.Sprintf("testing many events %d", i))
-			}
-			return nil
-		}),
+		funcManyEvents.WithHandler(a),
 		funcBigEvent.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
 			buf := make([]byte, bigEventSize)
 			ctx.Event(string(buf))
+			ctx.Event("HALLO")
 			return nil
 		}),
 	)

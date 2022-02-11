@@ -81,7 +81,7 @@ type Sandbox interface {
 	// Event emits an event
 	Event(msg string)
 	// RegisterError registers an error
-	RegisterError(errorId uint16, messageFormat string)
+	RegisterError(messageFormat string) uint16
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take

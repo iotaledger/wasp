@@ -79,8 +79,8 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name, descriptio
 	s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
-func (s *sandbox) RegisterError(errorId uint16, messageFormat string) {
-	s.vmctx.RegisterError(errorId, messageFormat)
+func (s *sandbox) RegisterError(messageFormat string) uint16 {
+	return s.vmctx.RegisterError(messageFormat)
 }
 
 func (s *sandbox) Event(msg string) {

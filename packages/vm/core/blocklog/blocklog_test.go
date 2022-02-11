@@ -3,6 +3,8 @@ package blocklog
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
+	error2 "github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"testing"
 	"time"
 
@@ -10,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var FailedToLoadError *iscp.ErrorDefinition = errors.RegisterGlobalError(1, "Failed to load %v, with %v on %v")
+var FailedToLoadError *error2.ErrorDefinition = commonerrors.RegisterGlobalError(1, "Failed to load %v, with %v on %v")
 
 func TestSimpleErrorSerialization(t *testing.T) {
 	mu := marshalutil.New()
