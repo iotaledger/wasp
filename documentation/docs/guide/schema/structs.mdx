@@ -86,7 +86,7 @@ struct:
 ```go
 package betting
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib"
 
 type Bet struct {
     Amount int64             // bet amount
@@ -311,7 +311,7 @@ The generated code in `state.xx` that implements the state interface is shown he
 ```go
 package betting
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib"
 
 type ArrayOfImmutableBet struct {
     objID int32

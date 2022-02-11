@@ -26,4 +26,4 @@ environment with the Rust plugin is a good combination.
 
 You can find example implementations of smart contracts (including source code
 and tests) in the Wasp repository, in the
-[contracts/rust folder](https://github.com/iotaledger/wasp/tree/master/contracts/rust).
+[contracts/wasm folder](https://github.com/iotaledger/wasp/tree/master/contracts/wasm).

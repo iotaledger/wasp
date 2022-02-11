@@ -49,7 +49,6 @@ type KVWriter interface {
 type KVIterator interface {
 	Iterate(prefix Key, f func(key Key, value []byte) bool) error
 	IterateKeys(prefix Key, f func(key Key) bool) error
-
 	IterateSorted(prefix Key, f func(key Key, value []byte) bool) error
 	IterateKeysSorted(prefix Key, f func(key Key) bool) error
 }
@@ -63,7 +62,6 @@ type KVMustReader interface {
 type KVMustIterator interface {
 	MustIterate(prefix Key, f func(key Key, value []byte) bool)
 	MustIterateKeys(prefix Key, f func(key Key) bool)
-
 	MustIterateSorted(prefix Key, f func(key Key, value []byte) bool)
 	MustIterateKeysSorted(prefix Key, f func(key Key) bool)
 }
