@@ -125,26 +125,32 @@ func TestConsumeRequest(t *testing.T) {
 	addrKeys := iotago.AddressKeys{Address: &stateControllerAddr, Keys: stateController}
 
 	aliasOut1 := &iotago.AliasOutput{
-		Amount:               1337,
-		AliasID:              tpkg.RandAliasAddress().AliasID(),
-		StateController:      &stateControllerAddr,
-		GovernanceController: &stateControllerAddr,
-		StateIndex:           1,
+		Amount:     1337,
+		AliasID:    tpkg.RandAliasAddress().AliasID(),
+		StateIndex: 1,
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: &stateControllerAddr},
+			&iotago.GovernorAddressUnlockCondition{Address: &stateControllerAddr},
+		},
 	}
 	aliasOut1Inp := tpkg.RandUTXOInput()
 
 	req := &iotago.ExtendedOutput{
-		Amount:  1337,
-		Address: aliasOut1.AliasID.ToAddress(),
+		Amount: 1337,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: aliasOut1.AliasID.ToAddress()},
+		},
 	}
 	reqInp := tpkg.RandUTXOInput()
 
 	aliasOut2 := &iotago.AliasOutput{
-		Amount:               1337 * 2,
-		AliasID:              aliasOut1.AliasID,
-		StateController:      &stateControllerAddr,
-		GovernanceController: &stateControllerAddr,
-		StateIndex:           2,
+		Amount:     1337 * 2,
+		AliasID:    aliasOut1.AliasID,
+		StateIndex: 2,
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: &stateControllerAddr},
+			&iotago.GovernorAddressUnlockCondition{Address: &stateControllerAddr},
+		},
 	}
 	essence := &iotago.TransactionEssence{
 		Inputs:  iotago.Inputs{aliasOut1Inp, reqInp},
@@ -163,7 +169,7 @@ func TestConsumeRequest(t *testing.T) {
 	semValCtx := &iotago.SemanticValidationContext{
 		ExtParas: &iotago.ExternalUnlockParameters{
 			ConfMsIndex: 1,
-			ConfUnix:    uint64(time.Now().Unix()),
+			ConfUnix:    uint32(time.Now().Unix()),
 		},
 	}
 	outset := iotago.OutputSet{
