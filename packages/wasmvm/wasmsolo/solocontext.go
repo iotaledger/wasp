@@ -5,6 +5,8 @@ package wasmsolo
 
 import (
 	"flag"
+	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -25,10 +27,14 @@ const ( // TODO set back to false
 	SoloDebug        = true
 	SoloHostTracing  = true
 	SoloStackTracing = true
+
+	L2FundsContract   = 1_000_000
+	L2FundsCreator    = 2_000_000
+	L2FundsOriginator = 3_000_000
 )
 
 var (
-	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
+	GoDebug    = flag.Bool("godebug", true, "debug go smart contract code")
 	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
 	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
@@ -55,6 +61,58 @@ var (
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
+
+func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
+	for _, a := range s {
+		if *a == *e {
+			return true
+		}
+	}
+	return false
+}
+
+// Accounts prints all known accounts, both L2 and L1.
+// It uses the L2 ledger to enumerate the known accounts.
+// Any newly created SoloAgents can be specified as extra accounts
+func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
+	accs := ctx.Chain.L2Accounts()
+	for _, agent := range agents {
+		agentID := agent.AgentID()
+		if !contains(accs, agentID) {
+			accs = append(accs, agentID)
+		}
+	}
+	sort.Slice(accs, func(i, j int) bool {
+		return accs[i].String() < accs[j].String()
+	})
+	txt := "ACCOUNTS:"
+	for _, acc := range accs {
+		l2 := ctx.Chain.L2Assets(acc)
+		l1 := ctx.Chain.Env.L1Assets(acc.Address())
+		txt += fmt.Sprintf("\n%s\n\tL2:%8d", acc.String(), l2.Iotas)
+		if acc.Hname() == 0 {
+			txt += fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+		}
+		for _, token := range l2.Tokens {
+			txt += fmt.Sprintf("\n\tL2:%8d", token.Amount)
+			tokTxt := ",\t           "
+			if acc.Hname() == 0 {
+				for i := range l1.Tokens {
+					if *l1.Tokens[i] == *token {
+						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
+						tokTxt = fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+						break
+					}
+				}
+			}
+			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
+		}
+		for _, token := range l1.Tokens {
+			txt += fmt.Sprintf("\n\tL2:%8d,\tL1:%8d,\t%s", 0, l1.Iotas, token.ID.String())
+		}
+	}
+	fmt.Println(txt)
+}
 
 func (ctx *SoloContext) Burn(i int64) {
 	// ignore gas for now
@@ -98,7 +156,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
-		chain.MustDepositIotasToL2(100_000_000, creator.Pair)
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	ctx.upload(keyPair)
 	if ctx.Err != nil {
@@ -127,7 +185,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	}
 
 	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
-	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, ctx.Creator().Pair)
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -151,7 +209,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
-		chain.MustDepositIotasToL2(100_000_000, creator.Pair)
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
@@ -163,7 +221,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	}
 
 	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
-	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, 10_000_000, scAccount, ctx.Creator().Pair)
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -199,7 +257,7 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		})
 	}
 	chain := soloEnv.NewChain(nil, chainName)
-	chain.MustDepositIotasToL2(100_000_000, &chain.OriginatorPrivateKey)
+	chain.MustDepositIotasToL2(L2FundsOriginator, &chain.OriginatorPrivateKey)
 	return chain
 }
 
