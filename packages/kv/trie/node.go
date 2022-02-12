@@ -6,18 +6,19 @@ import (
 	"io"
 )
 
-type serializable interface {
+type commitment interface {
 	Read(r io.Reader) error
 	Write(w io.Writer)
 	String() string
+	Equal(commitment) bool
 }
 
 type VectorCommitment interface {
-	serializable
+	commitment
 }
 
 type TerminalCommitment interface {
-	serializable
+	commitment
 }
 
 // Node is a node of the 25š+-ary verkle trie

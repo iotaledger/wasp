@@ -60,14 +60,14 @@ func commitToData(data []byte) TerminalCommitment {
 	return &ret
 }
 
-func updateVectorCommitment(prev, delta VectorCommitment) VectorCommitment {
-	return delta
+func updateVectorCommitment(prev *VectorCommitment, delta VectorCommitment) {
+	*prev = delta
 }
 
 func updateNodeCommitment(n *Node) VectorCommitment {
 	n.terminalCommitment = n.newTerminal
-	for i, n := range n.modifiedChildren {
-		n.children[i] = updateNodeCommitment(n.modifiedChildren[i])
+	for i, child := range n.modifiedChildren {
+		n.children[i] = updateNodeCommitment(child)
 	}
 	n.modifiedChildren = make(map[uint8]*Node)
 	return commitToChildren(n)
@@ -84,4 +84,18 @@ func (s *hashCommitment) Write(w io.Writer) {
 
 func (s *hashCommitment) String() string {
 	return hex.EncodeToString(s[:])
+}
+
+func (s *hashCommitment) Equal(another commitment) bool {
+	if s == nil && another == nil {
+		return true
+	}
+	if s == nil || another == nil {
+		return false
+	}
+	a, ok := another.(*hashCommitment)
+	if !ok {
+		return false
+	}
+	return *s == *a
 }

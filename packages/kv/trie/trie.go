@@ -10,7 +10,7 @@ type TrieSetup struct {
 	CommitToChildren      func(*Node) VectorCommitment
 	CommitToData          func([]byte) TerminalCommitment
 	UpdateNodeCommitment  func(*Node) VectorCommitment // returns delta
-	UpdateCommitment      func(prev, delta VectorCommitment) VectorCommitment
+	UpdateCommitment      func(update *VectorCommitment, delta VectorCommitment)
 }
 
 type trie struct {
@@ -162,12 +162,14 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	return node
 }
 
-// Commit calculates new root from the cache
-func (t *trie) Commit() VectorCommitment {
+// Commit calculates a new root commitment value from the cache and commits all mutations.
+// Flush() writes the cache to kv store
+func (t *trie) Commit() {
 	root, ok := t.GetNode(nil)
 	if !ok {
-		return nil
+		t.rootCommitment = nil
+		return
 	}
 	deltaC := t.setup.UpdateNodeCommitment(root)
-	return t.setup.UpdateCommitment(t.RootCommitment(), deltaC)
+	t.setup.UpdateCommitment(&t.rootCommitment, deltaC)
 }
