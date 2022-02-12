@@ -2,6 +2,7 @@ package testcore
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 	"testing"
@@ -49,7 +50,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 			AddAssetsIotas(iotasSent).
 			WithGasBudget(100_000).
-			AddIotaAllowance(iotasSent),
+			AddAllowanceIotas(iotasSent),
 		sender,
 	)
 	require.Error(t, err)
@@ -115,6 +116,19 @@ func TestFoundries(t *testing.T) {
 
 		ch.MustDepositIotasToL2(10_000, senderKeyPair)
 	}
+	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
+		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+
+		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+			accounts.ParamMaxSupply, 1,
+		).AddAssetsIotas(10000).WithGasBudget(math.MaxUint64)
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		// it succeeds when allowance is added
+		_, err = ch.PostRequestSync(req.AddAllowanceIotas(500), nil)
+		require.NoError(t, err)
+	})
 	t.Run("supply 10", func(t *testing.T) {
 		initTest()
 		sn, _, err := ch.NewFoundryParams(10).
@@ -626,7 +640,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("withdraw not enough for dust", func(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
-		v.req.AddNativeTokensAllowanceVect(&iotago.NativeToken{
+		v.req.AddAllowanceNativeTokensVect(&iotago.NativeToken{
 			ID:     *v.tokenID,
 			Amount: big.NewInt(100),
 		})

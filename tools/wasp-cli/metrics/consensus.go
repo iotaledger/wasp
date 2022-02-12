@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -18,12 +19,13 @@ var consensusMetricsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := config.WaspClient()
-		chid, err := iscp.ChainIDFromBase58(chainIDStr)
+		_, chainAddress, err := iotago.ParseBech32(chainIDStr)
 		log.Check(err)
-		workflowStatus, err := client.GetChainConsensusWorkflowStatus(chid)
+		chid := iscp.ChainIDFromAddress(chainAddress.(*iotago.Ed25519Address))
+		workflowStatus, err := client.GetChainConsensusWorkflowStatus(&chid)
 		log.Check(err)
 		header := []string{"Flag name", "Value", "Last time set"}
-		table := make([][]string, 9)
+		table := make([][]string, 10)
 		table[0] = makeWorkflowTableRow("State received", workflowStatus.FlagStateReceived, time.Time{})
 		table[1] = makeWorkflowTableRow("Batch proposal sent", workflowStatus.FlagBatchProposalSent, workflowStatus.TimeBatchProposalSent)
 		table[2] = makeWorkflowTableRow("Consensus on batch reached", workflowStatus.FlagConsensusBatchKnown, workflowStatus.TimeConsensusBatchKnown)
@@ -33,11 +35,12 @@ var consensusMetricsCmd = &cobra.Command{
 		table[6] = makeWorkflowTableRow("Transaction posted to L1", workflowStatus.FlagTransactionPosted, workflowStatus.TimeTransactionPosted) // TODO: is not meaningful, if I am not a contributor
 		table[7] = makeWorkflowTableRow("Transaction seen by L1", workflowStatus.FlagTransactionSeen, workflowStatus.TimeTransactionSeen)
 		table[8] = makeWorkflowTableRow("Consensus is completed", !(workflowStatus.FlagInProgress), workflowStatus.TimeCompleted)
+		table[9] = makeWorkflowTableRow("Current state index", workflowStatus.CurrentStateIndex, time.Time{})
 		log.PrintTable(header, table)
 	},
 }
 
-func makeWorkflowTableRow(name string, value bool, timestamp time.Time) []string {
+func makeWorkflowTableRow(name string, value interface{}, timestamp time.Time) []string {
 	res := make([]string, 3)
 	res[0] = name
 	res[1] = fmt.Sprintf("%v", value)

@@ -20,7 +20,7 @@ type SandboxBase interface {
 	// AccountID returns the agentID of the current contract
 	AccountID() *AgentID
 	// Params returns the parameters of the current call
-	Params() dict.Dict
+	Params() *Params
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
@@ -37,6 +37,11 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
+}
+
+type Params struct {
+	Dict dict.Dict
+	KVDecoder
 }
 
 type Helpers interface {
@@ -130,7 +135,7 @@ type RequestParameters struct {
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters
-	Options *SendOptions
+	Options SendOptions
 }
 
 type Gas interface {
@@ -154,7 +159,12 @@ type StateAnchor struct {
 
 type SendOptions struct {
 	Timelock   *TimeData
-	Expiration *TimeData
+	Expiration *Expiration
+}
+
+type Expiration struct {
+	TimeData
+	ReturnAddress iotago.Address
 }
 
 // RequestMetadata represents content of the data payload of the output

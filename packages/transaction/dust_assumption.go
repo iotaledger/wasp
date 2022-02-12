@@ -43,8 +43,8 @@ func (d *DustDepositAssumption) String() string {
 
 func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
 	return &DustDepositAssumption{
-		AnchorOutput:      aliasOutputDustDeposit(rent) + 50,
-		NativeTokenOutput: nativeTokenOutputDustDeposit(rent) + 50,
+		AnchorOutput:      aliasOutputDustDeposit(rent),
+		NativeTokenOutput: nativeTokenOutputDustDeposit(rent),
 	}
 }
 
@@ -82,7 +82,7 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			}},
 		},
 		nil,
-		nil,
+		iscp.SendOptions{},
 		rent,
 	)
 	return o.VByteCost(rent, nil)

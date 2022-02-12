@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"golang.org/x/xerrors"
 )
 
@@ -23,8 +23,7 @@ const (
 	// FirstUserMsgCode is the first committee message type.
 	// All the equal and larger msg types are committee messages.
 	// those with smaller are reserved by the package for heartbeat and handshake messages
-	FirstUserMsgCode = byte(0x10)
-
+	FirstUserMsgCode                = byte(0x10)
 	PeerMessageReceiverStateManager = byte(iota)
 	PeerMessageReceiverConsensus
 	PeerMessageReceiverCommonSubset
@@ -38,10 +37,10 @@ const (
 type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
-	PeerGroup(peeringID PeeringID, peerPubKeys []*cryptolib.PublicKey) (GroupProvider, error)
-	PeerDomain(peeringID PeeringID, peerAddrs []*cryptolib.PublicKey) (PeerDomainProvider, error)
-	PeerByPubKey(peerPub *cryptolib.PublicKey) (PeerSender, error)
-	SendMsgByPubKey(pubKey *cryptolib.PublicKey, msg *PeerMessageData)
+	PeerGroup(peeringID PeeringID, peerPubKeys []*ed25519.PublicKey) (GroupProvider, error)
+	PeerDomain(peeringID PeeringID, peerAddrs []*ed25519.PublicKey) (PeerDomainProvider, error)
+	PeerByPubKey(peerPub *ed25519.PublicKey) (PeerSender, error)
+	SendMsgByPubKey(pubKey *ed25519.PublicKey, msg *PeerMessageData)
 	PeerStatus() []PeerStatusProvider
 	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
@@ -52,9 +51,9 @@ type NetworkProvider interface {
 // struct, that implements the NetworkProvider. These implementations should interact,
 // e.g. when we distrust some peer, all the connections to it should be cut immediately.
 type TrustedNetworkManager interface {
-	IsTrustedPeer(pubKey cryptolib.PublicKey) error
-	TrustPeer(pubKey cryptolib.PublicKey, netID string) (*TrustedPeer, error)
-	DistrustPeer(pubKey cryptolib.PublicKey) (*TrustedPeer, error)
+	IsTrustedPeer(pubKey ed25519.PublicKey) error
+	TrustPeer(pubKey ed25519.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey ed25519.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
 }
 
@@ -67,8 +66,8 @@ type TrustedNetworkManager interface {
 type GroupProvider interface {
 	SelfIndex() uint16
 	PeerIndex(peer PeerSender) (uint16, error)
-	PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error)
-	PubKeyByIndex(index uint16) (*cryptolib.PublicKey, error)
+	PeerIndexByPubKey(peerPubKey *ed25519.PublicKey) (uint16, error)
+	PubKeyByIndex(index uint16) (*ed25519.PublicKey, error)
 	Attach(receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte)
@@ -90,18 +89,17 @@ type GroupProvider interface {
 // All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
 type PeerDomainProvider interface {
 	ReshufflePeers(seedBytes ...[]byte)
-	GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey
-	UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey)
+	GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey
+	UpdatePeers(newPeerPubKeys []*ed25519.PublicKey)
 	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
-	SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver byte, msgType byte, msgData []byte)
+	SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver byte, msgType byte, msgData []byte)
 	PeerStatus() []PeerStatusProvider
 	Close()
 }
 
 // PeerSender represents an interface to some remote peer.
 type PeerSender interface {
-
 	// NetID identifies the peer.
 	NetID() string
 
@@ -109,7 +107,7 @@ type PeerSender interface {
 	// authenticated, therefore it can return nil, if pub
 	// key is not known yet. You can call await before calling
 	// this function to ensure the public key is already resolved.
-	PubKey() *cryptolib.PublicKey
+	PubKey() *ed25519.PublicKey
 
 	// SendMsg works in an asynchronous way, and therefore the
 	// errors are not returned here.
@@ -138,7 +136,7 @@ type PeerSender interface {
 // by the same object.
 type PeerStatusProvider interface {
 	NetID() string
-	PubKey() *cryptolib.PublicKey
+	PubKey() *ed25519.PublicKey
 	IsAlive() bool
 	NumUsers() int
 }

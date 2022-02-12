@@ -13,27 +13,27 @@ export class NowCall {
 }
 
 export class NowContext {
-	state: sc.MutabletimestampState = new sc.MutabletimestampState();
+	state: sc.MutabletimestampState = new sc.MutabletimestampState(wasmlib.ScState.proxy());
 }
 
 export class GetTimestampCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetTimestamp);
-	results: sc.ImmutableGetTimestampResults = new sc.ImmutableGetTimestampResults();
+	results: sc.ImmutableGetTimestampResults = new sc.ImmutableGetTimestampResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetTimestampContext {
-	results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults();
-	state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState();
+	results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
-    static now(ctx: wasmlib.ScFuncCallContext): NowCall {
-        return new NowCall();
-    }
+	static now(_ctx: wasmlib.ScFuncCallContext): NowCall {
+		return new NowCall();
+	}
 
-    static getTimestamp(ctx: wasmlib.ScViewCallContext): GetTimestampCall {
-        let f = new GetTimestampCall();
-        f.func.setPtrs(null, f.results);
-        return f;
-    }
+	static getTimestamp(_ctx: wasmlib.ScViewCallContext): GetTimestampCall {
+		const f = new GetTimestampCall();
+		f.results = new sc.ImmutableGetTimestampResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
 }

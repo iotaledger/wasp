@@ -11,24 +11,24 @@ import (
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(stateOutputID iotago.OutputID, msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
-	if msg.ChainOutput.StateIndex > 0 {
+func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
+	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
-			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(stateOutputID.UTXOInput()))
+			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("STATE TRANSITION. State hash: %s",
 			msg.VirtualState.StateCommitment().String())
 	} else {
-		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(stateOutputID.UTXOInput()))
+		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("ORIGIN STATE SAVED. state hash: %s",
 			msg.VirtualState.StateCommitment().String())
 	}
 }
 
 // LogGovernanceTransition
-func LogGovernanceTransition(stateOutputID iotago.OutputID, msg *ChainTransitionEventData, log *logger.Logger) {
-	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.StateMetadata)
+func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
+	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.GetStateMetadata())
 	log.Infof("GOVERNANCE TRANSITION state index #%d, anchor output: %s, state hash: %s",
-		msg.VirtualState.BlockIndex(), iscp.OID(stateOutputID.UTXOInput()), stateHash.String())
+		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), stateHash.String())
 }
 
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {

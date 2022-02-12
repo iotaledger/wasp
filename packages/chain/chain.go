@@ -42,7 +42,7 @@ type ChainCore interface {
 	//  Mocking interfaces should be available only in the testing environment
 	// Most of these methods are made public for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
-	Enqueueiotago(chainOutput *iotago.AliasOutput, timestamp time.Time)
+	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
 	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
@@ -54,7 +54,6 @@ type ChainCore interface {
 type ChainEntry interface {
 	ReceiveTransaction(*iotago.Transaction)
 	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
-
 	Dismiss(reason string)
 	IsDismissed() bool
 }
@@ -97,26 +96,22 @@ type Committee interface {
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
 	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
-	NodeConnectionHandleOutputFun             func(iotago.Output)
-	NodeConnectionHandleUnspentAliasOutputFun func(*iotago.AliasOutput, time.Time)
+	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
+	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
 )
 
 type NodeConnection interface {
 	Subscribe(addr iotago.Address)
 	Unsubscribe(addr iotago.Address)
-
 	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
 	//AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
 	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID)
+	PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-
 	DetachFromTransactionReceived(*iotago.AliasAddress)
 	DetachFromInclusionStateReceived(*iotago.AliasAddress)
 	DetachFromOutputReceived(*iotago.AliasAddress)
@@ -129,14 +124,11 @@ type ChainNodeConnection interface {
 	//AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState()
 	PullTransactionInclusionState(txid iotago.TransactionID)
-	PullConfirmedOutput(outputID iotago.OutputID)
+	PullConfirmedOutput(outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-
 	DetachFromTransactionReceived()
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
@@ -149,8 +141,8 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(msg iotago.Output)
-	EnqueueStateCandidateMsg(state.VirtualStateAccess, iotago.OutputID)
+	EnqueueOutputMsg(iotago.Output, *iotago.UTXOInput)
+	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	SetChainPeers(peers []*ed25519.PublicKey)
@@ -177,14 +169,20 @@ type AsynchronousCommonSubsetRunner interface {
 	Close()
 }
 
+type WAL interface {
+	Write(bytes []byte) error
+	Contains(i uint32) bool
+	Read(i uint32) ([]byte, error)
+}
+
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
 	SyncedStateHash       hashing.HashValue
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
-	StateOutputID         iotago.OutputID
-	StateOutputHash       hashing.HashValue
+	StateOutputID         *iotago.UTXOInput
+	StateOutputCommitment hashing.HashValue
 	StateOutputTimestamp  time.Time
 }
 
@@ -204,7 +202,6 @@ type ConsensusWorkflowStatus interface {
 	IsTransactionPosted() bool
 	IsTransactionSeen() bool
 	IsInProgress() bool
-
 	GetBatchProposalSentTime() time.Time
 	GetConsensusBatchKnownTime() time.Time
 	GetVMStartedTime() time.Time
@@ -213,6 +210,7 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionPostedTime() time.Time
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
+	GetCurrentStateIndex() uint32
 }
 
 type ReadyListRecord struct {
@@ -237,7 +235,7 @@ type PeerStatus struct {
 
 type ChainTransitionEventData struct {
 	VirtualState    state.VirtualStateAccess
-	ChainOutput     *iotago.AliasOutput
+	ChainOutput     *iscp.AliasOutputWithID
 	OutputTimestamp time.Time
 }
 

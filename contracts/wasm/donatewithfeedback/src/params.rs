@@ -9,74 +9,70 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDonateParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDonateParams {
     pub fn feedback(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, PARAM_FEEDBACK.get_key_id())
+		ScImmutableString::new(self.proxy.root(PARAM_FEEDBACK))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDonateParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableDonateParams {
     pub fn feedback(&self) -> ScMutableString {
-		ScMutableString::new(self.id, PARAM_FEEDBACK.get_key_id())
+		ScMutableString::new(self.proxy.root(PARAM_FEEDBACK))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableWithdrawParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableWithdrawParams {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableWithdrawParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableWithdrawParams {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDonationParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDonationParams {
-    pub fn nr(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_NR.get_key_id())
+    pub fn nr(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_NR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDonationParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableDonationParams {
-    pub fn nr(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_NR.get_key_id())
+    pub fn nr(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_NR))
 	}
 }

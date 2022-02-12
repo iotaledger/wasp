@@ -21,8 +21,7 @@ import (
 // governance transition. The state of the chain remains unchanged
 func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("rotateStateController")
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	newStateControllerAddr := par.MustGetAddress(governance.ParamStateControllerAddress)
+	newStateControllerAddr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	ctx.Requiref(amap.MustHasAt(iscp.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix))
@@ -40,7 +39,7 @@ func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 	// - either there's no need to rotate
 	// - or it just has been rotated. In case of the second situation we emit a 'rotate' event
 	addrs := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.FuncControlAddresses.Hname(), nil, nil)
-	par = kvdecoder.New(addrs, ctx.Log())
+	par := kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
 	if !storedStateController.Equal(newStateControllerAddr) {
 		// state controller address recorded in the blocklog is different from the new one
@@ -54,8 +53,7 @@ func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 
 func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("addAllowedStateControllerAddress")
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
+	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustSetAt(iscp.BytesFromAddress(addr), []byte{0xFF})
 	return nil
@@ -63,8 +61,7 @@ func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 
 func removeAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("removeAllowedStateControllerAddress")
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
+	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustDelAt(iscp.BytesFromAddress(addr))
 	return nil

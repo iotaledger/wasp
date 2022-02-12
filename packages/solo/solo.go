@@ -29,6 +29,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
@@ -45,15 +47,15 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                            TestContext
-	logger                       *logger.Logger
-	dbmanager                    *dbmanager.DBManager
-	utxoDB                       *utxodb.UtxoDB
-	glbMutex                     sync.RWMutex
-	ledgerMutex                  sync.RWMutex
+	T           TestContext
+	logger      *logger.Logger
+	dbmanager   *dbmanager.DBManager
+	utxoDB      *utxodb.UtxoDB
+	glbMutex    sync.RWMutex
+	ledgerMutex sync.RWMutex
 	chains                       map[iscp.ChainID]*Chain
-	vmRunner                     vm.VMRunner
-	processorConfig              *processors.Config
+	vmRunner    vm.VMRunner
+	processorConfig  *processors.Config
 	disableAutoAdjustDustDeposit bool
 }
 
@@ -85,9 +87,9 @@ type Chain struct {
 	ValidatorFeeTarget *iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
-	State state.VirtualStateAccess
+	State       state.VirtualStateAccess
 	// GlobalSync represents global atomic flag for the optimistic state reader. In Solo it has no function
-	GlobalSync coreutil.ChainStateSync
+	GlobalSync  coreutil.ChainStateSync
 	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
 	// Log is the named logger of the chain
@@ -109,7 +111,7 @@ type InitOptions struct {
 	Seed                  cryptolib.Seed
 	RentStructure         *iotago.RentStructure
 	Log                   *logger.Logger
-}
+	}
 
 func defaultInitOptions() *InitOptions {
 	return &InitOptions{
@@ -122,8 +124,6 @@ func defaultInitOptions() *InitOptions {
 }
 
 // New creates an instance of the Solo environment
-// If solo is used for unit testing, 't' should be the *testing.T instance;
-// otherwise it can be either nil or an instance created with NewTestContext.
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
 func New(t TestContext, initOptions ...*InitOptions) *Solo {
@@ -144,26 +144,25 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		opt.RentStructure = testdeserparams.RentStructure()
 	}
 
-	// disable wasmtime vm for now
-	//err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-	//	return wasmproc.GetProcessor(binary, log)
-	//})
-	//require.NoError(t, err)
-
 	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
 	ret := &Solo{
-		T:                            t,
+		T:               t,
 		logger:                       opt.Log,
 		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true),
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
-		vmRunner:                     runvm.NewVMRunner(),
+		vmRunner:        runvm.NewVMRunner(),
 		processorConfig:              processors.NewConfig(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
 		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
+
+	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
+		return wasmhost.GetProcessor(binaryCode, opt.Log)
+	})
+	require.NoError(t, err)
 
 	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
 		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
@@ -201,16 +200,16 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
-// nolint:funlen
+//nolint:funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
 	var originatorAddr iotago.Address
-	var origKeyPair cryptolib.KeyPair
 	if chainOriginator == nil {
-		origKeyPair, originatorAddr = env.utxoDB.NewKeyPairByIndex(1) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
+		origKeyPair := cryptolib.NewKeyPair()
+		originatorAddr = cryptolib.Ed25519AddressFromPubKey(origKeyPair.PublicKey)
 		chainOriginator = &origKeyPair
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
@@ -337,7 +336,7 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 	ret, err := iscp.RequestsInTransaction(tx)
 	require.NoError(env.T, err)
 	return ret
-}
+		}
 
 func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
 	env.glbMutex.RLock()
@@ -346,7 +345,7 @@ func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
 	defer ch.runVMMutex.Unlock()
 
 	ch.mempool.ReceiveRequests(reqs...)
-}
+		}
 
 // AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
 // then waits for the in-buffer to be empty, before resuming VM execution
@@ -397,8 +396,8 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	timeAssumption := ch.Env.GlobalTime()
-	ready := ch.mempool.ReadyNow(timeAssumption)
+	now := ch.Env.GlobalTime()
+	ready := ch.mempool.ReadyNow(now)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
@@ -406,13 +405,13 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	ret := make([]iscp.Request, 0)
 	for _, req := range ready[:batchSize] {
 		if !req.IsOffLedger() {
-			timeData := req.AsOnLedger().Features().TimeLock()
-			if timeData != nil && timeData.Time.After(timeAssumption.Time) {
+			onLedgerReq := req.AsOnLedger()
+			if !iscp.RequestIsUnlockable(onLedgerReq, ch.ChainID.AsAddress(), now) {
 				continue
+				}
 			}
+			ret = append(ret, req)
 		}
-		ret = append(ret, req)
-	}
 	return ret
 }
 

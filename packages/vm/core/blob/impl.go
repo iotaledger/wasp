@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -26,7 +25,7 @@ func storeBlob(ctx iscp.Sandbox) dict.Dict {
 	state := ctx.State()
 	params := ctx.Params()
 	// calculate a deterministic hash of all blob fields
-	blobHash, kSorted, values := mustGetBlobHash(params)
+	blobHash, kSorted, values := mustGetBlobHash(params.Dict)
 
 	directory := GetDirectory(state)
 	ctx.Requiref(!directory.MustHasAt(blobHash[:]),
@@ -66,7 +65,7 @@ func storeBlob(ctx iscp.Sandbox) dict.Dict {
 func getBlobInfo(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 
-	blobHash := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetHashValue(ParamHash)
+	blobHash := ctx.Params().MustGetHashValue(ParamHash)
 
 	blbSizes := GetBlobSizesR(ctx.State(), blobHash)
 	ret := dict.New()
@@ -81,9 +80,8 @@ func getBlobField(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	blobHash := params.MustGetHashValue(ParamHash)
-	field := params.MustGetBytes(ParamField)
+	blobHash := ctx.Params().MustGetHashValue(ParamHash)
+	field := ctx.Params().MustGetBytes(ParamField)
 
 	blobValues := GetBlobValuesR(state, blobHash)
 	ctx.Requiref(blobValues.MustLen() != 0, "blob with hash %s has not been found", blobHash.String())

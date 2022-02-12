@@ -1,11 +1,12 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"math"
 	"math/big"
+
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -114,14 +114,18 @@ func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 }
 
 func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
+	sender := vmctx.req.SenderAccount()
+	if sender == nil {
+		return 0
+	}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
 		// iotas are used as gas tokens
-		return vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+		return vmctx.GetIotaBalance(sender)
 	}
 	// native tokens are used for gas fee
 	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
 	// to pay for gas chain is configured to use some native token, not IOTA
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(sender, tokenID)
 	if tokensAvailableBig.IsUint64() {
 		return tokensAvailableBig.Uint64()
 	}
@@ -217,13 +221,16 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 }
 
 // adjustL2IotasIfNeeded adjust L2 ledger for iotas if the L1 changed because of dust deposit changes
-func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
+func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account *iscp.AgentID) {
+	if adjustment == 0 {
+		return
+	}
 	err := util.CatchPanicReturnError(func() {
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-			accounts.AdjustAccountIotas(s, commonaccount.Get(vmctx.ChainID()), adjustment)
+			accounts.AdjustAccountIotas(s, account, adjustment)
 		})
 	}, accounts.ErrNotEnoughFunds.Create())
 	if err != nil {
-		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 }

@@ -38,53 +38,54 @@ import (
 const maxMsgBuffer = 1000
 
 var (
-	_ chain.Chain         = &chainObj{}
-	_ chain.ChainCore     = &chainObj{}
-	_ chain.ChainEntry    = &chainObj{}
-	_ chain.ChainRequests = &chainObj{}
+	_ chain.Chain                = &chainObj{}
+	_ chain.ChainCore            = &chainObj{}
+	_ chain.ChainEntry           = &chainObj{}
+	_ chain.ChainRequests        = &chainObj{}
 	_ chain.ChainMetrics         = &chainObj{}
 	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
-	committee                        atomic.Value
-	mempool                          chain.Mempool
-	mempoolLastCleanedIndex          uint32
-	dismissed                        atomic.Bool
-	dismissOnce                      sync.Once
-	chainID                          *iscp.ChainID
-	chainStateSync                   coreutil.ChainStateSync
-	stateReader                      state.OptimisticStateReader
-	procset                          *processors.Cache
-	stateMgr                         chain.StateManager
-	consensus                        chain.Consensus
-	log                              *logger.Logger
+	committee                          atomic.Value
+	mempool                            chain.Mempool
+	mempoolLastCleanedIndex            uint32
+	dismissed                          atomic.Bool
+	dismissOnce                        sync.Once
+	chainID                            *iscp.ChainID
+	chainStateSync                     coreutil.ChainStateSync
+	stateReader                        state.OptimisticStateReader
+	procset                            *processors.Cache
+	stateMgr                           chain.StateManager
+	consensus                          chain.Consensus
+	log                                *logger.Logger
 	nodeConn                           chain.ChainNodeConnection
-	db                               kvstore.KVStore
-	netProvider                      peering.NetworkProvider
-	dksProvider                      registry.DKShareRegistryProvider
+	db                                 kvstore.KVStore
+	netProvider                        peering.NetworkProvider
+	dksProvider                        registry.DKShareRegistryProvider
 	blobProvider                       registry.BlobCache
 	committeeRegistry                registry.CommitteeRegistryProvider
-	eventRequestProcessed            *events.Event
-	eventChainTransition             *events.Event
+	eventRequestProcessed              *events.Event
+	eventChainTransition               *events.Event
 	eventChainTransitionClosure        *events.Closure
 	receiveChainPeerMessagesAttachID   interface{}
 	detachFromCommitteePeerMessagesFun func()
-	chainPeers                       peering.PeerDomainProvider
+	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
-	offLedgerReqsAcksMutex           sync.RWMutex
+	offLedgerReqsAcksMutex             sync.RWMutex
 	offLedgerReqsAcks                  map[iscp.RequestID][]*ed25519.PublicKey
-	offledgerBroadcastUpToNPeers     int
-	offledgerBroadcastInterval       time.Duration
-	pullMissingRequestsFromCommittee bool
-	chainMetrics                     metrics.ChainMetrics
-	dismissChainMsgPipe              pipe.Pipe
-	stateMsgPipe                     pipe.Pipe
-	offLedgerRequestPeerMsgPipe      pipe.Pipe
-	requestAckPeerMsgPipe            pipe.Pipe
-	missingRequestIDsPeerMsgPipe     pipe.Pipe
-	missingRequestPeerMsgPipe        pipe.Pipe
-	timerTickMsgPipe                 pipe.Pipe
+	offledgerBroadcastUpToNPeers       int
+	offledgerBroadcastInterval         time.Duration
+	pullMissingRequestsFromCommittee   bool
+	chainMetrics                       metrics.ChainMetrics
+	dismissChainMsgPipe                pipe.Pipe
+	stateMsgPipe                       pipe.Pipe
+	offLedgerRequestPeerMsgPipe        pipe.Pipe
+	requestAckPeerMsgPipe              pipe.Pipe
+	missingRequestIDsPeerMsgPipe       pipe.Pipe
+	missingRequestPeerMsgPipe          pipe.Pipe
+	timerTickMsgPipe                   pipe.Pipe
+	wal                                chain.WAL
 }
 
 type committeeStruct struct {
@@ -106,6 +107,7 @@ func NewChain(
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
+	wal chain.WAL,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
@@ -113,15 +115,15 @@ func NewChain(
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
-		procset:           processors.MustNew(processorConfig),
-		chainID:           chainID,
-		log:               chainLog,
+		procset:        processors.MustNew(processorConfig),
+		chainID:        chainID,
+		log:            chainLog,
 		nodeConn:       nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
-		db:                db,
-		chainStateSync:    chainStateSync,
-		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
-		netProvider:       netProvider,
-		dksProvider:       dksProvider,
+		db:             db,
+		chainStateSync: chainStateSync,
+		stateReader:    state.NewOptimisticStateReader(db, chainStateSync),
+		netProvider:    netProvider,
+		dksProvider:    dksProvider,
 		blobProvider:   blobProvider,
 		committeeRegistry: committeeRegistry,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
@@ -143,6 +145,7 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
+		wal:                              wal,
 	}
 	ret.committee.Store(&committeeStruct{})
 
@@ -158,7 +161,8 @@ func NewChain(
 		log.Errorf("NewChain: unable to create stateMgr.fallbackPeers domain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics)
+
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal)
 	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
@@ -274,6 +278,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 		c.mempoolLastCleanedIndex = stateIndex
 		c.updateChainNodes(stateIndex)
+		c.chainMetrics.CurrentStateIndex(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())

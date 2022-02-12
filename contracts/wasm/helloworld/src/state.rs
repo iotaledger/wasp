@@ -9,17 +9,15 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableHelloWorldState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableHelloWorldState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }

@@ -3,7 +3,8 @@ package tstemplates
 var typedefsTs = map[string]string{
 	// *******************************
 	"typedefs.ts": `
-$#emit tsImports
+$#emit importWasmTypes
+$#emit importSc
 $#each typedef typedefProxy
 `,
 	// *******************************
@@ -23,7 +24,7 @@ $#if map typedefProxyAlias
 	"typedefProxyAlias": `
 
 export class $mut$FldName extends $proxy {
-};
+}
 `,
 	// *******************************
 	"typedefProxyArray": `
@@ -33,106 +34,85 @@ $#if exist else typedefProxyArrayNew
 	// *******************************
 	"typedefProxyArrayNew": `
 
-export class $proxy {
-	objID: i32;
+export class $proxy extends wasmtypes.ScProxy {
+$#if mut typedefProxyArrayMut
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-$#if mut typedefProxyArrayClear
-
-    length(): i32 {
-        return wasmlib.getLength(this.objID);
-    }
+	length(): u32 {
+		return this.proxy.length();
+	}
 $#if basetype typedefProxyArrayNewBaseType typedefProxyArrayNewOtherType
 }
 $#set exist $proxy
 `,
 	// *******************************
-	"typedefProxyArrayClear": `
+	"typedefProxyArrayMut": `
+$#if basetype typedefProxyArrayAppendBaseType typedefProxyArrayAppendOtherType
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
+	clear(): void {
+		this.proxy.clearArray();
+	}
+`,
+	// *******************************
+	"typedefProxyArrayAppendBaseType": `
+
+	append$FldType(): wasmtypes.Sc$mut$FldType {
+		return new wasmtypes.Sc$mut$FldType(this.proxy.append());
+	}
+`,
+	// *******************************
+	"typedefProxyArrayAppendOtherType": `
+
+	append$FldType(): sc.$mut$FldType {
+		return new sc.$mut$FldType(this.proxy.append());
+	}
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
 
-    get$FldType(index: i32): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, new wasmlib.Key32(index));
-    }
-`,
-	// *******************************
-	"typedefProxyArrayNewOtherType": `
-$#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
-`,
-	// *******************************
-	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#emit setVarType
-
-	get$OldType(index: i32): sc.$mut$OldType {
-		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), $varType);
-		return new sc.$mut$OldType(subID);
+	get$FldType(index: u32): wasmtypes.Sc$mut$FldType {
+		return new wasmtypes.Sc$mut$FldType(this.proxy.index(index));
 	}
 `,
 	// *******************************
-	"typedefProxyArrayNewOtherTypeStruct": `
+	"typedefProxyArrayNewOtherType": `
 
-	get$FldType(index: i32): sc.$mut$FldType {
-		return new sc.$mut$FldType(this.objID, new wasmlib.Key32(index));
+	get$FldType(index: u32): sc.$mut$FldType {
+		return new sc.$mut$FldType(this.proxy.index(index));
 	}
 `,
 	// *******************************
 	"typedefProxyMap": `
-$#set proxy Map$fldMapKey$+To$mut$FldType
+$#set proxy Map$FldMapKey$+To$mut$FldType
 $#if exist else typedefProxyMapNew
 `,
 	// *******************************
 	"typedefProxyMapNew": `
 
-export class $proxy {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-$#if mut typedefProxyMapClear
+export class $proxy extends wasmtypes.ScProxy {
+$#if mut typedefProxyMapMut
 $#if basetype typedefProxyMapNewBaseType typedefProxyMapNewOtherType
 }
 $#set exist $proxy
 `,
 	// *******************************
-	"typedefProxyMapClear": `
+	"typedefProxyMapMut": `
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
 
-    get$FldType(key: $fldKeyLangType): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, $fldKeyToKey32);
-    }
+	get$FldType(key: $fldKeyLangType): wasmtypes.Sc$mut$FldType {
+		return new wasmtypes.Sc$mut$FldType(this.proxy.key(wasmtypes.$fldMapKey$+ToBytes(key)));
+	}
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
-`,
-	// *******************************
-	"typedefProxyMapNewOtherTypeTypeDef": `
-$#emit setVarType
 
-    get$OldType(key: $oldKeyLangType): sc.$mut$OldType {
-        let subID = wasmlib.getObjectID(this.objID, $oldKeyToKey32, $varType);
-        return new sc.$mut$OldType(subID);
-    }
-`,
-	// *******************************
-	"typedefProxyMapNewOtherTypeStruct": `
-
-    get$FldType(key: $fldKeyLangType): sc.$mut$FldType {
-        return new sc.$mut$FldType(this.objID, $fldKeyToKey32);
-    }
+	get$FldType(key: $fldKeyLangType): sc.$mut$FldType {
+		return new sc.$mut$FldType(this.proxy.key(wasmtypes.$fldMapKey$+ToBytes(key)));
+	}
 `,
 }

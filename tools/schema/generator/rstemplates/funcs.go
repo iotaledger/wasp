@@ -6,8 +6,6 @@ var funcsRs = map[string]string{
 use wasmlib::*;
 
 use crate::*;
-$#if structs useStructs
-$#if typedefs useTypeDefs
 $#each func funcSignature
 `,
 	// *******************************

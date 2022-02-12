@@ -3,7 +3,9 @@ package gotemplates
 var paramsGo = map[string]string{
 	// *******************************
 	"params.go": `
-$#emit goHeader
+$#emit goPackage
+
+$#emit importWasmTypes
 $#each func paramsFunc
 `,
 	// *******************************
@@ -24,7 +26,7 @@ $#set TypeName $mut$FuncName$+Params
 $#each param proxyContainers
 
 type $TypeName struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 $#each param proxyMethods
 `,

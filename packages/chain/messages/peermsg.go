@@ -7,6 +7,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -39,7 +40,13 @@ type StateTransitionMsg struct {
 // StateCandidateMsg Consensus sends the finalized next state to StateManager
 type StateCandidateMsg struct {
 	State             state.VirtualStateAccess
-	ApprovingOutputID iotago.OutputID
+	ApprovingOutputID *iotago.UTXOInput
+}
+
+// Level 1 sends new state output to state manager
+type OutputMsg struct {
+	Output iotago.Output
+	ID     *iotago.UTXOInput
 }
 
 // VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
@@ -61,6 +68,6 @@ type InclusionStateMsg struct {
 
 // StateMsg txstream plugin sends the only existing AliasOutput in the chain's address to StateManager
 type StateMsg struct {
-	ChainOutput *iotago.AliasOutput
+	ChainOutput *iscp.AliasOutputWithID
 	Timestamp   time.Time
 }

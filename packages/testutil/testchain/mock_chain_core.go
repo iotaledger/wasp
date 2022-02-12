@@ -25,7 +25,6 @@ type MockedChainCore struct {
 	T                       *testing.T
 	chainID                 *iscp.ChainID
 	processors              *processors.Cache
-	peeringID               peering.PeeringID
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	getNetIDsFun            func() []string
@@ -56,7 +55,6 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
-		peeringID:  chainID.Array(),
 		log:        log,
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")

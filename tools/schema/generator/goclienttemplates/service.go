@@ -3,7 +3,13 @@ package goclienttemplates
 var serviceGo = map[string]string{
 	// *******************************
 	"service.go": `
-$#emit clientHeader
+package $package$+client
+$#if funcs emitContract
+`,
+	// *******************************
+	"emitContract": `
+
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
 $#each params constArg
@@ -20,16 +26,11 @@ type $PkgName$+Service struct {
 
 func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) (*$PkgName$+Service, error) {
 	s := &$PkgName$+Service{}
-$#set eventHandlers EventHandlers
-$#if core noEventHandlers
-	err := s.Service.Init(cl, chainID, 0x$hscName, $eventHandlers)
+	err := s.Service.Init(cl, chainID, 0x$hscName)
 	return s, err
 }
+$#if events newEventHandler
 $#each func serviceFunction
-`,
-	// *******************************
-	"noEventHandlers": `
-$#set eventHandlers nil
 `,
 	// *******************************
 	"constArg": `
@@ -38,6 +39,13 @@ $#set eventHandlers nil
 	// *******************************
 	"constRes": `
 	Res$FldName = "$fldAlias"
+`,
+	// *******************************
+	"newEventHandler": `
+
+func (s *$PkgName$+Service) NewEventHandler() *$PkgName$+Events {
+	return &$PkgName$+Events{}
+}
 `,
 	// *******************************
 	"funcStruct": `
@@ -116,9 +124,14 @@ type $FuncName$+Results struct {
 }
 $#each result callResultGetter
 `,
+	//TODO array and map abstraction on key/value results
 	// *******************************
 	"callResultGetter": `
-$#if map callResultGetterMap callResultGetterBasic
+$#if map callResultGetterMap callResultGetter2
+`,
+	// *******************************
+	"callResultGetter2": `
+$#if basetype callResultGetterBasic callResultGetterStruct
 `,
 	// *******************************
 	"callResultGetterMap": `
@@ -126,7 +139,7 @@ $#if map callResultGetterMap callResultGetterBasic
 func (r *$FuncName$+Results) $FldName() map[$fldKeyLangType]$fldLangType {
     res := make(map[$fldKeyLangType]$fldLangType)
     r.res.ForEach(func(key []byte, val []byte) {
-        res[r.res.To$fldMapKey(key)] = r.res.To$FldType(val)
+        res[r.res.To$FldMapKey(key)] = r.res.To$FldType(val)
     })
 	return res
 }
@@ -137,6 +150,13 @@ $#if mandatory else callResultOptional
 
 func (r *$FuncName$+Results) $FldName() $fldLangType {
 	return r.res.To$FldType(r.res.Get(Res$FldName))
+}
+`,
+	// *******************************
+	"callResultGetterStruct": `
+
+func (r *$FuncName$+Results) $FldName() *$FldType {
+	return New$FldType$+FromBytes(r.res.Get(Res$FldName))
 }
 `,
 	// *******************************

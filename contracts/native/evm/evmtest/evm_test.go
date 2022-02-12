@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +55,7 @@ func TestStorageContract(t *testing.T) {
 		// call FuncSendTransaction with EVM tx that calls `store(43)`
 		res, err := storage.store(43)
 		require.NoError(t, err)
-		require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+		require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 		require.EqualValues(t, 2, evmChain.getBlockNumber())
 
 		// call `retrieve` view, get 43
@@ -84,8 +85,8 @@ func TestERC20Contract(t *testing.T) {
 		res, err := erc20.transfer(recipientAddress, transferAmount)
 		require.NoError(t, err)
 
-		require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
-		require.Equal(t, 1, len(res.receipt.Logs))
+		require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+		require.Equal(t, 1, len(res.evmReceipt.Logs))
 
 		// call `balanceOf` view => check balance of recipient = 1337 TestCoin
 		require.Zero(t, erc20.balanceOf(recipientAddress).Cmp(transferAmount))
@@ -110,36 +111,17 @@ func TestGasCharged(t *testing.T) {
 		evmChain := initEVMChain(t, evmFlavor)
 		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
-		iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
-
-		initialBalance := evmChain.solo.L1Iotas(iotaAddress)
-		iotasSent := initialBalance - 1
+		iotaWallet, _ := evmChain.solo.NewKeyPairWithFunds()
 
 		// call `store(999)` with enough gas
-		res, err := storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSent}})
+		res, err := storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet}})
 		require.NoError(t, err)
-		require.Greater(t, res.iotaChargedFee, uint64(0))
-
-		// call `retrieve` view, get 42
-		require.EqualValues(t, 999, storage.retrieve())
-
-		// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
-		// TODO: gas is currently not being charged
-		expectedUserBalance := uint64(0) // iotasSent - res.iotaChargedFee
-
-		evmChain.soloChain.AssertL2Iotas(iotaAgentID, expectedUserBalance)
-
-		// call `store(123)` without enough gas
-		_, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
-		require.NoError(t, err)
-		require.EqualValues(t, 123, storage.retrieve())
-		// TODO:
-		// require.Contains(t, err.ErrorStr(), "transferred tokens (1) not enough")
-		// require.EqualValues(t, 999, storage.retrieve())
-
-		// verify user on-chain account still has the same balance (no refund happened)
-		evmChain.soloChain.AssertL2Iotas(iotaAgentID, expectedUserBalance)
+		t.Log("evm gas used:", res.evmReceipt.GasUsed)
+		t.Log("iscp gas used:", res.iscpReceipt.GasBurned)
+		t.Log("iscp gas fee:", res.iscpReceipt.GasFeeCharged)
+		require.Greater(t, res.evmReceipt.GasUsed, uint64(0))
+		require.Greater(t, res.iscpReceipt.GasBurned, uint64(0))
+		require.Greater(t, res.iscpReceipt.GasFeeCharged, uint64(0))
 	})
 }
 
@@ -156,7 +138,8 @@ func TestOwner(t *testing.T) {
 		user1AgentID := iscp.NewAgentID(user1Address, 0)
 		_, err := evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-				AddAssetsIotas(100000),
+				AddAssetsIotas(100000).
+				WithMaxAffordableGasBudget(),
 			user1Wallet,
 		)
 		require.Error(t, err)
@@ -168,7 +151,8 @@ func TestOwner(t *testing.T) {
 		// current owner is able to set a new "next owner"
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-				AddAssetsIotas(100000),
+				AddAssetsIotas(100000).
+				WithMaxAffordableGasBudget(),
 			&evmChain.soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
@@ -182,7 +166,8 @@ func TestOwner(t *testing.T) {
 
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
-				AddAssetsIotas(100000),
+				AddAssetsIotas(100000).
+				WithMaxAffordableGasBudget(),
 			user2Wallet,
 		)
 		require.Error(t, err)
@@ -194,7 +179,8 @@ func TestOwner(t *testing.T) {
 		// claim ownership successfully
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
-				AddAssetsIotas(100000),
+				AddAssetsIotas(100000).
+				WithMaxAffordableGasBudget(),
 			user1Wallet,
 		)
 		require.NoError(t, err)
@@ -203,34 +189,33 @@ func TestOwner(t *testing.T) {
 	})
 }
 
-func TestGasPerIotas(t *testing.T) {
+func TestGasRatio(t *testing.T) {
 	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
 		evmChain := initEVMChain(t, evmFlavor)
 		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-		// the default value is correct
-		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
+		require.Equal(t, evm.DefaultGasRatio, evmChain.getGasRatio())
 
 		res, err := storage.store(43)
 		require.NoError(t, err)
-		initialGasFee := res.iotaChargedFee
+		initialGasFee := res.iscpReceipt.GasFeeCharged
 
-		// only the owner can call the setGasPerIotas endpoint
-		newGasPerIota := evm.DefaultGasPerIota * 1000
+		// only the owner can call the setGasRatio endpoint
+		newGasRatio := util.Ratio32{A: evm.DefaultGasRatio.A * 10, B: evm.DefaultGasRatio.B}
 		newUserWallet, _ := evmChain.solo.NewKeyPairWithFunds()
-		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: newUserWallet})
+		err = evmChain.setGasRatio(newGasRatio, iotaCallOptions{wallet: newUserWallet})
 		require.Contains(t, err.Error(), "unauthorized access")
-		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
+		require.Equal(t, evm.DefaultGasRatio, evmChain.getGasRatio())
 
-		// current owner is able to set a new gasPerIotas
-		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: &evmChain.soloChain.OriginatorPrivateKey})
+		// current owner is able to set a new gasRatio
+		err = evmChain.setGasRatio(newGasRatio, iotaCallOptions{wallet: &evmChain.soloChain.OriginatorPrivateKey})
 		require.NoError(t, err)
-		require.Equal(t, newGasPerIota, evmChain.getGasPerIotas())
+		require.Equal(t, newGasRatio, evmChain.getGasRatio())
 
 		// run an equivalent request and compare the gas fees
 		res, err = storage.store(44)
 		require.NoError(t, err)
-		require.Less(t, res.iotaChargedFee, initialGasFee)
+		require.Greater(t, res.iscpReceipt.GasFeeCharged, initialGasFee)
 	})
 }
 
@@ -240,76 +225,69 @@ func TestGasLimit(t *testing.T) {
 		evmChain := initEVMChain(t, evmFlavor)
 		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-		gasPerIotas := evmChain.getGasPerIotas()
+		// set a gas ratio such that evm gas cost in iotas is larger than dust cost
+		err := evmChain.setGasRatio(util.Ratio32{A: 10, B: 1}, iotaCallOptions{wallet: &evmChain.soloChain.OriginatorPrivateKey})
+		require.NoError(t, err)
 
 		// estimate gas by sending a valid tx
-		result, err := storage.store(123)
+		iotaWallet1, _ := evmChain.solo.NewKeyPairWithFunds()
+		result, err := storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet1}})
 		require.NoError(t, err)
-		gas := result.receipt.GasUsed
+		gas := result.iscpReceipt.GasBurned
+		fee := result.iscpReceipt.GasFeeCharged
+		t.Logf("gas: %d, fee: %d", gas, fee)
 
 		// send again with same gas limit but not enough iotas
-		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
-		// TODO: gas is currently not being charged
-		// require.Error(t, err)
-		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.ErrorStr())
-		require.NoError(t, err)
+		iotaWallet2, _ := evmChain.solo.NewKeyPairWithFunds()
+		_, err = storage.store(124, ethCallOptions{iota: iotaCallOptions{
+			wallet: iotaWallet2,
+			before: func(req *solo.CallParams) {
+				req.WithGasBudget(gas).AddAssetsIotas(fee * 9 / 10)
+			},
+		}})
+		require.Error(t, err)
+		require.Regexp(t, `\bgas\b`, err.Error())
 
 		// send again with gas limit not enough for transaction
-		_, err = storage.store(123, ethCallOptions{gasLimit: 1 * gasPerIotas, iota: iotaCallOptions{transfer: 1}})
+		iotaWallet3, _ := evmChain.solo.NewKeyPairWithFunds()
+		_, err = storage.store(125, ethCallOptions{iota: iotaCallOptions{
+			wallet: iotaWallet3,
+			before: func(req *solo.CallParams) {
+				req.WithGasBudget(gas / 2).AddAssetsIotas(fee)
+			},
+		}})
 		require.Error(t, err)
-		require.Regexp(t, `intrinsic gas too low: have \d+, want \d+`, err.Error())
+		require.Regexp(t, `\bgas\b`, err.Error())
 	})
 }
 
-// ensure the amount of iotas sent impacts the amount of loop iterators (gas used)
+// ensure the amount of iotas sent impacts the amount of gas used
 func TestLoop(t *testing.T) {
 	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
 		evmChain := initEVMChain(t, evmFlavor)
 		loop := evmChain.deployLoopContract(evmChain.faucetKey)
-		gasPerIotas := evmChain.getGasPerIotas()
 
-		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
-		iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
+		gasPerToken := evmChain.soloChain.GetGasFeePolicy().GasPerToken
 
-		initialBalance := evmChain.solo.L1Iotas(iotaAddress)
-		iotasSpent1 := uint64(100)
-		res, err := loop.loop(ethCallOptions{
-			gasLimit: iotasSpent1 * gasPerIotas,
-			iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1},
-		})
-		require.NoError(t, err)
-		require.Equal(t, res.iotaChargedFee, iotasSpent1)
-		gasUsed := res.receipt.GasUsed
-
-		iotasSpent2 := uint64(1000)
-		res, err = loop.loop(ethCallOptions{
-			gasLimit: iotasSpent2 * gasPerIotas,
-			iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2},
-		})
-		require.NoError(t, err)
-		require.Equal(t, res.iotaChargedFee, iotasSpent2)
-		require.Greater(t, res.receipt.GasUsed, gasUsed)
-
-		// ensure iotas sent are kept in the ISCP chain
-		require.Equal(t, evmChain.solo.L1Iotas(iotaAddress), initialBalance-iotasSpent1-iotasSpent2)
-		evmChain.soloChain.AssertL2Iotas(iotaAgentID, 0)
-	})
-}
-
-func TestNonFaucetUsers(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		evmChain := initEVMChain(t, evmFlavor)
-		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
-
-		// call EVM contract with a new key (that doesn't own ether on the EVM evmChain.soloChain)
-		gasPerIotas := evmChain.getGasPerIotas()
-		iotas := uint64(10000)
-		// this should be successful because gasPrice is 0
-		res, err := storage.store(123, ethCallOptions{gasLimit: iotas * gasPerIotas, iota: iotaCallOptions{transfer: iotas}})
-		require.NoError(t, err)
-		require.Greater(t, res.iotaChargedFee, uint64(0))
-
-		require.EqualValues(t, 123, storage.retrieve())
+		for _, evmGasLimit := range []uint64{100000, 200000} {
+			iscGasBudget := evmGasLimit * 2
+			iotasSent := iscGasBudget / gasPerToken
+			iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
+			loop.loop(ethCallOptions{
+				gasLimit: &evmGasLimit,
+				iota: iotaCallOptions{
+					wallet: iotaWallet,
+					before: func(req *solo.CallParams) {
+						req.WithGasBudget(iscGasBudget).AddAssetsIotas(iotasSent)
+					},
+				},
+			})
+			// gas fee is charged regardless of result
+			require.LessOrEqual(t,
+				evmChain.soloChain.L2Iotas(iscp.NewAgentID(iotaAddress, 0)),
+				iotasSent-evmGasLimit/gasPerToken,
+			)
+		}
 	})
 }
 
@@ -322,23 +300,21 @@ func TestPrePaidFees(t *testing.T) {
 
 		// test sending off-ledger request without depositing funds first
 		txdata, _, _ := storage.buildEthTxData(nil, "store", uint32(999))
-		offledgerRequest := evmChain.buildSoloRequest(evm.FuncSendTransaction.Name, 100, evm.FieldTransactionData, txdata)
-		evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
-
-		// check that the tx has no effect
+		offledgerRequest := evmChain.buildSoloRequest(evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata).
+			WithMaxAffordableGasBudget()
+		_, err := evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
+		require.Error(t, err)
 		require.EqualValues(t, 42, storage.retrieve())
 
 		// deposit funds
 		initialBalance := evmChain.solo.L1Iotas(iotaAddress)
-		_, err := evmChain.soloChain.PostRequestSync(
-			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssetsIotas(initialBalance),
-			iotaWallet,
-		)
+		err = evmChain.soloChain.DepositIotasToL2(initialBalance/2, iotaWallet)
 		require.NoError(t, err)
 
 		// send offledger request again and check that is works
-		evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
-		require.EqualValues(t, 999, storage.retrieve())
+		_, err = evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
+		require.NoError(t, err)
+		require.EqualValues(t, 999, int(storage.retrieve()))
 	})
 }
 
@@ -369,7 +345,7 @@ func TestISCPTriggerEvent(t *testing.T) {
 	//     triggers an ISCP event with the given string parameter
 	res, err := iscpTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 	ev, err := evmChain.soloChain.GetEventsForBlock(evmChain.soloChain.GetLatestBlockInfo().BlockIndex)
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
@@ -388,15 +364,28 @@ func TestISCPEntropy(t *testing.T) {
 	//  emits an EVM event (aka log) with the entropy value
 	res, err := iscpTest.emitEntropy()
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
-	require.Len(t, res.receipt.Logs, 1)
-	entropy := res.receipt.Logs[0].Data
+	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+	require.Len(t, res.evmReceipt.Logs, 1)
+	entropy := res.evmReceipt.Logs[0].Data
 	require.Len(t, entropy, 32)
 	require.NotEqualValues(t, entropy, make([]byte, 32))
 }
 
 func TestBlockTime(t *testing.T) {
 	evmChain := initEVMChain(t, evmlight.Contract)
+
+	// deposit funds to cover for dust, gas, etc
+	_, err := evmChain.soloChain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+			accounts.ParamAgentID, iscp.NewAgentID(evmChain.soloChain.ChainID.AsAddress(), evmChain.evmFlavor.Hname()),
+		).
+			AddAssetsIotas(200000).
+			AddAllowanceIotas(100000).
+			WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
 	evmChain.setBlockTime(60)
 
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
@@ -405,7 +394,7 @@ func TestBlockTime(t *testing.T) {
 
 	res, err := storage.store(43)
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 
 	require.EqualValues(t, 43, storage.retrieve())
 	require.EqualValues(t, 0, evmChain.getBlockNumber())
@@ -415,7 +404,7 @@ func TestBlockTime(t *testing.T) {
 	require.EqualValues(t, 1, mempoolInfo.InBufCounter-mempoolInfo.OutPoolCounter)
 
 	// first block gets minted
-	evmChain.solo.AdvanceClockBy(61*time.Second, 0)
+	evmChain.solo.AdvanceClockBy(61*time.Second, 1)
 	evmChain.soloChain.WaitUntil(func(mstats mempool.MempoolInfo) bool {
 		return mstats.OutPoolCounter == mempoolInfo.InBufCounter
 	})
@@ -428,7 +417,7 @@ func TestBlockTime(t *testing.T) {
 	require.EqualValues(t, 1, mempoolInfo.InBufCounter-mempoolInfo.OutPoolCounter)
 
 	// second (empty) block gets minted
-	evmChain.solo.AdvanceClockBy(61*time.Second, 0)
+	evmChain.solo.AdvanceClockBy(61*time.Second, 1)
 	evmChain.soloChain.WaitUntil(func(mstats mempool.MempoolInfo) bool {
 		return mstats.OutPoolCounter == mempoolInfo.InBufCounter
 	})
@@ -453,11 +442,9 @@ func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain,
 		sender, err := crypto.GenerateKey() // send from a new address so that nonce is always 0
 		require.NoError(b, err)
 
-		// TODO: for some reason, estimating gas does not work here
-		opt := ethCallOptions{sender: sender, gasLimit: 50000}
-		txdata, _, opt := storage.buildEthTxData([]ethCallOptions{opt}, "store", uint32(i))
-		iotaOpt := storage.chain.parseIotaCallOptions([]iotaCallOptions{opt.iota})
-		reqs[i] = storage.chain.buildSoloRequest(evm.FuncSendTransaction.Name, iotaOpt.transfer, evm.FieldTransactionData, txdata)
+		txdata, _, _ := storage.buildEthTxData([]ethCallOptions{{sender: sender}}, "store", uint32(i))
+		reqs[i] = storage.chain.buildSoloRequest(evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata)
+		reqs[i].WithMaxAffordableGasBudget()
 	}
 
 	return evmChain.soloChain, reqs

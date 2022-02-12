@@ -3,7 +3,6 @@ package wallet
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -14,11 +13,10 @@ var addressCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		wallet := Load()
-		kp := wallet.KeyPair()
 		log.Printf("Address index %d\n", addressIndex)
-		log.Verbosef("  Private key: %s\n", kp.PrivateKey)
-		log.Verbosef("  Public key:  %s\n", kp.PublicKey)
-		log.Printf("  Address:     %s\n", wallet.Address().Base58())
+		log.Verbosef("  Private key: %s\n", wallet.KeyPair.PrivateKey)
+		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.PublicKey)
+		log.Printf("  Address:     %s\n", wallet.Address().Bech32(iscp.Bech32Prefix))
 	},
 }
 
@@ -27,23 +25,24 @@ var balanceCmd = &cobra.Command{
 	Short: "Show the wallet balance",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		wallet := Load()
-		address := wallet.Address()
+		panic("TODO implement")
+		// wallet := Load()
+		// address := wallet.Address()
 
-		outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
-		log.Check(err)
+		// outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
+		// log.Check(err)
 
-		log.Printf("Address index %d\n", addressIndex)
-		log.Printf("  Address: %s\n", address.Base58())
-		log.Printf("  Balance:\n")
-		var total uint64
-		if log.VerboseFlag {
-			total = printOutputsByOutputID(outs)
-		} else {
-			total = printOutputsByAsset(outs)
-		}
-		log.Printf("    ------\n")
-		log.Printf("    Total: %d\n", total)
+		// log.Printf("Address index %d\n", addressIndex)
+		// log.Printf("  Address: %s\n", address.Bech32(iscp.Bech32Prefix))
+		// log.Printf("  Balance:\n")
+		// var total uint64
+		// if log.VerboseFlag {
+		// 	total = printOutputsByOutputID(outs)
+		// } else {
+		// 	total = printOutputsByAsset(outs)
+		// }
+		// log.Printf("    ------\n")
+		// log.Printf("    Total: %d\n", total)
 	},
 }
 

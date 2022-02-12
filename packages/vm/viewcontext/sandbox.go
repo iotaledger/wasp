@@ -1,8 +1,9 @@
 package viewcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"math/big"
+
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
@@ -22,10 +23,10 @@ import (
 
 type sandboxview struct {
 	contractHname iscp.Hname
-	params        dict.Dict
+	params        iscp.Params
 	state         kv.KVStoreReader
 	vctx          *Viewcontext
-	assert        *assert.Assert
+	assertObj     *assert.Assert
 	// gas related
 	gasBudget uint64
 	gasBurned uint64
@@ -39,10 +40,20 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 	return &sandboxview{
 		vctx:          vctx,
 		contractHname: contractHname,
-		params:        params,
-		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
-		assert:        assert.NewAssert(vctx),
+		params: iscp.Params{
+			Dict:      params,
+			KVDecoder: kvdecoder.New(params, vctx.log),
+		},
+		state:     contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
+		gasBudget: 1_000_000, // TODO sensible upper limit for view calls
 	}
+}
+
+func (s *sandboxview) assert() *assert.Assert {
+	if s.assertObj == nil {
+		s.assertObj = assert.NewAssert(s.vctx)
+	}
+	return s.assertObj
 }
 
 func (s *sandboxview) AccountID() *iscp.AgentID {
@@ -55,25 +66,19 @@ func (s *sandboxview) AccountID() *iscp.AgentID {
 }
 
 func (s *sandboxview) BalanceIotas() uint64 {
-	panic("not implemented")
-	// TODO no need to call view, state can be accesses directly
-	//r, err := s.Call(accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), dict.Dict{
-	//	accounts.ParamAgentID: s.AccountID().Bytes(),
-	//})
-	//a := assert.NewAssert(s.Log())
-	//a.RequireNoError(err)
-	//bals, err := accounts.DecodeBalances(r)
-	//a.RequireNoError(err)
-	//return bals
+	return accounts.GetIotaBalance(s.state, s.AccountID())
 }
 
-func (s *sandboxview) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
-	panic("not implemented")
+func (s *sandboxview) BalanceNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
+	return accounts.GetNativeTokenBalance(s.state, s.AccountID(), tokenID)
 }
 
 func (s *sandboxview) Assets() *iscp.Assets {
-	// TODO no need to call view, state can be accesses directly
-	panic("not implemented")
+	ret := accounts.GetAssets(s.state, s.AccountID())
+	if ret == nil {
+		ret = &iscp.Assets{}
+	}
+	return ret
 }
 
 func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
@@ -112,8 +117,8 @@ func (s *sandboxview) Log() iscp.LogInterface {
 	return s.vctx
 }
 
-func (s *sandboxview) Params() dict.Dict {
-	return s.params
+func (s *sandboxview) Params() *iscp.Params {
+	return &s.params
 }
 
 func (s *sandboxview) State() kv.KVStoreReader {
@@ -147,9 +152,9 @@ func (s *sandboxview) gasBudgetLeft() uint64 {
 }
 
 func (s *sandboxview) Requiref(cond bool, format string, args ...interface{}) {
-	s.assert.Requiref(cond, format, args...)
+	s.assert().Requiref(cond, format, args...)
 }
 
 func (s *sandboxview) RequireNoError(err error, str ...string) {
-	s.assert.RequireNoError(err, str...)
+	s.assert().RequireNoError(err, str...)
 }

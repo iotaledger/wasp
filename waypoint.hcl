@@ -28,7 +28,6 @@ app "wasp-evm" {
             buildkit   = true
             dockerfile = "./Dockerfile"
             build_args = {
-                GOLANG_IMAGE_TAG = "1.17-buster"
                 BUILD_TAGS = "rocksdb,builtin_static"
                 BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefhash()}"
             }
@@ -37,7 +36,7 @@ app "wasp-evm" {
         registry {
             use "docker" {
                 image = "ghcr.io/luke-thorne/wasp"
-                tag = gitrefpretty()
+                tag = gitrefhash()
                 encoded_auth = base64encode(jsonencode(var.ghcr))
             }
         }

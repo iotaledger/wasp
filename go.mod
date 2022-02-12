@@ -9,8 +9,8 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.32.0
-	github.com/ethereum/go-ethereum v1.10.13
+	github.com/bytecodealliance/wasmtime-go v0.34.0
+	github.com/ethereum/go-ethereum v1.10.15
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220119141545-2dab9f1c12a5
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220202150501-46c14920440d
@@ -26,7 +26,7 @@ require (
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/second-state/WasmEdge-go v0.9.0-rc3
+	github.com/second-state/WasmEdge-go v0.9.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
@@ -49,8 +49,9 @@ require (
 
 replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
-	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20211102133541-45878bcd628c
+	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220204023422-c467ab1fee84
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go
+	github.com/iotaledger/goshimmer => github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497
 	github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260
 	go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
 )

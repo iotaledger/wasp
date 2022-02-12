@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -16,19 +15,18 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"golang.org/x/xerrors"
 )
 
 var (
-	ErrNotEnoughFunds               = commonerrors.RegisterGlobalError("not enough funds")
-	ErrNotEnoughIotas               = commonerrors.RegisterGlobalError("not enough iotas")
-	ErrNotEnoughIotasForDustDeposit = commonerrors.RegisterGlobalError("not enough iotas for dust deposit")
-	ErrNotEnoughNativeTokens        = commonerrors.RegisterGlobalError("not enough native tokens")
-	ErrNotEnoughAllowance           = commonerrors.RegisterGlobalError("not enough allowance")
-	ErrBadAmount                    = commonerrors.RegisterGlobalError("bad native asset amount")
-	ErrRepeatingFoundrySerialNumber = commonerrors.RegisterGlobalError("repeating serial number of the foundry")
-	ErrFoundryNotFound              = commonerrors.RegisterGlobalError("foundry not found")
-	ErrOverflow                     = commonerrors.RegisterGlobalError("overflow in token arithmetics")
+	ErrNotEnoughFunds               = xerrors.New("not enough funds")
+	ErrNotEnoughIotasForDustDeposit = xerrors.New("not enough iotas for dust deposit")
+	ErrNotEnoughAllowance           = xerrors.New("not enough allowance")
+	ErrBadAmount                    = xerrors.New("bad native asset amount")
+	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
+	ErrFoundryNotFound              = xerrors.New("foundry not found")
+	ErrOverflow                     = xerrors.New("overflow in token arithmetics")
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -261,12 +259,12 @@ func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.Agen
 	}
 }
 
-func AdjustAccountIotas(state kv.KVStore, agentID *iscp.AgentID, adjustment int64) {
+func AdjustAccountIotas(state kv.KVStore, account *iscp.AgentID, adjustment int64) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(state, agentID, iscp.NewAssets(uint64(adjustment), nil))
+		CreditToAccount(state, account, iscp.NewAssets(uint64(adjustment), nil))
 	case adjustment < 0:
-		DebitFromAccount(state, agentID, iscp.NewAssets(uint64(-adjustment), nil))
+		DebitFromAccount(state, account, iscp.NewAssets(uint64(-adjustment), nil))
 	}
 }
 
@@ -664,4 +662,16 @@ func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumpti
 		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
 	}
 	return ret
+}
+
+// debitIotasFromAllowance is used for adjustment of L2 when part of iotas are taken for dust deposit
+// It takes iotas from allowance to the common account and then removes them from the L2 ledger
+func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
+	if amount == 0 {
+		return
+	}
+	commonAccount := commonaccount.Get(ctx.ChainID())
+	dustAssets := iscp.NewAssetsIotas(amount)
+	ctx.TransferAllowedFunds(commonAccount, dustAssets)
+	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
 }

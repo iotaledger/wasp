@@ -9,23 +9,23 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor int64) {
+func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(agent.ScAddress())
 	member.Params.Factor().SetValue(factor)
 	member.Func.TransferIotas(1).Post()
 }
 
-func dividendDivide(ctx *wasmsolo.SoloContext, amount int64) {
+func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
 	divide := dividend.ScFuncs.Divide(ctx)
 	divide.Func.TransferIotas(amount).Post()
 }
 
-func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) int64 {
+func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) uint64 {
 	getFactor := dividend.ScFuncs.GetFactor(ctx)
 	getFactor.Params.Address().SetValue(member.ScAddress())
 	getFactor.Func.Call()
@@ -40,10 +40,14 @@ func TestDeploy(t *testing.T) {
 
 func TestAddMemberOk(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx.Accounts()
 
 	member1 := ctx.NewSoloAgent()
+	ctx.Accounts(member1)
+
 	dividendMember(ctx, member1, 100)
 	require.NoError(t, ctx.Err)
+	ctx.Accounts(member1)
 }
 
 func TestAddMemberFailMissingAddress(t *testing.T) {
@@ -69,19 +73,25 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 
 func TestDivide1Member(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx.Accounts()
 
 	member1 := ctx.NewSoloAgent()
+	l1Old := member1.Balance()
+	require.EqualValues(t, 0, ctx.Balance(member1))
+
 	dividendMember(ctx, member1, 100)
 	require.NoError(t, ctx.Err)
-
-	require.EqualValues(t, 1, ctx.Balance(ctx.Account()))
+	ctx.Accounts(member1)
 
 	dividendDivide(ctx, 99)
 	require.NoError(t, ctx.Err)
+	ctx.Accounts(member1)
 
-	// 99 from divide() + 1 from the member() call
-	require.EqualValues(t, solo.Saldo+100, member1.Balance())
-	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	l1New := member1.Balance()
+	ctx.Accounts(member1)
+
+	require.EqualValues(t, 0, ctx.Balance(member1))
+	require.EqualValues(t, 100, l1New-l1Old)
 }
 
 func TestDivide2Members(t *testing.T) {

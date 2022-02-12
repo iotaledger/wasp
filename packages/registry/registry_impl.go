@@ -143,7 +143,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, erro
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
+	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, iscp.BytesFromAddress(sharedAddress))
 }
 
 // endregion //////////////////////////////////////////////////////////////
@@ -152,7 +152,7 @@ func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
 
 // IsTrustedPeer implements TrustedNetworkManager interface.
 func (r *Impl) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
-	tp := &peering.TrustedPeer{PubKey: pubKey}
+	tp := &peering.TrustedPeer{PubKey: cryptolib.CryptolibPublicKeyToHivePublicKey(pubKey)}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func (r *Impl) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
 
 // TrustPeer implements TrustedNetworkManager interface.
 func (r *Impl) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
-	tp := &peering.TrustedPeer{PubKey: pubKey, NetID: netID}
+	tp := &peering.TrustedPeer{PubKey: cryptolib.CryptolibPublicKeyToHivePublicKey(pubKey), NetID: netID}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (r *Impl) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.Tru
 // DistrustPeer implements TrustedNetworkManager interface.
 // Get is kind of optional, so we ignore errors related to it.
 func (r *Impl) DistrustPeer(pubKey cryptolib.PublicKey) (*peering.TrustedPeer, error) {
-	tp := &peering.TrustedPeer{PubKey: pubKey}
+	tp := &peering.TrustedPeer{PubKey: cryptolib.CryptolibPublicKeyToHivePublicKey(pubKey)}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return nil, err

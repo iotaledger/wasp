@@ -7,7 +7,7 @@
 
 package tokenregistry
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type MintSupplyCall struct {
 	Func   *wasmlib.ScFunc
@@ -35,24 +35,24 @@ var ScFuncs Funcs
 
 func (sc Funcs) MintSupply(ctx wasmlib.ScFuncCallContext) *MintSupplyCall {
 	f := &MintSupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMintSupply)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) TransferOwnership(ctx wasmlib.ScFuncCallContext) *TransferOwnershipCall {
 	f := &TransferOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferOwnership)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) UpdateMetadata(ctx wasmlib.ScFuncCallContext) *UpdateMetadataCall {
 	f := &UpdateMetadataCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncUpdateMetadata)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GetInfo(ctx wasmlib.ScViewCallContext) *GetInfoCall {
 	f := &GetInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetInfo)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }

@@ -25,7 +25,7 @@ var Processor = Contract.Processor(initialize,
 	FuncDoNothing.WithHandler(doNothing),
 	// FuncSendToAddress.WithHandler(sendToAddress),
 
-	FuncWithdrawToChain.WithHandler(withdrawToChain),
+	FuncWithdrawFromChain.WithHandler(withdrawFromChain),
 	FuncCallOnChain.WithHandler(callOnChain),
 	FuncSetInt.WithHandler(setInt),
 	FuncGetInt.WithHandler(getInt),
@@ -78,7 +78,7 @@ var (
 	FuncTestBlockContext2 = coreutil.Func("testBlockContext2")
 	FuncGetStringValue    = coreutil.ViewFunc("getStringValue")
 
-	FuncWithdrawToChain = coreutil.Func("withdrawToChain")
+	FuncWithdrawFromChain = coreutil.Func("withdrawFromChain")
 
 	FuncDoNothing = coreutil.Func("doNothing")
 	// FuncSendToAddress = coreutil.Func("sendToAddress")
@@ -111,19 +111,21 @@ const (
 	VarContractNameDeployed = "exampleDeployTR"
 
 	// parameters
-	ParamFail            = "initFailParam"
-	ParamAddress         = "address"
-	ParamChainID         = "chainID"
-	ParamChainOwnerID    = "chainOwnerID"
-	ParamCaller          = "caller"
-	ParamAgentID         = "agentID"
-	ParamContractCreator = "contractCreator"
-	ParamContractID      = "contractID"
-	ParamIntParamName    = "intParamName"
-	ParamIntParamValue   = "intParamValue"
-	ParamHnameContract   = "hnameContract"
-	ParamHnameEP         = "hnameEP"
-	ParamVarName         = "varName"
+	ParamFail              = "initFailParam"
+	ParamAddress           = "address"
+	ParamChainID           = "chainID"
+	ParamIotasToWithdrawal = "iotasWithdrawal"
+	ParamGasBudgetToSend   = "gasBudget"
+	ParamChainOwnerID      = "chainOwnerID"
+	ParamCaller            = "caller"
+	ParamAgentID           = "agentID"
+	ParamContractCreator   = "contractCreator"
+	ParamContractID        = "contractID"
+	ParamIntParamName      = "intParamName"
+	ParamIntParamValue     = "intParamValue"
+	ParamHnameContract     = "hnameContract"
+	ParamHnameEP           = "hnameEP"
+	ParamVarName           = "varName"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="

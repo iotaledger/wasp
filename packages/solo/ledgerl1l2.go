@@ -185,7 +185,10 @@ func (fp *foundryParams) WithTag(tag *iotago.TokenTag) *foundryParams {
 	return fp
 }
 
-const allowanceForFoundryDustDeposit = 1000
+const (
+	allowanceForFoundryDustDeposit = 1000
+	allowanceForModifySupply       = 1000
+)
 
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
@@ -245,7 +248,8 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-	)
+	).
+		WithAllowance(iscp.NewAssetsIotas(allowanceForModifySupply)) // enough allowance is needed for the dust deposit when token is minted first on the chain
 	g, _, err := ch.EstimateGasOnLedger(req, user, true)
 	if err != nil {
 		return err
@@ -282,7 +286,7 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 		accounts.ParamDestroyTokens, true,
 	).WithGasBudget(DestroyTokensGasBudgetIotas).AddAssetsIotas(1000)
 	req.AddAssetsNativeTokens(tokenID, amount)
-	req.AddNativeTokensAllowance(tokenID, amount)
+	req.AddAllowanceNativeTokens(tokenID, amount)
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
 	}

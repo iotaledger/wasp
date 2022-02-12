@@ -33,7 +33,7 @@ func estimateGas(t testing.TB, emu *EVMEmulator, from common.Address, to *common
 	})
 	if err != nil {
 		t.Logf("%v", err)
-		return evm.GasLimitDefault - 1
+		return evm.BlockGasLimitDefault - 1
 	}
 	return gas
 }
@@ -52,7 +52,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	_, err = emu.SendTransaction(tx)
+	_, _, err = emu.SendTransaction(tx, tx.Gas())
 	require.NoError(t, err)
 	emu.Commit()
 
@@ -90,7 +90,7 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.GasLimitDefault, 0)
+	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.BlockGasLimitDefault, 0)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -111,7 +111,7 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 			// assert that current block is genesis
 			block := emu.Blockchain().CurrentBlock()
 			require.NotNil(t, block)
-			require.EqualValues(t, evm.GasLimitDefault, block.Header().GasLimit)
+			require.EqualValues(t, evm.BlockGasLimitDefault, block.Header().GasLimit)
 			genesisHash = block.Hash()
 		}
 
@@ -138,7 +138,7 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, evm.GasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, evm.BlockGasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
 	}
 
 	{
@@ -179,7 +179,7 @@ func testBlockchainPersistence(t testing.TB, db ethdb.Database) {
 	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
 	transferAmount := big.NewInt(1000)
 
-	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.GasLimitDefault, 0)
+	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.BlockGasLimitDefault, 0)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
@@ -231,7 +231,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	_, err = emu.SendTransaction(tx)
+	_, _, err = emu.SendTransaction(tx, tx.Gas())
 	require.NoError(t, err)
 	emu.Commit()
 
@@ -240,7 +240,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	// assertions
 	{
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, evm.GasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, evm.BlockGasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
 
 		// verify contract address
 		{
@@ -302,7 +302,7 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.GasLimitDefault, 0)
+	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.BlockGasLimitDefault, 0)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -375,7 +375,7 @@ func testERC20Contract(t testing.TB, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.GasLimitDefault, 0)
+	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.BlockGasLimitDefault, 0)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -468,7 +468,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.GasLimitDefault, 0)
+	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.BlockGasLimitDefault, 0)
 
 	emu := NewEVMEmulator(db)
 
@@ -523,7 +523,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := emu.SendTransaction(txs[i])
+		_, _, err := emu.SendTransaction(txs[i], txs[i].Gas())
 		require.NoError(b, err)
 
 		// commit a block every n txs

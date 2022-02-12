@@ -2,9 +2,10 @@ package testcore
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -116,7 +117,6 @@ func TestUploadWasm(t *testing.T) {
 		require.NoError(t, err)
 
 		require.EqualValues(t, binary, binBack)
-
 	})
 	t.Run("upload wasm from file", func(t *testing.T) {
 		env := solo.New(t)
@@ -126,8 +126,8 @@ func TestUploadWasm(t *testing.T) {
 		require.NoError(t, err)
 
 		// TODO
-		//err = ch.DeployContract(nil, "testCore", hwasm)
-		//require.NoError(t, err)
+		// err = ch.DeployContract(nil, "testCore", hwasm)
+		// require.NoError(t, err)
 	})
 	t.Run("list blobs", func(t *testing.T) {
 		env := solo.New(t)
@@ -139,7 +139,6 @@ func TestUploadWasm(t *testing.T) {
 		ret, err := ch.CallView(blob.Contract.Name, blob.FuncListBlobs.Name)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, len(ret))
-
 	})
 }
 

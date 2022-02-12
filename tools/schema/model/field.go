@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 var (
@@ -17,25 +15,25 @@ var (
 	fldTypeRegexp  = regexp.MustCompile(`^[A-Z][a-zA-Z0-9]+$`)
 )
 
-var FieldTypes = map[string]int32{
-	"Address":   wasmlib.TYPE_ADDRESS,
-	"AgentID":   wasmlib.TYPE_AGENT_ID,
-	"Bool":      wasmlib.TYPE_BOOL,
-	"Bytes":     wasmlib.TYPE_BYTES,
-	"ChainID":   wasmlib.TYPE_CHAIN_ID,
-	"Color":     wasmlib.TYPE_COLOR,
-	"Hash":      wasmlib.TYPE_HASH,
-	"Hname":     wasmlib.TYPE_HNAME,
-	"Int8":      wasmlib.TYPE_INT8,
-	"Int16":     wasmlib.TYPE_INT16,
-	"Int32":     wasmlib.TYPE_INT32,
-	"Int64":     wasmlib.TYPE_INT64,
-	"RequestID": wasmlib.TYPE_REQUEST_ID,
-	"String":    wasmlib.TYPE_STRING,
-	"Uint8":     wasmlib.TYPE_INT8,
-	"Uint16":    wasmlib.TYPE_INT16,
-	"Uint32":    wasmlib.TYPE_INT32,
-	"Uint64":    wasmlib.TYPE_INT64,
+var FieldTypes = map[string]bool{
+	"Address":   true,
+	"AgentID":   true,
+	"Bool":      true,
+	"Bytes":     true,
+	"ChainID":   true,
+	"Color":     true,
+	"Hash":      true,
+	"Hname":     true,
+	"Int8":      true,
+	"Int16":     true,
+	"Int32":     true,
+	"Int64":     true,
+	"RequestID": true,
+	"String":    true,
+	"Uint8":     true,
+	"Uint16":    true,
+	"Uint32":    true,
+	"Uint64":    true,
 }
 
 type Field struct {
@@ -47,7 +45,7 @@ type Field struct {
 	MapKey   string
 	Optional bool
 	Type     string
-	TypeID   int32
+	BaseType bool
 }
 
 func (f *Field) Compile(s *Schema, fldName, fldType string) error {
@@ -102,9 +100,8 @@ func (f *Field) Compile(s *Schema, fldName, fldType string) error {
 	if !fldTypeRegexp.MatchString(f.Type) {
 		return fmt.Errorf("invalid field type: %s", f.Type)
 	}
-	typeID, ok := FieldTypes[f.Type]
-	if ok {
-		f.TypeID = typeID
+	f.BaseType = FieldTypes[f.Type]
+	if f.BaseType {
 		return nil
 	}
 	for _, typeDef := range s.Structs {

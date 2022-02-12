@@ -13,7 +13,7 @@ import (
 func TestTypesFull(t *testing.T) { run2(t, testTypesFull) }
 func testTypesFull(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
-	cID, _ := setupTestSandboxSC(t, ch, nil, w)
+	cID := setupTestSandboxSC(t, ch, nil, w)
 
 	ch.MustDepositIotasToL2(10_000, nil)
 
@@ -37,7 +37,7 @@ func testTypesFull(t *testing.T, w bool) {
 func TestTypesView(t *testing.T) { run2(t, testTypesView) }
 func testTypesView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	cID, _ := setupTestSandboxSC(t, chain, nil, w)
+	cID := setupTestSandboxSC(t, chain, nil, w)
 
 	_, err := chain.CallView(ScName, sbtestsc.FuncPassTypesView.Name,
 		"string", "string",

@@ -17,4 +17,5 @@ var (
 	ErrPrivilegedCallFailed               = xerrors.New("privileged call failed")
 	ErrExceededPostedOutputLimit          = xerrors.Errorf("exceeded maximum number of %d posted outputs in one request", MaxPostedOutputsInOneRequest)
 	ErrGasBudgetExceeded                  = xerrors.New("gas budget exceeded")
+	ErrSenderUnknown                      = xerrors.New("sender unknown")
 )

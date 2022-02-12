@@ -153,10 +153,6 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("keys", !g.s.CoreContracts)
-	if err != nil {
-		return err
-	}
 	err = g.createSourceFile("events", len(g.s.Events) != 0)
 	if err != nil {
 		return err

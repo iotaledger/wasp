@@ -505,42 +505,54 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg, header *types.Header, 
 	return core.NewStateTransition(vmEnv, msg, gasPool).TransitionDb()
 }
 
+func minUint64(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // SendTransaction updates the pending block to include the given transaction.
 // It returns an error if the transaction is invalid.
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, error) {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, error) {
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid transaction: %w", err)
+		return nil, 0, xerrors.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.pending.state.GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	snap := e.pending.state.Snapshot()
 
 	e.pending.state.Prepare(tx.Hash(), len(e.pending.txs))
 
+	availableGas := minUint64(gasLimit, e.pending.gasPool.Gas())
+	gasPool := core.GasPool(availableGas)
+
 	receipt, err := core.ApplyTransaction(
 		e.blockchain.Config(),
 		e.blockchain,
 		nil,
-		e.pending.gasPool,
+		&gasPool,
 		e.pending.state,
 		e.pending.header,
 		tx,
 		&e.pending.header.GasUsed,
 		vmConfig,
 	)
+	gasUsed := availableGas - gasPool.Gas()
 	if err != nil {
 		e.pending.state.RevertToSnapshot(snap)
-		return nil, err
+		return nil, gasUsed, err
 	}
 
 	e.pending.txs = append(e.pending.txs, tx)
 	e.pending.receipts = append(e.pending.receipts, receipt)
+	e.pending.gasPool.SubGas(receipt.GasUsed)
 
-	return receipt, nil
+	return receipt, gasUsed, nil
 }
 
 // FilterLogs executes a log filter operation, blocking during execution and

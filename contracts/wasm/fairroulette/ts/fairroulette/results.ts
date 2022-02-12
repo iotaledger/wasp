@@ -5,53 +5,53 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableLastWinningNumberResults extends wasmlib.ScMapID {
-    lastWinningNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultLastWinningNumber));
+export class ImmutableLastWinningNumberResults extends wasmtypes.ScProxy {
+	lastWinningNumber(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ResultLastWinningNumber));
 	}
 }
 
-export class MutableLastWinningNumberResults extends wasmlib.ScMapID {
-    lastWinningNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultLastWinningNumber));
+export class MutableLastWinningNumberResults extends wasmtypes.ScProxy {
+	lastWinningNumber(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ResultLastWinningNumber));
 	}
 }
 
-export class ImmutableRoundNumberResults extends wasmlib.ScMapID {
-    roundNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundNumber));
+export class ImmutableRoundNumberResults extends wasmtypes.ScProxy {
+	roundNumber(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultRoundNumber));
 	}
 }
 
-export class MutableRoundNumberResults extends wasmlib.ScMapID {
-    roundNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundNumber));
+export class MutableRoundNumberResults extends wasmtypes.ScProxy {
+	roundNumber(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultRoundNumber));
 	}
 }
 
-export class ImmutableRoundStartedAtResults extends wasmlib.ScMapID {
-    roundStartedAt(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStartedAt));
+export class ImmutableRoundStartedAtResults extends wasmtypes.ScProxy {
+	roundStartedAt(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultRoundStartedAt));
 	}
 }
 
-export class MutableRoundStartedAtResults extends wasmlib.ScMapID {
-    roundStartedAt(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStartedAt));
+export class MutableRoundStartedAtResults extends wasmtypes.ScProxy {
+	roundStartedAt(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultRoundStartedAt));
 	}
 }
 
-export class ImmutableRoundStatusResults extends wasmlib.ScMapID {
-    roundStatus(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStatus));
+export class ImmutableRoundStatusResults extends wasmtypes.ScProxy {
+	roundStatus(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ResultRoundStatus));
 	}
 }
 
-export class MutableRoundStatusResults extends wasmlib.ScMapID {
-    roundStatus(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStatus));
+export class MutableRoundStatusResults extends wasmtypes.ScProxy {
+	roundStatus(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ResultRoundStatus));
 	}
 }

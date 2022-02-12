@@ -13,10 +13,7 @@ pub const HSC_NAME       : ScHname = ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
 $#if state constState
-
-$#each func constFunc
-
-$#each func constHFunc
+$#if funcs constFuncs
 `,
 	// *******************************
 	"constParams": `
@@ -35,6 +32,13 @@ $#each results constField
 
 $#set constPrefix STATE_
 $#each state constField
+`,
+	// *******************************
+	"constFuncs": `
+
+$#each func constFunc
+
+$#each func constHFunc
 `,
 	// *******************************
 	"constField": `

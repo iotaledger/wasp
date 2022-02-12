@@ -15,7 +15,8 @@
 package dividend
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 // 'init' is used as a way to initialize a smart contract. It is an optional
@@ -31,7 +32,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 
 	// First we set up a default value for the owner in case the optional
 	// 'owner' parameter was omitted.
-	var owner wasmlib.ScAgentID = ctx.ContractCreator()
+	var owner wasmtypes.ScAgentID = ctx.ContractCreator()
 
 	// Now we check if the optional 'owner' parameter is present in the params map.
 	if f.Params.Owner().Exists() {
@@ -64,33 +65,24 @@ func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
 	// So once we get to this point in the code we can take that as a given.
 
 	// Since we are sure that the 'factor' parameter actually exists we can
-	// retrieve its actual value into an int64. Note that we use Go's built-in
+	// retrieve its actual value into an uint64. Note that we use Go's built-in
 	// data types when manipulating Int64, String, or Bytes value objects.
-	var factor int64 = f.Params.Factor().Value()
-
-	// As an extra requirement we check that the 'factor' parameter value is not
-	// negative. If it is, we panic out with an error message.
-	// Note how we avoid an if expression like this one here:
-	// if factor < 0 {
-	//     ctx.Panic("negative factor")
-	// }
-	// Using the require() method instead reduces typing and enhances readability.
-	ctx.Require(factor >= 0, "negative factor")
+	var factor uint64 = f.Params.Factor().Value()
 
 	// Since we are sure that the 'address' parameter actually exists we can
 	// retrieve its actual value into an ScAddress value type.
-	var address wasmlib.ScAddress = f.Params.Address().Value()
+	var address wasmtypes.ScAddress = f.Params.Address().Value()
 
 	// We will store the address/factor combinations in a key/value sub-map of the
 	// state storage named 'members'. The schema tool has generated an appropriately
 	// type-checked proxy map for us from the schema.json state storage definition.
 	// If there is no 'members' map present yet in state storage an empty map will
 	// automatically be created on the host.
-	var members MapAddressToMutableInt64 = f.State.Members()
+	var members MapAddressToMutableUint64 = f.State.Members()
 
-	// Now we create an ScMutableInt64 proxy for the value stored in the 'members'
+	// Now we create an ScMutableUint64 proxy for the value stored in the 'members'
 	// map under the key defined by the 'address' parameter we retrieved earlier.
-	var currentFactor wasmlib.ScMutableInt64 = members.GetInt64(address)
+	var currentFactor wasmtypes.ScMutableUint64 = members.GetUint64(address)
 
 	// We check to see if this key/value combination exists in the 'members' map.
 	if !currentFactor.Exists() {
@@ -102,12 +94,9 @@ func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
 		var memberList ArrayOfMutableAddress = f.State.MemberList()
 
 		// Now we will append the new address to the memberList array.
-		// First we determine the current length of the array.
-		var length int32 = memberList.Length()
-
-		// Next we create an ScMutableAddress proxy to the address value that lives
-		// at that index in the memberList array (no value, since we're appending).
-		var newAddress wasmlib.ScMutableAddress = memberList.GetAddress(length)
+		// We create an ScMutableAddress proxy to an address value that lives
+		// at the end of the memberList array (no value yet, since we're appending).
+		var newAddress wasmtypes.ScMutableAddress = memberList.AppendAddress()
 
 		// And finally we append the new address to the array by telling the proxy
 		// to update the value it refers to with the 'address' parameter.
@@ -117,10 +106,10 @@ func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
 		// memberList.GetAddress(memberList.Length()).SetValue(&address)
 	}
 
-	// Create an ScMutableInt64 proxy named 'totalFactor' for an Int64 value in
+	// Create an ScMutableUint64 proxy named 'totalFactor' for an Uint64 value in
 	// state storage. Note that we don't care whether this value exists or not,
 	// because WasmLib will treat it as if it has the default value of zero.
-	var totalFactor wasmlib.ScMutableInt64 = f.State.TotalFactor()
+	var totalFactor wasmtypes.ScMutableUint64 = f.State.TotalFactor()
 
 	// Now we calculate the new running total sum of factors by first getting the
 	// current value of 'totalFactor' from the state storage, then subtracting the
@@ -128,7 +117,7 @@ func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
 	// exists. Again, if the associated value doesn't exist, WasmLib will assume it
 	// to be zero. Finally we add the factor retrieved from the parameters,
 	// resulting in the new totalFactor.
-	var newTotalFactor int64 = totalFactor.Value() - currentFactor.Value() + factor
+	var newTotalFactor uint64 = totalFactor.Value() - currentFactor.Value() + factor
 
 	// Now we store the new totalFactor in the state storage.
 	totalFactor.SetValue(newTotalFactor)
@@ -154,31 +143,31 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	var balances wasmlib.ScBalances = ctx.Balances()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	var amount int64 = balances.Balance(wasmlib.IOTA)
+	var amount uint64 = balances.Balance(wasmtypes.IOTA)
 
 	// Retrieve the pre-calculated totalFactor value from the state storage.
-	var totalFactor int64 = f.State.TotalFactor().Value()
+	var totalFactor uint64 = f.State.TotalFactor().Value()
 
 	// Get the proxy to the 'members' map in the state storage.
-	var members MapAddressToMutableInt64 = f.State.Members()
+	var members MapAddressToMutableUint64 = f.State.Members()
 
 	// Get the proxy to the 'memberList' array in the state storage.
 	var memberList ArrayOfMutableAddress = f.State.MemberList()
 
 	// Determine the current length of the memberList array.
-	var size int32 = memberList.Length()
+	var size uint32 = memberList.Length()
 
 	// Loop through all indexes of the memberList array.
-	for i := int32(0); i < size; i++ {
+	for i := uint32(0); i < size; i++ {
 		// Retrieve the next indexed address from the memberList array.
-		var address wasmlib.ScAddress = memberList.GetAddress(i).Value()
+		var address wasmtypes.ScAddress = memberList.GetAddress(i).Value()
 
 		// Retrieve the factor associated with the address from the members map.
-		var factor int64 = members.GetInt64(address).Value()
+		var factor uint64 = members.GetUint64(address).Value()
 
 		// Calculate the fair share of iotas to disperse to this member based on the
 		// factor we just retrieved. Note that the result will been truncated.
-		var share int64 = amount * factor / totalFactor
+		var share uint64 = amount * factor / totalFactor
 
 		// Is there anything to disperse to this member?
 		if share > 0 {
@@ -194,7 +183,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 			// member address. The transfer_to_address() method receives the address
 			// value and the proxy to the new transfers map on the host, and will
 			// call the corresponding host sandbox function with these values.
-			ctx.TransferToAddress(address, transfers)
+			ctx.Send(address, transfers)
 		}
 	}
 }
@@ -218,15 +207,15 @@ func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
 func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
 	// Since we are sure that the 'address' parameter actually exists we can
 	// retrieve its actual value into an ScAddress value type.
-	var address wasmlib.ScAddress = f.Params.Address().Value()
+	var address wasmtypes.ScAddress = f.Params.Address().Value()
 
 	// Create an ScImmutableMap proxy to the 'members' map in the state storage.
 	// Note that for views this is an *immutable* map as opposed to the *mutable*
 	// map we can access from the *mutable* state that gets passed to funcs.
-	var members MapAddressToImmutableInt64 = f.State.Members()
+	var members MapAddressToImmutableUint64 = f.State.Members()
 
 	// Retrieve the factor associated with the address parameter.
-	var factor int64 = members.GetInt64(address).Value()
+	var factor uint64 = members.GetUint64(address).Value()
 
 	// Set the factor in the results map of the function context.
 	// The contents of this results map is returned to the caller of the function.

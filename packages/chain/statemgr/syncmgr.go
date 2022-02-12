@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -14,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) outputPulled(output *iotago.AliasOutput) bool {
+func (sm *stateManager) outputPulled(output *iscp.AliasOutputWithID) bool {
 	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), iscp.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
@@ -24,7 +23,7 @@ func (sm *stateManager) outputPulled(output *iotago.AliasOutput) bool {
 	return sm.syncingBlocks.approveBlockCandidates(output)
 }
 
-func (sm *stateManager) stateOutputReceived(output *iotago.AliasOutput, timestamp time.Time) bool {
+func (sm *stateManager) stateOutputReceived(output *iscp.AliasOutputWithID, timestamp time.Time) bool {
 	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
 		output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
 	if sm.solidState.BlockIndex() > output.GetStateIndex() {
@@ -39,9 +38,9 @@ func (sm *stateManager) stateOutputReceived(output *iotago.AliasOutput, timestam
 				sm.log.Debugf("stateOutputReceived ignoring: repeated state output")
 				return false
 			}
-			if !output.GetIsGovernanceUpdated() {
+			/*if !output.GetIsGovernanceUpdated() {
 				sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
-			}
+			}*/
 			// it is a state controller address rotation
 
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
@@ -81,6 +80,12 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
 		requestBlockRetryTime := sm.syncingBlocks.getRequestBlockRetryTime(i)
 		blockCandidatesCount := sm.syncingBlocks.getBlockCandidatesCount(i)
+		if blockCandidatesCount == 0 {
+			if sm.candidateBlockInWAL(i) {
+				blockCandidatesCount++
+				sm.syncingBlocks.setReceivedFromWAL(i)
+			}
+		}
 		approvedBlockCandidatesCount := sm.syncingBlocks.getApprovedBlockCandidatesCount(i)
 		sm.log.Debugf("doSyncAction: trying to sync state for index %v; requestBlockRetryTime %v, blockCandidates count %v, approved blockCandidates count %v",
 			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
@@ -90,7 +95,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		currentTime := time.Now()
-		if currentTime.After(requestBlockRetryTime) {
+		if !sm.syncingBlocks.isObtainedFromWAL(i) && currentTime.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v, fallback=%v from %v random peers.", i, sm.domain.GetFallbackMode(), numberOfNodesToRequestBlockFromConst)
 			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
@@ -118,12 +123,41 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
+func (sm *stateManager) candidateBlockInWAL(i uint32) bool {
+	if !sm.wal.Contains(i) {
+		sm.log.Debugf("candidateBlockInWAL: block with index %d not found in wal.", i)
+		return false
+	}
+	blockBytes, err := sm.wal.Read(i)
+	if err != nil {
+		sm.log.Debugf("candidateBlockInWAL: error reading block bytes for %d. %v", i, err)
+		return false
+	}
+	block, err := state.BlockFromBytes(blockBytes)
+	if err != nil {
+		sm.log.Debugf("candidateBlockInWAL: error reading block bytes for %d. %v", i, err)
+		return false
+	}
+	nextState := sm.solidState.Copy()
+	err = nextState.ApplyBlock(block)
+	if err != nil {
+		sm.log.Debugf("candidateBlockInWAL: error applying block %d. %v", i, err)
+		return false
+	}
+	_, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
+	if candidate == nil {
+		return false
+	}
+	candidate.approveIfRightOutput(sm.stateOutput)
+	return true
+}
+
 func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualStateAccess, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualStateAccess, bool) {
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state hashes must be equal
 		finalStateHash := calculatedPrevState.StateCommitment()
-		finalCandidateHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
+		finalCandidateHash := candidateAcc[len(candidateAcc)-1].getNextStateCommitment()
 		if finalStateHash != finalCandidateHash {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its hash does not match last candidate expected hash: %v != %v",
 				fromStateIndex, toStateIndex, finalStateHash.String(), finalCandidateHash.String())

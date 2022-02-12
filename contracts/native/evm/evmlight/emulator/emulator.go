@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -112,13 +113,16 @@ func (e *EVMEmulator) GasLimit() uint64 {
 }
 
 func newRevertError(result *core.ExecutionResult) *revertError {
-	reason, errUnpack := abi.UnpackRevert(result.Revert())
-	err := xerrors.New("execution reverted")
-	if errUnpack == nil {
-		err = xerrors.Errorf("execution reverted: %v", reason)
+	reason := "(empty reason)"
+	if len(result.Revert()) > 0 {
+		var err error
+		reason, err = abi.UnpackRevert(result.Revert())
+		if err != nil {
+			reason = fmt.Sprintf("(failed to decode revert reason: %v)", err)
+		}
 	}
 	return &revertError{
-		error:  err,
+		msg:    fmt.Sprintf("execution reverted: %s", reason),
 		reason: hexutil.Encode(result.Revert()),
 	}
 }
@@ -126,8 +130,12 @@ func newRevertError(result *core.ExecutionResult) *revertError {
 // revertError is an API error that encompasses an EVM revert with JSON error
 // code and a binary data blob.
 type revertError struct {
-	error
+	msg    string
 	reason string // revert reason hex encoded
+}
+
+func (e *revertError) Error() string {
+	return e.msg
 }
 
 // ErrorCode returns the JSON error code for a revert.
@@ -147,8 +155,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// If the result contains a revert reason, try to unpack and return it.
-	if len(res.Revert()) > 0 {
+	if res.Err == vm.ErrExecutionReverted {
 		return nil, newRevertError(res)
 	}
 	return res.Return(), res.Err
@@ -208,10 +215,10 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 		}
 		if failed {
 			if result != nil && !errors.Is(result.Err, vm.ErrOutOfGas) {
-				if len(result.Revert()) > 0 {
-					return 0, newRevertError(result)
+				if result.Err == vm.ErrExecutionReverted {
+					return 0, xerrors.Errorf("(estimateGas) %v", newRevertError(result))
 				}
-				return 0, xerrors.Errorf("revert: %w", result.Err)
+				return 0, xerrors.Errorf("(estimateGas) %w", result.Err)
 			}
 			// Otherwise, the specified gas cap is too low
 			return 0, xerrors.Errorf("gas required exceeds allowance (%d)", max)
@@ -244,21 +251,25 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(msg, statedb, pendingHeader)
+	result, _, err := e.applyMessage(msg, statedb, pendingHeader, msg.Gas())
+	return result, err
 }
 
-func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasLimit uint64) (*core.ExecutionResult, uint64, error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig())
-	gasPool := core.GasPool(msg.Gas())
+	gasPool := core.GasPool(gasLimit)
 	vmEnv.Reset(txContext, statedb)
-	return core.ApplyMessage(vmEnv, msg, &gasPool)
+	result, err := core.ApplyMessage(vmEnv, &messageWithGasOverride{msg, gasLimit}, &gasPool)
+	gasUsed := gasLimit - gasPool.Gas()
+	return result, gasUsed, err
 }
 
 func (e *EVMEmulator) vmConfig() vm.Config {
+	jt := vm.NewISCPInstructionSet(e.GetIEVMBackend)
 	return vm.Config{
-		JumpTable: vm.NewISCPInstructionSet(e.GetIEVMBackend),
+		JumpTable: &jt,
 	}
 }
 
@@ -266,28 +277,28 @@ func (e *EVMEmulator) GetIEVMBackend() vm.ISCPBackend {
 	return e.IEVMBackend
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, error) {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid transaction: %w", err)
+		return nil, 0, xerrors.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	result, err := e.applyMessage(msg, statedb, pendingHeader)
+	result, gasUsed, err := e.applyMessage(msg, statedb, pendingHeader, gasLimit)
 	if err != nil {
-		return nil, err
+		return nil, gasUsed, err
 	}
 
 	cumulativeGasUsed := result.UsedGas
@@ -320,7 +331,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, er
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, nil
+	return receipt, gasUsed, nil
 }
 
 func (e *EVMEmulator) MintBlock() {
@@ -477,4 +488,14 @@ func (c *chainContext) Engine() consensus.Engine {
 
 func (c *chainContext) GetHeader(common.Hash, uint64) *types.Header {
 	panic("not implemented")
+}
+
+// messageWithGasOverride implements core.Message overriding the Gas() function
+type messageWithGasOverride struct {
+	core.Message
+	gas uint64
+}
+
+func (m *messageWithGasOverride) Gas() uint64 {
+	return m.gas
 }

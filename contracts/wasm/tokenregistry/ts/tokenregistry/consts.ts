@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "tokenregistry";
 export const ScDescription = "";
-export const HScName       = new wasmlib.ScHname(0xe1ba0c78);
+export const HScName       = new wasmtypes.ScHname(0xe1ba0c78);
 
 export const ParamColor       = "color";
 export const ParamDescription = "description";
@@ -23,7 +23,7 @@ export const FuncTransferOwnership = "transferOwnership";
 export const FuncUpdateMetadata    = "updateMetadata";
 export const ViewGetInfo           = "getInfo";
 
-export const HFuncMintSupply        = new wasmlib.ScHname(0x564349a7);
-export const HFuncTransferOwnership = new wasmlib.ScHname(0xbb9eb5af);
-export const HFuncUpdateMetadata    = new wasmlib.ScHname(0xa26b23b6);
-export const HViewGetInfo           = new wasmlib.ScHname(0xcfedba5f);
+export const HFuncMintSupply        = new wasmtypes.ScHname(0x564349a7);
+export const HFuncTransferOwnership = new wasmtypes.ScHname(0xbb9eb5af);
+export const HFuncUpdateMetadata    = new wasmtypes.ScHname(0xa26b23b6);
+export const HViewGetInfo           = new wasmtypes.ScHname(0xcfedba5f);

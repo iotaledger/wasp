@@ -4,14 +4,14 @@
 package tokenregistry
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 	minted := ctx.Minted()
 	mintedColors := minted.Colors()
-	ctx.Require(mintedColors.Length() == 1, "need single minted color")
-	mintedColor := mintedColors.GetColor(0).Value()
+	ctx.Require(len(mintedColors) == 1, "need single minted color")
+	mintedColor := mintedColors[0]
 	currentToken := f.State.Registry().GetToken(mintedColor)
 	if currentToken.Exists() {
 		// should never happen, because transaction id is unique
@@ -31,7 +31,7 @@ func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 	}
 	currentToken.SetValue(token)
 	colorList := f.State.ColorList()
-	colorList.GetColor(colorList.Length()).SetValue(mintedColor)
+	colorList.AppendColor().SetValue(mintedColor)
 }
 
 func funcTransferOwnership(ctx wasmlib.ScFuncContext, f *TransferOwnershipContext) {

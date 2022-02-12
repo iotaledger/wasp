@@ -57,6 +57,7 @@ const (
 	ParamSupplyDeltaAbs            = "d"
 	ParamDestroyTokens             = "y"
 	ParamDustDepositAssumptionsBin = "u"
+	ParamForceOpenAccount          = "c"
 )
 
 var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")

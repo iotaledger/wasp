@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -181,7 +181,7 @@ func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
 	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
-func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress ledgerstate.Address) *templates.WaspConfigParams {
+func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
 		DashboardPort:                c.DashboardPort(i),

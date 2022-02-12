@@ -2,7 +2,6 @@ package wallet
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -16,7 +15,7 @@ type WalletConfig struct {
 }
 
 type Wallet struct {
-	seed cryptolib.Seed
+	KeyPair *cryptolib.KeyPair
 }
 
 var initCmd = &cobra.Command{
@@ -44,17 +43,17 @@ func Load() *Wallet {
 	}
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
-	return &Wallet{cryptolib.SeedFromByteArray(seedBytes)}
+	seed := cryptolib.SeedFromByteArray(seedBytes)
+	kp := cryptolib.NewKeyPairFromSeed(seed)
+	return &Wallet{KeyPair: &kp}
 }
 
 var addressIndex int
 
 func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
-	key := cryptolib.NewKeyPairFromPrivateKey(w.seed[:])
-	return &key.PrivateKey
+	return &w.KeyPair.PrivateKey
 }
 
 func (w *Wallet) Address() iotago.Address {
-	addr := iotago.Ed25519AddressFromPubKey(w.PrivateKey().Public().(ed25519.PublicKey))
-	return &addr
+	return cryptolib.Ed25519AddressFromPubKey(w.KeyPair.PublicKey)
 }

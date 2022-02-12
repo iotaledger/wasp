@@ -6,7 +6,6 @@ package statemgr
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -78,18 +77,21 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	}
 }
 
-func (sm *stateManager) EnqueueOutputMsg(msg iotago.Output) {
-	sm.eventOutputMsgPipe.In() <- msg
+func (sm *stateManager) EnqueueOutputMsg(output iotago.Output, id *iotago.UTXOInput) {
+	sm.eventOutputMsgPipe.In() <- &messages.OutputMsg{
+		Output: output,
+		ID:     id,
+	}
 }
 
-func (sm *stateManager) handleOutputMsg(msg iotago.Output) {
-	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID()))
-	chainOutput, ok := msg.(*iotago.AliasOutput)
+func (sm *stateManager) handleOutputMsg(msg *messages.OutputMsg) {
+	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID))
+	chainOutput, ok := msg.Output.(*iotago.AliasOutput)
 	if !ok {
-		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *iotago.AliasOutput", msg)
+		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *iotago.AliasOutput", msg.Output)
 		return
 	}
-	if sm.outputPulled(chainOutput) {
+	if sm.outputPulled(iscp.NewAliasOutputWithID(chainOutput, msg.ID)) {
 		sm.takeAction()
 	}
 }
@@ -105,7 +107,8 @@ func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
 		"state index", msg.ChainOutput.GetStateIndex(),
 		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
 	)
-	stateHash, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
+	sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex())
+	stateHash, err := msg.ChainOutput.GetStateCommitment()
 	if err != nil {
 		sm.log.Errorf("EventStateMsg ignored: failed to parse state hash: %v", err)
 		return
@@ -116,7 +119,7 @@ func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID iotago.OutputID) {
+func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID *iotago.UTXOInput) {
 	sm.eventStateCandidateMsgPipe.In() <- &messages.StateCandidateMsg{
 		State:             virtualState,
 		ApprovingOutputID: outputID,

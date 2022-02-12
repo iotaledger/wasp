@@ -7,13 +7,8 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use wasmlib::*;
-
-use crate::consts::*;
-use crate::params::*;
-use crate::results::*;
+use crate::*;
 
 pub struct DivideCall {
 	pub func: ScFunc,
@@ -49,55 +44,56 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn divide(_ctx: & dyn ScFuncCallContext) -> DivideCall {
+    pub fn divide(_ctx: &dyn ScFuncCallContext) -> DivideCall {
         DivideCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DIVIDE),
         }
     }
 
-    pub fn init(_ctx: & dyn ScFuncCallContext) -> InitCall {
+    pub fn init(_ctx: &dyn ScFuncCallContext) -> InitCall {
         let mut f = InitCall {
             func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
-            params: MutableInitParams { id: 0 },
+            params: MutableInitParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScInitFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn member(_ctx: & dyn ScFuncCallContext) -> MemberCall {
+    pub fn member(_ctx: &dyn ScFuncCallContext) -> MemberCall {
         let mut f = MemberCall {
             func: ScFunc::new(HSC_NAME, HFUNC_MEMBER),
-            params: MutableMemberParams { id: 0 },
+            params: MutableMemberParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn set_owner(_ctx: & dyn ScFuncCallContext) -> SetOwnerCall {
+    pub fn set_owner(_ctx: &dyn ScFuncCallContext) -> SetOwnerCall {
         let mut f = SetOwnerCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_OWNER),
-            params: MutableSetOwnerParams { id: 0 },
+            params: MutableSetOwnerParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn get_factor(_ctx: & dyn ScViewCallContext) -> GetFactorCall {
+    pub fn get_factor(_ctx: &dyn ScViewCallContext) -> GetFactorCall {
         let mut f = GetFactorCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_FACTOR),
-            params: MutableGetFactorParams { id: 0 },
-            results: ImmutableGetFactorResults { id: 0 },
+            params: MutableGetFactorParams { proxy: Proxy::nil() },
+            results: ImmutableGetFactorResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_owner(_ctx: & dyn ScViewCallContext) -> GetOwnerCall {
+    pub fn get_owner(_ctx: &dyn ScViewCallContext) -> GetOwnerCall {
         let mut f = GetOwnerCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_OWNER),
-            results: ImmutableGetOwnerResults { id: 0 },
+            results: ImmutableGetOwnerResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

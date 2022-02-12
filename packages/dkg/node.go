@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -27,7 +27,7 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *cryptolib.KeyPair               // Keys of the current node.
+	identity     *ed25519.KeyPair                 // Keys of the current node.
 	secKey       kyber.Scalar                     // Derived from the identity.
 	pubKey       kyber.Point                      // Derived from the identity.
 	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
@@ -44,13 +44,13 @@ type Node struct {
 // Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
-	identity *cryptolib.KeyPair,
+	identity *ed25519.KeyPair,
 	netProvider peering.NetworkProvider,
 	reg registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey); err != nil {
+	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
 		return nil, err
 	}
 	n := Node{
@@ -99,7 +99,7 @@ func (n *Node) Close() {
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
-	peerPubs []cryptolib.PublicKey,
+	peerPubs []*ed25519.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
@@ -135,7 +135,7 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]cryptolib.PublicKey, peerCount)
+		peerPubs = make([]*ed25519.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err

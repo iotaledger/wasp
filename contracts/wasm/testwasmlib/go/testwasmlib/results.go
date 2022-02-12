@@ -7,116 +7,116 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableArrayLengthResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayLengthResults) Length() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultLength))
+func (s ImmutableArrayLengthResults) Length() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
 }
 
 type MutableArrayLengthResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayLengthResults) Length() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultLength))
+func (s MutableArrayLengthResults) Length() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
 }
 
 type ImmutableArrayValueResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayValueResults) Value() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultValue))
+func (s ImmutableArrayValueResults) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
 }
 
 type MutableArrayValueResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayValueResults) Value() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultValue))
+func (s MutableArrayValueResults) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }
 
 type ImmutableBlockRecordResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBlockRecordResults) Record() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultRecord))
+func (s ImmutableBlockRecordResults) Record() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultRecord))
 }
 
 type MutableBlockRecordResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBlockRecordResults) Record() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultRecord))
+func (s MutableBlockRecordResults) Record() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultRecord))
 }
 
 type ImmutableBlockRecordsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBlockRecordsResults) Count() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultCount))
+func (s ImmutableBlockRecordsResults) Count() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultCount))
 }
 
 type MutableBlockRecordsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBlockRecordsResults) Count() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultCount))
+func (s MutableBlockRecordsResults) Count() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultCount))
 }
 
 type ImmutableGetRandomResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetRandomResults) Random() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultRandom))
+func (s ImmutableGetRandomResults) Random() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultRandom))
 }
 
 type MutableGetRandomResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetRandomResults) Random() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultRandom))
+func (s MutableGetRandomResults) Random() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultRandom))
 }
 
 type ImmutableIotaBalanceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIotaBalanceResults) Iotas() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIotas))
+func (s ImmutableIotaBalanceResults) Iotas() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultIotas))
 }
 
 type MutableIotaBalanceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableIotaBalanceResults) Iotas() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIotas))
+func (s MutableIotaBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
 }
 
 type ImmutableMapValueResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableMapValueResults) Value() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultValue))
+func (s ImmutableMapValueResults) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
 }
 
 type MutableMapValueResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableMapValueResults) Value() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultValue))
+func (s MutableMapValueResults) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }

@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasmlib = { path = "../../../packages/vm/wasmlib" }
+wasmlib = { path = "../../../packages/wasmvm/wasmlib" }
 #wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }

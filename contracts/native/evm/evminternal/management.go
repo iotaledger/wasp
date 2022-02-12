@@ -4,6 +4,7 @@
 package evminternal
 
 import (
+	"math"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -16,10 +17,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 const (
-	keyGasPerIota   = "g"
+	keyGasRatio     = "g"
 	keyEVMOwner     = "o"
 	keyNextEVMOwner = "n"
 	keyBlockTime    = "b"
@@ -31,9 +34,9 @@ const (
 var ManagementHandlers = []coreutil.ProcessorEntryPoint{
 	evm.FuncSetNextOwner.WithHandler(setNextOwner),
 	evm.FuncClaimOwnership.WithHandler(claimOwnership),
-	evm.FuncSetGasPerIota.WithHandler(setGasPerIota),
+	evm.FuncSetGasRatio.WithHandler(setGasRatio),
 	evm.FuncGetOwner.WithHandler(getOwner),
-	evm.FuncGetGasPerIota.WithHandler(getGasPerIota),
+	evm.FuncGetGasRatio.WithHandler(getGasRatio),
 	evm.FuncSetBlockTime.WithHandler(setBlockTime),
 }
 
@@ -42,7 +45,7 @@ func EVMStateSubrealm(state kv.KVStore) kv.KVStore {
 }
 
 func InitializeManagement(ctx iscp.Sandbox) {
-	ctx.State().Set(keyGasPerIota, codec.EncodeUint64(evm.DefaultGasPerIota))
+	ctx.State().Set(keyGasRatio, evm.DefaultGasRatio.Bytes())
 	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 }
 
@@ -84,8 +87,9 @@ func ScheduleNextBlock(ctx iscp.Sandbox) {
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     evm.FuncMintBlock.Hname(),
+			GasBudget:      math.MaxUint64, // TODO: ?
 		},
-		Options: &iscp.SendOptions{Timelock: &iscp.TimeData{
+		Options: iscp.SendOptions{Timelock: &iscp.TimeData{
 			Time: time.Unix(0, ctx.Timestamp()).
 				Add(time.Duration(blockTime) * time.Second),
 		}},
@@ -125,19 +129,17 @@ func getOwner(ctx iscp.SandboxView) dict.Dict {
 	return Result(ctx.State().MustGet(keyEVMOwner))
 }
 
-func setGasPerIota(ctx iscp.Sandbox) dict.Dict {
+func setGasRatio(ctx iscp.Sandbox) dict.Dict {
 	requireOwner(ctx)
-	par := kvdecoder.New(ctx.Params())
-	gasPerIotaBin := codec.EncodeUint64(par.MustGetUint64(evm.FieldGasPerIota))
-	ctx.State().Set(keyGasPerIota, gasPerIotaBin)
+	ctx.State().Set(keyGasRatio, codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio)).Bytes())
 	return nil
 }
 
-func getGasPerIota(ctx iscp.SandboxView) dict.Dict {
-	return Result(ctx.State().MustGet(keyGasPerIota))
+func getGasRatio(ctx iscp.SandboxView) dict.Dict {
+	return Result(ctx.State().MustGet(keyGasRatio))
 }
 
-func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockTime uint32) *types.Receipt) dict.Dict {
+func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockTime uint32, gasBudget uint64) (uint64, error)) dict.Dict {
 	a := assert.NewAssert(ctx.Log())
 
 	tx := &types.Transaction{}
@@ -145,14 +147,28 @@ func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockT
 	a.RequireNoError(err)
 
 	blockTime := getBlockTime(ctx.State())
-	receipt := apply(tx, blockTime)
 
-	gasPerIota, err := codec.DecodeUint64(ctx.State().MustGet(keyGasPerIota), evm.DefaultGasPerIota)
-	a.RequireNoError(err)
+	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evm.DefaultGasRatio)
 
-	return dict.Dict{
-		// TODO: this is just informative, gas is currently not being charged
-		evm.FieldGasFee:  codec.EncodeUint64(receipt.GasUsed / gasPerIota),
-		evm.FieldGasUsed: codec.EncodeUint64(receipt.GasUsed),
-	}
+	// ignore the evm gas budget set in the evm tx, use the remaining ISC gas budget instead
+	gasBudget := ISCGasBudgetToEVM(ctx.Gas().Budget(), gasRatio)
+
+	gasUsed, err := apply(tx, blockTime, gasBudget)
+
+	// burn gas even on error
+	ctx.Gas().Burn(gas.BurnCodeEVM1P, EVMGasToISC(gasUsed, gasRatio))
+
+	ctx.RequireNoError(err)
+
+	return nil
+}
+
+func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio util.Ratio32) uint64 {
+	// EVM gas budget = floor(ISC gas budget * B / A)
+	return gasRatio.YFloor64(iscGasBudget)
+}
+
+func EVMGasToISC(evmGas uint64, gasRatio util.Ratio32) uint64 {
+	// ISC gas burned = ceil(EVM gas * A / B)
+	return gasRatio.XCeil64(evmGas)
 }

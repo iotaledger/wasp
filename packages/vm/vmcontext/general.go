@@ -49,9 +49,9 @@ func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) Params() dict.Dict {
+func (vmctx *VMContext) Params() *iscp.Params {
 	vmctx.GasBurn(gas.BurnCodeGetContext)
-	return vmctx.getCallContext().params
+	return &vmctx.getCallContext().params
 }
 
 func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
@@ -91,7 +91,11 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 
 func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
 	vmctx.GasBurn(gas.BurnCodeGetAllowance)
-	return vmctx.getCallContext().allowanceAvailable.Clone()
+	allowance := vmctx.getCallContext().allowanceAvailable
+	if allowance == nil {
+		return iscp.NewEmptyAssets()
+	}
+	return allowance.Clone()
 }
 
 func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
