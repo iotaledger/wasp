@@ -347,6 +347,11 @@ func TestTrieRnd(t *testing.T) {
 		require.True(t, c1.Equal(c2))
 
 		tr2.FlushCache(store2)
+		trieSize := len(store2.Bytes())
+		t.Logf("key entries = %d", len(data))
+		t.Logf("trie entries = %d", len(store2))
+		t.Logf("trie bytes = %d KB", trieSize/1024)
+		t.Logf("trie bytes/entry = %d ", trieSize/len(store2))
 	})
 	t.Run("determinism5", func(t *testing.T) {
 		data := genRnd4()
@@ -372,10 +377,5 @@ func TestTrieRnd(t *testing.T) {
 		t.Logf("root1 = %s", c1)
 		t.Logf("root2 = %s", c2)
 		require.True(t, c1.Equal(c2))
-
-		tr2.FlushCache(store2)
-		trieSize := len(store2.Bytes())
-		t.Logf("trie bytes = %d KB", trieSize/1024)
-		t.Logf("trie bytes/entry = %d ", trieSize/len(store2))
 	})
 }
