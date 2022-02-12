@@ -10,7 +10,7 @@ import (
 
 func TestNode(t *testing.T) {
 	t.Run("base1", func(t *testing.T) {
-		n := &Node{}
+		n := NewNode()
 		var buf bytes.Buffer
 		n.Write(&buf)
 		t.Logf("size() = %d, size(serialize) = %d", Size(n), len(buf.Bytes()))
@@ -26,7 +26,7 @@ func TestNode(t *testing.T) {
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base short terminal", func(t *testing.T) {
-		n := &Node{}
+		n := NewNode()
 		n.pathFragment = []byte("kuku")
 		n.terminalCommitment = MerkleTrieSetup.CommitToData([]byte("data"))
 
@@ -45,7 +45,7 @@ func TestNode(t *testing.T) {
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base long terminal", func(t *testing.T) {
-		n := &Node{}
+		n := NewNode()
 		n.pathFragment = []byte("kuku")
 		n.terminalCommitment = MerkleTrieSetup.CommitToData([]byte(strings.Repeat("data", 1000)))
 

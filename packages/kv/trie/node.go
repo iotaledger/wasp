@@ -23,8 +23,11 @@ type TerminalCommitment interface {
 // Node is a node of the 25š+-ary verkle trie
 type Node struct {
 	pathFragment       []byte // can't be longer than 256 bytes
-	children           [256]VectorCommitment
+	children           map[uint8]VectorCommitment
 	terminalCommitment TerminalCommitment
+	// non-persistent
+	newTerminal      TerminalCommitment
+	modifiedChildren map[uint8]*Node
 }
 
 const (
@@ -32,11 +35,21 @@ const (
 	hasChildrenFlag      = 0x02
 )
 
+func NewNode() *Node {
+	return &Node{
+		pathFragment:       nil,
+		children:           make(map[uint8]VectorCommitment),
+		terminalCommitment: nil,
+		modifiedChildren:   make(map[uint8]*Node),
+	}
+}
+
 func (f *TrieSetup) NodeFromBytes(data []byte) (*Node, error) {
-	ret := &Node{}
+	ret := NewNode()
 	if err := ret.Read(bytes.NewReader(data), f); err != nil {
 		return nil, err
 	}
+	ret.newTerminal = ret.terminalCommitment
 	return ret, nil
 }
 
@@ -49,10 +62,7 @@ func (n *Node) Write(w io.Writer) {
 	}
 	// compress children flags 32 bytes (if any)
 	var flags [32]byte
-	for i, v := range n.children {
-		if v == nil {
-			continue
-		}
+	for i := range n.children {
 		flags[i/8] |= 0x1 << (i % 8)
 		smallFlags |= hasChildrenFlag
 	}
@@ -64,8 +74,9 @@ func (n *Node) Write(w io.Writer) {
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
 		_, _ = w.Write(flags[:])
-		for _, child := range n.children {
-			if child == nil {
+		for i := 0; i < 256; i++ {
+			child, ok := n.children[uint8(i)]
+			if !ok {
 				continue
 			}
 			child.Write(w)
@@ -95,14 +106,13 @@ func (n *Node) Read(r io.Reader, factory *TrieSetup) error {
 		if _, err := r.Read(flags[:]); err != nil {
 			return err
 		}
-		for i := range n.children {
+		for i := 0; i < 256; i++ {
+			ib := uint8(i)
 			if flags[i/8]&(0x1<<(i%8)) != 0 {
-				n.children[i] = factory.NewVectorCommitment()
-				if err := n.children[i].Read(r); err != nil {
+				n.children[ib] = factory.NewVectorCommitment()
+				if err := n.children[ib].Read(r); err != nil {
 					return err
 				}
-			} else {
-				n.children[i] = nil
 			}
 		}
 	}

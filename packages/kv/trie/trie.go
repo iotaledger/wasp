@@ -9,7 +9,8 @@ type TrieSetup struct {
 	NewTerminalCommitment func() TerminalCommitment
 	CommitToChildren      func(*Node) VectorCommitment
 	CommitToData          func([]byte) TerminalCommitment
-	UpdateKey             func(t *trie, path []byte, pathPosition int, updateCommitment *VectorCommitment, terminal TerminalCommitment)
+	UpdateNodeCommitment  func(*Node) VectorCommitment // returns delta
+	UpdateCommitment      func(prev, delta VectorCommitment) VectorCommitment
 }
 
 type trie struct {
@@ -32,6 +33,7 @@ func (t *trie) RootCommitment() VectorCommitment {
 	return t.rootCommitment
 }
 
+// GetNode takes node from the cache of fetches it from kv store
 func (t *trie) GetNode(key []byte) (*Node, bool) {
 	k := kv.Key(key)
 	node, ok := t.nodeCache[k]
@@ -50,21 +52,6 @@ func (t *trie) GetNode(key []byte) (*Node, bool) {
 
 }
 
-// assumes that node with the key does not exist
-func (t *trie) mustNewNode(key []byte) *Node {
-	t.nodeCache[kv.Key(key)] = &Node{}
-	return t.nodeCache[kv.Key(key)]
-}
-
-func (t *trie) Update(key, value []byte) {
-	if len(value) == 0 {
-		// empty value means no value and no entry
-		return
-	}
-	terminal := t.setup.CommitToData(value)
-	t.setup.UpdateKey(t, key, 0, &t.rootCommitment, terminal)
-}
-
 func (t *trie) FlushCache(store kv.KVStore) {
 	for k, v := range t.nodeCache {
 		store.Set(k, Bytes(v))
@@ -73,4 +60,114 @@ func (t *trie) FlushCache(store kv.KVStore) {
 
 func (t *trie) ClearCache() {
 	t.nodeCache = make(map[kv.Key]*Node)
+}
+
+// newTerminalNode assumes key does not exist in the trie
+func (t *trie) newTerminalNode(key, pathFragment []byte, newTerminal TerminalCommitment) *Node {
+	ret := NewNode()
+	ret.pathFragment = pathFragment
+	ret.newTerminal = newTerminal
+	t.nodeCache[kv.Key(key)] = ret
+	return ret
+}
+
+func (t *trie) Update(key []byte, value []byte) {
+	c := t.setup.CommitToData(value)
+	t.updateKey(key, 0, c)
+}
+
+// updateKey updates tree (recursively) by adding or updating terminal commitment at specified key
+// - 'path' the key of the terminal value
+// - 'pathPosition' is the position in the path the current node's key starts: key = path[:pathPosition]
+// - 'terminal' is the new commitment to the value under key 'path'
+func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitment) *Node {
+	assert(pathPosition <= len(path), "pathPosition <= len(path)")
+	if len(path) == 0 {
+		path = []byte{}
+	}
+	key := path[:pathPosition]
+	tail := path[pathPosition:]
+	// looking up for the node with the key (with caching)
+	node, ok := t.GetNode(key)
+	if !ok {
+		// node for the path[:pathPosition] does not exist. Create a new one with the terminal value only
+		return t.newTerminalNode(key, tail, terminal)
+	}
+	// node for the key exists
+	// find common prefix between tail of the
+	prefix := commonPrefix(node.pathFragment, tail)
+	assert(len(prefix) <= len(node.pathFragment), "len(prefix)<= len(node.pathFragment)")
+	// the following parameters define how it goes:
+	// - len(path)
+	// - pathPosition
+	// - len(node.pathFragment)
+	// - len(prefix)
+	nextPathPosition := pathPosition + len(prefix)
+	assert(nextPathPosition <= len(path), "nextPathPosition <= len(path)")
+
+	if len(prefix) == len(node.pathFragment) {
+		// pathFragment is part of the path. No need for a fork, continue the path
+		if nextPathPosition == len(path) {
+			// reached the terminal value on this node
+			node.newTerminal = terminal
+			return node
+		}
+		assert(nextPathPosition < len(path), "nextPathPosition < len(path)")
+		// didn't reach the end of the path
+		// choose the direction and continue down the path of the child
+		childIndex := path[nextPathPosition]
+		// recursively update the rest of the path
+		node.modifiedChildren[childIndex] = t.updateKey(path, nextPathPosition+1, terminal)
+		return node
+	}
+	assert(len(prefix) < len(node.pathFragment), "len(prefix) < len(node.pathFragment)")
+
+	// split the pathFragment. The continued branch is part of the fragment
+	// key of the next node starts at the next position after current key plus prefix
+	keyContinue := make([]byte, pathPosition+len(prefix)+1)
+	copy(keyContinue, path)
+	keyContinue[len(keyContinue)-1] = node.pathFragment[len(prefix)]
+	// add child index to the end of the keyContinue
+	childIndexContinue := keyContinue[len(keyContinue)-1]
+	// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
+	newNode := NewNode()
+	newNode.pathFragment = node.pathFragment[len(prefix)+1:]
+	newNode.children = node.children
+	newNode.modifiedChildren = node.modifiedChildren
+	newNode.terminalCommitment = node.terminalCommitment
+	newNode.newTerminal = node.newTerminal
+	t.nodeCache[kv.Key(keyContinue)] = newNode
+	// clear the old one and adjust path fragment. Continue with 1 child, the new node
+	node.pathFragment = prefix
+	node.children = make(map[uint8]VectorCommitment)
+	node.modifiedChildren = make(map[uint8]*Node)
+	node.modifiedChildren[childIndexContinue] = newNode
+	node.terminalCommitment = nil
+	node.newTerminal = nil
+
+	if pathPosition+len(prefix) == len(path) {
+		// no need for the new node
+		node.newTerminal = terminal
+	} else {
+		// create the new node
+		keyFork := path[:pathPosition+len(prefix)+1]
+		assert(len(keyContinue) == len(keyFork), "len(keyContinue)==len(keyFork)")
+		nodeFork := NewNode()
+		nodeFork.pathFragment = path[len(keyFork):]
+		nodeFork.newTerminal = terminal
+		childForkIndex := keyFork[len(keyFork)-1]
+		node.modifiedChildren[childForkIndex] = nodeFork
+		t.nodeCache[kv.Key(keyFork)] = nodeFork
+	}
+	return node
+}
+
+// Commit calculates new root from the cache
+func (t *trie) Commit() VectorCommitment {
+	root, ok := t.GetNode(nil)
+	if !ok {
+		return nil
+	}
+	deltaC := t.setup.UpdateNodeCommitment(root)
+	return t.setup.UpdateCommitment(t.RootCommitment(), deltaC)
 }
