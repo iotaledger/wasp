@@ -88,11 +88,16 @@ func (t *trie) Update(key []byte, value []byte) {
 	t.updateKey(key, 0, c)
 }
 
+// Delete deletes key/value from the trie
+func (t *trie) Delete(key []byte) {
+	t.Update(key, nil)
+}
+
 // updateKey updates tree (recursively) by adding or updating terminal commitment at specified key
 // - 'path' the key of the terminal value
 // - 'pathPosition' is the position in the path the current node's key starts: key = path[:pathPosition]
-// - 'terminal' is the new commitment to the value under key 'path'. nil means deletion
-// - returns the node under the key = path[:pathPosition] or nil in case of deletion
+// - 'terminal' is the new commitment to the value under key 'path'. nil means terminal deletion
+// - returns the node under the key = path[:pathPosition] or nil in case of terminal deletion
 func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitment) *Node {
 	assert(pathPosition <= len(path), "pathPosition <= len(path)")
 	if len(path) == 0 {

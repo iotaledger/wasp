@@ -225,6 +225,14 @@ func genRnd4() []string {
 	return ret
 }
 
+func genDels(data []string, num int) []string {
+	ret := make([]string, 0, num)
+	for i := 0; i < num; i++ {
+		ret = append(ret, data[rand.Intn(len(data))])
+	}
+	return ret
+}
+
 func TestTrieRnd(t *testing.T) {
 	t.Run("rnd1", func(t *testing.T) {
 		data := genRnd1()
@@ -375,6 +383,154 @@ func TestTrieRnd(t *testing.T) {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true
 		})
+		tr2.Commit()
+		c2 := tr2.RootCommitment()
+		t.Logf("root1 = %s", c1)
+		t.Logf("root2 = %s", c2)
+		require.True(t, c1.Equal(c2))
+	})
+}
+
+func TestTrieWithDeletion(t *testing.T) {
+	data := []string{"0", "1", "2", "3", "4", "5"}
+	var tr1, tr2 *trie
+	initTest := func() {
+		store1 := dict.New()
+		tr1 = NewTrie(MerkleTrieSetup, store1, nil)
+		store2 := dict.New()
+		tr2 = NewTrie(MerkleTrieSetup, store2, nil)
+	}
+	t.Run("del1", func(t *testing.T) {
+		initTest()
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr2.Delete([]byte(data[1]))
+		tr2.Update([]byte(data[1]), []byte(data[1]))
+		tr2.Commit()
+		c2 := tr1.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("del2", func(t *testing.T) {
+		initTest()
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr2.Commit()
+		tr2.Delete([]byte(data[1]))
+		tr2.Update([]byte(data[1]), []byte(data[1]))
+		tr2.Commit()
+		c2 := tr1.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("del3", func(t *testing.T) {
+		initTest()
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+			tr2.Commit()
+		}
+		tr2.Delete([]byte(data[1]))
+		tr2.Update([]byte(data[1]), []byte(data[1]))
+		tr2.Commit()
+		c2 := tr1.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("del4", func(t *testing.T) {
+		initTest()
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+			tr2.Commit()
+		}
+		tr2.Delete([]byte(data[1]))
+		tr2.Commit()
+		tr2.Update([]byte(data[1]), []byte(data[1]))
+		tr2.Commit()
+		c2 := tr1.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("del5", func(t *testing.T) {
+		initTest()
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+			tr2.Commit()
+		}
+		c2 := tr1.RootCommitment()
+		require.True(t, c1.Equal(c2))
+
+		tr2.Delete([]byte(data[1]))
+		tr2.Commit()
+		c2 = tr2.RootCommitment()
+		require.False(t, c1.Equal(c2))
+
+		tr2.Update([]byte(data[1]), []byte(data[1]))
+		tr2.Commit()
+		c2 = tr1.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("del determ", func(t *testing.T) {
+		initTest()
+		data = genRnd4()
+		dels := genDels(data, 1000)
+
+		posDel := 0
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+			tr1.Commit()
+			if i%10 == 10 {
+				tr1.Delete([]byte(dels[posDel]))
+				posDel = (posDel + 1) % len(dels)
+			}
+		}
+		tr1.Commit()
+		for i := range dels {
+			tr1.Delete([]byte(dels[i]))
+		}
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation.ForEach(func(i uint16) bool {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+			return true
+		})
+		for i := range dels {
+			tr2.Delete([]byte(dels[i]))
+		}
 		tr2.Commit()
 		c2 := tr2.RootCommitment()
 		t.Logf("root1 = %s", c1)
