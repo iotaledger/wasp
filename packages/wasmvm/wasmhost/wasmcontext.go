@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -87,7 +88,9 @@ func (wc *WasmContext) callFunction() error {
 
 	saveID := wc.proc.currentContextID
 	wc.proc.currentContextID = wc.id
+	wc.proc.vm.GasBudget(wc.GasBudget())
 	err := wc.proc.RunScFunction(wc.funcName)
+	wc.GasBurned(wc.proc.vm.GasBurned())
 	wc.proc.currentContextID = saveID
 	return err
 }
@@ -111,6 +114,20 @@ func (wc *WasmContext) ExportName(index int32, name string) {
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {
 	return wc.funcTable.FunctionFromCode(code)
+}
+
+// GasBudget is a callback from the VM that asks for the remaining gas budget of the
+// Wasp sandbox. The VM will update the gas budget for the Wasm code with this value
+// just before returning to the Wasm code.
+func (wc *WasmContext) GasBudget() uint64 {
+	return wc.wcSandbox.common.Gas().Budget()
+}
+
+// GasBurned is a callback from the VM that sets the remaining gas budget.
+// It will update the gas budget for the Wasp sandbox with the amount of gas
+// burned by the Wasm code thus far just before calling sandbox.
+func (wc *WasmContext) GasBurned(burned uint64) {
+	wc.wcSandbox.common.Gas().Burn(gas.BurnCodeWasm1P, burned)
 }
 
 func (wc *WasmContext) IsView() bool {

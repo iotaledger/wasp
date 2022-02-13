@@ -37,6 +37,8 @@ var (
 )
 
 type WasmVM interface {
+	GasBudget(budget uint64)
+	GasBurned() uint64
 	Instantiate() error
 	Interrupt()
 	LinkHost(proc *WasmProcessor) error
@@ -57,16 +59,23 @@ type WasmVMBase struct {
 	timeoutStarted bool
 }
 
-// catchPanicMessage is used in every host function to catch any panic.
+// wrapUp is used in every host function to catch any panic.
 // It will save the first panic it encounters in the WasmVMBase so that
 // the caller of the Wasm function can retrieve the correct error.
 // This is a workaround to WasmTime saving the *last* panic instead of
 // the first, thereby reporting the wrong panic error sometimes
-func (vm *WasmVMBase) catchPanicMessage() {
+// wrapUp will also update the Wasm code that initiated the call with
+// the remaining gas budget (the Wasp node may have burned some)
+func (vm *WasmVMBase) wrapUp() {
 	panicMsg := recover()
 	if panicMsg == nil {
+		// update gas budget
+		ctx := vm.getContext(0)
+		ctx.GasBurned(vm.proc.vm.GasBurned())
 		return
 	}
+
+	// panic means no need to update gas budget
 	if vm.panicErr == nil {
 		switch msg := panicMsg.(type) {
 		case error:
@@ -75,6 +84,7 @@ func (vm *WasmVMBase) catchPanicMessage() {
 			vm.panicErr = fmt.Errorf("%v", msg)
 		}
 	}
+
 	// rethrow and let nature run its course...
 	panic(panicMsg)
 }
@@ -84,9 +94,11 @@ func (vm *WasmVMBase) getContext(id int32) *WasmContext {
 }
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
-	// crude implementation assumes texts to only use ASCII part of UTF-16
+	vm.reportGasBurned()
 
-	defer vm.catchPanicMessage()
+	defer vm.wrapUp()
+
+	// crude implementation assumes texts to only use ASCII part of UTF-16
 	impl := vm.proc.vm
 
 	// null-terminated UTF-16 error message
@@ -109,7 +121,8 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 }
 
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
-	defer vm.catchPanicMessage()
+	vm.reportGasBurned()
+	defer vm.wrapUp()
 	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
@@ -131,7 +144,8 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 }
 
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
-	defer vm.catchPanicMessage()
+	vm.reportGasBurned()
+	defer vm.wrapUp()
 	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
@@ -169,7 +183,8 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 }
 
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
-	defer vm.catchPanicMessage()
+	vm.reportGasBurned()
+	defer vm.wrapUp()
 	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
@@ -213,6 +228,11 @@ func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 
 	vm.proc = proc
 	return nil
+}
+
+func (vm *WasmVMBase) reportGasBurned() {
+	ctx := vm.proc.GetContext(0)
+	vm.proc.vm.GasBudget(ctx.GasBudget())
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
