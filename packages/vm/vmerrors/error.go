@@ -220,13 +220,17 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil, errorMessageResolver ErrorMessa
 	return &blockError, nil
 }
 
-func GetErrorIdFromMessageFormat(messageFormat string) (uint16, error) {
+func GetErrorIdFromMessageFormat(messageFormat string) uint16 {
 	messageFormatHash := hashing.HashStrings(messageFormat).Bytes()
 	mu := marshalutil.New(messageFormatHash)
 
 	errorId, err := mu.ReadUint16()
 
-	return errorId, err
+	if err != nil {
+		panic(err)
+	}
+
+	return errorId
 }
 
 func IsDefinition(error Error, definition ErrorDefinition) bool {

@@ -5,12 +5,7 @@ import errors "github.com/iotaledger/wasp/packages/vm/vmerrors"
 var globalErrorCollection IErrorCollection = NewErrorCollection()
 
 func RegisterGlobalError(messageFormat string) *errors.ErrorDefinition {
-	errorId, err := errors.GetErrorIdFromMessageFormat(messageFormat)
-
-	if err != nil {
-		panic(err)
-	}
-
+	errorId := errors.GetErrorIdFromMessageFormat(messageFormat)
 	errorDefinition, err := globalErrorCollection.Register(errorId, messageFormat)
 
 	if err != nil {

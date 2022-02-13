@@ -31,11 +31,7 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 		panic(commonerrors.ErrMessageFormatEmpty)
 	}
 
-	errorId, err := vmerrors.GetErrorIdFromMessageFormat(errorMessageFormat)
-
-	if err != nil {
-		panic(err)
-	}
+	errorId := vmerrors.GetErrorIdFromMessageFormat(errorMessageFormat)
 
 	errorDefinition, err := e.Register(errorId, errorMessageFormat)
 

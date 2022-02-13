@@ -1,6 +1,9 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
@@ -12,7 +15,6 @@ import (
 	"testing"
 )
 
-/*
 var errorContractName = "ErrorContract"
 var errorContract = coreutil.NewContract(errorContractName, "error contract")
 
@@ -31,15 +33,19 @@ var errorContractProcessor = errorContract.Processor(nil,
 		panic(testError)
 		return nil
 	}),
-)*/
+)
 
 func setupErrorsTest(t *testing.T) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true}).WithNativeContract(errorContractProcessor)
 	chain, _, _ := env.NewChainExt(nil, 100_000, "chain1")
+	err := chain.DeployContract(nil, errorContract.Name, errorContract.ProgramHash)
+
+	require.NoError(t, err)
 
 	chain.MustDepositIotasToL2(10_000_000, nil)
 	defer chain.Log.Sync()
+
 	chain.CheckChain()
 
 	return env, chain
@@ -62,7 +68,6 @@ func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 // Panicked vmerrors will be stored as is.
 // The first test validates a typed vmerror Error (Not enough Gas)
 // The second test validates the wrapped generic ErrUntypedError
-
 func TestErrorWithCustomError(t *testing.T) {
 	_, chain := setupErrorsTestWithoutFunds(t)
 
@@ -133,4 +138,17 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 	message := dict.MustGet(errors.ParamErrorMessageFormat)
 
 	require.Equal(t, string(message), errorMessageToTest)
+}
+
+func TestErrorRegistrationWithCustomContract(t *testing.T) {
+	_, chain := setupErrorsTest(t)
+
+	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
+		WithGasBudget(100_000)
+
+	_, _, err := chain.PostRequestSyncTx(req, nil)
+
+	require.NoError(t, err)
+
+	require.Equal(t, testError, vmerrors.GetErrorIdFromMessageFormat("Test Error"))
 }
