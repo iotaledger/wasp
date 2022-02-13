@@ -243,11 +243,10 @@ func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
 	assets := s.ctx.AllowanceAvailable()
-	if !assets.IsEmpty() {
-		s.ctx.TransferAllowedFunds(s.ctx.AccountID())
-	}
-	assets = s.ctx.Assets()
-	return assets.Bytes()
+	//if !assets.IsEmpty() {
+	//	s.ctx.TransferAllowedFunds(s.ctx.AccountID())
+	//}
+	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnLog(args []byte) []byte {
@@ -287,6 +286,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 		TargetContract: contract,
 		EntryPoint:     function,
 		Params:         params,
+		Allowance:      assets,
 		GasBudget:      1_000_000,
 	}
 	if req.Delay == 0 {
@@ -302,9 +302,10 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	timeLock := time.Unix(0, s.ctx.Timestamp())
 	timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
 	s.ctx.Send(iscp.RequestParameters{
-		TargetAddress: s.ctx.Caller().Address(),
-		Assets:        assets,
-		Metadata:      metadata,
+		AdjustToMinimumDustDeposit: true,
+		TargetAddress:              s.ctx.Caller().Address(),
+		Assets:                     assets,
+		Metadata:                   metadata,
 		Options: iscp.SendOptions{
 			Timelock: &iscp.TimeData{Time: timeLock},
 		},
@@ -338,8 +339,9 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
 		s.ctx.Send(iscp.RequestParameters{
-			TargetAddress: address,
-			Assets:        assets,
+			AdjustToMinimumDustDeposit: true,
+			TargetAddress:              address,
+			Assets:                     assets,
 		})
 	}
 	return nil

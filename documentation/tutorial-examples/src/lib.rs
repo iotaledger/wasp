@@ -79,6 +79,6 @@ fn withdraw_iota(ctx: &ScFuncContext) {
 
     let bal = ctx.balances().balance(&ScColor::IOTA);
     if bal > 0 {
-        ctx.transfer_to_address(&caller.address(), ScTransfers::iotas(bal))
+        ctx.send(&caller.address(), &ScTransfers::iotas(bal))
     }
 }

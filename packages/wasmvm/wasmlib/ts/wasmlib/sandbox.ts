@@ -176,6 +176,12 @@ export class ScSandboxFunc extends ScSandbox {
     private static entropy: u8[] = [];
     private static offset: u32 = 0;
 
+    // access the allowance assets
+    public allowance(): ScBalances {
+        const buf = sandbox(FnIncomingTransfer, null);
+        return new ScAssets(buf).balances();
+    }
+
     //public blockContext(construct func(sandbox: ScSandbox) interface{}, onClose func(interface{})): interface{} {
     //	panic("implement me")
     //}
@@ -211,12 +217,6 @@ export class ScSandboxFunc extends ScSandbox {
     // signals an event on the node that external entities can subscribe to
     public event(msg: string): void {
         sandbox(FnEvent, wasmtypes.stringToBytes(msg));
-    }
-
-    // access the incoming balances for all assets
-    public incomingTransfer(): ScBalances {
-        const buf = sandbox(FnIncomingTransfer, null);
-        return new ScAssets(buf).balances();
     }
 
     // retrieve the assets that were minted in this transaction
@@ -274,17 +274,10 @@ export class ScSandboxFunc extends ScSandbox {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
     }
 
-    // transfer assetss to the specified Tangle ledger address
+    // transfer assets to the specified Tangle ledger address
     public send(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
         // we need some assets to send
-        let assets: u64 = 0;
-        const colors = transfer.balances().colors();
-        for (let i = 0; i < colors.length; i++) {
-            const color = colors[i];
-            assets += transfer.balances().balance(color);
-        }
-        if (assets == 0) {
-            // only try to send when non-zero assets
+        if (transfer.isEmpty()) {
             return;
         }
 

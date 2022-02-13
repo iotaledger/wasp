@@ -177,6 +177,12 @@ type ScSandboxFunc struct {
 	ScSandbox
 }
 
+// access the allowance assets
+func (s ScSandboxFunc) Allowance() ScBalances {
+	buf := Sandbox(FnIncomingTransfer, nil)
+	return NewScAssetsFromBytes(buf).Balances()
+}
+
 //func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
 //	panic("implement me")
 //}
@@ -213,12 +219,6 @@ func (s ScSandboxFunc) Entropy() wasmtypes.ScHash {
 // signals an event on the node that external entities can subscribe to
 func (s ScSandboxFunc) Event(msg string) {
 	Sandbox(FnEvent, []byte(msg))
-}
-
-// access the incoming balances for all assets
-func (s ScSandboxFunc) IncomingTransfer() ScBalances {
-	buf := Sandbox(FnIncomingTransfer, nil)
-	return NewScAssetsFromBytes(buf).Balances()
 }
 
 // retrieve the assets that were minted in this transaction
@@ -285,15 +285,10 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
 }
 
-// transfer assetss to the specified Tangle ledger address
+// transfer assets to the specified Tangle ledger address
 func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 	// we need some assets to send
-	assets := uint64(0)
-	for _, amount := range transfer {
-		assets += amount
-	}
-	if assets == 0 {
-		// only try to send when non-zero assets
+	if transfer.IsEmpty() {
 		return
 	}
 

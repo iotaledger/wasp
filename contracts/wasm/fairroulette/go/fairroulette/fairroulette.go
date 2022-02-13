@@ -59,7 +59,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Create ScBalances proxy to the incoming balances for this request.
 	// Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
 	// in a simpler to use interface.
-	incoming := ctx.Incoming()
+	incoming := ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens that are part of the incoming balance.
 	amount := incoming.Balance(wasmtypes.IOTA)
@@ -212,7 +212,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// of the winner. The transfer_to_address() method receives the address value and
 			// the proxy to the new transfers map on the host, and will call the corresponding
 			// host sandbox function with these values.
-			ctx.TransferToAddress(bet.Better.Address(), transfers)
+			ctx.Send(bet.Better.Address(), transfers)
 		}
 
 		// Announce who got sent what as event.
@@ -227,7 +227,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		transfers := wasmlib.NewScTransferIotas(remainder)
 
 		// Send the remainder to the contract creator.
-		ctx.TransferToAddress(ctx.ContractCreator().Address(), transfers)
+		ctx.Send(ctx.ContractCreator().Address(), transfers)
 	}
 
 	// Set round status to 0, send out event to notify that the round has ended

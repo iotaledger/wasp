@@ -130,6 +130,7 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.Assets) []byte {
 	req := solo.NewCallParamsFromDic(contract, function, params)
 	req.AddAssets(assets)
+	req.WithAllowance(assets)
 	req.WithMaxAffordableGasBudget()
 	ctx := s.ctx
 	//TODO mint!
