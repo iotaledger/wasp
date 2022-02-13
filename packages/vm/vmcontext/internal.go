@@ -158,7 +158,6 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 
 	if errProvided != nil {
 		if _, ok := errProvided.(*vmerrors.Error); !ok {
-			// TODO MAKE IT WORK HERE
 			receiptError = commonerrors.ErrUntypedError.Create(errProvided)
 		} else {
 			receiptError = errProvided
@@ -229,7 +228,7 @@ func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account *iscp.Ag
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 			accounts.AdjustAccountIotas(s, account, adjustment)
 		})
-	}, accounts.ErrNotEnoughFunds.Create())
+	}, accounts.ErrNotEnoughFunds)
 	if err != nil {
 		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}

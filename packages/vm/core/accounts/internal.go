@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -20,13 +21,13 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds               = xerrors.New("not enough funds")
-	ErrNotEnoughIotasForDustDeposit = xerrors.New("not enough iotas for dust deposit")
-	ErrNotEnoughAllowance           = xerrors.New("not enough allowance")
-	ErrBadAmount                    = xerrors.New("bad native asset amount")
-	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
-	ErrFoundryNotFound              = xerrors.New("foundry not found")
-	ErrOverflow                     = xerrors.New("overflow in token arithmetics")
+	ErrNotEnoughFunds               = commonerrors.RegisterGlobalError("not enough funds").CreateTyped()
+	ErrNotEnoughIotasForDustDeposit = commonerrors.RegisterGlobalError("not enough iotas for dust deposit").CreateTyped()
+	ErrNotEnoughAllowance           = commonerrors.RegisterGlobalError("not enough allowance").CreateTyped()
+	ErrBadAmount                    = commonerrors.RegisterGlobalError("bad native asset amount").CreateTyped()
+	ErrRepeatingFoundrySerialNumber = commonerrors.RegisterGlobalError("repeating serial number of the foundry").CreateTyped()
+	ErrFoundryNotFound              = commonerrors.RegisterGlobalError("foundry not found").CreateTyped()
+	ErrOverflow                     = commonerrors.RegisterGlobalError("overflow in token arithmetics").CreateTyped()
 )
 
 // getAccount each account is a map with the name of its controlling agentID.

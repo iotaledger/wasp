@@ -2,7 +2,6 @@ package commonerrors
 
 import (
 	errors "github.com/iotaledger/wasp/packages/vm/vmerrors"
-	"golang.org/x/xerrors"
 	"math"
 )
 
@@ -26,8 +25,12 @@ func (e *ErrorCollection) Get(errorId uint16) (*errors.ErrorDefinition, error) {
 }
 
 func (e *ErrorCollection) Register(errorId uint16, messageFormat string) (*errors.ErrorDefinition, error) {
+	if len(messageFormat) > math.MaxUint16 {
+		return nil, ErrErrorMessageTooLong
+	}
+
 	if _, exists := e.errors[errorId]; exists {
-		return nil, xerrors.Errorf("Error with id %v already registered", errorId)
+		return nil, ErrErrorAlreadyRegistered.CreateTyped(errorId)
 	}
 
 	e.errors[errorId] = errors.NewErrorDefinition(math.MaxUint32, errorId, messageFormat)

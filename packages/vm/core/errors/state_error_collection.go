@@ -7,8 +7,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
-	error2 "github.com/iotaledger/wasp/packages/vm/vmerrors"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"golang.org/x/xerrors"
+	"math"
 )
 
 // StateErrorCollectionWriter implements IErrorCollection. Is used for contract internal errors.
@@ -33,7 +34,7 @@ func (e *StateErrorCollectionWriter) getErrorDefinitionMap() *collections.Map {
 	return collections.NewMap(e.partition, mapName)
 }
 
-func (e *StateErrorCollectionWriter) Get(errorId uint16) (*error2.ErrorDefinition, error) {
+func (e *StateErrorCollectionWriter) Get(errorId uint16) (*vmerrors.ErrorDefinition, error) {
 	errorMap := e.getErrorDefinitionMap()
 	errorIdKey := codec.EncodeUint16(errorId)
 
@@ -43,7 +44,7 @@ func (e *StateErrorCollectionWriter) Get(errorId uint16) (*error2.ErrorDefinitio
 		return nil, err
 	}
 
-	errorDefinition, err := error2.ErrorDefinitionFromMarshalUtil(marshalutil.New(errorBytes))
+	errorDefinition, err := vmerrors.ErrorDefinitionFromMarshalUtil(marshalutil.New(errorBytes))
 
 	if err != nil {
 		return nil, err
@@ -52,17 +53,21 @@ func (e *StateErrorCollectionWriter) Get(errorId uint16) (*error2.ErrorDefinitio
 	return errorDefinition, nil
 }
 
-func (e *StateErrorCollectionWriter) Register(errorId uint16, messageFormat string) (*error2.ErrorDefinition, error) {
+func (e *StateErrorCollectionWriter) Register(errorId uint16, messageFormat string) (*vmerrors.ErrorDefinition, error) {
 	errorMap := e.getErrorDefinitionMap()
 	mapKey := codec.EncodeUint16(errorId)
+
+	if len(messageFormat) > math.MaxUint16 {
+		return nil, commonerrors.ErrErrorMessageTooLong
+	}
 
 	if errorBytes, err := errorMap.GetAt(mapKey); err != nil {
 		return nil, err
 	} else if len(errorBytes) > 0 {
-		return nil, xerrors.Errorf("Error already registered")
+		return nil, commonerrors.ErrErrorAlreadyRegistered.CreateTyped(errorId)
 	}
 
-	newError := error2.NewErrorDefinition(uint32(e.hname), errorId, messageFormat)
+	newError := vmerrors.NewErrorDefinition(uint32(e.hname), errorId, messageFormat)
 
 	if err := errorMap.SetAt(mapKey, newError.Bytes()); err != nil {
 		return nil, err
@@ -93,7 +98,7 @@ func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname iscp.Hname)
 	return &errorCollection
 }
 
-func (e *StateErrorCollectionReader) Get(errorId uint16) (*error2.ErrorDefinition, error) {
+func (e *StateErrorCollectionReader) Get(errorId uint16) (*vmerrors.ErrorDefinition, error) {
 	errorMap := e.getErrorDefinitionMap()
 	errorIdKey := codec.EncodeUint16(errorId)
 
@@ -103,7 +108,7 @@ func (e *StateErrorCollectionReader) Get(errorId uint16) (*error2.ErrorDefinitio
 		return nil, err
 	}
 
-	errorDefinition, err := error2.ErrorDefinitionFromMarshalUtil(marshalutil.New(errorBytes))
+	errorDefinition, err := vmerrors.ErrorDefinitionFromMarshalUtil(marshalutil.New(errorBytes))
 
 	if err != nil {
 		return nil, err
@@ -112,6 +117,6 @@ func (e *StateErrorCollectionReader) Get(errorId uint16) (*error2.ErrorDefinitio
 	return errorDefinition, nil
 }
 
-func (e *StateErrorCollectionReader) Register(errorId uint16, messageFormat string) (*error2.ErrorDefinition, error) {
+func (e *StateErrorCollectionReader) Register(errorId uint16, messageFormat string) (*vmerrors.ErrorDefinition, error) {
 	return nil, xerrors.Errorf("Registering in read only maps is unsupported")
 }

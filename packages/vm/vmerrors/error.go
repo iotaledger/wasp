@@ -56,7 +56,7 @@ func (e *ErrorDefinition) Panic(params ...interface{}) {
 func (e *ErrorDefinition) Serialize(mu *marshalutil.MarshalUtil) {
 	messageFormatBytes := []byte(e.MessageFormat())
 
-	mu.WriteUint32(uint32(e.PrefixId())).
+	mu.WriteUint32(e.PrefixId()).
 		WriteUint16(e.Id()).
 		WriteUint16(uint16(len(messageFormatBytes))).
 		WriteBytes(messageFormatBytes)

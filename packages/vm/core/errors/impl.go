@@ -28,7 +28,7 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)
 
 	if len(errorMessageFormat) == 0 {
-		panic("error message is empty")
+		panic(commonerrors.ErrMessageFormatEmpty)
 	}
 
 	errorId, err := vmerrors.GetErrorIdFromMessageFormat(errorMessageFormat)
@@ -44,6 +44,7 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 	}
 
 	ret := dict.New()
+	ret.Set(ParamContractHname, codec.EncodeHname(ctx.Caller().Hname()))
 	ret.Set(ParamErrorId, codec.EncodeUint16(errorId))
 	ret.Set(ParamErrorDefinitionAdded, codec.EncodeBool(errorDefinition != nil))
 

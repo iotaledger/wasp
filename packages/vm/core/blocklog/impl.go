@@ -76,7 +76,6 @@ func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
 		return nil
 	}
 
-	// TODO: Find better solution (extend receipt itself with error?)
 	return dict.Dict{
 		ParamRequestRecord: recBin,
 		ParamBlockIndex:    codec.EncodeUint32(blockIndex),
