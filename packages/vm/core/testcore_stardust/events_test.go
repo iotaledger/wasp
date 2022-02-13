@@ -18,7 +18,6 @@ import (
 
 func a(ctx iscp.Sandbox) dict.Dict {
 	for i := 0; i < nEvents; i++ {
-		ctx.Log().Debugf("HIAISDAISDI")
 		ctx.Event(fmt.Sprintf("testing many events %d", i))
 	}
 	return nil
@@ -38,7 +37,6 @@ var (
 		funcBigEvent.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
 			buf := make([]byte, bigEventSize)
 			ctx.Event(string(buf))
-			ctx.Event("HALLO")
 			return nil
 		}),
 	)
