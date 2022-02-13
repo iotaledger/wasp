@@ -23,8 +23,8 @@ func TestNode(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), Bytes(nBack))
 
-		h := MerkleCommitments.CommitToChildren(n)
-		hBack := MerkleCommitments.CommitToChildren(nBack)
+		h := MerkleCommitments.CommitToNode(n)
+		hBack := MerkleCommitments.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
@@ -41,8 +41,8 @@ func TestNode(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), Bytes(nBack))
 
-		h := MerkleCommitments.CommitToChildren(n)
-		hBack := MerkleCommitments.CommitToChildren(nBack)
+		h := MerkleCommitments.CommitToNode(n)
+		hBack := MerkleCommitments.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
@@ -58,8 +58,8 @@ func TestNode(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), Bytes(nBack))
 
-		h := MerkleCommitments.CommitToChildren(n)
-		hBack := MerkleCommitments.CommitToChildren(nBack)
+		h := MerkleCommitments.CommitToNode(n)
+		hBack := MerkleCommitments.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
@@ -86,7 +86,7 @@ func TestTrieBase(t *testing.T) {
 		c := tr.RootCommitment()
 		rootNode, ok := tr.getNode(nil)
 		require.True(t, ok)
-		require.EqualValues(t, c, tr.setup.CommitToChildren(rootNode))
+		require.EqualValues(t, c, tr.setup.CommitToNode(rootNode))
 	})
 	t.Run("base2", func(t *testing.T) {
 		store1 := dict.New()
@@ -360,9 +360,9 @@ func TestTrieRnd(t *testing.T) {
 		tr2.FlushCache(store2)
 		trieSize := len(store2.Bytes())
 		t.Logf("key entries = %d", len(data))
-		t.Logf("trie entries = %d", len(store2))
-		t.Logf("trie bytes = %d KB", trieSize/1024)
-		t.Logf("trie bytes/entry = %d ", trieSize/len(store2))
+		t.Logf("Trie entries = %d", len(store2))
+		t.Logf("Trie bytes = %d KB", trieSize/1024)
+		t.Logf("Trie bytes/entry = %d ", trieSize/len(store2))
 	})
 	t.Run("determinism5", func(t *testing.T) {
 		data := genRnd4()
@@ -393,7 +393,7 @@ func TestTrieRnd(t *testing.T) {
 
 func TestTrieWithDeletion(t *testing.T) {
 	data := []string{"0", "1", "2", "3", "4", "5"}
-	var tr1, tr2 *trie
+	var tr1, tr2 *Trie
 	initTest := func() {
 		store1 := dict.New()
 		tr1 = NewTrie(MerkleCommitments, store1, nil)

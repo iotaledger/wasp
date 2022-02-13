@@ -1,28 +1,35 @@
 package trie
 
 import (
+	"bytes"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
-// CommitmentLogic abstracts 256+ trie logic from the commitment logic/cryptography
+// CommitmentLogic abstracts 256+ Trie logic from the commitment logic/cryptography
 type CommitmentLogic interface {
 	NewVectorCommitment() VectorCommitment
 	NewTerminalCommitment() TerminalCommitment
-	CommitToChildren(*Node) VectorCommitment
+	CommitToNode(*Node) VectorCommitment
 	CommitToData([]byte) TerminalCommitment
 	UpdateNodeCommitment(*Node) VectorCommitment // returns delta. Return nil if deletion
 	UpdateCommitment(update *VectorCommitment, delta VectorCommitment)
 }
 
-type trie struct {
+type Trie struct {
 	setup          CommitmentLogic
 	store          kv.KVMustReader
 	rootCommitment VectorCommitment
 	nodeCache      map[kv.Key]*Node
 }
 
-func NewTrie(setup CommitmentLogic, store kv.KVMustReader, rootCommitment VectorCommitment) *trie {
-	return &trie{
+type ProofPath struct {
+	key       []byte
+	path      []*Node
+	keyAbsent bool
+}
+
+func NewTrie(setup CommitmentLogic, store kv.KVMustReader, rootCommitment VectorCommitment) *Trie {
+	return &Trie{
 		setup:          setup,
 		store:          store,
 		rootCommitment: rootCommitment,
@@ -30,12 +37,12 @@ func NewTrie(setup CommitmentLogic, store kv.KVMustReader, rootCommitment Vector
 	}
 }
 
-func (t *trie) RootCommitment() VectorCommitment {
+func (t *Trie) RootCommitment() VectorCommitment {
 	return t.rootCommitment
 }
 
 // getNode takes node from the cache of fetches it from kv store
-func (t *trie) getNode(key []byte) (*Node, bool) {
+func (t *Trie) getNode(key []byte) (*Node, bool) {
 	k := kv.Key(key)
 	node, ok := t.nodeCache[k]
 	if ok {
@@ -53,7 +60,7 @@ func (t *trie) getNode(key []byte) (*Node, bool) {
 
 }
 
-func (t *trie) FlushCache(store kv.KVStore) {
+func (t *Trie) FlushCache(store kv.KVStore) {
 	for k, v := range t.nodeCache {
 		if !v.IsEmpty() {
 			store.Set(k, Bytes(v))
@@ -63,33 +70,33 @@ func (t *trie) FlushCache(store kv.KVStore) {
 	}
 }
 
-func (t *trie) ClearCache() {
+func (t *Trie) ClearCache() {
 	t.nodeCache = make(map[kv.Key]*Node)
 }
 
-// newTerminalNode assumes key does not exist in the trie
-func (t *trie) newTerminalNode(key, pathFragment []byte, newTerminal TerminalCommitment) *Node {
+// newTerminalNode assumes key does not exist in the Trie
+func (t *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TerminalCommitment) *Node {
 	ret := newNode(pathFragment)
 	ret.newTerminal = newTerminal
 	t.nodeCache[kv.Key(key)] = ret
 	return ret
 }
 
-func (t *trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
+func (t *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 	ret := *copyFrom
 	ret.pathFragment = pathFragment
 	t.nodeCache[kv.Key(key)] = &ret
 	return &ret
 }
 
-// Update updates trie with the key/value
-func (t *trie) Update(key []byte, value []byte) {
+// Update updates Trie with the key/value
+func (t *Trie) Update(key []byte, value []byte) {
 	c := t.setup.CommitToData(value)
 	t.updateKey(key, 0, c)
 }
 
-// Delete deletes key/value from the trie
-func (t *trie) Delete(key []byte) {
+// Delete deletes key/value from the Trie
+func (t *Trie) Delete(key []byte) {
 	t.Update(key, nil)
 }
 
@@ -98,7 +105,7 @@ func (t *trie) Delete(key []byte) {
 // - 'pathPosition' is the position in the path the current node's key starts: key = path[:pathPosition]
 // - 'terminal' is the new commitment to the value under key 'path'. nil means terminal deletion
 // - returns the node under the key = path[:pathPosition] or nil in case of terminal deletion
-func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitment) *Node {
+func (t *Trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitment) *Node {
 	assert(pathPosition <= len(path), "pathPosition <= len(path)")
 	if len(path) == 0 {
 		path = []byte{}
@@ -179,7 +186,7 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 
 // Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodes
 // Doesn't delete cached nodes
-func (t *trie) Commit() {
+func (t *Trie) Commit() {
 	root, ok := t.getNode(nil)
 	if !ok {
 		t.rootCommitment = nil
@@ -187,4 +194,36 @@ func (t *trie) Commit() {
 	}
 	deltaC := t.setup.UpdateNodeCommitment(root)
 	t.setup.UpdateCommitment(&t.rootCommitment, deltaC)
+}
+
+func (t *Trie) Path(key []byte) *ProofPath {
+	ret := &ProofPath{
+		key:  key,
+		path: make([]*Node, 0),
+	}
+	ret.keyAbsent = !t.path(key, 0, ret.path)
+	return ret
+}
+
+func (t *Trie) path(path []byte, pathPosition int, ret []*Node) bool {
+	assert(pathPosition <= len(path), "pathPosition <= len(path)")
+	if len(path) == 0 {
+		path = []byte{}
+	}
+	key := path[:pathPosition]
+	// looking up for the node with the key (with caching)
+	node, ok := t.getNode(key)
+	if !ok {
+		// key is absent
+		return false
+	}
+	ret = append(ret, node)
+	tail := path[pathPosition:]
+	if !bytes.HasPrefix(tail, node.pathFragment) {
+		return false
+	}
+	if bytes.Equal(tail, node.pathFragment) {
+		return true
+	}
+	return t.path(path, pathPosition+len(node.pathFragment)+1, ret)
 }

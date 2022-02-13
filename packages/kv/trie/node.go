@@ -21,7 +21,7 @@ type TerminalCommitment interface {
 	commitment
 }
 
-// Node is a node of the 25š+-ary verkle trie
+// Node is a node of the 25š+-ary verkle Trie
 type Node struct {
 	pathFragment []byte // can't be longer than 256 bytes
 	children     map[byte]VectorCommitment
