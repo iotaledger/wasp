@@ -45,9 +45,9 @@ func newNode(pathFragment []byte) *Node {
 	}
 }
 
-func (f *TrieSetup) NodeFromBytes(data []byte) (*Node, error) {
+func NodeFromBytes(setup CommitmentLogic, data []byte) (*Node, error) {
 	ret := newNode(nil)
-	if err := ret.Read(bytes.NewReader(data), f); err != nil {
+	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
 		return nil, err
 	}
 	ret.newTerminal = ret.terminal
@@ -89,7 +89,7 @@ func (n *Node) Write(w io.Writer) {
 	}
 }
 
-func (n *Node) Read(r io.Reader, factory *TrieSetup) error {
+func (n *Node) Read(r io.Reader, setup CommitmentLogic) error {
 	var err error
 	if n.pathFragment, err = util.ReadBytes16(r); err != nil {
 		return err
@@ -99,7 +99,7 @@ func (n *Node) Read(r io.Reader, factory *TrieSetup) error {
 		return err
 	}
 	if smallFlags&hasTerminalValueFlag != 0 {
-		n.terminal = factory.NewTerminalCommitment()
+		n.terminal = setup.NewTerminalCommitment()
 		if err := n.terminal.Read(r); err != nil {
 			return err
 		}
@@ -114,7 +114,7 @@ func (n *Node) Read(r io.Reader, factory *TrieSetup) error {
 		for i := 0; i < 256; i++ {
 			ib := uint8(i)
 			if flags[i/8]&(0x1<<(i%8)) != 0 {
-				n.children[ib] = factory.NewVectorCommitment()
+				n.children[ib] = setup.NewVectorCommitment()
 				if err := n.children[ib].Read(r); err != nil {
 					return err
 				}

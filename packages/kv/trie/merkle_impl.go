@@ -10,21 +10,19 @@ import (
 
 type hashCommitment [32]byte
 
-// MerkleTrieSetup implements 256+ trie based on Merkle tree, i.e. on hashing with blake2b
-var MerkleTrieSetup = &TrieSetup{
-	NewTerminalCommitment: newTerminalCommitment,
-	NewVectorCommitment:   newVectorCommitment,
-	CommitToChildren:      commitToChildren,
-	CommitToData:          commitToData,
-	UpdateCommitment:      updateVectorCommitment,
-	UpdateNodeCommitment:  updateNodeCommitment,
-}
+// MerkleCommitments implements 256+ trie based on Merkle tree, i.e. on hashing with blake2b
+type merkleTrieSetup struct{}
 
-func newTerminalCommitment() TerminalCommitment {
+var (
+	MerkleCommitments                 = &merkleTrieSetup{}
+	_                 CommitmentLogic = MerkleCommitments
+)
+
+func (s *merkleTrieSetup) NewTerminalCommitment() TerminalCommitment {
 	return &hashCommitment{}
 }
 
-func newVectorCommitment() VectorCommitment {
+func (s *merkleTrieSetup) NewVectorCommitment() VectorCommitment {
 	return &hashCommitment{}
 }
 
@@ -38,7 +36,7 @@ func (w sliceWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func commitToChildren(n *Node) VectorCommitment {
+func (s *merkleTrieSetup) CommitToChildren(n *Node) VectorCommitment {
 	var buf [257 * 32]byte // 8 KB + 32 B
 	empty := true
 	for i := range n.children {
@@ -57,7 +55,7 @@ func commitToChildren(n *Node) VectorCommitment {
 	return &ret
 }
 
-func commitToData(data []byte) TerminalCommitment {
+func (s *merkleTrieSetup) CommitToData(data []byte) TerminalCommitment {
 	if len(data) == 0 {
 		// empty slice -> no data (deleted)
 		return nil
@@ -71,14 +69,14 @@ func commitToData(data []byte) TerminalCommitment {
 	return &ret
 }
 
-func updateVectorCommitment(prev *VectorCommitment, delta VectorCommitment) {
+func (s *merkleTrieSetup) UpdateCommitment(prev *VectorCommitment, delta VectorCommitment) {
 	*prev = delta
 }
 
-func updateNodeCommitment(n *Node) VectorCommitment {
+func (s *merkleTrieSetup) UpdateNodeCommitment(n *Node) VectorCommitment {
 	n.terminal = n.newTerminal
 	for i, child := range n.modifiedChildren {
-		c := updateNodeCommitment(child)
+		c := s.UpdateNodeCommitment(child)
 		if c != nil {
 			n.children[i] = c
 		} else {
@@ -87,7 +85,7 @@ func updateNodeCommitment(n *Node) VectorCommitment {
 		}
 	}
 	n.modifiedChildren = make(map[byte]*Node)
-	ret := commitToChildren(n)
+	ret := s.CommitToChildren(n)
 	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
 	return ret
 }

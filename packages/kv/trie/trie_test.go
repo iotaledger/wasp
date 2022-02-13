@@ -19,47 +19,47 @@ func TestNode(t *testing.T) {
 		t.Logf("size() = %d, size(serialize) = %d", Size(n), len(buf.Bytes()))
 		require.EqualValues(t, Size(n), len(buf.Bytes()))
 
-		nBack, err := MerkleTrieSetup.NodeFromBytes(buf.Bytes())
+		nBack, err := NodeFromBytes(MerkleCommitments, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), Bytes(nBack))
 
-		h := MerkleTrieSetup.CommitToChildren(n)
-		hBack := MerkleTrieSetup.CommitToChildren(nBack)
+		h := MerkleCommitments.CommitToChildren(n)
+		hBack := MerkleCommitments.CommitToChildren(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base short terminal", func(t *testing.T) {
 		n := newNode([]byte("kuku"))
-		n.terminal = MerkleTrieSetup.CommitToData([]byte("data"))
+		n.terminal = MerkleCommitments.CommitToData([]byte("data"))
 
 		var buf bytes.Buffer
 		n.Write(&buf)
 		t.Logf("size() = %d, size(serialize) = %d", Size(n), len(buf.Bytes()))
 		require.EqualValues(t, Size(n), len(buf.Bytes()))
 
-		nBack, err := MerkleTrieSetup.NodeFromBytes(buf.Bytes())
+		nBack, err := NodeFromBytes(MerkleCommitments, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), Bytes(nBack))
 
-		h := MerkleTrieSetup.CommitToChildren(n)
-		hBack := MerkleTrieSetup.CommitToChildren(nBack)
+		h := MerkleCommitments.CommitToChildren(n)
+		hBack := MerkleCommitments.CommitToChildren(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base long terminal", func(t *testing.T) {
 		n := newNode([]byte("kuku"))
-		n.terminal = MerkleTrieSetup.CommitToData([]byte(strings.Repeat("data", 1000)))
+		n.terminal = MerkleCommitments.CommitToData([]byte(strings.Repeat("data", 1000)))
 		var buf bytes.Buffer
 		n.Write(&buf)
 		t.Logf("size() = %d, size(serialize) = %d", Size(n), len(buf.Bytes()))
 		require.EqualValues(t, Size(n), len(buf.Bytes()))
 
-		nBack, err := MerkleTrieSetup.NodeFromBytes(buf.Bytes())
+		nBack, err := NodeFromBytes(MerkleCommitments, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), Bytes(nBack))
 
-		h := MerkleTrieSetup.CommitToChildren(n)
-		hBack := MerkleTrieSetup.CommitToChildren(nBack)
+		h := MerkleCommitments.CommitToChildren(n)
+		hBack := MerkleCommitments.CommitToChildren(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
@@ -71,7 +71,7 @@ func TestTrieBase(t *testing.T) {
 
 	t.Run("base1", func(t *testing.T) {
 		store := dict.New()
-		tr := NewTrie(MerkleTrieSetup, store, nil)
+		tr := NewTrie(MerkleCommitments, store, nil)
 		require.EqualValues(t, nil, tr.RootCommitment())
 
 		tr.Update([]byte(data1[0]), []byte(data1[0]))
@@ -90,7 +90,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base2", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data1 {
 			tr1.Update([]byte(data1[i]), []byte(data1[i]))
@@ -99,7 +99,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		for i := range data1 {
 			tr2.Update([]byte(data1[i]), []byte(data1[i]))
@@ -111,7 +111,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base3", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data2 {
 			tr1.Update([]byte(data2[i]), []byte(data2[i]))
@@ -120,7 +120,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		for i := range data2 {
 			tr2.Update([]byte(data2[i]), []byte(data2[i]))
@@ -131,7 +131,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base4", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data2 {
 			tr1.Update([]byte(data2[i]), []byte(data2[i]))
@@ -140,7 +140,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		for i := len(data2) - 1; i >= 0; i-- {
 			tr2.Update([]byte(data2[i]), []byte(data2[i]))
@@ -237,7 +237,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("rnd1", func(t *testing.T) {
 		data := genRnd1()
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -246,7 +246,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		for i := len(data) - 1; i >= 0; i-- {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
@@ -260,7 +260,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism1", func(t *testing.T) {
 		data := genRnd1()
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -269,7 +269,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -285,7 +285,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism2", func(t *testing.T) {
 		data := genRnd2()
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -294,7 +294,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -310,7 +310,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism3", func(t *testing.T) {
 		data := genRnd3()
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -319,7 +319,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -335,7 +335,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism4", func(t *testing.T) {
 		data := genRnd4()
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -344,7 +344,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -367,7 +367,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism5", func(t *testing.T) {
 		data := genRnd4()
 		store1 := dict.New()
-		tr1 := NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 := NewTrie(MerkleCommitments, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -376,7 +376,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 := NewTrie(MerkleCommitments, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -396,9 +396,9 @@ func TestTrieWithDeletion(t *testing.T) {
 	var tr1, tr2 *trie
 	initTest := func() {
 		store1 := dict.New()
-		tr1 = NewTrie(MerkleTrieSetup, store1, nil)
+		tr1 = NewTrie(MerkleCommitments, store1, nil)
 		store2 := dict.New()
-		tr2 = NewTrie(MerkleTrieSetup, store2, nil)
+		tr2 = NewTrie(MerkleCommitments, store2, nil)
 	}
 	t.Run("del1", func(t *testing.T) {
 		initTest()

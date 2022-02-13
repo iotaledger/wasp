@@ -4,24 +4,24 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
-// TrieSetup abstracts 256+ trie logic from the commitment logic/cryptography
-type TrieSetup struct {
-	NewVectorCommitment   func() VectorCommitment
-	NewTerminalCommitment func() TerminalCommitment
-	CommitToChildren      func(*Node) VectorCommitment
-	CommitToData          func([]byte) TerminalCommitment
-	UpdateNodeCommitment  func(*Node) VectorCommitment // returns delta. Return nil if deletion
-	UpdateCommitment      func(update *VectorCommitment, delta VectorCommitment)
+// CommitmentLogic abstracts 256+ trie logic from the commitment logic/cryptography
+type CommitmentLogic interface {
+	NewVectorCommitment() VectorCommitment
+	NewTerminalCommitment() TerminalCommitment
+	CommitToChildren(*Node) VectorCommitment
+	CommitToData([]byte) TerminalCommitment
+	UpdateNodeCommitment(*Node) VectorCommitment // returns delta. Return nil if deletion
+	UpdateCommitment(update *VectorCommitment, delta VectorCommitment)
 }
 
 type trie struct {
-	setup          *TrieSetup
+	setup          CommitmentLogic
 	store          kv.KVMustReader
 	rootCommitment VectorCommitment
 	nodeCache      map[kv.Key]*Node
 }
 
-func NewTrie(setup *TrieSetup, store kv.KVMustReader, rootCommitment VectorCommitment) *trie {
+func NewTrie(setup CommitmentLogic, store kv.KVMustReader, rootCommitment VectorCommitment) *trie {
 	return &trie{
 		setup:          setup,
 		store:          store,
@@ -45,7 +45,7 @@ func (t *trie) getNode(key []byte) (*Node, bool) {
 	if nodeBin == nil {
 		return nil, false
 	}
-	node, err := t.setup.NodeFromBytes(nodeBin)
+	node, err := NodeFromBytes(t.setup, nodeBin)
 	assert(err == nil, err)
 
 	t.nodeCache[k] = node
