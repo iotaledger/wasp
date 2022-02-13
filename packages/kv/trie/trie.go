@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
+// TrieSetup abstracts 256+ trie logic from the commitment logic/cryptography
 type TrieSetup struct {
 	NewVectorCommitment   func() VectorCommitment
 	NewTerminalCommitment func() TerminalCommitment
@@ -33,8 +34,8 @@ func (t *trie) RootCommitment() VectorCommitment {
 	return t.rootCommitment
 }
 
-// GetNode takes node from the cache of fetches it from kv store
-func (t *trie) GetNode(key []byte) (*Node, bool) {
+// getNode takes node from the cache of fetches it from kv store
+func (t *trie) getNode(key []byte) (*Node, bool) {
 	k := kv.Key(key)
 	node, ok := t.nodeCache[k]
 	if ok {
@@ -68,13 +69,20 @@ func (t *trie) ClearCache() {
 
 // newTerminalNode assumes key does not exist in the trie
 func (t *trie) newTerminalNode(key, pathFragment []byte, newTerminal TerminalCommitment) *Node {
-	ret := NewNode()
-	ret.pathFragment = pathFragment
+	ret := newNode(pathFragment)
 	ret.newTerminal = newTerminal
 	t.nodeCache[kv.Key(key)] = ret
 	return ret
 }
 
+func (t *trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
+	ret := *copyFrom
+	ret.pathFragment = pathFragment
+	t.nodeCache[kv.Key(key)] = &ret
+	return &ret
+}
+
+// Update updates trie with the key/value
 func (t *trie) Update(key []byte, value []byte) {
 	c := t.setup.CommitToData(value)
 	t.updateKey(key, 0, c)
@@ -93,7 +101,7 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	key := path[:pathPosition]
 	tail := path[pathPosition:]
 	// looking up for the node with the key (with caching)
-	node, ok := t.GetNode(key)
+	node, ok := t.getNode(key)
 	if !ok {
 		if terminal == nil {
 			// in case of deletion do nothing
@@ -102,8 +110,7 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 		// node for the path[:pathPosition] does not exist. Create a new one with the terminal value only
 		return t.newTerminalNode(key, tail, terminal)
 	}
-	// node for the key exists
-	// find common prefix between tail of the
+	// node for the key exists. Find common prefix between tail of the path and path fragment
 	prefix := commonPrefix(node.pathFragment, tail)
 	assert(len(prefix) <= len(node.pathFragment), "len(prefix)<= len(node.pathFragment)")
 	// the following parameters define how it goes:
@@ -143,19 +150,13 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	// add child index to the end of the keyContinue
 	childIndexContinue := keyContinue[len(keyContinue)-1]
 	// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
-	newNode := NewNode()
-	newNode.pathFragment = node.pathFragment[len(prefix)+1:]
-	newNode.children = node.children
-	newNode.modifiedChildren = node.modifiedChildren
-	newNode.terminalCommitment = node.terminalCommitment
-	newNode.newTerminal = node.newTerminal
-	t.nodeCache[kv.Key(keyContinue)] = newNode
+	insertNode := t.newNodeCopy(keyContinue, node.pathFragment[len(prefix)+1:], node)
 	// clear the old one and adjust path fragment. Continue with 1 child, the new node
-	node.pathFragment = prefix
 	node.children = make(map[uint8]VectorCommitment)
 	node.modifiedChildren = make(map[uint8]*Node)
-	node.modifiedChildren[childIndexContinue] = newNode
-	node.terminalCommitment = nil
+	node.pathFragment = prefix
+	node.modifiedChildren[childIndexContinue] = insertNode
+	node.terminal = nil
 	node.newTerminal = nil
 
 	if pathPosition+len(prefix) == len(path) {
@@ -164,21 +165,17 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	} else {
 		// create the new node
 		keyFork := path[:pathPosition+len(prefix)+1]
-		assert(len(keyContinue) == len(keyFork), "len(keyContinue)==len(keyFork)")
-		nodeFork := NewNode()
-		nodeFork.pathFragment = path[len(keyFork):]
-		nodeFork.newTerminal = terminal
 		childForkIndex := keyFork[len(keyFork)-1]
-		node.modifiedChildren[childForkIndex] = nodeFork
-		t.nodeCache[kv.Key(keyFork)] = nodeFork
+		assert(len(keyContinue) == len(keyFork), "len(keyContinue)==len(keyFork)")
+		node.modifiedChildren[childForkIndex] = t.newTerminalNode(keyFork, path[len(keyFork):], terminal)
 	}
 	return node
 }
 
-// Commit calculates a new root commitment value from the cache and commits all mutations.
-// Flush() writes the cache to kv store
+// Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodes
+// Doesn't delete cached nodes
 func (t *trie) Commit() {
-	root, ok := t.GetNode(nil)
+	root, ok := t.getNode(nil)
 	if !ok {
 		t.rootCommitment = nil
 		return

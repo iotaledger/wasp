@@ -23,9 +23,9 @@ type TerminalCommitment interface {
 
 // Node is a node of the 25š+-ary verkle trie
 type Node struct {
-	pathFragment       []byte // can't be longer than 256 bytes
-	children           map[byte]VectorCommitment
-	terminalCommitment TerminalCommitment
+	pathFragment []byte // can't be longer than 256 bytes
+	children     map[byte]VectorCommitment
+	terminal     TerminalCommitment
 	// non-persistent
 	newTerminal      TerminalCommitment
 	modifiedChildren map[byte]*Node
@@ -36,33 +36,33 @@ const (
 	hasChildrenFlag      = 0x02
 )
 
-func NewNode() *Node {
+func newNode(pathFragment []byte) *Node {
 	return &Node{
-		pathFragment:       nil,
-		children:           make(map[uint8]VectorCommitment),
-		terminalCommitment: nil,
-		modifiedChildren:   make(map[uint8]*Node),
+		pathFragment:     pathFragment,
+		children:         make(map[uint8]VectorCommitment),
+		terminal:         nil,
+		modifiedChildren: make(map[uint8]*Node),
 	}
 }
 
 func (f *TrieSetup) NodeFromBytes(data []byte) (*Node, error) {
-	ret := NewNode()
+	ret := newNode(nil)
 	if err := ret.Read(bytes.NewReader(data), f); err != nil {
 		return nil, err
 	}
-	ret.newTerminal = ret.terminalCommitment
+	ret.newTerminal = ret.terminal
 	return ret, nil
 }
 
 func (n *Node) IsEmpty() bool {
-	return len(n.children) == 0 && len(n.modifiedChildren) == 0 && n.terminalCommitment == nil && n.newTerminal == nil
+	return len(n.children) == 0 && len(n.modifiedChildren) == 0 && n.terminal == nil && n.newTerminal == nil
 }
 
 func (n *Node) Write(w io.Writer) {
 	_ = util.WriteBytes16(w, n.pathFragment)
 
 	var smallFlags byte
-	if n.terminalCommitment != nil {
+	if n.terminal != nil {
 		smallFlags = hasTerminalValueFlag
 	}
 	// compress children flags 32 bytes (if any)
@@ -74,7 +74,7 @@ func (n *Node) Write(w io.Writer) {
 	_ = util.WriteByte(w, smallFlags)
 	// write terminal commitment if any
 	if smallFlags&hasTerminalValueFlag != 0 {
-		n.terminalCommitment.Write(w)
+		n.terminal.Write(w)
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
@@ -99,12 +99,12 @@ func (n *Node) Read(r io.Reader, factory *TrieSetup) error {
 		return err
 	}
 	if smallFlags&hasTerminalValueFlag != 0 {
-		n.terminalCommitment = factory.NewTerminalCommitment()
-		if err := n.terminalCommitment.Read(r); err != nil {
+		n.terminal = factory.NewTerminalCommitment()
+		if err := n.terminal.Read(r); err != nil {
 			return err
 		}
 	} else {
-		n.terminalCommitment = nil
+		n.terminal = nil
 	}
 	if smallFlags&hasChildrenFlag != 0 {
 		var flags [32]byte

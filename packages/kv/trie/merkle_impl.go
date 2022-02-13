@@ -10,6 +10,7 @@ import (
 
 type hashCommitment [32]byte
 
+// MerkleTrieSetup implements 256+ trie based on Merkle tree, i.e. on hashing with blake2b
 var MerkleTrieSetup = &TrieSetup{
 	NewTerminalCommitment: newTerminalCommitment,
 	NewVectorCommitment:   newVectorCommitment,
@@ -45,8 +46,8 @@ func commitToChildren(n *Node) VectorCommitment {
 		n.children[i].Write(sliceWriter(buf[pos : pos+32]))
 		empty = false
 	}
-	if n.terminalCommitment != nil {
-		n.terminalCommitment.Write(sliceWriter(buf[256*32:]))
+	if n.terminal != nil {
+		n.terminal.Write(sliceWriter(buf[256*32:]))
 		empty = false
 	}
 	if empty {
@@ -57,6 +58,10 @@ func commitToChildren(n *Node) VectorCommitment {
 }
 
 func commitToData(data []byte) TerminalCommitment {
+	if len(data) == 0 {
+		// empty slice -> no data (deleted)
+		return nil
+	}
 	ret := hashCommitment{}
 	if len(data) <= 32 {
 		copy(ret[:], data)
@@ -71,7 +76,7 @@ func updateVectorCommitment(prev *VectorCommitment, delta VectorCommitment) {
 }
 
 func updateNodeCommitment(n *Node) VectorCommitment {
-	n.terminalCommitment = n.newTerminal
+	n.terminal = n.newTerminal
 	for i, child := range n.modifiedChildren {
 		c := updateNodeCommitment(child)
 		if c != nil {
