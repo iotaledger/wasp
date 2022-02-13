@@ -24,11 +24,11 @@ type TerminalCommitment interface {
 // Node is a node of the 25š+-ary verkle trie
 type Node struct {
 	pathFragment       []byte // can't be longer than 256 bytes
-	children           map[uint8]VectorCommitment
+	children           map[byte]VectorCommitment
 	terminalCommitment TerminalCommitment
 	// non-persistent
 	newTerminal      TerminalCommitment
-	modifiedChildren map[uint8]*Node
+	modifiedChildren map[byte]*Node
 }
 
 const (
@@ -52,6 +52,10 @@ func (f *TrieSetup) NodeFromBytes(data []byte) (*Node, error) {
 	}
 	ret.newTerminal = ret.terminalCommitment
 	return ret, nil
+}
+
+func (n *Node) IsEmpty() bool {
+	return len(n.children) == 0 && len(n.modifiedChildren) == 0 && n.terminalCommitment == nil && n.newTerminal == nil
 }
 
 func (n *Node) Write(w io.Writer) {

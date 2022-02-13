@@ -9,7 +9,7 @@ type TrieSetup struct {
 	NewTerminalCommitment func() TerminalCommitment
 	CommitToChildren      func(*Node) VectorCommitment
 	CommitToData          func([]byte) TerminalCommitment
-	UpdateNodeCommitment  func(*Node) VectorCommitment // returns delta
+	UpdateNodeCommitment  func(*Node) VectorCommitment // returns delta. Return nil if deletion
 	UpdateCommitment      func(update *VectorCommitment, delta VectorCommitment)
 }
 
@@ -54,7 +54,11 @@ func (t *trie) GetNode(key []byte) (*Node, bool) {
 
 func (t *trie) FlushCache(store kv.KVStore) {
 	for k, v := range t.nodeCache {
-		store.Set(k, Bytes(v))
+		if !v.IsEmpty() {
+			store.Set(k, Bytes(v))
+		} else {
+			store.Del(k)
+		}
 	}
 }
 
@@ -79,7 +83,8 @@ func (t *trie) Update(key []byte, value []byte) {
 // updateKey updates tree (recursively) by adding or updating terminal commitment at specified key
 // - 'path' the key of the terminal value
 // - 'pathPosition' is the position in the path the current node's key starts: key = path[:pathPosition]
-// - 'terminal' is the new commitment to the value under key 'path'
+// - 'terminal' is the new commitment to the value under key 'path'. nil means deletion
+// - returns the node under the key = path[:pathPosition] or nil in case of deletion
 func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitment) *Node {
 	assert(pathPosition <= len(path), "pathPosition <= len(path)")
 	if len(path) == 0 {
@@ -90,6 +95,10 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	// looking up for the node with the key (with caching)
 	node, ok := t.GetNode(key)
 	if !ok {
+		if terminal == nil {
+			// in case of deletion do nothing
+			return nil
+		}
 		// node for the path[:pathPosition] does not exist. Create a new one with the terminal value only
 		return t.newTerminalNode(key, tail, terminal)
 	}
@@ -108,7 +117,7 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	if len(prefix) == len(node.pathFragment) {
 		// pathFragment is part of the path. No need for a fork, continue the path
 		if nextPathPosition == len(path) {
-			// reached the terminal value on this node
+			// reached the terminal value on this node. In case of deletion the newTerminal will become nil
 			node.newTerminal = terminal
 			return node
 		}
@@ -122,6 +131,10 @@ func (t *trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	}
 	assert(len(prefix) < len(node.pathFragment), "len(prefix) < len(node.pathFragment)")
 
+	if terminal == nil {
+		// node not found, do nothing in case of deletion
+		return nil
+	}
 	// split the pathFragment. The continued branch is part of the fragment
 	// key of the next node starts at the next position after current key plus prefix
 	keyContinue := make([]byte, pathPosition+len(prefix)+1)

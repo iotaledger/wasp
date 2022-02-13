@@ -39,12 +39,18 @@ func (w sliceWriter) Write(p []byte) (int, error) {
 
 func commitToChildren(n *Node) VectorCommitment {
 	var buf [257 * 32]byte // 8 KB + 32 B
+	empty := true
 	for i := range n.children {
 		pos := 32 * int(i)
 		n.children[i].Write(sliceWriter(buf[pos : pos+32]))
+		empty = false
 	}
 	if n.terminalCommitment != nil {
 		n.terminalCommitment.Write(sliceWriter(buf[256*32:]))
+		empty = false
+	}
+	if empty {
+		return nil
 	}
 	ret := hashCommitment(blake2b.Sum256(buf[:]))
 	return &ret
@@ -67,10 +73,18 @@ func updateVectorCommitment(prev *VectorCommitment, delta VectorCommitment) {
 func updateNodeCommitment(n *Node) VectorCommitment {
 	n.terminalCommitment = n.newTerminal
 	for i, child := range n.modifiedChildren {
-		n.children[i] = updateNodeCommitment(child)
+		c := updateNodeCommitment(child)
+		if c != nil {
+			n.children[i] = c
+		} else {
+			// deletion
+			delete(n.children, i)
+		}
 	}
-	n.modifiedChildren = make(map[uint8]*Node)
-	return commitToChildren(n)
+	n.modifiedChildren = make(map[byte]*Node)
+	ret := commitToChildren(n)
+	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
+	return ret
 }
 
 func (s *hashCommitment) Read(r io.Reader) error {
