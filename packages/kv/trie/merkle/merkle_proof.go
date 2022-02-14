@@ -47,7 +47,7 @@ func (m *merkleTrieSetup) ProvePath(path *trie.ProofPath) *MerkleProof {
 }
 
 // KeyTerminal returns key and terminal commitment the proof is about. If it returns (?, nil) it means it is proof of absence
-// It does not verify the proof
+// It does not verify the proof, so this function should be used only after Verify()
 func (p *MerkleProof) KeyTerminal() ([]byte, *[32]byte) {
 	if len(p.Path) == 0 {
 		return nil, nil
