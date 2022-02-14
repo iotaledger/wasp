@@ -1,7 +1,8 @@
-package trie
+package merkle
 
 import (
 	"encoding/hex"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"golang.org/x/crypto/blake2b"
 	"io"
 )
@@ -14,15 +15,15 @@ type hashCommitment [32]byte
 type merkleTrieSetup struct{}
 
 var (
-	MerkleCommitments                 = &merkleTrieSetup{}
-	_                 CommitmentLogic = MerkleCommitments
+	MerkleCommitments                      = &merkleTrieSetup{}
+	_                 trie.CommitmentLogic = MerkleCommitments
 )
 
-func (s *merkleTrieSetup) NewTerminalCommitment() TerminalCommitment {
+func (m *merkleTrieSetup) NewTerminalCommitment() trie.TerminalCommitment {
 	return &hashCommitment{}
 }
 
-func (s *merkleTrieSetup) NewVectorCommitment() VectorCommitment {
+func (m *merkleTrieSetup) NewVectorCommitment() trie.VectorCommitment {
 	return &hashCommitment{}
 }
 
@@ -36,23 +37,34 @@ func (w sliceWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (s *merkleTrieSetup) CommitToNode(n *Node) VectorCommitment {
-	var buf [258 * 32]byte // 8 KB + 32 B + 32 B
+func (m *merkleTrieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
+	var hashes [258]*hashCommitment
+
 	empty := true
-	for i := range n.children {
-		pos := 32 * int(i)
-		n.children[i].Write(sliceWriter(buf[pos : pos+32]))
+	for i, c := range n.Children {
+		hashes[i] = c.(*hashCommitment)
 		empty = false
 	}
-	if n.terminal != nil {
-		n.terminal.Write(sliceWriter(buf[256*32 : 256*32+32]))
+	if n.Terminal != nil {
+		hashes[256] = n.Terminal.(*hashCommitment)
 		empty = false
 	}
 	if empty {
 		return nil
 	}
-	// committing to the pathFragment. To be able to prove absence of key
-	hashData(n.pathFragment).Write(sliceWriter(buf[257*32 : 257*32+32]))
+	hashes[257] = hashData(n.PathFragment)
+	return hashHashes(&hashes)
+}
+
+func hashHashes(hashes *[258]*hashCommitment) *hashCommitment {
+	var buf [258 * 32]byte // 8 KB + 32 B + 32 B
+	for i, h := range hashes {
+		if h == nil {
+			continue
+		}
+		pos := 32 * int(i)
+		h.Write(sliceWriter(buf[pos : pos+32]))
+	}
 	ret := hashCommitment(blake2b.Sum256(buf[:]))
 	return &ret
 }
@@ -67,7 +79,7 @@ func hashData(data []byte) *hashCommitment {
 	return &ret
 }
 
-func (s *merkleTrieSetup) CommitToData(data []byte) TerminalCommitment {
+func (m *merkleTrieSetup) CommitToData(data []byte) trie.TerminalCommitment {
 	if len(data) == 0 {
 		// empty slice -> no data (deleted)
 		return nil
@@ -75,26 +87,28 @@ func (s *merkleTrieSetup) CommitToData(data []byte) TerminalCommitment {
 	return hashData(data)
 }
 
-func (s *merkleTrieSetup) UpdateCommitment(prev *VectorCommitment, delta VectorCommitment) {
+func (m *merkleTrieSetup) UpdateCommitment(prev *trie.VectorCommitment, delta trie.VectorCommitment) {
 	*prev = delta
 }
 
-func (s *merkleTrieSetup) UpdateNodeCommitment(n *Node) VectorCommitment {
-	n.terminal = n.newTerminal
-	for i, child := range n.modifiedChildren {
-		c := s.UpdateNodeCommitment(child)
+func (m *merkleTrieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitment {
+	n.Terminal = n.NewTerminal
+	for i, child := range n.ModifiedChildren {
+		c := m.UpdateNodeCommitment(child)
 		if c != nil {
-			n.children[i] = c
+			n.Children[i] = c
 		} else {
 			// deletion
-			delete(n.children, i)
+			delete(n.Children, i)
 		}
 	}
-	n.modifiedChildren = make(map[byte]*Node)
-	ret := s.CommitToNode(n)
+	n.ModifiedChildren = make(map[byte]*trie.Node)
+	ret := m.CommitToNode(n)
 	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
 	return ret
 }
+
+func (m *merkleTrieSetup) MerkleProofPath() {}
 
 func (s *hashCommitment) Read(r io.Reader) error {
 	_, err := r.Read((*s)[:])
@@ -109,7 +123,7 @@ func (s *hashCommitment) String() string {
 	return hex.EncodeToString(s[:])
 }
 
-func (s *hashCommitment) Equal(another commitment) bool {
+func (s *hashCommitment) Equal(another trie.Commitment) bool {
 	if s == nil && another == nil {
 		return true
 	}

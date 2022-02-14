@@ -6,29 +6,29 @@ import (
 	"io"
 )
 
-type commitment interface {
+type Commitment interface {
 	Read(r io.Reader) error
 	Write(w io.Writer)
 	String() string
-	Equal(commitment) bool
+	Equal(Commitment) bool
 }
 
 type VectorCommitment interface {
-	commitment
+	Commitment
 }
 
 type TerminalCommitment interface {
-	commitment
+	Commitment
 }
 
 // Node is a node of the 25š+-ary verkle Trie
 type Node struct {
-	pathFragment []byte // can't be longer than 256 bytes
-	children     map[byte]VectorCommitment
-	terminal     TerminalCommitment
+	PathFragment []byte // can't be longer than 256 bytes
+	Children     map[byte]VectorCommitment
+	Terminal     TerminalCommitment
 	// non-persistent
-	newTerminal      TerminalCommitment
-	modifiedChildren map[byte]*Node
+	NewTerminal      TerminalCommitment
+	ModifiedChildren map[byte]*Node
 }
 
 const (
@@ -36,51 +36,51 @@ const (
 	hasChildrenFlag      = 0x02
 )
 
-func newNode(pathFragment []byte) *Node {
+func NewNode(pathFragment []byte) *Node {
 	return &Node{
-		pathFragment:     pathFragment,
-		children:         make(map[uint8]VectorCommitment),
-		terminal:         nil,
-		modifiedChildren: make(map[uint8]*Node),
+		PathFragment:     pathFragment,
+		Children:         make(map[uint8]VectorCommitment),
+		Terminal:         nil,
+		ModifiedChildren: make(map[uint8]*Node),
 	}
 }
 
 func NodeFromBytes(setup CommitmentLogic, data []byte) (*Node, error) {
-	ret := newNode(nil)
+	ret := NewNode(nil)
 	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
 		return nil, err
 	}
-	ret.newTerminal = ret.terminal
+	ret.NewTerminal = ret.Terminal
 	return ret, nil
 }
 
 func (n *Node) IsEmpty() bool {
-	return len(n.children) == 0 && len(n.modifiedChildren) == 0 && n.terminal == nil && n.newTerminal == nil
+	return len(n.Children) == 0 && len(n.ModifiedChildren) == 0 && n.Terminal == nil && n.NewTerminal == nil
 }
 
 func (n *Node) Write(w io.Writer) {
-	_ = util.WriteBytes16(w, n.pathFragment)
+	_ = util.WriteBytes16(w, n.PathFragment)
 
 	var smallFlags byte
-	if n.terminal != nil {
+	if n.Terminal != nil {
 		smallFlags = hasTerminalValueFlag
 	}
 	// compress children flags 32 bytes (if any)
 	var flags [32]byte
-	for i := range n.children {
+	for i := range n.Children {
 		flags[i/8] |= 0x1 << (i % 8)
 		smallFlags |= hasChildrenFlag
 	}
 	_ = util.WriteByte(w, smallFlags)
 	// write terminal commitment if any
 	if smallFlags&hasTerminalValueFlag != 0 {
-		n.terminal.Write(w)
+		n.Terminal.Write(w)
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
 		_, _ = w.Write(flags[:])
 		for i := 0; i < 256; i++ {
-			child, ok := n.children[uint8(i)]
+			child, ok := n.Children[uint8(i)]
 			if !ok {
 				continue
 			}
@@ -91,7 +91,7 @@ func (n *Node) Write(w io.Writer) {
 
 func (n *Node) Read(r io.Reader, setup CommitmentLogic) error {
 	var err error
-	if n.pathFragment, err = util.ReadBytes16(r); err != nil {
+	if n.PathFragment, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
 	var smallFlags byte
@@ -99,12 +99,12 @@ func (n *Node) Read(r io.Reader, setup CommitmentLogic) error {
 		return err
 	}
 	if smallFlags&hasTerminalValueFlag != 0 {
-		n.terminal = setup.NewTerminalCommitment()
-		if err := n.terminal.Read(r); err != nil {
+		n.Terminal = setup.NewTerminalCommitment()
+		if err := n.Terminal.Read(r); err != nil {
 			return err
 		}
 	} else {
-		n.terminal = nil
+		n.Terminal = nil
 	}
 	if smallFlags&hasChildrenFlag != 0 {
 		var flags [32]byte
@@ -114,8 +114,8 @@ func (n *Node) Read(r io.Reader, setup CommitmentLogic) error {
 		for i := 0; i < 256; i++ {
 			ib := uint8(i)
 			if flags[i/8]&(0x1<<(i%8)) != 0 {
-				n.children[ib] = setup.NewVectorCommitment()
-				if err := n.children[ib].Read(r); err != nil {
+				n.Children[ib] = setup.NewVectorCommitment()
+				if err := n.Children[ib].Read(r); err != nil {
 					return err
 				}
 			}
