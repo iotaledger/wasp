@@ -12,26 +12,32 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
+
+var errorMessageToTest = "Test error message %v"
 
 var errorContractName = "ErrorContract"
 var errorContract = coreutil.NewContract(errorContractName, "error contract")
 
 var funcRegisterErrors = coreutil.Func("register_errors")
-var funcThrowErrors = coreutil.Func("throw_errors")
+var funcThrowErrorWithoutArgs = coreutil.Func("throw_error_without_args")
+var funcThrowErrorWithArgs = coreutil.Func("throw_error_with_args")
 
-var testError uint16
+var testError *vmerrors.ErrorDefinition
 
 var errorContractProcessor = errorContract.Processor(nil,
 	funcRegisterErrors.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-		testError = ctx.RegisterError("Test Error")
+		testError = ctx.RegisterError(errorMessageToTest)
 
 		return nil
 	}),
-	funcThrowErrors.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-		panic(vmerrors.Error{})
-		return nil
+	funcThrowErrorWithoutArgs.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		panic(testError.CreateTyped())
+	}),
+	funcThrowErrorWithArgs.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		panic(testError.CreateTyped(42))
 	}),
 )
 
@@ -107,13 +113,17 @@ func TestSuccessfulRegisterError(t *testing.T) {
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name, errors.ParamErrorMessageFormat, "poof").
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, dict, err := chain.PostRequestSyncTx(req, nil)
 
 	require.NoError(t, err)
+
+	kv := kvdecoder.New(dict)
+	errorCreated := kv.MustGetBool(errors.ParamErrorDefinitionAdded)
+
+	require.True(t, errorCreated)
 }
 
 func TestRetrievalOfErrorMessage(t *testing.T) {
-	errorMessageToTest := "poof"
 
 	_, chain := setupErrorsTest(t)
 
@@ -150,18 +160,67 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError, vmerrors.GetErrorIdFromMessageFormat("Test Error"))
+	require.Equal(t, testError, vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
 }
 
-func TestPanicWithCustomContract(t *testing.T) {
+func TestPanicWithCustomContractWithArgs(t *testing.T) {
 	_, chain := setupErrorsTest(t)
 
-	req := solo.NewCallParams(errorContract.Name, funcThrowErrors.Name).
+	// Register error
+	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError, vmerrors.GetErrorIdFromMessageFormat("Test Error"))
+	// Throw error
+	req = solo.NewCallParams(errorContract.Name, funcThrowErrorWithArgs.Name).
+		WithGasBudget(100_000)
+
+	_, _, err = chain.PostRequestSyncTx(req, nil)
+
+	errorTestType := &vmerrors.Error{}
+	require.ErrorAs(t, err, &errorTestType)
+
+	typedError := err.(*vmerrors.Error)
+
+	require.Error(t, err)
+	require.Equal(t, testError.Id(), vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.MessageFormat(), typedError.MessageFormat())
+
+	// Further, this error will add the arg '42'
+	require.True(t, strings.HasSuffix(err.Error(), "42"))
+}
+
+func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
+	_, chain := setupErrorsTest(t)
+
+	// Register error
+	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
+		WithGasBudget(100_000)
+
+	_, _, err := chain.PostRequestSyncTx(req, nil)
+
+	require.NoError(t, err)
+
+	// Throw error
+	req = solo.NewCallParams(errorContract.Name, funcThrowErrorWithoutArgs.Name).
+		WithGasBudget(100_000)
+
+	_, _, err = chain.PostRequestSyncTx(req, nil)
+
+	errorTestType := &vmerrors.Error{}
+	require.ErrorAs(t, err, &errorTestType)
+
+	typedError := err.(*vmerrors.Error)
+
+	require.Error(t, err)
+	require.Equal(t, testError.Id(), vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.MessageFormat(), typedError.MessageFormat())
+
+	t.Log(err.Error())
+
+	// Further, this error throws without an expected arg, therefore the output will end with '%!v(MISSING)'
+	require.True(t, strings.HasSuffix(err.Error(), "%!v(MISSING)"))
 }

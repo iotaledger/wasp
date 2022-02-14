@@ -37,10 +37,10 @@ func (e *ErrorDefinition) MessageFormat() string {
 
 func (e *ErrorDefinition) Create(params ...interface{}) error {
 	return &Error{
-		PrefixId:      e.PrefixId(),
-		Id:            e.Id(),
-		MessageFormat: e.MessageFormat(),
-		Params:        params,
+		prefixId:      e.PrefixId(),
+		id:            e.Id(),
+		messageFormat: e.MessageFormat(),
+		params:        params,
 	}
 }
 
@@ -96,16 +96,32 @@ func ErrorDefinitionFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ErrorDefiniti
 }
 
 type Error struct {
-	PrefixId      uint32
-	Id            uint16
-	MessageFormat string
-	Params        []interface{}
+	prefixId      uint32
+	id            uint16
+	messageFormat string
+	params        []interface{}
+}
+
+func (e *Error) PrefixId() uint32 {
+	return e.prefixId
+}
+
+func (e *Error) Id() uint16 {
+	return e.id
+}
+
+func (e *Error) MessageFormat() string {
+	return e.messageFormat
+}
+
+func (e *Error) Params() []interface{} {
+	return e.params
 }
 
 func (e *Error) RequestMessageFormat(resolver ErrorMessageResolver) error {
 	var err error
 
-	if e.MessageFormat, err = resolver(e); err != nil {
+	if e.messageFormat, err = resolver(e); err != nil {
 		return err
 	}
 
@@ -113,7 +129,7 @@ func (e *Error) RequestMessageFormat(resolver ErrorMessageResolver) error {
 }
 
 func (e *Error) HasMessageFormat() bool {
-	return e.MessageFormat != ""
+	return e.MessageFormat() != ""
 }
 
 func (e *Error) Error() string {
@@ -121,11 +137,11 @@ func (e *Error) Error() string {
 		return ""
 	}
 
-	return fmt.Sprintf(e.MessageFormat, e.Params...)
+	return fmt.Sprintf(e.MessageFormat(), e.Params()...)
 }
 
 func (e *Error) Definition() ErrorDefinition {
-	return ErrorDefinition{prefixId: e.PrefixId, id: e.Id, messageFormat: e.MessageFormat}
+	return ErrorDefinition{prefixId: e.PrefixId(), id: e.Id(), messageFormat: e.MessageFormat()}
 }
 
 func (e *Error) Hash() uint32 {
@@ -138,7 +154,7 @@ func (e *Error) Hash() uint32 {
 }
 
 func (e *Error) serializeParams(mu *marshalutil.MarshalUtil) error {
-	bytes, err := json.Marshal(e.Params)
+	bytes, err := json.Marshal(e.Params())
 
 	mu.WriteUint16(uint16(len(bytes)))
 	mu.WriteBytes(bytes)
@@ -149,8 +165,8 @@ func (e *Error) serializeParams(mu *marshalutil.MarshalUtil) error {
 func (e *Error) Serialize(mu *marshalutil.MarshalUtil) error {
 	hash := e.Hash()
 
-	mu.WriteUint32(e.PrefixId).
-		WriteUint16(e.Id).
+	mu.WriteUint32(e.PrefixId()).
+		WriteUint16(e.Id()).
 		WriteUint32(hash)
 
 	// For now, JSON encoded.
@@ -172,7 +188,7 @@ func (e *Error) deserializeParams(mu *marshalutil.MarshalUtil) error {
 		return err
 	}
 
-	if err = json.Unmarshal(params, &e.Params); err != nil {
+	if err = json.Unmarshal(params, &e.params); err != nil {
 		return err
 	}
 
@@ -187,11 +203,11 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil, errorMessageResolver ErrorMessa
 
 	blockError := Error{}
 
-	if blockError.PrefixId, err = mu.ReadUint32(); err != nil {
+	if blockError.prefixId, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 
-	if blockError.Id, err = mu.ReadUint16(); err != nil {
+	if blockError.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
 
@@ -207,7 +223,7 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil, errorMessageResolver ErrorMessa
 		return &blockError, nil
 	}
 
-	if blockError.MessageFormat, err = errorMessageResolver(&blockError); err != nil {
+	if blockError.messageFormat, err = errorMessageResolver(&blockError); err != nil {
 		return nil, err
 	}
 
@@ -234,7 +250,7 @@ func GetErrorIdFromMessageFormat(messageFormat string) uint16 {
 }
 
 func IsDefinition(error Error, definition ErrorDefinition) bool {
-	if error.Id == definition.Id() && error.PrefixId == definition.PrefixId() {
+	if error.Id() == definition.Id() && error.PrefixId() == definition.PrefixId() {
 		return true
 	}
 
@@ -242,8 +258,8 @@ func IsDefinition(error Error, definition ErrorDefinition) bool {
 }
 
 func Is(error *Error, errorComp *Error) bool {
-	if error.Id == errorComp.Id &&
-		error.PrefixId == errorComp.PrefixId {
+	if error.Id() == errorComp.Id() &&
+		error.PrefixId() == errorComp.PrefixId() {
 		return true
 	}
 

@@ -10,8 +10,8 @@ import (
 func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*error2.Error) (string, error) {
 	return func(errorToResolve *error2.Error) (string, error) {
 		params := dict.New()
-		params.Set(ParamContractHname, codec.EncodeUint32(errorToResolve.PrefixId))
-		params.Set(ParamErrorId, codec.EncodeUint16(errorToResolve.Id))
+		params.Set(ParamContractHname, codec.EncodeUint32(errorToResolve.PrefixId()))
+		params.Set(ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
 
 		ret := ctx.Call(Contract.Hname(), FuncGetErrorMessageFormat.Hname(), params)
 

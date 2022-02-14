@@ -24,8 +24,8 @@ import (
 
 	// Validate that properties are the same
 	require.EqualValues(t, blockError.Hash(), newError.Hash())
-	require.EqualValues(t, blockError.Params, newError.Params)
-	require.EqualValues(t, blockError.MessageFormat, newError.MessageFormat)
+	require.EqualValues(t, blockError.params, newError.params)
+	require.EqualValues(t, blockError.messageFormat, newError.messageFormat)
 
 	// Validate that error returns a proper error type
 	require.Error(t, newError)

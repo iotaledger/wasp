@@ -4,6 +4,7 @@
 package iscp
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -86,7 +87,7 @@ type Sandbox interface {
 	// Event emits an event
 	Event(msg string)
 	// RegisterError registers an error
-	RegisterError(messageFormat string) uint16
+	RegisterError(messageFormat string) *vmerrors.ErrorDefinition
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take

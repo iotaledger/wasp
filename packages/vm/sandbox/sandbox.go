@@ -4,6 +4,7 @@
 package sandbox
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -85,7 +86,7 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name, descriptio
 	s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
-func (s *sandbox) RegisterError(messageFormat string) uint16 {
+func (s *sandbox) RegisterError(messageFormat string) *vmerrors.ErrorDefinition {
 	return s.vmctx.RegisterError(messageFormat)
 }
 
