@@ -1,11 +1,8 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math"
 	"math/big"
-
-	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -17,6 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract

@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
@@ -37,7 +36,6 @@ type VMContext struct {
 	finalStateTimestamp  time.Time
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
-	blockOutputCount     uint8
 	dustAssumptions      *transaction.DustDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
@@ -52,7 +50,6 @@ type VMContext struct {
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue
-	contractRecord     *root.ContractRecord
 	callStack          []*callContext
 	// --- gas related
 	// max tokens cane be charged for gas fee

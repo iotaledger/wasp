@@ -109,7 +109,7 @@ func TestFoundries(t *testing.T) {
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
-		defer ch.Log.Sync()
+		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = iscp.NewAgentID(senderAddr, 0)

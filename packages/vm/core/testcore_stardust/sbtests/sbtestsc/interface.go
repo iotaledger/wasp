@@ -52,6 +52,7 @@ var Processor = Contract.Processor(initialize,
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
+	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
 )
 
 var (
@@ -102,6 +103,7 @@ var (
 	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
 	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
 	FuncInfiniteLoop           = coreutil.Func("infiniteLoop")
+	FuncInfiniteLoopView       = coreutil.ViewFunc("infiniteLoopView")
 )
 
 const (

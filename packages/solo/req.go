@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -399,32 +399,21 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
-// callViewFull calls the view entry point of the smart contract
-// with params wrapped into the CallParams object. The allowance part, fs any, is ignored
-//nolint:unused
-func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
-	ch.runVMMutex.Lock()
-	defer ch.runVMMutex.Unlock()
-
-	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
-	return vctx.CallView(req.target, req.entryPoint, req.params)
-}
-
 // CallView calls the view entry point of the smart contract.
 // The call params should be either a dict.Dict, or pairs of ('paramName',
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	ch.Log.Debugf("callView: %s::%s", scName, funName)
+	ch.Log().Debugf("callView: %s::%s", scName, funName)
 
 	p := parseParams(params)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
+	vmctx := vmcontext.CreateVMContextForViewCall(ch)
 	ch.StateReader.SetBaseline()
-	return vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), p)
+	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
@@ -441,7 +430,7 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 			return true
 		}
 		if time.Now().After(deadline) {
-			ch.Log.Errorf("WaitUntil failed waiting max %v", maxw)
+			ch.Log().Errorf("WaitUntil failed waiting max %v", maxw)
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)

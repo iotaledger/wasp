@@ -1,8 +1,9 @@
 package sbtests
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -43,6 +44,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 
 // queue many transactions with enough gas to fill a block, assert that they are split across blocks
 func TestBlockGasOverflow(t *testing.T) { run2(t, testBlockGasOverflow) }
+
 func testBlockGasOverflow(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
@@ -78,4 +80,13 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	// no further blocks should have been produced
 	_, err = ch.GetBlockInfo(initialBlockInfo.BlockIndex + 3)
 	require.Error(t, err)
+}
+
+func TestViewGasBlock(t *testing.T) { run2(t, testViewGasBlock) }
+func testViewGasBlock(t *testing.T, w bool) {
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+	_, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
+	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
 }

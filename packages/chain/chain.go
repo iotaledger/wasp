@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -36,7 +35,13 @@ type ChainCore interface {
 	GetStateReader() state.OptimisticStateReader
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
+	VirtualStateAccess() state.VirtualStateAccess
+	GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput)
 	Log() *logger.Logger
+}
+
+type ChainCoreMock interface {
+	ChainCore
 
 	// FIXME these methods should not be part of the chain interface just for the need of mocking
 	//  Mocking interfaces should be available only in the testing environment
@@ -96,7 +101,7 @@ type Committee interface {
 
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
-	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
+	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
 	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
 	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
 )
@@ -106,7 +111,7 @@ type NodeConnection interface {
 	Unsubscribe(addr iotago.Address)
 
 	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
-	//AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
+	// AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
 	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
 
@@ -126,7 +131,7 @@ type NodeConnection interface {
 
 type ChainNodeConnection interface {
 	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
-	//AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
+	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
 

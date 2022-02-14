@@ -55,7 +55,7 @@ func TestTutorial3(t *testing.T) {
 	// call the contract to extract value of the 'paramString' and check
 	res, err := chain.CallView("example1", "getString")
 	require.NoError(t, err)
-	par := kvdecoder.New(res, chain.Log)
+	par := kvdecoder.New(res, chain.Log())
 	returnedString := par.MustGetString("paramString")
 	require.EqualValues(t, "Hello, world!", returnedString)
 }

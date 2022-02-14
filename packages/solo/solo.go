@@ -12,12 +12,14 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
@@ -26,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -93,7 +96,7 @@ type Chain struct {
 	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
 	// Log is the named logger of the chain
-	Log *logger.Logger
+	log *logger.Logger
 	// global processor cache
 	proc *processors.Cache
 	// related to asynchronous backlog processing
@@ -103,6 +106,8 @@ type Chain struct {
 	// receipt of the last call
 	lastReceipt *blocklog.RequestReceipt
 }
+
+var _ chain.ChainCore = &Chain{}
 
 type InitOptions struct {
 	AutoAdjustDustDeposit bool
@@ -272,7 +277,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
 		proc:                   processors.MustNew(env.processorConfig),
-		Log:                    chainlog,
+		log:                    chainlog,
 	}
 	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
@@ -308,7 +313,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	}
 	ret.logRequestLastBlock()
 
-	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
+	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
 	return ret, originTx, initTx
 }
 
@@ -441,7 +446,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 		results := ch.runRequestsNolock(batch, "batchLoop")
 		for _, res := range results {
 			if res.Error != nil {
-				ch.Log.Errorf("runRequestsSync: %v", res.Error)
+				ch.log.Errorf("runRequestsSync: %v", res.Error)
 			}
 		}
 		return true
@@ -454,6 +459,55 @@ func (ch *Chain) BacklogLen() int {
 	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
+
+func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GetChainNodes() []peering.PeerStatusProvider {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GlobalStateSync() coreutil.ChainStateSync {
+	return ch.GlobalSync
+}
+
+func (ch *Chain) StateCandidateToStateManager(state.VirtualStateAccess, iotago.OutputID) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) GetStateReader() state.OptimisticStateReader {
+	return ch.StateReader
+}
+
+func (ch *Chain) ID() *iscp.ChainID {
+	return ch.ChainID
+}
+
+func (ch *Chain) Log() *logger.Logger {
+	return ch.log
+}
+
+func (ch *Chain) Processors() *processors.Cache {
+	return ch.proc
+}
+
+func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
+	return ch.State.Copy()
+}
+
+// ---------------------------------------------
 
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
 func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {

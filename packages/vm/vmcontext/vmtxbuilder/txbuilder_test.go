@@ -1,7 +1,6 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -17,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"github.com/stretchr/testify/require"
 )
 

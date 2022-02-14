@@ -58,6 +58,9 @@ func (s *sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
 }
 
 func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
+	if params == nil {
+		params = make(dict.Dict)
+	}
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
