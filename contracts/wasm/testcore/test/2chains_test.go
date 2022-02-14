@@ -28,14 +28,17 @@ func Test2Chains(t *testing.T) {
 		ctx2 := deployTestCoreOnChain(t, w, chain2, nil)
 		require.NoError(t, ctx2.Err)
 
+		ctx1.Accounts(user)
+		ctx2.Accounts(user)
+
 		require.EqualValues(t, 0, ctx1.Balance(user))
-		require.EqualValues(t, 0, ctx1.Balance(ctx1.Account()))
+		require.EqualValues(t, wasmsolo.L2FundsContract, ctx1.Balance(ctx1.Account()))
 		require.EqualValues(t, 0, ctx1.Balance(ctx2.Account()))
 		chainAccountBalances(ctx1, w, 2, 2)
 
 		require.EqualValues(t, 0, ctx2.Balance(user))
 		require.EqualValues(t, 0, ctx2.Balance(ctx1.Account()))
-		require.EqualValues(t, 0, ctx2.Balance(ctx2.Account()))
+		require.EqualValues(t, wasmsolo.L2FundsContract, ctx2.Balance(ctx2.Account()))
 		chainAccountBalances(ctx2, w, 2, 2)
 
 		deposit(t, ctx1, user, ctx2.Account(), 42)

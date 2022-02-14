@@ -93,6 +93,15 @@ func NewScTransfer(color wasmtypes.ScColor, amount uint64) ScTransfers {
 	return transfer
 }
 
+func (t ScTransfers) IsEmpty() bool {
+	for _, val := range t {
+		if val != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // set the specified colored token transfer in the transfers object
 // note that this will overwrite any previous amount for the specified color
 func (t ScTransfers) Set(color wasmtypes.ScColor, amount uint64) {
