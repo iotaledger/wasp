@@ -1,22 +1,22 @@
 package commonerrors
 
 import (
-	errors "github.com/iotaledger/wasp/packages/vm/vmerrors"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"math"
 )
 
 // ErrorCollection implements IErrorCollection. Is used for global errors. Does not require vm context state.
 type ErrorCollection struct {
-	errors map[uint16]*errors.ErrorDefinition
+	errors map[uint16]*vmerrors.ErrorDefinition
 }
 
 func NewErrorCollection() IErrorCollection {
 	return &ErrorCollection{
-		errors: map[uint16]*errors.ErrorDefinition{},
+		errors: map[uint16]*vmerrors.ErrorDefinition{},
 	}
 }
 
-func (e *ErrorCollection) Get(errorId uint16) (*errors.ErrorDefinition, error) {
+func (e *ErrorCollection) Get(errorId uint16) (*vmerrors.ErrorDefinition, error) {
 	if errorDefinition, ok := e.errors[errorId]; ok {
 		return errorDefinition, nil
 	}
@@ -24,7 +24,7 @@ func (e *ErrorCollection) Get(errorId uint16) (*errors.ErrorDefinition, error) {
 	return nil, nil
 }
 
-func (e *ErrorCollection) Register(errorId uint16, messageFormat string) (*errors.ErrorDefinition, error) {
+func (e *ErrorCollection) Register(errorId uint16, messageFormat string) (*vmerrors.ErrorDefinition, error) {
 	if len(messageFormat) > math.MaxUint16 {
 		return nil, ErrErrorMessageTooLong
 	}
@@ -33,7 +33,7 @@ func (e *ErrorCollection) Register(errorId uint16, messageFormat string) (*error
 		return nil, ErrErrorAlreadyRegistered.Create(errorId)
 	}
 
-	e.errors[errorId] = errors.NewErrorDefinition(math.MaxUint32, errorId, messageFormat)
+	e.errors[errorId] = vmerrors.NewErrorDefinition(math.MaxUint32, errorId, messageFormat)
 
 	return e.errors[errorId], nil
 }

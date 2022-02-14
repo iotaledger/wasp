@@ -1,11 +1,11 @@
 package commonerrors
 
-import errors "github.com/iotaledger/wasp/packages/vm/vmerrors"
+import "github.com/iotaledger/wasp/packages/vm/vmerrors"
 
 var globalErrorCollection IErrorCollection = NewErrorCollection()
 
-func RegisterGlobalError(messageFormat string) *errors.ErrorDefinition {
-	errorId := errors.GetErrorIdFromMessageFormat(messageFormat)
+func RegisterGlobalError(messageFormat string) *vmerrors.ErrorDefinition {
+	errorId := vmerrors.GetErrorIdFromMessageFormat(messageFormat)
 	errorDefinition, err := globalErrorCollection.Register(errorId, messageFormat)
 
 	if err != nil {

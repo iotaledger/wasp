@@ -4,11 +4,11 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	error2 "github.com/iotaledger/wasp/packages/vm/vmerrors"
+	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
 
-func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*error2.Error) (string, error) {
-	return func(errorToResolve *error2.Error) (string, error) {
+func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*vmerrors.Error) (string, error) {
+	return func(errorToResolve *vmerrors.Error) (string, error) {
 		params := dict.New()
 		params.Set(ParamContractHname, codec.EncodeUint32(errorToResolve.PrefixId()))
 		params.Set(ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
