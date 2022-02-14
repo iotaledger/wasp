@@ -30,7 +30,7 @@ func (e *ErrorCollection) Register(errorId uint16, messageFormat string) (*error
 	}
 
 	if _, exists := e.errors[errorId]; exists {
-		return nil, ErrErrorAlreadyRegistered.CreateTyped(errorId)
+		return nil, ErrErrorAlreadyRegistered.Create(errorId)
 	}
 
 	e.errors[errorId] = errors.NewErrorDefinition(math.MaxUint32, errorId, messageFormat)

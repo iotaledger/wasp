@@ -41,5 +41,5 @@ var (
 )
 
 var (
-	ErrChainInitConditionsFailed = commonerrors.RegisterGlobalError("root.init can't be called in this state").CreateTyped()
+	ErrChainInitConditionsFailed = commonerrors.RegisterGlobalError("root.init can't be called in this state").Create()
 )

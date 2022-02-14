@@ -35,18 +35,13 @@ func (e *ErrorDefinition) MessageFormat() string {
 	return e.messageFormat
 }
 
-func (e *ErrorDefinition) Create(params ...interface{}) error {
+func (e *ErrorDefinition) Create(params ...interface{}) *Error {
 	return &Error{
 		prefixId:      e.PrefixId(),
 		id:            e.Id(),
 		messageFormat: e.MessageFormat(),
 		params:        params,
 	}
-}
-
-func (e *ErrorDefinition) CreateTyped(params ...interface{}) *Error {
-	err := e.Create(params...)
-	return err.(*Error)
 }
 
 func (e *ErrorDefinition) Panic(params ...interface{}) {

@@ -34,10 +34,10 @@ var errorContractProcessor = errorContract.Processor(nil,
 		return nil
 	}),
 	funcThrowErrorWithoutArgs.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-		panic(testError.CreateTyped())
+		panic(testError.Create())
 	}),
 	funcThrowErrorWithArgs.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-		panic(testError.CreateTyped(42))
+		panic(testError.Create(42))
 	}),
 )
 
@@ -160,7 +160,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError, vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Id(), vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {

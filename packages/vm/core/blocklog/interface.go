@@ -360,7 +360,7 @@ func (r *RequestReceipt) DetailedError() *vmerrors.Error {
 		return err
 	}
 
-	return commonerrors.ErrUntypedError.CreateTyped(r.Error)
+	return commonerrors.ErrUntypedError.Create(r.Error)
 }
 
 func (r *RequestReceipt) Bytes() []byte {

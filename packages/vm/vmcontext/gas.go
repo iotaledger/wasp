@@ -28,7 +28,7 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	}
 
 	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
-		panic(ErrGasBudgetDetail.CreateTyped(ErrGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
+		panic(ErrGasBudgetDetail.Create(ErrGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
 	}
 }
 

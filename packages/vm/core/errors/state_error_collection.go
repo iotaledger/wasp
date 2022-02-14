@@ -64,7 +64,7 @@ func (e *StateErrorCollectionWriter) Register(errorId uint16, messageFormat stri
 	if errorBytes, err := errorMap.GetAt(mapKey); err != nil {
 		return nil, err
 	} else if len(errorBytes) > 0 {
-		return nil, commonerrors.ErrErrorAlreadyRegistered.CreateTyped(errorId)
+		return nil, commonerrors.ErrErrorAlreadyRegistered.Create(errorId)
 	}
 
 	newError := vmerrors.NewErrorDefinition(uint32(e.hname), errorId, messageFormat)

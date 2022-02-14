@@ -21,13 +21,13 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds               = commonerrors.RegisterGlobalError("not enough funds").CreateTyped()
-	ErrNotEnoughIotasForDustDeposit = commonerrors.RegisterGlobalError("not enough iotas for dust deposit").CreateTyped()
-	ErrNotEnoughAllowance           = commonerrors.RegisterGlobalError("not enough allowance").CreateTyped()
-	ErrBadAmount                    = commonerrors.RegisterGlobalError("bad native asset amount").CreateTyped()
-	ErrRepeatingFoundrySerialNumber = commonerrors.RegisterGlobalError("repeating serial number of the foundry").CreateTyped()
-	ErrFoundryNotFound              = commonerrors.RegisterGlobalError("foundry not found").CreateTyped()
-	ErrOverflow                     = commonerrors.RegisterGlobalError("overflow in token arithmetics").CreateTyped()
+	ErrNotEnoughFunds               = commonerrors.RegisterGlobalError("not enough funds").Create()
+	ErrNotEnoughIotasForDustDeposit = commonerrors.RegisterGlobalError("not enough iotas for dust deposit").Create()
+	ErrNotEnoughAllowance           = commonerrors.RegisterGlobalError("not enough allowance").Create()
+	ErrBadAmount                    = commonerrors.RegisterGlobalError("bad native asset amount").Create()
+	ErrRepeatingFoundrySerialNumber = commonerrors.RegisterGlobalError("repeating serial number of the foundry").Create()
+	ErrFoundryNotFound              = commonerrors.RegisterGlobalError("foundry not found").Create()
+	ErrOverflow                     = commonerrors.RegisterGlobalError("overflow in token arithmetics").Create()
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
