@@ -11,8 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
 
-var ErrUndefinedError = commonerrors.RegisterGlobalError("&%v")
-
 type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
@@ -28,9 +26,9 @@ func (r VMRunner) Run(task *vm.VMTask) {
 			task.VMError = e
 		case error:
 			// May require a different error type here?
-			task.VMError = ErrUndefinedError.Create(e)
+			task.VMError = commonerrors.ErrUntypedError.Create(e)
 		default:
-			task.VMError = ErrUndefinedError.Create(e)
+			task.VMError = commonerrors.ErrUntypedError.Create(e)
 		}
 
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
