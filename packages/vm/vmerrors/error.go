@@ -224,7 +224,7 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil, errorMessageResolver ErrorMessa
 
 	// If message format is resolved, do hash check
 
-	if hash == blockError.Hash() {
+	if hash != blockError.Hash() {
 		return nil, xerrors.Errorf("Hash of error %v:%v does not match serialized error! (old: %v, now: %v)", blockError.PrefixId, blockError.Id, hash, blockError.Hash())
 	}
 
