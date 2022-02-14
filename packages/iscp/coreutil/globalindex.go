@@ -1,11 +1,11 @@
 package coreutil
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"go.uber.org/atomic"
+	"golang.org/x/xerrors"
 )
 
-var ErrorStateInvalidated = commonerrors.RegisterGlobalError("virtual state has been invalidated")
+var ErrorStateInvalidated = xerrors.New("virtual state has been invalidated")
 
 // ChainStateSync and StateBaseline interfaces implements optimistic (non-blocking) access to the
 // global state (database) of the chain
@@ -85,8 +85,7 @@ func (g *stateBaseline) IsValid() bool {
 
 func (g *stateBaseline) MustValidate() {
 	if !g.IsValid() {
-		panic(ErrorStateInvalidated.Create())
-		//panic( ErrorStateInvalidated )
+		panic(ErrorStateInvalidated)
 	}
 }
 
