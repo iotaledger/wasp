@@ -13,9 +13,7 @@ const ScHnameLength = 4
 
 type ScHname uint32
 
-//func HnameFromString(name string) ScHname {
-//	return HnameFromBytes(wasmlib.Sandbox(wasmstore.FnUtilsHashName, []byte(name)))
-//}
+var NewScHname func(name string) ScHname
 
 func (o ScHname) Bytes() []byte {
 	return HnameToBytes(o)

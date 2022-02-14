@@ -5,6 +5,8 @@ package wasmsolo
 
 import (
 	"flag"
+	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -25,6 +27,10 @@ const ( // TODO set back to false
 	SoloDebug        = true
 	SoloHostTracing  = true
 	SoloStackTracing = true
+
+	L2FundsContract   = 1_000_000
+	L2FundsCreator    = 2_000_000
+	L2FundsOriginator = 3_000_000
 )
 
 var (
@@ -55,6 +61,58 @@ var (
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
+
+func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
+	for _, a := range s {
+		if *a == *e {
+			return true
+		}
+	}
+	return false
+}
+
+// Accounts prints all known accounts, both L2 and L1.
+// It uses the L2 ledger to enumerate the known accounts.
+// Any newly created SoloAgents can be specified as extra accounts
+func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
+	accs := ctx.Chain.L2Accounts()
+	for _, agent := range agents {
+		agentID := agent.AgentID()
+		if !contains(accs, agentID) {
+			accs = append(accs, agentID)
+		}
+	}
+	sort.Slice(accs, func(i, j int) bool {
+		return accs[i].String() < accs[j].String()
+	})
+	txt := "ACCOUNTS:"
+	for _, acc := range accs {
+		l2 := ctx.Chain.L2Assets(acc)
+		l1 := ctx.Chain.Env.L1Assets(acc.Address())
+		txt += fmt.Sprintf("\n%s\n\tL2:%8d", acc.String(), l2.Iotas)
+		if acc.Hname() == 0 {
+			txt += fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+		}
+		for _, token := range l2.Tokens {
+			txt += fmt.Sprintf("\n\tL2:%8d", token.Amount)
+			tokTxt := ",\t           "
+			if acc.Hname() == 0 {
+				for i := range l1.Tokens {
+					if *l1.Tokens[i] == *token {
+						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
+						tokTxt = fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+						break
+					}
+				}
+			}
+			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
+		}
+		for _, token := range l1.Tokens {
+			txt += fmt.Sprintf("\n\tL2:%8d,\tL1:%8d,\t%s", 0, l1.Iotas, token.ID.String())
+		}
+	}
+	fmt.Println(txt)
+}
 
 func (ctx *SoloContext) Burn(i int64) {
 	// ignore gas for now
@@ -98,6 +156,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	ctx.upload(keyPair)
 	if ctx.Err != nil {
@@ -125,6 +184,11 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+	if ctx.Err != nil {
+		return ctx
+	}
 	return ctx.init(onLoad)
 }
 
@@ -145,12 +209,19 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, scName, ctx.Hprog, params...)
+	if ctx.Err != nil {
+		return ctx
+	}
+
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -185,7 +256,9 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 			AutoAdjustDustDeposit: true,
 		})
 	}
-	return soloEnv.NewChain(nil, chainName)
+	chain := soloEnv.NewChain(nil, chainName)
+	chain.MustDepositIotasToL2(L2FundsOriginator, &chain.OriginatorPrivateKey)
+	return chain
 }
 
 // Account returns a SoloAgent for the smart contract associated with ctx
@@ -204,7 +277,7 @@ func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
-	//TODO is milestones 1 a good value?
+	// TODO is milestones 1 a good value?
 	ctx.Chain.Env.AdvanceClockBy(step, 1)
 }
 
@@ -215,10 +288,16 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 	account := iscp.NewAgentID(agent.address, agent.hname)
 	switch len(color) {
 	case 0:
-		return ctx.Chain.L2Iotas(account)
+		iotas := ctx.Chain.L2Iotas(account)
+		return iotas
 	case 1:
+		if color[0] == wasmtypes.IOTA {
+			iotas := ctx.Chain.L2Iotas(account)
+			return iotas
+		}
 		token := ctx.Convertor.IscpColor(&color[0])
-		return ctx.Chain.L2NativeTokens(account, token).Uint64()
+		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
+		return tokens
 	default:
 		require.Fail(ctx.Chain.Env.T, "too many color arguments")
 		return 0
@@ -280,7 +359,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 
 // Minted returns the color and amount of newly minted tokens
 func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
-	panic("fixme")
+	panic("fixme: soloContext.Minted")
 	//t := ctx.Chain.Env.T
 	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))

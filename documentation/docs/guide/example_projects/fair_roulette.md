@@ -65,7 +65,7 @@ Off-ledger requests are directly sent to Wasp nodes and do not require validatio
 :::note
 This example uses On-ledger requests to initiate a betting request. A method to invoke Off-ledger requests is implemented inside the frontend.
 
-See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
+See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
 :::
 
 #### Funds
@@ -131,7 +131,7 @@ All state changes such as the `round started` ,`round ended`, `placed bets`, and
 
 #### Building the Contract
 
-```
+```shell
 cd contracts/wasm/fairroulette
 wasm-pack build 
 ```
@@ -217,7 +217,7 @@ This service comprises two parts:
 
 ##### PlaceBetOnLedger
 
-The [placeBetOnLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L149) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
+The [placeBetOnLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L149) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
 
 * The smart contract ID: `fairroulette` 
 * The function to invoke: `placeBet` 
@@ -235,7 +235,7 @@ See: [CoreTypes](https://wiki.iota.org/wasp/misc/coretypes) and [Invoking](https
 
 ##### CallView 
 
-The [callView](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L165) function is responsible for calling smart contract view functions. 
+The [callView](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L165) function is responsible for calling smart contract view functions. 
 
 See: [Calling a view](https://wiki.iota.org/wasp/guide/solo/view-sc) 
 
@@ -246,9 +246,9 @@ State changes that happen afterwards are published through the websocket event s
 
 You can find examples to guide you in building similar functions in:
 
-* Frontend: [getRoundStatus](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L181) 
+* Frontend: [getRoundStatus](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L181) 
 
-* Smart Contract: [view_round_status](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/src/fairroulette.rs#L312)
+* Smart Contract: [view_round_status](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/src/fairroulette.rs#L312)
 
 Since data returned by the views is encoded in Base64, the frontend needs to decode this by using simple `Buffer` methods. 
 The `view_round_status` view returns an `UInt16` which has a state of either `0` or `1`. 
@@ -264,12 +264,12 @@ This means that to get a proper value from a view call, you should use `readUInt
 #### Install Dependencies
 
 1. Go to your frontend directory ( contracts/wasm/fairroulette/frontend for example)
-    ```bash
+    ```shell
     cd  contracts/wasm/fairroulette/frontend
     ```
 2. Install dependencies running:
 
-    ```bash
+    ```shell
     npm install
     ```
    
@@ -277,7 +277,7 @@ This means that to get a proper value from a view call, you should use `readUInt
 
 The frontend requires that you create a config file. You can copy the template from `contracts/wasm/fairroulette/frontend/config.dev.sample.js`, and rename it to `config.dev.js` inside the same folder.
 
-```bash
+```shell
 cp config.dev.sample.js config.dev.js
 ```
 
@@ -285,7 +285,7 @@ Make sure to update the config values according to your setup.
 
 The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain).  You can get your chain id from your dashboard, or list all chains by running:
 
-```bash
+```shell
 wasp-cli chain list
 ```
 
@@ -297,7 +297,7 @@ wasp-cli chain list
 
 You can build the frontend by running the following commands:
 
-```bash
+```shell
 cd contracts/wasm/fairroulette/frontend
 npm run build_worker
 ```
@@ -313,7 +313,7 @@ You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#dep
 The deployment of a contract requires funds to be deposited to the **chain**. 
 You can do this by executing the following command from the directory where your Wasp node was configured: 
 
-```bash
+```shell
 wasp-cli chain deposit IOTA:10000
 ```
 
@@ -321,6 +321,6 @@ Make sure to [Build](#building-the-contract) the contract before deploying it.
 
 Now, you can deploy the contract with a wasmtime configuration.
 
-```bash
+```shell
 wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/wasm/fairroulette/pkg/fairroulette_bg.wasm
 ```

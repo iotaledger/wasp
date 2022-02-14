@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import {Buffer} from "./buffer";
-import {IResponse} from "./api_common/response_models";
+import { Buffer } from "./buffer";
+import { IResponse } from "./api_common/response_models";
 import * as requestSender from "./api_common/request_sender";
-import {Base58, ED25519, Hash, IKeyPair} from "./crypto";
+import { Base58, ED25519, Hash, IKeyPair } from "./crypto";
 import {Colors} from "./colors";
 import {CoreAccountsService} from "./coreaccounts/service";
 
@@ -58,7 +58,7 @@ export class WaspClient {
     }
 
     public async postRequest(chainID: string, offLedgerRequest: Buffer): Promise<void> {
-        const request = {Request: offLedgerRequest.toString("base64")};
+        const request = { Request: offLedgerRequest.toString("base64") };
         await requestSender.sendRequestExt<IOffLedgerRequest, null>(this.waspAPI, "post", `/request/${chainID}`, request);
     }
 

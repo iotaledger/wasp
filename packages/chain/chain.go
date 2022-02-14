@@ -59,7 +59,6 @@ type ChainCoreMock interface {
 type ChainEntry interface {
 	ReceiveTransaction(*iotago.Transaction)
 	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
-
 	Dismiss(reason string)
 	IsDismissed() bool
 }
@@ -109,19 +108,15 @@ type (
 type NodeConnection interface {
 	Subscribe(addr iotago.Address)
 	Unsubscribe(addr iotago.Address)
-
 	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
 	// AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
 	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
 	PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-
 	DetachFromTransactionReceived(*iotago.AliasAddress)
 	DetachFromInclusionStateReceived(*iotago.AliasAddress)
 	DetachFromOutputReceived(*iotago.AliasAddress)
@@ -134,14 +129,11 @@ type ChainNodeConnection interface {
 	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState()
 	PullTransactionInclusionState(txid iotago.TransactionID)
 	PullConfirmedOutput(outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-
 	DetachFromTransactionReceived()
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
@@ -182,6 +174,12 @@ type AsynchronousCommonSubsetRunner interface {
 	Close()
 }
 
+type WAL interface {
+	Write(bytes []byte) error
+	Contains(i uint32) bool
+	Read(i uint32) ([]byte, error)
+}
+
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
@@ -209,7 +207,6 @@ type ConsensusWorkflowStatus interface {
 	IsTransactionPosted() bool
 	IsTransactionSeen() bool
 	IsInProgress() bool
-
 	GetBatchProposalSentTime() time.Time
 	GetConsensusBatchKnownTime() time.Time
 	GetVMStartedTime() time.Time
@@ -218,6 +215,7 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionPostedTime() time.Time
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
+	GetCurrentStateIndex() uint32
 }
 
 type ReadyListRecord struct {

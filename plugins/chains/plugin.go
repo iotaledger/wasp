@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/processors"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/wal"
 )
 
 const PluginName = "Chains"
@@ -52,7 +53,7 @@ func run(_ *node.Plugin) {
 			allMetrics = metrics.AllMetrics()
 		}
 		allChains.SetNodeConn(nodeconnimpl.NewNodeConnection(nodeconn.NodeConnection(), allMetrics.GetNodeConnectionMetrics(), log))
-		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics); err != nil {
+		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics, wal.GetWAL()); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return
 		}

@@ -42,6 +42,14 @@ impl WasmDecoder<'_> {
         value.to_vec()
     }
 
+    // peeks at the next byte in the byte buffer
+    pub fn peek(&self) -> u8 {
+        if self.buf.len() == 0 {
+            panic("insufficient peek bytes");
+        }
+        self.buf[0]
+    }
+
     // vli (variable length integer) decoder
     pub fn vli_decode(&mut self, bits: i32) -> i64 {
         let mut b = self.byte();

@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_AGENT_ID_LENGTH: usize = 37;
+const NIL_AGENT_ID: u8 = 0xff;
 
 #[derive(PartialEq, Clone)]
 pub struct ScAgentID {
@@ -15,13 +15,17 @@ pub struct ScAgentID {
     hname: ScHname,
 }
 
+const NIL_AGENT: ScAgentID = ScAgentID {
+    address: ScAddress { id: [0; SC_ADDRESS_LENGTH] },
+    hname: ScHname(0),
+};
+
 impl ScAgentID {
     pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
-        ScAgentID { address: address_from_bytes(&address.to_bytes()), hname: hname_from_bytes(&hname.to_bytes()) }
-    }
-
-    pub fn from_bytes(buf: &[u8]) -> ScAgentID {
-        agent_id_from_bytes(buf)
+        ScAgentID {
+            address: address_from_bytes(&address.to_bytes()),
+            hname: hname_from_bytes(&hname.to_bytes()),
+        }
     }
 
     pub fn address(&self) -> ScAddress {
@@ -47,36 +51,81 @@ impl ScAgentID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// note: only alias address can have a non-zero hname
+// so there is no need to encode it when it is always zero
+
 pub fn agent_id_decode(dec: &mut WasmDecoder) -> ScAgentID {
-    ScAgentID { address: address_decode(dec), hname: hname_decode(dec) }
+    if dec.peek() == SC_ADDRESS_ALIAS {
+        return ScAgentID { address: address_decode(dec), hname: hname_decode(dec) };
+    }
+    ScAgentID { address: address_decode(dec), hname: ScHname(0) }
 }
 
 pub fn agent_id_encode(enc: &mut WasmEncoder, value: &ScAgentID) {
     address_encode(enc, &value.address());
-    hname_encode(enc, value.hname());
+    if value.address.to_bytes()[0] == SC_ADDRESS_ALIAS {
+        hname_encode(enc, value.hname());
+    }
 }
 
 pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
     if buf.len() == 0 {
-        return ScAgentID { address: address_from_bytes(buf), hname: hname_from_bytes(buf) };
+        return ScAgentID {
+            address: address_from_bytes(buf),
+            hname: ScHname(0),
+        };
     }
-    if buf.len() != SC_AGENT_ID_LENGTH {
-        panic("invalid AgentID length");
-    }
-    // max ledgerstate.AliasAddressType
-    if buf[0] > SC_ADDRESS_ALIAS {
-        panic("invalid AgentID address type");
+    match buf[0] {
+        SC_ADDRESS_ALIAS => {
+            if buf.len() != SC_LENGTH_ALIAS + SC_HNAME_LENGTH {
+                panic("invalid AgentID length: Alias address");
+            }
+            return ScAgentID {
+                address: address_from_bytes(&buf[..SC_LENGTH_ALIAS]),
+                hname: hname_from_bytes(&buf[SC_LENGTH_ALIAS..]),
+            };
+        }
+        SC_ADDRESS_ED25519 => {
+            if buf.len() != SC_LENGTH_ED25519 {
+                panic("invalid AgentID length: Ed25519 address");
+            }
+            return ScAgentID {
+                address: address_from_bytes(buf),
+                hname: ScHname(0),
+            };
+        }
+        SC_ADDRESS_NFT => {
+            if buf.len() != SC_LENGTH_NFT {
+                panic("invalid AgentID length: NFT address");
+            }
+            return ScAgentID {
+                address: address_from_bytes(buf),
+                hname: ScHname(0),
+            };
+        }
+        NIL_AGENT_ID => {
+            if buf.len() != 1 {
+                panic("invalid AgentID length: nil AgentID");
+            }
+        }
+        _ =>
+            panic("invalid AgentID address type"),
     }
     ScAgentID {
-        address: address_from_bytes(&buf[..SC_ADDRESS_LENGTH]),
-        hname: hname_from_bytes(&buf[SC_ADDRESS_LENGTH..]),
+        address: address_from_bytes(&[]),
+        hname: ScHname(0),
     }
 }
 
 pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
-    let mut enc = WasmEncoder::new();
-    agent_id_encode(&mut enc, value);
-    enc.buf()
+    if *value == NIL_AGENT {
+        return [NIL_AGENT_ID].to_vec();
+    }
+    let mut buf = address_to_bytes(&value.address);
+    if buf[0] == SC_ADDRESS_ALIAS {
+        buf.extend_from_slice(&hname_to_bytes(value.hname));
+    }
+    buf
 }
 
 pub fn agent_id_to_string(value: &ScAgentID) -> String {

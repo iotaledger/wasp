@@ -73,7 +73,7 @@ fn transfer(ctx: &ScFuncContext, state: &MutableErc721State, from: &ScAgentID, t
 }
 
 fn zero() -> ScAgentID {
-    ScAgentID::from_bytes(&[])
+    agent_id_from_bytes(&[])
 }
 
 ///////////////////////////  SC FUNCS  ////////////////////////////
