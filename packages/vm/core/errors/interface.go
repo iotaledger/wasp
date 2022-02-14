@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractError, "Error contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractErrors, "Errors contract")
 
 const (
 	prefixBlockRegistry = string('a' + iota)
