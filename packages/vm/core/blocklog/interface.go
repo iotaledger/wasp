@@ -59,7 +59,6 @@ const (
 	ParamRequestRecord          = "d"
 	ParamEvent                  = "e"
 	ParamStateControllerAddress = "s"
-	ParamErrorMessageFormat     = "m"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
