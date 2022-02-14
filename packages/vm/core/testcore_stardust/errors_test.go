@@ -30,7 +30,7 @@ var errorContractProcessor = errorContract.Processor(nil,
 		return nil
 	}),
 	funcThrowErrors.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-		panic(testError)
+		panic(vmerrors.Error{})
 		return nil
 	}),
 )
@@ -144,6 +144,19 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 	_, chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
+		WithGasBudget(100_000)
+
+	_, _, err := chain.PostRequestSyncTx(req, nil)
+
+	require.NoError(t, err)
+
+	require.Equal(t, testError, vmerrors.GetErrorIdFromMessageFormat("Test Error"))
+}
+
+func TestPanicWithCustomContract(t *testing.T) {
+	_, chain := setupErrorsTest(t)
+
+	req := solo.NewCallParams(errorContract.Name, funcThrowErrors.Name).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
