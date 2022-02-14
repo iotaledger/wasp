@@ -120,14 +120,19 @@ func (wc *WasmContext) FunctionFromCode(code uint32) string {
 // Wasp sandbox. The VM will update the gas budget for the Wasm code with this value
 // just before returning to the Wasm code.
 func (wc *WasmContext) GasBudget() uint64 {
-	return wc.wcSandbox.common.Gas().Budget()
+	if wc.wcSandbox != nil {
+		return wc.wcSandbox.common.Gas().Budget()
+	}
+	return 0
 }
 
 // GasBurned is a callback from the VM that sets the remaining gas budget.
 // It will update the gas budget for the Wasp sandbox with the amount of gas
 // burned by the Wasm code thus far just before calling sandbox.
 func (wc *WasmContext) GasBurned(burned uint64) {
-	wc.wcSandbox.common.Gas().Burn(gas.BurnCodeWasm1P, burned)
+	if wc.wcSandbox != nil {
+		wc.wcSandbox.common.Gas().Burn(gas.BurnCodeWasm1P, burned)
+	}
 }
 
 func (wc *WasmContext) IsView() bool {

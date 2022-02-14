@@ -195,7 +195,7 @@ func TestVlu(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge {
+	if *wasmsolo.GoDebug || *wasmsolo.UseWasmEdge {
 		// no timeout possible because goroutines cannot be killed
 		// or because there is no way to interrupt the Wasm code
 		t.SkipNow()

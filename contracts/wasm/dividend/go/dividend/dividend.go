@@ -137,10 +137,10 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	// Create an ScBalances map proxy to the account balances for this
 	// smart contract. Note that ScBalances wraps an ScImmutableMap of
 	// token color/amount combinations in a simpler to use interface.
-	var allow wasmlib.ScBalances = ctx.Allowance()
+	var allowance wasmlib.ScBalances = ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	amount := allow.Balance(wasmtypes.IOTA)
+	amount := allowance.Balance(wasmtypes.IOTA)
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
 

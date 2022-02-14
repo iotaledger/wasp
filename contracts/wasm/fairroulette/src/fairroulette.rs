@@ -58,10 +58,10 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // Create ScBalances proxy to the incoming balances for this request.
     // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
     // in a simpler to use interface.
-    let incoming: ScBalances = ctx.allowance();
+    let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = incoming.balance(&ScColor::IOTA);
+    let amount: u64 = allowance.balance(&ScColor::IOTA);
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");

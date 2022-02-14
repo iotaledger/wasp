@@ -29,12 +29,12 @@ func NewWasmTimeVM() WasmVM {
 }
 
 func (vm *WasmTimeVM) GasBudget(budget uint64) {
-	//TODO turn on gas usage for VM somewhere
+	// TODO turn on gas usage for VM somewhere
 	// set gas budget to provided budget here
 }
 
 func (vm *WasmTimeVM) GasBurned() uint64 {
-	//TODO return actual amount of gas burned by VM
+	// TODO return actual amount of gas burned by VM
 	return 0
 }
 

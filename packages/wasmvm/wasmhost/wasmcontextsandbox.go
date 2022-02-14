@@ -19,6 +19,7 @@ import (
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
 	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
 	(*WasmContextSandbox).fnBlockContext,
@@ -31,7 +32,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEvent,
-	(*WasmContextSandbox).fnIncomingTransfer,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
 	(*WasmContextSandbox).fnPanic,
@@ -63,6 +63,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 var sandboxFuncNames = []string{
 	"nil",
 	"FnAccountID",
+	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
 	"FnBlockContext",
@@ -75,7 +76,6 @@ var sandboxFuncNames = []string{
 	"#FnDeployContract",
 	"FnEntropy",
 	"$FnEvent",
-	"FnIncomingTransfer",
 	"$FnLog",
 	"FnMinted",
 	"$FnPanic",
@@ -150,6 +150,11 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
+}
+
+func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
+	assets := s.ctx.AllowanceAvailable()
+	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -239,14 +244,6 @@ func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 	s.ctx.Event(string(args))
 	return nil
-}
-
-func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
-	assets := s.ctx.AllowanceAvailable()
-	//if !assets.IsEmpty() {
-	//	s.ctx.TransferAllowedFunds(s.ctx.AccountID())
-	//}
-	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnLog(args []byte) []byte {

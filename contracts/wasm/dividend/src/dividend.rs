@@ -137,10 +137,10 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
     // Create an ScBalances map proxy to the account balances for this
     // smart contract. Note that ScBalances wraps an ScImmutableMap of
     // token color/amount combinations in a simpler to use interface.
-    let allow: ScBalances = ctx.allowance();
+    let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens from the account balance.
-    let amount: u64 = allow.balance(&ScColor::IOTA);
+    let amount: u64 = allowance.balance(&ScColor::IOTA);
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
     let total_factor: u64 = f.state.total_factor().value();

@@ -11,19 +11,19 @@ import {ScImmutableState, ScState} from "./state";
 
 // @formatter:off
 export const FnAccountID           : i32 = -1;
-export const FnBalance             : i32 = -2;
-export const FnBalances            : i32 = -3;
-export const FnBlockContext        : i32 = -4;
-export const FnCall                : i32 = -5;
-export const FnCaller              : i32 = -6;
-export const FnChainID             : i32 = -7;
-export const FnChainOwnerID        : i32 = -8;
-export const FnContract            : i32 = -9;
-export const FnContractCreator     : i32 = -10;
-export const FnDeployContract      : i32 = -11;
-export const FnEntropy             : i32 = -12;
-export const FnEvent               : i32 = -13;
-export const FnIncomingTransfer    : i32 = -14;
+export const FnAllowance           : i32 = -2;
+export const FnBalance             : i32 = -3;
+export const FnBalances            : i32 = -4;
+export const FnBlockContext        : i32 = -5;
+export const FnCall                : i32 = -6;
+export const FnCaller              : i32 = -7;
+export const FnChainID             : i32 = -8;
+export const FnChainOwnerID        : i32 = -9;
+export const FnContract            : i32 = -10;
+export const FnContractCreator     : i32 = -11;
+export const FnDeployContract      : i32 = -12;
+export const FnEntropy             : i32 = -13;
+export const FnEvent               : i32 = -14;
 export const FnLog                 : i32 = -15;
 export const FnMinted              : i32 = -16;
 export const FnPanic               : i32 = -17;
@@ -178,7 +178,7 @@ export class ScSandboxFunc extends ScSandbox {
 
     // access the allowance assets
     public allowance(): ScBalances {
-        const buf = sandbox(FnIncomingTransfer, null);
+        const buf = sandbox(FnAllowance, null);
         return new ScAssets(buf).balances();
     }
 

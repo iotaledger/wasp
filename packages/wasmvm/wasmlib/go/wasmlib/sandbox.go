@@ -10,19 +10,19 @@ import (
 
 const (
 	FnAccountID           = int32(-1)
-	FnBalance             = int32(-2)
-	FnBalances            = int32(-3)
-	FnBlockContext        = int32(-4)
-	FnCall                = int32(-5)
-	FnCaller              = int32(-6)
-	FnChainID             = int32(-7)
-	FnChainOwnerID        = int32(-8)
-	FnContract            = int32(-9)
-	FnContractCreator     = int32(-10)
-	FnDeployContract      = int32(-11)
-	FnEntropy             = int32(-12)
-	FnEvent               = int32(-13)
-	FnIncomingTransfer    = int32(-14)
+	FnAllowance           = int32(-2)
+	FnBalance             = int32(-3)
+	FnBalances            = int32(-4)
+	FnBlockContext        = int32(-5)
+	FnCall                = int32(-6)
+	FnCaller              = int32(-7)
+	FnChainID             = int32(-8)
+	FnChainOwnerID        = int32(-9)
+	FnContract            = int32(-10)
+	FnContractCreator     = int32(-11)
+	FnDeployContract      = int32(-12)
+	FnEntropy             = int32(-13)
+	FnEvent               = int32(-14)
 	FnLog                 = int32(-15)
 	FnMinted              = int32(-16)
 	FnPanic               = int32(-17)
@@ -179,7 +179,7 @@ type ScSandboxFunc struct {
 
 // access the allowance assets
 func (s ScSandboxFunc) Allowance() ScBalances {
-	buf := Sandbox(FnIncomingTransfer, nil)
+	buf := Sandbox(FnAllowance, nil)
 	return NewScAssetsFromBytes(buf).Balances()
 }
 

@@ -22,6 +22,7 @@ import (
 var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	nil,
 	(*SoloSandbox).fnAccountID,
+	(*SoloSandbox).fnAllowance,
 	(*SoloSandbox).fnBalance,
 	(*SoloSandbox).fnBalances,
 	(*SoloSandbox).fnBlockContext,
@@ -34,7 +35,6 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnDeployContract,
 	(*SoloSandbox).fnEntropy,
 	(*SoloSandbox).fnEvent,
-	(*SoloSandbox).fnIncomingTransfer,
 	(*SoloSandbox).fnLog,
 	(*SoloSandbox).fnMinted,
 	(*SoloSandbox).fnPanic,
@@ -165,6 +165,12 @@ func (s *SoloSandbox) fnAccountID(args []byte) []byte {
 	return s.ctx.AccountID().Bytes()
 }
 
+func (s *SoloSandbox) fnAllowance(args []byte) []byte {
+	//// zero incoming balance
+	assets := new(iscp.Assets)
+	return s.cvt.ScBalances(assets).Bytes()
+}
+
 func (s *SoloSandbox) fnBalance(args []byte) []byte {
 	color := wasmtypes.ColorFromBytes(args)
 	return codec.EncodeUint64(s.ctx.Balance(s.ctx.Account(), color))
@@ -242,12 +248,6 @@ func (s *SoloSandbox) fnEntropy(args []byte) []byte {
 func (s *SoloSandbox) fnEvent(args []byte) []byte {
 	s.Panicf("solo cannot send events")
 	return nil
-}
-
-func (s *SoloSandbox) fnIncomingTransfer(args []byte) []byte {
-	//// zero incoming balance
-	assets := new(iscp.Assets)
-	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *SoloSandbox) fnLog(args []byte) []byte {

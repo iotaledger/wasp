@@ -56,13 +56,13 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Require that the number is a valid number to bet on, otherwise panic out.
 	ctx.Require(number >= 1 && number <= MaxNumber, "invalid number")
 
-	// Create ScBalances proxy to the incoming balances for this request.
+	// Create ScBalances proxy to the allowance balances for this request.
 	// Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
 	// in a simpler to use interface.
-	incoming := ctx.Allowance()
+	allowance := ctx.Allowance()
 
-	// Retrieve the amount of plain iota tokens that are part of the incoming balance.
-	amount := incoming.Balance(wasmtypes.IOTA)
+	// Retrieve the amount of plain iota tokens that are part of the allowance balance.
+	amount := allowance.Balance(wasmtypes.IOTA)
 
 	// Require that there are actually some plain iotas there
 	ctx.Require(amount > 0, "empty bet")
