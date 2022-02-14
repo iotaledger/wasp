@@ -485,7 +485,15 @@ func (r *OnLedgerRequestData) Features() Features {
 }
 
 func (r *OnLedgerRequestData) String() string {
-	return fmt.Sprintf("(not impl) ID: %s", r.ID()) // TODO
+	req := r.requestMetadata
+	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, GasBudget: %d }",
+		r.ID().String(),
+		req.SenderContract.String(),
+		req.TargetContract.String(),
+		req.EntryPoint.String(),
+		req.Params.String(),
+		req.GasBudget,
+	)
 }
 
 func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {

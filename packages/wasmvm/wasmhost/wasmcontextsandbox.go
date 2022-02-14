@@ -261,7 +261,7 @@ func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
-	s.common.Log().Panicf("WASM panic: %s", string(args))
+	s.common.Log().Panicf("WASM: panic in VM: %s", string(args))
 	return nil
 }
 
@@ -291,9 +291,10 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	}
 	if req.Delay == 0 {
 		s.ctx.Send(iscp.RequestParameters{
-			TargetAddress: s.ctx.Caller().Address(),
-			Assets:        assets,
-			Metadata:      metadata,
+			AdjustToMinimumDustDeposit: true,
+			TargetAddress:              s.ctx.Caller().Address(),
+			Assets:                     assets,
+			Metadata:                   metadata,
 		})
 		return nil
 	}
