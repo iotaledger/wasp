@@ -5,15 +5,15 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 func CallView(ch chain.ChainCore, contractHname, viewHname iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
-		vctx := viewcontext.NewFromChain(ch)
+		vctx := vmcontext.CreateVMContextForViewCall(ch)
 		var err error
-		ret, err = vctx.CallView(contractHname, viewHname, params)
+		ret, err = vctx.CallViewExternal(contractHname, viewHname, params)
 		return err
 	})
 

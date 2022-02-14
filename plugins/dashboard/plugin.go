@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/auth"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -41,7 +41,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 type waspServices struct{}
@@ -136,11 +136,11 @@ func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, p
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
-	vctx := viewcontext.NewFromChain(ch)
+	vctx := vmcontext.CreateVMContextForViewCall(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), params)
+		ret, err = vctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), params)
 		return err
 	})
 	return ret, err

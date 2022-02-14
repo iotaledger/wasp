@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -26,65 +25,63 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/txstream"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
 )
 
 const maxMsgBuffer = 1000
 
 var (
-	_ chain.Chain         = &chainObj{}
-	_ chain.ChainCore     = &chainObj{}
-	_ chain.ChainEntry    = &chainObj{}
-	_ chain.ChainRequests = &chainObj{}
+	_ chain.Chain                = &chainObj{}
+	_ chain.ChainCore            = &chainObj{}
+	_ chain.ChainEntry           = &chainObj{}
+	_ chain.ChainRequests        = &chainObj{}
 	_ chain.ChainMetrics         = &chainObj{}
 	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
-	committee                        atomic.Value
-	mempool                          chain.Mempool
-	mempoolLastCleanedIndex          uint32
-	dismissed                        atomic.Bool
-	dismissOnce                      sync.Once
-	chainID                          *iscp.ChainID
-	chainStateSync                   coreutil.ChainStateSync
-	stateReader                      state.OptimisticStateReader
-	procset                          *processors.Cache
-	stateMgr                         chain.StateManager
-	consensus                        chain.Consensus
-	log                              *logger.Logger
+	committee                          atomic.Value
+	mempool                            chain.Mempool
+	mempoolLastCleanedIndex            uint32
+	dismissed                          atomic.Bool
+	dismissOnce                        sync.Once
+	chainID                            *iscp.ChainID
+	chainStateSync                     coreutil.ChainStateSync
+	stateReader                        state.OptimisticStateReader
+	procset                            *processors.Cache
+	stateMgr                           chain.StateManager
+	consensus                          chain.Consensus
+	log                                *logger.Logger
 	nodeConn                           chain.ChainNodeConnection
-	db                               kvstore.KVStore
-	netProvider                      peering.NetworkProvider
-	dksProvider                      registry.DKShareRegistryProvider
+	db                                 kvstore.KVStore
+	netProvider                        peering.NetworkProvider
+	dksProvider                        registry.DKShareRegistryProvider
 	blobProvider                       registry.BlobCache
-	committeeRegistry                registry.CommitteeRegistryProvider
-	eventRequestProcessed            *events.Event
-	eventChainTransition             *events.Event
+	committeeRegistry                  registry.CommitteeRegistryProvider
+	eventRequestProcessed              *events.Event
+	eventChainTransition               *events.Event
 	eventChainTransitionClosure        *events.Closure
 	receiveChainPeerMessagesAttachID   interface{}
 	detachFromCommitteePeerMessagesFun func()
-	chainPeers                       peering.PeerDomainProvider
+	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
-	offLedgerReqsAcksMutex           sync.RWMutex
+	offLedgerReqsAcksMutex             sync.RWMutex
 	offLedgerReqsAcks                  map[iscp.RequestID][]*ed25519.PublicKey
-	offledgerBroadcastUpToNPeers     int
-	offledgerBroadcastInterval       time.Duration
-	pullMissingRequestsFromCommittee bool
-	chainMetrics                     metrics.ChainMetrics
-	dismissChainMsgPipe              pipe.Pipe
-	stateMsgPipe                     pipe.Pipe
-	offLedgerRequestPeerMsgPipe      pipe.Pipe
-	requestAckPeerMsgPipe            pipe.Pipe
-	missingRequestIDsPeerMsgPipe     pipe.Pipe
-	missingRequestPeerMsgPipe        pipe.Pipe
-	timerTickMsgPipe                 pipe.Pipe
+	offledgerBroadcastUpToNPeers       int
+	offledgerBroadcastInterval         time.Duration
+	pullMissingRequestsFromCommittee   bool
+	chainMetrics                       metrics.ChainMetrics
+	dismissChainMsgPipe                pipe.Pipe
+	stateMsgPipe                       pipe.Pipe
+	offLedgerRequestPeerMsgPipe        pipe.Pipe
+	requestAckPeerMsgPipe              pipe.Pipe
+	missingRequestIDsPeerMsgPipe       pipe.Pipe
+	missingRequestPeerMsgPipe          pipe.Pipe
+	timerTickMsgPipe                   pipe.Pipe
 }
 
 type committeeStruct struct {
@@ -116,13 +113,13 @@ func NewChain(
 		procset:           processors.MustNew(processorConfig),
 		chainID:           chainID,
 		log:               chainLog,
-		nodeConn:       nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
+		nodeConn:          nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
-		blobProvider:   blobProvider,
+		blobProvider:      blobProvider,
 		committeeRegistry: committeeRegistry,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
@@ -293,11 +290,12 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	govAccessNodes := make([]ed25519.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		res, err := viewcontext.NewFromChain(c).CallView(
-			governance.Contract.Hname(),
-			governance.FuncGetChainNodes.Hname(),
-			governance.GetChainNodesRequest{}.AsDict(),
-		)
+		// TODO refactor, viewcontext is deprecated
+		// res, err := viewcontext.NewFromChain(c).CallView(
+		// 	governance.Contract.Hname(),
+		// 	governance.FuncGetChainNodes.Hname(),
+		// 	governance.GetChainNodesRequest{}.AsDict(),
+		// )
 		if err != nil {
 			c.log.Panicf("unable to read the governance contract state: %v", err)
 		}
