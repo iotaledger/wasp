@@ -33,7 +33,7 @@ type ProofPathElement struct {
 	ChildIndex int
 }
 
-func NewTrie(setup CommitmentLogic, store kv.KVMustReader, rootCommitment VectorCommitment) *Trie {
+func New(setup CommitmentLogic, store kv.KVMustReader, rootCommitment VectorCommitment) *Trie {
 	return &Trie{
 		setup:          setup,
 		store:          store,
@@ -231,6 +231,7 @@ func (t *Trie) path(pathPosition int, ret *ProofPath) {
 		Key:  key,
 		Node: node,
 	}
+	ret.Path = append(ret.Path, elem)
 	tail := ret.Key[pathPosition:]
 	if !bytes.HasPrefix(tail, node.PathFragment) {
 		elem.ChildIndex = 257
@@ -243,7 +244,10 @@ func (t *Trie) path(pathPosition int, ret *ProofPath) {
 	indexPos := pathPosition + len(node.PathFragment)
 	assert(indexPos < len(ret.Key), "assertion: pathPosition+len(node.pathFragment)<=len(ret.Key)")
 	elem.ChildIndex = int(ret.Key[indexPos])
-	assert(node.Children[byte(elem.ChildIndex)] != nil, "assertion: node.Children[indexPos] != nil")
+	if node.Children[byte(elem.ChildIndex)] == nil {
+		// no way further
+		return
+	}
 	t.path(indexPos+1, ret)
 }
 

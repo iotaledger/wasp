@@ -46,20 +46,33 @@ func (m *merkleTrieSetup) ProvePath(path *trie.ProofPath) *MerkleProof {
 	return ret
 }
 
-// KeyTerminal returns key and terminal commitment the proof is about. If it returns (?, nil) it means it is proof of absence
-// It does not verify the proof, so this function should be used only after Verify()
-func (p *MerkleProof) KeyTerminal() ([]byte, *[32]byte) {
+// MustKeyTerminal returns key and terminal commitment the proof is about. If it returns (?, nil) it means it is proof of absence
+// It does not verify the proof, so this function should be used only after Validate()
+func (p *MerkleProof) MustKeyTerminal() ([]byte, *[32]byte) {
 	if len(p.Path) == 0 {
 		return nil, nil
 	}
 	lastElem := p.Path[len(p.Path)-1]
-	if lastElem.ChildIndex == 257 {
+	switch {
+	case lastElem.ChildIndex < 256:
+		if _, ok := lastElem.Children[byte(lastElem.ChildIndex)]; ok {
+			panic("nil child commitment expected for proof of absence")
+		}
+		return p.Key, nil
+	case lastElem.ChildIndex == 256:
+		return p.Key, lastElem.Terminal
+	case lastElem.ChildIndex == 257:
 		return p.Key, nil
 	}
-	return p.Key, lastElem.Terminal
+	panic("wrong lastElem.ChildIndex")
 }
 
-func (p *MerkleProof) Verify(root *[32]byte) error {
+func (p *MerkleProof) MustIsProofOfAbsence() bool {
+	_, r := p.MustKeyTerminal()
+	return r == nil
+}
+
+func (p *MerkleProof) Validate(root *[32]byte) error {
 	if len(p.Path) == 0 {
 		if root != nil {
 			return xerrors.New("proof is empty")
@@ -78,7 +91,7 @@ func (p *MerkleProof) Verify(root *[32]byte) error {
 
 func (p *MerkleProof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 	assert(pathIdx < len(p.Path), "assertion: pathIdx < len(p.Path)")
-	assert(keyIdx < len(p.Key), "assertion: keyIdx < len(p.Key)")
+	assert(keyIdx <= len(p.Key), "assertion: keyIdx <= len(p.Key)")
 
 	elem := p.Path[pathIdx]
 	tail := p.Key[keyIdx:]
@@ -106,6 +119,13 @@ func (p *MerkleProof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 		return elem.hashIt(&c), nil
 	}
 	// it is the last in the path
+	if elem.ChildIndex < 256 {
+		c := elem.Children[byte(elem.ChildIndex)]
+		if c != nil {
+			return [32]byte{}, xerrors.Errorf("wrong proof: child commitment of the last element expected to be nil. Path position: %d, key position %d", pathIdx, keyIdx)
+		}
+		return elem.hashIt(nil), nil
+	}
 	if elem.ChildIndex != 256 && elem.ChildIndex != 257 {
 		return [32]byte{}, xerrors.Errorf("wrong proof: child index expected to be 256 or 257. Path position: %d, key position %d", pathIdx, keyIdx)
 	}

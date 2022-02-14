@@ -61,7 +61,7 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	}
 	time.Sleep(500 * time.Millisecond)
 	//
-	// Verify the results (with some tolerance for randomness).
+	// Validate the results (with some tolerance for randomness).
 	{ // 50% of messages dropped + 50% duplicated -> delivered ~75%
 		require.Greater(t, len(durations), 500)
 		require.Less(t, len(durations), 900)

@@ -108,8 +108,6 @@ func (m *merkleTrieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitme
 	return ret
 }
 
-func (m *merkleTrieSetup) MerkleProofPath() {}
-
 func (s *hashCommitment) Read(r io.Reader) error {
 	_, err := r.Read((*s)[:])
 	return err
