@@ -344,6 +344,9 @@ func (vmctx *VMContext) loadChainConfig() {
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
+	if vmctx.req == nil {
+		return false
+	}
 	target := vmctx.req.CallTarget()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
 }

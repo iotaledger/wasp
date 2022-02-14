@@ -3,8 +3,8 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"

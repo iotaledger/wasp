@@ -38,6 +38,8 @@ func CreateVMContextForViewCall(ch chain.ChainCore) *VMContext {
 
 // callViewExternal is onlu for internal usage by CallViewExternal
 func (vmctx *VMContext) callViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) dict.Dict {
+	vmctx.loadChainConfig()
+
 	contractRecord := vmctx.getContractRecord(targetContract)
 	ep := vmctx.getEntryPointByProgHash(targetContract, epCode, contractRecord.ProgramHash)
 
@@ -57,7 +59,6 @@ func (vmctx *VMContext) callViewExternal(targetContract, epCode iscp.Hname, para
 // CallViewExternal is used to call a view outside of SC execution (webapi/dashboard/etc)
 // implements own panic catcher
 func (vmctx *VMContext) CallViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) (ret dict.Dict, err error) {
-	// TODO look into refactor to use the new panic catcher utility
 	func() {
 		defer func() {
 			r := recover()
