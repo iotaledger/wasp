@@ -10,7 +10,7 @@ import (
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair                cryptolib.KeyPair
+	SenderKeyPair                *cryptolib.KeyPair
 	UnspentOutputs               []iotago.Output
 	UnspentOutputIDs             []*iotago.UTXOInput
 	Requests                     []*iscp.RequestParameters

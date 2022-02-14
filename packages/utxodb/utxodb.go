@@ -240,7 +240,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 }
 
 // NewKeyPairByIndex deterministic private key
-func (u *UtxoDB) NewKeyPairByIndex(index uint64) (cryptolib.KeyPair, *iotago.Ed25519Address) {
+func (u *UtxoDB) NewKeyPairByIndex(index uint64) (*cryptolib.KeyPair, *iotago.Ed25519Address) {
 	var tmp8 [8]byte
 	binary.LittleEndian.PutUint64(tmp8[:], index)
 	h := hashing.HashData(u.seed[:], tmp8[:])

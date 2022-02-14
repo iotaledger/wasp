@@ -37,7 +37,7 @@ func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate 
 	return NodeOwnershipCertificate(data)
 }
 
-func (c NodeOwnershipCertificate) Verify(nodePubKey cryptolib.PublicKey, ownerAddress iotago.Address) bool {
+func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) bool {
 	certData := bytes.Buffer{}
 	certData.Write(nodePubKey.AsBytes())
 	certData.Write(iscp.BytesFromAddress(ownerAddress))

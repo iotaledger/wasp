@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -65,14 +64,14 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 
 func NextState(
 	t *testing.T,
-	chainKey *ed25519.KeyPair,
+	chainKey *cryptolib.KeyPair,
 	vs state.VirtualStateAccess,
 	chainOutput *iscp.AliasOutputWithID,
 	ts time.Time,
 	/*reqs ...iscp.Calldata,*/
 ) (nextvs state.VirtualStateAccess, tx *iotago.Transaction, aliasOutputID *iotago.UTXOInput) {
 	if chainKey != nil {
-		require.True(t, chainOutput.GetStateAddress().Equal(cryptolib.Ed25519AddressFromPubKey(cryptolib.HivePublicKeyToCryptolibPublicKey(chainKey.PublicKey))))
+		require.True(t, chainOutput.GetStateAddress().Equal(chainKey.GetPublicKey().AsEd25519Address()))
 	}
 
 	nextvs = vs.Copy()
@@ -120,7 +119,7 @@ func NextState(
 	}
 	signatures, err := txEssence.Sign(iotago.AddressKeys{
 		Address: chainOutput.GetStateAddress(),
-		Keys:    cryptolib.HivePrivateKeyToCryptolibPrivateKey(chainKey.PrivateKey),
+		Keys:    chainKey.GetPrivateKey().AsCrypto(),
 	})
 	require.NoError(t, err)
 	tx = &iotago.Transaction{

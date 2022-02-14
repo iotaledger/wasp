@@ -51,7 +51,7 @@ type OffLedgerRequestData struct {
 	contract   Hname
 	entryPoint Hname
 	params     dict.Dict
-	publicKey  cryptolib.PublicKey
+	publicKey  *cryptolib.PublicKey
 	sender     *iotago.Ed25519Address
 	signature  []byte
 	nonce      uint64
@@ -65,6 +65,7 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
+		publicKey:  cryptolib.NewKeyPair().GetPublicKey(),
 		nonce:      nonce,
 	}
 }
@@ -215,7 +216,7 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 }
 
 // Sign signs essence
-func (r *OffLedgerRequestData) Sign(key cryptolib.KeyPair) {
+func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 	r.publicKey = key.GetPublicKey()
 	r.signature, _ = key.GetPrivateKey().Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }

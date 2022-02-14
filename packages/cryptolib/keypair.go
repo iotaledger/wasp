@@ -6,26 +6,24 @@ import (
 )
 
 type KeyPair struct {
-	privateKey PrivateKey
-	publicKey  PublicKey
+	privateKey *PrivateKey
+	publicKey  *PublicKey
 }
 
 // NewKeyPair creates a new key pair with a randomly generated seed
-func NewKeyPair() KeyPair {
+func NewKeyPair() *KeyPair {
 	seed := tpkg.RandEd25519Seed()
-	key := NewKeyPairFromSeed(SeedFromByteArray(seed[:]))
-
-	return key
+	return NewKeyPairFromSeed(SeedFromByteArray(seed[:]))
 }
 
-func NewKeyPairFromSeed(seed Seed) KeyPair {
+func NewKeyPairFromSeed(seed Seed) *KeyPair {
 	privateKey := NewPrivateKeyFromSeed(seed)
 	return NewKeyPairFromPrivateKey(privateKey)
 }
 
-func NewKeyPairFromPrivateKey(privateKey PrivateKey) KeyPair {
+func NewKeyPairFromPrivateKey(privateKey *PrivateKey) *KeyPair {
 	publicKey := privateKey.Public()
-	return KeyPair{
+	return &KeyPair{
 		privateKey: privateKey,
 		publicKey:  publicKey,
 	}
@@ -44,10 +42,10 @@ func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
 	return iotago.NewInMemoryAddressSigner(addrKeys)
 }
 
-func (k *KeyPair) GetPrivateKey() PrivateKey {
+func (k *KeyPair) GetPrivateKey() *PrivateKey {
 	return k.privateKey
 }
 
-func (k *KeyPair) GetPublicKey() PublicKey {
+func (k *KeyPair) GetPublicKey() *PublicKey {
 	return k.publicKey
 }

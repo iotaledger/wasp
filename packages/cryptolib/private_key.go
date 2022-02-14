@@ -15,34 +15,38 @@ type PrivateKey struct {
 
 const PrivateKeySize = crypto.PrivateKeySize
 
-func NewPrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
+func NewPrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
 	if len(privateKeyBytes) < PrivateKeySize {
-		return PrivateKey{}, fmt.Errorf("bytes too short")
+		return nil, fmt.Errorf("bytes too short")
 	}
-	return PrivateKey{privateKeyBytes}, nil
+	return &PrivateKey{privateKeyBytes}, nil
 }
 
-func NewPrivateKeyFromSeed(seed Seed) PrivateKey {
+func NewPrivateKeyFromSeed(seed Seed) *PrivateKey {
 	var seedByte [SeedSize]byte = seed
-	return PrivateKey{crypto.NewKeyFromSeed(seedByte[:])}
+	return &PrivateKey{crypto.NewKeyFromSeed(seedByte[:])}
 }
 
-func (pkT PrivateKey) isValid() bool {
+func (pkT *PrivateKey) isValid() bool {
 	return len(pkT.key) > 0
 }
 
-func (pkT PrivateKey) AsCrypto() crypto.PrivateKey {
+func (pkT *PrivateKey) AsCrypto() crypto.PrivateKey {
 	return pkT.key
 }
 
-func (pkT PrivateKey) Public() PublicKey {
+func (pkT *PrivateKey) AsBytes() []byte {
+	return pkT.key
+}
+
+func (pkT *PrivateKey) Public() *PublicKey {
 	return newPublicKeyFromCrypto(pkT.key.Public().(crypto.PublicKey))
 }
 
-func (pkT PrivateKey) Sign(rand io.Reader, message []byte, opts cr.SignerOpts) ([]byte, error) {
+func (pkT *PrivateKey) Sign(rand io.Reader, message []byte, opts cr.SignerOpts) ([]byte, error) {
 	return pkT.key.Sign(rand, message, opts)
 }
 
-func (pkT PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
+func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
 	return iotago.NewAddressKeysForEd25519Address(addr, pkT.key)
 }

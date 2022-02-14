@@ -8,8 +8,8 @@ import (
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -28,7 +28,7 @@ type DKShare struct {
 	PublicCommits []kyber.Point
 	PublicShares  []kyber.Point
 	PrivateShare  kyber.Scalar
-	NodePubKeys   []*ed25519.PublicKey
+	NodePubKeys   []*cryptolib.PublicKey
 	suite         Suite // Transient, only needed for un-marshaling.
 }
 
@@ -41,7 +41,7 @@ func NewDKShare(
 	publicCommits []kyber.Point,
 	publicShares []kyber.Point,
 	privateShare kyber.Scalar,
-	nodePubKeys []*ed25519.PublicKey,
+	nodePubKeys []*cryptolib.PublicKey,
 ) (*DKShare, error) {
 	//var err error
 	//

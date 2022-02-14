@@ -19,7 +19,7 @@ import (
 func TestCreateOrigin(t *testing.T) {
 	var u *utxodb.UtxoDB
 	var originTx, txInit *iotago.Transaction
-	var user cryptolib.KeyPair
+	var user *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
 	var chainID *iscp.ChainID
