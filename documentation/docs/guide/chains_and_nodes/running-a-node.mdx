@@ -13,6 +13,9 @@ keywords:
   - Prometheus
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Running a Node
 
 In the following section, you can find information on how to use Wasp by cloning the repository and building the application. The instructions below will build both the Wasp node and the Wasp CLI to interact with the node from the command line.
@@ -58,7 +61,33 @@ git clone https://github.com/iotaledger/wasp
 
 ## Compile
 
-You can build and install both `wasp` and `wasp-cli` by running:
+You can build and install both `wasp` and `wasp-cli` by running the following commands. By default this will place the applications in `$GOPATH/bin`, which defaults to `$HOME/go/bin` on Linux and Mac and `%USERPROFILE%/go/bin` on Windows. You can add this location to your PATH to run the applications from the command line from anywhere:
+
+<Tabs>
+  <TabItem value="unix" label="Linux/Mac" default>
+    You can do this by adding the following line to your `$HOME/.profile`:
+
+    ```bash
+    export PATH=$PATH:$(go env GOPATH)/bin
+    ```
+
+    :::note
+
+    Changes made to a profile file may not apply until the next time you log into your computer. To apply the changes immediately, just run the shell commands directly or execute them from the profile using a command such as `source $HOME/.profile`.
+
+    :::
+
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+    On Windows the Go installation should add the path automatically.
+  </TabItem>
+</Tabs>
+
+:::note
+
+As an alternative you could run `make build` instead of `make install`, this would only build the applications and leave them in the repository directory.
+
+:::
 
 ### Linux/macOS
 
@@ -81,10 +110,6 @@ make install
 ```shell
 make install-windows
 ```
-
-### Add to Path
-
-It is recommendable to add `wasp` and `wasp-cli` to your PATH. Please follow the instructions specific to your OS to do this.
 
 #### Microsoft Windows Installation Errors
 
@@ -258,4 +283,12 @@ wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
 
 ## Video Tutorial
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/eV2AoV3QPC4" title="Wasp Node Setup" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/eV2AoV3QPC4"
+  title="Wasp Node Setup"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
