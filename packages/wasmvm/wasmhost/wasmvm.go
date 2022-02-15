@@ -89,6 +89,16 @@ func (vm *WasmVMBase) wrapUp() {
 	panic(panicMsg)
 }
 
+func (vm *WasmVMBase) GasBudget(budget uint64) {
+	// ignore gas budget
+}
+
+func (vm *WasmVMBase) GasBurned() uint64 {
+	// burn nothing
+	return 0
+}
+
+//nolint:unparam
 func (vm *WasmVMBase) getContext(id int32) *WasmContext {
 	return vm.proc.GetContext(id)
 }

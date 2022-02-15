@@ -27,14 +27,6 @@ func NewWasmGoVM(scName string, onLoad ScOnloadFunc) WasmVM {
 	return &WasmGoVM{scName: scName, onLoad: onLoad}
 }
 
-func (vm *WasmGoVM) GasBudget(budget uint64) {
-	// ignore gas budget
-}
-
-func (vm *WasmGoVM) GasBurned() uint64 {
-	return 0
-}
-
 func (vm *WasmGoVM) Instantiate() error {
 	return nil
 }

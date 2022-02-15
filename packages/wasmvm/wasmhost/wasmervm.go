@@ -27,16 +27,6 @@ func NewWasmerVM() WasmVM {
 	return vm
 }
 
-func (vm *WasmerVM) GasBudget(budget uint64) {
-	//TODO turn on gas usage for VM somewhere
-	// set gas budget to provided budget here
-}
-
-func (vm *WasmerVM) GasBurned() uint64 {
-	//TODO return actual amount of gas burned by VM
-	return 0
-}
-
 //TODO
 func (vm *WasmerVM) Interrupt() {
 	panic("implement me")
