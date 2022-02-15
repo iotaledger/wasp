@@ -1,4 +1,4 @@
-package merkle
+package merkle_trie
 
 import (
 	"bytes"
@@ -8,26 +8,34 @@ import (
 	"io"
 )
 
-type MerkleProof struct {
+type Proof struct {
 	Key  []byte
-	Path []*MerkleProofElement
+	Path []*ProofElement
 }
 
-type MerkleProofElement struct {
+type ProofElement struct {
 	PathFragment []byte
 	Children     map[byte]*[32]byte
 	Terminal     *[32]byte
 	ChildIndex   int
 }
 
+func ProofFromBytes(data []byte) (*Proof, error) {
+	ret := &Proof{}
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 // Proof converts generic proof path to the Merkle proof path
-func (m *merkleTrieSetup) Proof(path *trie.ProofPath) *MerkleProof {
-	ret := &MerkleProof{
+func (m *trieSetup) Proof(path *trie.ProofPath) *Proof {
+	ret := &Proof{
 		Key:  path.Key,
-		Path: make([]*MerkleProofElement, len(path.Path)),
+		Path: make([]*ProofElement, len(path.Path)),
 	}
 	for i, eg := range path.Path {
-		em := &MerkleProofElement{
+		em := &ProofElement{
 			PathFragment: eg.Node.PathFragment,
 			Children:     make(map[byte]*[32]byte),
 			Terminal:     nil,
@@ -50,7 +58,7 @@ func (m *merkleTrieSetup) Proof(path *trie.ProofPath) *MerkleProof {
 
 // MustKeyTerminal returns key and terminal commitment the proof is about. If it returns (?, nil) it means it is proof of absence
 // It does not verify the proof, so this function should be used only after Validate()
-func (p *MerkleProof) MustKeyTerminal() ([]byte, *[32]byte) {
+func (p *Proof) MustKeyTerminal() ([]byte, *[32]byte) {
 	if len(p.Path) == 0 {
 		return nil, nil
 	}
@@ -69,12 +77,12 @@ func (p *MerkleProof) MustKeyTerminal() ([]byte, *[32]byte) {
 	panic("wrong lastElem.ChildIndex")
 }
 
-func (p *MerkleProof) MustIsProofOfAbsence() bool {
+func (p *Proof) MustIsProofOfAbsence() bool {
 	_, r := p.MustKeyTerminal()
 	return r == nil
 }
 
-func (p *MerkleProof) Validate(root *[32]byte) error {
+func (p *Proof) Validate(root *[32]byte) error {
 	if len(p.Path) == 0 {
 		if root != nil {
 			return xerrors.New("proof is empty")
@@ -91,7 +99,7 @@ func (p *MerkleProof) Validate(root *[32]byte) error {
 	return nil
 }
 
-func (p *MerkleProof) verify(pathIdx, keyIdx int) ([32]byte, error) {
+func (p *Proof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 	assert(pathIdx < len(p.Path), "assertion: pathIdx < len(p.Path)")
 	assert(keyIdx <= len(p.Key), "assertion: keyIdx <= len(p.Key)")
 
@@ -134,7 +142,7 @@ func (p *MerkleProof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 	return elem.hashIt(nil), nil
 }
 
-func (e *MerkleProofElement) hashIt(missingCommitment *[32]byte) [32]byte {
+func (e *ProofElement) hashIt(missingCommitment *[32]byte) [32]byte {
 	var hashes [258]*hashCommitment
 	for idx, c := range e.Children {
 		hashes[idx] = (*hashCommitment)(c)
@@ -153,7 +161,7 @@ func assert(cond bool, err interface{}) {
 	}
 }
 
-func (p *MerkleProof) Write(w io.Writer) {
+func (p *Proof) Write(w io.Writer) {
 	_ = util.WriteBytes16(w, p.Key)
 	_ = util.WriteUint16(w, uint16(len(p.Path)))
 	for _, e := range p.Path {
@@ -161,7 +169,7 @@ func (p *MerkleProof) Write(w io.Writer) {
 	}
 }
 
-func (p *MerkleProof) Read(r io.Reader) error {
+func (p *Proof) Read(r io.Reader) error {
 	var err error
 	if p.Key, err = util.ReadBytes16(r); err != nil {
 		return err
@@ -170,9 +178,9 @@ func (p *MerkleProof) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	p.Path = make([]*MerkleProofElement, size)
+	p.Path = make([]*ProofElement, size)
 	for i := range p.Path {
-		p.Path[i] = &MerkleProofElement{}
+		p.Path[i] = &ProofElement{}
 		if err = p.Path[i].Read(r); err != nil {
 			return err
 		}
@@ -185,9 +193,9 @@ const (
 	hasChildrenFlag      = 0x02
 )
 
-func (e *MerkleProofElement) Write(w io.Writer) {
+func (e *ProofElement) Write(w io.Writer) {
 	_ = util.WriteBytes16(w, e.PathFragment)
-
+	_ = util.WriteUint16(w, uint16(e.ChildIndex))
 	var smallFlags byte
 	if e.Terminal != nil {
 		smallFlags = hasTerminalValueFlag
@@ -216,11 +224,16 @@ func (e *MerkleProofElement) Write(w io.Writer) {
 	}
 }
 
-func (e *MerkleProofElement) Read(r io.Reader) error {
+func (e *ProofElement) Read(r io.Reader) error {
 	var err error
 	if e.PathFragment, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
+	var idx uint16
+	if err := util.ReadUint16(r, &idx); err != nil {
+		return err
+	}
+	e.ChildIndex = int(idx)
 	var smallFlags byte
 	if smallFlags, err = util.ReadByte(r); err != nil {
 		return err
@@ -237,6 +250,7 @@ func (e *MerkleProofElement) Read(r io.Reader) error {
 	} else {
 		e.Terminal = nil
 	}
+	e.Children = make(map[byte]*[32]byte)
 	if smallFlags&hasChildrenFlag != 0 {
 		var flags [32]byte
 		if _, err := r.Read(flags[:]); err != nil {

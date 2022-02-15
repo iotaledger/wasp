@@ -1,4 +1,4 @@
-package merkle
+package merkle_trie
 
 import (
 	"encoding/hex"
@@ -11,23 +11,23 @@ import (
 
 type hashCommitment [32]byte
 
-// MerkleCommitments implements 256+ Trie based on Merkle tree, i.e. on hashing with blake2b
-type merkleTrieSetup struct{}
+// CommitmentLogic implements 256+ Trie based on Merkle tree, i.e. on hashing with blake2b
+type trieSetup struct{}
 
 var (
-	MerkleCommitments                      = &merkleTrieSetup{}
-	_                 trie.CommitmentLogic = MerkleCommitments
+	CommitmentLogic                      = &trieSetup{}
+	_               trie.CommitmentLogic = CommitmentLogic
 )
 
-func (m *merkleTrieSetup) NewTerminalCommitment() trie.TerminalCommitment {
+func (m *trieSetup) NewTerminalCommitment() trie.TerminalCommitment {
 	return &hashCommitment{}
 }
 
-func (m *merkleTrieSetup) NewVectorCommitment() trie.VectorCommitment {
+func (m *trieSetup) NewVectorCommitment() trie.VectorCommitment {
 	return &hashCommitment{}
 }
 
-func (m *merkleTrieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
+func (m *trieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
 	var hashes [258]*hashCommitment
 
 	empty := true
@@ -69,7 +69,7 @@ func hashData(data []byte) *hashCommitment {
 	return &ret
 }
 
-func (m *merkleTrieSetup) CommitToData(data []byte) trie.TerminalCommitment {
+func (m *trieSetup) CommitToData(data []byte) trie.TerminalCommitment {
 	if len(data) == 0 {
 		// empty slice -> no data (deleted)
 		return nil
@@ -77,11 +77,11 @@ func (m *merkleTrieSetup) CommitToData(data []byte) trie.TerminalCommitment {
 	return hashData(data)
 }
 
-func (m *merkleTrieSetup) UpdateCommitment(prev *trie.VectorCommitment, delta trie.VectorCommitment) {
+func (m *trieSetup) UpdateCommitment(prev *trie.VectorCommitment, delta trie.VectorCommitment) {
 	*prev = delta
 }
 
-func (m *merkleTrieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitment {
+func (m *trieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitment {
 	if n == nil {
 		// no node, no commitment
 		return nil

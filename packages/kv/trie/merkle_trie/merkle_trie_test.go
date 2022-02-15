@@ -1,4 +1,4 @@
-package merkle
+package merkle_trie
 
 import (
 	"bytes"
@@ -20,47 +20,47 @@ func TestNode(t *testing.T) {
 		t.Logf("size() = %d, size(serialize) = %d", trie.Size(n), len(buf.Bytes()))
 		require.EqualValues(t, trie.Size(n), len(buf.Bytes()))
 
-		nBack, err := trie.NodeFromBytes(MerkleCommitments, buf.Bytes())
+		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), trie.Bytes(nBack))
 
-		h := MerkleCommitments.CommitToNode(n)
-		hBack := MerkleCommitments.CommitToNode(nBack)
+		h := CommitmentLogic.CommitToNode(n)
+		hBack := CommitmentLogic.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base short terminal", func(t *testing.T) {
 		n := trie.NewNode([]byte("kuku"))
-		n.Terminal = MerkleCommitments.CommitToData([]byte("data"))
+		n.Terminal = CommitmentLogic.CommitToData([]byte("data"))
 
 		var buf bytes.Buffer
 		n.Write(&buf)
 		t.Logf("size() = %d, size(serialize) = %d", trie.Size(n), len(buf.Bytes()))
 		require.EqualValues(t, trie.Size(n), len(buf.Bytes()))
 
-		nBack, err := trie.NodeFromBytes(MerkleCommitments, buf.Bytes())
+		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), trie.Bytes(nBack))
 
-		h := MerkleCommitments.CommitToNode(n)
-		hBack := MerkleCommitments.CommitToNode(nBack)
+		h := CommitmentLogic.CommitToNode(n)
+		hBack := CommitmentLogic.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base long terminal", func(t *testing.T) {
 		n := trie.NewNode([]byte("kuku"))
-		n.Terminal = MerkleCommitments.CommitToData([]byte(strings.Repeat("data", 1000)))
+		n.Terminal = CommitmentLogic.CommitToData([]byte(strings.Repeat("data", 1000)))
 		var buf bytes.Buffer
 		n.Write(&buf)
 		t.Logf("size() = %d, size(serialize) = %d", trie.Size(n), len(buf.Bytes()))
 		require.EqualValues(t, trie.Size(n), len(buf.Bytes()))
 
-		nBack, err := trie.NodeFromBytes(MerkleCommitments, buf.Bytes())
+		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), trie.Bytes(nBack))
 
-		h := MerkleCommitments.CommitToNode(n)
-		hBack := MerkleCommitments.CommitToNode(nBack)
+		h := CommitmentLogic.CommitToNode(n)
+		hBack := CommitmentLogic.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
@@ -72,7 +72,7 @@ func TestTrieBase(t *testing.T) {
 
 	t.Run("base1", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(MerkleCommitments, store, nil)
+		tr := trie.New(CommitmentLogic, store, nil)
 		require.EqualValues(t, nil, tr.RootCommitment())
 
 		tr.Update([]byte(data1[0]), []byte(data1[0]))
@@ -91,7 +91,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base2", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data1 {
 			tr1.Update([]byte(data1[i]), []byte(data1[i]))
@@ -100,7 +100,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		for i := range data1 {
 			tr2.Update([]byte(data1[i]), []byte(data1[i]))
@@ -112,7 +112,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base3", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data2 {
 			tr1.Update([]byte(data2[i]), []byte(data2[i]))
@@ -121,7 +121,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		for i := range data2 {
 			tr2.Update([]byte(data2[i]), []byte(data2[i]))
@@ -132,7 +132,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base4", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data2 {
 			tr1.Update([]byte(data2[i]), []byte(data2[i]))
@@ -141,7 +141,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		for i := len(data2) - 1; i >= 0; i-- {
 			tr2.Update([]byte(data2[i]), []byte(data2[i]))
@@ -260,7 +260,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("rnd1", func(t *testing.T) {
 		data := genRnd1()
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -269,7 +269,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		for i := len(data) - 1; i >= 0; i-- {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
@@ -283,7 +283,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism1", func(t *testing.T) {
 		data := genRnd1()
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -292,7 +292,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -308,7 +308,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism2", func(t *testing.T) {
 		data := genRnd2()
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -317,7 +317,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -333,7 +333,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism3", func(t *testing.T) {
 		data := genRnd3()
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -342,7 +342,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -358,7 +358,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism4", func(t *testing.T) {
 		data := genRnd4()
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -367,7 +367,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -390,7 +390,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism5", func(t *testing.T) {
 		data := genRnd4()
 		store1 := dict.New()
-		tr1 := trie.New(MerkleCommitments, store1, nil)
+		tr1 := trie.New(CommitmentLogic, store1, nil)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -399,7 +399,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(MerkleCommitments, store2, nil)
+		tr2 := trie.New(CommitmentLogic, store2, nil)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -419,9 +419,9 @@ func TestTrieWithDeletion(t *testing.T) {
 	var tr1, tr2 *trie.Trie
 	initTest := func() {
 		store1 := dict.New()
-		tr1 = trie.New(MerkleCommitments, store1, nil)
+		tr1 = trie.New(CommitmentLogic, store1, nil)
 		store2 := dict.New()
-		tr2 = trie.New(MerkleCommitments, store2, nil)
+		tr2 = trie.New(CommitmentLogic, store2, nil)
 	}
 	t.Run("del1", func(t *testing.T) {
 		initTest()
@@ -567,7 +567,7 @@ func TestTrieProof(t *testing.T) {
 
 	t.Run("proof empty tie", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(MerkleCommitments, store, nil)
+		tr := trie.New(CommitmentLogic, store, nil)
 		require.EqualValues(t, nil, tr.RootCommitment())
 
 		proof := tr.ProofPath(nil)
@@ -575,7 +575,7 @@ func TestTrieProof(t *testing.T) {
 	})
 	t.Run("proof one entry 1", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(MerkleCommitments, store, nil)
+		tr := trie.New(CommitmentLogic, store, nil)
 
 		tr.Update(nil, []byte("1"))
 		tr.Commit()
@@ -583,7 +583,7 @@ func TestTrieProof(t *testing.T) {
 		proofPath := tr.ProofPath(nil)
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof := MerkleCommitments.Proof(proofPath)
+		proof := CommitmentLogic.Proof(proofPath)
 		rootC := (*[32]byte)(tr.RootCommitment().(*hashCommitment))
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
@@ -597,7 +597,7 @@ func TestTrieProof(t *testing.T) {
 		proofPath = tr.ProofPath([]byte("a"))
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof = MerkleCommitments.Proof(proofPath)
+		proof = CommitmentLogic.Proof(proofPath)
 		rootC = (*[32]byte)(tr.RootCommitment().(*hashCommitment))
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
@@ -606,14 +606,14 @@ func TestTrieProof(t *testing.T) {
 	})
 	t.Run("proof one entry 2", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(MerkleCommitments, store, nil)
+		tr := trie.New(CommitmentLogic, store, nil)
 
 		tr.Update([]byte("1"), []byte("2"))
 		tr.Commit()
 		proofPath := tr.ProofPath(nil)
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof := MerkleCommitments.Proof(proofPath)
+		proof := CommitmentLogic.Proof(proofPath)
 		rootC := (*[32]byte)(tr.RootCommitment().(*hashCommitment))
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
@@ -622,7 +622,7 @@ func TestTrieProof(t *testing.T) {
 		proofPath = tr.ProofPath([]byte("1"))
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof = MerkleCommitments.Proof(proofPath)
+		proof = CommitmentLogic.Proof(proofPath)
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
 		require.False(t, proof.MustIsProofOfAbsence())
@@ -638,7 +638,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 
 	initTrie := func(dataAdd []string) {
 		store := dict.New()
-		tr = trie.New(MerkleCommitments, store, nil)
+		tr = trie.New(CommitmentLogic, store, nil)
 		for _, s := range dataAdd {
 			tr.Update([]byte(s), []byte(s+"++"))
 		}
@@ -658,7 +658,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 		for _, s := range data {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
@@ -674,7 +674,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 
 		for _, s := range data {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
@@ -683,7 +683,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
@@ -702,21 +702,41 @@ func TestTrieProofWithDeletes(t *testing.T) {
 
 		for _, s := range data {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
-			t.Logf("proof presence size = %d bytes", trie.Size(proof))
+			sz := trie.Size(proof)
+			t.Logf("proof presence size = %d bytes", sz)
+
+			proofBin := trie.Bytes(proof)
+			require.EqualValues(t, len(proofBin), sz)
+			proofBack, err := ProofFromBytes(proofBin)
+			require.NoError(t, err)
+			err = proofBack.Validate(rootC)
+			require.NoError(t, err)
+			require.EqualValues(t, proof.Key, proofBack.Key)
+			require.False(t, proofBack.MustIsProofOfAbsence())
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
-			t.Logf("proof absence size = %d bytes", trie.Size(proof))
+			sz := trie.Size(proof)
+			t.Logf("proof absence size = %d bytes", sz)
+
+			proofBin := trie.Bytes(proof)
+			require.EqualValues(t, len(proofBin), sz)
+			proofBack, err := ProofFromBytes(proofBin)
+			require.NoError(t, err)
+			err = proofBack.Validate(rootC)
+			require.NoError(t, err)
+			require.EqualValues(t, proof.Key, proofBack.Key)
+			require.True(t, proofBack.MustIsProofOfAbsence())
 		}
 	})
 	t.Run("proof many entries rnd", func(t *testing.T) {
@@ -730,26 +750,26 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 
 		lenStats := make(map[int]int)
-		size10Stats := make(map[int]int)
+		size100Stats := make(map[int]int)
 		for _, s := range addKeys {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			lenP := len(proofPath.Path)
-			sizeP10 := trie.Size(proof) / 10
+			sizeP100 := trie.Size(proof) / 100
 			//t.Logf("key: '%s', proof presence len: %d", s, )
 			t.Logf("proof presence size = %d bytes", trie.Size(proof))
 
 			l := lenStats[lenP]
 			lenStats[lenP] = l + 1
-			sz := size10Stats[sizeP10]
-			size10Stats[sizeP10] = sz + 1
+			sz := size100Stats[sizeP100]
+			size100Stats[sizeP100] = sz + 1
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
-			proof := MerkleCommitments.Proof(proofPath)
+			proof := CommitmentLogic.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
@@ -760,8 +780,8 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			if i < 10 {
 				t.Logf("len[%d] = %d", i, lenStats[i])
 			}
-			if size10Stats[i] != 0 {
-				t.Logf("size[%d] = %d", i*10, size10Stats[i])
+			if size100Stats[i] != 0 {
+				t.Logf("size[%d] = %d", i*100, size100Stats[i])
 			}
 		}
 	})
