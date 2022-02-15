@@ -34,7 +34,7 @@ const ( // TODO set back to false
 )
 
 var (
-	GoDebug     = flag.Bool("godebug", false, "debug go smart contract code")
+	GoDebug     = flag.Bool("godebug", true, "debug go smart contract code")
 	GoWasm      = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
 	TsWasm      = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
 	RsWasm      = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
@@ -58,7 +58,6 @@ type SoloContext struct {
 }
 
 var (
-	//_ iscp.Gas                  = &SoloContext{}
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
@@ -154,6 +153,8 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 
+	ctx.Accounts()
+
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
@@ -163,6 +164,8 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	if ctx.Err != nil {
 		return ctx
 	}
+
+	ctx.Accounts()
 
 	var params []interface{}
 	if len(init) != 0 {
@@ -185,8 +188,13 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
+	ctx.Accounts()
+
 	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
 	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+
+	ctx.Accounts()
+
 	if ctx.Err != nil {
 		return ctx
 	}

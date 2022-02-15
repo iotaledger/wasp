@@ -105,7 +105,6 @@ func (vm *WasmVMBase) getContext(id int32) *WasmContext {
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 	vm.reportGasBurned()
-
 	defer vm.wrapUp()
 
 	// crude implementation assumes texts to only use ASCII part of UTF-16
@@ -133,10 +132,10 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	vm.reportGasBurned()
 	defer vm.wrapUp()
-	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
 	ctx.log().Debugf("HostFdWrite(...)")
+	impl := vm.proc.vm
 
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := impl.VMGetBytes(iovs, 8)
@@ -156,9 +155,9 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	vm.reportGasBurned()
 	defer vm.wrapUp()
-	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
+	impl := vm.proc.vm
 	if HostTracing {
 		vm.traceGet(ctx, keyRef, keyLen, valRef, valLen)
 	}
@@ -195,9 +194,9 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	vm.reportGasBurned()
 	defer vm.wrapUp()
-	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
+	impl := vm.proc.vm
 	if HostTracing {
 		vm.traceSet(ctx, keyRef, keyLen, valRef, valLen)
 	}
