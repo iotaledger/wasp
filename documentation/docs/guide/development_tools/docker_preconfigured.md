@@ -19,11 +19,11 @@ This page describes the usage of the preconfigured developer Docker setup.
 
 ## Introduction
 
-To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a preconfigured Wasp and GoShimmer (v0.7.7) node, that are connected with each other - ready to run out of the box.
+To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp and GoShimmer (v0.7.7) node, that are connected with each other - ready to run out of the box.
 
 ## Running the setup
 
-Checkout the project, switch to 'develop' and start with docker-compose:
+Checkout the project and start with docker-compose:
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
