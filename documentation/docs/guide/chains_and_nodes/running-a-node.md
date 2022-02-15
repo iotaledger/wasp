@@ -13,9 +13,6 @@ keywords:
   - Prometheus
 ---
 
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-
 # Running a Node
 
 In the following section, you can find information on how to use Wasp by cloning the repository and building the application. The instructions below will build both the Wasp node and the Wasp CLI to interact with the node from the command line.
@@ -61,27 +58,19 @@ git clone https://github.com/iotaledger/wasp
 
 ## Compile
 
-You can build and install both `wasp` and `wasp-cli` by running the following commands. By default this will place the applications in `$GOPATH/bin`, which defaults to `$HOME/go/bin` on Linux and Mac and `%USERPROFILE%/go/bin` on Windows. You can add this location to your PATH to run the applications from the command line from anywhere:
+You can build and install both `wasp` and `wasp-cli` by running the following commands.
 
-<Tabs>
-  <TabItem value="unix" label="Linux/Mac" default>
-    You can do this by adding the following line to your `$HOME/.profile`:
+:::info
 
-    ```bash
-    export PATH=$PATH:$(go env GOPATH)/bin
-    ```
+By default this will place the applications in `$HOME/go/bin` on Linux and Mac and `%USERPROFILE%/go/bin` on Windows. On Windows the Go installation should add this path automatically to your PATH environment variable. On Linux and Mac you can add this location to your PATH by adding the following line to your `$HOME/.profile`:
 
-    :::note
+```shell
+export PATH=$PATH:$(go env GOPATH)/bin
+```
 
-    Changes made to a profile file may not apply until the next time you log into your computer. To apply the changes immediately, just run the shell commands directly or execute them from the profile using a command such as `source $HOME/.profile`.
+Changes made to a profile file may not apply until the next time you log into your computer. To apply the changes immediately, just run the shell commands directly or execute them from the profile using a command such as `source $HOME/.profile`.
 
-    :::
-
-  </TabItem>
-  <TabItem value="windows" label="Windows">
-    On Windows the Go installation should add the path automatically.
-  </TabItem>
-</Tabs>
+:::
 
 :::note
 
