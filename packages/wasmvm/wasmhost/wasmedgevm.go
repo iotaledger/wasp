@@ -40,16 +40,6 @@ func NewWasmEdgeVM() WasmVM {
 	return vm
 }
 
-func (vm *WasmEdgeVM) GasBudget(budget uint64) {
-	//TODO turn on gas usage for VM somewhere
-	// set gas budget to provided budget here
-}
-
-func (vm *WasmEdgeVM) GasBurned() uint64 {
-	//TODO return actual amount of gas burned by VM
-	return 0
-}
-
 func (vm *WasmEdgeVM) Instantiate() error {
 	err := vm.edge.Instantiate()
 	if err != nil {
