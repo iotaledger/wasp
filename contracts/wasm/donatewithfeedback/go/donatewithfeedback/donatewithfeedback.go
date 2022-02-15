@@ -10,7 +10,7 @@ import (
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 	donation := &Donation{
-		Amount:    ctx.IncomingTransfer().Balance(wasmtypes.IOTA),
+		Amount:    ctx.Allowance().Balance(wasmtypes.IOTA),
 		Donator:   ctx.Caller(),
 		Error:     "",
 		Feedback:  f.Params.Feedback().Value(),

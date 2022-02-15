@@ -58,10 +58,10 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // Create ScBalances proxy to the incoming balances for this request.
     // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
     // in a simpler to use interface.
-    let incoming: ScBalances = ctx.incoming();
+    let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = incoming.balance(&ScColor::IOTA);
+    let amount: u64 = allowance.balance(&ScColor::IOTA);
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");
@@ -215,7 +215,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
             // of the winner. The transfer_to_address() method receives the address value and
             // the proxy to the new transfers map on the host, and will call the corresponding
             // host sandbox function with these values.
-            ctx.transfer_to_address(&bet.better.address(), transfers);
+            ctx.send(&bet.better.address(), &transfers);
         }
 
         // Announce who got sent what as event.
@@ -230,7 +230,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         let transfers: ScTransfers = ScTransfers::iotas(remainder);
 
         // Send the remainder to the contract creator.
-        ctx.transfer_to_address(&ctx.contract_creator().address(), transfers);
+        ctx.send(&ctx.contract_creator().address(), &transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended

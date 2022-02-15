@@ -19,6 +19,7 @@ import (
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
 	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
 	(*WasmContextSandbox).fnBlockContext,
@@ -31,7 +32,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEvent,
-	(*WasmContextSandbox).fnIncomingTransfer,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
 	(*WasmContextSandbox).fnPanic,
@@ -63,6 +63,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 var sandboxFuncNames = []string{
 	"nil",
 	"FnAccountID",
+	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
 	"FnBlockContext",
@@ -75,7 +76,6 @@ var sandboxFuncNames = []string{
 	"#FnDeployContract",
 	"FnEntropy",
 	"$FnEvent",
-	"FnIncomingTransfer",
 	"$FnLog",
 	"FnMinted",
 	"$FnPanic",
@@ -150,6 +150,11 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
+}
+
+func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
+	assets := s.ctx.AllowanceAvailable()
+	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -241,15 +246,6 @@ func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
-	assets := s.ctx.AllowanceAvailable()
-	if !assets.IsEmpty() {
-		s.ctx.TransferAllowedFunds(s.ctx.AccountID())
-	}
-	assets = s.ctx.Assets()
-	return assets.Bytes()
-}
-
 func (s *WasmContextSandbox) fnLog(args []byte) []byte {
 	s.common.Log().Infof(string(args))
 	return nil
@@ -287,6 +283,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 		TargetContract: contract,
 		EntryPoint:     function,
 		Params:         params,
+		Allowance:      assets,
 		GasBudget:      1_000_000,
 	}
 	if req.Delay == 0 {
@@ -302,9 +299,10 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	timeLock := time.Unix(0, s.ctx.Timestamp())
 	timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
 	s.ctx.Send(iscp.RequestParameters{
-		TargetAddress: s.ctx.Caller().Address(),
-		Assets:        assets,
-		Metadata:      metadata,
+		AdjustToMinimumDustDeposit: true,
+		TargetAddress:              s.ctx.Caller().Address(),
+		Assets:                     assets,
+		Metadata:                   metadata,
 		Options: iscp.SendOptions{
 			Timelock: &iscp.TimeData{Time: timeLock},
 		},
@@ -338,8 +336,9 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
 		s.ctx.Send(iscp.RequestParameters{
-			TargetAddress: address,
-			Assets:        assets,
+			AdjustToMinimumDustDeposit: true,
+			TargetAddress:              address,
+			Assets:                     assets,
 		})
 	}
 	return nil
