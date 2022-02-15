@@ -121,7 +121,7 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	}
 	key := path[:pathPosition]
 	tail := path[pathPosition:]
-	// looking up for the node with the Key (with caching)
+	// looking up for the node with the key (with caching)
 	node, ok := t.GetNode(key)
 	if !ok {
 		if terminal == nil {

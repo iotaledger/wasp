@@ -92,6 +92,10 @@ func (m *merkleTrieSetup) UpdateCommitment(prev *trie.VectorCommitment, delta tr
 }
 
 func (m *merkleTrieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitment {
+	if n == nil {
+		// no node, no commitment
+		return nil
+	}
 	n.Terminal = n.NewTerminal
 	for i, child := range n.ModifiedChildren {
 		c := m.UpdateNodeCommitment(child)

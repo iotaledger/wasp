@@ -18,8 +18,8 @@ type MerkleProofElement struct {
 	ChildIndex   int
 }
 
-// ProvePath converts generic proof path to the Merkle proof path
-func (m *merkleTrieSetup) ProvePath(path *trie.ProofPath) *MerkleProof {
+// Proof converts generic proof path to the Merkle proof path
+func (m *merkleTrieSetup) Proof(path *trie.ProofPath) *MerkleProof {
 	ret := &MerkleProof{
 		Key:  path.Key,
 		Path: make([]*MerkleProofElement, len(path.Path)),
@@ -105,8 +105,8 @@ func (p *MerkleProof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 		if elem.ChildIndex > 255 {
 			return [32]byte{}, xerrors.Errorf("wrong proof: wrong child index. Path position: %d, key position %d", pathIdx, keyIdx)
 		}
-		if elem.Children[byte(elem.ChildIndex)] != nil {
-			return [32]byte{}, xerrors.Errorf("wrong proof: nil expected at child index. Path position: %d, key position %d", pathIdx, keyIdx)
+		if _, ok := elem.Children[byte(elem.ChildIndex)]; ok {
+			return [32]byte{}, xerrors.Errorf("wrong proof: unexpected commitment at child index %d. Path position: %d, key position %d", elem.ChildIndex, pathIdx, keyIdx)
 		}
 		nextKeyIdx := keyIdx + len(elem.PathFragment) + 1
 		if nextKeyIdx > len(p.Key) {

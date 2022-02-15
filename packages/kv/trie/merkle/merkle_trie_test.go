@@ -234,6 +234,28 @@ func genDels(data []string, num int) []string {
 	return ret
 }
 
+func gen2different(n int) ([]string, []string) {
+	orig := genRnd4()
+	// filter different
+	unique := make(map[string]bool)
+	for _, s := range orig {
+		unique[s] = true
+	}
+	ret1 := make([]string, 0)
+	ret2 := make([]string, 0)
+	for s := range unique {
+		if rand.Intn(10000) > 1000 {
+			ret1 = append(ret1, s)
+		} else {
+			ret2 = append(ret2, s)
+		}
+		if len(ret1)+len(ret2) > n {
+			break
+		}
+	}
+	return ret1, ret2
+}
+
 func TestTrieRnd(t *testing.T) {
 	t.Run("rnd1", func(t *testing.T) {
 		data := genRnd1()
@@ -542,7 +564,6 @@ func TestTrieWithDeletion(t *testing.T) {
 
 func TestTrieProof(t *testing.T) {
 	//data1 := []string{"", "1", "2"}
-	//data2 := []string{"a", "ab", "ac", "abc", "abd", "ad", "ada", "adb", "adc", "c"}
 
 	t.Run("proof empty tie", func(t *testing.T) {
 		store := dict.New()
@@ -562,7 +583,7 @@ func TestTrieProof(t *testing.T) {
 		proofPath := tr.ProofPath(nil)
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof := MerkleCommitments.ProvePath(proofPath)
+		proof := MerkleCommitments.Proof(proofPath)
 		rootC := (*[32]byte)(tr.RootCommitment().(*hashCommitment))
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
@@ -574,7 +595,7 @@ func TestTrieProof(t *testing.T) {
 		proofPath = tr.ProofPath([]byte("a"))
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof = MerkleCommitments.ProvePath(proofPath)
+		proof = MerkleCommitments.Proof(proofPath)
 		rootC = (*[32]byte)(tr.RootCommitment().(*hashCommitment))
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
@@ -589,7 +610,7 @@ func TestTrieProof(t *testing.T) {
 		proofPath := tr.ProofPath(nil)
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof := MerkleCommitments.ProvePath(proofPath)
+		proof := MerkleCommitments.Proof(proofPath)
 		rootC := (*[32]byte)(tr.RootCommitment().(*hashCommitment))
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
@@ -598,12 +619,123 @@ func TestTrieProof(t *testing.T) {
 		proofPath = tr.ProofPath([]byte("1"))
 		require.EqualValues(t, 1, len(proofPath.Path))
 
-		proof = MerkleCommitments.ProvePath(proofPath)
+		proof = MerkleCommitments.Proof(proofPath)
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
 		require.False(t, proof.MustIsProofOfAbsence())
 
 		_, term := proof.MustKeyTerminal()
 		require.EqualValues(t, ([32]byte)(*hashData([]byte("2"))), *term)
+	})
+}
+
+func TestTrieProofWithDeletes(t *testing.T) {
+	var tr *trie.Trie
+	var rootC *[32]byte
+
+	initTrie := func(dataAdd []string) {
+		store := dict.New()
+		tr = trie.New(MerkleCommitments, store, nil)
+		for _, s := range dataAdd {
+			tr.Update([]byte(s), []byte(s+"++"))
+		}
+	}
+	deleteKeys := func(keysDelete []string) {
+		for _, s := range keysDelete {
+			tr.Update([]byte(s), nil)
+		}
+	}
+	commitTrie := func() *[32]byte {
+		tr.Commit()
+		return (*[32]byte)(tr.RootCommitment().(*hashCommitment))
+	}
+	data := []string{"a", "ab", "ac", "abc", "abd", "ad", "ada", "adb", "adc", "c", "ad+dddgsssisd"}
+	t.Run("proof many entries 1", func(t *testing.T) {
+		initTrie(data)
+		rootC = commitTrie()
+		for _, s := range data {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.False(t, proof.MustIsProofOfAbsence())
+			t.Logf("key: '%s', proof len: %d", s, len(proofPath.Path))
+		}
+	})
+	t.Run("proof many entries 2", func(t *testing.T) {
+		delKeys := []string{"1", "2", "3", "12345", "ab+", "ada+"}
+		initTrie(data)
+		deleteKeys(delKeys)
+		rootC = commitTrie()
+
+		for _, s := range data {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.False(t, proof.MustIsProofOfAbsence())
+			t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
+		}
+		for _, s := range delKeys {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.True(t, proof.MustIsProofOfAbsence())
+			t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
+		}
+	})
+	t.Run("proof many entries 3", func(t *testing.T) {
+		delKeys := []string{"1", "2", "3", "12345", "ab+", "ada+"}
+		allData := make([]string, 0, len(data)+len(delKeys))
+		allData = append(allData, data...)
+		allData = append(allData, delKeys...)
+		initTrie(allData)
+		deleteKeys(delKeys)
+		rootC = commitTrie()
+
+		for _, s := range data {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.False(t, proof.MustIsProofOfAbsence())
+			t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
+		}
+		for _, s := range delKeys {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.True(t, proof.MustIsProofOfAbsence())
+			t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
+		}
+	})
+	t.Run("proof many entries rnd", func(t *testing.T) {
+		addKeys, delKeys := gen2different(100000)
+		t.Logf("len adds: %d, len dels: %d", len(addKeys), len(delKeys))
+		allData := make([]string, 0, len(addKeys)+len(delKeys))
+		allData = append(allData, addKeys...)
+		allData = append(allData, delKeys...)
+		initTrie(allData)
+		deleteKeys(delKeys)
+		rootC = commitTrie()
+
+		for _, s := range addKeys {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.False(t, proof.MustIsProofOfAbsence())
+			//t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
+		}
+		for _, s := range delKeys {
+			proofPath := tr.ProofPath([]byte(s))
+			proof := MerkleCommitments.Proof(proofPath)
+			err := proof.Validate(rootC)
+			require.NoError(t, err)
+			require.True(t, proof.MustIsProofOfAbsence())
+			//t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
+		}
 	})
 }
