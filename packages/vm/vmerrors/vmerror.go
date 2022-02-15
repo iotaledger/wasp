@@ -148,16 +148,19 @@ func (e *Error) Hash() uint32 {
 	return hash
 }
 
-func (e *Error) serializeParams(mu *marshalutil.MarshalUtil) error {
+func (e *Error) serializeParams(mu *marshalutil.MarshalUtil) {
 	bytes, err := json.Marshal(e.Params())
+
+	if err != nil {
+		panic(err)
+	}
 
 	mu.WriteUint16(uint16(len(bytes)))
 	mu.WriteBytes(bytes)
-
-	return err
 }
 
-func (e *Error) Serialize(mu *marshalutil.MarshalUtil) error {
+func (e *Error) Bytes() []byte {
+	mu := marshalutil.New()
 	hash := e.Hash()
 
 	mu.WriteUint32(e.PrefixId()).
@@ -165,9 +168,9 @@ func (e *Error) Serialize(mu *marshalutil.MarshalUtil) error {
 		WriteUint32(hash)
 
 	// For now, JSON encoded.
-	err := e.serializeParams(mu)
+	e.serializeParams(mu)
 
-	return err
+	return mu.Bytes()
 }
 
 func (e *Error) deserializeParams(mu *marshalutil.MarshalUtil) error {

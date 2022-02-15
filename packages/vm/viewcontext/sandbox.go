@@ -1,9 +1,8 @@
 package viewcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
-
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
@@ -136,7 +135,7 @@ func (s *sandboxview) Gas() iscp.Gas {
 func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.gasBurned += burnCode.Cost(par...)
 	if s.gasBurned > s.gasBudget {
-		panic(vmcontext.ErrGasBudgetExceeded)
+		panic(vm.ErrGasBudgetExceeded)
 	}
 }
 

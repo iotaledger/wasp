@@ -1,10 +1,11 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"math"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 
@@ -154,13 +155,13 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
-	var receiptError error
+	var receiptError *vmerrors.Error
 
 	if errProvided != nil {
-		if _, ok := errProvided.(*vmerrors.Error); !ok {
-			receiptError = commonerrors.ErrUntypedError.Create(errProvided)
+		if _, ok := errProvided.(*vmerrors.Error); ok {
+			receiptError = errProvided.(*vmerrors.Error)
 		} else {
-			receiptError = errProvided
+			receiptError = commonerrors.ErrUntypedError.Create(errProvided)
 		}
 	}
 
@@ -189,10 +190,10 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	vmctx.GasBurn(gas.BurnCodeEmitEventFixed)
 
 	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
-		panic(ErrTooManyEvents)
+		panic(vm.ErrTooManyEvents)
 	}
 	if len([]byte(msg)) > int(vmctx.chainInfo.MaxEventSize) {
-		panic(ErrTooLargeEvent)
+		panic(vm.ErrTooLargeEvent)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 

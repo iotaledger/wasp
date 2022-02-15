@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
@@ -21,7 +22,7 @@ func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict
 		return vmctx.callByProgramHash(targetContract, epCode, params, allowance, rec.ProgramHash)
 	}
 	vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-	panic(xerrors.Errorf("%v: contract='%s'", ErrContractNotFound, targetContract))
+	panic(xerrors.Errorf("%v: contract='%s'", vm.ErrContractNotFound, targetContract))
 }
 
 func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets, progHash hashing.HashValue) dict.Dict {
@@ -33,7 +34,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	if !ok {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
 		panic(xerrors.Errorf("%v: target=(%s, %s)",
-			ErrTargetEntryPointNotFound, targetContract, epCode))
+			vm.ErrTargetEntryPointNotFound, targetContract, epCode))
 	}
 
 	vmctx.pushCallContext(targetContract, params, allowance)
@@ -43,7 +44,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	if ep.IsView() {
 		if epCode == iscp.EntryPointInit {
 			panic(xerrors.Errorf("'%v': target=(%s, %s)",
-				ErrEntryPointCantBeAView, vmctx.req.CallTarget().Contract, epCode))
+				vm.ErrEntryPointCantBeAView, vmctx.req.CallTarget().Contract, epCode))
 		}
 		return ep.Call(NewSandboxView(vmctx))
 	}
@@ -51,7 +52,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
 			panic(xerrors.Errorf("%v: target=(%s, %s)",
-				ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
+				vm.ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))

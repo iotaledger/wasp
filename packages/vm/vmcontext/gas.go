@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
@@ -28,7 +29,7 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	}
 
 	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
-		panic(ErrGasBudgetDetail.Create(ErrGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
+		panic(vm.ErrGasBudgetDetail.Create(vm.ErrGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
 	}
 }
 

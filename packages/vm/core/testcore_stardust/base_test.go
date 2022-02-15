@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"strings"
 	"testing"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -102,7 +102,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrTargetContractNotFound)
+		testmisc.RequireErrorToBe(t, err, vm.ErrTargetContractNotFound)
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -137,7 +137,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrTargetContractNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -172,7 +172,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -207,7 +207,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -386,7 +386,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
@@ -398,7 +398,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
@@ -410,7 +410,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
@@ -422,7 +422,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 }

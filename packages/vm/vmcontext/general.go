@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -150,7 +151,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 		// check if target exists, if it is not forced
 		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
 		if !forceOpenAccount && !vmctx.targetAccountExists(target) {
-			panic(ErrTransferTargetAccountDoesNotExists)
+			panic(vm.ErrTransferTargetAccountDoesNotExists)
 		}
 	}
 

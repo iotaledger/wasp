@@ -197,14 +197,14 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 
 	if vmctx.req.SenderAccount() == nil {
 		// if sender unknown, follow panic path
-		panic(ErrSenderUnknown)
+		panic(vm.ErrSenderUnknown)
 	}
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
+		panic(xerrors.Errorf("%v: target = %s", vm.ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
 	return vmctx.callByProgramHash(
 		targetContract.Hname(),

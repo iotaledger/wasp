@@ -133,7 +133,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		currentDustDepositValues := transaction.NewDepositEstimate(task.RentStructure)
 		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
 			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
-			panic(ErrInconsistentDustAssumptions)
+			panic(vm.ErrInconsistentDustAssumptions)
 		}
 
 		// save the anchor tx ID of the current state

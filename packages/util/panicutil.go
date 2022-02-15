@@ -1,7 +1,7 @@
 package util
 
 import (
-	errorlib "errors"
+	"errors"
 	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
 
@@ -23,7 +23,7 @@ func CatchPanicReturnError(fun func(), catchErrors ...error) error {
 			}
 			if err1, ok := r.(error); ok {
 				for _, targetError := range catchErrors {
-					if errorlib.Is(err1, targetError) {
+					if errors.Is(err1, targetError) {
 						err = targetError
 						return
 					}

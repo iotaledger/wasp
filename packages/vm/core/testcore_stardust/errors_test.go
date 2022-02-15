@@ -6,10 +6,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -86,7 +86,7 @@ func TestErrorWithCustomError(t *testing.T) {
 	require.ErrorAs(t, err, &testError)
 
 	typedError := err.(*vmerrors.Error)
-	require.Equal(t, typedError.Definition(), *vmcontext.ErrGasBudgetDetail)
+	require.Equal(t, typedError.Definition(), *vm.ErrGasBudgetDetail)
 }
 
 // This test does not supply the required kv pair 'ParamErrorMessageFormat' which makes the kvdecoder fail with an xerror

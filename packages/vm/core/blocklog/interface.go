@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"io"
@@ -306,7 +305,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
-	Error         error
+	Error         *vmerrors.Error
 	GasBudget     uint64
 	GasBurned     uint64
 	GasFeeCharged uint64
@@ -351,18 +350,6 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	return ret, nil
 }
 
-func (r *RequestReceipt) DetailedError() *vmerrors.Error {
-	if r.Error == nil {
-		return nil
-	}
-
-	if err, ok := r.Error.(*vmerrors.Error); ok {
-		return err
-	}
-
-	return commonerrors.ErrUntypedError.Create(r.Error)
-}
-
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
 
@@ -376,7 +363,7 @@ func (r *RequestReceipt) Bytes() []byte {
 		mu.WriteBool(false)
 	} else {
 		mu.WriteBool(true)
-		r.DetailedError().Serialize(mu)
+		mu.WriteBytes(r.Error.Bytes())
 	}
 
 	return mu.Bytes()

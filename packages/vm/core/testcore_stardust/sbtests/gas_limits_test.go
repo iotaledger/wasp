@@ -1,7 +1,7 @@
 package sbtests
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"github.com/iotaledger/wasp/packages/vm"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -34,7 +34,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	req, wallet := maxGasRequest(ch, 2)
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err) // tx expected to run out of gas
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
+	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
 	require.Less(t, req.GasBudget(), receipt.GasBurned)
