@@ -27,16 +27,6 @@ func (m *merkleTrieSetup) NewVectorCommitment() trie.VectorCommitment {
 	return &hashCommitment{}
 }
 
-type sliceWriter []byte
-
-func (w sliceWriter) Write(p []byte) (int, error) {
-	if len(p) > len(w) {
-		panic("sliceWriter: data does not fit the target")
-	}
-	copy(w, p)
-	return len(p), nil
-}
-
 func (m *merkleTrieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
 	var hashes [258]*hashCommitment
 
@@ -63,7 +53,7 @@ func hashHashes(hashes *[258]*hashCommitment) *hashCommitment {
 			continue
 		}
 		pos := 32 * int(i)
-		h.Write(sliceWriter(buf[pos : pos+32]))
+		h.Write(trie.NewSliceWriter(buf[pos : pos+32]))
 	}
 	ret := hashCommitment(blake2b.Sum256(buf[:]))
 	return &ret

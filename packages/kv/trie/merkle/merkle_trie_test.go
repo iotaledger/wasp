@@ -588,6 +588,8 @@ func TestTrieProof(t *testing.T) {
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
 
+		t.Logf("proof presence size = %d bytes", trie.Size(proof))
+
 		key, term := proof.MustKeyTerminal()
 		require.EqualValues(t, 0, len(key))
 		require.EqualValues(t, *term, *hashData([]byte("1")))
@@ -600,6 +602,7 @@ func TestTrieProof(t *testing.T) {
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
 		require.True(t, proof.MustIsProofOfAbsence())
+		t.Logf("proof absence size = %d bytes", trie.Size(proof))
 	})
 	t.Run("proof one entry 2", func(t *testing.T) {
 		store := dict.New()
@@ -660,6 +663,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof len: %d", s, len(proofPath.Path))
+			t.Logf("proof presence size = %d bytes", trie.Size(proof))
 		}
 	})
 	t.Run("proof many entries 2", func(t *testing.T) {
@@ -675,6 +679,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
+			t.Logf("proof presence size = %d bytes", trie.Size(proof))
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
@@ -683,6 +688,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
+			t.Logf("proof absence size = %d bytes", trie.Size(proof))
 		}
 	})
 	t.Run("proof many entries 3", func(t *testing.T) {
@@ -701,6 +707,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
+			t.Logf("proof presence size = %d bytes", trie.Size(proof))
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
@@ -709,6 +716,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
+			t.Logf("proof absence size = %d bytes", trie.Size(proof))
 		}
 	})
 	t.Run("proof many entries rnd", func(t *testing.T) {
@@ -721,13 +729,23 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		deleteKeys(delKeys)
 		rootC = commitTrie()
 
+		lenStats := make(map[int]int)
+		size10Stats := make(map[int]int)
 		for _, s := range addKeys {
 			proofPath := tr.ProofPath([]byte(s))
 			proof := MerkleCommitments.Proof(proofPath)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
-			//t.Logf("key: '%s', proof presence len: %d", s, len(proofPath.Path))
+			lenP := len(proofPath.Path)
+			sizeP10 := trie.Size(proof) / 10
+			//t.Logf("key: '%s', proof presence len: %d", s, )
+			t.Logf("proof presence size = %d bytes", trie.Size(proof))
+
+			l := lenStats[lenP]
+			lenStats[lenP] = l + 1
+			sz := size10Stats[sizeP10]
+			size10Stats[sizeP10] = sz + 1
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
@@ -736,6 +754,15 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			//t.Logf("key: '%s', proof absence len: %d", s, len(proofPath.Path))
+			t.Logf("proof absence size = %d bytes", trie.Size(proof))
+		}
+		for i := 0; i < 5000; i++ {
+			if i < 10 {
+				t.Logf("len[%d] = %d", i, lenStats[i])
+			}
+			if size10Stats[i] != 0 {
+				t.Logf("size[%d] = %d", i*10, size10Stats[i])
+			}
 		}
 	})
 }

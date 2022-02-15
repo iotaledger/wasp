@@ -3,7 +3,9 @@ package merkle
 import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+	"io"
 )
 
 type MerkleProof struct {
@@ -149,4 +151,111 @@ func assert(cond bool, err interface{}) {
 	if !cond {
 		panic(err)
 	}
+}
+
+func (p *MerkleProof) Write(w io.Writer) {
+	_ = util.WriteBytes16(w, p.Key)
+	_ = util.WriteUint16(w, uint16(len(p.Path)))
+	for _, e := range p.Path {
+		e.Write(w)
+	}
+}
+
+func (p *MerkleProof) Read(r io.Reader) error {
+	var err error
+	if p.Key, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	var size uint16
+	if err = util.ReadUint16(r, &size); err != nil {
+		return err
+	}
+	p.Path = make([]*MerkleProofElement, size)
+	for i := range p.Path {
+		p.Path[i] = &MerkleProofElement{}
+		if err = p.Path[i].Read(r); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+const (
+	hasTerminalValueFlag = 0x01
+	hasChildrenFlag      = 0x02
+)
+
+func (e *MerkleProofElement) Write(w io.Writer) {
+	_ = util.WriteBytes16(w, e.PathFragment)
+
+	var smallFlags byte
+	if e.Terminal != nil {
+		smallFlags = hasTerminalValueFlag
+	}
+	// compress children flags 32 bytes (if any)
+	var flags [32]byte
+	for i := range e.Children {
+		flags[i/8] |= 0x1 << (i % 8)
+		smallFlags |= hasChildrenFlag
+	}
+	_ = util.WriteByte(w, smallFlags)
+	// write terminal commitment if any
+	if smallFlags&hasTerminalValueFlag != 0 {
+		_, _ = w.Write(e.Terminal[:])
+	}
+	// write child commitments if any
+	if smallFlags&hasChildrenFlag != 0 {
+		_, _ = w.Write(flags[:])
+		for i := 0; i < 256; i++ {
+			child, ok := e.Children[uint8(i)]
+			if !ok {
+				continue
+			}
+			_, _ = w.Write(child[:])
+		}
+	}
+}
+
+func (e *MerkleProofElement) Read(r io.Reader) error {
+	var err error
+	if e.PathFragment, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	var smallFlags byte
+	if smallFlags, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	if smallFlags&hasTerminalValueFlag != 0 {
+		e.Terminal = &[32]byte{}
+		n, err := r.Read(e.Terminal[:])
+		if err != nil {
+			return err
+		}
+		if n != 32 {
+			return xerrors.New("32 bytes expected")
+		}
+	} else {
+		e.Terminal = nil
+	}
+	if smallFlags&hasChildrenFlag != 0 {
+		var flags [32]byte
+		if _, err := r.Read(flags[:]); err != nil {
+			return err
+		}
+		for i := 0; i < 256; i++ {
+			ib := uint8(i)
+			if flags[i/8]&(0x1<<(i%8)) != 0 {
+				e.Children[ib] = &[32]byte{}
+				n, err := r.Read(e.Children[ib][:])
+				if err != nil {
+					return err
+				}
+				if n != 32 {
+					return xerrors.New("32 bytes expected")
+				}
+			}
+		}
+	}
+	return nil
+
 }
