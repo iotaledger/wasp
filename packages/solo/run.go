@@ -81,10 +81,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		//)
 		//require.NoError(ch.Env.T, err)
 	}
-	sigs, err := essence.Sign(iotago.AddressKeys{
-		Address: ch.StateControllerAddress,
-		Keys:    ch.StateControllerKeyPair.GetPrivateKey().AsCrypto(),
-	})
+	sigs, err := essence.Sign(ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress))
 	require.NoError(ch.Env.T, err)
 
 	tx := &iotago.Transaction{

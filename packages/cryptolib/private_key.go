@@ -38,10 +38,6 @@ func (pkT *PrivateKey) isValid() bool {
 	return len(pkT.key) > 0
 }
 
-func (pkT *PrivateKey) AsCrypto() crypto.PrivateKey {
-	return pkT.key
-}
-
 func (pkT *PrivateKey) AsBytes() []byte {
 	return pkT.key
 }
@@ -60,4 +56,8 @@ func (pkT *PrivateKey) Sign(rand io.Reader, message []byte, opts cr.SignerOpts) 
 
 func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
 	return iotago.NewAddressKeysForEd25519Address(addr, pkT.key)
+}
+
+func (pkT *PrivateKey) AddressKeys(addr iotago.Address) iotago.AddressKeys {
+	return iotago.AddressKeys{Address: addr, Keys: pkT.key}
 }

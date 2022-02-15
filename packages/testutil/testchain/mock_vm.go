@@ -117,10 +117,7 @@ func NextState(
 		},
 		Payload: nil,
 	}
-	signatures, err := txEssence.Sign(iotago.AddressKeys{
-		Address: chainOutput.GetStateAddress(),
-		Keys:    chainKey.GetPrivateKey().AsCrypto(),
-	})
+	signatures, err := txEssence.Sign(chainKey.GetPrivateKey().AddressKeys(chainOutput.GetStateAddress()))
 	require.NoError(t, err)
 	tx = &iotago.Transaction{
 		Essence:      txEssence,

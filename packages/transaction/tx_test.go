@@ -122,7 +122,7 @@ func TestConsumeRequest(t *testing.T) {
 	stateControllerKeyPair := cryptolib.NewKeyPair()
 	stateController := stateControllerKeyPair.GetPrivateKey()
 	stateControllerAddr := stateControllerKeyPair.GetPublicKey().AsEd25519Address()
-	addrKeys := iotago.AddressKeys{Address: stateControllerAddr, Keys: stateController.AsCrypto()}
+	addrKeys := stateController.AddressKeysForEd25519Address(stateControllerAddr)
 
 	aliasOut1 := &iotago.AliasOutput{
 		Amount:     1337,
