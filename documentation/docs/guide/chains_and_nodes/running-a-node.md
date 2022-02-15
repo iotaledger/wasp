@@ -16,7 +16,7 @@ keywords:
 # Running a Node
 
 In the following section, you can find information on how to use Wasp by cloning the repository and building the application.
-If you prefer, you can also configure a node [using a docker image (standalone)](docker_standalone.md) or [docker (preconfigured)](docker_preconfigured.md) (official images will be provided in the future).
+If you prefer, you can also configure a node [using a docker image (standalone)](docker_standalone.md) or [docker (preconfigured)](../development_tools/docker_preconfigured.md) (official images will be provided in the future).
 
 ## Requirements
 
