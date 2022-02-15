@@ -3,6 +3,7 @@ package cryptolib
 import (
 	cr "crypto"
 	crypto "crypto/ed25519"
+	"encoding/hex"
 	"fmt"
 	"io"
 
@@ -43,6 +44,10 @@ func (pkT *PrivateKey) AsCrypto() crypto.PrivateKey {
 
 func (pkT *PrivateKey) AsBytes() []byte {
 	return pkT.key
+}
+
+func (pkT *PrivateKey) AsString() string {
+	return hex.EncodeToString(pkT.key)
 }
 
 func (pkT *PrivateKey) Public() *PublicKey {

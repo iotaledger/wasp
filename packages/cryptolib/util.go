@@ -1,11 +1,28 @@
 package cryptolib
 
 import (
-//	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"fmt"
+
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
-// TODO: remove all these functions
+const (
+	SignatureSize = ed25519.SignatureSize
+)
 
+func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, consumedBytes int, err error) {
+	if len(bytes) < SignatureSize {
+		err = fmt.Errorf("bytes too short")
+		return
+	}
+
+	copy(result[:SignatureSize], bytes)
+	consumedBytes = SignatureSize
+
+	return
+}
+
+// TODO: remove all these functions
 /*func CryptolibPublicKeyToHivePublicKey(pk PublicKey) ed25519.PublicKey { // nolint:revive
 	var result ed25519.PublicKey
 	copy(result[:], pk.asCrypto())

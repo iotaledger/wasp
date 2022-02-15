@@ -43,17 +43,17 @@ func Load() *Wallet {
 	}
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
-	seed := cryptolib.SeedFromByteArray(seedBytes)
+	seed := cryptolib.NewSeedFromByteArray(seedBytes)
 	kp := cryptolib.NewKeyPairFromSeed(seed)
-	return &Wallet{KeyPair: &kp}
+	return &Wallet{KeyPair: kp}
 }
 
 var addressIndex int
 
 func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
-	return &w.KeyPair.PrivateKey
+	return w.KeyPair.GetPrivateKey()
 }
 
 func (w *Wallet) Address() iotago.Address {
-	return cryptolib.Ed25519AddressFromPubKey(w.KeyPair.PublicKey)
+	return w.KeyPair.GetPublicKey().AsEd25519Address()
 }

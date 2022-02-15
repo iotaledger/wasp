@@ -3,7 +3,6 @@ package cryptolib
 import (
 	"crypto/ed25519"
 	"encoding/binary"
-	"fmt"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
@@ -11,11 +10,22 @@ import (
 )
 
 const (
-	SeedSize      = ed25519.SeedSize
-	SignatureSize = ed25519.SignatureSize
+	SeedSize = ed25519.SeedSize
 )
 
 type Seed [SeedSize]byte
+
+func NewSeed() Seed {
+	return tpkg.RandEd25519Seed()
+}
+
+func NewSeedFromByteArray(seedData []byte) Seed {
+	var seed Seed
+
+	copy(seed[:], seedData)
+
+	return seed
+}
 
 func (seed *Seed) SubSeed(n uint64) Seed {
 	subSeed := make([]byte, SeedSize)
@@ -26,29 +36,5 @@ func (seed *Seed) SubSeed(n uint64) Seed {
 
 	byteutils.XORBytes(subSeed, seed[:], hashOfIndexBytes[:])
 
-	return SeedFromByteArray(subSeed)
-}
-
-func SeedFromByteArray(seedData []byte) Seed {
-	var seed Seed
-
-	copy(seed[:], seedData)
-
-	return seed
-}
-
-func NewSeed() Seed {
-	return tpkg.RandEd25519Seed()
-}
-
-func SignatureFromBytes(bytes []byte) (result [ed25519.SignatureSize]byte, consumedBytes int, err error) {
-	if len(bytes) < SignatureSize {
-		err = fmt.Errorf("bytes too short")
-		return
-	}
-
-	copy(result[:SignatureSize], bytes)
-	consumedBytes = SignatureSize
-
-	return
+	return NewSeedFromByteArray(subSeed)
 }
