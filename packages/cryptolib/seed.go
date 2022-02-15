@@ -19,7 +19,7 @@ func NewSeed() Seed {
 	return tpkg.RandEd25519Seed()
 }
 
-func NewSeedFromByteArray(seedData []byte) Seed {
+func NewSeedFromBytes(seedData []byte) Seed {
 	var seed Seed
 
 	copy(seed[:], seedData)
@@ -36,5 +36,5 @@ func (seed *Seed) SubSeed(n uint64) Seed {
 
 	byteutils.XORBytes(subSeed, seed[:], hashOfIndexBytes[:])
 
-	return NewSeedFromByteArray(subSeed)
+	return NewSeedFromBytes(subSeed)
 }
