@@ -7,6 +7,7 @@ import (
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 )
 
 type PrivateKey struct {
@@ -14,6 +15,11 @@ type PrivateKey struct {
 }
 
 const PrivateKeySize = crypto.PrivateKeySize
+
+func NewPrivateKey() *PrivateKey {
+	seed := tpkg.RandEd25519Seed()
+	return NewPrivateKeyFromSeed(seed)
+}
 
 func NewPrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
 	if len(privateKeyBytes) < PrivateKeySize {

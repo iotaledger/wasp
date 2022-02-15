@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/crypto/ed25519"
 	"golang.org/x/xerrors"
 )
 
@@ -183,14 +182,14 @@ func (req GetChainNodesRequest) AsDict() dict.Dict {
 // GetChainNodesResponse
 //
 type GetChainNodesResponse struct {
-	AccessNodeCandidates []*AccessNodeInfo   // Application info for the AccessNodes.
-	AccessNodes          []ed25519.PublicKey // Public Keys of Access Nodes.
+	AccessNodeCandidates []*AccessNodeInfo      // Application info for the AccessNodes.
+	AccessNodes          []*cryptolib.PublicKey // Public Keys of Access Nodes.
 }
 
 func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	res := GetChainNodesResponse{
 		AccessNodeCandidates: make([]*AccessNodeInfo, 0),
-		AccessNodes:          make([]ed25519.PublicKey, 0),
+		AccessNodes:          make([]*cryptolib.PublicKey, 0),
 	}
 
 	ac := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodeCandidates))
@@ -205,7 +204,11 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 
 	an := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodes))
 	an.MustIterate(func(pubKeyBin, value []byte) bool {
-		res.AccessNodes = append(res.AccessNodes, pubKeyBin)
+		publicKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBin)
+		if err != nil {
+			panic(xerrors.Errorf("unable to decode public key: %v", err))
+		}
+		res.AccessNodes = append(res.AccessNodes, publicKey)
 		return true
 	})
 	return &res
@@ -223,36 +226,28 @@ const (
 	ChangeAccessNodeActionDrop
 )
 
-type fixedSizePubKey [ed25519.PublicKeySize]byte // needed because iotago pub key is a byte slice ([]byte) and cannot be used as a key to an array
-
-func getFixedSizePubKey(pubKey []byte) fixedSizePubKey {
-	var ret fixedSizePubKey
-	copy(ret[:], pubKey)
-	return ret
-}
-
 type ChangeAccessNodesRequest struct {
-	actions map[fixedSizePubKey]ChangeAccessNodeAction
+	actions map[cryptolib.PublicKeyKey]ChangeAccessNodeAction
 }
 
 func NewChangeAccessNodesRequest() *ChangeAccessNodesRequest {
 	return &ChangeAccessNodesRequest{
-		actions: make(map[fixedSizePubKey]ChangeAccessNodeAction),
+		actions: make(map[cryptolib.PublicKeyKey]ChangeAccessNodeAction),
 	}
 }
 
-func (req *ChangeAccessNodesRequest) Remove(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[getFixedSizePubKey(pubKey)] = ChangeAccessNodeActionRemove
+func (req *ChangeAccessNodesRequest) Remove(pubKey *cryptolib.PublicKey) *ChangeAccessNodesRequest {
+	req.actions[pubKey.AsKey()] = ChangeAccessNodeActionRemove
 	return req
 }
 
-func (req *ChangeAccessNodesRequest) Accept(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[getFixedSizePubKey(pubKey)] = ChangeAccessNodeActionAccept
+func (req *ChangeAccessNodesRequest) Accept(pubKey *cryptolib.PublicKey) *ChangeAccessNodesRequest {
+	req.actions[pubKey.AsKey()] = ChangeAccessNodeActionAccept
 	return req
 }
 
-func (req *ChangeAccessNodesRequest) Drop(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[getFixedSizePubKey(pubKey)] = ChangeAccessNodeActionDrop
+func (req *ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) *ChangeAccessNodesRequest {
+	req.actions[pubKey.AsKey()] = ChangeAccessNodeActionDrop
 	return req
 }
 

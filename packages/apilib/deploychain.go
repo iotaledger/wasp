@@ -55,7 +55,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := cryptolib.Ed25519AddressFromPubKey(par.OriginatorKeyPair.PublicKey)
+	originatorAddr := par.OriginatorKeyPair.GetPublicKey().AsEd25519Address()
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controller: %s, N = %d, T = %d\n",
@@ -102,7 +102,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string) (*iscp.ChainID, *iotago.Transaction, error) {
 	panic("TODO implement")
-	// originatorAddr := cryptolib.Ed25519AddressFromPubKey(originator.Public().(ed25519.PublicKey))
+	// originatorAddr := originator.GetPublicKey().AsEd25519Address()
 	// // ----------- request owner address' outputs from the ledger
 	// allOuts, err := Layer1Client.GetConfirmedOutputs(originatorAddr)
 	// if err != nil {

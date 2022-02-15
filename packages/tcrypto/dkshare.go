@@ -201,14 +201,14 @@ func (s *DKShare) Read(r io.Reader) error {
 	// if err = util.ReadUint16(r, &arrLen); err != nil {
 	// 	return err
 	// }
-	// s.NodePubKeys = make([]*ed25519.PublicKey, arrLen)
+	// s.NodePubKeys = make([]*cryptolib.PublicKey, arrLen)
 	// for i := range s.NodePubKeys {
 	// 	var nodePubKeyBin []byte
-	// 	var nodePubKey ed25519.PublicKey
+	// 	var nodePubKey *cryptolib.PublicKey
 	// 	if nodePubKeyBin, err = util.ReadBytes16(r); err != nil {
 	// 		return err
 	// 	}
-	// 	if nodePubKey, _, err = ed25519.PublicKeyFromBytes(nodePubKeyBin); err != nil {
+	// 	if nodePubKey, _, err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin); err != nil {
 	// 		return err
 	// 	}
 	// 	s.NodePubKeys[i] = &nodePubKey

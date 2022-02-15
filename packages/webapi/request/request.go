@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -32,7 +32,7 @@ func AddEndpoints(
 	getChain chains.ChainProvider,
 	getChainBalance getAccountAssetsFn,
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
-	nodePubKey *ed25519.PublicKey,
+	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
 	log *logger.Logger,
 ) {
@@ -60,7 +60,7 @@ type offLedgerReqAPI struct {
 	getAccountAssets        getAccountAssetsFn
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
 	requestsCache           *expiringcache.ExpiringCache
-	nodePubKey              *ed25519.PublicKey
+	nodePubKey              *cryptolib.PublicKey
 	log                     *logger.Logger
 }
 

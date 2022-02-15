@@ -2,7 +2,6 @@ package cryptolib
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 )
 
 type KeyPair struct {
@@ -12,8 +11,8 @@ type KeyPair struct {
 
 // NewKeyPair creates a new key pair with a randomly generated seed
 func NewKeyPair() *KeyPair {
-	seed := tpkg.RandEd25519Seed()
-	return NewKeyPairFromSeed(SeedFromByteArray(seed[:]))
+	privateKey := NewPrivateKey()
+	return NewKeyPairFromPrivateKey(privateKey)
 }
 
 func NewKeyPairFromSeed(seed Seed) *KeyPair {
