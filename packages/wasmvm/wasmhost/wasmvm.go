@@ -53,40 +53,11 @@ type WasmVM interface {
 }
 
 type WasmVMBase struct {
-	proc           *WasmProcessor
-	panicErr       error
 	cachedResult   []byte
+	gasEnabled     bool
+	panicErr       error
+	proc           *WasmProcessor
 	timeoutStarted bool
-}
-
-// wrapUp is used in every host function to catch any panic.
-// It will save the first panic it encounters in the WasmVMBase so that
-// the caller of the Wasm function can retrieve the correct error.
-// This is a workaround to WasmTime saving the *last* panic instead of
-// the first, thereby reporting the wrong panic error sometimes
-// wrapUp will also update the Wasm code that initiated the call with
-// the remaining gas budget (the Wasp node may have burned some)
-func (vm *WasmVMBase) wrapUp() {
-	panicMsg := recover()
-	if panicMsg == nil {
-		// update gas budget
-		ctx := vm.getContext(0)
-		ctx.GasBurned(vm.proc.vm.GasBurned())
-		return
-	}
-
-	// panic means no need to update gas budget
-	if vm.panicErr == nil {
-		switch msg := panicMsg.(type) {
-		case error:
-			vm.panicErr = msg
-		default:
-			vm.panicErr = fmt.Errorf("%v", msg)
-		}
-	}
-
-	// rethrow and let nature run its course...
-	panic(panicMsg)
 }
 
 func (vm *WasmVMBase) GasBudget(budget uint64) {
@@ -96,6 +67,10 @@ func (vm *WasmVMBase) GasBudget(budget uint64) {
 func (vm *WasmVMBase) GasBurned() uint64 {
 	// burn nothing
 	return 0
+}
+
+func (vm *WasmVMBase) GasEnable(enable bool)  {
+	vm.gasEnabled = enable
 }
 
 //nolint:unparam
@@ -240,8 +215,10 @@ func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 }
 
 func (vm *WasmVMBase) reportGasBurned() {
-	ctx := vm.proc.GetContext(0)
-	vm.proc.vm.GasBudget(ctx.GasBudget())
+	if vm.gasEnabled {
+		ctx := vm.proc.GetContext(0)
+		vm.proc.vm.GasBudget(ctx.GasBudget())
+	}
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
@@ -413,6 +390,38 @@ func (vm *WasmVMBase) traceVal(val []byte) string {
 		}
 	}
 	return string(val)
+}
+
+// wrapUp is used in every host function to catch any panic.
+// It will save the first panic it encounters in the WasmVMBase so that
+// the caller of the Wasm function can retrieve the correct error.
+// This is a workaround to WasmTime saving the *last* panic instead of
+// the first, thereby reporting the wrong panic error sometimes
+// wrapUp will also update the Wasm code that initiated the call with
+// the remaining gas budget (the Wasp node may have burned some)
+func (vm *WasmVMBase) wrapUp() {
+	panicMsg := recover()
+	if panicMsg == nil {
+		if vm.gasEnabled {
+			// update gas budget
+			ctx := vm.getContext(0)
+			ctx.GasBurned(vm.proc.vm.GasBurned())
+		}
+		return
+	}
+
+	// panic means no need to update gas budget
+	if vm.panicErr == nil {
+		switch msg := panicMsg.(type) {
+		case error:
+			vm.panicErr = msg
+		default:
+			vm.panicErr = fmt.Errorf("%v", msg)
+		}
+	}
+
+	// rethrow and let nature run its course...
+	panic(panicMsg)
 }
 
 // hex returns a hex string representing the byte buffer
