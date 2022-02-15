@@ -37,10 +37,6 @@ func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 	return &PublicKey{publicKeyBytes}, nil
 }
 
-func (pkT *PublicKey) asCrypto() crypto.PublicKey {
-	return pkT.key
-}
-
 func (pkT *PublicKey) AsBytes() []byte {
 	return pkT.key
 }
