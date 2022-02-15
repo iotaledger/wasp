@@ -39,6 +39,7 @@ var (
 type WasmVM interface {
 	GasBudget(budget uint64)
 	GasBurned() uint64
+	GasEnable(enable bool)
 	Instantiate() error
 	Interrupt()
 	LinkHost(proc *WasmProcessor) error
