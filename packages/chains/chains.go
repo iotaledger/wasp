@@ -129,7 +129,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 	chainMetrics := allMetrics.NewChainMetrics(chr.ChainID)
 	chainWAL, err := w.NewChainWAL(chr.ChainID)
 	if err != nil {
-		c.log.Debugf("VMError creating wal object: %v", err)
+		c.log.Debugf("Error creating wal object: %v", err)
 		chainWAL = wal.NewDefault()
 	}
 	newChain := chainimpl.NewChain(

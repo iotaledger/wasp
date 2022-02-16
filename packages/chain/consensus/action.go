@@ -374,7 +374,7 @@ func (c *consensus) writeToWAL() {
 	if err == nil {
 		err = c.wal.Write(block.Bytes())
 		if err != nil {
-			c.log.Debugf("VMError writing block to wal: %v", err)
+			c.log.Debugf("Error writing block to wal: %v", err)
 		}
 	}
 }

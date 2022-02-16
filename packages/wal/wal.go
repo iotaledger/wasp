@@ -84,12 +84,12 @@ func (w *chainWAL) Write(bytes []byte) error {
 	segment, err := w.createSegment(block.BlockIndex())
 	if err != nil {
 		w.metrics.failedWrites.Inc()
-		return fmt.Errorf("VMError writing log: %w", err)
+		return fmt.Errorf("Error writing log: %w", err)
 	}
 	n, err := segment.Write(bytes)
 	if err != nil || len(bytes) != n {
 		w.metrics.failedReads.Inc()
-		return fmt.Errorf("VMError writing log: %w", err)
+		return fmt.Errorf("Error writing log: %w", err)
 	}
 	w.metrics.segments.Inc()
 	return segment.Close()
@@ -121,19 +121,19 @@ func (w *chainWAL) Read(i uint32) ([]byte, error) {
 	}
 	if err := segment.load(); err != nil {
 		w.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("VMError opening backup file: %w", err)
+		return nil, fmt.Errorf("Error opening backup file: %w", err)
 	}
 	stat, err := segment.Stat()
 	if err != nil {
 		w.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("VMError reading backup file: %w", err)
+		return nil, fmt.Errorf("Error reading backup file: %w", err)
 	}
 	blockBytes := make([]byte, stat.Size())
 	bufr := bufio.NewReader(segment)
 	n, err := bufr.Read(blockBytes)
 	if err != nil || int64(n) != stat.Size() {
 		w.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("VMError reading backup file: %w", err)
+		return nil, fmt.Errorf("Error reading backup file: %w", err)
 	}
 	return blockBytes, nil
 }

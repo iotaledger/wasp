@@ -1,7 +1,7 @@
 package vmcontext
 
 import (
-	errorlib "errors"
+	"errors"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -180,7 +180,7 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	case string:
 		return coreerrors.ErrUntypedError.Create(err)
 	case error:
-		if errorlib.Is(err, coreutil.ErrorStateInvalidated) {
+		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
 		}
 

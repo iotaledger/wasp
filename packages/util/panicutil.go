@@ -1,7 +1,7 @@
 package util
 
 import (
-	"errors"
+	"golang.org/x/xerrors"
 )
 
 func CatchPanicReturnError(fun func(), catchErrors ...error) error {
@@ -15,7 +15,7 @@ func CatchPanicReturnError(fun func(), catchErrors ...error) error {
 
 			if err1, ok := r.(error); ok {
 				for _, targetError := range catchErrors {
-					if errors.Is(err1, targetError) {
+					if xerrors.Is(err1, targetError) {
 						err = targetError
 						return
 					}

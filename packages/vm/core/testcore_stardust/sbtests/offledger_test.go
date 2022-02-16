@@ -134,8 +134,8 @@ func TestOffLedgerSuccess(t *testing.T) {
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 //		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
-//		require.VMError(t, err)
-//		require.Contains(t, err.VMError(), "not enough fees")
+//		require.Error(t, err)
+//		require.Contains(t, err.Error(), "not enough fees")
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
