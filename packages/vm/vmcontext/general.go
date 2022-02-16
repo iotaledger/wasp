@@ -16,7 +16,7 @@ func (vmctx *VMContext) ChainID() *iscp.ChainID {
 	var ret iscp.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		// origin
-		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID.ID()))
+		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
 	} else {
 		ret = iscp.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
 	}
@@ -170,7 +170,7 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		StateController:      vmctx.task.AnchorOutput.StateController(),
 		GovernanceController: vmctx.task.AnchorOutput.GovernorAddress(),
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
-		OutputID:             vmctx.task.AnchorOutputID.ID(),
+		OutputID:             vmctx.task.AnchorOutputID,
 		StateData:            sd,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
 		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,

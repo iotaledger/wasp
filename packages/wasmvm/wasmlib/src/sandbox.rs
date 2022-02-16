@@ -8,19 +8,19 @@ use crate::host::*;
 
 // @formatter:off
 pub const FN_ACCOUNT_ID            : i32 = -1;
-pub const FN_BALANCE               : i32 = -2;
-pub const FN_BALANCES              : i32 = -3;
-pub const FN_BLOCK_CONTEXT         : i32 = -4;
-pub const FN_CALL                  : i32 = -5;
-pub const FN_CALLER                : i32 = -6;
-pub const FN_CHAIN_ID              : i32 = -7;
-pub const FN_CHAIN_OWNER_ID        : i32 = -8;
-pub const FN_CONTRACT              : i32 = -9;
-pub const FN_CONTRACT_CREATOR      : i32 = -10;
-pub const FN_DEPLOY_CONTRACT       : i32 = -11;
-pub const FN_ENTROPY               : i32 = -12;
-pub const FN_EVENT                 : i32 = -13;
-pub const FN_INCOMING_TRANSFER     : i32 = -14;
+pub const FN_ALLOWANCE             : i32 = -2;
+pub const FN_BALANCE               : i32 = -3;
+pub const FN_BALANCES              : i32 = -4;
+pub const FN_BLOCK_CONTEXT         : i32 = -5;
+pub const FN_CALL                  : i32 = -6;
+pub const FN_CALLER                : i32 = -7;
+pub const FN_CHAIN_ID              : i32 = -8;
+pub const FN_CHAIN_OWNER_ID        : i32 = -9;
+pub const FN_CONTRACT              : i32 = -10;
+pub const FN_CONTRACT_CREATOR      : i32 = -11;
+pub const FN_DEPLOY_CONTRACT       : i32 = -12;
+pub const FN_ENTROPY               : i32 = -13;
+pub const FN_EVENT                 : i32 = -14;
 pub const FN_LOG                   : i32 = -15;
 pub const FN_MINTED                : i32 = -16;
 pub const FN_PANIC                 : i32 = -17;
@@ -181,6 +181,12 @@ pub trait ScSandboxView: ScSandbox {
 }
 
 pub trait ScSandboxFunc: ScSandbox {
+    // access the allowance assets
+    fn allowance(&self) -> ScBalances {
+        let buf = sandbox(FN_ALLOWANCE, &[]);
+        return ScAssets::new(&buf).balances();
+    }
+
     //fn blockContext(&self, construct func(sandbox: ScSandbox) interface{}, onClose func(interface{})) -> interface{} {
     //	panic("implement me")
     //}
@@ -217,12 +223,6 @@ pub trait ScSandboxFunc: ScSandbox {
     // signals an event on the node that external entities can subscribe to
     fn event(&self, msg: &str) {
         sandbox(FN_EVENT, &string_to_bytes(msg));
-    }
-
-    // access the incoming balances for all assets
-    fn incoming_transfer(&self) -> ScBalances {
-        let buf = sandbox(FN_INCOMING_TRANSFER, &[]);
-        return ScAssets::new(&buf).balances();
     }
 
     // retrieve the assets that were minted in self transaction
@@ -285,17 +285,10 @@ pub trait ScSandboxFunc: ScSandbox {
         return request_id_from_bytes(&sandbox(FN_REQUEST_ID, &[]));
     }
 
-    // transfer assetss to the specified Tangle ledger address
+    // transfer assets to the specified Tangle ledger address
     fn send(&self, address: &ScAddress, transfer: &ScTransfers) {
         // we need some assets to send
-        let mut assets: u64 = 0;
-        let colors = transfer.balances().colors();
-        for i in 0..colors.len() {
-            let color = colors.get(i).unwrap();
-            assets += transfer.balances().balance(color);
-        }
-        if assets == 0 {
-            // only try to send when non-zero assets
+        if transfer.is_empty() {
             return;
         }
 

@@ -135,7 +135,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
+			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
 		})
 
 		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
@@ -145,7 +145,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
 	}
 
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
 		return ret.loadNativeTokenOutput(id)
 	}
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
@@ -153,7 +153,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
-		&task.AnchorOutputID,
+		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
 		*ret.dustAssumptions,

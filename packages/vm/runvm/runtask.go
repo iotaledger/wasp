@@ -70,7 +70,7 @@ func runTask(task *vm.VMTask) {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence = vmctx.BuildTransactionEssence(&iscp.StateData{
+		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(&iscp.StateData{
 			Commitment: stateCommitment,
 		})
 

@@ -36,7 +36,7 @@ type ChainCore interface {
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	VirtualStateAccess() state.VirtualStateAccess
-	GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput)
+	GetAnchorOutput() (*iotago.AliasOutput, iotago.OutputID)
 	Log() *logger.Logger
 }
 

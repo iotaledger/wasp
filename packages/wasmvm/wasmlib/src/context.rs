@@ -28,15 +28,6 @@ impl ScViewCallContext for ScFuncContext {
     }
 }
 
-impl ScFuncContext {
-    pub fn incoming(&self) -> ScBalances {
-        self.incoming_transfer()
-    }
-
-    pub fn transfer_to_address(&self, address: &ScAddress, transfer: ScTransfers) {
-        self.send(address, &transfer)
-    }
-}
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // smart contract view interface which has only immutable access to state
