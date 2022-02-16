@@ -46,6 +46,7 @@ export const FnUtilsEd25519Valid   : i32 = -33;
 export const FnUtilsHashBlake2b    : i32 = -34;
 export const FnUtilsHashName       : i32 = -35;
 export const FnUtilsHashSha3       : i32 = -36;
+export const FnTransferAllowed     : i32 = -37;
 // @formatter:on
 
 // Direct logging of text to host log
@@ -290,4 +291,18 @@ export class ScSandboxFunc extends ScSandbox {
     //public stateAnchor(): interface{} {
     //	panic("implement me")
     //}
+
+    // transfer allowed assets to the specified ISCP ledger address
+    public transferAllowed(agentID: wasmtypes.ScAgentID, transfer: ScTransfers, create: bool): void {
+        // we need some assets to send
+        if (transfer.isEmpty()) {
+            return;
+        }
+
+        const req = new wasmrequests.TransferRequest();
+        req.agentID = agentID;
+        req.create = create;
+        req.transfer = transfer.toBytes();
+        sandbox(FnTransferAllowed, req.bytes());
+    }
 }

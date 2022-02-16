@@ -92,6 +92,17 @@ export class TakeAllowanceContext {
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class TakeBalanceCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTakeBalance);
+	results: sc.ImmutableTakeBalanceResults = new sc.ImmutableTakeBalanceResults(wasmlib.ScView.nilProxy);
+}
+
+export class TakeBalanceContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	results: sc.MutableTakeBalanceResults = new sc.MutableTakeBalanceResults(wasmlib.ScView.nilProxy);
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class TriggerEventCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTriggerEvent);
 	params: sc.MutableTriggerEventParams = new sc.MutableTriggerEventParams(wasmlib.ScView.nilProxy);
@@ -226,6 +237,12 @@ export class ScFuncs {
 
 	static takeAllowance(_ctx: wasmlib.ScFuncCallContext): TakeAllowanceCall {
 		return new TakeAllowanceCall();
+	}
+
+	static takeBalance(_ctx: wasmlib.ScFuncCallContext): TakeBalanceCall {
+		const f = new TakeBalanceCall();
+		f.results = new sc.ImmutableTakeBalanceResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
 	}
 
 	static triggerEvent(_ctx: wasmlib.ScFuncCallContext): TriggerEventCall {

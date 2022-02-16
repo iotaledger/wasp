@@ -26,6 +26,11 @@ structs:
     address: Address
     transfer: Bytes
 
+  TransferRequest:
+    agentID: AgentID
+    create: Bool
+    transfer: Bytes
+
 typedefs: {}
 state: {}
 funcs: {}

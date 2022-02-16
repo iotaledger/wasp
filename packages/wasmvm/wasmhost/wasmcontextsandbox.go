@@ -54,6 +54,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnUtilsHashBlake2b,
 	(*WasmContextSandbox).fnUtilsHashName,
 	(*WasmContextSandbox).fnUtilsHashSha3,
+	(*WasmContextSandbox).fnTransferAllowed,
 }
 
 // '$' prefix indicates a string param
@@ -98,6 +99,7 @@ var sandboxFuncNames = []string{
 	"#FnUtilsHashBlake2b",
 	"$FnUtilsHashName",
 	"#FnUtilsHashSha3",
+	"#FnTransferAllowed",
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
@@ -354,6 +356,22 @@ func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 	s.common.Log().Debugf(string(args))
+	return nil
+}
+
+// transfer tokens to address
+func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
+	req := wasmrequests.NewTransferRequestFromBytes(args)
+	agentID := s.cvt.IscpAgentID(&req.AgentID)
+	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	if len(scAssets) != 0 {
+		assets := s.cvt.IscpAssets(scAssets)
+		if req.Create {
+			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, assets)
+		} else {
+			s.ctx.TransferAllowedFunds(agentID, assets)
+		}
+	}
 	return nil
 }
 

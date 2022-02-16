@@ -303,11 +303,26 @@ func TestClearMap(t *testing.T) {
 func TestViewBalance(t *testing.T) {
 	ctx := setupTest(t)
 
+	startBalance := ctx.Balance(ctx.Account())
+
+	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
+	f.Func.TransferIotas(1234).Post()
+	require.NoError(t, ctx.Err)
+	ctx.Accounts()
+
+	g := testwasmlib.ScFuncs.TakeBalance(ctx)
+	g.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+	ctx.Accounts()
+	require.True(t, g.Results.Iotas().Exists())
+	require.EqualValues(t, startBalance+1234, g.Results.Iotas().Value())
+
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
+	ctx.Accounts()
 	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, 0, v.Results.Iotas().Value())
+	require.EqualValues(t, startBalance+1234, v.Results.Iotas().Value())
 }
 
 func TestViewBalanceWithTokens(t *testing.T) {

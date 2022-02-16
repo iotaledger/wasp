@@ -48,6 +48,11 @@ pub struct TakeAllowanceCall {
 	pub func: ScFunc,
 }
 
+pub struct TakeBalanceCall {
+	pub func: ScFunc,
+	pub results: ImmutableTakeBalanceResults,
+}
+
 pub struct TriggerEventCall {
 	pub func: ScFunc,
 	pub params: MutableTriggerEventParams,
@@ -161,6 +166,15 @@ impl ScFuncs {
         TakeAllowanceCall {
             func: ScFunc::new(HSC_NAME, HFUNC_TAKE_ALLOWANCE),
         }
+    }
+
+    pub fn take_balance(_ctx: &dyn ScFuncCallContext) -> TakeBalanceCall {
+        let mut f = TakeBalanceCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TAKE_BALANCE),
+            results: ImmutableTakeBalanceResults { proxy: Proxy::nil() },
+        };
+        ScFunc::link_results(&mut f.results.proxy, &f.func);
+        f
     }
 
     pub fn trigger_event(_ctx: &dyn ScFuncCallContext) -> TriggerEventCall {

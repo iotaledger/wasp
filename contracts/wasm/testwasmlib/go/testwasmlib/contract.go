@@ -47,6 +47,11 @@ type TakeAllowanceCall struct {
 	Func *wasmlib.ScFunc
 }
 
+type TakeBalanceCall struct {
+	Func    *wasmlib.ScFunc
+	Results ImmutableTakeBalanceResults
+}
+
 type TriggerEventCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableTriggerEventParams
@@ -138,6 +143,12 @@ func (sc Funcs) Random(ctx wasmlib.ScFuncCallContext) *RandomCall {
 
 func (sc Funcs) TakeAllowance(ctx wasmlib.ScFuncCallContext) *TakeAllowanceCall {
 	return &TakeAllowanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTakeAllowance)}
+}
+
+func (sc Funcs) TakeBalance(ctx wasmlib.ScFuncCallContext) *TakeBalanceCall {
+	f := &TakeBalanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTakeBalance)}
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
+	return f
 }
 
 func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {

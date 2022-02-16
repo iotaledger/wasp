@@ -106,6 +106,14 @@ export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): voi
     f.state.random().setValue(ctx.random(1000));
 }
 
+export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanceContext): void {
+    ctx.transferAllowed(ctx.accountID(), wasmlib.ScTransfers.fromBalances(ctx.allowance()), false);
+}
+
+export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceContext): void {
+    f.results.iotas().setValue(ctx.balances().balance(wasmtypes.IOTA));
+}
+
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
     f.events.test(f.params.address().value(), f.params.name().value());
 }
@@ -164,7 +172,4 @@ export function viewMapValue(ctx: wasmlib.ScViewContext, f: sc.MapValueContext):
     let key = f.params.key().value();
     let value = myMap.getString(key).value();
     f.results.value().setValue(value);
-}
-
-export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanceContext): void {
 }

@@ -105,6 +105,14 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
     f.state.random().set_value(ctx.random(1000));
 }
 
+pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
+    ctx.transfer_allowed(&ctx.account_id(), &ScTransfers::from_balances(ctx.allowance()), false);
+}
+
+pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
+    f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
+}
+
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
     f.events.test(&f.params.address().value(), &f.params.name().value());
 }
@@ -149,7 +157,4 @@ pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
 }
 
 pub fn view_map_value(_ctx: &ScViewContext, _f: &MapValueContext) {
-}
-
-pub fn func_take_allowance(ctx: &ScFuncContext, f: &TakeAllowanceContext) {
 }

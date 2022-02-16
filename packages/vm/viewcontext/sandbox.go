@@ -66,19 +66,22 @@ func (s *sandboxview) AccountID() *iscp.AgentID {
 }
 
 func (s *sandboxview) BalanceIotas() uint64 {
-	return accounts.GetIotaBalance(s.state, s.AccountID())
+	return s.Assets().Iotas
 }
 
 func (s *sandboxview) BalanceNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
-	return accounts.GetNativeTokenBalance(s.state, s.AccountID(), tokenID)
+	return s.Assets().AmountNativeToken(tokenID)
 }
 
 func (s *sandboxview) Assets() *iscp.Assets {
-	ret := accounts.GetAssets(s.state, s.AccountID())
-	if ret == nil {
-		ret = &iscp.Assets{}
+	res := s.Call(accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), dict.Dict{
+		accounts.ParamAgentID: s.AccountID().Bytes(),
+	})
+	assets, err := iscp.AssetsFromDict(res)
+	if err != nil {
+		panic(err)
 	}
-	return ret
+	return assets
 }
 
 func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {

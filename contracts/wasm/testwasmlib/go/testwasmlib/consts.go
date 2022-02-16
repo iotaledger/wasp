@@ -67,6 +67,7 @@ const (
 	FuncParamTypes    = "paramTypes"
 	FuncRandom        = "random"
 	FuncTakeAllowance = "takeAllowance"
+	FuncTakeBalance   = "takeBalance"
 	FuncTriggerEvent  = "triggerEvent"
 	ViewArrayLength   = "arrayLength"
 	ViewArrayValue    = "arrayValue"
@@ -86,6 +87,7 @@ const (
 	HFuncParamTypes    = wasmtypes.ScHname(0x6921c4cd)
 	HFuncRandom        = wasmtypes.ScHname(0xe86c97ca)
 	HFuncTakeAllowance = wasmtypes.ScHname(0x91e7bd00)
+	HFuncTakeBalance   = wasmtypes.ScHname(0x8ad1cb27)
 	HFuncTriggerEvent  = wasmtypes.ScHname(0xd5438ac6)
 	HViewArrayLength   = wasmtypes.ScHname(0x3a831021)
 	HViewArrayValue    = wasmtypes.ScHname(0x662dbd81)

@@ -57,6 +57,7 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnUtilsHashBlake2b,
 	(*SoloSandbox).fnUtilsHashName,
 	(*SoloSandbox).fnUtilsHashSha3,
+	(*SoloSandbox).fnTransferAllowed,
 }
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
@@ -308,7 +309,7 @@ func (s *SoloSandbox) fnResults(args []byte) []byte {
 	panic("implement me")
 }
 
-// transfer tokens to address
+// transfer tokens to L1 address
 func (s *SoloSandbox) fnSend(args []byte) []byte {
 	panic("implement me")
 }
@@ -324,4 +325,9 @@ func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
 func (s *SoloSandbox) fnTrace(args []byte) []byte {
 	s.ctx.Chain.Log.Debugf(string(args))
 	return nil
+}
+
+// transfer allowed tokens to L2 agent
+func (s *SoloSandbox) fnTransferAllowed(args []byte) []byte {
+	panic("implement me")
 }
