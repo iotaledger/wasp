@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+
+
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/execution"
 	"golang.org/x/xerrors"
 )
 
@@ -21,7 +22,7 @@ func (vmctx *VMContext) mustBeCalledFromContract(contract *coreutil.ContractInfo
 
 func (vmctx *VMContext) TryLoadContract(programHash hashing.HashValue) error {
 	vmctx.mustBeCalledFromContract(root.Contract)
-	vmtype, programBinary, err := vmctx.LocateProgram(programHash)
+	vmtype, programBinary, err := execution.GetProgramBinary(vmctx, programHash)
 	if err != nil {
 		return err
 	}

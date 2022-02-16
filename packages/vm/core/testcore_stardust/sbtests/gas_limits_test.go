@@ -3,21 +3,20 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
 func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.KeyPair) {
 	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(seedIndex))
 	iotasToSend := ch.Env.L1Iotas(address)
-	gasBudget := gas.MaxGasPerCall + 5000
+	gasBudget := gas.MaxGasPerCall + 5000000
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncInfiniteLoop.Name).
 		AddAssetsIotas(iotasToSend).
@@ -38,7 +37,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
-	require.Less(t, req.GasBudget(), receipt.GasBurned)
+	require.Less(t, receipt.GasBurned, req.GasBudget())
 	require.Greater(t, receipt.GasBurned, gas.MaxGasPerCall) // should exceed MaxGasPerCall by 1 operation
 }
 

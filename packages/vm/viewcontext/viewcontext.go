@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -23,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
 )
 
@@ -35,22 +35,17 @@ type Viewcontext struct {
 	chainInfo   *governance.ChainInfo
 	gasBurnLog  *gas.BurnLog
 	gasBudget   uint64
-
-	// target call specific
-	targetContractHname   iscp.Hname
-	targetEntryPointHname iscp.Hname
-	params                iscp.Params
+	callStack   []*callContext
 }
 
 var _ execution.WaspContext = &Viewcontext{}
 
 func New(ch chain.ChainCore) *Viewcontext {
 	return &Viewcontext{
-		processors:          ch.Processors(),
-		stateReader:         ch.GetStateReader(),
-		chainID:             ch.ID(),
-		log:                 ch.Log(),
-		targetContractHname: 0,
+		processors:  ch.Processors(),
+		stateReader: ch.GetStateReader(),
+		chainID:     ch.ID(),
+		log:         ch.Log(),
 	}
 }
 
@@ -70,7 +65,7 @@ func (ctx *Viewcontext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	g := burnCode.Cost(par...)
 	ctx.gasBurnLog.Record(burnCode, g)
 	if g > ctx.gasBudget {
-		panic(xerrors.Errorf("maximum gas exceeded"))
+		panic(vmcontext.ErrGasBudgetExceeded)
 	}
 	ctx.gasBudget -= g
 }
@@ -124,7 +119,7 @@ func (ctx *Viewcontext) ChainOwnerID() *iscp.AgentID {
 }
 
 func (ctx *Viewcontext) ContractCreator() *iscp.AgentID {
-	rec := ctx.GetContractRecord(ctx.targetContractHname)
+	rec := ctx.GetContractRecord(ctx.CurrentContractHname())
 	if rec == nil {
 		panic("can't find current contract")
 	}
@@ -132,15 +127,15 @@ func (ctx *Viewcontext) ContractCreator() *iscp.AgentID {
 }
 
 func (ctx *Viewcontext) CurrentContractHname() iscp.Hname {
-	return ctx.targetContractHname
+	return ctx.getCallContext().contract
 }
 
 func (ctx *Viewcontext) Params() *iscp.Params {
-	return &ctx.params
+	return &ctx.getCallContext().params
 }
 
 func (ctx *Viewcontext) StateReader() kv.KVStoreReader {
-	return ctx.contractStateReader(ctx.targetContractHname)
+	return ctx.contractStateReader(ctx.CurrentContractHname())
 }
 
 func (ctx *Viewcontext) GasBudgetLeft() uint64 {
@@ -172,19 +167,15 @@ func (ctx *Viewcontext) callView(targetContract, entryPoint iscp.Hname, params d
 		panic("target entrypoint is not a view")
 	}
 
+	ctx.pushCallContext(targetContract, params)
+	defer ctx.popCallContext()
+
 	return ep.Call(sandbox.NewSandboxView(ctx))
 }
 
 func (ctx *Viewcontext) initCallView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
 	ctx.gasBurnLog = gas.NewGasBurnLog()
-	ctx.gasBudget = gas.ViewCallGasBudget
-
-	ctx.targetContractHname = targetContract
-	ctx.targetEntryPointHname = entryPoint
-	ctx.params = iscp.Params{
-		Dict:      params,
-		KVDecoder: kvdecoder.New(params, ctx.log),
-	}
+	ctx.gasBudget = gas.MaxGasExternalViewCall
 
 	ctx.chainInfo = governance.MustGetChainInfo(ctx.contractStateReader(governance.Contract.Hname()))
 
