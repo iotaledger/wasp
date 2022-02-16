@@ -74,30 +74,25 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 func TestDivide1Member(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 	ctx.Accounts()
-	receipt := ctx.Chain.LastReceipt()
+
 	member1 := ctx.NewSoloAgent()
 	l1Old := member1.Balance()
 	require.EqualValues(t, 0, ctx.Balance(member1))
 	ctx.Accounts(member1)
-	receipt = ctx.Chain.LastReceipt()
 
 	dividendMember(ctx, member1, 100)
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1)
-	receipt = ctx.Chain.LastReceipt()
 
 	dividendDivide(ctx, 99)
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1)
-	receipt = ctx.Chain.LastReceipt()
 
 	l1New := member1.Balance()
 	ctx.Accounts(member1)
-	receipt = ctx.Chain.LastReceipt()
 
 	require.EqualValues(t, 0, ctx.Balance(member1))
 	require.EqualValues(t, 100, l1New-l1Old)
-	_ = receipt
 }
 
 func TestDivide2Members(t *testing.T) {

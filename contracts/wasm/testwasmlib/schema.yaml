@@ -82,6 +82,8 @@ funcs:
 
   random:
 
+  takeAllowance:
+
   triggerEvent:
     params:
       name: String

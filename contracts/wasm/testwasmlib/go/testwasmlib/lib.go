@@ -18,6 +18,7 @@ var exportMap = wasmlib.ScExportMap{
 		FuncMapSet,
 		FuncParamTypes,
 		FuncRandom,
+		FuncTakeAllowance,
 		FuncTriggerEvent,
 		ViewArrayLength,
 		ViewArrayValue,
@@ -35,6 +36,7 @@ var exportMap = wasmlib.ScExportMap{
 		funcMapSetThunk,
 		funcParamTypesThunk,
 		funcRandomThunk,
+		funcTakeAllowanceThunk,
 		funcTriggerEventThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
@@ -201,6 +203,22 @@ func funcRandomThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcRandom(ctx, f)
 	ctx.Log("testwasmlib.funcRandom ok")
+}
+
+type TakeAllowanceContext struct {
+	Events TestWasmLibEvents
+	State  MutableTestWasmLibState
+}
+
+func funcTakeAllowanceThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcTakeAllowance")
+	f := &TakeAllowanceContext{
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcTakeAllowance(ctx, f)
+	ctx.Log("testwasmlib.funcTakeAllowance ok")
 }
 
 type TriggerEventContext struct {

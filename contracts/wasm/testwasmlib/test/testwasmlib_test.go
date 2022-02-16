@@ -312,28 +312,21 @@ func TestViewBalance(t *testing.T) {
 
 func TestViewBalanceWithTokens(t *testing.T) {
 	ctx := setupTest(t)
-
 	ctx.Accounts()
-	receipt := ctx.Chain.LastReceipt()
 
 	// FuncParamTypes without params does nothing
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	f.Func.TransferIotas(42).Post()
+	f.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
-
 	ctx.Accounts()
-	receipt = ctx.Chain.LastReceipt()
 
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-
 	ctx.Accounts()
-	receipt = ctx.Chain.LastReceipt()
 
 	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, 42, v.Results.Iotas().Value())
-	_ = receipt
+	require.EqualValues(t, 0, v.Results.Iotas().Value())
 }
 
 func TestRandom(t *testing.T) {

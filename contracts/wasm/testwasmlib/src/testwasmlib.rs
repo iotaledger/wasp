@@ -150,3 +150,6 @@ pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
 
 pub fn view_map_value(_ctx: &ScViewContext, _f: &MapValueContext) {
 }
+
+pub fn func_take_allowance(ctx: &ScFuncContext, f: &TakeAllowanceContext) {
+}

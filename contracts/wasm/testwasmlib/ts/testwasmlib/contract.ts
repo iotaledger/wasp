@@ -83,6 +83,15 @@ export class RandomContext {
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class TakeAllowanceCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTakeAllowance);
+}
+
+export class TakeAllowanceContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class TriggerEventCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTriggerEvent);
 	params: sc.MutableTriggerEventParams = new sc.MutableTriggerEventParams(wasmlib.ScView.nilProxy);
@@ -213,6 +222,10 @@ export class ScFuncs {
 
 	static random(_ctx: wasmlib.ScFuncCallContext): RandomCall {
 		return new RandomCall();
+	}
+
+	static takeAllowance(_ctx: wasmlib.ScFuncCallContext): TakeAllowanceCall {
+		return new TakeAllowanceCall();
 	}
 
 	static triggerEvent(_ctx: wasmlib.ScFuncCallContext): TriggerEventCall {

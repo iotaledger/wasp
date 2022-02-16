@@ -165,3 +165,6 @@ export function viewMapValue(ctx: wasmlib.ScViewContext, f: sc.MapValueContext):
     let value = myMap.getString(key).value();
     f.results.value().setValue(value);
 }
+
+export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanceContext): void {
+}

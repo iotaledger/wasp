@@ -160,3 +160,7 @@ func viewMapValue(ctx wasmlib.ScViewContext, f *MapValueContext) {
 	key := f.Params.Key().Value()
 	f.Results.Value().SetValue(myMap.GetString(key).Value())
 }
+
+func funcTakeAllowance(ctx wasmlib.ScFuncContext, f *TakeAllowanceContext) {
+	// ctx.
+}

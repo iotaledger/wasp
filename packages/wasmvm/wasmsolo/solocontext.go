@@ -115,7 +115,9 @@ func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
 			txt += fmt.Sprintf("\n\tL2:%8d,\tL1:%8d,\t%s", 0, l1.Iotas, token.ID.String())
 		}
 	}
-	fmt.Println(txt)
+	receipt := ctx.Chain.LastReceipt()
+
+	fmt.Printf("%s\nGas: %d, fee %d\n", txt, receipt.GasBurned, receipt.GasFeeCharged)
 }
 
 func (ctx *SoloContext) Burn(i int64) {
@@ -347,7 +349,7 @@ func (ctx *SoloContext) EnqueueRequest() {
 	ctx.isRequest = true
 }
 
-func (ctx *SoloContext) existFile(path string, ext string) string {
+func (ctx *SoloContext) existFile(path, ext string) string {
 	fileName := ctx.scName + ext
 
 	// first check for new file in path

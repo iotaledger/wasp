@@ -44,6 +44,10 @@ pub struct RandomCall {
 	pub func: ScFunc,
 }
 
+pub struct TakeAllowanceCall {
+	pub func: ScFunc,
+}
+
 pub struct TriggerEventCall {
 	pub func: ScFunc,
 	pub params: MutableTriggerEventParams,
@@ -150,6 +154,12 @@ impl ScFuncs {
     pub fn random(_ctx: &dyn ScFuncCallContext) -> RandomCall {
         RandomCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
+        }
+    }
+
+    pub fn take_allowance(_ctx: &dyn ScFuncCallContext) -> TakeAllowanceCall {
+        TakeAllowanceCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TAKE_ALLOWANCE),
         }
     }
 

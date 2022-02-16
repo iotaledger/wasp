@@ -43,6 +43,10 @@ type RandomCall struct {
 	Func *wasmlib.ScFunc
 }
 
+type TakeAllowanceCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type TriggerEventCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableTriggerEventParams
@@ -130,6 +134,10 @@ func (sc Funcs) ParamTypes(ctx wasmlib.ScFuncCallContext) *ParamTypesCall {
 
 func (sc Funcs) Random(ctx wasmlib.ScFuncCallContext) *RandomCall {
 	return &RandomCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRandom)}
+}
+
+func (sc Funcs) TakeAllowance(ctx wasmlib.ScFuncCallContext) *TakeAllowanceCall {
+	return &TakeAllowanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTakeAllowance)}
 }
 
 func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {
