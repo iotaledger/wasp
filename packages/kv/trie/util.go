@@ -23,17 +23,3 @@ func Size(o interface{ Write(w io.Writer) }) int {
 	o.Write(&ret)
 	return int(ret)
 }
-
-type sliceWriter []byte
-
-func (w sliceWriter) Write(p []byte) (int, error) {
-	if len(p) > len(w) {
-		panic("sliceWriter: data does not fit the target")
-	}
-	copy(w, p)
-	return len(p), nil
-}
-
-func NewSliceWriter(buf []byte) io.Writer {
-	return sliceWriter(buf)
-}
