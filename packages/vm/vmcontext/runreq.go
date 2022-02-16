@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -60,6 +61,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 			vmctx.prepareGasBudget()
 			// run the contract program
 			receipt, callRet, callErr := vmctx.callTheContract()
+			vmctx.mustCheckTransactionSize()
 			result = &vm.RequestResult{
 				Request: req,
 				Receipt: receipt,
@@ -356,4 +358,13 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	}
 	target := vmctx.req.CallTarget()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
+}
+
+// mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
+func (vmctx *VMContext) mustCheckTransactionSize() {
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(&iscp.StateData{})
+	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
+	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
+		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
+	}
 }

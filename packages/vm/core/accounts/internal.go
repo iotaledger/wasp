@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -16,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"golang.org/x/xerrors"
 )
 

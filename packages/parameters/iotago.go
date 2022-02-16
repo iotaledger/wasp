@@ -6,16 +6,32 @@ import (
 )
 
 // Parameters needed for interaction with iota.go
-// TODO: make configurable
 
 // https://github.com/muXxer/protocol-rfcs/blob/master/text/0032-dust-protection/0032-dust-protection.md
 
-func DeSerializationParameters() *iotago.DeSerializationParameters {
+func DeSerializationParametersForTesting() *iotago.DeSerializationParameters {
 	return testdeserparams.DeSerializationParameters() // TODO
 }
 
-func RentStructure() *iotago.RentStructure {
+func RentStructureForTesting() *iotago.RentStructure {
 	return testdeserparams.RentStructure() // TODO
 }
 
-const NetworkID uint64 = 0 // TODO
+// L1 describes parameters coming from the L1 node
+type L1 struct {
+	NetworkID                 uint64
+	MaxTransactionSize        int
+	DeSerializationParameters *iotago.DeSerializationParameters
+}
+
+func (l1 *L1) RentStructure() *iotago.RentStructure {
+	return l1.DeSerializationParameters.RentStructure
+}
+
+func L1ForTesting() *L1 {
+	return &L1{
+		NetworkID:                 0,
+		MaxTransactionSize:        32000,
+		DeSerializationParameters: DeSerializationParametersForTesting(),
+	}
+}

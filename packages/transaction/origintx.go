@@ -21,7 +21,7 @@ func NewChainOriginTransaction(
 	deposit uint64,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	rentStructure *iotago.RentStructure,
+	l1Params *parameters.L1,
 ) (*iotago.Transaction, *iscp.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
@@ -43,7 +43,7 @@ func NewChainOriginTransaction(
 		},
 	}
 	{
-		aliasDustDeposit := NewDepositEstimate(rentStructure).AnchorOutput
+		aliasDustDeposit := NewDepositEstimate(l1Params.RentStructure()).AnchorOutput
 		if aliasOutput.Amount < aliasDustDeposit {
 			aliasOutput.Amount = aliasDustDeposit
 		}
@@ -54,7 +54,7 @@ func NewChainOriginTransaction(
 		nil,
 		unspentOutputs,
 		unspentOutputIDs,
-		rentStructure,
+		l1Params.RentStructure(),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -64,9 +64,9 @@ func NewChainOriginTransaction(
 		outputs = append(outputs, remainderOutput)
 	}
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: l1Params.NetworkID,
 		Inputs:    txInputs.UTXOInputs(),
-		Outputs: outputs,
+		Outputs:   outputs,
 	}
 	sigs, err := essence.Sign(
 		txInputs.OrderedSet(unspentOutputs).MustCommitment(),
@@ -98,7 +98,7 @@ func NewRootInitRequestTransaction(
 	description string,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	rentStructure *iotago.RentStructure,
+	l1Params *parameters.L1,
 ) (*iotago.Transaction, error) {
 	//
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
@@ -112,12 +112,12 @@ func NewRootInitRequestTransaction(
 				EntryPoint:     iscp.EntryPointInit,
 				GasBudget:      0, // TODO. Probably we need minimum fixed budget for core contract calls. 0 for init call
 				Params: dict.Dict{
-					root.ParamDustDepositAssumptionsBin: NewDepositEstimate(rentStructure).Bytes(),
+					root.ParamDustDepositAssumptionsBin: NewDepositEstimate(l1Params.RentStructure()).Bytes(),
 					governance.ParamDescription:         codec.EncodeString(description),
 				},
 			},
 		}},
-		RentStructure: rentStructure,
+		L1: l1Params,
 	})
 	if err != nil {
 		return nil, err

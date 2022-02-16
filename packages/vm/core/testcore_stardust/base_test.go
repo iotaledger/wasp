@@ -488,3 +488,49 @@ func TestBurnLog(t *testing.T) {
 	t.Logf("receipt 2:\n%s", rec)
 	t.Logf("burn log 2:\n%s", rec.GasBurnLog)
 }
+
+func TestMessageSize(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true}).
+		WithNativeContract(sbtestsc.Processor)
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(10000, nil)
+
+	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
+	require.NoError(t, err)
+
+	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
+
+	reqSize := 5_000 // bytes
+	dust := uint64(reqSize * 2)
+
+	maxRequestsPerBlock := env.L1Params().MaxTransactionSize / reqSize
+
+	reqs := make([]iscp.Request, maxRequestsPerBlock+1)
+	for i := 0; i < len(reqs); i++ {
+		req, err := solo.NewIscpRequestFromCallParams(
+			ch,
+			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
+				sbtestsc.ParamSize, uint32(reqSize),
+			).
+				AddAssetsIotas(dust).
+				AddAllowanceIotas(dust).
+				WithMaxAffordableGasBudget(),
+			nil,
+		)
+		require.NoError(t, err)
+		reqs[i] = req
+	}
+
+	env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
+	ch.WaitUntilMempoolIsEmpty()
+
+	// request outputs are so large that they have to be processed in two separate blocks
+	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
+
+	for _, req := range reqs {
+		receipt, ok := ch.GetRequestReceipt(req.ID())
+		require.True(t, ok)
+		require.Empty(t, receipt.ErrorStr)
+	}
+}
