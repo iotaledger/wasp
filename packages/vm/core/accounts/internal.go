@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -21,13 +21,13 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds               = commonerrors.RegisterGlobalError("not enough funds").Create()
-	ErrNotEnoughIotasForDustDeposit = commonerrors.RegisterGlobalError("not enough iotas for dust deposit").Create()
-	ErrNotEnoughAllowance           = commonerrors.RegisterGlobalError("not enough allowance").Create()
-	ErrBadAmount                    = commonerrors.RegisterGlobalError("bad native asset amount").Create()
-	ErrRepeatingFoundrySerialNumber = commonerrors.RegisterGlobalError("repeating serial number of the foundry").Create()
-	ErrFoundryNotFound              = commonerrors.RegisterGlobalError("foundry not found").Create()
-	ErrOverflow                     = commonerrors.RegisterGlobalError("overflow in token arithmetics").Create()
+	ErrNotEnoughFunds               = coreerrors.RegisterGlobalError("not enough funds").Create()
+	ErrNotEnoughIotasForDustDeposit = coreerrors.RegisterGlobalError("not enough iotas for dust deposit").Create()
+	ErrNotEnoughAllowance           = coreerrors.RegisterGlobalError("not enough allowance").Create()
+	ErrBadAmount                    = coreerrors.RegisterGlobalError("bad native asset amount").Create()
+	ErrRepeatingFoundrySerialNumber = coreerrors.RegisterGlobalError("repeating serial number of the foundry").Create()
+	ErrFoundryNotFound              = coreerrors.RegisterGlobalError("foundry not found").Create()
+	ErrOverflow                     = coreerrors.RegisterGlobalError("overflow in token arithmetics").Create()
 )
 
 // getAccount each account is a map with the name of its controlling agentID.

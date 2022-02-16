@@ -7,9 +7,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
@@ -172,21 +170,21 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
-	case *vmerrors.Error:
-		return r.(*vmerrors.Error)
-	case vmerrors.Error:
-		e := r.(vmerrors.Error)
+	case *iscp.VMError:
+		return r.(*iscp.VMError)
+	case iscp.VMError:
+		e := r.(iscp.VMError)
 		return &e
 	case *kv.DBError:
 		panic(err)
 	case string:
-		return commonerrors.ErrUntypedError.Create(err)
+		return coreerrors.ErrUntypedError.Create(err)
 	case error:
 		if errorlib.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
 		}
 
-		return commonerrors.ErrUntypedError.Create(err)
+		return coreerrors.ErrUntypedError.Create(err)
 	}
 	return nil
 }

@@ -5,8 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"math"
 )
 
@@ -28,20 +27,16 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)
 
 	if len(errorMessageFormat) == 0 {
-		panic(commonerrors.ErrMessageFormatEmpty)
+		panic(coreerrors.ErrMessageFormatEmpty)
 	}
 
-	errorId := vmerrors.GetErrorIdFromMessageFormat(errorMessageFormat)
+	errorDefinition, err := e.Register(errorMessageFormat)
 
-	errorDefinition, err := e.Register(errorId, errorMessageFormat)
-
-	if err != nil {
-		panic(err)
-	}
+	ctx.RequireNoError(err)
 
 	ret := dict.New()
 	ret.Set(ParamContractHname, codec.EncodeHname(ctx.Caller().Hname()))
-	ret.Set(ParamErrorId, codec.EncodeUint16(errorId))
+	ret.Set(ParamErrorId, codec.EncodeUint16(errorDefinition.Id()))
 	ret.Set(ParamErrorDefinitionAdded, codec.EncodeBool(errorDefinition != nil))
 
 	return ret
@@ -53,19 +48,17 @@ func funcGetErrorMessageFormat(ctx iscp.SandboxView) dict.Dict {
 	contract := params.MustGetUint32(ParamContractHname)
 	errorId := params.MustGetUint16(ParamErrorId)
 
-	var e commonerrors.IErrorCollection
+	var e coreerrors.ErrorCollection
 
 	if contract == math.MaxUint32 {
-		e = commonerrors.GetGlobalErrorCollection()
+		e = coreerrors.All()
 	} else {
 		e = NewStateErrorCollectionReader(ctx.State(), iscp.Hname(contract))
 	}
 
 	errorDefinition, err := e.Get(errorId)
 
-	if err != nil {
-		panic(err)
-	}
+	ctx.RequireNoError(err)
 
 	ret := dict.New()
 	ret.Set(ParamErrorMessageFormat, codec.EncodeString(errorDefinition.MessageFormat()))

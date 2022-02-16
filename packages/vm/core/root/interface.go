@@ -2,7 +2,7 @@ package root
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 var (
@@ -41,5 +41,5 @@ var (
 )
 
 var (
-	ErrChainInitConditionsFailed = commonerrors.RegisterGlobalError("root.init can't be called in this state").Create()
+	ErrChainInitConditionsFailed = coreerrors.RegisterGlobalError("root.init can't be called in this state").Create()
 )

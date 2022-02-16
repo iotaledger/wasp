@@ -9,8 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -25,7 +24,7 @@ var funcRegisterErrors = coreutil.Func("register_errors")
 var funcThrowErrorWithoutArgs = coreutil.Func("throw_error_without_args")
 var funcThrowErrorWithArgs = coreutil.Func("throw_error_with_args")
 
-var testError *vmerrors.ErrorDefinition
+var testError *iscp.VMErrorTemplate
 
 var errorContractProcessor = errorContract.Processor(nil,
 	funcRegisterErrors.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
@@ -70,9 +69,9 @@ func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 }
 
 // Panics and returned errors will eventually land into the error handling hook.
-// Typical xerror/error types will be wrapped into a vmerrors.Error type (Err ErrUntypedError)
+// Typical xerror/error types will be wrapped into a vmerrors.VMError type (Err ErrUntypedError)
 // Panicked vmerrors will be stored as is.
-// The first test validates a typed vmerror Error (Not enough Gas)
+// The first test validates a typed vmerror VMError (Not enough Gas)
 // The second test validates the wrapped generic ErrUntypedError
 func TestErrorWithCustomError(t *testing.T) {
 	_, chain := setupErrorsTestWithoutFunds(t)
@@ -82,10 +81,10 @@ func TestErrorWithCustomError(t *testing.T) {
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 
-	testError := &vmerrors.Error{}
+	testError := &iscp.VMError{}
 	require.ErrorAs(t, err, &testError)
 
-	typedError := err.(*vmerrors.Error)
+	typedError := err.(*iscp.VMError)
 	require.Equal(t, typedError.Definition(), *vm.ErrGasBudgetDetail)
 }
 
@@ -98,11 +97,11 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 
-	testError := &vmerrors.Error{}
+	testError := &iscp.VMError{}
 	require.ErrorAs(t, err, &testError)
 
-	typedError := err.(*vmerrors.Error)
-	require.Equal(t, typedError.Definition(), *commonerrors.ErrUntypedError)
+	typedError := err.(*iscp.VMError)
+	require.Equal(t, typedError.Definition(), *coreerrors.ErrUntypedError)
 
 	require.Equal(t, err.Error(), "cannot decode key 'm': cannot decode nil bytes")
 }
@@ -160,7 +159,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError.Id(), vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {
@@ -180,13 +179,13 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
 
-	errorTestType := &vmerrors.Error{}
+	errorTestType := &iscp.VMError{}
 	require.ErrorAs(t, err, &errorTestType)
 
-	typedError := err.(*vmerrors.Error)
+	typedError := err.(*iscp.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Id(), vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
 	require.Equal(t, testError.MessageFormat(), typedError.MessageFormat())
 
 	// Further, this error will add the arg '42'
@@ -210,13 +209,13 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
 
-	errorTestType := &vmerrors.Error{}
+	errorTestType := &iscp.VMError{}
 	require.ErrorAs(t, err, &errorTestType)
 
-	typedError := err.(*vmerrors.Error)
+	typedError := err.(*iscp.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Id(), vmerrors.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
 	require.Equal(t, testError.MessageFormat(), typedError.MessageFormat())
 
 	t.Log(err.Error())

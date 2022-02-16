@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/txstream"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/wal"
 	"golang.org/x/xerrors"
@@ -130,7 +129,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 	chainMetrics := allMetrics.NewChainMetrics(chr.ChainID)
 	chainWAL, err := w.NewChainWAL(chr.ChainID)
 	if err != nil {
-		c.log.Debugf("Error creating wal object: %v", err)
+		c.log.Debugf("VMError creating wal object: %v", err)
 		chainWAL = wal.NewDefault()
 	}
 	newChain := chainimpl.NewChain(

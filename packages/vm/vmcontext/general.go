@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -217,7 +216,7 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	vmctx.GasBurn(gas.BurnCodeDeployContract)
 }
 
-func (vmctx *VMContext) RegisterError(messageFormat string) *vmerrors.ErrorDefinition {
+func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
 	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
 	params := dict.New()
@@ -233,9 +232,9 @@ func (vmctx *VMContext) RegisterError(messageFormat string) *vmerrors.ErrorDefin
 	}
 
 	errorId := data.MustGetUint16(errors.ParamErrorId)
-	errorPrefixId := data.MustGetUint32(errors.ParamContractHname)
+	errorPrefixId := data.MustGetHname(errors.ParamContractHname)
 
 	vmctx.Debugf("vmcontext.RegisterError: errorId: '%v'", errorId)
 
-	return vmerrors.NewErrorDefinition(errorPrefixId, errorId, messageFormat)
+	return iscp.NewVMErrorTemplate(errorPrefixId, errorId, messageFormat)
 }

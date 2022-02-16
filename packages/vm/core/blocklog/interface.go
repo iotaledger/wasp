@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 	"io"
 	"math"
 	"time"
@@ -305,7 +304,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
-	Error         *vmerrors.Error
+	Error         *iscp.VMError
 	GasBudget     uint64
 	GasBurned     uint64
 	GasFeeCharged uint64
@@ -343,7 +342,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 		return ret, nil
 	}
 
-	if ret.Error, err = vmerrors.ErrorFromBytes(mu, nil); err != nil {
+	if ret.Error, err = iscp.VMErrorFromMarshalUtil(mu, nil); err != nil {
 		return nil, err
 	}
 

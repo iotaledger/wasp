@@ -2,14 +2,12 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/commonerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"math"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
-
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -155,13 +153,13 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
-	var receiptError *vmerrors.Error
+	var receiptError *iscp.VMError
 
 	if errProvided != nil {
-		if _, ok := errProvided.(*vmerrors.Error); ok {
-			receiptError = errProvided.(*vmerrors.Error)
+		if _, ok := errProvided.(*iscp.VMError); ok {
+			receiptError = errProvided.(*iscp.VMError)
 		} else {
-			receiptError = commonerrors.ErrUntypedError.Create(errProvided)
+			receiptError = coreerrors.ErrUntypedError.Create(errProvided)
 		}
 	}
 

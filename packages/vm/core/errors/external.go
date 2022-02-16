@@ -4,13 +4,13 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/vmerrors"
 )
 
-func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*vmerrors.Error) (string, error) {
-	return func(errorToResolve *vmerrors.Error) (string, error) {
+// SandboxErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
+func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*iscp.VMError) (string, error) {
+	return func(errorToResolve *iscp.VMError) (string, error) {
 		params := dict.New()
-		params.Set(ParamContractHname, codec.EncodeUint32(errorToResolve.PrefixId()))
+		params.Set(ParamContractHname, codec.EncodeHname(errorToResolve.PrefixId()))
 		params.Set(ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
 
 		ret := ctx.Call(Contract.Hname(), FuncGetErrorMessageFormat.Hname(), params)
