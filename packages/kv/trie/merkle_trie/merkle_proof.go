@@ -15,8 +15,8 @@ type Proof struct {
 
 type ProofElement struct {
 	PathFragment []byte
-	Children     map[byte]*[32]byte
-	Terminal     *[32]byte
+	Children     map[byte]*vectorCommitment
+	Terminal     *terminalCommitment
 	ChildIndex   int
 }
 
@@ -37,30 +37,33 @@ func (m *trieSetup) Proof(path *trie.ProofPath) *Proof {
 	for i, eg := range path.Path {
 		em := &ProofElement{
 			PathFragment: eg.Node.PathFragment,
-			Children:     make(map[byte]*[32]byte),
+			Children:     make(map[byte]*vectorCommitment),
 			Terminal:     nil,
 			ChildIndex:   eg.ChildIndex,
 		}
 		if eg.Node.Terminal != nil {
-			em.Terminal = (*[32]byte)(eg.Node.Terminal.(*hashCommitment))
+			em.Terminal = eg.Node.Terminal.(*terminalCommitment)
 		}
 		for k, v := range eg.Node.Children {
 			if int(k) == eg.ChildIndex {
 				// skipping the commitment which must come from the next child. 256 and 257 will be skipped too
 				continue
 			}
-			em.Children[k] = (*[32]byte)(v.(*hashCommitment))
+			em.Children[k] = v.(*vectorCommitment)
 		}
 		ret.Path[i] = em
 	}
 	return ret
 }
 
-// MustKeyTerminal returns key and terminal commitment the proof is about. If it returns (?, nil) it means it is proof of absence
+// MustKeyTerminal returns key and terminal commitment the proof is about. If it returns:
+// - key
+// - commitment slice of up to 32 bytes long. If it is nil, the proof is an absence proof
+// - false if it is original data, true if it is a blake2b hash of the data
 // It does not verify the proof, so this function should be used only after Validate()
-func (p *Proof) MustKeyTerminal() ([]byte, *[32]byte) {
+func (p *Proof) MustKeyTerminal() ([]byte, []byte, bool) {
 	if len(p.Path) == 0 {
-		return nil, nil
+		return nil, nil, false
 	}
 	lastElem := p.Path[len(p.Path)-1]
 	switch {
@@ -68,17 +71,21 @@ func (p *Proof) MustKeyTerminal() ([]byte, *[32]byte) {
 		if _, ok := lastElem.Children[byte(lastElem.ChildIndex)]; ok {
 			panic("nil child commitment expected for proof of absence")
 		}
-		return p.Key, nil
+		return p.Key, nil, false
 	case lastElem.ChildIndex == 256:
-		return p.Key, lastElem.Terminal
+		if lastElem.Terminal == nil {
+			return p.Key, nil, false
+		}
+		d, ishash := lastElem.Terminal.value()
+		return p.Key, d, ishash
 	case lastElem.ChildIndex == 257:
-		return p.Key, nil
+		return p.Key, nil, false
 	}
 	panic("wrong lastElem.ChildIndex")
 }
 
 func (p *Proof) MustIsProofOfAbsence() bool {
-	_, r := p.MustKeyTerminal()
+	_, r, _ := p.MustKeyTerminal()
 	return r == nil
 }
 
@@ -100,8 +107,8 @@ func (p *Proof) Validate(root *[32]byte) error {
 }
 
 func (p *Proof) verify(pathIdx, keyIdx int) ([32]byte, error) {
-	assert(pathIdx < len(p.Path), "assertion: pathIdx < len(p.Path)")
-	assert(keyIdx <= len(p.Key), "assertion: keyIdx <= len(p.Key)")
+	assert(pathIdx < len(p.Path), "assertion: pathIdx < lenPlus1(p.Path)")
+	assert(keyIdx <= len(p.Key), "assertion: keyIdx <= lenPlus1(p.Key)")
 
 	elem := p.Path[pathIdx]
 	tail := p.Key[keyIdx:]
@@ -143,16 +150,19 @@ func (p *Proof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 }
 
 func (e *ProofElement) hashIt(missingCommitment *[32]byte) [32]byte {
-	var hashes [258]*hashCommitment
+	var hashes [258]*[32]byte
 	for idx, c := range e.Children {
-		hashes[idx] = (*hashCommitment)(c)
+		hashes[idx] = (*[32]byte)(c)
 	}
-	hashes[256] = (*hashCommitment)(e.Terminal)
-	hashes[257] = hashData(e.PathFragment)
+	if e.Terminal != nil {
+		hashes[256] = &e.Terminal.bytes
+	}
+	cd := commitToData(e.PathFragment)
+	hashes[257] = &cd
 	if e.ChildIndex < 256 {
-		hashes[e.ChildIndex] = (*hashCommitment)(missingCommitment)
+		hashes[e.ChildIndex] = missingCommitment
 	}
-	return *hashHashes(&hashes)
+	return hashVector(&hashes)
 }
 
 func assert(cond bool, err interface{}) {
@@ -209,7 +219,7 @@ func (e *ProofElement) Write(w io.Writer) {
 	_ = util.WriteByte(w, smallFlags)
 	// write terminal commitment if any
 	if smallFlags&hasTerminalValueFlag != 0 {
-		_, _ = w.Write(e.Terminal[:])
+		e.Terminal.Write(w)
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
@@ -219,7 +229,7 @@ func (e *ProofElement) Write(w io.Writer) {
 			if !ok {
 				continue
 			}
-			_, _ = w.Write(child[:])
+			child.Write(w)
 		}
 	}
 }
@@ -239,18 +249,14 @@ func (e *ProofElement) Read(r io.Reader) error {
 		return err
 	}
 	if smallFlags&hasTerminalValueFlag != 0 {
-		e.Terminal = &[32]byte{}
-		n, err := r.Read(e.Terminal[:])
-		if err != nil {
+		e.Terminal = &terminalCommitment{}
+		if err := e.Terminal.Read(r); err != nil {
 			return err
-		}
-		if n != 32 {
-			return xerrors.New("32 bytes expected")
 		}
 	} else {
 		e.Terminal = nil
 	}
-	e.Children = make(map[byte]*[32]byte)
+	e.Children = make(map[byte]*vectorCommitment)
 	if smallFlags&hasChildrenFlag != 0 {
 		var flags [32]byte
 		if _, err := r.Read(flags[:]); err != nil {
@@ -259,13 +265,9 @@ func (e *ProofElement) Read(r io.Reader) error {
 		for i := 0; i < 256; i++ {
 			ib := uint8(i)
 			if flags[i/8]&(0x1<<(i%8)) != 0 {
-				e.Children[ib] = &[32]byte{}
-				n, err := r.Read(e.Children[ib][:])
-				if err != nil {
+				e.Children[ib] = &vectorCommitment{}
+				if err := e.Children[ib].Read(r); err != nil {
 					return err
-				}
-				if n != 32 {
-					return xerrors.New("32 bytes expected")
 				}
 			}
 		}

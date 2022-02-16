@@ -6,19 +6,20 @@ import (
 	"io"
 )
 
-type Commitment interface {
+type CommitmentBase interface {
 	Read(r io.Reader) error
 	Write(w io.Writer)
 	String() string
-	Equal(Commitment) bool
+	Equal(CommitmentBase) bool
 }
 
 type VectorCommitment interface {
-	Commitment
+	CommitmentBase
+	Update(delta VectorCommitment)
 }
 
 type TerminalCommitment interface {
-	Commitment
+	CommitmentBase
 }
 
 // Node is a node of the 25š+-ary verkle Trie

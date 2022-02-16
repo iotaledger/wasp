@@ -12,14 +12,12 @@ type CommitmentLogic interface {
 	CommitToNode(*Node) VectorCommitment
 	CommitToData([]byte) TerminalCommitment
 	UpdateNodeCommitment(*Node) VectorCommitment // returns delta. Return nil if deletion
-	UpdateCommitment(update *VectorCommitment, delta VectorCommitment)
 }
 
 type Trie struct {
-	setup          CommitmentLogic
-	store          kv.KVMustReader
-	rootCommitment VectorCommitment
-	nodeCache      map[kv.Key]*Node
+	setup     CommitmentLogic
+	store     kv.KVMustReader
+	nodeCache map[kv.Key]*Node
 }
 
 type ProofPath struct {
@@ -33,17 +31,20 @@ type ProofPathElement struct {
 	ChildIndex int
 }
 
-func New(setup CommitmentLogic, store kv.KVMustReader, rootCommitment VectorCommitment) *Trie {
+func New(setup CommitmentLogic, store kv.KVMustReader) *Trie {
 	return &Trie{
-		setup:          setup,
-		store:          store,
-		rootCommitment: rootCommitment,
-		nodeCache:      make(map[kv.Key]*Node),
+		setup:     setup,
+		store:     store,
+		nodeCache: make(map[kv.Key]*Node),
 	}
 }
 
 func (t *Trie) RootCommitment() VectorCommitment {
-	return t.rootCommitment
+	n, ok := t.GetNode(nil)
+	if !ok {
+		return nil
+	}
+	return t.CommitToNode(n)
 }
 
 // getNode takes node from the cache of fetches it from kv store
@@ -198,11 +199,9 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 func (t *Trie) Commit() {
 	root, ok := t.GetNode(nil)
 	if !ok {
-		t.rootCommitment = nil
 		return
 	}
-	deltaC := t.setup.UpdateNodeCommitment(root)
-	t.setup.UpdateCommitment(&t.rootCommitment, deltaC)
+	t.setup.UpdateNodeCommitment(root)
 }
 
 // ProofPath returns generic proof path
