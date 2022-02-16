@@ -114,6 +114,10 @@ func (e *VMError) Id() uint16 {
 }
 
 func (e *VMError) MessageFormat() string {
+	if e.messageFormat == "" {
+		return "%v"
+	}
+
 	return e.messageFormat
 }
 
@@ -122,6 +126,10 @@ func (e *VMError) Params() []interface{} {
 }
 
 func (e *VMError) RequestMessageFormat(resolver VMErrorMessageResolver) error {
+	if e == nil {
+		return nil
+	}
+
 	var err error
 
 	if e.messageFormat, err = resolver(e); err != nil {

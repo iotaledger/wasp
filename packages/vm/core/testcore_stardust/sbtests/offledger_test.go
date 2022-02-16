@@ -60,7 +60,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		_, err = ch.PostRequestOffLedger(req, user)
 		require.NoError(t, err)
 		rec := ch.LastReceipt()
-		require.NoError(t, rec.Error)
+		require.NoError(t, rec.Error.AsGoError())
 		t.Logf("receipt: %s", rec)
 
 		res, err := ch.CallView(ScName, sbtestsc.FuncGetInt.Name,

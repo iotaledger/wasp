@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"math"
 	"time"
 
@@ -411,6 +412,35 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 
 	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
 	return vctx.CallView(req.target, req.entryPoint, req.params)
+}
+
+// ErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
+func (ch *Chain) ErrorMessageResolver() func(*iscp.VMError) (string, error) {
+	return func(errorToResolve *iscp.VMError) (string, error) {
+		params := dict.New()
+		params.Set(errors.ParamContractHname, codec.EncodeHname(errorToResolve.PrefixId()))
+		params.Set(errors.ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
+
+		ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, params)
+
+		if err != nil {
+			return "", err
+		}
+
+		errorMessageFormat, err := ret.Get(errors.ParamErrorMessageFormat)
+
+		if err != nil {
+			return "", err
+		}
+
+		errorMessageFormatString, err := codec.DecodeString(errorMessageFormat)
+
+		if err != nil {
+			return "", err
+		}
+
+		return errorMessageFormatString, nil
+	}
 }
 
 // CallView calls the view entry point of the smart contract.

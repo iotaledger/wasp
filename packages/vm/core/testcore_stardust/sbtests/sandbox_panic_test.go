@@ -1,6 +1,7 @@
 package sbtests
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"strings"
 	"testing"
 
@@ -58,7 +59,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicFullEP.Name).WithGasBudget(1000)
 	_, err := chain.PostRequestSync(req, nil)
-	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgFullPanic)
+	testmisc.RequireErrorToBe(t, err, coreerrors.ErrUntypedError.Create(sbtestsc.MsgFullPanic))
 
 	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	str := strings.Join(recStr, "\n")

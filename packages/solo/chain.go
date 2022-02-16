@@ -420,6 +420,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIdx, uint16(i))
+		ret[i].Error.RequestMessageFormat(ch.ErrorMessageResolver())
 	}
 	return ret
 }
