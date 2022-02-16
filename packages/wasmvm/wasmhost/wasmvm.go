@@ -70,7 +70,7 @@ func (vm *WasmVMBase) GasBurned() uint64 {
 	return 0
 }
 
-func (vm *WasmVMBase) GasEnable(enable bool)  {
+func (vm *WasmVMBase) GasEnable(enable bool) {
 	vm.gasEnabled = enable
 }
 

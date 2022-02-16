@@ -115,15 +115,15 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 	localStateSandboxCall.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
-	if *wasmsolo.GoDebug {
-		// when using WasmGoVM the 3 posts are run only after
-		// the LocalStateMustIncrement has been set to true
-		checkStateCounter(t, ctx, 2)
+	if ctx.IsWasm {
+		// global var in wasm execution has no effect
+		checkStateCounter(t, ctx, nil)
 		return
 	}
 
-	// global var in wasm execution has no effect
-	checkStateCounter(t, ctx, nil)
+	// when using WasmGoVM the 3 posts are run only after
+	// the LocalStateMustIncrement has been set to true
+	checkStateCounter(t, ctx, 2)
 }
 
 func TestIncrementLocalStatePost(t *testing.T) {
@@ -135,15 +135,15 @@ func TestIncrementLocalStatePost(t *testing.T) {
 
 	require.True(t, ctx.WaitForPendingRequests(3))
 
-	if *wasmsolo.GoDebug {
-		// when using WasmGoVM the 3 posts are run only after
-		// the LocalStateMustIncrement has been set to true
-		checkStateCounter(t, ctx, 3)
+	if ctx.IsWasm {
+		// global var in wasm execution has no effect
+		checkStateCounter(t, ctx, nil)
 		return
 	}
 
-	// global var in wasm execution has no effect
-	checkStateCounter(t, ctx, nil)
+	// when using WasmGoVM the 3 posts are run only after
+	// the LocalStateMustIncrement has been set to true
+	checkStateCounter(t, ctx, 3)
 }
 
 func TestVliCodec(t *testing.T) {
@@ -195,13 +195,13 @@ func TestVlu(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	if *wasmsolo.GoDebug || *wasmsolo.UseWasmEdge {
+	ctx := setupTest(t)
+
+	if !ctx.IsWasm || *wasmsolo.UseWasmEdge {
 		// no timeout possible because goroutines cannot be killed
 		// or because there is no way to interrupt the Wasm code
 		t.SkipNow()
 	}
-
-	ctx := setupTest(t)
 
 	save := wasmhost.DisableWasmTimeout
 	wasmhost.DisableWasmTimeout = false

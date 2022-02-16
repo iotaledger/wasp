@@ -255,7 +255,6 @@ func TestClearMap(t *testing.T) {
 	// test reproduces a problem that needs fixing
 	t.SkipNow()
 
-	*wasmsolo.GoDebug = true
 	ctx := setupTest(t)
 
 	as := testwasmlib.ScFuncs.MapSet(ctx)

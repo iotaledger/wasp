@@ -38,32 +38,21 @@ func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creato
 	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnLoad, sbtestsc.Processor, init...)
 }
 
-func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
+func run2(t *testing.T, test func(*testing.T, bool)) {
 	//t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
 	//	test(t, false)
 	//})
 
-	if len(skipWasm) != 0 && skipWasm[0] {
-		t.Logf("skipped Wasm versions of '%s'", t.Name())
-		return
-	}
-
-	saveGoDebug := *wasmsolo.GoDebug
 	saveGoWasm := *wasmsolo.GoWasm
+	saveRsWasm := *wasmsolo.RsWasm
 	saveTsWasm := *wasmsolo.TsWasm
-	*wasmsolo.GoDebug = false
-	*wasmsolo.GoWasm = false
-	*wasmsolo.TsWasm = false
 
-	exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
-	if exists {
-		wasmlib.ConnectHost(nil)
-		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
-			test(t, true)
-		})
-	}
+	wasmlib.ConnectHost(nil)
+	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
+		test(t, true)
+	})
 
-	exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
+	exists, _ := util.ExistsFilePath("../go/pkg/testcore_go.wasm")
 	if exists {
 		*wasmsolo.GoWasm = true
 		wasmlib.ConnectHost(nil)
@@ -71,6 +60,16 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 			test(t, true)
 		})
 		*wasmsolo.GoWasm = false
+	}
+
+	exists, _ = util.ExistsFilePath("../pkg/testcore_bg.wasm")
+	if exists {
+		*wasmsolo.RsWasm = true
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+		*wasmsolo.RsWasm = true
 	}
 
 	exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
@@ -83,14 +82,8 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 		*wasmsolo.TsWasm = false
 	}
 
-	*wasmsolo.GoDebug = true
-	wasmlib.ConnectHost(nil)
-	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
-		test(t, true)
-	})
-
-	*wasmsolo.GoDebug = saveGoDebug
 	*wasmsolo.GoWasm = saveGoWasm
+	*wasmsolo.RsWasm = saveRsWasm
 	*wasmsolo.TsWasm = saveTsWasm
 }
 

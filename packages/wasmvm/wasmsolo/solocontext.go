@@ -34,10 +34,13 @@ const ( // TODO set back to false
 )
 
 var (
-	GoDebug     = flag.Bool("godebug", true, "debug go smart contract code")
-	GoWasm      = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
-	TsWasm      = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
-	RsWasm      = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
+	// the following 3 flags will cause Wasm code to be loaded and run
+	// they are checked in sequence and the first one set determines the Wasm language mode
+	// if none of them are set, solo will try to run the Go SC code directly (no Wasm)
+	GoWasm = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
+	RsWasm = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
+	TsWasm = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
+
 	UseWasmEdge = flag.Bool("wasmedge", false, "use WasmEdge instead of WasmTime")
 )
 
@@ -47,14 +50,15 @@ type SoloContext struct {
 	creator     *SoloAgent
 	Err         error
 	Hprog       hashing.HashValue
-	keyPair     *cryptolib.KeyPair
 	isRequest   bool
+	IsWasm      bool
+	keyPair     *cryptolib.KeyPair
 	mint        uint64
 	offLedger   bool
 	scName      string
 	Tx          *iotago.Transaction
-	wc          *wasmhost.WasmContext
 	wasmHostOld wasmlib.ScHost
+	wc          *wasmhost.WasmContext
 }
 
 var (
@@ -160,7 +164,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		keyPair = creator.Pair
 		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
-	ctx.upload(keyPair)
+	ctx.uploadWasm(keyPair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -171,16 +175,16 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
-	if *GoDebug {
+	if !ctx.IsWasm {
 		wasmhost.GoWasmVM = func() wasmhost.WasmVM {
 			return wasmhost.NewWasmGoVM(ctx.scName, onLoad)
 		}
 	}
-	//if *UseWasmEdge && wasmproc.GoWasmVM == nil {
+	//if ctx.IsWasm && *UseWasmEdge && wasmproc.GoWasmVM == nil {
 	//	wasmproc.GoWasmVM = wasmhost.NewWasmEdgeVM
 	//}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
-	if *GoDebug {
+	if !ctx.IsWasm {
 		// just in case deploy failed we don't want to leave this around
 		wasmhost.GoWasmVM = nil
 	}
@@ -343,6 +347,26 @@ func (ctx *SoloContext) EnqueueRequest() {
 	ctx.isRequest = true
 }
 
+func (ctx *SoloContext) existFile(path string, ext string) string {
+	fileName := ctx.scName + ext
+
+	// first check for new file in path
+	pathName := path + fileName
+	exists, _ := util.ExistsFilePath(pathName)
+	if exists {
+		return pathName
+	}
+
+	// check for file in current folder
+	exists, _ = util.ExistsFilePath(fileName)
+	if exists {
+		return fileName
+	}
+
+	// file not found
+	return ""
+}
+
 func (ctx *SoloContext) Host() wasmlib.ScHost {
 	return nil
 }
@@ -422,60 +446,30 @@ func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
 	return wasmlib.NewScTransfers()
 }
 
-// TODO can we make upload work through an off-ledger request instead?
-// that way we can get rid of all the extra token code when checking balances
-
-func (ctx *SoloContext) upload(keyPair *cryptolib.KeyPair) {
-	if *GoDebug {
+func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
+	wasmFile := ""
+	if *GoWasm {
+		// find Go Wasm file
+		wasmFile = ctx.existFile("../go/pkg/", "_go.wasm")
+	} else if *RsWasm {
+		// find Rust Wasm file
+		wasmFile = ctx.existFile("../pkg/", "_bg.wasm")
+	} else if *TsWasm {
+		// find TypeScript Wasm file
+		wasmFile = ctx.existFile("../ts/pkg/", "_ts.wasm")
+	} else {
+		// none of the Wasm modes selected, use WasmGoVM to run Go SC code directly
 		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
 		return
 	}
 
-	// start with file in test folder
-	wasmFile := ctx.scName + "_bg.wasm"
-
-	// try (newer?) Rust Wasm file first
-	rsFile := "../pkg/" + wasmFile
-	exists, _ := util.ExistsFilePath(rsFile)
-	if exists {
-		wasmFile = rsFile
-	} else {
-		rsFile := wasmFile
-		exists, _ = util.ExistsFilePath(rsFile)
-		wasmFile = rsFile
+	if wasmFile == "" {
+		panic("cannot find Wasm file for: " + ctx.scName)
 	}
 
-	// try Go Wasm file?
-	if !exists || *GoWasm {
-		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath(goFile)
-		if exists {
-			wasmFile = goFile
-		} else {
-			goFile = ctx.scName + "_go.wasm"
-			exists, _ = util.ExistsFilePath(goFile)
-			if exists {
-				wasmFile = goFile
-			}
-		}
-	}
-
-	// try TypeScript Wasm file?
-	if !exists || *TsWasm {
-		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath(tsFile)
-		if exists {
-			wasmFile = tsFile
-		} else {
-			tsFile = ctx.scName + "_ts.wasm"
-			exists, _ = util.ExistsFilePath(tsFile)
-			if exists {
-				wasmFile = tsFile
-			}
-		}
-	}
-
+	// upload the Wasm code into the core blob contract
 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)
+	ctx.IsWasm = true
 }
 
 // WaitForPendingRequests waits for expectedRequests pending requests to be processed.
