@@ -76,7 +76,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
-		AddOutput(&iotago.ExtendedOutput{
+		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: addr2},
@@ -92,7 +92,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
-		AddOutput(&iotago.ExtendedOutput{
+		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: addr3},

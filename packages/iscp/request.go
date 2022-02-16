@@ -99,8 +99,8 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 
 	ret := make(map[ChainID][]Request)
 	for i, out := range tx.Essence.Outputs {
-		if _, ok := out.(*iotago.ExtendedOutput); !ok {
-			// only ExtendedOutputs are interpreted right now TODO nfts and other
+		if _, ok := out.(*iotago.BasicOutput); !ok {
+			// only BasicOutputs are interpreted right now TODO nfts and other
 			continue
 		}
 		// wrap output into the iscp.Request

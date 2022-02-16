@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -135,7 +136,7 @@ func TestConsumeRequest(t *testing.T) {
 	}
 	aliasOut1Inp := tpkg.RandUTXOInput()
 
-	req := &iotago.ExtendedOutput{
+	req := &iotago.BasicOutput{
 		Amount: 1337,
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: aliasOut1.AliasID.ToAddress()},
@@ -153,8 +154,9 @@ func TestConsumeRequest(t *testing.T) {
 		},
 	}
 	essence := &iotago.TransactionEssence{
-		Inputs:  iotago.Inputs{aliasOut1Inp, reqInp},
-		Outputs: iotago.Outputs{aliasOut2},
+		NetworkID: parameters.NetworkID,
+		Inputs:    iotago.Inputs{aliasOut1Inp, reqInp},
+		Outputs:   iotago.Outputs{aliasOut2},
 	}
 	sigs, err := essence.Sign(addrKeys)
 	require.NoError(t, err)

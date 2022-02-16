@@ -55,7 +55,7 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestP
 		if len(f) == 1 {
 			f[0](i, &requestParams)
 		}
-		output := transaction.ExtendedOutputFromPostData(
+		output := transaction.BasicOutputFromPostData(
 			tpkg.RandEd25519Address(),
 			iscp.Hn("dummySenderContract"),
 			requestParams,

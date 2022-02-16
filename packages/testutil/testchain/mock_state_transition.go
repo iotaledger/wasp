@@ -12,7 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+
 	//"github.com/iotaledger/wasp/packages/transaction"
 	//"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
@@ -78,30 +80,31 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	}*/
 	aliasID := consumedOutput.AliasID
 	txEssence := &iotago.TransactionEssence{
-		Inputs: []iotago.Input{chainOutput.ID()},
+		NetworkID: parameters.NetworkID,
+		Inputs:    []iotago.Input{chainOutput.ID()},
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{
-				Amount:               consumedOutput.Amount,
-				NativeTokens:         consumedOutput.NativeTokens,
-				AliasID:              aliasID,
-				StateIndex:           consumedOutput.StateIndex + 1,
-				StateMetadata:        nextvs.StateCommitment().Bytes(),
-				FoundryCounter:       consumedOutput.FoundryCounter,
-				Conditions:			  consumedOutput.Conditions,
-				Blocks:               consumedOutput.Blocks,
+				Amount:         consumedOutput.Amount,
+				NativeTokens:   consumedOutput.NativeTokens,
+				AliasID:        aliasID,
+				StateIndex:     consumedOutput.StateIndex + 1,
+				StateMetadata:  nextvs.StateCommitment().Bytes(),
+				FoundryCounter: consumedOutput.FoundryCounter,
+				Conditions:     consumedOutput.Conditions,
+				Blocks:         consumedOutput.Blocks,
 			},
 		},
 		Payload: nil,
 	}
 	fmt.Printf("XXX %v\n", iotago.AliasOutput{
-		Amount:               consumedOutput.Amount,
-		NativeTokens:         consumedOutput.NativeTokens,
-		AliasID:              consumedOutput.AliasID,
-		StateIndex:           consumedOutput.StateIndex + 1,
-		StateMetadata:        nextvs.StateCommitment().Bytes(),
-		FoundryCounter:       consumedOutput.FoundryCounter,
-		Conditions:			  consumedOutput.Conditions,
-		Blocks:               consumedOutput.Blocks,
+		Amount:         consumedOutput.Amount,
+		NativeTokens:   consumedOutput.NativeTokens,
+		AliasID:        consumedOutput.AliasID,
+		StateIndex:     consumedOutput.StateIndex + 1,
+		StateMetadata:  nextvs.StateCommitment().Bytes(),
+		FoundryCounter: consumedOutput.FoundryCounter,
+		Conditions:     consumedOutput.Conditions,
+		Blocks:         consumedOutput.Blocks,
 	})
 	signatures, err := txEssence.Sign(iotago.AddressKeys{
 		Address: chainOutput.GetStateAddress(),
