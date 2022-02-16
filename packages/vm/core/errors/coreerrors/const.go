@@ -1,6 +1,6 @@
 package coreerrors
 
-var ErrUntypedError = RegisterGlobalError("%v")
-var ErrErrorAlreadyRegistered = RegisterGlobalError("Error with id %v already registered")
-var ErrErrorMessageTooLong = RegisterGlobalError("Error message is too long").Create()
-var ErrMessageFormatEmpty = RegisterGlobalError("Error message is empty").Create()
+var ErrUntypedError = Register("%v")
+var ErrErrorAlreadyRegistered = Register("Error with id %v already registered")
+var ErrErrorMessageTooLong = Register("Error message is too long").Create()
+var ErrMessageFormatEmpty = Register("Error message is empty").Create()

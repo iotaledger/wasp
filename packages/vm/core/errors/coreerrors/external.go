@@ -6,7 +6,7 @@ import (
 
 var coreErrorCollection ErrorCollection = NewCoreErrorCollection()
 
-func RegisterGlobalError(messageFormat string) *iscp.VMErrorTemplate {
+func Register(messageFormat string) *iscp.VMErrorTemplate {
 	errorDefinition, err := coreErrorCollection.Register(messageFormat)
 
 	if err != nil {

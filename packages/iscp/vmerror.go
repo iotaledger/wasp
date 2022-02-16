@@ -201,6 +201,24 @@ func (e *VMError) deserializeParams(mu *marshalutil.MarshalUtil) error {
 	return err
 }
 
+/*
+	AsGoError is a drop in to fix the following scenario:
+	A request finishes successfully. The receipt contains a nil error which is of type *VMError.
+    require.NoError would fail the validation and panic, as VMError is not *the* golang type "error"
+    This is why it's required to check if the value is nil and return nil again which golang will interpret as type error.
+ 	If VMError is an actual error, no adjustment needs to be done.
+	Therefore, any Solo function that returns the receipt.VMError which afterwords gets checked with require.NoError needs to call this function.
+
+	See: packages/solo/req.go -> EstimateGasOffLedger, EstimateGasOnLedger, PostRequestSyncTx
+*/
+func (e *VMError) AsGoError() error {
+	if e == nil {
+		return nil
+	}
+
+	return e
+}
+
 type VMErrorMessageResolver func(*VMError) (string, error)
 
 func VMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil, errorMessageResolver VMErrorMessageResolver) (*VMError, error) {

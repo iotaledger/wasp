@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-// CoreErrorCollection implements IErrorCollection. Is used for global errors. Does not require vm context state.
+// CoreErrorCollection implements ErrorCollection. Is used for global errors. Does not require vm context state.
 type CoreErrorCollection map[uint16]*iscp.VMErrorTemplate
 
 func NewCoreErrorCollection() ErrorCollection {

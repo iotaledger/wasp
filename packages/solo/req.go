@@ -265,24 +265,6 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	return tx, iscp.NewRequestID(*txid, 0), nil
 }
 
-/*
-	ReturnGenericNilErrorIfVMErrorIsNil is a drop in to fix the following scenario:
-	A request finishes successfully. The receipt contains a nil error which is of type *vmerrors.VMError.
-    require.NoError would fail the validation and panic, as vmerrors.VMError is not *the* golang type "error"
-    This is why it's required to check if the value is nil and return nil again which golang will interpret as type error.
- 	If vmerror is an actual error, no adjustment needs to be done.
-	Therefore, any Solo function that returns the receipt.VMError which afterwords gets checked with require.NoError needs to call this function.
-
-	See: EstimateGasOffLedger, EstimateGasOnLedger, PostRequestSyncTx
-*/
-func ReturnGenericNilErrorIfVMErrorIsNil(err *iscp.VMError) error {
-	if err == nil {
-		return nil
-	}
-
-	return err
-}
-
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
 //  - creates a request transaction with the request block on it. The sigScheme is used to
 //    sign the inputs of the transaction or OriginatorKeyPair is used if parameter is nil
@@ -325,7 +307,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 		return tx, res, err
 	}
 
-	return tx, res, ReturnGenericNilErrorIfVMErrorIsNil(receipt.Error)
+	return tx, res, receipt.Error.AsGoError()
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -400,7 +382,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		return 0, 0, err
 	}
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ReturnGenericNilErrorIfVMErrorIsNil(res.Receipt.Error)
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -417,7 +399,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
 
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ReturnGenericNilErrorIfVMErrorIsNil(res.Receipt.Error)
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
 // callViewFull calls the view entry point of the smart contract
