@@ -1,11 +1,12 @@
 package iscp
 
 import (
-	"github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"math/big"
 	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 // KVDecoder is interface with all kind of utility functions extracting and decoding values from the key/value map

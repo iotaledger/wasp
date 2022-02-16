@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -411,7 +411,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := vmcontext.CreateVMContextForViewCall(ch)
+	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
 }

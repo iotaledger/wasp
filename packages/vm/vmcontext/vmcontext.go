@@ -12,16 +12,14 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
-)
-
-var (
-	NewSandbox     func(vmctx *VMContext) iscp.Sandbox
-	NewSandboxView func(vmctx *VMContext) iscp.SandboxView
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -45,7 +43,7 @@ type VMContext struct {
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.Request
-	numPostedOutputs   int // how many outputs has been posted in the request
+	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
@@ -65,6 +63,8 @@ type VMContext struct {
 	// burn history. If disabled, it is nil
 	gasBurnLog *gas.BurnLog
 }
+
+var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
 	caller             *iscp.AgentID // calling agent
@@ -293,4 +293,15 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 	if vmctx.gasFeeChargedTotal != sumGasFeeCharged {
 		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
 	}
+}
+
+func (vmctx *VMContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
+		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
+	})
+	return vmtype, binary, err
+}
+
+func (vmctx *VMContext) Processors() *processors.Cache {
+	return vmctx.task.Processors
 }

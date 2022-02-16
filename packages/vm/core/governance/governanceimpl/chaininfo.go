@@ -64,7 +64,7 @@ func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 		ctx.Event(fmt.Sprintf("[updated chain config] max eventsPerRequest: %d", maxEventsPerReq))
 	}
 	return nil
-	}
+}
 
 func getMaxBlobSize(ctx iscp.SandboxView) dict.Dict {
 	maxBlobSize, err := ctx.State().Get(governance.VarMaxBlobSize)

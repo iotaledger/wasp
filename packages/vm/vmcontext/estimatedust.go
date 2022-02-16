@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-// TODO missing gas burn
 func (vmctx *VMContext) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
 	par.AdjustToMinimumDustDeposit = false
 	out := transaction.ExtendedOutputFromPostData(

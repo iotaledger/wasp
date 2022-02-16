@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"golang.org/x/xerrors"
 )
 
 func (vmctx *VMContext) mustBeCalledFromContract(contract *coreutil.ContractInfo) {
@@ -23,7 +21,7 @@ func (vmctx *VMContext) mustBeCalledFromContract(contract *coreutil.ContractInfo
 
 func (vmctx *VMContext) TryLoadContract(programHash hashing.HashValue) error {
 	vmctx.mustBeCalledFromContract(root.Contract)
-	vmtype, programBinary, err := vmctx.getBinary(programHash)
+	vmtype, programBinary, err := vmctx.LocateProgram(programHash)
 	if err != nil {
 		return err
 	}

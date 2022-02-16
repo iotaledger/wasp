@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
 )
 
@@ -295,12 +296,11 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	govAccessNodes := make([]ed25519.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		// TODO refactor, viewcontext is deprecated
-		// res, err := viewcontext.NewFromChain(c).CallView(
-		// 	governance.Contract.Hname(),
-		// 	governance.FuncGetChainNodes.Hname(),
-		// 	governance.GetChainNodesRequest{}.AsDict(),
-		// )
+		res, err := viewcontext.New(c).CallView(
+			governance.Contract.Hname(),
+			governance.FuncGetChainNodes.Hname(),
+			governance.GetChainNodesRequest{}.AsDict(),
+		)
 		if err != nil {
 			c.log.Panicf("unable to read the governance contract state: %v", err)
 		}

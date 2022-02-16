@@ -1,42 +1,26 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/execution"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"golang.org/x/xerrors"
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
 func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) dict.Dict {
-	vmctx.GasBurn(gas.BurnCodeCallContract)
-
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 
-func (vmctx *VMContext) getEntryPointByProgHash(targetContract, epCode iscp.Hname, progHash hashing.HashValue) iscp.VMProcessorEntryPoint {
-	proc, err := vmctx.task.Processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
-	if err != nil {
-		panic(err)
-	}
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: target=(%s, %s)",
-			ErrTargetEntryPointNotFound, targetContract, epCode))
-	}
-	return ep
-}
-
 func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) dict.Dict {
-	contractRecord := vmctx.getContractRecord(targetContract)
-	ep := vmctx.getEntryPointByProgHash(targetContract, epCode, contractRecord.ProgramHash)
+	contractRecord := vmctx.getOrCreateContractRecord(targetContract)
+	ep := execution.GetEntryPointByProgHash(vmctx, targetContract, epCode, contractRecord.ProgramHash)
 
 	vmctx.pushCallContext(targetContract, params, allowance)
 	defer vmctx.popCallContext()
@@ -48,7 +32,7 @@ func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params di
 		// 	panic(xerrors.Errorf("'%v': target=(%s, %s)",
 		// 		ErrEntryPointCantBeAView, vmctx.req.CallTarget().Contract, epCode))
 		// }
-		return ep.Call(NewSandboxView(vmctx))
+		return ep.Call(sandbox.NewSandboxView(vmctx))
 	}
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {

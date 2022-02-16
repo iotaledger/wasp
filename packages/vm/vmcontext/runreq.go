@@ -28,7 +28,7 @@ import (
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
 	// prepare context for the request
 	vmctx.req = req
-	vmctx.numPostedOutputs = 0
+	vmctx.NumPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
@@ -323,13 +323,20 @@ func (vmctx *VMContext) chargeGasFee() {
 	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
 }
 
-func (vmctx *VMContext) getContractRecord(contractHname iscp.Hname) *root.ContractRecord {
-	ret := vmctx.findContractByHname(contractHname)
+func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
 		panic(xerrors.Errorf("%v: contract = %s", ErrTargetContractNotFound, contractHname))
 	}
 	return ret
+}
+
+func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
+		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
+	}
+	return vmctx.GetContractRecord(contractHname)
 }
 
 // loadChainConfig only makes sense if chain is already deployed
