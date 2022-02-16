@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -68,17 +69,21 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, int(totalSpent), int(dustCosts.AnchorOutput+vByteCostInit))
 
 	// check if there's a single alias output on chain's address
-	aliasOutputs, _ := env.L1Ledger().GetAliasOutputs(ch.ChainID.AsAddress())
+	aliasOutputs := env.L1Ledger().GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(t, 1, len(aliasOutputs))
+	var aliasOut *iotago.AliasOutput
+	for _, out := range aliasOutputs {
+		aliasOut = out
+	}
 
 	// check total on chain assets
 	totalAssets := ch.L2TotalAssets()
 	// no native tokens expected
 	require.EqualValues(t, 0, len(totalAssets.Tokens))
 	// what spent all goes to the alias output
-	require.EqualValues(t, int(totalSpent), int(aliasOutputs[0].Amount))
+	require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
 	// total iotas on L2 must be equal to alias output iotas - dust deposit
-	ch.AssertL2TotalIotas(aliasOutputs[0].Amount - dustCosts.AnchorOutput)
+	ch.AssertL2TotalIotas(aliasOut.Amount - dustCosts.AnchorOutput)
 
 	// all dust deposit of the init request goes to the user account
 	ch.AssertL2Iotas(ch.OriginatorAgentID, vByteCostInit)

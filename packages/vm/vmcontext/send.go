@@ -18,7 +18,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit
-	out := transaction.ExtendedOutputFromPostData(
+	out := transaction.BasicOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,

@@ -57,7 +57,7 @@ func incCounter(ctx iscp.Sandbox) dict.Dict {
 	if ctx.AllowanceAvailable() != nil {
 		tra = ctx.AllowanceAvailable().String()
 	}
-	ctx.Log().Infof("incCounter: incoming transfer: %s", tra)
+	ctx.Log().Infof("incCounter: allowance available: %s", tra)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val+inc))
 	ctx.Event(fmt.Sprintf("incCounter: counter = %d", val+inc))
 	return nil

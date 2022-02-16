@@ -19,16 +19,6 @@ export class ScFuncContext extends ScSandboxFunc implements ScViewCallContext, S
     canCallView(): void {
         panic("canCallView");
     }
-
-    // TODO deprecated
-    incoming(): ScBalances {
-        return super.incomingTransfer();
-    }
-
-    // TODO deprecated
-    transferToAddress(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
-        super.send(address, transfer);
-    }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
