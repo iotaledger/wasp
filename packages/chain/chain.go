@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -38,6 +36,7 @@ type ChainCore interface {
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
+	EnqueueDismissChain(reason string)
 }
 
 type ChainCoreMocked interface {
@@ -46,7 +45,6 @@ type ChainCoreMocked interface {
 	// FIXME these methods should not be part of the chain interface just for the need of mocking
 	//  Mocking interfaces should be available only in the testing environment
 	// Most of these methods are made public for mocking in tests
-	EnqueueDismissChain(reason string) // This one should really be public
 	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)

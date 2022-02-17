@@ -5,7 +5,6 @@ package tcrypto
 
 import (
 	"bytes"
-	"crypto/ed25519"
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
@@ -138,7 +137,6 @@ func (s *DKShare) Write(w io.Writer) error {
 	// }
 	// return nil
 }
-
 
 func (s *DKShare) Read(r io.Reader) error {
 	panic("TODO implement")
