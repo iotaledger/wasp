@@ -50,7 +50,7 @@ func (vm *WasmTimeVM) GasBudget(budget uint64) error {
 	return nil
 }
 
-// GasBurned will return the gas has been burned by wasmtime since last time WasmTimeVM.GasBudget is called
+// GasBurned will return the gas has been burned by wasmtime since the last time WasmTimeVM.GasBudget was called
 func (vm *WasmTimeVM) GasBurned() uint64 {
 	gasBurned, ok := vm.store.FuelConsumed()
 	if !ok {
