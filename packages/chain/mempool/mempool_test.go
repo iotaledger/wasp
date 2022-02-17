@@ -583,7 +583,7 @@ func TestRotateRequest(t *testing.T) {
 	require.True(t, len(ready) == 5)
 
 	kp, addr := testkey.GenKeyAddr()
-	rotateReq := rotate.NewRotateRequestOffLedger(iscp.RandomChainID(), addr, *kp)
+	rotateReq := rotate.NewRotateRequestOffLedger(iscp.RandomChainID(), addr, kp)
 	require.True(t, rotate.IsRotateStateControllerRequest(rotateReq))
 
 	pool.ReceiveRequest(rotateReq)

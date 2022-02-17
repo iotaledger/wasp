@@ -73,7 +73,7 @@ type Chain struct {
 
 	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	StateControllerKeyPair cryptolib.KeyPair
+	StateControllerKeyPair *cryptolib.KeyPair
 	StateControllerAddress iotago.Address
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
@@ -81,7 +81,7 @@ type Chain struct {
 
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
 	// It is a default key pair in many of Solo calls which require private key.
-	OriginatorPrivateKey cryptolib.KeyPair
+	OriginatorPrivateKey *cryptolib.KeyPair
 	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
 	OriginatorAgentID *iscp.AgentID
@@ -213,13 +213,12 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	var originatorAddr iotago.Address
 	if chainOriginator == nil {
-		origKeyPair := cryptolib.NewKeyPair()
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(origKeyPair.PublicKey)
-		chainOriginator = &origKeyPair
+		chainOriginator = cryptolib.NewKeyPair()
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(chainOriginator.PublicKey)
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
@@ -229,7 +228,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	outs, outIDs := env.UnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
-		*chainOriginator,
+		chainOriginator,
 		stateAddr,
 		stateAddr,
 		initIotas, // will be adjusted to min dust deposit
@@ -269,7 +268,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		ChainID:                chainID,
 		StateControllerKeyPair: stateController,
 		StateControllerAddress: stateAddr,
-		OriginatorPrivateKey:   *chainOriginator,
+		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     feeTarget,

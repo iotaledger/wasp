@@ -150,7 +150,7 @@ func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptol
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
 		WithTransfer(r.allowance).
 		WithGasBudget(r.gasBudget)
-	ret.Sign(*keyPair)
+	ret.Sign(keyPair)
 	return ret
 }
 
@@ -187,17 +187,17 @@ func toMap(params []interface{}) map[string]interface{} {
 
 func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, error) {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
-	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
+	L1Iotas := ch.Env.L1Iotas(keyPair.GetPublicKey().AsEd25519Address())
 	if L1Iotas == 0 {
 		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
-	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
-	allOuts, allOutIDs := ch.Env.UnspentOutputs(&addr)
+	addr := keyPair.GetPublicKey().AsEd25519Address()
+	allOuts, allOutIDs := ch.Env.UnspentOutputs(addr)
 
 	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
-		SenderKeyPair:    *keyPair,
+		SenderKeyPair:    keyPair,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Requests: []*iscp.RequestParameters{{
@@ -289,7 +289,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
@@ -319,9 +319,9 @@ func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
 
 func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
-	agentID := iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0)
+	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address(), 0)
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
@@ -392,7 +392,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 		req.WithGasBudget(math.MaxUint64)
 	}
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)

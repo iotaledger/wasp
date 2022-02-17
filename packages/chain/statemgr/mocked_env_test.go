@@ -7,7 +7,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -25,15 +24,15 @@ type MockedEnv struct {
 	T                 *testing.T
 	Log               *logger.Logger
 	Ledger            *testchain.MockedLedger
-	OriginatorKeyPair *ed25519.KeyPair
+	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
-	StateKeyPair      *ed25519.KeyPair
-	NodePubKeys       []*ed25519.PublicKey
+	StateKeyPair      *cryptolib.KeyPair
+	NodePubKeys       []*cryptolib.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	ChainID           *iscp.ChainID
 	mutex             sync.Mutex
-	Nodes             map[ed25519.PublicKey]*MockedNode
+	Nodes             map[cryptolib.PublicKeyKey]*MockedNode
 }
 
 func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.AliasOutput) {
@@ -47,12 +46,11 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 		Log:               log,
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		Nodes:             make(map[ed25519.PublicKey]*MockedNode),
+		Nodes:             make(map[cryptolib.PublicKeyKey]*MockedNode),
 	}
 
-	keyPair := ed25519.GenerateKeyPair()
-	ret.StateKeyPair = &keyPair
-	addr := cryptolib.Ed25519AddressFromPubKey(cryptolib.HivePublicKeyToCryptolibPublicKey(keyPair.PublicKey))
+	ret.StateKeyPair = cryptolib.NewKeyPair()
+	addr := ret.StateKeyPair.GetPublicKey().AsEd25519Address()
 
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
@@ -89,14 +87,14 @@ func (env *MockedEnv) AddNode(node *MockedNode) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
-	if _, ok := env.Nodes[*node.PubKey]; ok {
-		env.Log.Panicf("AddNode: duplicate node index %s", node.PubKey.String())
+	if _, ok := env.Nodes[node.PubKey.AsKey()]; ok {
+		env.Log.Panicf("AddNode: duplicate node index %s", node.PubKey.AsString())
 	}
-	env.Nodes[*node.PubKey] = node
+	env.Nodes[node.PubKey.AsKey()] = node
 }
 
 func (env *MockedEnv) RemoveNode(node *MockedNode) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
-	delete(env.Nodes, *node.PubKey)
+	delete(env.Nodes, node.PubKey.AsKey())
 }

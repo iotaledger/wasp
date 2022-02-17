@@ -16,7 +16,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
@@ -184,8 +184,8 @@ type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peeringID    peering.PeeringID
-	peerPubs     []*ed25519.PublicKey
-	initiatorPub *ed25519.PublicKey
+	peerPubs     []*cryptolib.PublicKey
+	initiatorPub *cryptolib.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
@@ -193,7 +193,7 @@ type initiatorInitMsg struct {
 
 type initiatorInitMsgIn struct {
 	initiatorInitMsg
-	SenderPubKey *ed25519.PublicKey
+	SenderPubKey *cryptolib.PublicKey
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
@@ -224,11 +224,11 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 		return err
 	}
 	for i := range m.peerPubs {
-		if err = util.WriteBytes16(w, m.peerPubs[i].Bytes()); err != nil {
+		if err = util.WriteBytes16(w, m.peerPubs[i].AsBytes()); err != nil {
 			return err
 		}
 	}
-	if err = util.WriteBytes16(w, m.initiatorPub.Bytes()); err != nil {
+	if err = util.WriteBytes16(w, m.initiatorPub.AsBytes()); err != nil {
 		return err
 	}
 	if err = util.WriteUint16(w, m.threshold); err != nil {
@@ -261,27 +261,27 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.peerPubs = make([]*ed25519.PublicKey, arrLen)
+	m.peerPubs = make([]*cryptolib.PublicKey, arrLen)
 	for i := range m.peerPubs {
 		var peerPubBytes []byte
 		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		peerPubKey, _, err := ed25519.PublicKeyFromBytes(peerPubBytes)
+		peerPubKey, err := cryptolib.NewPublicKeyFromBytes(peerPubBytes)
 		if err != nil {
 			return err
 		}
-		m.peerPubs[i] = &peerPubKey
+		m.peerPubs[i] = peerPubKey
 	}
 	var initiatorPubBytes []byte
 	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	initiatorPub, _, err := ed25519.PublicKeyFromBytes(initiatorPubBytes)
+	initiatorPub, err := cryptolib.NewPublicKeyFromBytes(initiatorPubBytes)
 	if err != nil {
 		return err
 	}
-	m.initiatorPub = &initiatorPub
+	m.initiatorPub = initiatorPub
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
 		return err
 	}

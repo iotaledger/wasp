@@ -1,55 +1,22 @@
 package cryptolib
 
 import (
-	crypto "crypto/ed25519"
-
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"crypto/ed25519"
+	"fmt"
 )
 
-func Ed25519AddressFromPubKey(key PublicKey) *iotago.Ed25519Address {
-	ret := iotago.Ed25519AddressFromPubKey(key)
-	return &ret
-}
+const (
+	SignatureSize = ed25519.SignatureSize
+)
 
-func Verify(publicKey PublicKey, message, sig []byte) bool {
-	return crypto.Verify(publicKey, message, sig)
-}
-
-func CryptolibPublicKeyToHivePublicKey(pk PublicKey) ed25519.PublicKey { // nolint:revive
-	var result ed25519.PublicKey
-	copy(result[:], pk)
-	return result
-}
-
-func CryptolibPrivateKeyToHivePrivateKey(pk PrivateKey) ed25519.PrivateKey { // nolint:revive
-	var result ed25519.PrivateKey
-	copy(result[:], pk)
-	return result
-}
-
-func CryptolibKeyPairToHiveKeyPair(pk KeyPair) ed25519.KeyPair { // nolint:revive
-	return ed25519.KeyPair{
-		PrivateKey: CryptolibPrivateKeyToHivePrivateKey(pk.PrivateKey),
-		PublicKey:  CryptolibPublicKeyToHivePublicKey(pk.PublicKey),
+func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, consumedBytes int, err error) {
+	if len(bytes) < SignatureSize {
+		err = fmt.Errorf("bytes too short")
+		return
 	}
-}
 
-func HivePublicKeyToCryptolibPublicKey(pk ed25519.PublicKey) PublicKey {
-	result := make([]byte, len(pk))
-	copy(result, pk[:])
-	return result
-}
+	copy(result[:SignatureSize], bytes)
+	consumedBytes = SignatureSize
 
-func HivePrivateKeyToCryptolibPrivateKey(pk ed25519.PrivateKey) PrivateKey {
-	result := make([]byte, len(pk))
-	copy(result, pk[:])
-	return result
-}
-
-func HiveKeyPairToCryptolibKeyPair(pk ed25519.KeyPair) KeyPair {
-	return KeyPair{
-		PrivateKey: HivePrivateKeyToCryptolibPrivateKey(pk.PrivateKey),
-		PublicKey:  HivePublicKeyToCryptolibPublicKey(pk.PublicKey),
-	}
+	return
 }

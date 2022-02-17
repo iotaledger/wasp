@@ -6,12 +6,12 @@ package statemgr
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -23,7 +23,7 @@ import (
 )
 
 type MockedNode struct {
-	PubKey       *ed25519.PublicKey
+	PubKey       *cryptolib.PublicKey
 	Env          *MockedEnv
 	NodeConn     *testchain.MockedNodeConn
 	ChainCore    *testchain.MockedChainCore
@@ -39,7 +39,7 @@ func (c *MockedStateManagerMetrics) LastSeenStateIndex(_ uint32) {}
 
 func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *MockedNode {
 	nodePubKey := env.NodePubKeys[nodeIndex]
-	nodePubKeyStr := nodePubKey.String()[0:10]
+	nodePubKeyStr := nodePubKey.AsString()[0:10]
 	log := env.Log.Named(nodePubKeyStr)
 	var peeringID peering.PeeringID
 	copy(peeringID[:], env.ChainID[:iotago.AliasIDLength])

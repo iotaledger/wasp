@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
@@ -16,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -36,12 +36,12 @@ import (
 const maxMsgBuffer = 1000
 
 var (
-	_ chain.Chain                = &chainObj{}
-	_ chain.ChainCore            = &chainObj{}
-	_ chain.ChainEntry           = &chainObj{}
-	_ chain.ChainRequests        = &chainObj{}
-	_ chain.ChainMetrics         = &chainObj{}
-	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
+	_ chain.Chain                     = &chainObj{}
+	_ chain.ChainCore                 = &chainObj{}
+	_ chain.ChainEntry                = &chainObj{}
+	_ chain.ChainRequests             = &chainObj{}
+	_ chain.ChainMetrics              = &chainObj{}
+	_ map[cryptolib.PublicKeyKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
@@ -71,7 +71,7 @@ type chainObj struct {
 	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
 	offLedgerReqsAcksMutex             sync.RWMutex
-	offLedgerReqsAcks                  map[iscp.RequestID][]*ed25519.PublicKey
+	offLedgerReqsAcks                  map[iscp.RequestID][]*cryptolib.PublicKey
 	offledgerBroadcastUpToNPeers       int
 	offledgerBroadcastInterval         time.Duration
 	pullMissingRequestsFromCommittee   bool
@@ -131,7 +131,7 @@ func NewChain(
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		candidateNodes:                   make([]*governance.AccessNodeInfo, 0),
-		offLedgerReqsAcks:                make(map[iscp.RequestID][]*ed25519.PublicKey),
+		offLedgerReqsAcks:                make(map[iscp.RequestID][]*cryptolib.PublicKey),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
@@ -148,7 +148,7 @@ func NewChain(
 	ret.committee.Store(&committeeStruct{})
 
 	var err error
-	chainPeerNodes := []*ed25519.PublicKey{netProvider.Self().PubKey()}
+	chainPeerNodes := []*cryptolib.PublicKey{netProvider.Self().PubKey()}
 	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), chainPeerNodes)
 	if err != nil {
 		log.Errorf("NewChain: unable to create chainPeers domain: %v", err)
@@ -293,7 +293,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	c.log.Debugf("updateChainNodes, stateIndex=%v", stateIndex)
-	govAccessNodes := make([]ed25519.PublicKey, 0)
+	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
 		res, err := viewcontext.New(c).CallView(
@@ -312,24 +312,24 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	//
 	// Collect the new set of access nodes in the communication domain.
 	// They include the committee nodes as well as the explicitly set access nodes.
-	newMembers := make(map[ed25519.PublicKey]bool)
-	newMembers[*c.netProvider.Self().PubKey()] = true
+	newMembers := make(map[cryptolib.PublicKeyKey]bool)
+	newMembers[c.netProvider.Self().PubKey().AsKey()] = true
 	cmt := c.getCommittee()
 	if cmt != nil {
 		for _, cm := range cmt.DKShare().NodePubKeys {
-			newMembers[*cm] = true
+			newMembers[cm.AsKey()] = true
 		}
 	}
 	for _, newAccessNode := range govAccessNodes {
-		newMembers[newAccessNode] = true
+		newMembers[newAccessNode.AsKey()] = true
 	}
 
 	//
 	// Pass it to the underlying domain to make a graceful update.
-	newMemberList := make([]*ed25519.PublicKey, 0)
+	newMemberList := make([]*cryptolib.PublicKey, 0)
 	for pubKey := range newMembers {
 		pubKeyCopy := pubKey
-		newMemberList = append(newMemberList, &pubKeyCopy)
+		newMemberList = append(newMemberList, pubKeyCopy)
 	}
 	c.chainPeers.UpdatePeers(newMemberList)
 	c.stateMgr.SetChainPeers(newMemberList)

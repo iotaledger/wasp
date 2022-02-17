@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
@@ -23,13 +23,13 @@ func TestPeeringNetReliable(t *testing.T) {
 		}
 		doneCh <- true
 	}()
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
-	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
+	srcPeerIdentity := cryptolib.NewKeyPair()
+	dstPeerIdentity := cryptolib.NewKeyPair()
+	someNode := peeringNode{netID: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetReliable(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
-	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
+	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
 	for i := 0; i < 10; i++ {
-		inCh <- &peeringMsg{from: &someNode.identity.PublicKey}
+		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
 	<-doneCh
 	behavior.Close()
@@ -57,13 +57,13 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	}()
 	//
 	// Run the test.
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
-	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
+	srcPeerIdentity := cryptolib.NewKeyPair()
+	dstPeerIdentity := cryptolib.NewKeyPair()
+	someNode := peeringNode{netID: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
-	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
+	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
 	for i := 0; i < 1000; i++ {
-		inCh <- &peeringMsg{from: &someNode.identity.PublicKey}
+		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
 	time.Sleep(500 * time.Millisecond)
 	//
@@ -107,13 +107,13 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	}()
 	//
 	// Run the test.
-	srcPeerIdentity := ed25519.GenerateKeyPair()
-	dstPeerIdentity := ed25519.GenerateKeyPair()
-	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
+	srcPeerIdentity := cryptolib.NewKeyPair()
+	dstPeerIdentity := cryptolib.NewKeyPair()
+	someNode := peeringNode{netID: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
-	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
+	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
 	for i := 0; i < 1000; i++ {
-		inCh <- &peeringMsg{from: &someNode.identity.PublicKey}
+		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
 	time.Sleep(500 * time.Millisecond)
 	//
