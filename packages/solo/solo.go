@@ -457,7 +457,6 @@ func (ch *Chain) BacklogLen() int {
 }
 
 func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
-	// FIXME: the order outputIDs does not correspond to the set (a map) of outputs
 	allOuts := env.utxoDB.GetUnspentOutputs(addr)
 	ids := make(iotago.OutputIDs, len(allOuts))
 	i := 0

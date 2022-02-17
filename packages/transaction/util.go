@@ -104,7 +104,11 @@ func computeInputsAndRemainder(
 
 	var errLast error
 	var inputCount int
-	for _, inp := range unspentOutputs {
+	for _, id := range unspentOutputIDs {
+		inp, ok := unspentOutputs[id]
+		if !ok {
+			return nil, nil, xerrors.New("computeInputsAndRemainder: outputID is not in the set ")
+		}
 		inputCount++
 		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
