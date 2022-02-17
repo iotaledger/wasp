@@ -27,11 +27,6 @@ func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params di
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
-		// I don't think this can happen because iscp.EntryPointInit is not a view...
-		// if epCode == iscp.EntryPointInit {
-		// 	panic(xerrors.Errorf("'%v': target=(%s, %s)",
-		// 		ErrEntryPointCantBeAView, vmctx.req.CallTarget().Contract, epCode))
-		// }
 		return ep.Call(sandbox.NewSandboxView(vmctx))
 	}
 	// prevent calling 'init' not from root contract or not while initializing root
