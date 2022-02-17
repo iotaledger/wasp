@@ -73,7 +73,7 @@ func (t *Trie) CommitToNode(n *Node) VectorCommitment {
 func (t *Trie) FlushCache(store kv.KVStore) {
 	for k, v := range t.nodeCache {
 		if !v.IsEmpty() {
-			store.Set(k, Bytes(v))
+			store.Set(k, MustBytes(v))
 		} else {
 			store.Del(k)
 		}

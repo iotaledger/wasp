@@ -123,8 +123,9 @@ func (v *vectorCommitment) Read(r io.Reader) error {
 	return err
 }
 
-func (v *vectorCommitment) Write(w io.Writer) {
-	_, _ = w.Write((*v)[:])
+func (v *vectorCommitment) Write(w io.Writer) error {
+	_, err := w.Write((*v)[:])
+	return err
 }
 
 func (v *vectorCommitment) String() string {
@@ -153,13 +154,16 @@ func (v *vectorCommitment) Update(delta trie.VectorCommitment) {
 	*v = *m
 }
 
-func (t *terminalCommitment) Write(w io.Writer) {
-	_ = util.WriteByte(w, t.lenPlus1)
+func (t *terminalCommitment) Write(w io.Writer) error {
+	if err := util.WriteByte(w, t.lenPlus1); err != nil {
+		return err
+	}
 	l := byte(32)
 	if t.lenPlus1 > 0 {
 		l = t.lenPlus1 - 1
 	}
-	_, _ = w.Write(t.bytes[:l])
+	_, err := w.Write(t.bytes[:l])
+	return err
 }
 
 func (t *terminalCommitment) Read(r io.Reader) error {

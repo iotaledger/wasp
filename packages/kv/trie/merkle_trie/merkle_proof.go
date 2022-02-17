@@ -171,12 +171,19 @@ func assert(cond bool, err interface{}) {
 	}
 }
 
-func (p *Proof) Write(w io.Writer) {
-	_ = util.WriteBytes16(w, p.Key)
-	_ = util.WriteUint16(w, uint16(len(p.Path)))
-	for _, e := range p.Path {
-		e.Write(w)
+func (p *Proof) Write(w io.Writer) error {
+	if err := util.WriteBytes16(w, p.Key); err != nil {
+		return err
 	}
+	if err := util.WriteUint16(w, uint16(len(p.Path))); err != nil {
+		return err
+	}
+	for _, e := range p.Path {
+		if err := e.Write(w); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *Proof) Read(r io.Reader) error {
@@ -203,9 +210,13 @@ const (
 	hasChildrenFlag      = 0x02
 )
 
-func (e *ProofElement) Write(w io.Writer) {
-	_ = util.WriteBytes16(w, e.PathFragment)
-	_ = util.WriteUint16(w, uint16(e.ChildIndex))
+func (e *ProofElement) Write(w io.Writer) error {
+	if err := util.WriteBytes16(w, e.PathFragment); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, uint16(e.ChildIndex)); err != nil {
+		return err
+	}
 	var smallFlags byte
 	if e.Terminal != nil {
 		smallFlags = hasTerminalValueFlag
@@ -216,22 +227,31 @@ func (e *ProofElement) Write(w io.Writer) {
 		flags[i/8] |= 0x1 << (i % 8)
 		smallFlags |= hasChildrenFlag
 	}
-	_ = util.WriteByte(w, smallFlags)
+	if err := util.WriteByte(w, smallFlags); err != nil {
+		return err
+	}
 	// write terminal commitment if any
 	if smallFlags&hasTerminalValueFlag != 0 {
-		e.Terminal.Write(w)
+		if err := e.Terminal.Write(w); err != nil {
+			return err
+		}
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		_, _ = w.Write(flags[:])
+		if _, err := w.Write(flags[:]); err != nil {
+			return err
+		}
 		for i := 0; i < 256; i++ {
 			child, ok := e.Children[uint8(i)]
 			if !ok {
 				continue
 			}
-			child.Write(w)
+			if err := child.Write(w); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func (e *ProofElement) Read(r io.Reader) error {

@@ -101,7 +101,6 @@ func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
 	b.stateOutputID = oid
 }
 
-// hash of all data except state transaction hash
 func (b *blockImpl) EssenceBytes() []byte {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
@@ -157,7 +156,9 @@ func (b *blockImpl) readEssence(r io.Reader) error {
 
 func (b *blockImpl) readOutputID(r io.Reader) error {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
+	if _, err := buf.ReadFrom(r); err != nil {
+		return err
+	}
 	b.stateOutputID = &iotago.UTXOInput{}
 	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
 	return err

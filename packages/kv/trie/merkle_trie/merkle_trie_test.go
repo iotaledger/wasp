@@ -16,13 +16,14 @@ func TestNode(t *testing.T) {
 	t.Run("base1", func(t *testing.T) {
 		n := trie.NewNode(nil)
 		var buf bytes.Buffer
-		n.Write(&buf)
-		t.Logf("size() = %d, size(serialize) = %d", trie.Size(n), len(buf.Bytes()))
-		require.EqualValues(t, trie.Size(n), len(buf.Bytes()))
+		err := n.Write(&buf)
+		require.NoError(t, err)
+		t.Logf("size() = %d, size(serialize) = %d", trie.MustSize(n), len(buf.Bytes()))
+		require.EqualValues(t, trie.MustSize(n), len(buf.Bytes()))
 
 		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
 		require.NoError(t, err)
-		require.EqualValues(t, buf.Bytes(), trie.Bytes(nBack))
+		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
 
 		h := CommitmentLogic.CommitToNode(n)
 		hBack := CommitmentLogic.CommitToNode(nBack)
@@ -34,13 +35,14 @@ func TestNode(t *testing.T) {
 		n.Terminal = CommitmentLogic.CommitToData([]byte("data"))
 
 		var buf bytes.Buffer
-		n.Write(&buf)
-		t.Logf("size() = %d, size(serialize) = %d", trie.Size(n), len(buf.Bytes()))
-		require.EqualValues(t, trie.Size(n), len(buf.Bytes()))
+		err := n.Write(&buf)
+		require.NoError(t, err)
+		t.Logf("size() = %d, size(serialize) = %d", trie.MustSize(n), len(buf.Bytes()))
+		require.EqualValues(t, trie.MustSize(n), len(buf.Bytes()))
 
 		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
 		require.NoError(t, err)
-		require.EqualValues(t, buf.Bytes(), trie.Bytes(nBack))
+		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
 
 		h := CommitmentLogic.CommitToNode(n)
 		hBack := CommitmentLogic.CommitToNode(nBack)
@@ -51,13 +53,14 @@ func TestNode(t *testing.T) {
 		n := trie.NewNode([]byte("kuku"))
 		n.Terminal = CommitmentLogic.CommitToData([]byte(strings.Repeat("data", 1000)))
 		var buf bytes.Buffer
-		n.Write(&buf)
-		t.Logf("size() = %d, size(serialize) = %d", trie.Size(n), len(buf.Bytes()))
-		require.EqualValues(t, trie.Size(n), len(buf.Bytes()))
+		err := n.Write(&buf)
+		require.NoError(t, err)
+		t.Logf("size() = %d, size(serialize) = %d", trie.MustSize(n), len(buf.Bytes()))
+		require.EqualValues(t, trie.MustSize(n), len(buf.Bytes()))
 
 		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
 		require.NoError(t, err)
-		require.EqualValues(t, buf.Bytes(), trie.Bytes(nBack))
+		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
 
 		h := CommitmentLogic.CommitToNode(n)
 		hBack := CommitmentLogic.CommitToNode(nBack)
@@ -588,7 +591,7 @@ func TestTrieProof(t *testing.T) {
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
 
-		t.Logf("proof presence size = %d bytes", trie.Size(proof))
+		t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 
 		key, term, _ := proof.MustKeyTerminal()
 		c, _ := commitToTerminal([]byte("1")).value()
@@ -603,7 +606,7 @@ func TestTrieProof(t *testing.T) {
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
 		require.True(t, proof.MustIsProofOfAbsence())
-		t.Logf("proof absence size = %d bytes", trie.Size(proof))
+		t.Logf("proof absence size = %d bytes", trie.MustSize(proof))
 	})
 	t.Run("proof one entry 2", func(t *testing.T) {
 		store := dict.New()
@@ -665,7 +668,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof lenPlus1: %d", s, len(proofPath.Path))
-			t.Logf("proof presence size = %d bytes", trie.Size(proof))
+			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 		}
 	})
 	t.Run("proof many entries 2", func(t *testing.T) {
@@ -681,7 +684,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof presence lenPlus1: %d", s, len(proofPath.Path))
-			t.Logf("proof presence size = %d bytes", trie.Size(proof))
+			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 		}
 		for _, s := range delKeys {
 			proofPath := tr.ProofPath([]byte(s))
@@ -690,7 +693,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof absence lenPlus1: %d", s, len(proofPath.Path))
-			t.Logf("proof absence size = %d bytes", trie.Size(proof))
+			t.Logf("proof absence size = %d bytes", trie.MustSize(proof))
 		}
 	})
 	t.Run("proof many entries 3", func(t *testing.T) {
@@ -709,10 +712,10 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof presence lenPlus1: %d", s, len(proofPath.Path))
-			sz := trie.Size(proof)
+			sz := trie.MustSize(proof)
 			t.Logf("proof presence size = %d bytes", sz)
 
-			proofBin := trie.Bytes(proof)
+			proofBin := trie.MustBytes(proof)
 			require.EqualValues(t, len(proofBin), sz)
 			proofBack, err := ProofFromBytes(proofBin)
 			require.NoError(t, err)
@@ -728,10 +731,10 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof absence lenPlus1: %d", s, len(proofPath.Path))
-			sz := trie.Size(proof)
+			sz := trie.MustSize(proof)
 			t.Logf("proof absence size = %d bytes", sz)
 
-			proofBin := trie.Bytes(proof)
+			proofBin := trie.MustBytes(proof)
 			require.EqualValues(t, len(proofBin), sz)
 			proofBack, err := ProofFromBytes(proofBin)
 			require.NoError(t, err)
@@ -760,9 +763,9 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
 			lenP := len(proofPath.Path)
-			sizeP100 := trie.Size(proof) / 100
+			sizeP100 := trie.MustSize(proof) / 100
 			//t.Logf("key: '%s', proof presence lenPlus1: %d", s, )
-			t.Logf("proof presence size = %d bytes", trie.Size(proof))
+			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 
 			l := lenStats[lenP]
 			lenStats[lenP] = l + 1
@@ -776,7 +779,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
 			//t.Logf("key: '%s', proof absence lenPlus1: %d", s, lenPlus1(proofPath.Path))
-			t.Logf("proof absence size = %d bytes", trie.Size(proof))
+			t.Logf("proof absence size = %d bytes", trie.MustSize(proof))
 		}
 		for i := 0; i < 5000; i++ {
 			if i < 10 {
