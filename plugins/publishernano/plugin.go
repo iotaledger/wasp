@@ -1,6 +1,7 @@
 package publishernano
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ const PluginName = "PublisherNano"
 var log *logger.Logger
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -40,7 +41,7 @@ func run(_ *node.Plugin) {
 	}
 	log.Infof("nanomsg publisher is running on port %d", port)
 
-	err = daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+	err = daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
 		for {
 			select {
 			case msg := <-messages:
@@ -50,7 +51,7 @@ func run(_ *node.Plugin) {
 						log.Errorf("Failed to publish message: %v", err)
 					}
 				}
-			case <-shutdownSignal:
+			case <-ctx.Done():
 				if socket != nil {
 					_ = socket.Close()
 					socket = nil

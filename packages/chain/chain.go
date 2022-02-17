@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -37,6 +38,10 @@ type ChainCore interface {
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
+}
+
+type ChainCoreMocked interface {
+	ChainCore
 
 	// FIXME these methods should not be part of the chain interface just for the need of mocking
 	//  Mocking interfaces should be available only in the testing environment
@@ -104,7 +109,7 @@ type NodeConnection interface {
 	Subscribe(addr iotago.Address)
 	Unsubscribe(addr iotago.Address)
 	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
-	//AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
+	// AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
 	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
 	PullState(addr *iotago.AliasAddress)
@@ -121,7 +126,7 @@ type NodeConnection interface {
 
 type ChainNodeConnection interface {
 	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
-	//AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
+	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
 	PullState()

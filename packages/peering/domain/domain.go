@@ -4,6 +4,7 @@
 package domain
 
 import (
+	"bytes"
 	"crypto/rand"
 	"sync"
 

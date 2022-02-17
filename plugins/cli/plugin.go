@@ -18,7 +18,7 @@ var printVersion bool
 func Init() *node.Plugin {
 	flag.BoolVarP(&printVersion, "version", "v", false, "Prints the Wasp version")
 
-	Plugin := node.NewPlugin(PluginName, node.Enabled)
+	Plugin := node.NewPlugin(PluginName, nil, node.Enabled)
 	Plugin.Events.Init.Attach(events.NewClosure(onInit))
 	return Plugin
 }

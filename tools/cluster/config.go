@@ -7,6 +7,7 @@ import (
 	"path"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -191,7 +192,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Addr
 		ProfilingPort:                c.ProfilingPort(i),
 		TxStreamHost:                 c.TxStreamHost(i),
 		MetricsPort:                  c.PrometheusPort(i),
-		OwnerAddress:                 ownerAddress.Base58(),
+		OwnerAddress:                 ownerAddress.Bech32(iscp.Bech32Prefix),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

@@ -1,6 +1,7 @@
 package nodeconn
 
 import (
+	"context"
 	"net"
 	"time"
 
@@ -27,7 +28,7 @@ var (
 
 // Init initializes the plugin
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func NodeConnection() *txstream.Client {
@@ -40,7 +41,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
 		addr := parameters.GetString(parameters.NodeAddress)
 		dial := txstream.DialFunc(func() (string, net.Conn, error) {
 			log.Infof("connecting with node at %s", addr)
@@ -52,7 +53,7 @@ func run(_ *node.Plugin) {
 		initialized.SetReady()
 		defer nodeConn.Close()
 
-		<-shutdownSignal
+		<-ctx.Done()
 
 		log.Info("Stopping node connection..")
 	}, parameters.PriorityNodeConnection)

@@ -32,7 +32,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	}
 	addr1 := iscp.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
-		Address:      addr1.Base58(),
+		Address:      addr1.Bech32(iscp.Bech32Prefix),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		PeerPubKeys:  []string{base64.StdEncoding.EncodeToString([]byte("key"))},
@@ -108,7 +108,7 @@ func (s *dkSharesService) handleDKSharesGet(c echo.Context) error {
 	var err error
 	var dkShare *tcrypto.DKShare
 	var sharedAddress iotago.Address
-	if sharedAddress, err = iotago.AddressFromBase58EncodedString(c.Param("sharedAddress")); err != nil {
+	if _, sharedAddress, err = iotago.ParseBech32(c.Param("sharedAddress")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	if dkShare, err = s.registry().LoadDKShare(sharedAddress); err != nil {
@@ -141,11 +141,11 @@ func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*model.DKSharesInfo, error) {
 
 	peerPubKeys := make([]string, len(dkShare.NodePubKeys))
 	for i := range dkShare.NodePubKeys {
-		peerPubKeys[i] = base64.StdEncoding.EncodeToString(dkShare.NodePubKeys[i].Bytes())
+		peerPubKeys[i] = base64.StdEncoding.EncodeToString(*dkShare.NodePubKeys[i])
 	}
 
 	return &model.DKSharesInfo{
-		Address:      dkShare.Address.Base58(),
+		Address:      dkShare.Address.Bech32(iscp.Bech32Prefix),
 		SharedPubKey: sharedPubKey,
 		PubKeyShares: pubKeyShares,
 		PeerPubKeys:  peerPubKeys,

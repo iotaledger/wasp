@@ -5,6 +5,7 @@ package tcrypto
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
@@ -89,7 +90,7 @@ func (s *DKShare) Bytes() []byte {
 }
 
 // Write returns byte representation of this struct.
-//nolint:gocritic
+
 func (s *DKShare) Write(w io.Writer) error {
 	panic("TODO implement")
 	// var err error
@@ -138,7 +139,7 @@ func (s *DKShare) Write(w io.Writer) error {
 	// return nil
 }
 
-//nolint:gocritic
+
 func (s *DKShare) Read(r io.Reader) error {
 	panic("TODO implement")
 

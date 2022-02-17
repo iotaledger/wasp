@@ -126,7 +126,7 @@ func (cssT *chainMetricsService) handleGetChainsNodeConnMetrics(c echo.Context) 
 }
 
 func (cssT *chainMetricsService) handleGetChainNodeConnMetrics(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -155,7 +155,7 @@ func (cssT *chainMetricsService) handleGetChainConsensusWorkflowStatus(c echo.Co
 }
 
 func (cssT *chainMetricsService) getChain(c echo.Context) (chain.Chain, error) {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, httperrors.BadRequest(err.Error())
 	}

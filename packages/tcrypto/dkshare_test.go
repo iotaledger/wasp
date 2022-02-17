@@ -7,8 +7,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
@@ -27,7 +26,7 @@ func TestMarshaling(t *testing.T) {
 
 	index := uint16(5)
 	dks := &DKShare{
-		Address:       ledgerstate.NewAliasAddress(hashing.HashStrings("abc").Bytes()),
+		Address:       &iotago.AliasAddress{},
 		Index:         &index,
 		N:             10,
 		T:             7,

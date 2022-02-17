@@ -32,8 +32,8 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
 
 	server.GET(routes.WaitRequestProcessed(":chainID", ":reqID"), r.handleWaitRequestProcessed).
 		SetSummary("Wait until the given request has been processed by the node").
-		AddParamPath("", "chainID", "ChainID (base58)").
-		AddParamPath("", "reqID", "Request ID (base58)").
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", "reqID", "Request ID").
 		AddParamBody(model.WaitRequestProcessedParams{}, "Params", "Optional parameters", false)
 }
 
@@ -96,7 +96,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp.RequestID, error) {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
@@ -104,7 +104,7 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp
 	if theChain == nil {
 		return nil, iscp.RequestID{}, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
 	}
-	reqID, err := iscp.RequestIDFromBase58(c.Param("reqID"))
+	reqID, err := iscp.RequestIDFromString(c.Param("reqID"))
 	if err != nil {
 		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
 	}

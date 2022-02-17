@@ -28,7 +28,7 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainBlob(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -81,7 +81,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 }
 
 func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return err
 	}

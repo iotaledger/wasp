@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -93,13 +94,9 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 }
 
 func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
-	scAddress, err := ledgerstate.AddressFromBase58EncodedString(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
-	}
-	chainID, err := iscp.ChainIDFromAddress(scAddress)
-	if err != nil {
-		return err
 	}
 
 	chain := w.chains().Get(chainID, true)
@@ -146,7 +143,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	res := model.ChainInfo{
-		ChainID:        model.ChainID(chainID.Base58()),
+		ChainID:        model.ChainID(chainID.String()),
 		Active:         chainRecord.Active,
 		StateAddress:   model.NewAddress(committeeInfo.Address),
 		CommitteeNodes: cmtNodes,
@@ -166,7 +163,7 @@ func makeCmtNodes(
 	cmtNodes := make([]*model.ChainNodeStatus, 0)
 	for _, cmtNodePubKey := range dkShare.NodePubKeys {
 		cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
-		inChainNodes[*cmtNodePubKey] = true
+		inChainNodes[cmtNodePubKey] = true
 	}
 	return cmtNodes
 }
@@ -183,7 +180,7 @@ func makeAcnNodes(
 		acnPubKey := chainNode.PubKey()
 		skip := false
 		for _, cmtNodePubKey := range dkShare.NodePubKeys {
-			if *acnPubKey == *cmtNodePubKey {
+			if bytes.Equal(*acnPubKey, *cmtNodePubKey) {
 				skip = true
 				break
 			}

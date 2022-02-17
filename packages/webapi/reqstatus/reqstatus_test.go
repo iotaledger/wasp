@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/events"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -35,7 +36,7 @@ func TestRequestStatus(t *testing.T) {
 	}}
 
 	chainID := iscp.RandomChainID()
-	reqID := iscp.RequestID(ledgerstate.OutputID{})
+	reqID := iscp.NewRequestID(iotago.TransactionID{}, 0)
 
 	var res model.RequestStatusResponse
 	testutil.CallWebAPIRequestHandler(
@@ -44,8 +45,8 @@ func TestRequestStatus(t *testing.T) {
 		http.MethodGet,
 		routes.RequestStatus(":chainID", ":reqID"),
 		map[string]string{
-			"chainID": chainID.Hex(),
-			"reqID":   reqID.Base58(),
+			"chainID": chainID.String(),
+			"reqID":   reqID.String(),
 		},
 		nil,
 		&res,

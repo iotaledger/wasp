@@ -18,6 +18,11 @@ func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
 }
 
+func assetID(aID []byte) []byte {
+	panic("TODO")
+	return aID
+}
+
 func trim(max int, s string) string {
 	if len(s) > max {
 		s = s[:max] + "…"
