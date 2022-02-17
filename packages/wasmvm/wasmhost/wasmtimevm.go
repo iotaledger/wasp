@@ -57,8 +57,8 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 		return 0
 	}
 
-	// gasBurned is the gas has been burned since the vm.store instance has been created
-	// so we need to substrate the remaining gas before calling vm.GasBudget
+	// gasBurned is the gas has been burned since the vm.store instance was been created
+	// so we need to subtract the remaining gas before calling vm.GasBudget
 	return gasBurned - vm.remainingGas
 }
 
