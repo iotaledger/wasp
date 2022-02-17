@@ -67,7 +67,7 @@ func (df *DomainWithFallback) SetMainPeers(peers []*cryptolib.PublicKey) {
 	selfPubKey := df.net.Self().PubKey()
 	otherPeers := make([]*cryptolib.PublicKey, 0)
 	for i := range peers {
-		if *peers[i] != *selfPubKey {
+		if !peers[i].Equals(selfPubKey) {
 			otherPeers = append(otherPeers, peers[i])
 		}
 	}
@@ -101,7 +101,7 @@ func (df *DomainWithFallback) updateDomainPeers() {
 		selfPubKey := df.net.Self().PubKey()
 		allTrusted := make([]*cryptolib.PublicKey, 0)
 		for _, n := range df.net.PeerStatus() {
-			if n.IsAlive() && *n.PubKey() != *selfPubKey {
+			if n.IsAlive() && !n.PubKey().Equals(selfPubKey) {
 				allTrusted = append(allTrusted, n.PubKey())
 			}
 		}

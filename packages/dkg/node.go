@@ -27,7 +27,7 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *cryptolib.KeyPair               // Keys of the current node.
+	identity     *cryptolib.KeyPair                // Keys of the current node.
 	secKey       kyber.Scalar                     // Derived from the identity.
 	pubKey       kyber.Point                      // Derived from the identity.
 	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
@@ -50,7 +50,7 @@ func NewNode(
 	log *logger.Logger,
 ) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey); err != nil {
+	if err := kyberEdDSSA.UnmarshalBinary(identity.GetPrivateKey().AsBytes()); err != nil {
 		return nil, err
 	}
 	n := Node{
@@ -135,7 +135,7 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]cryptolib.PublicKey, peerCount)
+		peerPubs = make([]*cryptolib.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err
@@ -156,7 +156,7 @@ func (n *Node) GenerateDistributedKey(
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
 				peerPubs:     peerPubs,
-				initiatorPub: &n.identity.PublicKey,
+				initiatorPub: n.identity.GetPublicKey(),
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
@@ -333,7 +333,7 @@ func (n *Node) exchangeInitiatorAcks(
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
 ) error {
 	recvCB := func(recv *peering.PeerMessageGroupIn, msg initiatorMsg) (bool, error) {
-		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.String())
+		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.AsString())
 		return true, nil
 	}
 	return n.exchangeInitiatorMsgs(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB, recvCB)
@@ -358,7 +358,7 @@ func (n *Node) exchangeInitiatorMsgs(
 			return false, nil
 		}
 		if err != nil {
-			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
+			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.AsString(), recv.PeerMessageData)
 			return false, err
 		}
 		if !initMsg.IsResponse() {

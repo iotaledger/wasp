@@ -6,20 +6,20 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// ExtendedOutputFromPostData creates extended output object from parameters.
+// BasicOutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of iotas required for the dust deposit
-func ExtendedOutputFromPostData(
+func BasicOutputFromPostData(
 	senderAddress iotago.Address,
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,
 	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
+) *iotago.BasicOutput {
 	metadata := par.Metadata
 	if metadata == nil {
 		// if metadata is not specified, target is nil. It corresponds to sending funds to the plain L1 address
 		metadata = &iscp.SendMetadata{}
 	}
-	ret := MakeExtendedOutput(
+	ret := MakeBasicOutput(
 		par.TargetAddress,
 		senderAddress,
 		par.Assets,
@@ -38,10 +38,10 @@ func ExtendedOutputFromPostData(
 	return ret
 }
 
-// MakeExtendedOutput creates new ExtendedOutput from input parameters.
+// MakeBasicOutput creates new BasicOutput from input parameters.
 // Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
 // If auto adjustment to dust is disabled and not enough iotas, returns an error
-func MakeExtendedOutput(
+func MakeBasicOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
 	assets *iscp.Assets,
@@ -49,11 +49,11 @@ func MakeExtendedOutput(
 	options iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
 	disableAutoAdjustDustDeposit ...bool,
-) *iotago.ExtendedOutput {
+) *iotago.BasicOutput {
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
-	ret := &iotago.ExtendedOutput{
+	ret := &iotago.BasicOutput{
 		Amount:       assets.Iotas,
 		NativeTokens: assets.Tokens,
 		Conditions: iotago.UnlockConditions{
@@ -104,12 +104,12 @@ func MakeExtendedOutput(
 
 func AssetsFromOutput(o iotago.Output) *iscp.Assets {
 	switch o := o.(type) {
-	case *iotago.ExtendedOutput:
+	case *iotago.BasicOutput:
 		return &iscp.Assets{
 			Iotas:  o.Amount,
 			Tokens: o.NativeTokens,
 		}
 	default:
-		panic(xerrors.Errorf("AssetsFromExtendedOutput: not supported output type: %T", o))
+		panic(xerrors.Errorf("AssetsFromBasicOutput: not supported output type: %T", o))
 	}
 }

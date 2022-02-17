@@ -14,7 +14,7 @@ contract Storage {
         n = _n;
     }
 
-    function retrieve() public view returns (uint32){
+    function retrieve() public view returns (uint32) {
         return n;
     }
 }

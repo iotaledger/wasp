@@ -5,9 +5,12 @@ package wasmsolo
 
 import (
 	"flag"
+	"fmt"
+	"sort"
 	"testing"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -24,27 +27,32 @@ const ( // TODO set back to false
 	SoloDebug        = true
 	SoloHostTracing  = true
 	SoloStackTracing = true
+
+	L2FundsContract   = 1_000_000
+	L2FundsCreator    = 2_000_000
+	L2FundsOriginator = 3_000_000
 )
 
 var (
-	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
-	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
-	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
-	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
+	GoDebug     = flag.Bool("godebug", false, "debug go smart contract code")
+	GoWasm      = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
+	TsWasm      = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
+	RsWasm      = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
+	UseWasmEdge = flag.Bool("wasmedge", false, "use WasmEdge instead of WasmTime")
 )
 
 type SoloContext struct {
-	Chain     *solo.Chain
-	Convertor SoloConvertor
-	creator   *SoloAgent
-	Err       error
-	Hprog     hashing.HashValue
-	keyPair   *cryptolib.KeyPair
-	isRequest bool
-	mint      uint64
-	offLedger bool
-	scName    string
-	//fixme Tx          *ledgerstate.Transaction
+	Chain       *solo.Chain
+	Convertor   wasmhost.WasmConvertor
+	creator     *SoloAgent
+	Err         error
+	Hprog       hashing.HashValue
+	keyPair     *cryptolib.KeyPair
+	isRequest   bool
+	mint        uint64
+	offLedger   bool
+	scName      string
+	Tx          *iotago.Transaction
 	wc          *wasmhost.WasmContext
 	wasmHostOld wasmlib.ScHost
 }
@@ -54,6 +62,58 @@ var (
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
+
+func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
+	for _, a := range s {
+		if *a == *e {
+			return true
+		}
+	}
+	return false
+}
+
+// Accounts prints all known accounts, both L2 and L1.
+// It uses the L2 ledger to enumerate the known accounts.
+// Any newly created SoloAgents can be specified as extra accounts
+func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
+	accs := ctx.Chain.L2Accounts()
+	for _, agent := range agents {
+		agentID := agent.AgentID()
+		if !contains(accs, agentID) {
+			accs = append(accs, agentID)
+		}
+	}
+	sort.Slice(accs, func(i, j int) bool {
+		return accs[i].String() < accs[j].String()
+	})
+	txt := "ACCOUNTS:"
+	for _, acc := range accs {
+		l2 := ctx.Chain.L2Assets(acc)
+		l1 := ctx.Chain.Env.L1Assets(acc.Address())
+		txt += fmt.Sprintf("\n%s\n\tL2:%8d", acc.String(), l2.Iotas)
+		if acc.Hname() == 0 {
+			txt += fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+		}
+		for _, token := range l2.Tokens {
+			txt += fmt.Sprintf("\n\tL2:%8d", token.Amount)
+			tokTxt := ",\t           "
+			if acc.Hname() == 0 {
+				for i := range l1.Tokens {
+					if *l1.Tokens[i] == *token {
+						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
+						tokTxt = fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+						break
+					}
+				}
+			}
+			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
+		}
+		for _, token := range l1.Tokens {
+			txt += fmt.Sprintf("\n\tL2:%8d,\tL1:%8d,\t%s", 0, l1.Iotas, token.ID.String())
+		}
+	}
+	fmt.Println(txt)
+}
 
 func (ctx *SoloContext) Burn(i int64) {
 	// ignore gas for now
@@ -97,6 +157,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	ctx.upload(keyPair)
 	if ctx.Err != nil {
@@ -112,7 +173,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 			return wasmhost.NewWasmGoVM(ctx.scName, onLoad)
 		}
 	}
-	//if *GoWasmEdge && wasmproc.GoWasmVM == nil {
+	//if *UseWasmEdge && wasmproc.GoWasmVM == nil {
 	//	wasmproc.GoWasmVM = wasmhost.NewWasmEdgeVM
 	//}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
@@ -124,6 +185,11 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+	if ctx.Err != nil {
+		return ctx
+	}
 	return ctx.init(onLoad)
 }
 
@@ -144,12 +210,19 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, scName, ctx.Hprog, params...)
+	if ctx.Err != nil {
+		return ctx
+	}
+
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -178,9 +251,15 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		soloEnv = env[0]
 	}
 	if soloEnv == nil {
-		soloEnv = solo.New(t, &solo.InitOptions{Debug: SoloDebug, PrintStackTrace: SoloStackTracing})
+		soloEnv = solo.New(t, &solo.InitOptions{
+			Debug:                 SoloDebug,
+			PrintStackTrace:       SoloStackTracing,
+			AutoAdjustDustDeposit: true,
+		})
 	}
-	return soloEnv.NewChain(nil, chainName)
+	chain := soloEnv.NewChain(nil, chainName)
+	chain.MustDepositIotasToL2(L2FundsOriginator, &chain.OriginatorPrivateKey)
+	return chain
 }
 
 // Account returns a SoloAgent for the smart contract associated with ctx
@@ -199,7 +278,7 @@ func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
-	//TODO is milestones 1 a good value?
+	// TODO is milestones 1 a good value?
 	ctx.Chain.Env.AdvanceClockBy(step, 1)
 }
 
@@ -207,20 +286,23 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 // The optional color parameter can be used to retrieve the balance for the specific color.
 // When color is omitted, wasmlib.IOTA is assumed.
 func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) uint64 {
-	panic("fixme")
-	//account := iscp.NewAgentID(agent.address, agent.hname)
-	//balances := ctx.Chain.GetAccountBalance(account)
-	//switch len(color) {
-	//case 0:
-	//	return balances.Get(colored.IOTA)
-	//case 1:
-	//	col, err := colored.ColorFromBytes(color[0].Bytes())
-	//	require.NoError(ctx.Chain.Env.T, err)
-	//	return balances.Get(col)
-	//default:
-	//	require.Fail(ctx.Chain.Env.T, "too many color arguments")
-	//	return 0
-	//}
+	account := iscp.NewAgentID(agent.address, agent.hname)
+	switch len(color) {
+	case 0:
+		iotas := ctx.Chain.L2Iotas(account)
+		return iotas
+	case 1:
+		if color[0] == wasmtypes.IOTA {
+			iotas := ctx.Chain.L2Iotas(account)
+			return iotas
+		}
+		token := ctx.Convertor.IscpColor(&color[0])
+		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
+		return tokens
+	default:
+		require.Fail(ctx.Chain.Env.T, "too many color arguments")
+		return 0
+	}
 }
 
 func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
@@ -278,7 +360,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 
 // Minted returns the color and amount of newly minted tokens
 func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
-	panic("fixme")
+	panic("fixme: soloContext.Minted")
 	//t := ctx.Chain.Env.T
 	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))

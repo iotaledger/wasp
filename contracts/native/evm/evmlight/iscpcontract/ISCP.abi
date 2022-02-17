@@ -1,1 +1,1 @@
-[{"inputs":[],"name":"getChainId","outputs":[{"internalType":"ISCPChainID","name":"","type":"bytes20"}],"stateMutability":"view","type":"function"}]
+[{"inputs":[],"name":"getChainID","outputs":[{"internalType":"ISCPChainID","name":"","type":"bytes20"}],"stateMutability":"view","type":"function"}]

@@ -71,16 +71,16 @@ $#if events PackageEventsExist
 $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
-    static $funcName(_ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
+	static $funcName(_ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
-    }
+	}
 `,
 	// *******************************
 	"setPtrs": `
-        const f = new $FuncName$+Call();
+		const f = new $FuncName$+Call();
 $#if param initParams
 $#if result initResults
-        return f;
+		return f;
 `,
 	// *******************************
 	"initParams": `
@@ -92,6 +92,6 @@ $#if result initResults
 `,
 	// *******************************
 	"noPtrs": `
-        return new $FuncName$+Call();
+		return new $FuncName$+Call();
 `,
 }

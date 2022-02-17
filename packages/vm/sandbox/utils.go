@@ -75,9 +75,9 @@ func (u utilImpl) Hname(name string) iscp.Hname {
 
 // --- iscp.ED25519 interface
 
-func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) bool {
+func (u utilImpl) ValidSignature(data, pubKey, signature []byte) bool {
 	u.gas.Burn(gas.BurnCodeUtilsED25519ValidSig)
-	pk, err := cryptolib.PublicKeyFromBytes(pubKey)
+	pk, err := cryptolib.NewPublicKeyFromBytes(pubKey)
 	if err != nil {
 		return false
 	}
@@ -85,12 +85,16 @@ func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) b
 	if err != nil {
 		return false
 	}
-	return cryptolib.Verify(pk, data, sig[:])
+	return pk.Verify(data, sig[:])
 }
 
 func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 	u.gas.Burn(gas.BurnCodeUtilsED25519AddrFromPubKey)
-	return cryptolib.Ed25519AddressFromPubKey(pubKey), nil
+	pk, err := cryptolib.NewPublicKeyFromBytes(pubKey)
+	if err != nil {
+		return nil, err
+	}
+	return pk.AsEd25519Address(), nil
 }
 
 // iscp.BLS interface

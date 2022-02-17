@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {Bytes, Int32, panic, Items, Item} from "."
+import {Bytes, Int32, Item, Items, panic} from "."
 import {Encoder} from "./encoder"
 import {Buffer} from "./buffer";
 

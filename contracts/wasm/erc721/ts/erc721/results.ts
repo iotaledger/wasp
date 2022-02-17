@@ -9,85 +9,85 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableBalanceOfResults extends wasmtypes.ScProxy {
-    amount(): wasmtypes.ScImmutableUint64 {
+	amount(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
 export class MutableBalanceOfResults extends wasmtypes.ScProxy {
-    amount(): wasmtypes.ScMutableUint64 {
+	amount(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
 export class ImmutableGetApprovedResults extends wasmtypes.ScProxy {
-    approved(): wasmtypes.ScImmutableAgentID {
+	approved(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultApproved));
 	}
 }
 
 export class MutableGetApprovedResults extends wasmtypes.ScProxy {
-    approved(): wasmtypes.ScMutableAgentID {
+	approved(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultApproved));
 	}
 }
 
 export class ImmutableIsApprovedForAllResults extends wasmtypes.ScProxy {
-    approval(): wasmtypes.ScImmutableBool {
+	approval(): wasmtypes.ScImmutableBool {
 		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultApproval));
 	}
 }
 
 export class MutableIsApprovedForAllResults extends wasmtypes.ScProxy {
-    approval(): wasmtypes.ScMutableBool {
+	approval(): wasmtypes.ScMutableBool {
 		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultApproval));
 	}
 }
 
 export class ImmutableNameResults extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScImmutableString {
+	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultName));
 	}
 }
 
 export class MutableNameResults extends wasmtypes.ScProxy {
-    name(): wasmtypes.ScMutableString {
+	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultName));
 	}
 }
 
 export class ImmutableOwnerOfResults extends wasmtypes.ScProxy {
-    owner(): wasmtypes.ScImmutableAgentID {
+	owner(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultOwner));
 	}
 }
 
 export class MutableOwnerOfResults extends wasmtypes.ScProxy {
-    owner(): wasmtypes.ScMutableAgentID {
+	owner(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultOwner));
 	}
 }
 
 export class ImmutableSymbolResults extends wasmtypes.ScProxy {
-    symbol(): wasmtypes.ScImmutableString {
+	symbol(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultSymbol));
 	}
 }
 
 export class MutableSymbolResults extends wasmtypes.ScProxy {
-    symbol(): wasmtypes.ScMutableString {
+	symbol(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultSymbol));
 	}
 }
 
 export class ImmutableTokenURIResults extends wasmtypes.ScProxy {
-    tokenURI(): wasmtypes.ScImmutableString {
+	tokenURI(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultTokenURI));
 	}
 }
 
 export class MutableTokenURIResults extends wasmtypes.ScProxy {
-    tokenURI(): wasmtypes.ScMutableString {
+	tokenURI(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultTokenURI));
 	}
 }

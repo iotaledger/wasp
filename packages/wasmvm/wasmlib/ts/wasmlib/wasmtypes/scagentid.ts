@@ -2,20 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
-import {addressDecode, addressEncode, addressFromBytes, ScAddress, ScAddressLength} from "./scaddress";
-import {hnameDecode, hnameEncode, hnameFromBytes, ScHname} from "./schname";
+import * as wasmtypes from "./index"
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export const ScAgentIDLength = 37;
+const nilAgentID: u8 = 0xff;
+const nilAgent = agentIDFromBytes([]);
 
 export class ScAgentID {
-    _address: ScAddress;
-    _hname: ScHname;
+    _address: wasmtypes.ScAddress;
+    _hname: wasmtypes.ScHname;
 
-    constructor(address: ScAddress, hname: ScHname) {
+    constructor(address: wasmtypes.ScAddress, hname: wasmtypes.ScHname) {
         this._address = address;
         this._hname = hname;
     }
@@ -25,16 +23,16 @@ export class ScAgentID {
             this._hname.equals(other._hname);
     }
 
-    public address(): ScAddress {
+    public address(): wasmtypes.ScAddress {
         return this._address;
     }
 
-    public hname(): ScHname {
+    public hname(): wasmtypes.ScHname {
         return this._hname;
     }
 
     public isAddress(): bool {
-        return this._hname.equals(new ScHname(0));
+        return this._hname.equals(new wasmtypes.ScHname(0));
     }
 
     // convert to byte array representation
@@ -50,35 +48,71 @@ export class ScAgentID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function agentIDDecode(dec: WasmDecoder): ScAgentID {
-    return new ScAgentID(addressDecode(dec), hnameDecode(dec))
+// note: only alias address can have a non-zero hname
+// so there is no need to encode it when it is always zero
+
+export function agentIDDecode(dec: wasmtypes.WasmDecoder): ScAgentID {
+    if (dec.peek() == wasmtypes.ScAddressAlias) {
+        return new ScAgentID(wasmtypes.addressDecode(dec), wasmtypes.hnameDecode(dec))
+    }
+    return new ScAgentID(wasmtypes.addressDecode(dec), new wasmtypes.ScHname(0));
 }
 
-export function agentIDEncode(enc: WasmEncoder, value: ScAgentID): void {
-    addressEncode(enc, value._address);
-    hnameEncode(enc, value._hname);
+export function agentIDEncode(enc: wasmtypes.WasmEncoder, value: ScAgentID): void {
+    wasmtypes.addressEncode(enc, value._address);
+    if (value._address.id[0] == wasmtypes.ScAddressAlias) {
+        wasmtypes.hnameEncode(enc, value._hname);
+    }
 }
 
 export function agentIDFromBytes(buf: u8[]): ScAgentID {
     if (buf.length == 0) {
-        return new ScAgentID(addressFromBytes(buf), hnameFromBytes(buf));
+        return new ScAgentID(wasmtypes.addressFromBytes([]), new wasmtypes.ScHname(0));
     }
-    if (buf.length != ScAgentIDLength) {
-        panic("invalid AgentID length");
+    switch (buf[0]) {
+        case wasmtypes.ScAddressAlias: {
+            if (buf.length != wasmtypes.ScLengthAlias + wasmtypes.ScHnameLength) {
+                panic("invalid AgentID length: Alias address");
+            }
+            const addr = wasmtypes.addressFromBytes(buf.slice(0, wasmtypes.ScLengthAlias));
+            const hname = wasmtypes.hnameFromBytes(buf.slice(wasmtypes.ScLengthAlias));
+            return new ScAgentID(addr, hname);
+        }
+        case wasmtypes.ScAddressEd25519: {
+            if (buf.length != wasmtypes.ScLengthEd25519) {
+                panic("invalid AgentID length: Ed25519 address");
+            }
+            return new ScAgentID(wasmtypes.addressFromBytes(buf), new wasmtypes.ScHname(0));
+        }
+        case wasmtypes.ScAddressNFT: {
+            if (buf.length != wasmtypes.ScLengthNFT) {
+                panic("invalid AgentID length: NFT address");
+            }
+            return new ScAgentID(wasmtypes.addressFromBytes(buf), new wasmtypes.ScHname(0));
+        }
+        case nilAgentID: {
+            if (buf.length != 1) {
+                panic("invalid AgentID length: nil AgentID")
+            }
+            break
+        }
+        default: {
+            panic("invalid AgentID address type");
+            break;
+        }
     }
-    // max ledgerstate.AliasAddressType
-    if (buf[0] > 2) {
-        panic("invalid AgentID: address type > 2");
-    }
-    return new ScAgentID(
-        addressFromBytes(buf.slice(0, ScAddressLength)),
-        hnameFromBytes(buf.slice(ScAddressLength)));
+    return agentIDFromBytes([]);
 }
 
 export function agentIDToBytes(value: ScAgentID): u8[] {
-    const enc = new WasmEncoder();
-    agentIDEncode(enc, value);
-    return enc.buf();
+    if (value.equals(nilAgent)) {
+        return [nilAgentID]
+    }
+    let buf = wasmtypes.addressToBytes(value._address);
+    if (buf[0] == wasmtypes.ScAddressAlias) {
+        buf = buf.concat(wasmtypes.hnameToBytes(value._hname))
+    }
+    return buf;
 }
 
 export function agentIDToString(value: ScAgentID): string {
@@ -89,9 +123,9 @@ export function agentIDToString(value: ScAgentID): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableAgentID {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

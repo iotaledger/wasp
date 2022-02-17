@@ -83,7 +83,7 @@ const (
 
 func New(
 	chainCore chain.ChainCore,
-	mempool mempool.Mempool,
+	mempool chain.Mempool,
 	committee chain.Committee,
 	peerGroup peering.GroupProvider,
 	nodeConn chain.ChainNodeConnection,

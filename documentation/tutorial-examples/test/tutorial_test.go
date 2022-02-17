@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var seed = cryptolib.NewSeed([]byte("long long seed for determinism...............1"))
+var seed = cryptolib.NewSeedFromBytes([]byte("long long seed for determinism...............1"))
 
 func TestTutorial1(t *testing.T) {
 	env := solo.New(t, false, false, seed)

@@ -51,9 +51,9 @@ type NetworkProvider interface {
 // struct, that implements the NetworkProvider. These implementations should interact,
 // e.g. when we distrust some peer, all the connections to it should be cut immediately.
 type TrustedNetworkManager interface {
-	IsTrustedPeer(pubKey cryptolib.PublicKey) error
-	TrustPeer(pubKey cryptolib.PublicKey, netID string) (*TrustedPeer, error)
-	DistrustPeer(pubKey cryptolib.PublicKey) (*TrustedPeer, error)
+	IsTrustedPeer(pubKey *cryptolib.PublicKey) error
+	TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey *cryptolib.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
 }
 

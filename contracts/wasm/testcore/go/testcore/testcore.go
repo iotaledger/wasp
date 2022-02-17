@@ -109,7 +109,7 @@ func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
 
 func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
 	transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
-	ctx.TransferToAddress(f.Params.Address().Value(), transfer)
+	ctx.Send(f.Params.Address().Value(), transfer)
 }
 
 func funcSetInt(ctx wasmlib.ScFuncContext, f *SetIntContext) {

@@ -59,7 +59,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.chainID().value().equals(ctx.chainID()), "mismatch: ChainID");
     }
     if (f.params.color().exists()) {
-        const color = wasmlib.colorFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhite"));
+        const color = wasmlib.colorFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhitePurple"));
         ctx.require(f.params.color().value().equals(color), "mismatch: Color");
     }
     if (f.params.hash().exists()) {

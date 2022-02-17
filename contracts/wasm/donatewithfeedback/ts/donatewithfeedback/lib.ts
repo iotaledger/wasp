@@ -9,28 +9,28 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncDonate,
-    	sc.FuncWithdraw,
-    	sc.ViewDonation,
-    	sc.ViewDonationInfo,
-    ],
-    funcs: [
-    	funcDonateThunk,
-    	funcWithdrawThunk,
-    ],
-    views: [
-    	viewDonationThunk,
-    	viewDonationInfoThunk,
-    ],
+	names: [
+		sc.FuncDonate,
+		sc.FuncWithdraw,
+		sc.ViewDonation,
+		sc.ViewDonationInfo,
+	],
+	funcs: [
+		funcDonateThunk,
+		funcWithdrawThunk,
+	],
+	views: [
+		viewDonationThunk,
+		viewDonationInfoThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcDonateThunk(ctx: wasmlib.ScFuncContext): void {
@@ -54,7 +54,7 @@ function funcWithdrawThunk(ctx: wasmlib.ScFuncContext): void {
 function viewDonationThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("donatewithfeedback.viewDonation");
 	let f = new sc.DonationContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableDonationResults(results.asProxy());
 	ctx.require(f.params.nr().exists(), "missing mandatory nr");
 	sc.viewDonation(ctx, f);
@@ -65,7 +65,7 @@ function viewDonationThunk(ctx: wasmlib.ScViewContext): void {
 function viewDonationInfoThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("donatewithfeedback.viewDonationInfo");
 	let f = new sc.DonationInfoContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableDonationInfoResults(results.asProxy());
 	sc.viewDonationInfo(ctx, f);
 	ctx.results(results);

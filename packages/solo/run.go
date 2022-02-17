@@ -42,7 +42,7 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput,
-		AnchorOutputID:     *anchorOutputID,
+		AnchorOutputID:     anchorOutputID,
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
 		VirtualStateAccess: ch.State.Copy(),
@@ -68,8 +68,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	task := ch.runTaskNoLock(reqs, false)
 
 	var essence *iotago.TransactionEssence
+	var inputsCommitment []byte
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
+		inputsCommitment = task.ResultInputsCommitment
 	} else {
 		panic("not implemented")
 		//essence, err = rotate.MakeRotateStateControllerTransaction(
@@ -81,10 +83,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		//)
 		//require.NoError(ch.Env.T, err)
 	}
-	sigs, err := essence.Sign(iotago.AddressKeys{
-		Address: ch.StateControllerAddress,
-		Keys:    ch.StateControllerKeyPair.PrivateKey,
-	})
+	sigs, err := essence.Sign(
+		inputsCommitment,
+		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
+	)
 	require.NoError(ch.Env.T, err)
 
 	tx := &iotago.Transaction{
@@ -117,7 +119,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	block, err := ch.State.ExtractBlock()
 	require.NoError(ch.Env.T, err)
 	require.NotNil(ch.Env.T, block)
-	block.SetApprovingOutputID(anchor.OutputID)
+	block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
 
 	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
@@ -125,7 +127,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
-	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID())
+	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
 
 	chain.PublishStateTransition(ch.ChainID, anchor.OutputID, stateOutput, len(reqids))
 	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)

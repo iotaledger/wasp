@@ -1,12 +1,12 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math/big"
 	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
@@ -32,7 +32,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		MaximumSupply:     maxSupply,
 		TokenScheme:       scheme,
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress()},
+			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
 		},
 		Blocks: nil,
 	}
@@ -46,7 +46,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, ErrNotEnoughIotaBalance)
 	if err != nil {
-		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,
@@ -70,6 +70,10 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
 			ErrCantModifySupplyOfTheToken, tokenID.String(), f.in.MustNativeTokenID().String()))
 	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+	defer txb.mustCheckMessageSize()
+
 	// check the supply bounds
 	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
 	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
@@ -115,6 +119,10 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	if f.in == nil {
 		panic(ErrCantDestroyFoundryBeingCreated)
 	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+	defer txb.mustCheckMessageSize()
+
 	f.out = nil
 	// return dust deposit to accounts
 	txb.addDeltaIotasToTotal(f.in.Amount)
@@ -231,7 +239,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
 	case f1.TokenTag != f2.TokenTag:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token tags must be equal")
-	case f1.Blocks != nil || f2.Blocks != nil:
+	case len(f1.Blocks) != 0 || len(f2.Blocks) != 0:
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true

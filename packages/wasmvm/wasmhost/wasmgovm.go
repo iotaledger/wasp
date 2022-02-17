@@ -27,10 +27,6 @@ func NewWasmGoVM(scName string, onLoad ScOnloadFunc) WasmVM {
 	return &WasmGoVM{scName: scName, onLoad: onLoad}
 }
 
-func (vm *WasmGoVM) NewInstance() WasmVM {
-	return nil
-}
-
 func (vm *WasmGoVM) Instantiate() error {
 	return nil
 }
@@ -48,6 +44,10 @@ func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {
 	if scName[3:] != vm.scName {
 		return errors.New("WasmGoVM: unknown contract: " + scName)
 	}
+	return nil
+}
+
+func (vm *WasmGoVM) NewInstance() WasmVM {
 	return nil
 }
 

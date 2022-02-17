@@ -43,15 +43,14 @@ func (d *DustDepositAssumption) String() string {
 
 func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
 	return &DustDepositAssumption{
-		AnchorOutput:      aliasOutputDustDeposit(rent) + 50,
-		NativeTokenOutput: nativeTokenOutputDustDeposit(rent) + 50,
+		AnchorOutput:      aliasOutputDustDeposit(rent),
+		NativeTokenOutput: nativeTokenOutputDustDeposit(rent),
 	}
 }
 
 func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
-	var seed cryptolib.Seed
-	keyPair := cryptolib.NewKeyPairFromSeed(&seed)
-	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	keyPair := cryptolib.NewKeyPairFromSeed([32]byte{})
+	addr := keyPair.GetPublicKey().AsEd25519Address()
 
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       iotago.AliasID{},
@@ -72,7 +71,7 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 
 func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
-	o := MakeExtendedOutput(
+	o := MakeBasicOutput(
 		&addr,
 		&addr,
 		&iscp.Assets{

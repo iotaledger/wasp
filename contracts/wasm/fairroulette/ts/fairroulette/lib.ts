@@ -9,38 +9,38 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncForcePayout,
-    	sc.FuncForceReset,
-    	sc.FuncPayWinners,
-    	sc.FuncPlaceBet,
-    	sc.FuncPlayPeriod,
-    	sc.ViewLastWinningNumber,
-    	sc.ViewRoundNumber,
-    	sc.ViewRoundStartedAt,
-    	sc.ViewRoundStatus,
-    ],
-    funcs: [
-    	funcForcePayoutThunk,
-    	funcForceResetThunk,
-    	funcPayWinnersThunk,
-    	funcPlaceBetThunk,
-    	funcPlayPeriodThunk,
-    ],
-    views: [
-    	viewLastWinningNumberThunk,
-    	viewRoundNumberThunk,
-    	viewRoundStartedAtThunk,
-    	viewRoundStatusThunk,
-    ],
+	names: [
+		sc.FuncForcePayout,
+		sc.FuncForceReset,
+		sc.FuncPayWinners,
+		sc.FuncPlaceBet,
+		sc.FuncPlayPeriod,
+		sc.ViewLastWinningNumber,
+		sc.ViewRoundNumber,
+		sc.ViewRoundStartedAt,
+		sc.ViewRoundStatus,
+	],
+	funcs: [
+		funcForcePayoutThunk,
+		funcForceResetThunk,
+		funcPayWinnersThunk,
+		funcPlaceBetThunk,
+		funcPlayPeriodThunk,
+	],
+	views: [
+		viewLastWinningNumberThunk,
+		viewRoundNumberThunk,
+		viewRoundStartedAtThunk,
+		viewRoundStatusThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcForcePayoutThunk(ctx: wasmlib.ScFuncContext): void {
@@ -99,7 +99,7 @@ function funcPlayPeriodThunk(ctx: wasmlib.ScFuncContext): void {
 function viewLastWinningNumberThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("fairroulette.viewLastWinningNumber");
 	let f = new sc.LastWinningNumberContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableLastWinningNumberResults(results.asProxy());
 	sc.viewLastWinningNumber(ctx, f);
 	ctx.results(results);
@@ -109,7 +109,7 @@ function viewLastWinningNumberThunk(ctx: wasmlib.ScViewContext): void {
 function viewRoundNumberThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("fairroulette.viewRoundNumber");
 	let f = new sc.RoundNumberContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableRoundNumberResults(results.asProxy());
 	sc.viewRoundNumber(ctx, f);
 	ctx.results(results);
@@ -119,7 +119,7 @@ function viewRoundNumberThunk(ctx: wasmlib.ScViewContext): void {
 function viewRoundStartedAtThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("fairroulette.viewRoundStartedAt");
 	let f = new sc.RoundStartedAtContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableRoundStartedAtResults(results.asProxy());
 	sc.viewRoundStartedAt(ctx, f);
 	ctx.results(results);
@@ -129,7 +129,7 @@ function viewRoundStartedAtThunk(ctx: wasmlib.ScViewContext): void {
 function viewRoundStatusThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("fairroulette.viewRoundStatus");
 	let f = new sc.RoundStatusContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableRoundStatusResults(results.asProxy());
 	sc.viewRoundStatus(ctx, f);
 	ctx.results(results);

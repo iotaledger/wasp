@@ -74,7 +74,7 @@ func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
 // PeerIndexByNetID implements peering.GroupProvider.
 func (g *groupImpl) PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error) {
 	for i := range g.nodes {
-		if bytes.Equal(*g.nodes[i].PubKey(), *peerPubKey) {
+		if g.nodes[i].PubKey().Equals(peerPubKey) {
 			return uint16(i), nil
 		}
 	}
@@ -141,7 +141,7 @@ func (g *groupImpl) ExchangeRound(
 			if err != nil {
 				g.log.Warnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
-					recvMsgNoIndex.SenderPubKey, g.netProvider.Self().PubKey(),
+					recvMsgNoIndex.SenderPubKey.AsString(), g.netProvider.Self().PubKey().AsString(),
 					recvMsgNoIndex.MsgType, err,
 				)
 				continue
@@ -153,7 +153,7 @@ func (g *groupImpl) ExchangeRound(
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
 				g.log.Warnf(
 					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
-					recvMsg.SenderPubKey, g.netProvider.Self().PubKey(),
+					recvMsg.SenderPubKey.AsString(), g.netProvider.Self().PubKey().AsString(),
 					recvMsg.MsgReceiver, recvMsg.MsgType,
 				)
 				continue
@@ -242,7 +242,7 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 		}
 		if err != nil {
 			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey, err)
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.AsString(), err)
 			return
 		}
 		gRecv := &peering.PeerMessageGroupIn{

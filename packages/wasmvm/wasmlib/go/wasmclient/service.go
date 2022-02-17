@@ -72,7 +72,7 @@ func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
 }
 
 func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer, keyPair *cryptolib.KeyPair, onLedger bool) Request {
-	panic("fixme")
+	panic("fixme: service.postRequest")
 	//bal, err := makeBalances(transfer)
 	//if err != nil {
 	//	return Request{err: err}
@@ -97,7 +97,7 @@ func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer,
 	//return Request{id: &id}
 }
 
-//func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *ed25519.KeyPair) Request {
+//func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *cryptolib.KeyPair) Request {
 //	// TODO implement
 //	return Request{}
 //}

@@ -9,90 +9,90 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
-    names: [
-    	sc.FuncCallOnChain,
-    	sc.FuncCheckContextFromFullEP,
-    	sc.FuncDoNothing,
-    	sc.FuncGetMintedSupply,
-    	sc.FuncIncCounter,
-    	sc.FuncInit,
-    	sc.FuncPassTypesFull,
-    	sc.FuncRunRecursion,
-    	sc.FuncSendToAddress,
-    	sc.FuncSetInt,
-    	sc.FuncSpawn,
-    	sc.FuncTestBlockContext1,
-    	sc.FuncTestBlockContext2,
-    	sc.FuncTestCallPanicFullEP,
-    	sc.FuncTestCallPanicViewEPFromFull,
-    	sc.FuncTestChainOwnerIDFull,
-    	sc.FuncTestEventLogDeploy,
-    	sc.FuncTestEventLogEventData,
-    	sc.FuncTestEventLogGenericData,
-    	sc.FuncTestPanicFullEP,
-    	sc.FuncWithdrawToChain,
-    	sc.ViewCheckContextFromViewEP,
-    	sc.ViewFibonacci,
-    	sc.ViewGetCounter,
-    	sc.ViewGetInt,
-    	sc.ViewGetStringValue,
-    	sc.ViewJustView,
-    	sc.ViewPassTypesView,
-    	sc.ViewTestCallPanicViewEPFromView,
-    	sc.ViewTestChainOwnerIDView,
-    	sc.ViewTestPanicViewEP,
-    	sc.ViewTestSandboxCall,
-    ],
-    funcs: [
-    	funcCallOnChainThunk,
-    	funcCheckContextFromFullEPThunk,
-    	funcDoNothingThunk,
-    	funcGetMintedSupplyThunk,
-    	funcIncCounterThunk,
-    	funcInitThunk,
-    	funcPassTypesFullThunk,
-    	funcRunRecursionThunk,
-    	funcSendToAddressThunk,
-    	funcSetIntThunk,
-    	funcSpawnThunk,
-    	funcTestBlockContext1Thunk,
-    	funcTestBlockContext2Thunk,
-    	funcTestCallPanicFullEPThunk,
-    	funcTestCallPanicViewEPFromFullThunk,
-    	funcTestChainOwnerIDFullThunk,
-    	funcTestEventLogDeployThunk,
-    	funcTestEventLogEventDataThunk,
-    	funcTestEventLogGenericDataThunk,
-    	funcTestPanicFullEPThunk,
-    	funcWithdrawToChainThunk,
-    ],
-    views: [
-    	viewCheckContextFromViewEPThunk,
-    	viewFibonacciThunk,
-    	viewGetCounterThunk,
-    	viewGetIntThunk,
-    	viewGetStringValueThunk,
-    	viewJustViewThunk,
-    	viewPassTypesViewThunk,
-    	viewTestCallPanicViewEPFromViewThunk,
-    	viewTestChainOwnerIDViewThunk,
-    	viewTestPanicViewEPThunk,
-    	viewTestSandboxCallThunk,
-    ],
+	names: [
+		sc.FuncCallOnChain,
+		sc.FuncCheckContextFromFullEP,
+		sc.FuncDoNothing,
+		sc.FuncGetMintedSupply,
+		sc.FuncIncCounter,
+		sc.FuncInit,
+		sc.FuncPassTypesFull,
+		sc.FuncRunRecursion,
+		sc.FuncSendToAddress,
+		sc.FuncSetInt,
+		sc.FuncSpawn,
+		sc.FuncTestBlockContext1,
+		sc.FuncTestBlockContext2,
+		sc.FuncTestCallPanicFullEP,
+		sc.FuncTestCallPanicViewEPFromFull,
+		sc.FuncTestChainOwnerIDFull,
+		sc.FuncTestEventLogDeploy,
+		sc.FuncTestEventLogEventData,
+		sc.FuncTestEventLogGenericData,
+		sc.FuncTestPanicFullEP,
+		sc.FuncWithdrawToChain,
+		sc.ViewCheckContextFromViewEP,
+		sc.ViewFibonacci,
+		sc.ViewGetCounter,
+		sc.ViewGetInt,
+		sc.ViewGetStringValue,
+		sc.ViewJustView,
+		sc.ViewPassTypesView,
+		sc.ViewTestCallPanicViewEPFromView,
+		sc.ViewTestChainOwnerIDView,
+		sc.ViewTestPanicViewEP,
+		sc.ViewTestSandboxCall,
+	],
+	funcs: [
+		funcCallOnChainThunk,
+		funcCheckContextFromFullEPThunk,
+		funcDoNothingThunk,
+		funcGetMintedSupplyThunk,
+		funcIncCounterThunk,
+		funcInitThunk,
+		funcPassTypesFullThunk,
+		funcRunRecursionThunk,
+		funcSendToAddressThunk,
+		funcSetIntThunk,
+		funcSpawnThunk,
+		funcTestBlockContext1Thunk,
+		funcTestBlockContext2Thunk,
+		funcTestCallPanicFullEPThunk,
+		funcTestCallPanicViewEPFromFullThunk,
+		funcTestChainOwnerIDFullThunk,
+		funcTestEventLogDeployThunk,
+		funcTestEventLogEventDataThunk,
+		funcTestEventLogGenericDataThunk,
+		funcTestPanicFullEPThunk,
+		funcWithdrawToChainThunk,
+	],
+	views: [
+		viewCheckContextFromViewEPThunk,
+		viewFibonacciThunk,
+		viewGetCounterThunk,
+		viewGetIntThunk,
+		viewGetStringValueThunk,
+		viewJustViewThunk,
+		viewPassTypesViewThunk,
+		viewTestCallPanicViewEPFromViewThunk,
+		viewTestChainOwnerIDViewThunk,
+		viewTestPanicViewEPThunk,
+		viewTestSandboxCallThunk,
+	],
 };
 
 export function on_call(index: i32): void {
-    wasmlib.ScExports.call(index, exportMap);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    wasmlib.ScExports.export(exportMap);
+	wasmlib.ScExports.export(exportMap);
 }
 
 function funcCallOnChainThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testcore.funcCallOnChain");
 	let f = new sc.CallOnChainContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableCallOnChainResults(results.asProxy());
 	ctx.require(f.params.intValue().exists(), "missing mandatory intValue");
 	sc.funcCallOnChain(ctx, f);
@@ -122,7 +122,7 @@ function funcDoNothingThunk(ctx: wasmlib.ScFuncContext): void {
 function funcGetMintedSupplyThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testcore.funcGetMintedSupply");
 	let f = new sc.GetMintedSupplyContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetMintedSupplyResults(results.asProxy());
 	sc.funcGetMintedSupply(ctx, f);
 	ctx.results(results);
@@ -164,7 +164,7 @@ function funcPassTypesFullThunk(ctx: wasmlib.ScFuncContext): void {
 function funcRunRecursionThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testcore.funcRunRecursion");
 	let f = new sc.RunRecursionContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableRunRecursionResults(results.asProxy());
 	ctx.require(f.params.intValue().exists(), "missing mandatory intValue");
 	sc.funcRunRecursion(ctx, f);
@@ -230,7 +230,7 @@ function funcTestCallPanicViewEPFromFullThunk(ctx: wasmlib.ScFuncContext): void 
 function funcTestChainOwnerIDFullThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testcore.funcTestChainOwnerIDFull");
 	let f = new sc.TestChainOwnerIDFullContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableTestChainOwnerIDFullResults(results.asProxy());
 	sc.funcTestChainOwnerIDFull(ctx, f);
 	ctx.results(results);
@@ -288,7 +288,7 @@ function viewCheckContextFromViewEPThunk(ctx: wasmlib.ScViewContext): void {
 function viewFibonacciThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testcore.viewFibonacci");
 	let f = new sc.FibonacciContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableFibonacciResults(results.asProxy());
 	ctx.require(f.params.intValue().exists(), "missing mandatory intValue");
 	sc.viewFibonacci(ctx, f);
@@ -299,7 +299,7 @@ function viewFibonacciThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testcore.viewGetCounter");
 	let f = new sc.GetCounterContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetCounterResults(results.asProxy());
 	sc.viewGetCounter(ctx, f);
 	ctx.results(results);
@@ -309,7 +309,7 @@ function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetIntThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testcore.viewGetInt");
 	let f = new sc.GetIntContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetIntResults(results.asProxy());
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	sc.viewGetInt(ctx, f);
@@ -320,7 +320,7 @@ function viewGetIntThunk(ctx: wasmlib.ScViewContext): void {
 function viewGetStringValueThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testcore.viewGetStringValue");
 	let f = new sc.GetStringValueContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableGetStringValueResults(results.asProxy());
 	ctx.require(f.params.varName().exists(), "missing mandatory varName");
 	sc.viewGetStringValue(ctx, f);
@@ -363,7 +363,7 @@ function viewTestCallPanicViewEPFromViewThunk(ctx: wasmlib.ScViewContext): void 
 function viewTestChainOwnerIDViewThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testcore.viewTestChainOwnerIDView");
 	let f = new sc.TestChainOwnerIDViewContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableTestChainOwnerIDViewResults(results.asProxy());
 	sc.viewTestChainOwnerIDView(ctx, f);
 	ctx.results(results);
@@ -380,7 +380,7 @@ function viewTestPanicViewEPThunk(ctx: wasmlib.ScViewContext): void {
 function viewTestSandboxCallThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testcore.viewTestSandboxCall");
 	let f = new sc.TestSandboxCallContext();
-    const results = new wasmlib.ScDict([]);
+	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableTestSandboxCallResults(results.asProxy());
 	sc.viewTestSandboxCall(ctx, f);
 	ctx.results(results);

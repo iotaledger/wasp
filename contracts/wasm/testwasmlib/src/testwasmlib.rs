@@ -58,7 +58,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.chain_id().value() == ctx.chain_id(), "mismatch: ChainID");
     }
     if f.params.color().exists() {
-        let color = color_from_bytes("RedGreenBlueYellowCyanBlackWhite".as_bytes());
+        let color = color_from_bytes("RedGreenBlueYellowCyanBlackWhitePurple".as_bytes());
         ctx.require(f.params.color().value() == color, "mismatch: Color");
     }
     if f.params.hash().exists() {

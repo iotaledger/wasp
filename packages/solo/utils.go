@@ -9,7 +9,7 @@ import (
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
 func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID *iscp.AgentID) error {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
 
 	req := NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, deployerAgentID).AddAssetsIotas(1)
@@ -20,7 +20,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgent
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
 func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID *iscp.AgentID) error {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
 
 	req := NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name, root.ParamDeployer, deployerAgentID).AddAssetsIotas(1)

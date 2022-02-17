@@ -5,14 +5,16 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScChainIDLength = 33
+const ScChainIDLength = 20
 
 type ScChainID struct {
 	id [ScChainIDLength]byte
 }
 
+// Address returns the alias address that the chain ID actually represents
 func (o ScChainID) Address() ScAddress {
-	return AddressFromBytes(o.id[:])
+	buf := []byte{ScAddressAlias}
+	return AddressFromBytes(append(buf, o.id[:]...))
 }
 
 func (o ScChainID) Bytes() []byte {
@@ -35,16 +37,10 @@ func ChainIDEncode(enc *WasmEncoder, value ScChainID) {
 
 func ChainIDFromBytes(buf []byte) ScChainID {
 	if len(buf) == 0 {
-		chainID := ScChainID{}
-		chainID.id[0] = 2 // ledgerstate.AliasAddressType
-		return chainID
+		return ScChainID{}
 	}
 	if len(buf) != ScChainIDLength {
 		panic("invalid ChainID length")
-	}
-	// must be ledgerstate.AliasAddressType
-	if buf[0] != 2 {
-		panic("invalid ChainID: not an alias address")
 	}
 	return chainIDFromBytesUnchecked(buf)
 }

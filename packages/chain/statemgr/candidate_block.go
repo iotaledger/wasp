@@ -6,35 +6,36 @@ package statemgr
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type candidateBlock struct {
-	block         state.Block
-	local         bool
-	votes         int
-	approved      bool
-	nextStateHash hashing.HashValue
-	nextState     state.VirtualStateAccess
+	block               state.Block
+	local               bool
+	votes               int
+	approved            bool
+	nextStateCommitment hashing.HashValue
+	nextState           state.VirtualStateAccess
 }
 
 func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualStateAccess) *candidateBlock {
 	var local bool
-	var stateHash hashing.HashValue
+	var stateCommitment hashing.HashValue
 	if nextStateIfProvided == nil {
 		local = false
-		stateHash = hashing.NilHash
+		stateCommitment = hashing.NilHash
 	} else {
 		local = true
-		stateHash = nextStateIfProvided.StateCommitment()
+		stateCommitment = nextStateIfProvided.StateCommitment()
 	}
 	return &candidateBlock{
-		block:         block,
-		local:         local,
-		votes:         1,
-		approved:      false,
-		nextStateHash: stateHash,
-		nextState:     nextStateIfProvided,
+		block:               block,
+		local:               local,
+		votes:               1,
+		approved:            false,
+		nextStateCommitment: stateCommitment,
+		nextState:           nextStateIfProvided,
 	}
 }
 
@@ -58,29 +59,29 @@ func (cT *candidateBlock) isApproved() bool {
 	return cT.approved
 }
 
-func (cT *candidateBlock) approveIfRightOutput(output *iotago.AliasOutput) {
+func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 	if cT.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
-		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
+		finalCommitment, err := output.GetStateCommitment()
 		if err != nil {
 			return
 		}
 		if cT.isLocal() {
-			if cT.nextStateHash == finalHash {
+			if cT.nextStateCommitment == finalCommitment {
 				cT.approved = true
 				cT.block.SetApprovingOutputID(outputID)
 			}
 		} else {
 			if cT.block.ApprovingOutputID() == outputID {
 				cT.approved = true
-				cT.nextStateHash = finalHash
+				cT.nextStateCommitment = finalCommitment
 			}
 		}
 	}
 }
 
-func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
-	return cT.nextStateHash
+func (cT *candidateBlock) getNextStateCommitment() hashing.HashValue {
+	return cT.nextStateCommitment
 }
 
 func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (state.VirtualStateAccess, error) {
@@ -91,6 +92,6 @@ func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (s
 	return currentState, err
 }
 
-func (cT *candidateBlock) getApprovingOutputID() iotago.OutputID {
+func (cT *candidateBlock) getApprovingOutputID() *iotago.UTXOInput {
 	return cT.block.ApprovingOutputID()
 }

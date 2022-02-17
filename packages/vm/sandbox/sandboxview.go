@@ -16,16 +16,23 @@ import (
 )
 
 type sandboxView struct {
-	vmctx  *vmcontext.VMContext
-	assert *assert.Assert
+	vmctx     *vmcontext.VMContext
+	assertObj *assert.Assert
+}
+
+func (s *sandboxView) assert() *assert.Assert {
+	if s.assertObj == nil {
+		s.assertObj = assert.NewAssert(s.vmctx)
+	}
+	return s.assertObj
 }
 
 func (s *sandboxView) Assets() *iscp.Assets {
-	panic("implement me")
+	return s.vmctx.GetAssets(s.vmctx.AccountID())
 }
 
 func (s *sandboxView) Timestamp() int64 {
-	panic("implement me")
+	return s.vmctx.Timestamp()
 }
 
 var _ iscp.SandboxView = &sandboxView{}
@@ -33,8 +40,7 @@ var _ iscp.SandboxView = &sandboxView{}
 func init() {
 	vmcontext.NewSandboxView = func(vmctx *vmcontext.VMContext) iscp.SandboxView {
 		return &sandboxView{
-			vmctx:  vmctx,
-			assert: assert.NewAssert(vmctx),
+			vmctx: vmctx,
 		}
 	}
 }
@@ -44,11 +50,11 @@ func (s *sandboxView) AccountID() *iscp.AgentID {
 }
 
 func (s *sandboxView) BalanceIotas() uint64 {
-	panic("implement me")
+	return s.vmctx.GetIotaBalance(s.vmctx.AccountID())
 }
 
 func (s *sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
-	panic("implement me")
+	return s.vmctx.GetNativeTokenBalance(s.vmctx.AccountID(), id)
 }
 
 func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
@@ -79,7 +85,7 @@ func (s *sandboxView) Log() iscp.LogInterface {
 	return s.vmctx
 }
 
-func (s *sandboxView) Params() dict.Dict {
+func (s *sandboxView) Params() *iscp.Params {
 	return s.vmctx.Params()
 }
 
@@ -106,9 +112,9 @@ func (s *sandboxView) Budget() uint64 {
 // helper methods
 
 func (s *sandboxView) Requiref(cond bool, format string, args ...interface{}) {
-	s.assert.Requiref(cond, format, args...)
+	s.assert().Requiref(cond, format, args...)
 }
 
 func (s *sandboxView) RequireNoError(err error, str ...string) {
-	s.assert.RequireNoError(err, str...)
+	s.assert().RequireNoError(err, str...)
 }

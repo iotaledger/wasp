@@ -36,12 +36,12 @@ import (
 const maxMsgBuffer = 1000
 
 var (
-	_ chain.Chain                  = &chainObj{}
-	_ chain.ChainCore              = &chainObj{}
-	_ chain.ChainEntry             = &chainObj{}
-	_ chain.ChainRequests          = &chainObj{}
-	_ chain.ChainMetrics           = &chainObj{}
-	_ map[cryptolib.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
+	_ chain.Chain                     = &chainObj{}
+	_ chain.ChainCore                 = &chainObj{}
+	_ chain.ChainEntry                = &chainObj{}
+	_ chain.ChainRequests             = &chainObj{}
+	_ chain.ChainMetrics              = &chainObj{}
+	_ map[cryptolib.PublicKeyKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
@@ -293,7 +293,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	c.log.Debugf("updateChainNodes, stateIndex=%v", stateIndex)
-	govAccessNodes := make([]cryptolib.PublicKey, 0)
+	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
 		res, err := viewcontext.NewFromChain(c).CallView(
@@ -312,16 +312,16 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	//
 	// Collect the new set of access nodes in the communication domain.
 	// They include the committee nodes as well as the explicitly set access nodes.
-	newMembers := make(map[cryptolib.PublicKey]bool)
-	newMembers[*c.netProvider.Self().PubKey()] = true
+	newMembers := make(map[cryptolib.PublicKeyKey]bool)
+	newMembers[c.netProvider.Self().PubKey().AsKey()] = true
 	cmt := c.getCommittee()
 	if cmt != nil {
 		for _, cm := range cmt.DKShare().NodePubKeys {
-			newMembers[*cm] = true
+			newMembers[cm.AsKey()] = true
 		}
 	}
 	for _, newAccessNode := range govAccessNodes {
-		newMembers[newAccessNode] = true
+		newMembers[newAccessNode.AsKey()] = true
 	}
 
 	//
@@ -329,7 +329,7 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	newMemberList := make([]*cryptolib.PublicKey, 0)
 	for pubKey := range newMembers {
 		pubKeyCopy := pubKey
-		newMemberList = append(newMemberList, &pubKeyCopy)
+		newMemberList = append(newMemberList, pubKeyCopy)
 	}
 	c.chainPeers.UpdatePeers(newMemberList)
 	c.stateMgr.SetChainPeers(newMemberList)

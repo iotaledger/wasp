@@ -45,8 +45,8 @@ type StateUpdate interface {
 // Block is a sequence of state updates applicable to the virtual state
 type Block interface {
 	BlockIndex() uint32
-	ApprovingOutputID() iotago.OutputID
-	SetApprovingOutputID(iotago.OutputID)
+	ApprovingOutputID() *iotago.UTXOInput
+	SetApprovingOutputID(*iotago.UTXOInput)
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
 	EssenceBytes() []byte // except state transaction id

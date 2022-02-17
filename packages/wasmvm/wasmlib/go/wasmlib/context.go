@@ -29,16 +29,6 @@ func (ctx ScFuncContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmty
 	return hContract
 }
 
-// TODO deprecated
-func (ctx ScFuncContext) Incoming() ScBalances {
-	return ctx.IncomingTransfer()
-}
-
-// TODO deprecated
-func (ctx ScFuncContext) TransferToAddress(address wasmtypes.ScAddress, transfer ScTransfers) {
-	ctx.Send(address, transfer)
-}
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // smart contract view sandbox interface

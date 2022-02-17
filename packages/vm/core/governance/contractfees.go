@@ -15,13 +15,6 @@ type ContractFeesRecord struct {
 	ValidatorFee uint64
 }
 
-func NewContractFeesRecord(ownerFee, validatorFee uint64) *ContractFeesRecord {
-	return &ContractFeesRecord{
-		OwnerFee:     ownerFee,
-		ValidatorFee: validatorFee,
-	}
-}
-
 func ContractFeesRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractFeesRecord, error) {
 	ret := &ContractFeesRecord{}
 	var err error
@@ -39,8 +32,4 @@ func (p *ContractFeesRecord) Bytes() []byte {
 	mu.WriteUint64(p.OwnerFee)
 	mu.WriteUint64(p.ValidatorFee)
 	return mu.Bytes()
-}
-
-func ContractFeesRecordFromBytes(data []byte) (*ContractFeesRecord, error) {
-	return ContractFeesRecordFromMarshalUtil(marshalutil.New(data))
 }

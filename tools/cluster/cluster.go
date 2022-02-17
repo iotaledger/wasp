@@ -16,13 +16,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
@@ -35,10 +34,10 @@ import (
 )
 
 type Cluster struct {
-	Name     string
-	Config   *ClusterConfig
-	Started  bool
-	DataPath string
+	Name          string
+	Config        *ClusterConfig
+	Started       bool
+	DataPath      string
 	ValidatorSeed *seed.Seed // Default identity for validators, chain owners, etc.
 
 	goshimmer *mocknode.MockNode
@@ -47,10 +46,10 @@ type Cluster struct {
 
 func New(name string, config *ClusterConfig) *Cluster {
 	return &Cluster{
-		Name:     name,
-		Config:   config,
+		Name:          name,
+		Config:        config,
 		ValidatorSeed: seed.NewSeed(),
-		waspCmds: make([]*exec.Cmd, config.Wasp.NumNodes),
+		waspCmds:      make([]*exec.Cmd, config.Wasp.NumNodes),
 	}
 }
 
@@ -166,15 +165,15 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	}
 
 	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
-		Layer1Client:          clu.GoshimmerClient(),
-		CommitteeAPIHosts:     chain.CommitteeAPIHosts(),
-		CommitteePubKeys:  committeePubKeys,
-		N:                     uint16(len(committeeNodes)),
-		T:                     quorum,
-		OriginatorPrivateKey:  chain.OriginatorKeyPair(),
-		Description:           description,
-		Textout:               os.Stdout,
-		Prefix:                "[cluster] ",
+		Layer1Client:         clu.GoshimmerClient(),
+		CommitteeAPIHosts:    chain.CommitteeAPIHosts(),
+		CommitteePubKeys:     committeePubKeys,
+		N:                    uint16(len(committeeNodes)),
+		T:                    quorum,
+		OriginatorPrivateKey: chain.OriginatorKeyPair(),
+		Description:          description,
+		Textout:              os.Stdout,
+		Prefix:               "[cluster] ",
 	}, stateAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
@@ -206,7 +205,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 	if err != nil {
 		return err
 	}
-	accessNodePubKey, err := ed25519.PublicKeyFromString(accessNodePeering.PubKey)
+	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
 	if err != nil {
 		return err
 	}
@@ -215,7 +214,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 		return err
 	}
 	scArgs := governance.AccessNodeInfo{
-		NodePubKey:    accessNodePubKey.Bytes(),
+		NodePubKey:    accessNodePubKey.AsBytes(),
 		ValidatorAddr: chain.OriginatorAddress().Bytes(),
 		Certificate:   cert.Bytes(),
 		ForCommittee:  false,

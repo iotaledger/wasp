@@ -59,6 +59,14 @@ func (d *WasmDecoder) FixedBytes(size uint32) []byte {
 	return value
 }
 
+// Peek peeks at the next byte in the byte buffer
+func (d *WasmDecoder) Peek() byte {
+	if len(d.buf) == 0 {
+		d.abort("insufficient peek bytes")
+	}
+	return d.buf[0]
+}
+
 // VliDecode: Variable Length Integer decoder, uses modified LEB128
 func (d *WasmDecoder) VliDecode(bits int) int64 {
 	b := d.Byte()

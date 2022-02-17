@@ -50,7 +50,7 @@ be enabled via configuration.
 
 You can get the source code of the latest Wasp version from the [official repository](https://github.com/iotaledger/wasp).
 
-```bash
+```shell
 git clone https://github.com/iotaledger/wasp
 ```
 
@@ -60,13 +60,23 @@ You can build and install both `wasp` and `wasp-cli` by running:
 
 ### Linux/macOS
 
-```bash
+```shell
+make install
+```
+
+### macOS arm64 (M1 Apple Silicon)
+
+[`wasmtime-go`](https://github.com/bytecodealliance/wasmtime-go) hasn't supported macOS on arm64 yet, so you should build your own wasmtime library. You can follow the README in `wasmtime-go` to build the library.
+Once a wasmtime library is built, then you can run the following commands.
+
+```shell
+go mod edit -replace=github.com/bytecodealliance/wasmtime-go=<wasmtime-go path>
 make install
 ```
 
 ### Microsoft Windows
 
-```bash
+```shell
 make install-windows
 ```
 
@@ -92,7 +102,7 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 
 You can run integration and unit test together with the following command:
 
-```bash
+```shell
 go test -tags rocksdb,builtin_static -timeout 20m ./...
 ```
 Keep in mind that this process may take several minutes.
@@ -101,7 +111,7 @@ Keep in mind that this process may take several minutes.
 
 You can run the unit tests without running integration tests with the following command:
 
-```bash
+```shell
 go test -tags rocksdb,builtin_static -short ./...
 ```
 
@@ -239,7 +249,7 @@ Repeat this process to launch as many nodes as you want for your committee.
 
 If you want to access the Wasp node from outside its local network, you will need to add your public IP to the `webpi.adminWhitelist`. You can do so by adding it to your config file, or running the node with the `webapi.adminWhitelist` flag.
 
-```bash
+```shell
 wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
 ```
 

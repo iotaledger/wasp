@@ -1,63 +1,122 @@
 export class Buffer extends Uint8Array {
     length: number
+
     write(string: string, offset?: number, length?: number, encoding?: string): number;
+
     toString(encoding?: string, start?: number, end?: number): string;
+
     toJSON(): { type: 'Buffer', data: any[] };
+
     equals(otherBuffer: Buffer): boolean;
+
     compare(otherBuffer: Uint8Array, targetStart?: number, targetEnd?: number, sourceStart?: number, sourceEnd?: number): number;
+
     copy(targetBuffer: Buffer, targetStart?: number, sourceStart?: number, sourceEnd?: number): number;
+
     slice(start?: number, end?: number): Buffer;
+
     writeUIntLE(value: number, offset: number, byteLength: number, noAssert?: boolean): number;
+
     writeUIntBE(value: number, offset: number, byteLength: number, noAssert?: boolean): number;
+
     writeIntLE(value: number, offset: number, byteLength: number, noAssert?: boolean): number;
+
     writeIntBE(value: number, offset: number, byteLength: number, noAssert?: boolean): number;
+
     readUIntLE(offset: number, byteLength: number, noAssert?: boolean): number;
+
     readUIntBE(offset: number, byteLength: number, noAssert?: boolean): number;
+
     readIntLE(offset: number, byteLength: number, noAssert?: boolean): number;
+
     readIntBE(offset: number, byteLength: number, noAssert?: boolean): number;
+
     readUInt8(offset: number, noAssert?: boolean): number;
+
     readUInt16LE(offset: number, noAssert?: boolean): number;
+
     readUInt16BE(offset: number, noAssert?: boolean): number;
+
     readUInt32LE(offset: number, noAssert?: boolean): number;
+
     readUInt32BE(offset: number, noAssert?: boolean): number;
+
     readBigUInt64LE(offset: number): bigint;
+
     readBigUInt64BE(offset: number): bigint;
+
     readInt8(offset: number, noAssert?: boolean): number;
+
     readInt16LE(offset: number, noAssert?: boolean): number;
+
     readInt16BE(offset: number, noAssert?: boolean): number;
+
     readInt32LE(offset: number, noAssert?: boolean): number;
+
     readInt32BE(offset: number, noAssert?: boolean): number;
+
     readBigInt64LE(offset: number): bigint;
+
     readBigInt64BE(offset: number): bigint;
+
     readFloatLE(offset: number, noAssert?: boolean): number;
+
     readFloatBE(offset: number, noAssert?: boolean): number;
+
     readDoubleLE(offset: number, noAssert?: boolean): number;
+
     readDoubleBE(offset: number, noAssert?: boolean): number;
+
     reverse(): this;
+
     swap16(): Buffer;
+
     swap32(): Buffer;
+
     swap64(): Buffer;
+
     writeUInt8(value: number, offset: number, noAssert?: boolean): number;
+
     writeUInt16LE(value: number, offset: number, noAssert?: boolean): number;
+
     writeUInt16BE(value: number, offset: number, noAssert?: boolean): number;
+
     writeUInt32LE(value: number, offset: number, noAssert?: boolean): number;
+
     writeUInt32BE(value: number, offset: number, noAssert?: boolean): number;
+
     writeBigUInt64LE(value: bigint, offset: number): number;
+
     writeBigUInt64BE(value: bigint, offset: number): number;
+
     writeInt8(value: number, offset: number, noAssert?: boolean): number;
+
     writeInt16LE(value: number, offset: number, noAssert?: boolean): number;
+
     writeInt16BE(value: number, offset: number, noAssert?: boolean): number;
+
     writeInt32LE(value: number, offset: number, noAssert?: boolean): number;
+
     writeInt32BE(value: number, offset: number, noAssert?: boolean): number;
+
     writeBigInt64LE(value: bigint, offset: number): number;
+
     writeBigInt64BE(value: bigint, offset: number): number;
+
     writeFloatLE(value: number, offset: number, noAssert?: boolean): number;
+
     writeFloatBE(value: number, offset: number, noAssert?: boolean): number;
+
     writeDoubleLE(value: number, offset: number, noAssert?: boolean): number;
+
     writeDoubleBE(value: number, offset: number, noAssert?: boolean): number;
+
     fill(value: any, offset?: number, end?: number): this;
+
     indexOf(value: string | number | Buffer, byteOffset?: number, encoding?: string): number;
+
     lastIndexOf(value: string | number | Buffer, byteOffset?: number, encoding?: string): number;
+
     includes(value: string | number | Buffer, byteOffset?: number, encoding?: string): boolean;
 
     /**
@@ -99,7 +158,9 @@ export class Buffer extends Uint8Array {
      * @param buffer The buffer to copy.
      */
     constructor(buffer: Buffer);
+
     prototype: Buffer;
+
     /**
      * Allocates a new Buffer using an {array} of octets.
      *
@@ -131,12 +192,14 @@ export class Buffer extends Uint8Array {
      * @param str
      */
     static from(str: string, encoding?: string): Buffer;
+
     /**
      * Returns true if {obj} is a Buffer
      *
      * @param obj object to test.
      */
     static isBuffer(obj: any): obj is Buffer;
+
     /**
      * Returns true if {encoding} is a valid encoding argument.
      * Valid string encodings in Node 0.12: 'ascii'|'utf8'|'utf16le'|'ucs2'(alias of 'utf16le')|'base64'|'binary'(deprecated)|'hex'
@@ -144,6 +207,7 @@ export class Buffer extends Uint8Array {
      * @param encoding string to test.
      */
     static isEncoding(encoding: string): boolean;
+
     /**
      * Gives the actual byte length of a string. encoding defaults to 'utf8'.
      * This is not the same as String.prototype.length since that returns the number of characters in a string.
@@ -152,6 +216,7 @@ export class Buffer extends Uint8Array {
      * @param encoding encoding used to evaluate (defaults to 'utf8')
      */
     static byteLength(string: string, encoding?: string): number;
+
     /**
      * Returns a buffer which is the result of concatenating all the buffers in the list together.
      *
@@ -164,10 +229,12 @@ export class Buffer extends Uint8Array {
      *   If totalLength is not provided, it is read from the buffers in the list. However, this adds an additional loop to the function, so it is faster to provide the length explicitly.
      */
     static concat(list: Uint8Array[], totalLength?: number): Buffer;
+
     /**
      * The same as buf1.compare(buf2).
      */
     static compare(buf1: Uint8Array, buf2: Uint8Array): number;
+
     /**
      * Allocates a new buffer of {size} octets.
      *
@@ -177,6 +244,7 @@ export class Buffer extends Uint8Array {
      * @param encoding encoding used for call to buf.fill while initializing
      */
     static alloc(size: number, fill?: string | Buffer | number, encoding?: string): Buffer;
+
     /**
      * Allocates a new buffer of {size} octets, leaving memory not initialized, so the contents
      * of the newly created Buffer are unknown and may contain sensitive data.
@@ -184,6 +252,7 @@ export class Buffer extends Uint8Array {
      * @param size count of octets to allocate
      */
     static allocUnsafe(size: number): Buffer;
+
     /**
      * Allocates a new non-pooled buffer of {size} octets, leaving memory not initialized, so the contents
      * of the newly created Buffer are unknown and may contain sensitive data.

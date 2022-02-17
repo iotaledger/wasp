@@ -49,27 +49,27 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-    static mintSupply(_ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
-        const f = new MintSupplyCall();
+	static mintSupply(_ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
+		const f = new MintSupplyCall();
 		f.params = new sc.MutableMintSupplyParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static transferOwnership(_ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
-        const f = new TransferOwnershipCall();
+	static transferOwnership(_ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
+		const f = new TransferOwnershipCall();
 		f.params = new sc.MutableTransferOwnershipParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static updateMetadata(_ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
-        const f = new UpdateMetadataCall();
+	static updateMetadata(_ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
+		const f = new UpdateMetadataCall();
 		f.params = new sc.MutableUpdateMetadataParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 
-    static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
-        const f = new GetInfoCall();
+	static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
+		const f = new GetInfoCall();
 		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
+		return f;
+	}
 }

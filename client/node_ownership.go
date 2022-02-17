@@ -13,9 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func (c *WaspClient) NodeOwnershipCertificate(nodePubKey cryptolib.PublicKey, ownerAddress iotago.Address) (governance.NodeOwnershipCertificate, error) {
+func (c *WaspClient) NodeOwnershipCertificate(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) (governance.NodeOwnershipCertificate, error) {
 	req := model.NodeOwnerCertificateRequest{
-		NodePubKey:   model.NewBytes(nodePubKey),
+		NodePubKey:   model.NewBytes(nodePubKey.AsBytes()),
 		OwnerAddress: model.NewAddress(ownerAddress),
 	}
 	res := model.NodeOwnerCertificateResponse{}

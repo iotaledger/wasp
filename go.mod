@@ -8,12 +8,12 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.32.0
+	github.com/bytecodealliance/wasmtime-go v0.34.0
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/iotaledger/goshimmer v0.8.5
-	github.com/iotaledger/hive.go v0.0.0-20220131083956-9001f8dfb134
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220119141545-2dab9f1c12a5
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220202150501-46c14920440d
+	github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220211160236-b8145d4bc382
 	github.com/knadh/koanf v1.3.3
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.15.0
@@ -50,6 +50,7 @@ replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
 	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220204023422-c467ab1fee84
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go
+	github.com/iotaledger/goshimmer => github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497
 	github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260
 	go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
 )

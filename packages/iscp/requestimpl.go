@@ -51,7 +51,7 @@ type OffLedgerRequestData struct {
 	contract   Hname
 	entryPoint Hname
 	params     dict.Dict
-	publicKey  cryptolib.PublicKey
+	publicKey  *cryptolib.PublicKey
 	sender     *iotago.Ed25519Address
 	signature  []byte
 	nonce      uint64
@@ -65,6 +65,7 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
+		publicKey:  cryptolib.NewKeyPair().GetPublicKey(),
 		nonce:      nonce,
 	}
 }
@@ -151,12 +152,13 @@ func (r *OffLedgerRequestData) essenceBytes() []byte {
 }
 
 func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	publicKey := r.publicKey.AsBytes()
 	mu.Write(r.chainID).
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
-		WriteUint8(uint8(len(r.publicKey))).
-		WriteBytes(r.publicKey).
+		WriteUint8(uint8(len(publicKey))).
+		WriteBytes(publicKey).
 		WriteUint64(r.nonce).
 		WriteUint64(r.gasBudget)
 	mu.WriteBool(r.allowance != nil)
@@ -184,7 +186,9 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if err != nil {
 		return err
 	}
-	if r.publicKey, err = mu.ReadBytes(int(pkLen)); err != nil {
+	if publicKey, err := mu.ReadBytes(int(pkLen)); err != nil {
+		return err
+	} else if r.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey); err != nil {
 		return err
 	}
 	if r.nonce, err = mu.ReadUint64(); err != nil {
@@ -213,8 +217,8 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 
 // Sign signs essence
 func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
-	r.publicKey = key.PublicKey
-	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
+	r.publicKey = key.GetPublicKey()
+	r.signature, _ = key.GetPrivateKey().Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger
@@ -239,7 +243,7 @@ func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestD
 
 // VerifySignature verifies essence signature
 func (r *OffLedgerRequestData) VerifySignature() bool {
-	return cryptolib.Verify(r.publicKey, r.essenceBytes(), r.signature)
+	return r.publicKey.Verify(r.essenceBytes(), r.signature)
 }
 
 // ID returns request id for this request
@@ -270,7 +274,7 @@ func (r *OffLedgerRequestData) SenderAccount() *AgentID {
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	if r.sender == nil {
-		r.sender = cryptolib.Ed25519AddressFromPubKey(r.publicKey)
+		r.sender = r.publicKey.AsEd25519Address()
 	}
 	return r.sender
 }
@@ -416,7 +420,7 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 
 func (r *OnLedgerRequestData) SenderAccount() *AgentID {
 	if r.SenderAddress() == nil || r.requestMetadata == nil {
-		return &NilAgentID
+		return nil
 	}
 	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract)
 }
@@ -441,7 +445,7 @@ func (r *OnLedgerRequestData) CallTarget() CallTarget {
 
 func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	switch out := r.output.(type) {
-	case *iotago.ExtendedOutput:
+	case *iotago.BasicOutput:
 		return out.Ident()
 	case *iotago.FoundryOutput:
 		return out.Ident()
@@ -481,7 +485,15 @@ func (r *OnLedgerRequestData) Features() Features {
 }
 
 func (r *OnLedgerRequestData) String() string {
-	return fmt.Sprintf("(not impl) ID: %s", r.ID()) // TODO
+	req := r.requestMetadata
+	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, GasBudget: %d }",
+		r.ID().String(),
+		req.SenderContract.String(),
+		req.TargetContract.String(),
+		req.EntryPoint.String(),
+		req.Params.String(),
+		req.GasBudget,
+	)
 }
 
 func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {
@@ -613,9 +625,14 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 	return ret, nil
 }
 
-func (rid RequestID) OutputID() *iotago.UTXOInput {
+func (rid RequestID) UTXOInput() *iotago.UTXOInput {
 	r := iotago.UTXOInput(rid)
 	return &r
+}
+
+func (rid RequestID) OutputID() iotago.OutputID {
+	r := iotago.UTXOInput(rid)
+	return r.ID()
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
@@ -633,11 +650,11 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return OID(rid.OutputID())
+	return OID(rid.UTXOInput())
 }
 
 func (rid RequestID) Short() string {
-	oid := rid.OutputID()
+	oid := rid.UTXOInput()
 	txid := hex.EncodeToString(oid.TransactionID[:])
 	return fmt.Sprintf("%d/%s", oid.TransactionOutputIndex, txid[:6]+"..")
 }

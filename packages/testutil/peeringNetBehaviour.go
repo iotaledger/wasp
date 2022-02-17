@@ -107,7 +107,7 @@ func (n *peeringNetUnreliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 				return
 			}
 			if rand.Intn(100) > n.deliverPct {
-				n.log.Debugf("Network dropped message %v -%v-> %v", recv.from.String(), recv.msg.MsgType, dstPubKey.String())
+				n.log.Debugf("Network dropped message %v -%v-> %v", recv.from.AsString(), recv.msg.MsgType, dstPubKey.AsString())
 				continue // Drop the message.
 			}
 			//
@@ -138,7 +138,7 @@ func (n *peeringNetUnreliable) sendDelayed(recv *peeringMsg, outCh chan *peering
 	}
 	n.log.Debugf(
 		"Network delivers message %v -%v-> %v (duplicate %v/%v, delay=%vms)",
-		recv.from.String(), recv.msg.MsgType, dstPubKey.String(), dupNum, dupCount, delay.Milliseconds(),
+		recv.from.AsString(), recv.msg.MsgType, dstPubKey.AsString(), dupNum, dupCount, delay.Milliseconds(),
 	)
 	safeSendPeeringMsg(outCh, recv, n.log)
 }

@@ -107,16 +107,16 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
-	pubKey0, err := cryptolib.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey0, err := cryptolib.NewPublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
-	pubKey1, err := cryptolib.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey1, err := cryptolib.NewPublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
 
-	address := cryptolib.Ed25519AddressFromPubKey(cryptolib.PublicKey{})
+	address := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
 
 	return &chain.CommitteeInfo{
 		Address:       address,
@@ -127,13 +127,13 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 			{
 				Index:     0,
 				NetID:     "localhost:2000",
-				PubKey:    &pubKey0,
+				PubKey:    pubKey0,
 				Connected: true,
 			},
 			{
 				Index:     1,
 				NetID:     "localhost:2001",
-				PubKey:    &pubKey1,
+				PubKey:    pubKey1,
 				Connected: true,
 			},
 		},
@@ -160,8 +160,8 @@ type dashboardTestEnv struct {
 }
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
-	ch := e.solo.NewChain(&cryptolib.KeyPair{}, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[*ch.ChainID] = ch
+	ch := e.solo.NewChain(cryptolib.NewKeyPair(), fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	e.wasp.chains[ch.ChainID.Array()] = ch
 	return ch
 }
 

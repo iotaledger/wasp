@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_CHAIN_ID_LENGTH: usize = 33;
+pub const SC_CHAIN_ID_LENGTH: usize = 20;
 
 #[derive(PartialEq, Clone)]
 pub struct ScChainID {
@@ -15,12 +15,9 @@ pub struct ScChainID {
 }
 
 impl ScChainID {
-    pub fn new(buf: &[u8]) -> ScChainID {
-        chain_id_from_bytes(buf)
-    }
-
     pub fn address(&self) -> ScAddress {
-        address_from_bytes(&self.id)
+        let buf = [SC_ADDRESS_ALIAS];
+        address_from_bytes(&[&buf[..], &self.id[..]].concat())
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -44,16 +41,10 @@ pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID) {
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
     if buf.len() == 0 {
-        let mut chain_id = ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
-        chain_id.id[0] = 2; // ledgerstate.AliasAddressType
-        return chain_id;
+        return ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
     }
     if buf.len() != SC_CHAIN_ID_LENGTH {
         panic("invalid ChainID length");
-    }
-    // must be ledgerstate.AliasAddressType
-    if buf[0] != 2 {
-        panic("invalid ChainID: not an alias address");
     }
     ScChainID { id: buf.try_into().expect("WTF?") }
 }

@@ -6,8 +6,8 @@ import { Buffer } from "./buffer";
 import { IResponse } from "./api_common/response_models";
 import * as requestSender from "./api_common/request_sender";
 import { Base58, ED25519, Hash, IKeyPair } from "./crypto";
-import { Colors } from "./colors";
-import { CoreAccountsService } from "./coreaccounts/service";
+import {Colors} from "./colors";
+import {CoreAccountsService} from "./coreaccounts/service";
 
 interface ICallViewResponse extends IResponse {
     Items: [{ Key: string; Value: string }];
@@ -102,8 +102,8 @@ export class WaspClient {
         const iotaBalance = balances.has(Colors.IOTA_COLOR_STRING)
             ? balances.get(Colors.IOTA_COLOR_STRING)
             : balances.has(Colors.IOTA_COLOR)
-            ? balances.get(Colors.IOTA_COLOR)
-            : 0n;
+                ? balances.get(Colors.IOTA_COLOR)
+                : 0n;
         return iotaBalance ?? 0n;
     }
 }

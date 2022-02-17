@@ -5,7 +5,17 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScAddressLength = 33
+const (
+	ScAddressAlias   = 8
+	ScAddressEd25519 = 0
+	ScAddressNFT     = 16
+
+	ScLengthAlias   = 21
+	ScLengthEd25519 = 33
+	ScLengthNFT     = 21
+
+	ScAddressLength = ScLengthEd25519
+)
 
 type ScAddress struct {
 	id [ScAddressLength]byte
@@ -26,41 +36,58 @@ func (o ScAddress) String() string {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// TODO address type-dependent encoding/decoding?
 func AddressDecode(dec *WasmDecoder) ScAddress {
-	return addressFromBytesUnchecked(dec.FixedBytes(ScAddressLength))
+	addr := ScAddress{}
+	copy(addr.id[:], dec.FixedBytes(ScAddressLength))
+	return addr
 }
 
 func AddressEncode(enc *WasmEncoder, value ScAddress) {
-	enc.FixedBytes(value.Bytes(), ScAddressLength)
+	enc.FixedBytes(value.id[:], ScAddressLength)
 }
 
 func AddressFromBytes(buf []byte) ScAddress {
+	addr := ScAddress{}
 	if len(buf) == 0 {
-		return ScAddress{}
+		return addr
 	}
-	if len(buf) != ScAddressLength {
-		panic("invalid Address length")
+	switch buf[0] {
+	case ScAddressAlias:
+		if len(buf) != ScLengthAlias {
+			panic("invalid Address length: Alias")
+		}
+	case ScAddressEd25519:
+		if len(buf) != ScLengthEd25519 {
+			panic("invalid Address length: Ed25519")
+		}
+	case ScAddressNFT:
+		if len(buf) != ScLengthNFT {
+			panic("invalid Address length: NFT")
+		}
+	default:
+		panic("invalid Address type")
 	}
-	// max ledgerstate.AliasAddressType
-	if buf[0] > 2 {
-		panic("invalid Address: address type > 2")
-	}
-	return addressFromBytesUnchecked(buf)
+	copy(addr.id[:], buf)
+	return addr
 }
 
 func AddressToBytes(value ScAddress) []byte {
-	return value.id[:]
+	switch value.id[0] {
+	case ScAddressAlias:
+		return value.id[:ScLengthAlias]
+	case ScAddressEd25519:
+		return value.id[:ScLengthEd25519]
+	case ScAddressNFT:
+		return value.id[:ScLengthNFT]
+	default:
+		panic("unexpected Address type")
+	}
 }
 
 func AddressToString(value ScAddress) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])
-}
-
-func addressFromBytesUnchecked(buf []byte) ScAddress {
-	o := ScAddress{}
-	copy(o.id[:], buf)
-	return o
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

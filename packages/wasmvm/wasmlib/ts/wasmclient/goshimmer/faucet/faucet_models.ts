@@ -1,5 +1,5 @@
-import type { IResponse } from '../../api_common/response_models';
-import { Buffer } from '../../buffer';
+import type {IResponse} from '../../api_common/response_models';
+import {Buffer} from '../../buffer';
 
 export interface IFaucetRequest {
     accessManaPledgeID: string;

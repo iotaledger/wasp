@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -45,7 +47,7 @@ type ChainCoreMocked interface {
 	//  Mocking interfaces should be available only in the testing environment
 	// Most of these methods are made public for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
-	Enqueueiotago(chainOutput *iotago.AliasOutput, timestamp time.Time)
+	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
 	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
@@ -98,9 +100,9 @@ type Committee interface {
 
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
-	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
-	NodeConnectionHandleOutputFun             func(iotago.Output)
-	NodeConnectionHandleUnspentAliasOutputFun func(*iotago.AliasOutput, time.Time)
+	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
+	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
+	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
 )
 
 type NodeConnection interface {
@@ -112,7 +114,7 @@ type NodeConnection interface {
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	PullConfirmedOutput(addr iotago.Address, outputID *iotago.OutputID)
+	PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	DetachFromTransactionReceived(*iotago.AliasAddress)
@@ -129,7 +131,7 @@ type ChainNodeConnection interface {
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
 	PullState()
 	PullTransactionInclusionState(txid iotago.TransactionID)
-	PullConfirmedOutput(outputID *iotago.OutputID)
+	PullConfirmedOutput(outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 	DetachFromTransactionReceived()
@@ -144,8 +146,8 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(msg iotago.Output)
-	EnqueueStateCandidateMsg(state.VirtualStateAccess, iotago.OutputID)
+	EnqueueOutputMsg(iotago.Output, *iotago.UTXOInput)
+	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	SetChainPeers(peers []*cryptolib.PublicKey)
@@ -178,23 +180,14 @@ type WAL interface {
 	Read(i uint32) ([]byte, error)
 }
 
-type MempoolInfo struct {
-	TotalPool      int
-	ReadyCounter   int
-	InBufCounter   int
-	OutBufCounter  int
-	InPoolCounter  int
-	OutPoolCounter int
-}
-
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
 	SyncedStateHash       hashing.HashValue
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
-	StateOutputID         iotago.OutputID
-	StateOutputHash       hashing.HashValue
+	StateOutputID         *iotago.UTXOInput
+	StateOutputCommitment hashing.HashValue
 	StateOutputTimestamp  time.Time
 }
 
@@ -222,6 +215,7 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionPostedTime() time.Time
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
+	GetCurrentStateIndex() uint32
 }
 
 type ReadyListRecord struct {
@@ -246,7 +240,7 @@ type PeerStatus struct {
 
 type ChainTransitionEventData struct {
 	VirtualState    state.VirtualStateAccess
-	ChainOutput     *iotago.AliasOutput
+	ChainOutput     *iscp.AliasOutputWithID
 	OutputTimestamp time.Time
 }
 

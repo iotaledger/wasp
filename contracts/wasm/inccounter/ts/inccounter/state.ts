@@ -9,25 +9,25 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableIncCounterState extends wasmtypes.ScProxy {
-    counter(): wasmtypes.ScImmutableInt64 {
+	counter(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.StateCounter));
 	}
 
-    numRepeats(): wasmtypes.ScImmutableInt64 {
+	numRepeats(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.StateNumRepeats));
 	}
 }
 
 export class MutableIncCounterState extends wasmtypes.ScProxy {
-    asImmutable(): sc.ImmutableIncCounterState {
+	asImmutable(): sc.ImmutableIncCounterState {
 		return new sc.ImmutableIncCounterState(this.proxy);
 	}
 
-    counter(): wasmtypes.ScMutableInt64 {
+	counter(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.StateCounter));
 	}
 
-    numRepeats(): wasmtypes.ScMutableInt64 {
+	numRepeats(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.StateNumRepeats));
 	}
 }

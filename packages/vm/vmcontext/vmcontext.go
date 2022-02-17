@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -39,6 +38,7 @@ type VMContext struct {
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
+	dustAssumptions      *transaction.DustDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
@@ -72,7 +72,7 @@ type VMContext struct {
 type callContext struct {
 	caller             *iscp.AgentID // calling agent
 	contract           iscp.Hname    // called contract
-	params             dict.Dict     // params passed
+	params             iscp.Params   // params passed
 	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
@@ -122,34 +122,33 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
-	var dustAssumptions *transaction.DustDepositAssumption
 
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
 
 		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
-			dustAssumptions = accounts.GetDustAssumptions(s)
+			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
 		currentDustDepositValues := transaction.NewDepositEstimate(task.RentStructure)
-		if currentDustDepositValues.AnchorOutput > dustAssumptions.AnchorOutput ||
-			currentDustDepositValues.NativeTokenOutput > dustAssumptions.NativeTokenOutput {
+		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
+			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
 			panic(ErrInconsistentDustAssumptions)
 		}
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
+			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
 		})
 
 		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
+		ret.dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
 	}
 
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
 		return ret.loadNativeTokenOutput(id)
 	}
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
@@ -157,10 +156,10 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
-		&task.AnchorOutputID,
+		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
-		*dustAssumptions,
+		*ret.dustAssumptions,
 		task.RentStructure,
 	)
 

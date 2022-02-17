@@ -101,7 +101,7 @@ export function funcRunRecursion(ctx: wasmlib.ScFuncContext, f: sc.RunRecursionC
 
 export function funcSendToAddress(ctx: wasmlib.ScFuncContext, f: sc.SendToAddressContext): void {
     let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
-    ctx.transferToAddress(f.params.address().value(), transfer);
+    ctx.send(f.params.address().value(), transfer);
 }
 
 export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): void {

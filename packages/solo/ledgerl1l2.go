@@ -185,7 +185,10 @@ func (fp *foundryParams) WithTag(tag *iotago.TokenTag) *foundryParams {
 	return fp
 }
 
-const allowanceForFoundryDustDeposit = 1000
+const (
+	allowanceForFoundryDustDeposit = 1000
+	allowanceForModifySupply       = 1000
+)
 
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
@@ -198,7 +201,7 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	if fp.maxSupply != nil {
 		par.Set(accounts.ParamMaxSupply, codec.EncodeBigIntAbs(fp.maxSupply))
 	}
-	user := &fp.ch.OriginatorPrivateKey
+	user := fp.ch.OriginatorPrivateKey
 	if fp.user != nil {
 		user = fp.user
 	}
@@ -245,7 +248,8 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-	)
+	).
+		WithAllowance(iscp.NewAssetsIotas(allowanceForModifySupply)) // enough allowance is needed for the dust deposit when token is minted first on the chain
 	g, _, err := ch.EstimateGasOnLedger(req, user, true)
 	if err != nil {
 		return err
@@ -253,7 +257,7 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 
 	req.WithGasBudget(g)
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 	_, err = ch.PostRequestSync(req, user)
 	return err
@@ -268,7 +272,7 @@ func (ch *Chain) DestroyTokensOnL2(foundryOrTokenID, amount interface{}, user *c
 	).WithGasBudget(DestroyTokensGasBudgetIotas)
 
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 	_, err := ch.PostRequestSync(req, user)
 	return err
@@ -284,7 +288,7 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 	req.AddAssetsNativeTokens(tokenID, amount)
 	req.AddAllowanceNativeTokens(tokenID, amount)
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 	_, err := ch.PostRequestSync(req, user)
 	return err
