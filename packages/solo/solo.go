@@ -221,7 +221,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		feeTarget = validatorFeeTarget[0]
 	}
 
-	outs, outIDs := env.UnspentOutputs(originatorAddr)
+	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
 		stateAddr,
@@ -277,7 +277,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	outs, ids := env.UnspentOutputs(originatorAddr)
+	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
 		chainID,
@@ -453,17 +453,6 @@ func (ch *Chain) collateAndRunBatch() bool {
 func (ch *Chain) BacklogLen() int {
 	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
-}
-
-func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
-	allOuts := env.utxoDB.GetUnspentOutputs(addr)
-	ids := make(iotago.OutputIDs, len(allOuts))
-	i := 0
-	for id, _ := range allOuts {
-		ids[i] = id
-		i++
-	}
-	return allOuts, ids
 }
 
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger

@@ -125,6 +125,7 @@ func TestConsumeRequest(t *testing.T) {
 	stateControllerAddr := stateControllerKeyPair.GetPublicKey().AsEd25519Address()
 	addrKeys := stateController.AddressKeysForEd25519Address(stateControllerAddr)
 
+	aliasOut1ID := tpkg.RandOutputID(0)
 	aliasOut1 := &iotago.AliasOutput{
 		Amount:     1337,
 		AliasID:    tpkg.RandAliasAddress().AliasID(),
@@ -136,6 +137,7 @@ func TestConsumeRequest(t *testing.T) {
 	}
 	aliasOut1Inp := tpkg.RandUTXOInput()
 
+	reqID := tpkg.RandOutputID(1)
 	req := &iotago.BasicOutput{
 		Amount: 1337,
 		Conditions: iotago.UnlockConditions{
@@ -158,7 +160,12 @@ func TestConsumeRequest(t *testing.T) {
 		Inputs:    iotago.Inputs{aliasOut1Inp, reqInp},
 		Outputs:   iotago.Outputs{aliasOut2},
 	}
-	sigs, err := essence.Sign(addrKeys)
+	sigs, err := essence.Sign(
+		iotago.OutputIDs{aliasOut1ID, reqID}.
+			OrderedSet(iotago.OutputSet{aliasOut1ID: aliasOut1, reqID: req}).
+			MustCommitment(),
+		addrKeys,
+	)
 	require.NoError(t, err)
 
 	tx := &iotago.Transaction{
