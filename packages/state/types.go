@@ -1,6 +1,7 @@
 package state
 
 import (
+	"encoding/hex"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -9,15 +10,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
+type Commitment hashing.HashValue
+
 // VirtualStateAccess is a virtualized access interface to the chain's database
 // It consists of state reader and the buffer to collect mutations to key values
 type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
-	StateCommitment() hashing.HashValue
+	StateCommitment() Commitment
 	KVStoreReader() kv.KVStoreReader
-	ApplyStateUpdates(...StateUpdate)
+	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
 	ExtractBlock() (Block, error)
 	Commit(blocks ...Block) error
@@ -53,12 +56,17 @@ type Block interface {
 	Bytes() []byte
 }
 
-const OriginStateHashBase58 = "96yCdioNdifMb8xTeHQVQ8BzDnXDbRBoYzTq7iVaymvV"
+func (c Commitment) String() string {
+	return (hashing.HashValue)(c).String()
+}
 
-func OriginStateHash() hashing.HashValue {
-	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)
+const OriginStateCommitmentHex = "96yCdioNdifMb8xTeHQVQ8BzDnXDbRBoYzTq7iVaymvV"
+
+func OriginStateCommitment() (ret Commitment) {
+	retBin, err := hex.DecodeString(OriginStateCommitmentHex)
 	if err != nil {
 		panic(err)
 	}
-	return ret
+	copy(ret[:], retBin)
+	return
 }

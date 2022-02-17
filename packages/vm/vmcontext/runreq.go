@@ -73,7 +73,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }

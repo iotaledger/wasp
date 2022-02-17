@@ -9,9 +9,9 @@ const (
 	ObjectTypeChainRecord
 	ObjectTypeCommitteeRecord
 	ObjectTypeDistributedKeyData
-	ObjectTypeStateHash
+	ObjectTypeState
+	ObjectTypeTrie
 	ObjectTypeBlock
-	ObjectTypeStateVariable
 	ObjectTypeNodeIdentity
 	ObjectTypeBlobCache
 	ObjectTypeBlobCacheTTL

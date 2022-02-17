@@ -446,7 +446,7 @@ func TestVirtualStateMustOptimistic2(t *testing.T) {
 
 	hashPrev := hash
 	upd := NewStateUpdateWithBlocklogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), vsOpt.PreviousStateHash())
-	vsOpt.ApplyStateUpdates(upd)
+	vsOpt.ApplyStateUpdate(upd)
 	hash = vs.StateCommitment()
 	hashOpt = vsOpt.StateCommitment()
 	require.EqualValues(t, hash, hashOpt)

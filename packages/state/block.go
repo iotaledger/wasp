@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
 
@@ -57,9 +58,7 @@ func newOriginBlock() Block {
 }
 
 func (b *blockImpl) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = b.Write(&buf)
-	return buf.Bytes()
+	return util.MustBytes(b)
 }
 
 func (b *blockImpl) String() string {

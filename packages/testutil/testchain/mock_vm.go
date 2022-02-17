@@ -98,7 +98,7 @@ func NextState(
 		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}*/
 
-	nextvs.ApplyStateUpdates(suBlockIndex, suCounter /*, suReqs*/)
+	nextvs.ApplyStateUpdate(suBlockIndex, suCounter /*, suReqs*/)
 	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
 
 	consumedOutput := chainOutput.GetAliasOutput()

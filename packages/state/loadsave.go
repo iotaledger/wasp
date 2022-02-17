@@ -2,6 +2,9 @@ package state
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie/merkle_trie"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
@@ -10,18 +13,49 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const maxKeyLen = 4096
+
+type mustKVStoreBatch struct {
+	batch kvstore.BatchedMutations
+}
+
+func (k *mustKVStoreBatch) Set(key kv.Key, value []byte) {
+	if err := k.batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeTrie, []byte(key)), value); err != nil {
+		panic(err)
+	}
+}
+
+func (k *mustKVStoreBatch) Del(key kv.Key) {
+	if err := k.batch.Delete(dbkeys.MakeKey(dbkeys.ObjectTypeTrie, []byte(key))); err != nil {
+		panic(err)
+	}
+}
+
 // Commit saves updates collected in the virtual state to DB together with the provided blocks in one transaction
 // Mutations must be non-empty otherwise it is NOP
-// It the log of updates is not taken into account
 func (vs *virtualStateAccess) Commit(blocks ...Block) error {
 	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
 		return nil
 	}
+	// generate trie update
+	sub := subRealm(vs.db, []byte{dbkeys.ObjectTypeTrie})
+	stateTrie := trie.New(merkle_trie.CommitmentLogic, kv.NewHiveKVStoreReader(sub))
+	for k, v := range vs.kvs.Mutations().Sets {
+		stateTrie.Update([]byte(k), v)
+	}
+	for k := range vs.kvs.Mutations().Dels {
+		stateTrie.Update([]byte(k), nil)
+	}
+	stateTrie.Commit()
+
 	batch := vs.db.Batched()
+	stateTrie.FlushCache(&mustKVStoreBatch{batch})
+
+	// TODO ----------------------------------
 
 	stateCommitment := vs.StateCommitment()
-	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), stateCommitment.Bytes()); err != nil {
+	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeTrie), stateCommitment.Bytes()); err != nil {
 		return err
 	}
 
@@ -34,12 +68,12 @@ func (vs *virtualStateAccess) Commit(blocks ...Block) error {
 
 	// store mutations
 	for k, v := range vs.kvs.Mutations().Sets {
-		if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateVariable, []byte(k)), v); err != nil {
+		if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(k)), v); err != nil {
 			return err
 		}
 	}
 	for k := range vs.kvs.Mutations().Dels {
-		if err := batch.Delete(dbkeys.MakeKey(dbkeys.ObjectTypeStateVariable, []byte(k))); err != nil {
+		if err := batch.Delete(dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(k))); err != nil {
 			return err
 		}
 	}

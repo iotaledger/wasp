@@ -60,7 +60,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}*/
 
-	nextvs.ApplyStateUpdates(suBlockIndex, suCounter /*, suReqs*/)
+	nextvs.ApplyStateUpdate(suBlockIndex, suCounter /*, suReqs*/)
 	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
 	//nextStateHash := nextvs.StateCommitment()

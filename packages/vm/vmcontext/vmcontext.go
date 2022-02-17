@@ -106,7 +106,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		panic(coreutil.ErrorStateInvalidated)
 	}
 	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
-	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
+	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	ret := &VMContext{
@@ -141,7 +141,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
 		})
 
-		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
+		ret.virtualState.ApplyStateUpdate(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
@@ -174,7 +174,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
 	vmctx.saveInternalUTXOs()
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -239,7 +239,7 @@ func (vmctx *VMContext) closeBlockContexts() {
 		b := vmctx.blockContext[hname]
 		b.onClose(b.obj)
 	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 }
 
 func (vmctx *VMContext) saveInternalUTXOs() {
