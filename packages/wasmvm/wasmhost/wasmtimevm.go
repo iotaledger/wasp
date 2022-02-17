@@ -11,31 +11,55 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
-	engine    *wasmtime.Engine
-	instance  *wasmtime.Instance
-	interrupt *wasmtime.InterruptHandle
-	linker    *wasmtime.Linker
-	memory    *wasmtime.Memory
-	module    *wasmtime.Module
-	store     *wasmtime.Store
+	engine       *wasmtime.Engine
+	instance     *wasmtime.Instance
+	interrupt    *wasmtime.InterruptHandle
+	linker       *wasmtime.Linker
+	memory       *wasmtime.Memory
+	module       *wasmtime.Module
+	store        *wasmtime.Store
+	remainingGas uint64
 }
 
 func NewWasmTimeVM() WasmVM {
 	vm := &WasmTimeVM{}
 	config := wasmtime.NewConfig()
 	config.SetInterruptable(true)
+	config.SetConsumeFuel(true)
 	vm.engine = wasmtime.NewEngineWithConfig(config)
 	return vm
 }
 
-func (vm *WasmTimeVM) GasBudget(budget uint64) {
-	// TODO turn on gas usage for VM somewhere
-	// set gas budget to provided budget here
+// GasBudget sets gas budget. Each time GasBudget is called, we will restart counting the total burned gas
+func (vm *WasmTimeVM) GasBudget(budget uint64) error {
+	remaining, err := vm.store.ConsumeFuel(0)
+	if err != nil {
+		return err
+	}
+
+	vm.remainingGas = remaining
+
+	if budget > remaining {
+		return vm.store.AddFuel(budget - remaining)
+	}
+
+	_, err = vm.store.ConsumeFuel(remaining - budget)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
+// GasBurned will return the gas has been burned by wasmtime since the last time WasmTimeVM.GasBudget was called
 func (vm *WasmTimeVM) GasBurned() uint64 {
-	// TODO return actual amount of gas burned by VM
-	return 0
+	gasBurned, ok := vm.store.FuelConsumed()
+	if !ok {
+		return 0
+	}
+
+	// gasBurned is the gas has been burned since the vm.store instance was been created
+	// so we need to subtract the remaining gas before calling vm.GasBudget
+	return gasBurned - vm.remainingGas
 }
 
 func (vm *WasmTimeVM) Instantiate() (err error) {

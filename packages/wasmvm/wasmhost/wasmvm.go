@@ -37,7 +37,7 @@ var (
 )
 
 type WasmVM interface {
-	GasBudget(budget uint64)
+	GasBudget(budget uint64) error
 	GasBurned() uint64
 	GasEnable(enable bool)
 	Instantiate() error
@@ -61,8 +61,9 @@ type WasmVMBase struct {
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) GasBudget(budget uint64) {
+func (vm *WasmVMBase) GasBudget(budget uint64) error {
 	// ignore gas budget
+	return nil
 }
 
 func (vm *WasmVMBase) GasBurned() uint64 {
