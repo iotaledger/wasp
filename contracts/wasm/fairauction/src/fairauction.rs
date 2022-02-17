@@ -57,7 +57,7 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
 }
 
 pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
-    let mut bid_amount = ctx.incoming().balance(&ScColor::IOTA);
+    let mut bid_amount = ctx.allowance().balance(&ScColor::IOTA);
     ctx.require(bid_amount > 0, "Missing bid amount");
 
     let color = f.params.color().value();
@@ -112,7 +112,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     if color == ScColor::IOTA || color == ScColor::MINT {
         ctx.panic("Reserved auction token color");
     }
-    let num_tokens = ctx.incoming().balance(&color);
+    let num_tokens = ctx.allowance().balance(&color);
     if num_tokens == 0 {
         ctx.panic("Missing auction tokens");
     }
@@ -150,7 +150,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     if margin == 0 {
         margin = 1;
     }
-    let deposit = ctx.incoming().balance(&ScColor::IOTA);
+    let deposit = ctx.allowance().balance(&ScColor::IOTA);
     if deposit < margin {
         ctx.panic("Insufficient deposit");
     }
@@ -205,10 +205,10 @@ pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
 fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, color: &ScColor, amount: u64) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
+        ctx.send(&agent.address(), &ScTransfers::transfer(color, amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
+    ctx.send(&agent.address(), &ScTransfers::transfer(color, amount));
 }

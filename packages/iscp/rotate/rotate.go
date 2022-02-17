@@ -18,7 +18,7 @@ func IsRotateStateControllerRequest(req iscp.Calldata) bool {
 	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 
-func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress iotago.Address, keyPair cryptolib.KeyPair) iscp.Request {
+func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress iotago.Address, keyPair *cryptolib.KeyPair) iscp.Request {
 	args := dict.New()
 	args.Set(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
 	nonce := uint64(time.Now().UnixNano())

@@ -18,7 +18,7 @@ func verifyReceipts(t *testing.T, w bool, ctx *wasmsolo.SoloContext, requests, p
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, requests+extra, strings.Count(str, "OnLedger::"))
+	require.EqualValues(t, requests+extra, strings.Count(str, "OnLedgerRequestData::"))
 	require.EqualValues(t, panics, strings.Count(str, "panic in VM"))
 }
 
@@ -31,7 +31,7 @@ func TestPanicFull(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgFullPanic)
 
-		verifyReceipts(t, w, ctx, 3, 1)
+		verifyReceipts(t, w, ctx, 4, 1)
 	})
 }
 
@@ -44,7 +44,7 @@ func TestPanicViewCall(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
-		verifyReceipts(t, w, ctx, 2, 0)
+		verifyReceipts(t, w, ctx, 3, 0)
 	})
 }
 
@@ -57,7 +57,7 @@ func TestCallPanicFull(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgFullPanic)
 
-		verifyReceipts(t, w, ctx, 3, 1)
+		verifyReceipts(t, w, ctx, 4, 1)
 	})
 }
 
@@ -70,7 +70,7 @@ func TestCallPanicViewFromFull(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
-		verifyReceipts(t, w, ctx, 3, 1)
+		verifyReceipts(t, w, ctx, 4, 1)
 	})
 }
 
@@ -83,6 +83,6 @@ func TestCallPanicViewFromView(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
-		verifyReceipts(t, w, ctx, 2, 0)
+		verifyReceipts(t, w, ctx, 3, 0)
 	})
 }

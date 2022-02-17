@@ -51,16 +51,19 @@ impl ScAgentID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// note: only alias address can have a non-zero hname
+// so there is no need to encode it when it is always zero
+
 pub fn agent_id_decode(dec: &mut WasmDecoder) -> ScAgentID {
-    if dec.peek() == SC_ADDRESS_ED25519 {
-        return ScAgentID { address: address_decode(dec), hname: ScHname(0) };
+    if dec.peek() == SC_ADDRESS_ALIAS {
+        return ScAgentID { address: address_decode(dec), hname: hname_decode(dec) };
     }
-    ScAgentID { address: address_decode(dec), hname: hname_decode(dec) }
+    ScAgentID { address: address_decode(dec), hname: ScHname(0) }
 }
 
 pub fn agent_id_encode(enc: &mut WasmEncoder, value: &ScAgentID) {
     address_encode(enc, &value.address());
-    if value.address.to_bytes()[0] != SC_ADDRESS_ED25519 {
+    if value.address.to_bytes()[0] == SC_ADDRESS_ALIAS {
         hname_encode(enc, value.hname());
     }
 }
@@ -92,12 +95,12 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
             };
         }
         SC_ADDRESS_NFT => {
-            if buf.len() != SC_LENGTH_NFT + SC_HNAME_LENGTH {
+            if buf.len() != SC_LENGTH_NFT {
                 panic("invalid AgentID length: NFT address");
             }
             return ScAgentID {
-                address: address_from_bytes(&buf[..SC_LENGTH_NFT]),
-                hname: hname_from_bytes(&buf[SC_LENGTH_NFT..]),
+                address: address_from_bytes(buf),
+                hname: ScHname(0),
             };
         }
         NIL_AGENT_ID => {
@@ -119,10 +122,9 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
         return [NIL_AGENT_ID].to_vec();
     }
     let mut buf = address_to_bytes(&value.address);
-    if buf[0] == SC_ADDRESS_ED25519 {
-        return buf;
+    if buf[0] == SC_ADDRESS_ALIAS {
+        buf.extend_from_slice(&hname_to_bytes(value.hname));
     }
-    buf.extend_from_slice(&hname_to_bytes(value.hname));
     buf
 }
 

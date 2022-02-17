@@ -27,6 +27,7 @@ type syncingBlocks struct {
 type syncingBlock struct {
 	requestBlockRetryTime time.Time
 	blockCandidates       map[hashing.HashValue]*candidateBlock
+	receivedFromWAL       bool
 }
 
 func newSyncingBlocks(log *logger.Logger, initialBlockRetry time.Duration) *syncingBlocks {
@@ -206,4 +207,19 @@ func (syncsT *syncingBlocks) blockPollFallbackNeeded() bool {
 		return false
 	}
 	return syncsT.lastPullTime.Sub(syncsT.lastRecvTime) >= pollFallbackDelay
+}
+
+func (syncsT *syncingBlocks) setReceivedFromWAL(i uint32) {
+	block, ok := syncsT.blocks[i]
+	if ok {
+		block.receivedFromWAL = true
+	}
+}
+
+func (syncsT *syncingBlocks) isObtainedFromWAL(i uint32) bool {
+	block, ok := syncsT.blocks[i]
+	if ok {
+		return block.receivedFromWAL
+	}
+	return false
 }

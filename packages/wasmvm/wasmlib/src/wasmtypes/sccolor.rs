@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_COLOR_LENGTH: usize = 32;
+pub const SC_COLOR_LENGTH: usize = 38;
 
 #[derive(PartialEq, Clone, Copy, Eq, Hash)]
 pub struct ScColor {

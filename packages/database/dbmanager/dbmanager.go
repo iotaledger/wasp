@@ -1,6 +1,7 @@
 package dbmanager
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -116,14 +117,14 @@ func (m *DBManager) Close() {
 	}
 }
 
-func (m *DBManager) RunGC(shutdownSignal <-chan struct{}) {
-	m.gc(m.registryDB, shutdownSignal)
+func (m *DBManager) RunGC(_ context.Context) {
+	m.gc(m.registryDB)
 	for _, db := range m.databases {
-		m.gc(db, shutdownSignal)
+		m.gc(db)
 	}
 }
 
-func (m *DBManager) gc(db DB, shutdownSignal <-chan struct{}) {
+func (m *DBManager) gc(db DB) {
 	if !db.RequiresGC() {
 		return
 	}

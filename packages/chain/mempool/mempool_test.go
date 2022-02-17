@@ -55,7 +55,7 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestP
 		if len(f) == 1 {
 			f[0](i, &requestParams)
 		}
-		output := transaction.ExtendedOutputFromPostData(
+		output := transaction.BasicOutputFromPostData(
 			tpkg.RandEd25519Address(),
 			iscp.Hn("dummySenderContract"),
 			requestParams,
@@ -583,7 +583,7 @@ func TestRotateRequest(t *testing.T) {
 	require.True(t, len(ready) == 5)
 
 	kp, addr := testkey.GenKeyAddr()
-	rotateReq := rotate.NewRotateRequestOffLedger(iscp.RandomChainID(), addr, *kp)
+	rotateReq := rotate.NewRotateRequestOffLedger(iscp.RandomChainID(), addr, kp)
 	require.True(t, rotate.IsRotateStateControllerRequest(rotateReq))
 
 	pool.ReceiveRequest(rotateReq)

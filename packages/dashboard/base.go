@@ -103,7 +103,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL()),
 		"args":                   args,
 		"hashref":                hashref,
-		"colorref":               colorref,
+		"assedID":                assetID,
 		"trim":                   trim,
 		"incUint32":              incUint32,
 		"decUint32":              decUint32,

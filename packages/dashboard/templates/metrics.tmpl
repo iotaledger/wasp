@@ -10,7 +10,7 @@
 	<h2 class="section">Chain metrics</h2>
 	<ul>
 		{{range $_, $c := .Chains}}
-			{{ $id := $c.ChainRecord.ChainID.Base58 }}
+			{{ $id := $c.ChainID.Base58 }}
 			<li>
 				<a href="{{ uri "metricsChain" $id }}"><code>{{ $id }}</code></a>
 				{{template "metricsChainAll" (args $id)}}

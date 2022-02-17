@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -894,7 +895,7 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 
 	inputIDs := tpkg.RandOutputIDs(3)
 	inputs := iotago.OutputSet{
-		inputIDs[0]: &iotago.ExtendedOutput{
+		inputIDs[0]: &iotago.BasicOutput{
 			Amount: OneMi,
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: ident1},
@@ -922,15 +923,15 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 			MaximumSupply:     big.NewInt(50),
 			TokenScheme:       &iotago.SimpleTokenScheme{},
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: aliasIdent1},
+				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 			},
 			Blocks: nil,
 		},
 	}
 
-	// set input ExtendedOutput NativeToken to 50 which get burned
+	// set input BasicOutput NativeToken to 50 which get burned
 	foundryNativeTokenID := inputs[inputIDs[2]].(*iotago.FoundryOutput).MustNativeTokenID()
-	inputs[inputIDs[0]].(*iotago.ExtendedOutput).NativeTokens = iotago.NativeTokens{
+	inputs[inputIDs[0]].(*iotago.BasicOutput).NativeTokens = iotago.NativeTokens{
 		{
 			ID:     foundryNativeTokenID,
 			Amount: new(big.Int).SetInt64(50),
@@ -938,7 +939,8 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 	}
 
 	essence := &iotago.TransactionEssence{
-		Inputs: inputIDs.UTXOInputs(),
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputIDs.UTXOInputs(),
 		Outputs: iotago.Outputs{
 			&iotago.AliasOutput{
 				Amount:         OneMi,
@@ -963,14 +965,14 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 				MaximumSupply:     big.NewInt(50),
 				TokenScheme:       &iotago.SimpleTokenScheme{},
 				Conditions: iotago.UnlockConditions{
-					&iotago.AddressUnlockCondition{Address: aliasIdent1},
+					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 				},
 				Blocks: nil,
 			},
 		},
 	}
 
-	sigs, err := essence.Sign(ident1AddrKeys)
+	sigs, err := essence.Sign(inputIDs.OrderedSet(inputs).MustCommitment(), ident1AddrKeys)
 	require.NoError(t, err)
 
 	tx := &iotago.Transaction{

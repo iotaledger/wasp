@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/metrics"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -38,7 +39,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
+	Plugin := node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 	return Plugin
 }
 
@@ -86,6 +87,7 @@ func configure(*node.Plugin) {
 		dkg.DefaultNode,
 		gracefulshutdown.Shutdown,
 		allMetrics,
+		wal.GetWAL(),
 	)
 }
 

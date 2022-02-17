@@ -80,6 +80,12 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
 		requestBlockRetryTime := sm.syncingBlocks.getRequestBlockRetryTime(i)
 		blockCandidatesCount := sm.syncingBlocks.getBlockCandidatesCount(i)
+		if blockCandidatesCount == 0 {
+			if sm.candidateBlockInWAL(i) {
+				blockCandidatesCount++
+				sm.syncingBlocks.setReceivedFromWAL(i)
+			}
+		}
 		approvedBlockCandidatesCount := sm.syncingBlocks.getApprovedBlockCandidatesCount(i)
 		sm.log.Debugf("doSyncAction: trying to sync state for index %v; requestBlockRetryTime %v, blockCandidates count %v, approved blockCandidates count %v",
 			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
@@ -89,14 +95,14 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		currentTime := time.Now()
-		if currentTime.After(requestBlockRetryTime) {
+		if !sm.syncingBlocks.isObtainedFromWAL(i) && currentTime.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v, fallback=%v from %v random peers.", i, sm.domain.GetFallbackMode(), numberOfNodesToRequestBlockFromConst)
 			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
 			for _, p := range sm.domain.GetRandomOtherPeers(numberOfNodesToRequestBlockFromConst) {
 				sm.domain.SendMsgByPubKey(p, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 				sm.syncingBlocks.blocksPulled()
-				sm.log.Debugf("doSyncAction: requesting block index %v,from %v", i, p.String())
+				sm.log.Debugf("doSyncAction: requesting block index %v,from %v", i, p.AsString())
 			}
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, currentTime.Add(sm.timers.GetBlockRetry))
@@ -115,6 +121,35 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			}
 		}
 	}
+}
+
+func (sm *stateManager) candidateBlockInWAL(i uint32) bool {
+	if !sm.wal.Contains(i) {
+		sm.log.Debugf("candidateBlockInWAL: block with index %d not found in wal.", i)
+		return false
+	}
+	blockBytes, err := sm.wal.Read(i)
+	if err != nil {
+		sm.log.Debugf("candidateBlockInWAL: error reading block bytes for %d. %v", i, err)
+		return false
+	}
+	block, err := state.BlockFromBytes(blockBytes)
+	if err != nil {
+		sm.log.Debugf("candidateBlockInWAL: error reading block bytes for %d. %v", i, err)
+		return false
+	}
+	nextState := sm.solidState.Copy()
+	err = nextState.ApplyBlock(block)
+	if err != nil {
+		sm.log.Debugf("candidateBlockInWAL: error applying block %d. %v", i, err)
+		return false
+	}
+	_, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
+	if candidate == nil {
+		return false
+	}
+	candidate.approveIfRightOutput(sm.stateOutput)
+	return true
 }
 
 func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualStateAccess, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualStateAccess, bool) {

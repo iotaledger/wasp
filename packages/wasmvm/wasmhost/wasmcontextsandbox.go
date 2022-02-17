@@ -19,6 +19,7 @@ import (
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
 	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
 	(*WasmContextSandbox).fnBlockContext,
@@ -31,7 +32,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEvent,
-	(*WasmContextSandbox).fnIncomingTransfer,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
 	(*WasmContextSandbox).fnPanic,
@@ -63,6 +63,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 var sandboxFuncNames = []string{
 	"nil",
 	"FnAccountID",
+	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
 	"FnBlockContext",
@@ -75,7 +76,6 @@ var sandboxFuncNames = []string{
 	"#FnDeployContract",
 	"FnEntropy",
 	"$FnEvent",
-	"FnIncomingTransfer",
 	"$FnLog",
 	"FnMinted",
 	"$FnPanic",
@@ -150,6 +150,11 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
+}
+
+func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
+	assets := s.ctx.AllowanceAvailable()
+	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -241,11 +246,6 @@ func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
-	panic("fixme: wc.fnIncomingTransfer")
-	// return s.ctx.IncomingTransfer().Bytes()
-}
-
 func (s *WasmContextSandbox) fnLog(args []byte) []byte {
 	s.common.Log().Infof(string(args))
 	return nil
@@ -257,7 +257,7 @@ func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
-	s.common.Log().Panicf("WASM panic: %s", string(args))
+	s.common.Log().Panicf("WASM: panic in VM: %s", string(args))
 	return nil
 }
 
@@ -283,7 +283,8 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 		TargetContract: contract,
 		EntryPoint:     function,
 		Params:         params,
-		GasBudget:      1000_000,
+		Allowance:      assets,
+		GasBudget:      1_000_000,
 	}
 	if req.Delay == 0 {
 		s.ctx.Send(iscp.RequestParameters{

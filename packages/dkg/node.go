@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -27,7 +27,7 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *ed25519.KeyPair                 // Keys of the current node.
+	identity     *cryptolib.KeyPair                // Keys of the current node.
 	secKey       kyber.Scalar                     // Derived from the identity.
 	pubKey       kyber.Point                      // Derived from the identity.
 	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
@@ -44,13 +44,13 @@ type Node struct {
 // Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
-	identity *ed25519.KeyPair,
+	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
 	reg registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
+	if err := kyberEdDSSA.UnmarshalBinary(identity.GetPrivateKey().AsBytes()); err != nil {
 		return nil, err
 	}
 	n := Node{
@@ -99,7 +99,7 @@ func (n *Node) Close() {
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
-	peerPubs []*ed25519.PublicKey,
+	peerPubs []*cryptolib.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
@@ -135,7 +135,7 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]*ed25519.PublicKey, peerCount)
+		peerPubs = make([]*cryptolib.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err
@@ -156,7 +156,7 @@ func (n *Node) GenerateDistributedKey(
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
 				peerPubs:     peerPubs,
-				initiatorPub: &n.identity.PublicKey,
+				initiatorPub: n.identity.GetPublicKey(),
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
@@ -333,7 +333,7 @@ func (n *Node) exchangeInitiatorAcks(
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
 ) error {
 	recvCB := func(recv *peering.PeerMessageGroupIn, msg initiatorMsg) (bool, error) {
-		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.String())
+		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.AsString())
 		return true, nil
 	}
 	return n.exchangeInitiatorMsgs(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB, recvCB)
@@ -358,7 +358,7 @@ func (n *Node) exchangeInitiatorMsgs(
 			return false, nil
 		}
 		if err != nil {
-			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
+			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.AsString(), recv.PeerMessageData)
 			return false, err
 		}
 		if !initMsg.IsResponse() {

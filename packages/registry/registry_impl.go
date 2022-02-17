@@ -151,8 +151,8 @@ func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
 // region TrustedNetworkManager ////////////////////////////////////////////////////
 
 // IsTrustedPeer implements TrustedNetworkManager interface.
-func (r *Impl) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
-	tp := &peering.TrustedPeer{PubKey: cryptolib.CryptolibPublicKeyToHivePublicKey(pubKey)}
+func (r *Impl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
+	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return err
@@ -162,8 +162,8 @@ func (r *Impl) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
 }
 
 // TrustPeer implements TrustedNetworkManager interface.
-func (r *Impl) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
-	tp := &peering.TrustedPeer{PubKey: cryptolib.CryptolibPublicKeyToHivePublicKey(pubKey), NetID: netID}
+func (r *Impl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
+	tp := &peering.TrustedPeer{PubKey: pubKey, NetID: netID}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return nil, err
@@ -181,8 +181,8 @@ func (r *Impl) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.Tru
 
 // DistrustPeer implements TrustedNetworkManager interface.
 // Get is kind of optional, so we ignore errors related to it.
-func (r *Impl) DistrustPeer(pubKey cryptolib.PublicKey) (*peering.TrustedPeer, error) {
-	tp := &peering.TrustedPeer{PubKey: cryptolib.CryptolibPublicKeyToHivePublicKey(pubKey)}
+func (r *Impl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
+	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return nil, err
@@ -284,28 +284,29 @@ func (r *Impl) HasBlob(h hashing.HashValue) (bool, error) {
 // GetNodeIdentity implements NodeIdentityProvider.
 func (r *Impl) GetNodeIdentity() (*cryptolib.KeyPair, error) {
 	var err error
-	var pair cryptolib.KeyPair
+	var pair *cryptolib.KeyPair
 	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
 	exists, _ = r.store.Has(dbKey)
 	if !exists {
 		pair = cryptolib.NewKeyPair()
-		data = pair.PrivateKey
+		data = pair.GetPrivateKey().AsBytes()
 		if err := r.store.Set(dbKey, data); err != nil {
 			return nil, err
 		}
 		r.log.Info("Node identity key pair generated.")
-		return &pair, nil
+		return pair, nil
 	}
 	if data, err = r.store.Get(dbKey); err != nil {
 		return nil, err
 	}
-	if pair.PrivateKey, err = cryptolib.PrivateKeyFromBytes(data); err != nil {
+	privateKey, err := cryptolib.NewPrivateKeyFromBytes(data)
+	if err != nil {
 		return nil, err
 	}
-	pair.PublicKey = pair.PublicKey
-	return &pair, nil
+	pair = cryptolib.NewKeyPairFromPrivateKey(privateKey)
+	return pair, nil
 }
 
 // GetNodePublicKey implements NodeIdentityProvider.
@@ -313,9 +314,9 @@ func (r *Impl) GetNodePublicKey() (*cryptolib.PublicKey, error) {
 	var err error
 	var pair *cryptolib.KeyPair
 	if pair, err = r.GetNodeIdentity(); err != nil {
-		return nil, err
+		return pair.GetPublicKey(), err // cannot be nil
 	}
-	return &pair.PublicKey, nil
+	return pair.GetPublicKey(), nil
 }
 
 func dbKeyForNodeIdentity() []byte {

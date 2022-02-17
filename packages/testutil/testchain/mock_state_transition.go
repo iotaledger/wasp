@@ -1,18 +1,18 @@
 package testchain
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+
 	//"github.com/iotaledger/wasp/packages/transaction"
 	//"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
@@ -21,12 +21,12 @@ import (
 
 type MockedStateTransition struct {
 	t           *testing.T
-	chainKey    *ed25519.KeyPair
+	chainKey    *cryptolib.KeyPair
 	onNextState func(virtualState state.VirtualStateAccess, tx *iotago.Transaction)
 	onVMResult  func(virtualState state.VirtualStateAccess, tx *iotago.TransactionEssence)
 }
 
-func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
+func NewMockedStateTransition(t *testing.T, chainKey *cryptolib.KeyPair) *MockedStateTransition {
 	return &MockedStateTransition{
 		t:        t,
 		chainKey: chainKey,
@@ -35,7 +35,7 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 
 func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *iscp.AliasOutputWithID, ts time.Time /*, reqs ...iscp.Calldata*/) {
 	if c.chainKey != nil {
-		require.True(c.t, chainOutput.GetStateAddress().Equal(cryptolib.Ed25519AddressFromPubKey(cryptolib.HivePublicKeyToCryptolibPublicKey(c.chainKey.PublicKey))))
+		require.True(c.t, chainOutput.GetStateAddress().Equal(c.chainKey.GetPublicKey().AsEd25519Address()))
 	}
 
 	nextvs := vs.Copy()
@@ -77,36 +77,28 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		aliasID = consumedOutput.AliasID
 	}*/
 	aliasID := consumedOutput.AliasID
+	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
 	txEssence := &iotago.TransactionEssence{
-		Inputs: []iotago.Input{chainOutput.ID()},
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{
-				Amount:               consumedOutput.Amount,
-				NativeTokens:         consumedOutput.NativeTokens,
-				AliasID:              aliasID,
-				StateIndex:           consumedOutput.StateIndex + 1,
-				StateMetadata:        nextvs.StateCommitment().Bytes(),
-				FoundryCounter:       consumedOutput.FoundryCounter,
-				Conditions:			  consumedOutput.Conditions,
-				Blocks:               consumedOutput.Blocks,
+				Amount:         consumedOutput.Amount,
+				NativeTokens:   consumedOutput.NativeTokens,
+				AliasID:        aliasID,
+				StateIndex:     consumedOutput.StateIndex + 1,
+				StateMetadata:  nextvs.StateCommitment().Bytes(),
+				FoundryCounter: consumedOutput.FoundryCounter,
+				Conditions:     consumedOutput.Conditions,
+				Blocks:         consumedOutput.Blocks,
 			},
 		},
 		Payload: nil,
 	}
-	fmt.Printf("XXX %v\n", iotago.AliasOutput{
-		Amount:               consumedOutput.Amount,
-		NativeTokens:         consumedOutput.NativeTokens,
-		AliasID:              consumedOutput.AliasID,
-		StateIndex:           consumedOutput.StateIndex + 1,
-		StateMetadata:        nextvs.StateCommitment().Bytes(),
-		FoundryCounter:       consumedOutput.FoundryCounter,
-		Conditions:			  consumedOutput.Conditions,
-		Blocks:               consumedOutput.Blocks,
-	})
-	signatures, err := txEssence.Sign(iotago.AddressKeys{
-		Address: chainOutput.GetStateAddress(),
-		Keys:    cryptolib.HivePrivateKeyToCryptolibPrivateKey(c.chainKey.PrivateKey),
-	})
+	signatures, err := txEssence.Sign(
+		iotago.Outputs{chainOutput.GetAliasOutput()}.MustCommitment(),
+		c.chainKey.GetPrivateKey().AddressKeys(chainOutput.GetStateAddress()),
+	)
 	require.NoError(c.t, err)
 	tx := &iotago.Transaction{
 		Essence:      txEssence,

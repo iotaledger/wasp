@@ -5,17 +5,16 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/txstream"
 )
 
 type nodeConnImplementation struct {
-	client                 *txstream_client.Client
-	transactionHandlers    map[ledgerstate.AliasAddress]chain.NodeConnectionHandleTransactionFun
-	iStateHandlers         map[ledgerstate.AliasAddress]chain.NodeConnectionHandleInclusionStateFun
-	outputHandlers         map[ledgerstate.AliasAddress]chain.NodeConnectionHandleOutputFun
-	unspentAOutputHandlers map[ledgerstate.AliasAddress]chain.NodeConnectionHandleUnspentAliasOutputFun
+	client              *txstream.Client
+	transactionHandlers map[iotago.AliasAddress]chain.NodeConnectionHandleTransactionFun
+	// iStateHandlers         map[iotago.AliasAddress]chain.NodeConnectionHandleInclusionStateFun
+	outputHandlers         map[iotago.AliasAddress]chain.NodeConnectionHandleOutputFun
+	unspentAOutputHandlers map[iotago.AliasAddress]chain.NodeConnectionHandleUnspentAliasOutputFun
 	transactionClosure     *events.Closure
 	iStateClosure          *events.Closure
 	outputClosure          *events.Closure
@@ -26,13 +25,13 @@ type nodeConnImplementation struct {
 
 var _ chain.NodeConnection = &nodeConnImplementation{}
 
-func NewNodeConnection(nodeConnClient *txstream_client.Client, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger) chain.NodeConnection {
+func NewNodeConnection(nodeConnClient *txstream.Client, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger) chain.NodeConnection {
 	ret := &nodeConnImplementation{
-		client:                 nodeConnClient,
-		transactionHandlers:    make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleTransactionFun),
-		iStateHandlers:         make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleInclusionStateFun),
-		outputHandlers:         make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleOutputFun),
-		unspentAOutputHandlers: make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleUnspentAliasOutputFun),
+		client:              nodeConnClient,
+		transactionHandlers: make(map[iotago.AliasAddress]chain.NodeConnectionHandleTransactionFun),
+		// iStateHandlers:         make(map[iotago.AliasAddress]chain.NodeConnectionHandleInclusionStateFun),
+		outputHandlers:         make(map[iotago.AliasAddress]chain.NodeConnectionHandleOutputFun),
+		unspentAOutputHandlers: make(map[iotago.AliasAddress]chain.NodeConnectionHandleUnspentAliasOutputFun),
 		metrics:                metrics,
 		log:                    log,
 	}
@@ -53,79 +52,83 @@ func NewNodeConnection(nodeConnClient *txstream_client.Client, metrics nodeconnm
 }
 
 func (n *nodeConnImplementation) handleTransactionReceived(msg *txstream.MsgTransaction) {
-	n.log.Debugf("NodeConnnection::TransactionReceived...")
-	defer n.log.Debugf("NodeConnnection::TransactionReceived... Done")
-	n.metrics.GetInTransaction().CountLastMessage(msg)
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
-	if !ok {
-		n.log.Warnf("NodeConnnection::TransactionReceived: cannot dispatch transaction message to non-alias address %v", msg.Address.String())
-		return
-	}
-	handler, ok := n.transactionHandlers[*aliasAddr]
-	if !ok {
-		n.log.Warnf("NodeConnnection::TransactionReceived: no handler for address %v", aliasAddr.String())
-		return
-	}
-	handler(msg.Tx)
+	panic("TODO implement")
+	// n.log.Debugf("NodeConnnection::TransactionReceived...")
+	// defer n.log.Debugf("NodeConnnection::TransactionReceived... Done")
+	// n.metrics.GetInTransaction().CountLastMessage(msg)
+	// aliasAddr, ok := msg.Address.(*iotago.AliasAddress)
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::TransactionReceived: cannot dispatch transaction message to non-alias address %v", msg.Address.String())
+	// 	return
+	// }
+	// handler, ok := n.transactionHandlers[*aliasAddr]
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::TransactionReceived: no handler for address %v", aliasAddr.String())
+	// 	return
+	// }
+	// handler(msg.Tx)
 }
 
 func (n *nodeConnImplementation) handleInclusionStateReceived(msg *txstream.MsgTxInclusionState) {
-	n.log.Debugf("NodeConnnection::InclusionStateReceived...")
-	defer n.log.Debugf("NodeConnnection::InclusionStateReceived... Done")
-	n.metrics.GetInInclusionState().CountLastMessage(msg)
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
-	if !ok {
-		n.log.Warnf("NodeConnnection::InclusionStateReceived: cannot dispatch transaction message to non-alias address %v", msg.Address.String())
-		return
-	}
-	handler, ok := n.iStateHandlers[*aliasAddr]
-	if !ok {
-		n.log.Warnf("NodeConnnection::InclusionStateReceived: no handler for address %v", aliasAddr.String())
-		return
-	}
-	handler(msg.TxID, msg.State)
+	panic("TODO implement")
+	// n.log.Debugf("NodeConnnection::InclusionStateReceived...")
+	// defer n.log.Debugf("NodeConnnection::InclusionStateReceived... Done")
+	// n.metrics.GetInInclusionState().CountLastMessage(msg)
+	// aliasAddr, ok := msg.Address.(*iotago.AliasAddress)
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::InclusionStateReceived: cannot dispatch transaction message to non-alias address %v", msg.Address.String())
+	// 	return
+	// }
+	// handler, ok := n.iStateHandlers[*aliasAddr]
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::InclusionStateReceived: no handler for address %v", aliasAddr.String())
+	// 	return
+	// }
+	// handler(msg.TxID, msg.State)
 }
 
 func (n *nodeConnImplementation) handleOutputReceived(msg *txstream.MsgOutput) {
-	n.log.Debugf("NodeConnnection::OutputReceived...")
-	defer n.log.Debugf("NodeConnnection::OutputReceived... Done")
-	n.metrics.GetInOutput().CountLastMessage(msg)
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
-	if !ok {
-		n.log.Warnf("NodeConnnection::OutputReceived: cannot dispatch transaction message to non-alias address %v", msg.Address.String())
-		return
-	}
-	handler, ok := n.outputHandlers[*aliasAddr]
-	if !ok {
-		n.log.Warnf("NodeConnnection::OutputReceived: no handler for address %v", aliasAddr.String())
-		return
-	}
-	handler(msg.Output)
+	panic("TODO implement")
+	// n.log.Debugf("NodeConnnection::OutputReceived...")
+	// defer n.log.Debugf("NodeConnnection::OutputReceived... Done")
+	// n.metrics.GetInOutput().CountLastMessage(msg)
+	// aliasAddr, ok := msg.Address.(*iotago.AliasAddress)
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::OutputReceived: cannot dispatch transaction message to non-alias address %v", msg.Address.String())
+	// 	return
+	// }
+	// handler, ok := n.outputHandlers[*aliasAddr]
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::OutputReceived: no handler for address %v", aliasAddr.String())
+	// 	return
+	// }
+	// handler(msg.Output)
 }
 
 func (n *nodeConnImplementation) handleUnspentAliasOutputReceived(msg *txstream.MsgUnspentAliasOutput) {
-	n.log.Debugf("NodeConnnection::UnspentAliasOutputReceived...")
-	defer n.log.Debugf("NodeConnnection::UnspentAliasOutputReceived... Done")
-	n.metrics.GetInUnspentAliasOutput().CountLastMessage(msg)
-	handler, ok := n.unspentAOutputHandlers[*msg.AliasAddress]
-	if !ok {
-		n.log.Warnf("NodeConnnection::UnspentAliasOutputReceived: no handler for address %v", msg.AliasAddress.String())
-		return
-	}
-	handler(msg.AliasOutput, msg.Timestamp)
+	panic("TODO implement")
+	// n.log.Debugf("NodeConnnection::UnspentAliasOutputReceived...")
+	// defer n.log.Debugf("NodeConnnection::UnspentAliasOutputReceived... Done")
+	// n.metrics.GetInUnspentAliasOutput().CountLastMessage(msg)
+	// handler, ok := n.unspentAOutputHandlers[*msg.AliasAddress]
+	// if !ok {
+	// 	n.log.Warnf("NodeConnnection::UnspentAliasOutputReceived: no handler for address %v", msg.AliasAddress.String())
+	// 	return
+	// }
+	// handler(msg.AliasOutput, msg.Timestamp)
 }
 
 // NOTE: request to client methods are logged through each chain logger in chainNodeConnImplementation
 
-func (n *nodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
+func (n *nodeConnImplementation) PullState(addr *iotago.AliasAddress) {
 	n.metrics.GetOutPullState().CountLastMessage(addr)
 	n.client.RequestUnspentAliasOutput(addr)
 }
 
-func (n *nodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+func (n *nodeConnImplementation) PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID) {
 	n.metrics.GetOutPullTransactionInclusionState().CountLastMessage(struct {
-		Address       ledgerstate.Address
-		TransactionID ledgerstate.TransactionID
+		Address       iotago.Address
+		TransactionID iotago.TransactionID
 	}{
 		Address:       addr,
 		TransactionID: txid,
@@ -133,23 +136,23 @@ func (n *nodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.
 	n.client.RequestTxInclusionState(addr, txid)
 }
 
-func (n *nodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+func (n *nodeConnImplementation) PullConfirmedOutput(addr iotago.Address, outputID *iotago.OutputID) {
 	n.metrics.GetOutPullConfirmedOutput().CountLastMessage(struct {
-		Address  ledgerstate.Address
-		OutputID ledgerstate.OutputID
+		Address  iotago.Address
+		OutputID iotago.OutputID
 	}{
 		Address:  addr,
-		OutputID: outputID,
+		OutputID: *outputID,
 	})
 	n.client.RequestConfirmedOutput(addr, outputID)
 }
 
-func (n *nodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction) {
+func (n *nodeConnImplementation) PostTransaction(tx *iotago.Transaction) {
 	n.metrics.GetOutPostTransaction().CountLastMessage(tx)
 	n.client.PostTransaction(tx)
 }
 
-func (n *nodeConnImplementation) AttachToTransactionReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleTransactionFun) {
+func (n *nodeConnImplementation) AttachToTransactionReceived(addr *iotago.AliasAddress, handler chain.NodeConnectionHandleTransactionFun) {
 	n.log.Debugf("NodeConnnection::AttachToTransactionReceived to %v", addr.String())
 	_, ok := n.transactionHandlers[*addr]
 	if ok {
@@ -158,16 +161,18 @@ func (n *nodeConnImplementation) AttachToTransactionReceived(addr *ledgerstate.A
 	n.transactionHandlers[*addr] = handler
 }
 
-func (n *nodeConnImplementation) AttachToInclusionStateReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleInclusionStateFun) {
-	n.log.Debugf("NodeConnnection::AttachToInclusionStateReceived to %v", addr.String())
-	_, ok := n.iStateHandlers[*addr]
-	if ok {
-		n.log.Panicf("NodeConnnection::AttachToInclusionStateReceived to %v failed: handler already registered")
-	}
-	n.iStateHandlers[*addr] = handler
-}
+// TODO refactor
+// func (n *nodeConnImplementation) AttachToInclusionStateReceived(addr *iotago.AliasAddress, handler chain.NodeConnectionHandleInclusionStateFun) {
+// 	panic("TODO implement")
+// 	n.log.Debugf("NodeConnnection::AttachToInclusionStateReceived to %v", addr.String())
+// 	// _, ok := n.iStateHandlers[*addr]
+// 	// if ok {
+// 	// 	n.log.Panicf("NodeConnnection::AttachToInclusionStateReceived to %v failed: handler already registered")
+// 	// }
+// 	// n.iStateHandlers[*addr] = handler
+// }
 
-func (n *nodeConnImplementation) AttachToOutputReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleOutputFun) {
+func (n *nodeConnImplementation) AttachToOutputReceived(addr *iotago.AliasAddress, handler chain.NodeConnectionHandleOutputFun) {
 	n.log.Debugf("NodeConnnection::AttachToOutputReceived to %v", addr.String())
 	_, ok := n.outputHandlers[*addr]
 	if ok {
@@ -176,7 +181,7 @@ func (n *nodeConnImplementation) AttachToOutputReceived(addr *ledgerstate.AliasA
 	n.outputHandlers[*addr] = handler
 }
 
-func (n *nodeConnImplementation) AttachToUnspentAliasOutputReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleUnspentAliasOutputFun) {
+func (n *nodeConnImplementation) AttachToUnspentAliasOutputReceived(addr *iotago.AliasAddress, handler chain.NodeConnectionHandleUnspentAliasOutputFun) {
 	n.log.Debugf("NodeConnnection::AttachToUnspentAliasOutputReceived to %v", addr.String())
 	_, ok := n.unspentAOutputHandlers[*addr]
 	if ok {
@@ -185,38 +190,40 @@ func (n *nodeConnImplementation) AttachToUnspentAliasOutputReceived(addr *ledger
 	n.unspentAOutputHandlers[*addr] = handler
 }
 
-func (n *nodeConnImplementation) DetachFromTransactionReceived(addr *ledgerstate.AliasAddress) {
+func (n *nodeConnImplementation) DetachFromTransactionReceived(addr *iotago.AliasAddress) {
 	n.log.Debugf("NodeConnnection::DetachFromTransactionReceived to %v", addr.String())
 	delete(n.transactionHandlers, *addr)
 }
 
-func (n *nodeConnImplementation) DetachFromInclusionStateReceived(addr *ledgerstate.AliasAddress) {
+func (n *nodeConnImplementation) DetachFromInclusionStateReceived(addr *iotago.AliasAddress) {
+	panic("TODO implement")
 	n.log.Debugf("NodeConnnection::DetachFromInclusionStateReceived to %v", addr.String())
-	delete(n.iStateHandlers, *addr)
+	// delete(n.iStateHandlers, *addr)
 }
 
-func (n *nodeConnImplementation) DetachFromOutputReceived(addr *ledgerstate.AliasAddress) {
+func (n *nodeConnImplementation) DetachFromOutputReceived(addr *iotago.AliasAddress) {
 	n.log.Debugf("NodeConnnection::DetachFromOutputReceived to %v", addr.String())
 	delete(n.outputHandlers, *addr)
 }
 
-func (n *nodeConnImplementation) DetachFromUnspentAliasOutputReceived(addr *ledgerstate.AliasAddress) {
+func (n *nodeConnImplementation) DetachFromUnspentAliasOutputReceived(addr *iotago.AliasAddress) {
 	n.log.Debugf("NodeConnnection::DetachFromUnspentAliasOutputReceived to %v", addr.String())
 	delete(n.unspentAOutputHandlers, *addr)
 }
 
-func (n *nodeConnImplementation) Subscribe(addr ledgerstate.Address) {
+func (n *nodeConnImplementation) Subscribe(addr iotago.Address) {
 	n.log.Debugf("NodeConnnection::Subscribing to %v...", addr.String())
 	defer n.log.Debugf("NodeConnnection::Subscribing done")
 	n.client.Subscribe(addr)
 	n.metrics.SetSubscribed(addr)
 }
 
-func (n *nodeConnImplementation) Unsubscribe(addr ledgerstate.Address) {
+func (n *nodeConnImplementation) Unsubscribe(addr iotago.Address) {
+	panic("TODO implement")
 	n.log.Debugf("NodeConnnection::Unsubscribing from %v...", addr.String())
 	defer n.log.Debugf("NodeConnnection::Unsubscribing done")
 	n.metrics.SetUnsubscribed(addr)
-	n.client.Unsubscribe(addr)
+	// n.client.Unsubscribe(addr)
 }
 
 func (n *nodeConnImplementation) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
@@ -224,16 +231,17 @@ func (n *nodeConnImplementation) GetMetrics() nodeconnmetrics.NodeConnectionMetr
 }
 
 func (n *nodeConnImplementation) Close() {
-	n.log.Debugf("NodeConnnection::Close")
-	n.client.Events.TransactionReceived.Detach(n.transactionClosure)
-	n.transactionHandlers = make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleTransactionFun)
+	panic("TODO implement")
+	// n.log.Debugf("NodeConnnection::Close")
+	// n.client.Events.TransactionReceived.Detach(n.transactionClosure)
+	// n.transactionHandlers = make(map[iotago.AliasAddress]chain.NodeConnectionHandleTransactionFun)
 
-	n.client.Events.InclusionStateReceived.Detach(n.iStateClosure)
-	n.iStateHandlers = make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleInclusionStateFun)
+	// n.client.Events.InclusionStateReceived.Detach(n.iStateClosure)
+	// n.iStateHandlers = make(map[iotago.AliasAddress]chain.NodeConnectionHandleInclusionStateFun)
 
-	n.client.Events.OutputReceived.Detach(n.outputClosure)
-	n.outputHandlers = make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleOutputFun)
+	// n.client.Events.OutputReceived.Detach(n.outputClosure)
+	// n.outputHandlers = make(map[iotago.AliasAddress]chain.NodeConnectionHandleOutputFun)
 
-	n.client.Events.UnspentAliasOutputReceived.Detach(n.unspentAOutputClosure)
-	n.unspentAOutputHandlers = make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleUnspentAliasOutputFun)
+	// n.client.Events.UnspentAliasOutputReceived.Detach(n.unspentAOutputClosure)
+	// n.unspentAOutputHandlers = make(map[iotago.AliasAddress]chain.NodeConnectionHandleUnspentAliasOutputFun)
 }
