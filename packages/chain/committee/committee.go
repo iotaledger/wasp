@@ -10,6 +10,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -46,14 +47,14 @@ func New(
 ) (chain.Committee, peering.GroupProvider, error) {
 	var err error
 	if dkShare.Index == nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.Address.Base58())
+		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.Address.Bech32(iscp.Bech32Prefix))
 	}
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
-	peerGroupID := dkShare.Address.Array()
-	var chainArr [33]byte
+	peerGroupID := dkShare.Address
+	var chainArr *iscp.ChainID
 	if chainID != nil {
-		chainArr = chainID.Array()
+		chainArr = chainID
 	}
 	for i := range peerGroupID {
 		peerGroupID[i] ^= chainArr[i]
@@ -176,7 +177,7 @@ func (c *committee) waitReady(waitReady bool) {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	c.log.Infof("committee started for address %s", c.dkshare.Address.Base58())
+	c.log.Infof("committee started for address %s", c.dkshare.Address.Bech32(iscp.Bech32Prefix))
 	c.log.Debugf("peer status: %s", c.PeerStatus())
 	c.isReady.Store(true)
 }

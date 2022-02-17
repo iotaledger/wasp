@@ -175,7 +175,7 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func worker(shutdownSignal <-chan struct{}) {
+func worker(ctx context.Context) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
@@ -189,7 +189,7 @@ func worker(shutdownSignal <-chan struct{}) {
 	}()
 
 	select {
-	case <-shutdownSignal:
+	case <-ctx.Done():
 	case <-stopped:
 	}
 

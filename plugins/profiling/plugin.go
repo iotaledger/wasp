@@ -1,6 +1,7 @@
 package profiling
 
 import (
+	"context"
 	"net/http"
 	"runtime"
 
@@ -20,7 +21,7 @@ var log *logger.Logger
 
 // Init gets the plugin instance.
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -51,8 +52,8 @@ func run(_ *node.Plugin) {
 		profs[5] = profile.TraceProfile(profConfig).Start()
 		profs[6] = profile.ThreadCreationProfile(profConfig).Start()
 
-		err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-			<-shutdownSignal
+		err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
+			<-ctx.Done()
 			for _, p := range profs {
 				p.Stop()
 			}

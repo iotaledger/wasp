@@ -1,6 +1,7 @@
 package txstream
 
 import (
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -9,7 +10,26 @@ func init() {
 	panic("THIS IS A PLACEHOLDER PACKAGE")
 }
 
-type Client struct{}
+type (
+	Client struct {
+		Events
+	}
+
+	Event struct {
+		Attach func(*events.Closure)
+	}
+	Events struct {
+		TransactionReceived        Event
+		InclusionStateReceived     Event
+		OutputReceived             Event
+		UnspentAliasOutputReceived Event
+	}
+
+	MsgTransaction        interface{}
+	MsgTxInclusionState   interface{}
+	MsgOutput             interface{}
+	MsgUnspentAliasOutput interface{}
+)
 
 func NewClient() *Client {
 	panic("not implemented")
@@ -31,7 +51,7 @@ func (n *Client) RequestTxInclusionState(addr iotago.Address, txid iotago.Transa
 }
 
 // RequestConfirmedOutput requests a specific confirmed output.
-func (n *Client) RequestConfirmedOutput(addr iotago.Address, outputID iotago.OutputID) {
+func (n *Client) RequestConfirmedOutput(addr iotago.Address, outputID *iotago.OutputID) {
 	panic("not implemented")
 }
 

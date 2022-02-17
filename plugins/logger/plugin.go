@@ -11,7 +11,7 @@ import (
 const PluginName = "Logger"
 
 func Init(conf *configuration.Configuration) *node.Plugin {
-	Plugin := node.NewPlugin(PluginName, node.Enabled)
+	Plugin := node.NewPlugin(PluginName, nil, node.Enabled)
 
 	Plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
 		if err := logger.InitGlobalLogger(conf); err != nil {
