@@ -263,7 +263,7 @@ func (u *UtxoDB) NewKeyPairByIndex(index uint64) (*cryptolib.KeyPair, *iotago.Ed
 	var tmp8 [8]byte
 	binary.LittleEndian.PutUint64(tmp8[:], index)
 	h := hashing.HashData(u.seed[:], tmp8[:])
-	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.Seed(h))
+	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes(h[:]))
 	addr := keyPair.GetPublicKey().AsEd25519Address()
 	return keyPair, addr
 }

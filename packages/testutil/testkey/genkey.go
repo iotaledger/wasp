@@ -8,7 +8,7 @@ import (
 func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
 	var keyPair *cryptolib.KeyPair
 	if len(seedOpt) > 0 {
-		keyPair = cryptolib.NewKeyPairFromSeed(seedOpt[0])
+		keyPair = cryptolib.NewKeyPairFromSeed(*seedOpt[0])
 	} else {
 		keyPair = cryptolib.NewKeyPair()
 	}
