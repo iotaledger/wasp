@@ -507,6 +507,10 @@ func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
 	return ch.State.Copy()
 }
 
+func (ch *Chain) EnqueueDismissChain(reason string) {
+	// not used, just to implement ChainCore interface
+}
+
 // ---------------------------------------------
 
 func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
