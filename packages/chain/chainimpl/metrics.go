@@ -19,3 +19,10 @@ func (c *chainObj) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
 	}
 	return c.consensus.GetWorkflowStatus()
 }
+
+func (c *chainObj) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	if c.consensus == nil {
+		return nil
+	}
+	return c.consensus.GetPipeMetrics()
+}
