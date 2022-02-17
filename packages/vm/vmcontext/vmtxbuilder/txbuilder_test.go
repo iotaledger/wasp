@@ -106,7 +106,7 @@ func TestTxBuilderBasic(t *testing.T) {
 			},
 		},
 	}
-	anchorID := tpkg.RandUTXOInput()
+	anchorID := tpkg.RandOutputIDs(1)[0]
 	tokenID := testiotago.RandNativeTokenID()
 	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
 		return nil, &iotago.UTXOInput{}
@@ -129,7 +129,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 		require.EqualValues(t, 1, len(essence.Inputs))
 		require.EqualValues(t, 1, len(essence.Outputs))
 
@@ -172,7 +172,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, expectedIotas, int(totalsOut.TotalIotasInL2Accounts))
 		require.EqualValues(t, 0, len(totalsOut.NativeTokenBalances))
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 1, len(totalsOut.NativeTokenBalances))
 		require.True(t, totalsOut.NativeTokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -230,7 +230,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 			},
 		},
 	}
-	anchorID := tpkg.RandUTXOInput()
+	anchorID := tpkg.RandOutputIDs(1)[0]
 
 	var nativeTokenIDs []iotago.NativeTokenID
 	var utxoInputsNativeTokens []iotago.UTXOInput
@@ -349,7 +349,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -363,7 +363,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -376,7 +376,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		runConsume(runTimes, testAmount)
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -390,7 +390,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -409,7 +409,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -433,7 +433,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -457,7 +457,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -485,7 +485,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -541,7 +541,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, afterTokens[nativeTokenIDs[0]].Cmp(new(big.Int).SetInt64(10)) == 0)
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -571,7 +571,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 		require.EqualValues(t, 2, len(essence.Inputs))
 		require.EqualValues(t, 2, len(essence.Outputs))
 
@@ -607,7 +607,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 		require.EqualValues(t, 6, len(essence.Inputs))
 		require.EqualValues(t, 6, len(essence.Outputs))
 
@@ -683,7 +683,7 @@ func TestFoundries(t *testing.T) {
 			},
 		},
 	}
-	anchorID := tpkg.RandUTXOInput()
+	anchorID := tpkg.RandOutputIDs(1)[0]
 
 	var nativeTokenIDs []iotago.NativeTokenID
 	var utxoInputsNativeTokens []iotago.UTXOInput
@@ -724,7 +724,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("create foundry ok", func(t *testing.T) {
 		initTest()
 		createNFoundries(3)
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
@@ -736,7 +736,7 @@ func TestFoundries(t *testing.T) {
 		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
@@ -777,7 +777,7 @@ func TestSerDe(t *testing.T) {
 	t.Run("serde FoundryOutput", func(t *testing.T) {
 		out := &iotago.FoundryOutput{
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: tpkg.RandAliasAddress()},
+				&iotago.ImmutableAliasUnlockCondition{Address: tpkg.RandAliasAddress()},
 			},
 			Amount:            1337,
 			NativeTokens:      nil,
