@@ -68,7 +68,7 @@ var (
 
 func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
 	for _, a := range s {
-		if *a == *e {
+		if a.Equals(e) {
 			return true
 		}
 	}
@@ -93,18 +93,18 @@ func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
 	for _, acc := range accs {
 		l2 := ctx.Chain.L2Assets(acc)
 		l1 := ctx.Chain.Env.L1Assets(acc.Address())
-		txt += fmt.Sprintf("\n%s\n\tL2:%8d", acc.String(), l2.Iotas)
+		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.Iotas)
 		if acc.Hname() == 0 {
-			txt += fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+			txt += fmt.Sprintf(",\tL1: %10d", l1.Iotas)
 		}
 		for _, token := range l2.Tokens {
-			txt += fmt.Sprintf("\n\tL2:%8d", token.Amount)
+			txt += fmt.Sprintf("\n\tL2: %10d", token.Amount)
 			tokTxt := ",\t           "
 			if acc.Hname() == 0 {
 				for i := range l1.Tokens {
 					if *l1.Tokens[i] == *token {
 						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
-						tokTxt = fmt.Sprintf(",\tL1:%8d", l1.Iotas)
+						tokTxt = fmt.Sprintf(",\tL1: %10d", l1.Iotas)
 						break
 					}
 				}
@@ -112,7 +112,7 @@ func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
 			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
 		}
 		for _, token := range l1.Tokens {
-			txt += fmt.Sprintf("\n\tL2:%8d,\tL1:%8d,\t%s", 0, l1.Iotas, token.ID.String())
+			txt += fmt.Sprintf("\n\tL2: %10d,\tL1: %10d,\t%s", 0, l1.Iotas, token.ID.String())
 		}
 	}
 	receipt := ctx.Chain.LastReceipt()
