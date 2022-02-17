@@ -162,9 +162,9 @@ func configure(*node.Plugin) {
 	}))
 	Server.Use(middleware.Recover())
 
-	config := auth.AuthConfiguration{}
+	config := auth.BaseAuthConfiguration{}
 	parameters.GetStruct(parameters.DashboardAuth, &config)
-	auth.AddAuthenticationDashboard(Server, config)
+	auth.AddAuthentication(Server, config)
 
 	d = dashboard.Init(Server, &waspServices{}, log)
 }

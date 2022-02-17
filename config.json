@@ -32,7 +32,7 @@
     "auth": {
       "scheme": "jwt",
       "claim": "webapi",
-      "duration": "24"
+      "duration": 24
     },
     "bindAddress": "0.0.0.0:9090"
   },
@@ -40,7 +40,7 @@
     "auth": {
       "scheme": "jwt",
       "claim": "dashboard",
-      "duration": "24"
+      "duration": 24
     },
     "bindAddress": "0.0.0.0:7000"
   },

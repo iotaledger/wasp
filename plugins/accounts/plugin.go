@@ -47,10 +47,8 @@ var accounts []Account
 
 func Init(_config *configuration.Configuration) *node.Plugin {
 	config = _config
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, node.Enabled, configure, nil)
 }
-
-func run(plugin *node.Plugin) {}
 
 func configure(plugin *node.Plugin) {
 	err := loadAccountsFromConfiguration()

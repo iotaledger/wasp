@@ -24,6 +24,7 @@ func initLogger() {
 }
 
 func AddEndpoints(
+	server echoswagger.ApiRoot,
 	adm echoswagger.ApiGroup,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
@@ -37,7 +38,7 @@ func AddEndpoints(
 
 	var config auth.BaseAuthConfiguration
 	parameters.GetStruct(parameters.WebAPIAuth, &config)
-	auth.AddAuthenticationWebAPI(adm, config)
+	auth.AddAuthentication(server.Echo(), config)
 
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)

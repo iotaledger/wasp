@@ -13,7 +13,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 const (
@@ -67,43 +66,26 @@ type IPWhiteListAuthConfiguration struct {
 	IPWhiteList       []string `mapstructure:"adminWhitelist"`
 }
 
-// TODO: Find better alternative for swagger/echo differences
-
-type PostHandler = func(route string, cb echo.HandlerFunc)
-type UseHandler = func(middleware ...echo.MiddlewareFunc)
-
-func AddAuthenticationWebAPI(adm echoswagger.ApiGroup, config BaseAuthConfiguration) {
-	var postHandler = func(route string, cb echo.HandlerFunc) {
-		adm.POST(route, cb)
-	}
-
-	addAuthentication(adm.EchoGroup().Use, postHandler, config)
+type WebAPI interface {
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	Use(middleware ...echo.MiddlewareFunc)
 }
 
-func AddAuthenticationDashboard(e *echo.Echo, config BaseAuthConfiguration) {
-	var postHandler = func(route string, cb echo.HandlerFunc) {
-		e.POST(route, cb)
-	}
-
-	addAuthentication(e.Use, postHandler, config)
-}
-
-// Usually you would pass echo.Echo, but to keep it generalized for WebAPI/Dashboard pass the Use function directly..
-func addAuthentication(use func(middleware ...echo.MiddlewareFunc), post PostHandler, config BaseAuthConfiguration) {
+func AddAuthentication(webAPI WebAPI, config BaseAuthConfiguration) {
 	accounts := accounts.GetAccounts()
 
 	switch config.GetScheme() {
 	case Authentication_BASIC:
-		addBasicAuth(use, accounts)
+		addBasicAuth(webAPI, accounts)
 	case Authentication_JWT:
-		jwtAuth := addJWTAuth(use, config.GetJWTAuthConfiguration(), accounts)
+		jwtAuth := addJWTAuth(webAPI, config.GetJWTAuthConfiguration(), accounts)
 
 		authHandler := &AuthRoute{jwt: jwtAuth, accounts: accounts}
-		post("/adm/auth", authHandler.CrossAPIAuthHandler)
+		webAPI.POST("/adm/auth", authHandler.CrossAPIAuthHandler)
 	case Authentication_IP:
-		addIPWhiteListauth(use, config.GetIPWhiteListAuthConfiguration())
+		addIPWhiteListauth(webAPI, config.GetIPWhiteListAuthConfiguration())
 	default:
-		panic(fmt.Sprintf("Unknown auth scheme %s", scheme))
+		panic(fmt.Sprintf("Unknown auth scheme %s", config.GetScheme()))
 	}
 }
 
@@ -145,7 +127,7 @@ func initJWT(duration int, nodeId string, accounts *[]accounts.Account) (*jwt.JW
 	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
 }
 
-func addJWTAuth(use func(middleware ...echo.MiddlewareFunc), config JWTAuthConfiguration, accounts *[]accounts.Account) *jwt.JWTAuth {
+func addJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, accounts *[]accounts.Account) *jwt.JWTAuth {
 	duration := config.Duration
 
 	if duration <= 0 {
@@ -154,13 +136,13 @@ func addJWTAuth(use func(middleware ...echo.MiddlewareFunc), config JWTAuthConfi
 
 	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", accounts)
 
-	use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
+	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
 
 	return jwtAuth
 }
 
-func addBasicAuth(use func(middleware ...echo.MiddlewareFunc), accounts *[]accounts.Account) {
-	use(middleware.BasicAuth(func(user, password string, c echo.Context) (bool, error) {
+func addBasicAuth(webAPI WebAPI, accounts *[]accounts.Account) {
+	webAPI.Use(middleware.BasicAuth(func(user, password string, c echo.Context) (bool, error) {
 
 		for _, v := range *accounts {
 			if user == v.Username && password == v.Password {
@@ -172,9 +154,9 @@ func addBasicAuth(use func(middleware ...echo.MiddlewareFunc), accounts *[]accou
 	}))
 }
 
-func addIPWhiteListauth(use func(middleware ...echo.MiddlewareFunc), config IPWhiteListAuthConfiguration) {
+func addIPWhiteListauth(webAPI WebAPI, config IPWhiteListAuthConfiguration) {
 	ipWhiteList := createIPWhiteList(config)
-	use(protected(ipWhiteList))
+	webAPI.Use(protected(ipWhiteList))
 }
 
 func createIPWhiteList(config IPWhiteListAuthConfiguration) []net.IP {
