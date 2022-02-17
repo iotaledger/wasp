@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/auth"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
