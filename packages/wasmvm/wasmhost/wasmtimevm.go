@@ -30,7 +30,7 @@ func NewWasmTimeVM() WasmVM {
 	return vm
 }
 
-// GasBudget sets gas bidget. Each GasBudget is called, we will restart counting the total burned gas
+// GasBudget sets gas budget. Each time GasBudget is called, we will restart counting the total burned gas
 func (vm *WasmTimeVM) GasBudget(budget uint64) error {
 	remaining, err := vm.store.ConsumeFuel(0)
 	if err != nil {
