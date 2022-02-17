@@ -1,4 +1,3 @@
-// Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
 package chain
@@ -35,11 +34,13 @@ type ChainCore interface {
 	GetStateReader() state.OptimisticStateReader
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
+	VirtualStateAccess() state.VirtualStateAccess
+	GetAnchorOutput() (*iotago.AliasOutput, iotago.OutputID)
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
 }
 
-type ChainCoreMocked interface {
+type ChainCoreMock interface {
 	ChainCore
 
 	// FIXME these methods should not be part of the chain interface just for the need of mocking
@@ -98,7 +99,7 @@ type Committee interface {
 
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
-	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
+	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
 	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
 	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
 )

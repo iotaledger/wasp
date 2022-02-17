@@ -136,11 +136,11 @@ func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, p
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
-	vctx := viewcontext.NewFromChain(ch)
+	vctx := viewcontext.New(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), params)
+		ret, err = vctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), params)
 		return err
 	})
 	return ret, err

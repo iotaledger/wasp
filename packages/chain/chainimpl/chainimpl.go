@@ -296,7 +296,7 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		res, err := viewcontext.NewFromChain(c).CallView(
+		res, err := viewcontext.New(c).CallView(
 			governance.Contract.Hname(),
 			governance.FuncGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),

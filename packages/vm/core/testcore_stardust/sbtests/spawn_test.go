@@ -23,7 +23,7 @@ func TestSpawn(t *testing.T) {
 
 	ret, err := ch.CallView(ScName+"_spawned", sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
-	res := kvdecoder.New(ret, ch.Log)
+	res := kvdecoder.New(ret, ch.Log())
 	counter := res.MustGetUint64(sbtestsc.VarCounter)
 	require.EqualValues(t, 5, counter)
 

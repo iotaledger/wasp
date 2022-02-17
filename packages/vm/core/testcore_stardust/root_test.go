@@ -22,7 +22,7 @@ func TestRootBasic(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	chain.CheckChain()
-	chain.Log.Infof("\n%s\n", chain.String())
+	chain.Log().Infof("\n%s\n", chain.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {

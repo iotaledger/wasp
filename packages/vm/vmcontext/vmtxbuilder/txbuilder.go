@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
