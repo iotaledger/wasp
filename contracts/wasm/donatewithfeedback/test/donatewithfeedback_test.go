@@ -34,48 +34,63 @@ func TestStateAfterDeploy(t *testing.T) {
 
 func TestDonateOnce(t *testing.T) {
 	ctx := setupTest(t)
+	accountBalance := ctx.Balance(ctx.Account())
 
 	donator1 := ctx.NewSoloAgent()
+	ctx.Chain.MustDepositIotasToL2(1000, donator1.Pair)
+	require.EqualValues(t, 1000-100, ctx.Balance(donator1))
+
 	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
 	donate.Params.Feedback().SetValue("Nice work!")
-	donate.Func.TransferIotas(42).Post()
+	donate.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 1000-200, ctx.Balance(donator1))
 
 	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
 	donationInfo.Func.Call()
 
 	require.EqualValues(t, 1, donationInfo.Results.Count().Value())
-	require.EqualValues(t, 42, donationInfo.Results.MaxDonation().Value())
-	require.EqualValues(t, 42, donationInfo.Results.TotalDonation().Value())
+	require.EqualValues(t, 1234, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, 1234, donationInfo.Results.TotalDonation().Value())
 
-	// 42 iota transferred from wallet to contract
-	require.EqualValues(t, solo.Saldo-42, donator1.Balance())
-	require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
+	// 1234 iota transferred from wallet to contract
+	require.EqualValues(t, solo.Saldo-1000-1234, donator1.Balance())
+	require.EqualValues(t, accountBalance+1234, ctx.Balance(ctx.Account()))
 }
 
 func TestDonateTwice(t *testing.T) {
 	ctx := setupTest(t)
+	accountBalance := ctx.Balance(ctx.Account())
 
 	donator1 := ctx.NewSoloAgent()
-	donate1 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
-	donate1.Params.Feedback().SetValue("Nice work!")
-	donate1.Func.TransferIotas(42).Post()
+	ctx.Chain.MustDepositIotasToL2(1000, donator1.Pair)
+	require.EqualValues(t, 1000-100, ctx.Balance(donator1))
+
+	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
+	donate.Params.Feedback().SetValue("Nice work!")
+	donate.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 1000-200, ctx.Balance(donator1))
 
 	donator2 := ctx.NewSoloAgent()
+	ctx.Chain.MustDepositIotasToL2(1000, donator2.Pair)
+	require.EqualValues(t, 1000-100, ctx.Balance(donator2))
+
 	donate2 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator2))
-	donate2.Params.Feedback().SetValue("Exactly what I needed!")
-	donate2.Func.TransferIotas(69).Post()
+	donate2.Params.Feedback().SetValue("Nice work!")
+	donate2.Func.TransferIotas(2345).Post()
 	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 1000-200, ctx.Balance(donator2))
 
 	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
 	donationInfo.Func.Call()
 
 	require.EqualValues(t, 2, donationInfo.Results.Count().Value())
-	require.EqualValues(t, 69, donationInfo.Results.MaxDonation().Value())
-	require.EqualValues(t, 42+69, donationInfo.Results.TotalDonation().Value())
+	require.EqualValues(t, 2345, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, 3579, donationInfo.Results.TotalDonation().Value())
 
-	require.EqualValues(t, solo.Saldo-42, donator1.Balance())
-	require.EqualValues(t, solo.Saldo-69, donator2.Balance())
-	require.EqualValues(t, 42+69, ctx.Balance(ctx.Account()))
+	// 1234 iota transferred from wallet to contract
+	require.EqualValues(t, solo.Saldo-1000-1234, donator1.Balance())
+	require.EqualValues(t, solo.Saldo-1000-2345, donator2.Balance())
+	require.EqualValues(t, accountBalance+1234+2345, ctx.Balance(ctx.Account()))
 }
