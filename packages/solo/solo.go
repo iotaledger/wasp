@@ -226,7 +226,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		feeTarget = validatorFeeTarget[0]
 	}
 
-	outs, outIDs := env.UnspentOutputs(originatorAddr)
+	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
 		stateAddr,
@@ -282,7 +282,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	outs, ids := env.UnspentOutputs(originatorAddr)
+	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
 		chainID,
@@ -510,7 +510,7 @@ func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
 // ---------------------------------------------
 
 func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
-	allOuts := env.utxoDB.GetUnspentOutputs(addr)
+	allOuts, _ := env.utxoDB.GetUnspentOutputs(addr)
 	ids := make(iotago.OutputIDs, len(allOuts))
 	i := 0
 	for id := range allOuts {

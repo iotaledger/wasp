@@ -71,11 +71,12 @@ func TestDoubleSpend(t *testing.T) {
 	tx1ID, err := tx1.ID()
 	require.NoError(t, err)
 
-	spend2, err := builder.NewTransactionBuilder().
-		AddInput(&builder.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
-			TransactionID:          *tx1ID,
-			TransactionOutputIndex: 0,
-		}}).
+	spend2, err := builder.NewTransactionBuilder(0).
+		AddInput(&builder.ToBeSignedUTXOInput{
+			Address:  addr1,
+			Output:   tx1.Essence.Outputs[0],
+			OutputID: iotago.OutputIDFromTransactionIDAndIndex(*tx1ID, 0),
+		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
 			Conditions: iotago.UnlockConditions{
@@ -87,11 +88,12 @@ func TestDoubleSpend(t *testing.T) {
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
 
-	spend3, err := builder.NewTransactionBuilder().
-		AddInput(&builder.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
-			TransactionID:          *tx1ID,
-			TransactionOutputIndex: 0,
-		}}).
+	spend3, err := builder.NewTransactionBuilder(0).
+		AddInput(&builder.ToBeSignedUTXOInput{
+			Address:  addr1,
+			Output:   tx1.Essence.Outputs[0],
+			OutputID: iotago.OutputIDFromTransactionIDAndIndex(*tx1ID, 0),
+		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
 			Conditions: iotago.UnlockConditions{
