@@ -354,7 +354,7 @@ func (u *UtxoDB) AddToLedger(tx *iotago.Transaction) error {
 	defer u.mutex.Unlock()
 
 	if err := u.validateTransaction(tx); err != nil {
-		panic(err)
+		return err
 	}
 
 	u.addTransaction(tx, false)
@@ -377,11 +377,20 @@ func (u *UtxoDB) MustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 }
 
 // GetUnspentOutputs returns all unspent outputs locked by the address with its ids
-func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) iotago.OutputSet {
+func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	return u.getUnspentOutputs(addr)
+	outs := u.getUnspentOutputs(addr)
+
+	ids := make(iotago.OutputIDs, len(outs))
+	i := 0
+	for id := range outs {
+		ids[i] = id
+		i++
+	}
+
+	return outs, ids
 }
 
 // GetAddressBalanceIotas returns the total amount of iotas owned by the address
