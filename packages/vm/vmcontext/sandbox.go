@@ -16,7 +16,7 @@ import (
 )
 
 type contractSandbox struct {
-	sandbox.Sandboxbase
+	sandbox.SandboxBase
 }
 
 func NewSandbox(vmctx *VMContext) iscp.Sandbox {

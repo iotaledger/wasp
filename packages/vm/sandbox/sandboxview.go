@@ -12,7 +12,7 @@ import (
 )
 
 type sandboxView struct {
-	Sandboxbase
+	SandboxBase
 }
 
 func NewSandboxView(ctx execution.WaspContext) iscp.SandboxView {
@@ -21,7 +21,7 @@ func NewSandboxView(ctx execution.WaspContext) iscp.SandboxView {
 	return ret
 }
 
-func (s *Sandboxbase) State() kv.KVStoreReader {
+func (s *sandboxView) State() kv.KVStoreReader {
 	return s.Ctx.StateReader()
 }
 

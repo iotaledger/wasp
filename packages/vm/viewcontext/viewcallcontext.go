@@ -11,14 +11,14 @@ type callContext struct {
 	params   iscp.Params // params passed
 }
 
-func (ctx *Viewcontext) getCallContext() *callContext {
+func (ctx *ViewContext) getCallContext() *callContext {
 	if len(ctx.callStack) == 0 {
 		panic("getCallContext: stack is empty")
 	}
 	return ctx.callStack[len(ctx.callStack)-1]
 }
 
-func (ctx *Viewcontext) pushCallContext(contract iscp.Hname, params dict.Dict) {
+func (ctx *ViewContext) pushCallContext(contract iscp.Hname, params dict.Dict) {
 	ctx.callStack = append(ctx.callStack,
 		&callContext{
 			contract: contract,
@@ -29,7 +29,7 @@ func (ctx *Viewcontext) pushCallContext(contract iscp.Hname, params dict.Dict) {
 		})
 }
 
-func (ctx *Viewcontext) popCallContext() {
+func (ctx *ViewContext) popCallContext() {
 	ctx.callStack[len(ctx.callStack)-1] = nil // for GC
 	ctx.callStack = ctx.callStack[:len(ctx.callStack)-1]
 }

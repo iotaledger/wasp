@@ -26,8 +26,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// viewcontext implements the needed infrastucture to run external view calls, its more lightweight than vmcontext
-type Viewcontext struct {
+// ViewContext implements the needed infrastucture to run external view calls, its more lightweight than vmcontext
+type ViewContext struct {
 	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
 	chainID     *iscp.ChainID
@@ -38,10 +38,10 @@ type Viewcontext struct {
 	callStack   []*callContext
 }
 
-var _ execution.WaspContext = &Viewcontext{}
+var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.ChainCore) *Viewcontext {
-	return &Viewcontext{
+func New(ch chain.ChainCore) *ViewContext {
+	return &ViewContext{
 		processors:  ch.Processors(),
 		stateReader: ch.GetStateReader(),
 		chainID:     ch.ID(),
@@ -49,19 +49,19 @@ func New(ch chain.ChainCore) *Viewcontext {
 	}
 }
 
-func (ctx *Viewcontext) contractStateReader(contract iscp.Hname) kv.KVStoreReader {
+func (ctx *ViewContext) contractStateReader(contract iscp.Hname) kv.KVStoreReader {
 	return subrealm.NewReadOnly(ctx.stateReader.KVStoreReader(), kv.Key(contract.Bytes()))
 }
 
-func (ctx *Viewcontext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+func (ctx *ViewContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 	return blob.LocateProgram(ctx.contractStateReader(blob.Contract.Hname()), programHash)
 }
 
-func (ctx *Viewcontext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+func (ctx *ViewContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
 	return root.FindContract(ctx.contractStateReader(root.Contract.Hname()), contractHname)
 }
 
-func (ctx *Viewcontext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
+func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	g := burnCode.Cost(par...)
 	ctx.gasBurnLog.Record(burnCode, g)
 	if g > ctx.gasBudget {
@@ -70,7 +70,7 @@ func (ctx *Viewcontext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	ctx.gasBudget -= g
 }
 
-func (ctx *Viewcontext) AccountID() *iscp.AgentID {
+func (ctx *ViewContext) AccountID() *iscp.AgentID {
 	hname := ctx.CurrentContractHname()
 	if commonaccount.IsCoreHname(hname) {
 		return commonaccount.Get(ctx.ChainID())
@@ -78,15 +78,15 @@ func (ctx *Viewcontext) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(ctx.ChainID().AsAddress(), hname)
 }
 
-func (ctx *Viewcontext) Processors() *processors.Cache {
+func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *Viewcontext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
+func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *Viewcontext) Timestamp() int64 {
+func (ctx *ViewContext) Timestamp() int64 {
 	t, err := ctx.stateReader.Timestamp()
 	if err != nil {
 		ctx.log.Panicf("%v", err)
@@ -94,31 +94,31 @@ func (ctx *Viewcontext) Timestamp() int64 {
 	return t.UnixNano()
 }
 
-func (ctx *Viewcontext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
+func (ctx *ViewContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 	return accounts.GetIotaBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *Viewcontext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (ctx *ViewContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	return accounts.GetNativeTokenBalance(
 		ctx.contractStateReader(accounts.Contract.Hname()),
 		agentID,
 		tokenID)
 }
 
-func (ctx *Viewcontext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Assets) dict.Dict {
+func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Assets) dict.Dict {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return ctx.callView(targetContract, epCode, params)
 }
 
-func (ctx *Viewcontext) ChainID() *iscp.ChainID {
+func (ctx *ViewContext) ChainID() *iscp.ChainID {
 	return ctx.chainInfo.ChainID
 }
 
-func (ctx *Viewcontext) ChainOwnerID() *iscp.AgentID {
+func (ctx *ViewContext) ChainOwnerID() *iscp.AgentID {
 	return ctx.chainInfo.ChainOwnerID
 }
 
-func (ctx *Viewcontext) ContractCreator() *iscp.AgentID {
+func (ctx *ViewContext) ContractCreator() *iscp.AgentID {
 	rec := ctx.GetContractRecord(ctx.CurrentContractHname())
 	if rec == nil {
 		panic("can't find current contract")
@@ -126,40 +126,40 @@ func (ctx *Viewcontext) ContractCreator() *iscp.AgentID {
 	return rec.Creator
 }
 
-func (ctx *Viewcontext) CurrentContractHname() iscp.Hname {
+func (ctx *ViewContext) CurrentContractHname() iscp.Hname {
 	return ctx.getCallContext().contract
 }
 
-func (ctx *Viewcontext) Params() *iscp.Params {
+func (ctx *ViewContext) Params() *iscp.Params {
 	return &ctx.getCallContext().params
 }
 
-func (ctx *Viewcontext) StateReader() kv.KVStoreReader {
+func (ctx *ViewContext) StateReader() kv.KVStoreReader {
 	return ctx.contractStateReader(ctx.CurrentContractHname())
 }
 
-func (ctx *Viewcontext) GasBudgetLeft() uint64 {
+func (ctx *ViewContext) GasBudgetLeft() uint64 {
 	return ctx.gasBudget
 }
 
-func (ctx *Viewcontext) Infof(format string, params ...interface{}) {
+func (ctx *ViewContext) Infof(format string, params ...interface{}) {
 	ctx.log.Infof(format, params...)
 }
 
-func (ctx *Viewcontext) Debugf(format string, params ...interface{}) {
+func (ctx *ViewContext) Debugf(format string, params ...interface{}) {
 	ctx.log.Debugf(format, params...)
 }
 
-func (ctx *Viewcontext) Panicf(format string, params ...interface{}) {
+func (ctx *ViewContext) Panicf(format string, params ...interface{}) {
 	ctx.log.Panicf(format, params...)
 }
 
 // only for debugging
-func (ctx *Viewcontext) GasBurnLog() *gas.BurnLog {
+func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 	return ctx.gasBurnLog
 }
 
-func (ctx *Viewcontext) callView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
+func (ctx *ViewContext) callView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
 	contractRecord := ctx.GetContractRecord(targetContract)
 	ep := execution.GetEntryPointByProgHash(ctx, targetContract, entryPoint, contractRecord.ProgramHash)
 
@@ -173,7 +173,7 @@ func (ctx *Viewcontext) callView(targetContract, entryPoint iscp.Hname, params d
 	return ep.Call(sandbox.NewSandboxView(ctx))
 }
 
-func (ctx *Viewcontext) initCallView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
+func (ctx *ViewContext) initCallView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
 	ctx.gasBurnLog = gas.NewGasBurnLog()
 	ctx.gasBudget = gas.MaxGasExternalViewCall
 
@@ -182,7 +182,7 @@ func (ctx *Viewcontext) initCallView(targetContract, entryPoint iscp.Hname, para
 	return ctx.callView(targetContract, entryPoint, params)
 }
 
-func (ctx *Viewcontext) CallViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) (ret dict.Dict, err error) {
+func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) (ret dict.Dict, err error) {
 	func() {
 		defer func() {
 			r := recover()
