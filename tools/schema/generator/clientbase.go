@@ -3,8 +3,6 @@ package generator
 import (
 	"fmt"
 	"os"
-
-	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
 type ClientBase struct {
@@ -31,27 +29,9 @@ func (g *ClientBase) Generate() error {
 }
 
 func (g *ClientBase) generateCode() error {
-	err := g.createSourceFile("events", !g.s.CoreContracts)
+	err := g.createSourceFile("events", len(g.s.Events) != 0)
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("service", true)
-	if err != nil {
-		return err
-	}
-	if !g.s.CoreContracts {
-		return g.generateFuncs(g.appendEvents)
-	}
-	return nil
-}
-
-func (g *ClientBase) appendEvents(existing model.StringMap) {
-	for _, g.currentEvent = range g.s.Events {
-		name := g.s.ContractName + capitalize(g.currentEvent.Name)
-		if existing[name] == "" {
-			g.log("currentEvent: " + g.currentEvent.Name)
-			g.setMultiKeyValues("evtName", g.currentEvent.Name)
-			g.emit("funcSignature")
-		}
-	}
+	return g.createSourceFile("service", true)
 }

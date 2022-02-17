@@ -7,80 +7,82 @@
 
 package dividend
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableAddress struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableAddress) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfImmutableAddress) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableAddress) GetAddress(index int32) wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(a.objID, wasmlib.Key32(index))
+func (a ArrayOfImmutableAddress) GetAddress(index uint32) wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(a.proxy.Index(index))
 }
 
-type MapAddressToImmutableInt64 struct {
-	objID int32
+type MapAddressToImmutableUint64 struct {
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAddressToImmutableInt64) GetInt64(key wasmlib.ScAddress) wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(m.objID, key.KeyID())
+func (m MapAddressToImmutableUint64) GetUint64(key wasmtypes.ScAddress) wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.AddressToBytes(key)))
 }
 
 type ImmutableDividendState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableDividendState) MemberList() ArrayOfImmutableAddress {
-	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMemberList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
-	return ArrayOfImmutableAddress{objID: arrID}
+	return ArrayOfImmutableAddress{proxy: s.proxy.Root(StateMemberList)}
 }
 
-func (s ImmutableDividendState) Members() MapAddressToImmutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMembers), wasmlib.TYPE_MAP)
-	return MapAddressToImmutableInt64{objID: mapID}
+func (s ImmutableDividendState) Members() MapAddressToImmutableUint64 {
+	return MapAddressToImmutableUint64{proxy: s.proxy.Root(StateMembers)}
 }
 
-func (s ImmutableDividendState) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(StateOwner))
+func (s ImmutableDividendState) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateOwner))
 }
 
-func (s ImmutableDividendState) TotalFactor() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateTotalFactor))
+func (s ImmutableDividendState) TotalFactor() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateTotalFactor))
 }
 
 type ArrayOfMutableAddress struct {
-	objID int32
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableAddress) AppendAddress() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(a.proxy.Append())
 }
 
 func (a ArrayOfMutableAddress) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableAddress) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfMutableAddress) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableAddress) GetAddress(index int32) wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(a.objID, wasmlib.Key32(index))
+func (a ArrayOfMutableAddress) GetAddress(index uint32) wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(a.proxy.Index(index))
 }
 
-type MapAddressToMutableInt64 struct {
-	objID int32
+type MapAddressToMutableUint64 struct {
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAddressToMutableInt64) Clear() {
-	wasmlib.Clear(m.objID)
+func (m MapAddressToMutableUint64) Clear() {
+	m.proxy.ClearMap()
 }
 
-func (m MapAddressToMutableInt64) GetInt64(key wasmlib.ScAddress) wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(m.objID, key.KeyID())
+func (m MapAddressToMutableUint64) GetUint64(key wasmtypes.ScAddress) wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.AddressToBytes(key)))
 }
 
 type MutableDividendState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableDividendState) AsImmutable() ImmutableDividendState {
@@ -88,19 +90,17 @@ func (s MutableDividendState) AsImmutable() ImmutableDividendState {
 }
 
 func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
-	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMemberList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
-	return ArrayOfMutableAddress{objID: arrID}
+	return ArrayOfMutableAddress{proxy: s.proxy.Root(StateMemberList)}
 }
 
-func (s MutableDividendState) Members() MapAddressToMutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMembers), wasmlib.TYPE_MAP)
-	return MapAddressToMutableInt64{objID: mapID}
+func (s MutableDividendState) Members() MapAddressToMutableUint64 {
+	return MapAddressToMutableUint64{proxy: s.proxy.Root(StateMembers)}
 }
 
-func (s MutableDividendState) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(StateOwner))
+func (s MutableDividendState) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateOwner))
 }
 
-func (s MutableDividendState) TotalFactor() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateTotalFactor))
+func (s MutableDividendState) TotalFactor() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateTotalFactor))
 }

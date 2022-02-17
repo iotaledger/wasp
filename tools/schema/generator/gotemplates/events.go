@@ -5,6 +5,7 @@ var eventsGo = map[string]string{
 	"events.go": `
 //nolint:gocritic
 $#emit goHeader
+$#emit importWasmTypes
 
 $#set TypeName $Package$+Events
 type $TypeName struct {
@@ -13,14 +14,14 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
-$#set params 
 $#set separator 
+$#set params 
 $#each event eventParam
 
 func (e $TypeName) $EvtName($params) {
-	wasmlib.NewEventEncoder("$package.$evtName").
+	evt := wasmlib.NewEventEncoder("$package.$evtName")
 $#each event eventEmit
-		Emit()
+	evt.Emit()
 }
 `,
 	// *******************************
@@ -30,6 +31,6 @@ $#set separator ,
 `,
 	// *******************************
 	"eventEmit": `
-		$FldType($fldName).
+	evt.Encode(wasmtypes.$FldType$+ToString($fldName))
 `,
 }

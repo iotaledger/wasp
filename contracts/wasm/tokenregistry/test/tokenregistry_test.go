@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/tokenregistry/go/tokenregistry"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 

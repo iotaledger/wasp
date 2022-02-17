@@ -7,52 +7,52 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableAllowanceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableAllowanceResults) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAmount))
+func (s ImmutableAllowanceResults) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAmount))
 }
 
 type MutableAllowanceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableAllowanceResults) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAmount))
+func (s MutableAllowanceResults) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAmount))
 }
 
 type ImmutableBalanceOfResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBalanceOfResults) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAmount))
+func (s ImmutableBalanceOfResults) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAmount))
 }
 
 type MutableBalanceOfResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBalanceOfResults) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAmount))
+func (s MutableBalanceOfResults) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAmount))
 }
 
 type ImmutableTotalSupplyResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTotalSupplyResults) Supply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultSupply))
+func (s ImmutableTotalSupplyResults) Supply() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultSupply))
 }
 
 type MutableTotalSupplyResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTotalSupplyResults) Supply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultSupply))
+func (s MutableTotalSupplyResults) Supply() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultSupply))
 }

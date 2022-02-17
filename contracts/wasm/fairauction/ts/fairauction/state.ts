@@ -5,141 +5,99 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class MapColorToImmutableAuction {
-	objID: i32;
+export class MapColorToImmutableAuction extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getAuction(key: wasmlib.ScColor): sc.ImmutableAuction {
-        return new sc.ImmutableAuction(this.objID, key.getKeyID());
-    }
-}
-
-export class MapColorToImmutableBidderList {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getBidderList(key: wasmlib.ScColor): sc.ImmutableBidderList {
-        let subID = wasmlib.getObjectID(this.objID, key.getKeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_AGENT_ID);
-        return new sc.ImmutableBidderList(subID);
-    }
-}
-
-export class MapColorToImmutableBids {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getBids(key: wasmlib.ScColor): sc.ImmutableBids {
-        let subID = wasmlib.getObjectID(this.objID, key.getKeyID(), wasmlib.TYPE_MAP);
-        return new sc.ImmutableBids(subID);
-    }
-}
-
-export class ImmutableFairAuctionState extends wasmlib.ScMapID {
-    auctions(): sc.MapColorToImmutableAuction {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateAuctions), wasmlib.TYPE_MAP);
-		return new sc.MapColorToImmutableAuction(mapID);
-	}
-
-    bidderList(): sc.MapColorToImmutableBidderList {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBidderList), wasmlib.TYPE_MAP);
-		return new sc.MapColorToImmutableBidderList(mapID);
-	}
-
-    bids(): sc.MapColorToImmutableBids {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBids), wasmlib.TYPE_MAP);
-		return new sc.MapColorToImmutableBids(mapID);
-	}
-
-    ownerMargin(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
+	getAuction(key: wasmtypes.ScColor): sc.ImmutableAuction {
+		return new sc.ImmutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
 
-export class MapColorToMutableAuction {
-	objID: i32;
+export class MapColorToImmutableBidderList extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    getAuction(key: wasmlib.ScColor): sc.MutableAuction {
-        return new sc.MutableAuction(this.objID, key.getKeyID());
-    }
+	getBidderList(key: wasmtypes.ScColor): sc.ImmutableBidderList {
+		return new sc.ImmutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
-export class MapColorToMutableBidderList {
-	objID: i32;
+export class MapColorToImmutableBids extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    getBidderList(key: wasmlib.ScColor): sc.MutableBidderList {
-        let subID = wasmlib.getObjectID(this.objID, key.getKeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_AGENT_ID);
-        return new sc.MutableBidderList(subID);
-    }
+	getBids(key: wasmtypes.ScColor): sc.ImmutableBids {
+		return new sc.ImmutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
 }
 
-export class MapColorToMutableBids {
-	objID: i32;
+export class ImmutableFairAuctionState extends wasmtypes.ScProxy {
+	auctions(): sc.MapColorToImmutableAuction {
+		return new sc.MapColorToImmutableAuction(this.proxy.root(sc.StateAuctions));
+	}
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	bidderList(): sc.MapColorToImmutableBidderList {
+		return new sc.MapColorToImmutableBidderList(this.proxy.root(sc.StateBidderList));
+	}
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
+	bids(): sc.MapColorToImmutableBids {
+		return new sc.MapColorToImmutableBids(this.proxy.root(sc.StateBids));
+	}
 
-    getBids(key: wasmlib.ScColor): sc.MutableBids {
-        let subID = wasmlib.getObjectID(this.objID, key.getKeyID(), wasmlib.TYPE_MAP);
-        return new sc.MutableBids(subID);
-    }
+	ownerMargin(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateOwnerMargin));
+	}
 }
 
-export class MutableFairAuctionState extends wasmlib.ScMapID {
-    asImmutable(): sc.ImmutableFairAuctionState {
-		const imm = new sc.ImmutableFairAuctionState();
-		imm.mapID = this.mapID;
-		return imm;
+export class MapColorToMutableAuction extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
 	}
 
-    auctions(): sc.MapColorToMutableAuction {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateAuctions), wasmlib.TYPE_MAP);
-		return new sc.MapColorToMutableAuction(mapID);
+	getAuction(key: wasmtypes.ScColor): sc.MutableAuction {
+		return new sc.MutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
+}
+
+export class MapColorToMutableBidderList extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
 	}
 
-    bidderList(): sc.MapColorToMutableBidderList {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBidderList), wasmlib.TYPE_MAP);
-		return new sc.MapColorToMutableBidderList(mapID);
+	getBidderList(key: wasmtypes.ScColor): sc.MutableBidderList {
+		return new sc.MutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
+}
+
+export class MapColorToMutableBids extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
 	}
 
-    bids(): sc.MapColorToMutableBids {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBids), wasmlib.TYPE_MAP);
-		return new sc.MapColorToMutableBids(mapID);
+	getBids(key: wasmtypes.ScColor): sc.MutableBids {
+		return new sc.MutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
+	}
+}
+
+export class MutableFairAuctionState extends wasmtypes.ScProxy {
+	asImmutable(): sc.ImmutableFairAuctionState {
+		return new sc.ImmutableFairAuctionState(this.proxy);
 	}
 
-    ownerMargin(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
+	auctions(): sc.MapColorToMutableAuction {
+		return new sc.MapColorToMutableAuction(this.proxy.root(sc.StateAuctions));
+	}
+
+	bidderList(): sc.MapColorToMutableBidderList {
+		return new sc.MapColorToMutableBidderList(this.proxy.root(sc.StateBidderList));
+	}
+
+	bids(): sc.MapColorToMutableBids {
+		return new sc.MapColorToMutableBids(this.proxy.root(sc.StateBids));
+	}
+
+	ownerMargin(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateOwnerMargin));
 	}
 }

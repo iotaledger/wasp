@@ -7,21 +7,38 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncApprove, funcApproveThunk)
-	exports.AddFunc(FuncInit, funcInitThunk)
-	exports.AddFunc(FuncTransfer, funcTransferThunk)
-	exports.AddFunc(FuncTransferFrom, funcTransferFromThunk)
-	exports.AddView(ViewAllowance, viewAllowanceThunk)
-	exports.AddView(ViewBalanceOf, viewBalanceOfThunk)
-	exports.AddView(ViewTotalSupply, viewTotalSupplyThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncApprove,
+		FuncInit,
+		FuncTransfer,
+		FuncTransferFrom,
+		ViewAllowance,
+		ViewBalanceOf,
+		ViewTotalSupply,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcApproveThunk,
+		funcInitThunk,
+		funcTransferThunk,
+		funcTransferFromThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewAllowanceThunk,
+		viewBalanceOfThunk,
+		viewTotalSupplyThunk,
+	},
+}
 
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
 	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ApproveContext struct {
@@ -34,10 +51,10 @@ func funcApproveThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc20.funcApprove")
 	f := &ApproveContext{
 		Params: ImmutableApproveParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Amount().Exists(), "missing mandatory amount")
@@ -56,10 +73,10 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc20.funcInit")
 	f := &InitContext{
 		Params: ImmutableInitParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Creator().Exists(), "missing mandatory creator")
@@ -78,10 +95,10 @@ func funcTransferThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc20.funcTransfer")
 	f := &TransferContext{
 		Params: ImmutableTransferParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
@@ -100,10 +117,10 @@ func funcTransferFromThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc20.funcTransferFrom")
 	f := &TransferFromContext{
 		Params: ImmutableTransferFromParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
@@ -121,20 +138,22 @@ type AllowanceContext struct {
 
 func viewAllowanceThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc20.viewAllowance")
+	results := wasmlib.NewScDict()
 	f := &AllowanceContext{
 		Params: ImmutableAllowanceParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableAllowanceResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
 	ctx.Require(f.Params.Delegation().Exists(), "missing mandatory delegation")
 	viewAllowance(ctx, f)
+	ctx.Results(results)
 	ctx.Log("erc20.viewAllowance ok")
 }
 
@@ -146,19 +165,21 @@ type BalanceOfContext struct {
 
 func viewBalanceOfThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc20.viewBalanceOf")
+	results := wasmlib.NewScDict()
 	f := &BalanceOfContext{
 		Params: ImmutableBalanceOfParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBalanceOfResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
 	viewBalanceOf(ctx, f)
+	ctx.Results(results)
 	ctx.Log("erc20.viewBalanceOf ok")
 }
 
@@ -169,14 +190,16 @@ type TotalSupplyContext struct {
 
 func viewTotalSupplyThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc20.viewTotalSupply")
+	results := wasmlib.NewScDict()
 	f := &TotalSupplyContext{
 		Results: MutableTotalSupplyResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableErc20State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewTotalSupply(ctx, f)
+	ctx.Results(results)
 	ctx.Log("erc20.viewTotalSupply ok")
 }

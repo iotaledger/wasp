@@ -22,7 +22,7 @@ const BASE_URI: &str = "my/special/base/uri/";
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
 // checks if caller is owner, or one of its delegated operators
-fn can_operate(state: MutableErc721State, caller: &ScAgentID, owner: &ScAgentID) -> bool {
+fn can_operate(state: &MutableErc721State, caller: &ScAgentID, owner: &ScAgentID) -> bool {
     if *caller == *owner {
         return true;
     }
@@ -32,7 +32,7 @@ fn can_operate(state: MutableErc721State, caller: &ScAgentID, owner: &ScAgentID)
 }
 
 // checks if caller is owner, or one of its delegated operators, or approved account for tokenID
-fn can_transfer(state: MutableErc721State, caller: &ScAgentID, owner: &ScAgentID, token_id: &ScHash) -> bool {
+fn can_transfer(state: &MutableErc721State, caller: &ScAgentID, owner: &ScAgentID, token_id: &ScHash) -> bool {
     if can_operate(state, caller, owner) {
         return true;
     }
@@ -42,7 +42,7 @@ fn can_transfer(state: MutableErc721State, caller: &ScAgentID, owner: &ScAgentID
 }
 
 // common code for safeTransferFrom and transferFrom
-fn transfer(ctx: &ScFuncContext, state: MutableErc721State, from: &ScAgentID, to: &ScAgentID, token_id: &ScHash) {
+fn transfer(ctx: &ScFuncContext, state: &MutableErc721State, from: &ScAgentID, to: &ScAgentID, token_id: &ScHash) {
     let token_owner = state.owners().get_agent_id(token_id);
     ctx.require(token_owner.exists(), "tokenID does not exist");
 
@@ -66,10 +66,14 @@ fn transfer(ctx: &ScFuncContext, state: MutableErc721State, from: &ScAgentID, to
     let current_approved = state.approved_accounts().get_agent_id(&token_id);
     if current_approved.exists() {
         current_approved.delete();
-        events.approval(&ScAgentID::ZERO, &owner, &token_id);
+        events.approval(&zero(), &owner, &token_id);
     }
 
     events.transfer(from, to, token_id);
+}
+
+fn zero() -> ScAgentID {
+    ScAgentID::from_bytes(&[])
 }
 
 ///////////////////////////  SC FUNCS  ////////////////////////////
@@ -82,7 +86,7 @@ pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
     let token_owner = f.state.owners().get_agent_id(&token_id);
     ctx.require(token_owner.exists(), "tokenID does not exist");
     let owner = token_owner.value();
-    ctx.require(can_operate(f.state, &ctx.caller(), &owner), "not owner or operator");
+    ctx.require(can_operate(&f.state, &ctx.caller(), &owner), "not owner or operator");
 
     let approved = f.params.approved();
     if !approved.exists() {
@@ -90,7 +94,7 @@ pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
         let current_approved = f.state.approved_accounts().get_agent_id(&token_id);
         if current_approved.exists() {
             current_approved.delete();
-            f.events.approval(&ScAgentID::ZERO, &owner, &token_id);
+            f.events.approval(&zero(), &owner, &token_id);
         }
         return;
     }
@@ -106,21 +110,21 @@ pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
 pub fn func_burn(ctx: &ScFuncContext, f: &BurnContext) {
     let token_id = f.params.token_id().value();
     let owner = f.state.owners().get_agent_id(&token_id).value();
-    ctx.require(owner != ScAgentID::ZERO, "tokenID does not exist");
+    ctx.require(owner != zero(), "tokenID does not exist");
     ctx.require(ctx.caller() == owner, "caller is not owner");
 
     // remove approval if it exists
     let current_approved = f.state.approved_accounts().get_agent_id(&token_id);
     if current_approved.exists() {
         current_approved.delete();
-        f.events.approval(&ScAgentID::ZERO, &owner, &token_id);
+        f.events.approval(&zero(), &owner, &token_id);
     }
 
     let balance = f.state.balances().get_uint64(&owner);
     balance.set_value(balance.value() - 1);
 
     f.state.owners().get_agent_id(&token_id).delete();
-    f.events.transfer(&owner, &ScAgentID::ZERO, &token_id);
+    f.events.transfer(&owner, &zero(), &token_id);
 }
 
 // Initializes the contract by setting a name and a symbol to the token collection.
@@ -151,7 +155,7 @@ pub fn func_mint(ctx: &ScFuncContext, f: &MintContext) {
     let balance = f.state.balances().get_uint64(&owner);
     balance.set_value(balance.value() + 1);
 
-    f.events.transfer(&ScAgentID::ZERO, &owner, &token_id);
+    f.events.transfer(&zero(), &owner, &token_id);
     // if !owner.is_address() {
     //     //TODO interpret to as SC address and call its onERC721Received() function
     // }
@@ -163,7 +167,7 @@ pub fn func_safe_transfer_from(ctx: &ScFuncContext, f: &SafeTransferFromContext)
     let from = f.params.from().value();
     let to = f.params.to().value();
     let token_id = f.params.token_id().value();
-    transfer(&ctx, f.state, &from, &to, &token_id);
+    transfer(&ctx, &f.state, &from, &to, &token_id);
     // if !to.is_address() {
     //     //TODO interpret to as SC address and call its onERC721Received() function
     // }
@@ -187,7 +191,7 @@ pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
     let from = f.params.from().value();
     let to = f.params.to().value();
     let token_id = f.params.token_id().value();
-    transfer(ctx, f.state, &from, &to, &token_id);
+    transfer(ctx, &f.state, &from, &to, &token_id);
 }
 
 ///////////////////////////  SC VIEWS  ////////////////////////////

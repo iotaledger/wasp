@@ -7,18 +7,32 @@
 
 package tokenregistry
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncMintSupply, funcMintSupplyThunk)
-	exports.AddFunc(FuncTransferOwnership, funcTransferOwnershipThunk)
-	exports.AddFunc(FuncUpdateMetadata, funcUpdateMetadataThunk)
-	exports.AddView(ViewGetInfo, viewGetInfoThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncMintSupply,
+		FuncTransferOwnership,
+		FuncUpdateMetadata,
+		ViewGetInfo,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcMintSupplyThunk,
+		funcTransferOwnershipThunk,
+		funcUpdateMetadataThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetInfoThunk,
+	},
+}
 
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
 	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type MintSupplyContext struct {
@@ -30,10 +44,10 @@ func funcMintSupplyThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("tokenregistry.funcMintSupply")
 	f := &MintSupplyContext{
 		Params: ImmutableMintSupplyParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTokenRegistryState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcMintSupply(ctx, f)
@@ -47,18 +61,18 @@ type TransferOwnershipContext struct {
 
 func funcTransferOwnershipThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("tokenregistry.funcTransferOwnership")
+	f := &TransferOwnershipContext{
+		Params: ImmutableTransferOwnershipParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTokenRegistryState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// TODO the one who can transfer token ownership
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &TransferOwnershipContext{
-		Params: ImmutableTransferOwnershipParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableTokenRegistryState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
 	funcTransferOwnership(ctx, f)
 	ctx.Log("tokenregistry.funcTransferOwnership ok")
@@ -71,18 +85,18 @@ type UpdateMetadataContext struct {
 
 func funcUpdateMetadataThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("tokenregistry.funcUpdateMetadata")
+	f := &UpdateMetadataContext{
+		Params: ImmutableUpdateMetadataParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTokenRegistryState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// TODO the one who can change the token info
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &UpdateMetadataContext{
-		Params: ImmutableUpdateMetadataParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableTokenRegistryState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
 	funcUpdateMetadata(ctx, f)
 	ctx.Log("tokenregistry.funcUpdateMetadata ok")
@@ -97,10 +111,10 @@ func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("tokenregistry.viewGetInfo")
 	f := &GetInfoContext{
 		Params: ImmutableGetInfoParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: ImmutableTokenRegistryState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")

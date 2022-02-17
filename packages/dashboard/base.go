@@ -49,6 +49,7 @@ type WaspServices interface {
 	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
 	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
 	GetChainConsensusWorkflowStatus(*iscp.ChainID) (chain.ConsensusWorkflowStatus, error)
+	GetChainConsensusPipeMetrics(*iscp.ChainID) (chain.ConsensusPipeMetrics, error)
 }
 
 type Dashboard struct {

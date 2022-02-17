@@ -10,63 +10,101 @@
 
 use testcore::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
 
 mod consts;
 mod contract;
-mod keys;
 mod params;
 mod results;
 mod state;
+
 mod testcore;
+
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_CALL_ON_CHAIN,
+    	FUNC_CHECK_CONTEXT_FROM_FULL_EP,
+    	FUNC_DO_NOTHING,
+    	FUNC_GET_MINTED_SUPPLY,
+    	FUNC_INC_COUNTER,
+    	FUNC_INIT,
+    	FUNC_PASS_TYPES_FULL,
+    	FUNC_RUN_RECURSION,
+    	FUNC_SEND_TO_ADDRESS,
+    	FUNC_SET_INT,
+    	FUNC_SPAWN,
+    	FUNC_TEST_BLOCK_CONTEXT1,
+    	FUNC_TEST_BLOCK_CONTEXT2,
+    	FUNC_TEST_CALL_PANIC_FULL_EP,
+    	FUNC_TEST_CALL_PANIC_VIEW_EP_FROM_FULL,
+    	FUNC_TEST_CHAIN_OWNER_ID_FULL,
+    	FUNC_TEST_EVENT_LOG_DEPLOY,
+    	FUNC_TEST_EVENT_LOG_EVENT_DATA,
+    	FUNC_TEST_EVENT_LOG_GENERIC_DATA,
+    	FUNC_TEST_PANIC_FULL_EP,
+    	FUNC_WITHDRAW_TO_CHAIN,
+    	VIEW_CHECK_CONTEXT_FROM_VIEW_EP,
+    	VIEW_FIBONACCI,
+    	VIEW_GET_COUNTER,
+    	VIEW_GET_INT,
+    	VIEW_GET_STRING_VALUE,
+    	VIEW_JUST_VIEW,
+    	VIEW_PASS_TYPES_VIEW,
+    	VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW,
+    	VIEW_TEST_CHAIN_OWNER_ID_VIEW,
+    	VIEW_TEST_PANIC_VIEW_EP,
+    	VIEW_TEST_SANDBOX_CALL,
+	],
+    funcs: &[
+    	func_call_on_chain_thunk,
+    	func_check_context_from_full_ep_thunk,
+    	func_do_nothing_thunk,
+    	func_get_minted_supply_thunk,
+    	func_inc_counter_thunk,
+    	func_init_thunk,
+    	func_pass_types_full_thunk,
+    	func_run_recursion_thunk,
+    	func_send_to_address_thunk,
+    	func_set_int_thunk,
+    	func_spawn_thunk,
+    	func_test_block_context1_thunk,
+    	func_test_block_context2_thunk,
+    	func_test_call_panic_full_ep_thunk,
+    	func_test_call_panic_view_ep_from_full_thunk,
+    	func_test_chain_owner_id_full_thunk,
+    	func_test_event_log_deploy_thunk,
+    	func_test_event_log_event_data_thunk,
+    	func_test_event_log_generic_data_thunk,
+    	func_test_panic_full_ep_thunk,
+    	func_withdraw_to_chain_thunk,
+	],
+    views: &[
+    	view_check_context_from_view_ep_thunk,
+    	view_fibonacci_thunk,
+    	view_get_counter_thunk,
+    	view_get_int_thunk,
+    	view_get_string_value_thunk,
+    	view_just_view_thunk,
+    	view_pass_types_view_thunk,
+    	view_test_call_panic_view_ep_from_view_thunk,
+    	view_test_chain_owner_id_view_thunk,
+    	view_test_panic_view_ep_thunk,
+    	view_test_sandbox_call_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
 
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_CALL_ON_CHAIN,                     func_call_on_chain_thunk);
-    exports.add_func(FUNC_CHECK_CONTEXT_FROM_FULL_EP,        func_check_context_from_full_ep_thunk);
-    exports.add_func(FUNC_DO_NOTHING,                        func_do_nothing_thunk);
-    exports.add_func(FUNC_GET_MINTED_SUPPLY,                 func_get_minted_supply_thunk);
-    exports.add_func(FUNC_INC_COUNTER,                       func_inc_counter_thunk);
-    exports.add_func(FUNC_INIT,                              func_init_thunk);
-    exports.add_func(FUNC_PASS_TYPES_FULL,                   func_pass_types_full_thunk);
-    exports.add_func(FUNC_RUN_RECURSION,                     func_run_recursion_thunk);
-    exports.add_func(FUNC_SEND_TO_ADDRESS,                   func_send_to_address_thunk);
-    exports.add_func(FUNC_SET_INT,                           func_set_int_thunk);
-    exports.add_func(FUNC_SPAWN,                             func_spawn_thunk);
-    exports.add_func(FUNC_TEST_BLOCK_CONTEXT1,               func_test_block_context1_thunk);
-    exports.add_func(FUNC_TEST_BLOCK_CONTEXT2,               func_test_block_context2_thunk);
-    exports.add_func(FUNC_TEST_CALL_PANIC_FULL_EP,           func_test_call_panic_full_ep_thunk);
-    exports.add_func(FUNC_TEST_CALL_PANIC_VIEW_EP_FROM_FULL, func_test_call_panic_view_ep_from_full_thunk);
-    exports.add_func(FUNC_TEST_CHAIN_OWNER_ID_FULL,          func_test_chain_owner_id_full_thunk);
-    exports.add_func(FUNC_TEST_EVENT_LOG_DEPLOY,             func_test_event_log_deploy_thunk);
-    exports.add_func(FUNC_TEST_EVENT_LOG_EVENT_DATA,         func_test_event_log_event_data_thunk);
-    exports.add_func(FUNC_TEST_EVENT_LOG_GENERIC_DATA,       func_test_event_log_generic_data_thunk);
-    exports.add_func(FUNC_TEST_PANIC_FULL_EP,                func_test_panic_full_ep_thunk);
-    exports.add_func(FUNC_WITHDRAW_TO_CHAIN,                 func_withdraw_to_chain_thunk);
-    exports.add_view(VIEW_CHECK_CONTEXT_FROM_VIEW_EP,        view_check_context_from_view_ep_thunk);
-    exports.add_view(VIEW_FIBONACCI,                         view_fibonacci_thunk);
-    exports.add_view(VIEW_GET_COUNTER,                       view_get_counter_thunk);
-    exports.add_view(VIEW_GET_INT,                           view_get_int_thunk);
-    exports.add_view(VIEW_GET_STRING_VALUE,                  view_get_string_value_thunk);
-    exports.add_view(VIEW_JUST_VIEW,                         view_just_view_thunk);
-    exports.add_view(VIEW_PASS_TYPES_VIEW,                   view_pass_types_view_thunk);
-    exports.add_view(VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW, view_test_call_panic_view_ep_from_view_thunk);
-    exports.add_view(VIEW_TEST_CHAIN_OWNER_ID_VIEW,          view_test_chain_owner_id_view_thunk);
-    exports.add_view(VIEW_TEST_PANIC_VIEW_EP,                view_test_panic_view_ep_thunk);
-    exports.add_view(VIEW_TEST_SANDBOX_CALL,                 view_test_sandbox_call_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct CallOnChainContext {
@@ -78,18 +116,13 @@ pub struct CallOnChainContext {
 fn func_call_on_chain_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcCallOnChain");
 	let f = CallOnChainContext {
-		params: ImmutableCallOnChainParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableCallOnChainResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableCallOnChainParams { proxy: params_proxy() },
+		results: MutableCallOnChainResults { proxy: results_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
 	func_call_on_chain(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.funcCallOnChain ok");
 }
 
@@ -101,12 +134,8 @@ pub struct CheckContextFromFullEPContext {
 fn func_check_context_from_full_ep_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcCheckContextFromFullEP");
 	let f = CheckContextFromFullEPContext {
-		params: ImmutableCheckContextFromFullEPParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableCheckContextFromFullEPParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
 	ctx.require(f.params.caller().exists(), "missing mandatory caller");
@@ -124,9 +153,7 @@ pub struct DoNothingContext {
 fn func_do_nothing_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcDoNothing");
 	let f = DoNothingContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_do_nothing(ctx, &f);
 	ctx.log("testcore.funcDoNothing ok");
@@ -140,14 +167,11 @@ pub struct GetMintedSupplyContext {
 fn func_get_minted_supply_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcGetMintedSupply");
 	let f = GetMintedSupplyContext {
-		results: MutableGetMintedSupplyResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableGetMintedSupplyResults { proxy: results_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_get_minted_supply(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.funcGetMintedSupply ok");
 }
 
@@ -158,9 +182,7 @@ pub struct IncCounterContext {
 fn func_inc_counter_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcIncCounter");
 	let f = IncCounterContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_inc_counter(ctx, &f);
 	ctx.log("testcore.funcIncCounter ok");
@@ -174,12 +196,8 @@ pub struct InitContext {
 fn func_init_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcInit");
 	let f = InitContext {
-		params: ImmutableInitParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_init(ctx, &f);
 	ctx.log("testcore.funcInit ok");
@@ -193,12 +211,8 @@ pub struct PassTypesFullContext {
 fn func_pass_types_full_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcPassTypesFull");
 	let f = PassTypesFullContext {
-		params: ImmutablePassTypesFullParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutablePassTypesFullParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
@@ -224,18 +238,13 @@ pub struct RunRecursionContext {
 fn func_run_recursion_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcRunRecursion");
 	let f = RunRecursionContext {
-		params: ImmutableRunRecursionParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableRunRecursionResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableRunRecursionParams { proxy: params_proxy() },
+		results: MutableRunRecursionResults { proxy: results_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
 	func_run_recursion(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.funcRunRecursion ok");
 }
 
@@ -246,16 +255,12 @@ pub struct SendToAddressContext {
 
 fn func_send_to_address_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSendToAddress");
+	let f = SendToAddressContext {
+		params: ImmutableSendToAddressParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	let f = SendToAddressContext {
-		params: ImmutableSendToAddressParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	func_send_to_address(ctx, &f);
 	ctx.log("testcore.funcSendToAddress ok");
@@ -269,12 +274,8 @@ pub struct SetIntContext {
 fn func_set_int_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSetInt");
 	let f = SetIntContext {
-		params: ImmutableSetIntParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableSetIntParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
 	ctx.require(f.params.name().exists(), "missing mandatory name");
@@ -290,12 +291,8 @@ pub struct SpawnContext {
 fn func_spawn_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSpawn");
 	let f = SpawnContext {
-		params: ImmutableSpawnParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableSpawnParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.prog_hash().exists(), "missing mandatory progHash");
 	func_spawn(ctx, &f);
@@ -309,9 +306,7 @@ pub struct TestBlockContext1Context {
 fn func_test_block_context1_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestBlockContext1");
 	let f = TestBlockContext1Context {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_block_context1(ctx, &f);
 	ctx.log("testcore.funcTestBlockContext1 ok");
@@ -324,9 +319,7 @@ pub struct TestBlockContext2Context {
 fn func_test_block_context2_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestBlockContext2");
 	let f = TestBlockContext2Context {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_block_context2(ctx, &f);
 	ctx.log("testcore.funcTestBlockContext2 ok");
@@ -339,9 +332,7 @@ pub struct TestCallPanicFullEPContext {
 fn func_test_call_panic_full_ep_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestCallPanicFullEP");
 	let f = TestCallPanicFullEPContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_call_panic_full_ep(ctx, &f);
 	ctx.log("testcore.funcTestCallPanicFullEP ok");
@@ -354,9 +345,7 @@ pub struct TestCallPanicViewEPFromFullContext {
 fn func_test_call_panic_view_ep_from_full_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestCallPanicViewEPFromFull");
 	let f = TestCallPanicViewEPFromFullContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_call_panic_view_ep_from_full(ctx, &f);
 	ctx.log("testcore.funcTestCallPanicViewEPFromFull ok");
@@ -370,14 +359,11 @@ pub struct TestChainOwnerIDFullContext {
 fn func_test_chain_owner_id_full_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestChainOwnerIDFull");
 	let f = TestChainOwnerIDFullContext {
-		results: MutableTestChainOwnerIDFullResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableTestChainOwnerIDFullResults { proxy: results_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_chain_owner_id_full(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.funcTestChainOwnerIDFull ok");
 }
 
@@ -388,9 +374,7 @@ pub struct TestEventLogDeployContext {
 fn func_test_event_log_deploy_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestEventLogDeploy");
 	let f = TestEventLogDeployContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_event_log_deploy(ctx, &f);
 	ctx.log("testcore.funcTestEventLogDeploy ok");
@@ -403,9 +387,7 @@ pub struct TestEventLogEventDataContext {
 fn func_test_event_log_event_data_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestEventLogEventData");
 	let f = TestEventLogEventDataContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_event_log_event_data(ctx, &f);
 	ctx.log("testcore.funcTestEventLogEventData ok");
@@ -419,12 +401,8 @@ pub struct TestEventLogGenericDataContext {
 fn func_test_event_log_generic_data_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestEventLogGenericData");
 	let f = TestEventLogGenericDataContext {
-		params: ImmutableTestEventLogGenericDataParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableTestEventLogGenericDataParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.counter().exists(), "missing mandatory counter");
 	func_test_event_log_generic_data(ctx, &f);
@@ -438,9 +416,7 @@ pub struct TestPanicFullEPContext {
 fn func_test_panic_full_ep_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestPanicFullEP");
 	let f = TestPanicFullEPContext {
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	func_test_panic_full_ep(ctx, &f);
 	ctx.log("testcore.funcTestPanicFullEP ok");
@@ -454,12 +430,8 @@ pub struct WithdrawToChainContext {
 fn func_withdraw_to_chain_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcWithdrawToChain");
 	let f = WithdrawToChainContext {
-		params: ImmutableWithdrawToChainParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableWithdrawToChainParams { proxy: params_proxy() },
+		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
 	func_withdraw_to_chain(ctx, &f);
@@ -474,12 +446,8 @@ pub struct CheckContextFromViewEPContext {
 fn view_check_context_from_view_ep_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewCheckContextFromViewEP");
 	let f = CheckContextFromViewEPContext {
-		params: ImmutableCheckContextFromViewEPParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableCheckContextFromViewEPParams { proxy: params_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
 	ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
@@ -498,18 +466,13 @@ pub struct FibonacciContext {
 fn view_fibonacci_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewFibonacci");
 	let f = FibonacciContext {
-		params: ImmutableFibonacciParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableFibonacciResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableFibonacciParams { proxy: params_proxy() },
+		results: MutableFibonacciResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
 	view_fibonacci(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewFibonacci ok");
 }
 
@@ -521,14 +484,11 @@ pub struct GetCounterContext {
 fn view_get_counter_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewGetCounter");
 	let f = GetCounterContext {
-		results: MutableGetCounterResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableGetCounterResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	view_get_counter(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewGetCounter ok");
 }
 
@@ -541,18 +501,13 @@ pub struct GetIntContext {
 fn view_get_int_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewGetInt");
 	let f = GetIntContext {
-		params: ImmutableGetIntParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableGetIntResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableGetIntParams { proxy: params_proxy() },
+		results: MutableGetIntResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	view_get_int(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewGetInt ok");
 }
 
@@ -565,18 +520,13 @@ pub struct GetStringValueContext {
 fn view_get_string_value_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewGetStringValue");
 	let f = GetStringValueContext {
-		params: ImmutableGetStringValueParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableGetStringValueResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableGetStringValueParams { proxy: params_proxy() },
+		results: MutableGetStringValueResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.var_name().exists(), "missing mandatory varName");
 	view_get_string_value(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewGetStringValue ok");
 }
 
@@ -587,9 +537,7 @@ pub struct JustViewContext {
 fn view_just_view_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewJustView");
 	let f = JustViewContext {
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	view_just_view(ctx, &f);
 	ctx.log("testcore.viewJustView ok");
@@ -603,12 +551,8 @@ pub struct PassTypesViewContext {
 fn view_pass_types_view_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewPassTypesView");
 	let f = PassTypesViewContext {
-		params: ImmutablePassTypesViewParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutablePassTypesViewParams { proxy: params_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
@@ -632,9 +576,7 @@ pub struct TestCallPanicViewEPFromViewContext {
 fn view_test_call_panic_view_ep_from_view_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewTestCallPanicViewEPFromView");
 	let f = TestCallPanicViewEPFromViewContext {
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	view_test_call_panic_view_ep_from_view(ctx, &f);
 	ctx.log("testcore.viewTestCallPanicViewEPFromView ok");
@@ -648,14 +590,11 @@ pub struct TestChainOwnerIDViewContext {
 fn view_test_chain_owner_id_view_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewTestChainOwnerIDView");
 	let f = TestChainOwnerIDViewContext {
-		results: MutableTestChainOwnerIDViewResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableTestChainOwnerIDViewResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	view_test_chain_owner_id_view(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewTestChainOwnerIDView ok");
 }
 
@@ -666,9 +605,7 @@ pub struct TestPanicViewEPContext {
 fn view_test_panic_view_ep_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewTestPanicViewEP");
 	let f = TestPanicViewEPContext {
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	view_test_panic_view_ep(ctx, &f);
 	ctx.log("testcore.viewTestPanicViewEP ok");
@@ -682,13 +619,10 @@ pub struct TestSandboxCallContext {
 fn view_test_sandbox_call_thunk(ctx: &ScViewContext) {
 	ctx.log("testcore.viewTestSandboxCall");
 	let f = TestSandboxCallContext {
-		results: MutableTestSandboxCallResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableTestCoreState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableTestSandboxCallResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
 	view_test_sandbox_call(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewTestSandboxCall ok");
 }

@@ -68,6 +68,7 @@ type consensus struct {
 	pullMissingRequestsFromCommittee bool
 	receivePeerMessagesAttachID      interface{}
 	consensusMetrics                 metrics.ConsensusMetrics
+	wal                              chain.WAL
 }
 
 var _ chain.Consensus = &consensus{}
@@ -79,7 +80,17 @@ const (
 	maxMsgBuffer = 1000
 )
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, peerGroup peering.GroupProvider, nodeConn chain.ChainNodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
+func New(
+	chainCore chain.ChainCore,
+	mempool chain.Mempool,
+	committee chain.Committee,
+	peerGroup peering.GroupProvider,
+	nodeConn chain.ChainNodeConnection,
+	pullMissingRequestsFromCommittee bool,
+	consensusMetrics metrics.ConsensusMetrics,
+	wal chain.WAL,
+	timersOpt ...ConsensusTimers,
+) chain.Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -109,6 +120,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		assert:                           assert.NewAssert(log),
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
+		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
@@ -286,4 +298,16 @@ func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 
 func (c *consensus) GetWorkflowStatus() chain.ConsensusWorkflowStatus {
 	return c.workflow
+}
+
+func (c *consensus) GetPipeMetrics() chain.ConsensusPipeMetrics {
+	return &pipeMetrics{
+		eventStateTransitionMsgPipeSize: c.eventStateTransitionMsgPipe.Len(),
+		eventSignedResultMsgPipeSize:    c.eventSignedResultMsgPipe.Len(),
+		eventSignedResultAckMsgPipeSize: c.eventSignedResultAckMsgPipe.Len(),
+		eventInclusionStateMsgPipeSize:  c.eventInclusionStateMsgPipe.Len(),
+		eventTimerMsgPipeSize:           c.eventTimerMsgPipe.Len(),
+		eventVMResultMsgPipeSize:        c.eventVMResultMsgPipe.Len(),
+		eventACSMsgPipeSize:             c.eventACSMsgPipe.Len(),
+	}
 }

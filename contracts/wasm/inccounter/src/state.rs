@@ -9,41 +9,39 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableIncCounterState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableIncCounterState {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_COUNTER.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn num_repeats(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_NUM_REPEATS.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(STATE_NUM_REPEATS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableIncCounterState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableIncCounterState {
     pub fn as_immutable(&self) -> ImmutableIncCounterState {
-		ImmutableIncCounterState { id: self.id }
+		ImmutableIncCounterState { proxy: self.proxy.root("") }
 	}
 
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_COUNTER.get_key_id())
+		ScMutableInt64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn num_repeats(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_NUM_REPEATS.get_key_id())
+		ScMutableInt64::new(self.proxy.root(STATE_NUM_REPEATS))
 	}
 }

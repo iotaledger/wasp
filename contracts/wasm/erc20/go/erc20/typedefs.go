@@ -7,28 +7,28 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type MapAgentIDToImmutableInt64 struct {
-	objID int32
+type MapAgentIDToImmutableUint64 struct {
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableInt64) GetInt64(key wasmlib.ScAgentID) wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(m.objID, key.KeyID())
+func (m MapAgentIDToImmutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
-type ImmutableAllowancesForAgent = MapAgentIDToImmutableInt64
+type ImmutableAllowancesForAgent = MapAgentIDToImmutableUint64
 
-type MapAgentIDToMutableInt64 struct {
-	objID int32
+type MapAgentIDToMutableUint64 struct {
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToMutableInt64) Clear() {
-	wasmlib.Clear(m.objID)
+func (m MapAgentIDToMutableUint64) Clear() {
+	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableInt64) GetInt64(key wasmlib.ScAgentID) wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(m.objID, key.KeyID())
+func (m MapAgentIDToMutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
-type MutableAllowancesForAgent = MapAgentIDToMutableInt64
+type MutableAllowancesForAgent = MapAgentIDToMutableUint64

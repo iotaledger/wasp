@@ -33,6 +33,7 @@ func AddEndpoints(
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
 	metrics *metricspkg.Metrics,
+	w *wal.WAL,
 ) {
 	initLogger()
 
@@ -44,7 +45,7 @@ func AddEndpoints(
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
-	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics)
+	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics, w)
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }

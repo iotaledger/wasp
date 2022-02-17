@@ -50,7 +50,6 @@ type ChainCore interface {
 type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-
 	Dismiss(reason string)
 	IsDismissed() bool
 }
@@ -65,6 +64,7 @@ type ChainRequests interface {
 type ChainMetrics interface {
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
+	GetConsensusPipeMetrics() ConsensusPipeMetrics
 }
 
 type Chain interface {
@@ -100,19 +100,15 @@ type (
 type NodeConnection interface {
 	Subscribe(addr ledgerstate.Address)
 	Unsubscribe(addr ledgerstate.Address)
-
 	AttachToTransactionReceived(*ledgerstate.AliasAddress, NodeConnectionHandleTransactionFun)
 	AttachToInclusionStateReceived(*ledgerstate.AliasAddress, NodeConnectionHandleInclusionStateFun)
 	AttachToOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState(addr *ledgerstate.AliasAddress)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-
 	DetachFromTransactionReceived(*ledgerstate.AliasAddress)
 	DetachFromInclusionStateReceived(*ledgerstate.AliasAddress)
 	DetachFromOutputReceived(*ledgerstate.AliasAddress)
@@ -125,14 +121,11 @@ type ChainNodeConnection interface {
 	AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState()
 	PullTransactionInclusionState(txid ledgerstate.TransactionID)
 	PullConfirmedOutput(outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-
 	DetachFromTransactionReceived()
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
@@ -166,6 +159,7 @@ type Consensus interface {
 	GetStatusSnapshot() *ConsensusInfo
 	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
+	GetPipeMetrics() ConsensusPipeMetrics
 }
 
 type Mempool interface {
@@ -185,6 +179,12 @@ type Mempool interface {
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	Close()
+}
+
+type WAL interface {
+	Write(bytes []byte) error
+	Contains(i uint32) bool
+	Read(i uint32) ([]byte, error)
 }
 
 type MempoolInfo struct {
@@ -223,7 +223,6 @@ type ConsensusWorkflowStatus interface {
 	IsTransactionPosted() bool
 	IsTransactionSeen() bool
 	IsInProgress() bool
-
 	GetBatchProposalSentTime() time.Time
 	GetConsensusBatchKnownTime() time.Time
 	GetVMStartedTime() time.Time
@@ -232,6 +231,17 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionPostedTime() time.Time
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
+	GetCurrentStateIndex() uint32
+}
+
+type ConsensusPipeMetrics interface {
+	GetEventStateTransitionMsgPipeSize() int
+	GetEventSignedResultMsgPipeSize() int
+	GetEventSignedResultAckMsgPipeSize() int
+	GetEventInclusionStateMsgPipeSize() int
+	GetEventACSMsgPipeSize() int
+	GetEventVMResultMsgPipeSize() int
+	GetEventTimerMsgPipeSize() int
 }
 
 type ReadyListRecord struct {

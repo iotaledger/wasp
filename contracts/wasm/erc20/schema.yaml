@@ -2,37 +2,37 @@ name: Erc20
 description: ERC-20 PoC for IOTA Smart Contracts
 events:
   approval:
-    amount: Int64
+    amount: Uint64
     owner: AgentID
     spender: AgentID
   transfer:
-    amount: Int64
+    amount: Uint64
     from: AgentID
     to: AgentID
 structs: {}
 typedefs:
-  AllowancesForAgent: map[AgentID]Int64
+  AllowancesForAgent: map[AgentID]Uint64
 state:
   allAllowances=a: map[AgentID]AllowancesForAgent
-  balances=b: map[AgentID]Int64 // balances per account
-  supply=s: Int64 // total supply of the token
+  balances=b: map[AgentID]Uint64 // balances per account
+  supply=s: Uint64 // total supply of the token
 funcs:
   approve:
     params:
-      amount=am: Int64 // allowance value for delegated account
+      amount=am: Uint64 // allowance value for delegated account
       delegation=d: AgentID // delegated account
   init:
     params:
       creator=c: AgentID // creator/owner of the initial supply
-      supply=s: Int64 // initial token supply
+      supply=s: Uint64 // initial token supply
   transfer:
     params:
       account=ac: AgentID // target account
-      amount=am: Int64 // amount of tokens to transfer
+      amount=am: Uint64 // amount of tokens to transfer
   transferFrom:
     params:
       account=ac: AgentID // sender account
-      amount=am: Int64 // amount of tokens to transfer
+      amount=am: Uint64 // amount of tokens to transfer
       recipient=r: AgentID // recipient account
 views:
   allowance:
@@ -40,12 +40,12 @@ views:
       account=ac: AgentID // sender account
       delegation=d: AgentID // delegated account
     results:
-      amount=am: Int64
+      amount=am: Uint64
   balanceOf:
     params:
       account=ac: AgentID // sender account
     results:
-      amount=am: Int64
+      amount=am: Uint64
   totalSupply:
     results:
-      supply=s: Int64
+      supply=s: Uint64

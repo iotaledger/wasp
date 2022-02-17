@@ -7,212 +7,216 @@
 
 package testcore
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableCallOnChainResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableCallOnChainResults) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
+func (s ImmutableCallOnChainResults) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
 }
 
 type MutableCallOnChainResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableCallOnChainResults) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
+func (s MutableCallOnChainResults) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
 }
 
 type ImmutableGetMintedSupplyResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetMintedSupplyResults) MintedColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultMintedColor))
+func (s ImmutableGetMintedSupplyResults) MintedColor() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultMintedColor))
 }
 
-func (s ImmutableGetMintedSupplyResults) MintedSupply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultMintedSupply))
+func (s ImmutableGetMintedSupplyResults) MintedSupply() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultMintedSupply))
 }
 
 type MutableGetMintedSupplyResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetMintedSupplyResults) MintedColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultMintedColor))
+func (s MutableGetMintedSupplyResults) MintedColor() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultMintedColor))
 }
 
-func (s MutableGetMintedSupplyResults) MintedSupply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultMintedSupply))
+func (s MutableGetMintedSupplyResults) MintedSupply() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultMintedSupply))
 }
 
 type ImmutableRunRecursionResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRunRecursionResults) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
+func (s ImmutableRunRecursionResults) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
 }
 
 type MutableRunRecursionResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRunRecursionResults) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
+func (s MutableRunRecursionResults) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
 }
 
 type ImmutableTestChainOwnerIDFullResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestChainOwnerIDFullResults) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
+func (s ImmutableTestChainOwnerIDFullResults) ChainOwnerID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
 type MutableTestChainOwnerIDFullResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTestChainOwnerIDFullResults) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
+func (s MutableTestChainOwnerIDFullResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
 type ImmutableFibonacciResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFibonacciResults) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
+func (s ImmutableFibonacciResults) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
 }
 
 type MutableFibonacciResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableFibonacciResults) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
+func (s MutableFibonacciResults) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
 }
 
 type ImmutableGetCounterResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetCounterResults) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultCounter))
+func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetCounterResults) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCounter))
+func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultCounter))
 }
 
 type MapStringToImmutableInt64 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapStringToImmutableInt64) GetInt64(key string) wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToImmutableInt64) GetInt64(key string) wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableGetIntResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetIntResults) Values() MapStringToImmutableInt64 {
-	return MapStringToImmutableInt64{objID: s.id}
+	//nolint:gosimple
+	return MapStringToImmutableInt64{proxy: s.proxy}
 }
 
 type MapStringToMutableInt64 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableInt64) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapStringToMutableInt64) GetInt64(key string) wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToMutableInt64) GetInt64(key string) wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableGetIntResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableGetIntResults) Values() MapStringToMutableInt64 {
-	return MapStringToMutableInt64{objID: s.id}
+	//nolint:gosimple
+	return MapStringToMutableInt64{proxy: s.proxy}
 }
 
 type MapStringToImmutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapStringToImmutableString) GetString(key string) wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToImmutableString) GetString(key string) wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableGetStringValueResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetStringValueResults) Vars() MapStringToImmutableString {
-	return MapStringToImmutableString{objID: s.id}
+	//nolint:gosimple
+	return MapStringToImmutableString{proxy: s.proxy}
 }
 
 type MapStringToMutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableString) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapStringToMutableString) GetString(key string) wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableGetStringValueResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableGetStringValueResults) Vars() MapStringToMutableString {
-	return MapStringToMutableString{objID: s.id}
+	//nolint:gosimple
+	return MapStringToMutableString{proxy: s.proxy}
 }
 
 type ImmutableTestChainOwnerIDViewResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestChainOwnerIDViewResults) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
+func (s ImmutableTestChainOwnerIDViewResults) ChainOwnerID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
 type MutableTestChainOwnerIDViewResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTestChainOwnerIDViewResults) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
+func (s MutableTestChainOwnerIDViewResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
 type ImmutableTestSandboxCallResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestSandboxCallResults) SandboxCall() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultSandboxCall))
+func (s ImmutableTestSandboxCallResults) SandboxCall() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultSandboxCall))
 }
 
 type MutableTestSandboxCallResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTestSandboxCallResults) SandboxCall() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultSandboxCall))
+func (s MutableTestSandboxCallResults) SandboxCall() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultSandboxCall))
 }

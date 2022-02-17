@@ -5,81 +5,65 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableString {
-	objID: i32;
+export class ArrayOfImmutableString extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	length(): u32 {
+		return this.proxy.length();
+	}
 
-    length(): i32 {
-        return wasmlib.getLength(this.objID);
-    }
-
-    getString(index: i32): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.objID, new wasmlib.Key32(index));
-    }
+	getString(index: u32): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.index(index));
+	}
 }
 
 export class ImmutableStringArray extends ArrayOfImmutableString {
-};
+}
 
-export class ArrayOfMutableString {
-	objID: i32;
+export class ArrayOfMutableString extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.append());
+	}
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
+	clear(): void {
+		this.proxy.clearArray();
+	}
 
-    length(): i32 {
-        return wasmlib.getLength(this.objID);
-    }
+	length(): u32 {
+		return this.proxy.length();
+	}
 
-    getString(index: i32): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.objID, new wasmlib.Key32(index));
-    }
+	getString(index: u32): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.index(index));
+	}
 }
 
 export class MutableStringArray extends ArrayOfMutableString {
-};
+}
 
-export class MapStringToImmutableString {
-	objID: i32;
+export class MapStringToImmutableString extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getString(key: string): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.objID, wasmlib.Key32.fromString(key));
-    }
+	getString(key: string): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
 }
 
 export class ImmutableStringMap extends MapStringToImmutableString {
-};
+}
 
-export class MapStringToMutableString {
-	objID: i32;
+export class MapStringToMutableString extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    getString(key: string): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.objID, wasmlib.Key32.fromString(key));
-    }
+	getString(key: string): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
 }
 
 export class MutableStringMap extends MapStringToMutableString {
-};
+}

@@ -1,4 +1,3 @@
-//nolint:dupl
 package collections
 
 import (
@@ -6,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // Array32 represents a dynamic array stored in a kv.KVStore
@@ -37,27 +35,15 @@ func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray3
 
 const array32ElemKeyCode = byte('#')
 
-func (a *Array32) Immutable() *ImmutableArray32 {
-	return a.ImmutableArray32
-}
-
-func (a *ImmutableArray32) getSizeKey() kv.Key {
-	return array32SizeKey(a.name)
-}
-
 func array32SizeKey(name string) kv.Key {
 	return kv.Key(name)
-}
-
-func (a *ImmutableArray32) getArray32ElemKey(idx uint32) kv.Key {
-	return array32ElemKey(a.name, idx)
 }
 
 func array32ElemKey(name string, idx uint32) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
 	buf.WriteByte(array32ElemKeyCode)
-	_ = util.WriteUint32(&buf, idx)
+	buf.Write(uint32ToBytes(idx))
 	return kv.Key(buf.Bytes())
 }
 
@@ -73,11 +59,48 @@ func Array32RangeKeys(name string, length, from, to uint32) []kv.Key {
 	return keys
 }
 
+// use ULEB128 decoding so that WasmLib can use it as well
+func bytesToUint32(buf []byte) uint32 {
+	value := uint32(buf[0] & 0x7f)
+	i := 0
+	for s := 7; (buf[i] & 0x80) != 0; s += 7 {
+		i++
+		value |= uint32(buf[i]&0x7f) << s
+	}
+	return value
+}
+
+// use ULEB128 encoding so that WasmLib can decode it as well
+func uint32ToBytes(value uint32) []byte {
+	buf := make([]byte, 0, 5)
+	b := byte(value)
+	value >>= 7
+	for value != 0 {
+		buf = append(buf, b|0x80)
+		b = byte(value)
+		value >>= 7
+	}
+	buf = append(buf, b)
+	return buf
+}
+
+func (a *Array32) Immutable() *ImmutableArray32 {
+	return a.ImmutableArray32
+}
+
+func (a *ImmutableArray32) getSizeKey() kv.Key {
+	return array32SizeKey(a.name)
+}
+
+func (a *ImmutableArray32) getArray32ElemKey(idx uint32) kv.Key {
+	return array32ElemKey(a.name, idx)
+}
+
 func (a *Array32) setSize(n uint32) {
 	if n == 0 {
 		a.kvw.Del(a.getSizeKey())
 	} else {
-		a.kvw.Set(a.getSizeKey(), util.Uint32To4Bytes(n))
+		a.kvw.Set(a.getSizeKey(), uint32ToBytes(n))
 	}
 }
 
@@ -99,7 +122,7 @@ func (a *ImmutableArray32) Len() (uint32, error) {
 	if v == nil {
 		return 0, nil
 	}
-	return util.MustUint32From4Bytes(v), nil
+	return bytesToUint32(v), nil
 }
 
 func (a *ImmutableArray32) MustLen() uint32 {

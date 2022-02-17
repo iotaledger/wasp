@@ -7,7 +7,7 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ApproveCall struct {
 	Func   *wasmlib.ScFunc
@@ -90,84 +90,89 @@ var ScFuncs Funcs
 
 func (sc Funcs) Approve(ctx wasmlib.ScFuncCallContext) *ApproveCall {
 	f := &ApproveCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncApprove)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Burn(ctx wasmlib.ScFuncCallContext) *BurnCall {
 	f := &BurnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncBurn)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Mint(ctx wasmlib.ScFuncCallContext) *MintCall {
 	f := &MintCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMint)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SafeTransferFrom(ctx wasmlib.ScFuncCallContext) *SafeTransferFromCall {
 	f := &SafeTransferFromCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSafeTransferFrom)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SetApprovalForAll(ctx wasmlib.ScFuncCallContext) *SetApprovalForAllCall {
 	f := &SetApprovalForAllCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetApprovalForAll)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) TransferFrom(ctx wasmlib.ScFuncCallContext) *TransferFromCall {
 	f := &TransferFromCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferFrom)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) BalanceOf(ctx wasmlib.ScViewCallContext) *BalanceOfCall {
 	f := &BalanceOfCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceOf)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetApproved(ctx wasmlib.ScViewCallContext) *GetApprovedCall {
 	f := &GetApprovedCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetApproved)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) IsApprovedForAll(ctx wasmlib.ScViewCallContext) *IsApprovedForAllCall {
 	f := &IsApprovedForAllCall{Func: wasmlib.NewScView(ctx, HScName, HViewIsApprovedForAll)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) Name(ctx wasmlib.ScViewCallContext) *NameCall {
 	f := &NameCall{Func: wasmlib.NewScView(ctx, HScName, HViewName)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) OwnerOf(ctx wasmlib.ScViewCallContext) *OwnerOfCall {
 	f := &OwnerOfCall{Func: wasmlib.NewScView(ctx, HScName, HViewOwnerOf)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) Symbol(ctx wasmlib.ScViewCallContext) *SymbolCall {
 	f := &SymbolCall{Func: wasmlib.NewScView(ctx, HScName, HViewSymbol)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) TokenURI(ctx wasmlib.ScViewCallContext) *TokenURICall {
 	f := &TokenURICall{Func: wasmlib.NewScView(ctx, HScName, HViewTokenURI)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

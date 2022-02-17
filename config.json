@@ -53,5 +53,9 @@
   },
   "nanomsg":{
     "port": 5550
+  },
+  "metrics":{
+    "bindAddress": "127.0.0.1:2112",
+    "enabled": true
   }
 }

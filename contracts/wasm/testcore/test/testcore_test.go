@@ -8,11 +8,11 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreaccounts"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coregovernance"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreroot"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -130,7 +130,7 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 	ctx.Chain.Env.AssertAddressIotas(ctx.Chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-minus)
 }
 
-func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount int64) {
+func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount uint64) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
 	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
 	if target != nil {

@@ -575,8 +575,6 @@ github.com/influxdata/promql/v2 v2.12.0/go.mod h1:fxOPu+DY0bqCTCECchSRtWfc+0X19y
 github.com/influxdata/roaring v0.4.13-0.20180809181101-fc520f41fab6/go.mod h1:bSgUQ7q5ZLSO+bKBGqJiCBGAl+9DxyW63zLTujjUlOE=
 github.com/influxdata/tdigest v0.0.0-20181121200506-bf2b5ad3c0a9/go.mod h1:Js0mqiSBE6Ffsg94weZZ2c+v/ciT8QRHFOap7EKDrR0=
 github.com/influxdata/usage-client v0.0.0-20160829180054-6d3895376368/go.mod h1:Wbbw6tYNvwa5dlB6304Sd+82Z3f7PmVZHVKU637d4po=
-github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a h1:JKIoZ7yxR8b0cLJY/vyKRj2lnEHlYCRkTvMz5V8OZfc=
-github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a/go.mod h1:L4a9tQOOlD37go7UztwlCFMrNlmgwKK9ixaPf45A/8U=
 github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e h1:jUHV5HGa/1o9qoPPr8ms3dMueSVUb1ZB2Z1XyJ79qfU=
 github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e/go.mod h1:NyBg/Ny7FFAdDs59zdwTVoysU2ZbJVQnRwyLIDFKJYA=
 github.com/ipfs/go-cid v0.0.1/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
@@ -676,6 +674,8 @@ github.com/jwilder/encoding v0.0.0-20170811194829-b4e1701a28ef/go.mod h1:Ct9fl0F
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3/go.mod h1:BYpt4ufZiIGv2nXn4gMxnfKV306n3mWXgNu/d2TqdTU=
 github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d/go.mod h1:P2viExyCEfeWGU259JnaQ34Inuec4R38JCyBx2edgD0=
+github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497 h1:Xteehyq9wIA12gi4lkvmd+VOXrgjlt9PGmm2AtOIotA=
+github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497/go.mod h1:L4a9tQOOlD37go7UztwlCFMrNlmgwKK9ixaPf45A/8U=
 github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515 h1:5oWqeyYqb0A+XNeM4qIESTfrgbTdCF+YTPgb9Rc50iM=
 github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515/go.mod h1:XadZ7V3kvoIfFGVb8s/ndgVitoHRNRjzgPlHhhb9HlI=
 github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3 h1:b7VGpy3biHI8Q0O8BthxiJfOXhx5F0Ej4TNuJ9A1omo=

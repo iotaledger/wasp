@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "donatewithfeedback";
 export const ScDescription = "";
-export const HScName       = new wasmlib.ScHname(0x696d7f66);
+export const HScName       = new wasmtypes.ScHname(0x696d7f66);
 
 export const ParamAmount   = "amount";
 export const ParamFeedback = "feedback";
@@ -33,7 +33,7 @@ export const FuncWithdraw     = "withdraw";
 export const ViewDonation     = "donation";
 export const ViewDonationInfo = "donationInfo";
 
-export const HFuncDonate       = new wasmlib.ScHname(0xdc9b133a);
-export const HFuncWithdraw     = new wasmlib.ScHname(0x9dcc0f41);
-export const HViewDonation     = new wasmlib.ScHname(0xbdb245ba);
-export const HViewDonationInfo = new wasmlib.ScHname(0xc8f7c726);
+export const HFuncDonate       = new wasmtypes.ScHname(0xdc9b133a);
+export const HFuncWithdraw     = new wasmtypes.ScHname(0x9dcc0f41);
+export const HViewDonation     = new wasmtypes.ScHname(0xbdb245ba);
+export const HViewDonationInfo = new wasmtypes.ScHname(0xc8f7c726);

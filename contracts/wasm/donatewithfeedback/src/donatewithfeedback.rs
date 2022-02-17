@@ -22,7 +22,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
         }
     }
     let log = f.state.log();
-    log.get_donation(log.length()).set_value(&donation);
+    log.append_donation().set_value(&donation);
 
     let largest_donation = f.state.max_donation();
     let total_donated = f.state.total_donation();
@@ -48,7 +48,7 @@ pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
 }
 
 pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {
-    let nr = (f.params.nr().value()) as i32;
+    let nr = f.params.nr().value();
     let donation = f.state.log().get_donation(nr).value();
     f.results.amount().set_value(donation.amount);
     f.results.donator().set_value(&donation.donator);
@@ -60,5 +60,5 @@ pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {
 pub fn view_donation_info(_ctx: &ScViewContext, f: &DonationInfoContext) {
     f.results.max_donation().set_value(f.state.max_donation().value());
     f.results.total_donation().set_value(f.state.total_donation().value());
-    f.results.count().set_value(f.state.log().length() as i64);
+    f.results.count().set_value(f.state.log().length());
 }

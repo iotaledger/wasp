@@ -7,62 +7,60 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Bet struct {
-	Amount int64
-	Better wasmlib.ScAgentID
-	Number int64
+	Amount uint64
+	Better wasmtypes.ScAgentID
+	Number uint16
 }
 
-func NewBetFromBytes(bytes []byte) *Bet {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func NewBetFromBytes(buf []byte) *Bet {
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Bet{}
-	data.Amount = decode.Int64()
-	data.Better = decode.AgentID()
-	data.Number = decode.Int64()
-	decode.Close()
+	data.Amount = wasmtypes.Uint64Decode(dec)
+	data.Better = wasmtypes.AgentIDDecode(dec)
+	data.Number = wasmtypes.Uint16Decode(dec)
+	dec.Close()
 	return data
 }
 
 func (o *Bet) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Int64(o.Amount).
-		AgentID(o.Better).
-		Int64(o.Number).
-		Data()
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint64Encode(enc, o.Amount)
+	wasmtypes.AgentIDEncode(enc, o.Better)
+	wasmtypes.Uint16Encode(enc, o.Number)
+	return enc.Buf()
 }
 
 type ImmutableBet struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o ImmutableBet) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o ImmutableBet) Value() *Bet {
-	return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewBetFromBytes(o.proxy.Get())
 }
 
 type MutableBet struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o MutableBet) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 
 func (o MutableBet) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o MutableBet) SetValue(value *Bet) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 
 func (o MutableBet) Value() *Bet {
-	return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewBetFromBytes(o.proxy.Get())
 }
