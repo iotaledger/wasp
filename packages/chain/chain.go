@@ -37,11 +37,15 @@ type ChainCore interface {
 	VirtualStateAccess() state.VirtualStateAccess
 	GetAnchorOutput() (*iotago.AliasOutput, iotago.OutputID)
 	Log() *logger.Logger
+	EnqueueDismissChain(reason string)
 }
 
 type ChainCoreMock interface {
 	ChainCore
-	EnqueueDismissChain(reason string) // This one should really be public
+
+	// FIXME these methods should not be part of the chain interface just for the need of mocking
+	//  Mocking interfaces should be available only in the testing environment
+	// Most of these methods are made public for mocking in tests
 	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)

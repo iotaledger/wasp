@@ -5,7 +5,6 @@
 package group
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"time"
