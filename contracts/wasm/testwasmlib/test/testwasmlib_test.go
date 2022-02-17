@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package test
 
 import (
@@ -300,48 +303,87 @@ func TestClearMap(t *testing.T) {
 	require.EqualValues(t, "", value.Value())
 }
 
-func TestViewBalance(t *testing.T) {
+func TestTakeAllowance(t *testing.T) {
 	ctx := setupTest(t)
 
-	startBalance := ctx.Balance(ctx.Account())
+	gasFee := uint64(100)
+	accountBalance := ctx.Balance(ctx.Account())
+	chainBalance := ctx.Balance(ctx.ChainAccount())
+	originatorBalance := ctx.Balance(ctx.Originator())
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
 	f.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Accounts()
 
+	require.EqualValues(t, accountBalance+1234, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance-gasFee, ctx.Balance(ctx.Originator()))
+
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
-	g.Func.TransferIotas(1).Post()
+	g.Func.TransferIotas(1111).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Accounts()
 	require.True(t, g.Results.Iotas().Exists())
-	require.EqualValues(t, startBalance+1234, g.Results.Iotas().Value())
+	require.EqualValues(t, accountBalance+1234, g.Results.Iotas().Value())
+
+	require.EqualValues(t, accountBalance+1234, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance+1111-gasFee*2, ctx.Balance(ctx.Originator()))
 
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	ctx.Accounts()
 	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, startBalance+1234, v.Results.Iotas().Value())
+	require.EqualValues(t, accountBalance+1234, v.Results.Iotas().Value())
+
+	require.EqualValues(t, accountBalance+1234, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance+1111-gasFee*2, ctx.Balance(ctx.Originator()))
 }
 
-func TestViewBalanceWithTokens(t *testing.T) {
+func TestTakeNoAllowance(t *testing.T) {
 	ctx := setupTest(t)
-	ctx.Accounts()
 
-	// FuncParamTypes without params does nothing
+	gasFee := uint64(100)
+	accountBalance := ctx.Balance(ctx.Account())
+	chainBalance := ctx.Balance(ctx.ChainAccount())
+	originatorBalance := ctx.Balance(ctx.Originator())
+
+	// FuncParamTypes without params does nothing to SC balance
+	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
 	f.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Accounts()
 
+	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance+1234-gasFee, ctx.Balance(ctx.Originator()))
+
+	g := testwasmlib.ScFuncs.TakeBalance(ctx)
+	g.Func.TransferIotas(1111).Post()
+	require.NoError(t, ctx.Err)
+	ctx.Accounts()
+	require.True(t, g.Results.Iotas().Exists())
+	require.EqualValues(t, accountBalance, g.Results.Iotas().Value())
+
+	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance+1234+1111-gasFee*2, ctx.Balance(ctx.Originator()))
+
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	ctx.Accounts()
 
 	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, 0, v.Results.Iotas().Value())
+	require.EqualValues(t, accountBalance, v.Results.Iotas().Value())
+
+	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance+1234+1111-gasFee*2, ctx.Balance(ctx.Originator()))
 }
 
 func TestRandom(t *testing.T) {

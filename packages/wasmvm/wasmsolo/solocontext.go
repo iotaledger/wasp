@@ -319,6 +319,16 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 	}
 }
 
+// ChainAccount returns a SoloAgent for the chain associated with ctx
+func (ctx *SoloContext) ChainAccount() *SoloAgent {
+	return &SoloAgent{
+		Env:     ctx.Chain.Env,
+		Pair:    nil,
+		address: ctx.Chain.ChainID.AsAddress(),
+		hname:   0,
+	}
+}
+
 func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
 	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
 }
