@@ -508,7 +508,7 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		CirculatingSupply: rec.CirculatingSupply,
 		MaximumSupply:     rec.MaximumSupply,
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
 		},
 		Blocks: nil,
 	}

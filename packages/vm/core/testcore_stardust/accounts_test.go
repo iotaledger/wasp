@@ -920,7 +920,7 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 			MaximumSupply:     big.NewInt(50),
 			TokenScheme:       &iotago.SimpleTokenScheme{},
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: aliasIdent1},
+				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 			},
 			Blocks: nil,
 		},
@@ -962,7 +962,7 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 				MaximumSupply:     big.NewInt(50),
 				TokenScheme:       &iotago.SimpleTokenScheme{},
 				Conditions: iotago.UnlockConditions{
-					&iotago.AddressUnlockCondition{Address: aliasIdent1},
+					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 				},
 				Blocks: nil,
 			},

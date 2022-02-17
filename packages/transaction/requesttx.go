@@ -56,7 +56,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		)
 		requiredDustDeposit := out.VByteCost(par.RentStructure, nil)
 		if out.Deposit() < requiredDustDeposit {
-			xerrors.Errorf("%v: available %d < required %d iotas",
+			return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
 		}
 		outputs = append(outputs, out)
