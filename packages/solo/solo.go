@@ -47,15 +47,15 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T           TestContext
-	logger      *logger.Logger
-	dbmanager   *dbmanager.DBManager
-	utxoDB      *utxodb.UtxoDB
-	glbMutex    sync.RWMutex
-	ledgerMutex sync.RWMutex
+	T                            TestContext
+	logger                       *logger.Logger
+	dbmanager                    *dbmanager.DBManager
+	utxoDB                       *utxodb.UtxoDB
+	glbMutex                     sync.RWMutex
+	ledgerMutex                  sync.RWMutex
 	chains                       map[iscp.ChainID]*Chain
-	vmRunner    vm.VMRunner
-	processorConfig  *processors.Config
+	vmRunner                     vm.VMRunner
+	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
 }
 
@@ -70,7 +70,7 @@ type Chain struct {
 
 	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	StateControllerKeyPair cryptolib.KeyPair
+	StateControllerKeyPair *cryptolib.KeyPair
 	StateControllerAddress iotago.Address
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
@@ -78,7 +78,7 @@ type Chain struct {
 
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
 	// It is a default key pair in many of Solo calls which require private key.
-	OriginatorPrivateKey cryptolib.KeyPair
+	OriginatorPrivateKey *cryptolib.KeyPair
 	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
 	OriginatorAgentID *iscp.AgentID
@@ -87,9 +87,9 @@ type Chain struct {
 	ValidatorFeeTarget *iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
-	State       state.VirtualStateAccess
+	State state.VirtualStateAccess
 	// GlobalSync represents global atomic flag for the optimistic state reader. In Solo it has no function
-	GlobalSync  coreutil.ChainStateSync
+	GlobalSync coreutil.ChainStateSync
 	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
 	// Log is the named logger of the chain
@@ -111,7 +111,7 @@ type InitOptions struct {
 	Seed                  cryptolib.Seed
 	RentStructure         *iotago.RentStructure
 	Log                   *logger.Logger
-	}
+}
 
 func defaultInitOptions() *InitOptions {
 	return &InitOptions{
@@ -146,12 +146,12 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 
 	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
 	ret := &Solo{
-		T:               t,
+		T:                            t,
 		logger:                       opt.Log,
 		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true),
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
-		vmRunner:        runvm.NewVMRunner(),
+		vmRunner:                     runvm.NewVMRunner(),
 		processorConfig:              processors.NewConfig(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 	}
@@ -208,13 +208,12 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	var originatorAddr iotago.Address
 	if chainOriginator == nil {
-		origKeyPair := cryptolib.NewKeyPair()
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(origKeyPair.PublicKey)
-		chainOriginator = &origKeyPair
+		chainOriginator = cryptolib.NewKeyPair()
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(chainOriginator.PublicKey)
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
@@ -224,7 +223,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	outs, outIDs := env.UnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
-		*chainOriginator,
+		chainOriginator,
 		stateAddr,
 		stateAddr,
 		initIotas, // will be adjusted to min dust deposit
@@ -264,7 +263,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		ChainID:                chainID,
 		StateControllerKeyPair: stateController,
 		StateControllerAddress: stateAddr,
-		OriginatorPrivateKey:   *chainOriginator,
+		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     feeTarget,
@@ -336,7 +335,7 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 	ret, err := iscp.RequestsInTransaction(tx)
 	require.NoError(env.T, err)
 	return ret
-		}
+}
 
 func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
 	env.glbMutex.RLock()
@@ -345,7 +344,7 @@ func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
 	defer ch.runVMMutex.Unlock()
 
 	ch.mempool.ReceiveRequests(reqs...)
-		}
+}
 
 // AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
 // then waits for the in-buffer to be empty, before resuming VM execution
@@ -409,10 +408,10 @@ func (ch *Chain) collateBatch() []iscp.Request {
 			onLedgerReq := req.AsOnLedger()
 			if !iscp.RequestIsUnlockable(onLedgerReq, ch.ChainID.AsAddress(), now) {
 				continue
-				}
 			}
-			ret = append(ret, req)
 		}
+		ret = append(ret, req)
+	}
 	return ret
 }
 

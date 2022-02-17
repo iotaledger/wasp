@@ -15,7 +15,7 @@ import (
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	keyPair cryptolib.KeyPair,
+	keyPair *cryptolib.KeyPair,
 	stateControllerAddress iotago.Address,
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
@@ -27,7 +27,7 @@ func NewChainOriginTransaction(
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	walletAddr := keyPair.GetPublicKey().AsEd25519Address()
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
@@ -66,11 +66,11 @@ func NewChainOriginTransaction(
 	essence := &iotago.TransactionEssence{
 		NetworkID: parameters.NetworkID,
 		Inputs:    txInputs.UTXOInputs(),
-		Outputs:   outputs,
+		Outputs: outputs,
 	}
 	sigs, err := essence.Sign(
 		txInputs.OrderedSet(unspentOutputs).MustCommitment(),
-		iotago.NewAddressKeysForEd25519Address(walletAddr, keyPair.PrivateKey),
+		keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -93,7 +93,7 @@ func NewChainOriginTransaction(
 // The request contains the minimum data needed to bootstrap the chain.
 // The signer must be the same that created the origin transaction.
 func NewRootInitRequestTransaction(
-	keyPair cryptolib.KeyPair,
+	keyPair *cryptolib.KeyPair,
 	chainID *iscp.ChainID,
 	description string,
 	unspentOutputs iotago.OutputSet,

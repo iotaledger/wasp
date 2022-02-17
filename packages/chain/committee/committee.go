@@ -9,10 +9,10 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -149,7 +149,7 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.validatorNodes.AllNodes() {
 		status := &chain.PeerStatus{
-			Index:  int(i),
+			Index:     int(i),
 			NetID:     peer.NetID(),
 			PubKey:    peer.PubKey(),
 			Connected: peer.IsAlive(),
@@ -181,13 +181,13 @@ func (c *committee) waitReady(waitReady bool) {
 	c.isReady.Store(true)
 }
 
-func (c *committee) GetRandomValidators(upToN int) []*ed25519.PublicKey {
+func (c *committee) GetRandomValidators(upToN int) []*cryptolib.PublicKey {
 	validators := c.validatorNodes.OtherNodes()
 	if upToN >= len(validators) {
-		valPubKeys := make([]*ed25519.PublicKey, 0)
+		valPubKeys := make([]*cryptolib.PublicKey, 0)
 		for i := range validators {
 			valPubKeys = append(valPubKeys, validators[i].PubKey())
-	}
+		}
 		return valPubKeys
 	}
 
@@ -196,7 +196,7 @@ func (c *committee) GetRandomValidators(upToN int) []*ed25519.PublicKey {
 	_, _ = rand.Read(seed)
 	permutation := util.NewPermutation16(uint16(len(validators)), seed)
 	permutation.Shuffle(seed)
-	ret := make([]*ed25519.PublicKey, 0)
+	ret := make([]*cryptolib.PublicKey, 0)
 	for len(ret) < upToN {
 		i := permutation.Next()
 		ret = append(ret, validators[i].PubKey())

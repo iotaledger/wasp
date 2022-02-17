@@ -110,7 +110,7 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 // Requires at least 2 x gasFeeEstimate to be on sender's L2 account
 func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 
 	blobAsADict := parseParams(params)
@@ -503,7 +503,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair cryptolib.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).AddAssetsIotas(1)
@@ -515,8 +515,8 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 	return result.Error
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) *vm.RequestResult {
-	tx, _, err := ch.RequestFromParamsToLedger(req, &keyPair)
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
@@ -539,9 +539,9 @@ func getAddr(addrOrKeypair interface{}) iotago.Address {
 	case iotago.Address:
 		return a
 	case *cryptolib.KeyPair:
-		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+		return a.GetPublicKey().AsEd25519Address()
 	case cryptolib.KeyPair:
-		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+		return a.GetPublicKey().AsEd25519Address()
 	}
 	panic(xerrors.Errorf("getAddr: wrong type %T", addrOrKeypair))
 }

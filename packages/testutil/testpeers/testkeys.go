@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -21,21 +21,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetupKeys(peerCount uint16) ([]string, []*ed25519.KeyPair) {
+func SetupKeys(peerCount uint16) ([]string, []*cryptolib.KeyPair) {
 	peerNetIDs := make([]string, peerCount)
-	peerIdentities := make([]*ed25519.KeyPair, peerCount)
+	peerIdentities := make([]*cryptolib.KeyPair, peerCount)
 	for i := range peerNetIDs {
-		peerIdentity := ed25519.GenerateKeyPair()
+		peerIdentities[i] = cryptolib.NewKeyPair()
 		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-		peerIdentities[i] = &peerIdentity
 	}
 	return peerNetIDs, peerIdentities
 }
 
-func PublicKeys(peerIdentities []*ed25519.KeyPair) []*ed25519.PublicKey {
-	pubKeys := make([]*ed25519.PublicKey, len(peerIdentities))
+func PublicKeys(peerIdentities []*cryptolib.KeyPair) []*cryptolib.PublicKey {
+	pubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
 	for i := range pubKeys {
-		pubKeys[i] = &peerIdentities[i].PublicKey
+		pubKeys[i] = peerIdentities[i].GetPublicKey()
 	}
 	return pubKeys
 }
@@ -44,7 +43,7 @@ func SetupDkg(
 	t *testing.T,
 	threshold uint16,
 	peerNetIDs []string,
-	peerIdentities []*ed25519.KeyPair,
+	peerIdentities []*cryptolib.KeyPair,
 	suite tcrypto.Suite,
 	log *logger.Logger,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
@@ -82,14 +81,14 @@ func SetupDkg(
 func SetupDkgPregenerated(
 	t *testing.T,
 	threshold uint16,
-	identities []*ed25519.KeyPair,
+	identities []*cryptolib.KeyPair,
 	suite tcrypto.Suite,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
 	var err error
 	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(identities)), threshold)
-	nodePubKeys := make([]*ed25519.PublicKey, len(identities))
+	nodePubKeys := make([]*cryptolib.PublicKey, len(identities))
 	for i := range nodePubKeys {
-		nodePubKeys[i] = &identities[i].PublicKey
+		nodePubKeys[i] = identities[i].GetPublicKey()
 	}
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
 	registries := make([]registry.DKShareRegistryProvider, len(identities))
@@ -112,7 +111,7 @@ func SetupDkgPregenerated(
 
 func SetupNet(
 	peerNetIDs []string,
-	peerIdentities []*ed25519.KeyPair,
+	peerIdentities []*cryptolib.KeyPair,
 	behavior testutil.PeeringNetBehavior,
 	log *logger.Logger,
 ) ([]peering.NetworkProvider, io.Closer) {

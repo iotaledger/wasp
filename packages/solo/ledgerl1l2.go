@@ -201,7 +201,7 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	if fp.maxSupply != nil {
 		par.Set(accounts.ParamMaxSupply, codec.EncodeBigIntAbs(fp.maxSupply))
 	}
-	user := &fp.ch.OriginatorPrivateKey
+	user := fp.ch.OriginatorPrivateKey
 	if fp.user != nil {
 		user = fp.user
 	}
@@ -257,7 +257,7 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 
 	req.WithGasBudget(g)
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 	_, err = ch.PostRequestSync(req, user)
 	return err
@@ -272,7 +272,7 @@ func (ch *Chain) DestroyTokensOnL2(foundryOrTokenID, amount interface{}, user *c
 	).WithGasBudget(DestroyTokensGasBudgetIotas)
 
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 	_, err := ch.PostRequestSync(req, user)
 	return err
@@ -288,7 +288,7 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 	req.AddAssetsNativeTokens(tokenID, amount)
 	req.AddAllowanceNativeTokens(tokenID, amount)
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 	_, err := ch.PostRequestSync(req, user)
 	return err

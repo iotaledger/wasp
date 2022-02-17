@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"bytes"
-	"crypto/ed25519"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 func TestCreateOrigin(t *testing.T) {
 	var u *utxodb.UtxoDB
 	var originTx, txInit *iotago.Transaction
-	var user cryptolib.KeyPair
+	var user *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
 	var chainID *iscp.ChainID
@@ -121,17 +120,18 @@ func TestCreateOrigin(t *testing.T) {
 }
 
 func TestConsumeRequest(t *testing.T) {
-	stateController := tpkg.RandEd25519PrivateKey()
-	stateControllerAddr := iotago.Ed25519AddressFromPubKey(stateController.Public().(ed25519.PublicKey))
-	addrKeys := iotago.AddressKeys{Address: &stateControllerAddr, Keys: stateController}
+	stateControllerKeyPair := cryptolib.NewKeyPair()
+	stateController := stateControllerKeyPair.GetPrivateKey()
+	stateControllerAddr := stateControllerKeyPair.GetPublicKey().AsEd25519Address()
+	addrKeys := stateController.AddressKeysForEd25519Address(stateControllerAddr)
 
 	aliasOut1 := &iotago.AliasOutput{
 		Amount:     1337,
 		AliasID:    tpkg.RandAliasAddress().AliasID(),
 		StateIndex: 1,
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: &stateControllerAddr},
-			&iotago.GovernorAddressUnlockCondition{Address: &stateControllerAddr},
+			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
+			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},
 		},
 	}
 	aliasOut1Inp := tpkg.RandUTXOInput()
@@ -149,8 +149,8 @@ func TestConsumeRequest(t *testing.T) {
 		AliasID:    aliasOut1.AliasID,
 		StateIndex: 2,
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: &stateControllerAddr},
-			&iotago.GovernorAddressUnlockCondition{Address: &stateControllerAddr},
+			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
+			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},
 		},
 	}
 	essence := &iotago.TransactionEssence{
