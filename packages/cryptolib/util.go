@@ -1,9 +1,8 @@
 package cryptolib
 
 import (
+	"crypto/ed25519"
 	"fmt"
-
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
 const (

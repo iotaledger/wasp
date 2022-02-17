@@ -1,7 +1,7 @@
 package cryptolib
 
 import (
-	crypto "crypto/ed25519"
+	"crypto/ed25519"
 	"encoding/hex"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -10,14 +10,14 @@ import (
 )
 
 type PublicKey struct {
-	key crypto.PublicKey
+	key ed25519.PublicKey
 }
 
 type PublicKeyKey [PublicKeySize]byte
 
-const PublicKeySize = crypto.PublicKeySize
+const PublicKeySize = ed25519.PublicKeySize
 
-func newPublicKeyFromCrypto(cryptoPublicKey crypto.PublicKey) *PublicKey {
+func newPublicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
 	return &PublicKey{cryptoPublicKey}
 }
 
@@ -69,5 +69,5 @@ func (pkT *PublicKey) Equals(other *PublicKey) bool {
 }
 
 func (pkT *PublicKey) Verify(message, sig []byte) bool {
-	return crypto.Verify(pkT.key, message, sig)
+	return ed25519.Verify(pkT.key, message, sig)
 }

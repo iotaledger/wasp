@@ -1,8 +1,8 @@
 package cryptolib
 
 import (
-	cr "crypto"
-	crypto "crypto/ed25519"
+	"crypto"
+	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -12,10 +12,10 @@ import (
 )
 
 type PrivateKey struct {
-	key crypto.PrivateKey
+	key ed25519.PrivateKey
 }
 
-const PrivateKeySize = crypto.PrivateKeySize
+const PrivateKeySize = ed25519.PrivateKeySize
 
 func NewPrivateKey() *PrivateKey {
 	seed := tpkg.RandEd25519Seed()
@@ -31,7 +31,7 @@ func NewPrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
 
 func NewPrivateKeyFromSeed(seed Seed) *PrivateKey {
 	var seedByte [SeedSize]byte = seed
-	return &PrivateKey{crypto.NewKeyFromSeed(seedByte[:])}
+	return &PrivateKey{ed25519.NewKeyFromSeed(seedByte[:])}
 }
 
 func (pkT *PrivateKey) isValid() bool {
@@ -47,10 +47,10 @@ func (pkT *PrivateKey) AsString() string {
 }
 
 func (pkT *PrivateKey) Public() *PublicKey {
-	return newPublicKeyFromCrypto(pkT.key.Public().(crypto.PublicKey))
+	return newPublicKeyFromCrypto(pkT.key.Public().(ed25519.PublicKey))
 }
 
-func (pkT *PrivateKey) Sign(rand io.Reader, message []byte, opts cr.SignerOpts) ([]byte, error) {
+func (pkT *PrivateKey) Sign(rand io.Reader, message []byte, opts crypto.SignerOpts) ([]byte, error) {
 	return pkT.key.Sign(rand, message, opts)
 }
 
