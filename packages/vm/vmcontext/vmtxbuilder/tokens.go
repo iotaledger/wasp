@@ -14,8 +14,8 @@ func (n *nativeTokenBalance) clone() *nativeTokenBalance {
 		tokenID:            n.tokenID,
 		input:              n.input,
 		dustDepositCharged: n.dustDepositCharged,
-		in:                 cloneInternalExtendedOutputOrNil(n.in),
-		out:                cloneInternalExtendedOutputOrNil(n.out),
+		in:                 cloneInternalBasicOutputOrNil(n.in),
+		out:                cloneInternalBasicOutputOrNil(n.out),
 	}
 }
 
@@ -56,7 +56,7 @@ func (n *nativeTokenBalance) setOutValue(v *big.Int) {
 func (n *nativeTokenBalance) identicalInOut() bool {
 	switch {
 	case n.in == n.out:
-		panic("identicalExtendedOutputs: internal inconsistency 1")
+		panic("identicalBasicOutputs: internal inconsistency 1")
 	case n.in == nil || n.out == nil:
 		return false
 	case !n.in.Ident().Equal(n.out.Ident()):
@@ -68,26 +68,26 @@ func (n *nativeTokenBalance) identicalInOut() bool {
 	case !n.in.Blocks.Equal(n.out.Blocks):
 		return false
 	case len(n.in.NativeTokens) != 1:
-		panic("identicalExtendedOutputs: internal inconsistency 2")
+		panic("identicalBasicOutputs: internal inconsistency 2")
 	case len(n.out.NativeTokens) != 1:
-		panic("identicalExtendedOutputs: internal inconsistency 3")
+		panic("identicalBasicOutputs: internal inconsistency 3")
 	case n.in.NativeTokens[0].ID != n.tokenID:
-		panic("identicalExtendedOutputs: internal inconsistency 4")
+		panic("identicalBasicOutputs: internal inconsistency 4")
 	case n.out.NativeTokens[0].ID != n.tokenID:
-		panic("identicalExtendedOutputs: internal inconsistency 5")
+		panic("identicalBasicOutputs: internal inconsistency 5")
 	}
 	return true
 }
 
-func cloneInternalExtendedOutputOrNil(o *iotago.ExtendedOutput) *iotago.ExtendedOutput {
+func cloneInternalBasicOutputOrNil(o *iotago.BasicOutput) *iotago.BasicOutput {
 	if o == nil {
 		return nil
 	}
-	return o.Clone().(*iotago.ExtendedOutput)
+	return o.Clone().(*iotago.BasicOutput)
 }
 
-func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.ExtendedOutput {
-	return &iotago.ExtendedOutput{
+func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.BasicOutput {
+	return &iotago.BasicOutput{
 		Amount: txb.dustDepositAssumption.NativeTokenOutput,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     nativeTokenID,
@@ -131,8 +131,8 @@ func (txb *AnchorTransactionBuilder) NativeTokenRecordsToBeUpdated() ([]iotago.N
 	return toBeUpdated, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []iotago.NativeTokenID) map[iotago.NativeTokenID]*iotago.ExtendedOutput {
-	ret := make(map[iotago.NativeTokenID]*iotago.ExtendedOutput)
+func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []iotago.NativeTokenID) map[iotago.NativeTokenID]*iotago.BasicOutput {
+	ret := make(map[iotago.NativeTokenID]*iotago.BasicOutput)
 	for _, id := range ids {
 		ret[id] = txb.balanceNativeTokens[id].out
 	}

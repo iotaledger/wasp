@@ -445,7 +445,7 @@ func (r *OnLedgerRequestData) CallTarget() CallTarget {
 
 func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	switch out := r.output.(type) {
-	case *iotago.ExtendedOutput:
+	case *iotago.BasicOutput:
 		return out.Ident()
 	case *iotago.FoundryOutput:
 		return out.Ident()
@@ -625,9 +625,14 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 	return ret, nil
 }
 
-func (rid RequestID) OutputID() *iotago.UTXOInput {
+func (rid RequestID) UTXOInput() *iotago.UTXOInput {
 	r := iotago.UTXOInput(rid)
 	return &r
+}
+
+func (rid RequestID) OutputID() iotago.OutputID {
+	r := iotago.UTXOInput(rid)
+	return r.ID()
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
@@ -645,11 +650,11 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return OID(rid.OutputID())
+	return OID(rid.UTXOInput())
 }
 
 func (rid RequestID) Short() string {
-	oid := rid.OutputID()
+	oid := rid.UTXOInput()
 	txid := hex.EncodeToString(oid.TransactionID[:])
 	return fmt.Sprintf("%d/%s", oid.TransactionOutputIndex, txid[:6]+"..")
 }

@@ -194,12 +194,12 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
 	addr := keyPair.GetPublicKey().AsEd25519Address()
-	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(addr)
+	allOuts, allOutIDs := ch.Env.UnspentOutputs(addr)
 
 	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
 		UnspentOutputs:   allOuts,
-		UnspentOutputIDs: ids,
+		UnspentOutputIDs: allOutIDs,
 		Requests: []*iscp.RequestParameters{{
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets:        req.assets,

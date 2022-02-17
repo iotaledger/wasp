@@ -615,7 +615,7 @@ func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap 
 }
 
 // SaveNativeTokenOutput map tokenID -> foundryRec
-func SaveNativeTokenOutput(state kv.KVStore, out *iotago.ExtendedOutput, blockIndex uint32, outputIndex uint16) {
+func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex uint32, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
 		DustIotas:   out.Amount,
 		Amount:      out.NativeTokens[0].Amount,
@@ -629,13 +629,13 @@ func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *iscp.ChainID) (*iotago.ExtendedOutput, uint32, uint16) {
+func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *iscp.ChainID) (*iotago.BasicOutput, uint32, uint16) {
 	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
 	if data == nil {
 		return nil, 0, 0
 	}
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
-	ret := &iotago.ExtendedOutput{
+	ret := &iotago.BasicOutput{
 		Amount: tokenRec.DustIotas,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     *tokenID,

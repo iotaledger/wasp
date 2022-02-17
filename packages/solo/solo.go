@@ -221,14 +221,14 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		feeTarget = validatorFeeTarget[0]
 	}
 
-	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
+	outs, outIDs := env.UnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
 		stateAddr,
 		stateAddr,
 		initIotas, // will be adjusted to min dust deposit
 		outs,
-		ids,
+		outIDs,
 		env.utxoDB.RentStructure(),
 	)
 	require.NoError(env.T, err)
@@ -277,7 +277,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	outs, ids = env.utxoDB.GetUnspentOutputs(originatorAddr)
+	outs, ids := env.UnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
 		chainID,
@@ -381,12 +381,13 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
-	outs, ids := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
+func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, iotago.OutputID) {
+	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
-	require.EqualValues(ch.Env.T, 1, len(ids))
-
-	return outs[0], ids[0]
+	for id, out := range outs {
+		return out, id
+	}
+	panic("unreachable")
 }
 
 // collateBatch selects requests which are not time locked
@@ -452,6 +453,17 @@ func (ch *Chain) collateAndRunBatch() bool {
 func (ch *Chain) BacklogLen() int {
 	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
+}
+
+func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+	allOuts := env.utxoDB.GetUnspentOutputs(addr)
+	ids := make(iotago.OutputIDs, len(allOuts))
+	i := 0
+	for id, _ := range allOuts {
+		ids[i] = id
+		i++
+	}
+	return allOuts, ids
 }
 
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger

@@ -42,7 +42,7 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput,
-		AnchorOutputID:     *anchorOutputID,
+		AnchorOutputID:     anchorOutputID,
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
 		VirtualStateAccess: ch.State.Copy(),
@@ -68,8 +68,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	task := ch.runTaskNoLock(reqs, false)
 
 	var essence *iotago.TransactionEssence
+	var inputsCommitment []byte
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
+		inputsCommitment = task.ResultInputsCommitment
 	} else {
 		panic("not implemented")
 		//essence, err = rotate.MakeRotateStateControllerTransaction(
@@ -81,7 +83,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		//)
 		//require.NoError(ch.Env.T, err)
 	}
-	sigs, err := essence.Sign(ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress))
+	sigs, err := essence.Sign(
+		inputsCommitment,
+		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
+	)
 	require.NoError(ch.Env.T, err)
 
 	tx := &iotago.Transaction{

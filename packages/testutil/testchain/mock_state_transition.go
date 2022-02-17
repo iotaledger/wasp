@@ -10,7 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+
 	//"github.com/iotaledger/wasp/packages/transaction"
 	//"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
@@ -75,8 +77,10 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		aliasID = consumedOutput.AliasID
 	}*/
 	aliasID := consumedOutput.AliasID
+	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
 	txEssence := &iotago.TransactionEssence{
-		Inputs: []iotago.Input{chainOutput.ID()},
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{
 				Amount:         consumedOutput.Amount,
@@ -91,10 +95,10 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		},
 		Payload: nil,
 	}
-	signatures, err := txEssence.Sign(iotago.AddressKeys{
-		Address: chainOutput.GetStateAddress(),
-		Keys:    c.chainKey.GetPrivateKey(),
-	})
+	signatures, err := txEssence.Sign(
+		iotago.Outputs{chainOutput.GetAliasOutput()}.MustCommitment(),
+		c.chainKey.GetPrivateKey().AddressKeys(chainOutput.GetStateAddress()),
+	)
 	require.NoError(c.t, err)
 	tx := &iotago.Transaction{
 		Essence:      txEssence,

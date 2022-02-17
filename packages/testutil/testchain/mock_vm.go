@@ -12,7 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+
 	// "github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
@@ -101,8 +103,10 @@ func NextState(
 
 	consumedOutput := chainOutput.GetAliasOutput()
 	aliasID := consumedOutput.AliasID
+	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
 	txEssence := &iotago.TransactionEssence{
-		Inputs: []iotago.Input{chainOutput.ID()},
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{
 				Amount:         consumedOutput.Amount,
@@ -117,7 +121,10 @@ func NextState(
 		},
 		Payload: nil,
 	}
-	signatures, err := txEssence.Sign(chainKey.GetPrivateKey().AddressKeys(chainOutput.GetStateAddress()))
+	signatures, err := txEssence.Sign(
+		iotago.Outputs{chainOutput.GetAliasOutput()}.MustCommitment(),
+		chainKey.GetPrivateKey().AddressKeys(chainOutput.GetStateAddress()),
+	)
 	require.NoError(t, err)
 	tx = &iotago.Transaction{
 		Essence:      txEssence,

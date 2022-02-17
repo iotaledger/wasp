@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -18,11 +19,11 @@ func NewChainOriginTransaction(
 	stateControllerAddress iotago.Address,
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
+	unspentOutputs iotago.OutputSet,
+	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
 ) (*iotago.Transaction, *iscp.ChainID, error) {
-	if len(allUnspentOutputs) != len(allInputs) {
+	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
@@ -47,12 +48,12 @@ func NewChainOriginTransaction(
 			aliasOutput.Amount = aliasDustDeposit
 		}
 	}
-	inputs, remainderOutput, err := computeInputsAndRemainder(
+	txInputs, remainderOutput, err := computeInputsAndRemainder(
 		walletAddr,
 		aliasOutput.Amount,
 		nil,
-		allUnspentOutputs,
-		allInputs,
+		unspentOutputs,
+		unspentOutputIDs,
 		rentStructure,
 	)
 	if err != nil {
@@ -63,16 +64,20 @@ func NewChainOriginTransaction(
 		outputs = append(outputs, remainderOutput)
 	}
 	essence := &iotago.TransactionEssence{
-		Inputs:  inputs,
+		NetworkID: parameters.NetworkID,
+		Inputs:    txInputs.UTXOInputs(),
 		Outputs: outputs,
 	}
-	sigs, err := essence.Sign(keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr))
+	sigs, err := essence.Sign(
+		txInputs.OrderedSet(unspentOutputs).MustCommitment(),
+		keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr),
+	)
 	if err != nil {
 		return nil, nil, err
 	}
 	tx := &iotago.Transaction{
 		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(txInputs), sigs[0]),
 	}
 	txid, err := tx.ID()
 	if err != nil {
@@ -91,15 +96,15 @@ func NewRootInitRequestTransaction(
 	keyPair *cryptolib.KeyPair,
 	chainID *iscp.ChainID,
 	description string,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
+	unspentOutputs iotago.OutputSet,
+	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
 ) (*iotago.Transaction, error) {
 	//
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
-		UnspentOutputs:   allUnspentOutputs,
-		UnspentOutputIDs: allInputs,
+		UnspentOutputs:   unspentOutputs,
+		UnspentOutputIDs: unspentOutputIDs,
 		Requests: []*iscp.RequestParameters{{
 			TargetAddress: chainID.AsAddress(),
 			Metadata: &iscp.SendMetadata{
