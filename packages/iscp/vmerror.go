@@ -39,7 +39,7 @@ func (e *VMErrorTemplate) MessageFormat() string {
 
 func (e *VMErrorTemplate) Create(params ...interface{}) *VMError {
 	return &VMError{
-		messageFormat: e.messageFormat,
+		messageFormat: e.MessageFormat(),
 		prefixId:      e.PrefixId(),
 		id:            e.Id(),
 		params:        params,
@@ -100,7 +100,7 @@ type UnresolvedVMError struct {
 }
 
 func (e *UnresolvedVMError) Error() string {
-	return fmt.Sprintf("Error (prefixId: %d, errorId: %d, hash: %x)", e.PrefixId(), e.Id(), e.hash)
+	return fmt.Sprintf("UnresolvedError (prefixId: %d, errorId: %d, hash: %x)", e.PrefixId(), e.Id(), e.hash)
 }
 
 func (e *UnresolvedVMError) Hash() uint32 {
@@ -127,9 +127,9 @@ func (e *UnresolvedVMError) ResolveToVMError(resolver VMErrorMessageResolver) (*
 	}
 
 	vmError := VMError{
-		prefixId: e.prefixId,
-		id:       e.id,
-		params:   e.params,
+		prefixId: e.PrefixId(),
+		id:       e.Id(),
+		params:   e.Params(),
 	}
 
 	var err error

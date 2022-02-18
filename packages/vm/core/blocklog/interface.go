@@ -376,11 +376,7 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
-
-	if r.Error != nil {
-		ret += fmt.Sprintf("Err (prefixId: %v, errorId: %v)", r.Error.PrefixId(), r.Error.Id())
-	}
-
+	ret += fmt.Sprintf("Err: %v", r.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
 	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())
@@ -396,7 +392,7 @@ func (r *RequestReceipt) Short() string {
 	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
 
 	if r.Error != nil {
-		ret += fmt.Sprintf(": Err (prefixId: %v, errorId: %v)", r.Error.PrefixId(), r.Error.Id())
+		ret += fmt.Sprintf(": Err: %v", r.Error)
 	}
 
 	return ret
