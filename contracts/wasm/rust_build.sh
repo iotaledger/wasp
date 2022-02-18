@@ -10,6 +10,6 @@ if [ -f "schema.yaml" ]; then
 fi
 
 echo "Building $example_name"
-schema -rust flag
+schema -rust $flag
 echo "compiling "$example_name"_bg.wasm"
 wasm-pack build

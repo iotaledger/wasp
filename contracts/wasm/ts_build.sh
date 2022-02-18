@@ -10,7 +10,7 @@ if [ -f "schema.yaml" ]; then
 fi
 
 echo "Building $example_name"
-schema -ts flag
+schema -ts $flag
 echo "compiling "$example_name"_bg.wasm"
-call asc ts/"$example_name"/lib.ts --lib d:/work/node_modules --binaryFile ts/pkg/"$example_name"_ts.wasm
-rem call asc ts/"$example_name"/lib.ts --lib d:/work/node_modules --binaryFile ts/pkg/"$example_name"_ts.wasm --textFile ts/pkg/"$example_name"_ts.wat
+npx asc ts/"$example_name"/lib.ts --lib ../node_modules --binaryFile ts/pkg/"$example_name"_ts.wasm
+npx asc ts/"$example_name"/lib.ts --lib ../node_modules --binaryFile ts/pkg/"$example_name"_ts.wasm --textFile ts/pkg/"$example_name"_ts.wat

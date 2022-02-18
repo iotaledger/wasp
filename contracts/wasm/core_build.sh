@@ -5,5 +5,5 @@ schema -core -go -rust -ts -client -force
 cd ../../../contracts/wasm
 rm -rf ./node_modules/wasmlib/
 rm -rf ./node_modules/wasmclient/
-cp -R ../../packages/wasmvm/wasmlib/ts/wasmclient ./node_modules/wasmclient
-cp -R ../../packages/wasmvm/wasmlib/ts/wasmlib ./node_modules/wasmlib
+cp -R ../../packages/wasmvm/wasmlib/ts/wasmclient ./node_modules
+cp -R ../../packages/wasmvm/wasmlib/ts/wasmlib ./node_modules

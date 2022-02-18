@@ -1,5 +1,4 @@
 #!/bin/bash
-
 example_name=$1
 flag=$2
 cd $example_name
@@ -11,7 +10,7 @@ if [ -f "schema.yaml" ]; then
 fi
 
 echo "Building $example_name"
-schema -go flag
+schema -go $flag
 echo "compiling "$example_name"_go.wasm"
 
 if [ ! -d "./go/pkg" ]; then

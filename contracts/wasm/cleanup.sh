@@ -1,22 +1,25 @@
-find . -type f -name "consts.*" -delete
-find . -type f -name "contract.*" -delete
-find . -type f -name "keys.*" -delete
-find . -type f -name "lib.*" -delete
-find . -type f -name "params.*" -delete
-find . -type f -name "results.*" -delete
-find . -type f -name "state.*" -delete
-find . -type f -name "typedefs.*" -delete
-find . -type f -name "types.*" -delete
-find . -type f -name "main.go" -delete
-find . -type f -name "*.wasm" -delete
+#!/bin/bash
+root=$(git rev-parse --show-toplevel)
 
-# remove careful, this could fuck up fairroulette frontend
-for dir in ./*; do
+ rm "$root"/contracts/wasm/*/*/*/consts.*
+ rm "$root"/contracts/wasm/*/*/*/contract.*
+ rm "$root"/contracts/wasm/*/*/*/keys.*
+ rm "$root"/contracts/wasm/*/*/*/lib.*
+ rm "$root"/contracts/wasm/*/*/*/params.*
+ rm "$root"/contracts/wasm/*/*/*/results.*
+ rm "$root"/contracts/wasm/*/*/*/state.*
+ rm "$root"/contracts/wasm/*/*/*/typedefs.*
+ rm "$root"/contracts/wasm/*/*/*/types.*
+ rm "$root"/contracts/wasm/*/*/*/main.go
+ rm -r "$root"/contracts/wasm/*/*/pkg
+ rm -r "$root"/contracts/wasm/target
+ rm -r "$root"/contracts/wasm/node_modules
+
+for dir in "$root"/contracts/wasm/*; do
  if [ -d "$dir" ]; then
-    find . -type f -name "$dir/ts/$dir/index.ts" -delete
-    find . -type f -name "$dir/ts/$dir/tsconfig.json" -delete
-    find . -type f -name "$dir/pkg/*.*" -delete
-    find . -type f -name "$dir/ts/pkg/*.*" -delete
+    rm "$dir"/ts/"$dir"/index.ts
+    rm "$dir"/ts/"$dir"/tsconfig.json
+    rm "$dir"/pkg/*.*
+    rm "$dir"/ts/pkg/*.*
   fi
 done
-find . -type f -name "target/*.*" -delete
