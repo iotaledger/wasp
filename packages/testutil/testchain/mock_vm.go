@@ -103,7 +103,7 @@ func NextState(
 
 	consumedOutput := chainOutput.GetAliasOutput()
 	aliasID := consumedOutput.AliasID
-	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
+	inputs := iotago.OutputIDs{chainOutput.OutputID()}
 	txEssence := &iotago.TransactionEssence{
 		NetworkID: parameters.NetworkID,
 		Inputs:    inputs.UTXOInputs(),
