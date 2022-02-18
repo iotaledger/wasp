@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"go.uber.org/zap"
 )
 
 // takeAction triggers actions whenever relevant
@@ -229,7 +230,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Calldata) *vm.VMTask {
 		Requests:           reqs,
 		Timestamp:          c.consensusBatch.Timestamp,
 		VirtualStateAccess: c.currentState.Copy(),
-		Log:                c.log,
+		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 	}
 	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
 		// TODO: OnFinish was dropped; move this block to the goroutine that calls vmRunner.Run()
