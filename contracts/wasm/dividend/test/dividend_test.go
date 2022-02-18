@@ -72,7 +72,6 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 func TestDivide1Member(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
-	gasFee := uint64(100)
 	accountBalance := ctx.Balance(ctx.Account())
 	chainBalance := ctx.Balance(ctx.ChainAccount())
 	originatorBalance := ctx.Balance(ctx.Originator())
@@ -85,25 +84,28 @@ func TestDivide1Member(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1)
 
+	chainBalance += ctx.GasFee
+	originatorBalance += 1111 - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111-gasFee, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, member1Balance, ctx.Balance(member1))
 
 	dividendDivide(ctx, 999)
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1)
 
+	chainBalance += ctx.GasFee
+	originatorBalance -= ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111-gasFee*2, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, member1Balance+999, ctx.Balance(member1))
 }
 
 func TestDivide2Members(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
-	gasFee := uint64(100)
 	accountBalance := ctx.Balance(ctx.Account())
 	chainBalance := ctx.Balance(ctx.ChainAccount())
 	originatorBalance := ctx.Balance(ctx.Originator())
@@ -115,9 +117,11 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1)
 
+	chainBalance += ctx.GasFee
+	originatorBalance += 1111 - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111-gasFee, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 0, ctx.Balance(member1))
 
 	member2 := ctx.NewSoloAgent()
@@ -127,9 +131,11 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1, member2)
 
+	chainBalance += ctx.GasFee
+	originatorBalance += 1111 - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111*2-gasFee*2, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 0, ctx.Balance(member1))
 	require.EqualValues(t, 0, ctx.Balance(member2))
 
@@ -138,9 +144,11 @@ func TestDivide2Members(t *testing.T) {
 	ctx.Accounts(member1, member2)
 
 	remain := uint64(999) - 999*250/1000 - 999*750/1000
+	chainBalance += ctx.GasFee
+	originatorBalance += remain - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*3, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111*2-gasFee*3+remain, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 999*250/1000, ctx.Balance(member1))
 	require.EqualValues(t, 999*750/1000, ctx.Balance(member2))
 }
@@ -148,7 +156,6 @@ func TestDivide2Members(t *testing.T) {
 func TestDivide3Members(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
-	gasFee := uint64(100)
 	accountBalance := ctx.Balance(ctx.Account())
 	chainBalance := ctx.Balance(ctx.ChainAccount())
 	originatorBalance := ctx.Balance(ctx.Originator())
@@ -160,9 +167,11 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1)
 
+	chainBalance += ctx.GasFee
+	originatorBalance += 1111 - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111-gasFee, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 0, ctx.Balance(member1))
 
 	member2 := ctx.NewSoloAgent()
@@ -172,9 +181,11 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1, member2)
 
+	chainBalance += ctx.GasFee
+	originatorBalance += 1111 - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111*2-gasFee*2, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 0, ctx.Balance(member1))
 	require.EqualValues(t, 0, ctx.Balance(member2))
 
@@ -185,9 +196,11 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1, member2, member3)
 
+	chainBalance += ctx.GasFee
+	originatorBalance += 1111 - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*3, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111*3-gasFee*3, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 0, ctx.Balance(member1))
 	require.EqualValues(t, 0, ctx.Balance(member2))
 	require.EqualValues(t, 0, ctx.Balance(member3))
@@ -197,9 +210,11 @@ func TestDivide3Members(t *testing.T) {
 	ctx.Accounts(member1, member2, member3)
 
 	remain := uint64(999) - 999*250/1500 - 999*500/1500 - 999*750/1500
+	chainBalance += ctx.GasFee
+	originatorBalance += remain - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*4, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111*3-gasFee*4+remain, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 999*250/1500, ctx.Balance(member1))
 	require.EqualValues(t, 999*500/1500, ctx.Balance(member2))
 	require.EqualValues(t, 999*750/1500, ctx.Balance(member3))
@@ -208,10 +223,12 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Accounts(member1, member2, member3)
 
-	remain += uint64(1234) - 1234*250/1500 - 1234*500/1500 - 1234*750/1500
+	remain = uint64(1234) - 1234*250/1500 - 1234*500/1500 - 1234*750/1500
+	chainBalance += ctx.GasFee
+	originatorBalance += remain - ctx.GasFee
 	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance+gasFee*5, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance+1111*3-gasFee*5+remain, ctx.Balance(ctx.Originator()))
+	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
+	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 	require.EqualValues(t, 999*250/1500+1234*250/1500, ctx.Balance(member1))
 	require.EqualValues(t, 999*500/1500+1234*500/1500, ctx.Balance(member2))
 	require.EqualValues(t, 999*750/1500+1234*750/1500, ctx.Balance(member3))

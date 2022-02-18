@@ -49,6 +49,8 @@ type SoloContext struct {
 	Convertor   wasmhost.WasmConvertor
 	creator     *SoloAgent
 	Err         error
+	Gas         uint64
+	GasFee      uint64
 	Hprog       hashing.HashValue
 	isRequest   bool
 	IsWasm      bool
@@ -117,20 +119,7 @@ func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
 	}
 	receipt := ctx.Chain.LastReceipt()
 
-	fmt.Printf("%s\nGas: %d, fee %d\n", txt, receipt.GasBurned, receipt.GasFeeCharged)
-}
-
-func (ctx *SoloContext) Burn(i int64) {
-	// ignore gas for now
-}
-
-func (ctx *SoloContext) Budget() int64 {
-	// ignore gas for now
-	return 0
-}
-
-func (ctx *SoloContext) SetBudget(i int64) {
-	// ignore gas for now
+	fmt.Printf("%s\nGas: %d, fee %d (from last receipt)\n", txt, receipt.GasBurned, receipt.GasFeeCharged)
 }
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
@@ -500,4 +489,10 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
 	_ = wasmhost.Connect(ctx.wc)
 	return result
+}
+
+func (ctx *SoloContext) UpdateGas() {
+	receipt := ctx.Chain.LastReceipt()
+	ctx.Gas = receipt.GasBurned
+	ctx.GasFee = receipt.GasFeeCharged
 }

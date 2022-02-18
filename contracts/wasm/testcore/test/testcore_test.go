@@ -46,6 +46,9 @@ func run2(t *testing.T, test func(*testing.T, bool)) {
 	saveGoWasm := *wasmsolo.GoWasm
 	saveRsWasm := *wasmsolo.RsWasm
 	saveTsWasm := *wasmsolo.TsWasm
+	*wasmsolo.GoWasm = false
+	*wasmsolo.RsWasm = false
+	*wasmsolo.TsWasm = false
 
 	wasmlib.ConnectHost(nil)
 	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {

@@ -11,14 +11,14 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
-	engine       *wasmtime.Engine
-	instance     *wasmtime.Instance
-	interrupt    *wasmtime.InterruptHandle
-	linker       *wasmtime.Linker
-	memory       *wasmtime.Memory
-	module       *wasmtime.Module
-	store        *wasmtime.Store
-	remainingGas uint64
+	engine     *wasmtime.Engine
+	instance   *wasmtime.Instance
+	interrupt  *wasmtime.InterruptHandle
+	linker     *wasmtime.Linker
+	memory     *wasmtime.Memory
+	module     *wasmtime.Module
+	store      *wasmtime.Store
+	lastBudget uint64
 }
 
 func NewWasmTimeVM() WasmVM {
@@ -30,36 +30,42 @@ func NewWasmTimeVM() WasmVM {
 	return vm
 }
 
-// GasBudget sets gas budget. Each time GasBudget is called, we will restart counting the total burned gas
-func (vm *WasmTimeVM) GasBudget(budget uint64) error {
-	remaining, err := vm.store.ConsumeFuel(0)
+// GasBudget sets the gas budget for the VM.
+func (vm *WasmTimeVM) GasBudget(budget uint64) {
+	// save budget so we can later determine how much the VM burned
+	vm.lastBudget = budget
+
+	// new budget for VM, top up to desired budget
+	err := vm.store.AddFuel(budget)
 	if err != nil {
-		return err
+		panic("GasBudget.set: " + err.Error())
 	}
 
-	vm.remainingGas = remaining
-
-	if budget > remaining {
-		return vm.store.AddFuel(budget - remaining)
-	}
-
-	_, err = vm.store.ConsumeFuel(remaining - budget)
+	// consume 0 fuel to determine remaining budget
+	remainingBudget, err := vm.store.ConsumeFuel(0)
 	if err != nil {
-		return err
+		panic("GasBudget.determine: " + err.Error())
 	}
-	return nil
+
+	if remainingBudget > budget {
+		// burn excess budget
+		_, err = vm.store.ConsumeFuel(remainingBudget - budget)
+		if err != nil {
+			panic("GasBudget.burn: " + err.Error())
+		}
+	}
 }
 
-// GasBurned will return the gas has been burned by wasmtime since the last time WasmTimeVM.GasBudget was called
+// GasBurned will return the gas burned since the last time GasBudget() was called
 func (vm *WasmTimeVM) GasBurned() uint64 {
-	gasBurned, ok := vm.store.FuelConsumed()
-	if !ok {
-		return 0
+	// consume 0 fuel to determine remaining budget
+	remainingBudget, err := vm.store.ConsumeFuel(0)
+	if err != nil {
+		panic("GasBurned.determine: " + err.Error())
 	}
 
-	// gasBurned is the gas has been burned since the vm.store instance was been created
-	// so we need to subtract the remaining gas before calling vm.GasBudget
-	return gasBurned - vm.remainingGas
+	burned := vm.lastBudget - remainingBudget
+	return burned
 }
 
 func (vm *WasmTimeVM) Instantiate() (err error) {

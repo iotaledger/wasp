@@ -58,10 +58,10 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	if err != nil {
 		return nil, err
 	}
-	proc.vm.GasBudget(100_000)
-	proc.vm.GasEnable(false)
+	proc.vm.GasBudget(1000_000)
+	proc.vm.GasDisable(true)
 	err = proc.vm.RunFunction("on_load")
-	proc.vm.GasEnable(true)
+	proc.vm.GasDisable(false)
 	if err != nil {
 		return nil, err
 	}

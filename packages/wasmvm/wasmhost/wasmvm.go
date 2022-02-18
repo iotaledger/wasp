@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -37,9 +38,9 @@ var (
 )
 
 type WasmVM interface {
-	GasBudget(budget uint64) error
+	GasBudget(budget uint64)
 	GasBurned() uint64
-	GasEnable(enable bool)
+	GasDisable(disable bool)
 	Instantiate() error
 	Interrupt()
 	LinkHost(proc *WasmProcessor) error
@@ -55,15 +56,14 @@ type WasmVM interface {
 
 type WasmVMBase struct {
 	cachedResult   []byte
-	gasEnabled     bool
+	gasDisabled    bool
 	panicErr       error
 	proc           *WasmProcessor
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) GasBudget(budget uint64) error {
+func (vm *WasmVMBase) GasBudget(budget uint64) {
 	// ignore gas budget
-	return nil
 }
 
 func (vm *WasmVMBase) GasBurned() uint64 {
@@ -71,8 +71,8 @@ func (vm *WasmVMBase) GasBurned() uint64 {
 	return 0
 }
 
-func (vm *WasmVMBase) GasEnable(enable bool) {
-	vm.gasEnabled = enable
+func (vm *WasmVMBase) GasDisable(disable bool) {
+	vm.gasDisabled = disable
 }
 
 //nolint:unparam
@@ -216,10 +216,11 @@ func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 	return nil
 }
 
+// reportGasBurned updates the sandbox gas budget with the amount burned by the VM
 func (vm *WasmVMBase) reportGasBurned() {
-	if vm.gasEnabled {
+	if !vm.gasDisabled {
 		ctx := vm.proc.GetContext(0)
-		vm.proc.vm.GasBudget(ctx.GasBudget())
+		ctx.GasBurned(vm.proc.vm.GasBurned())
 	}
 }
 
@@ -243,6 +244,9 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 		if vm.panicErr != nil {
 			err = vm.panicErr
 			vm.panicErr = nil
+		}
+		if err != nil && strings.Contains(err.Error(), "all fuel consumed") {
+			err = errors.New("gas budget exceeded in Wasm VM")
 		}
 		return err
 	}
@@ -404,10 +408,10 @@ func (vm *WasmVMBase) traceVal(val []byte) string {
 func (vm *WasmVMBase) wrapUp() {
 	panicMsg := recover()
 	if panicMsg == nil {
-		if vm.gasEnabled {
-			// update gas budget
+		if !vm.gasDisabled {
+			// update VM gas budget to reflect what sandbox burned
 			ctx := vm.getContext(0)
-			ctx.GasBurned(vm.proc.vm.GasBurned())
+			vm.proc.vm.GasBudget(ctx.GasBudget())
 		}
 		return
 	}

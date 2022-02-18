@@ -154,6 +154,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, asse
 		}
 	}
 	_ = wasmhost.Connect(ctx.wc)
+	ctx.UpdateGas()
 	if ctx.Err != nil {
 		return nil
 	}
@@ -189,30 +190,32 @@ func (s *SoloSandbox) fnBlockContext(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
+	ctx := s.ctx
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract := s.cvt.IscpHname(req.Contract)
-	if contract != iscp.Hn(s.ctx.scName) {
-		s.Panicf("unknown contract: %s vs. %s", contract.String(), s.ctx.scName)
+	if contract != iscp.Hn(ctx.scName) {
+		s.Panicf("unknown contract: %s vs. %s", contract.String(), ctx.scName)
 	}
 	function := s.cvt.IscpHname(req.Function)
-	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
+	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
-	s.Tracef("CALL %s.%s", s.ctx.scName, funcName)
+	s.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
-		return s.postSync(s.ctx.scName, funcName, params, assets)
+		return s.postSync(ctx.scName, funcName, params, assets)
 	}
 
-	_ = wasmhost.Connect(s.ctx.wasmHostOld)
-	res, err := s.ctx.Chain.CallView(s.ctx.scName, funcName, params)
-	_ = wasmhost.Connect(s.ctx.wc)
-	s.ctx.Err = err
-	if err != nil {
+	_ = wasmhost.Connect(ctx.wasmHostOld)
+	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
+	_ = wasmhost.Connect(ctx.wc)
+	ctx.Err = err
+	ctx.UpdateGas()
+	if ctx.Err != nil {
 		return nil
 	}
 	return res.Bytes()

@@ -52,10 +52,11 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 		require.EqualValues(t, solo.Saldo, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
 
-		ctx.Chain.MustDepositIotasToL2(1000+gasFee, user.Pair)
+		budget := uint64(1000)
+		ctx.Chain.MustDepositIotasToL2(budget+gasFee, user.Pair)
 		ctx.Accounts(user)
-		require.EqualValues(t, solo.Saldo-1000-gasFee, user.Balance())
-		require.EqualValues(t, 1000, ctx.Balance(user))
+		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
+		require.EqualValues(t, budget, ctx.Balance(user))
 
 		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
@@ -70,11 +71,11 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 		require.NoError(t, ctx.Err)
 		ctx.Accounts(user)
 
-		require.EqualValues(t, solo.Saldo-1000-gasFee, user.Balance())
-		require.EqualValues(t, 1000-gasFee, ctx.Balance(user))
+		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
+		require.EqualValues(t, budget-ctx.GasFee, ctx.Balance(user))
 
 		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+		require.EqualValues(t, chainBalance+gasFee+ctx.GasFee, ctx.Balance(ctx.ChainAccount()))
 		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 
 		// verify state update
@@ -86,7 +87,7 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 	})
 }
 
-func TestOffLedgerTransferEnough(t *testing.T) {
+func TestOffLedgerTransferWhenEnoughBudget(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -99,8 +100,7 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 		require.EqualValues(t, solo.Saldo, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
 
-		budget := uint64(1000)
-		// deposit itself burns gas
+		budget := uint64(9999)
 		ctx.Chain.MustDepositIotasToL2(budget+gasFee, user.Pair)
 		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
@@ -114,15 +114,15 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
 		f.Params.Name().SetValue("ppp")
 		f.Params.IntValue().SetValue(314)
-		f.Func.TransferIotas(budget - gasFee).Post()
+		f.Func.TransferIotas(1000).Post()
 		require.NoError(t, ctx.Err)
 		ctx.Accounts(user)
 
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget-gasFee, ctx.Balance(user))
+		require.EqualValues(t, budget-ctx.GasFee, ctx.Balance(user))
 
 		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+		require.EqualValues(t, chainBalance+gasFee+ctx.GasFee, ctx.Balance(ctx.ChainAccount()))
 		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 
 		// verify state update
@@ -134,7 +134,7 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 	})
 }
 
-func TestOffLedgerTransferNotEnough(t *testing.T) {
+func TestOffLedgerTransferWhenNotEnoughBudget(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -168,10 +168,10 @@ func TestOffLedgerTransferNotEnough(t *testing.T) {
 		ctx.Accounts(user)
 
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget-gasFee, ctx.Balance(user))
+		require.EqualValues(t, budget-ctx.GasFee, ctx.Balance(user))
 
 		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee*2, ctx.Balance(ctx.ChainAccount()))
+		require.EqualValues(t, chainBalance+gasFee+ctx.GasFee, ctx.Balance(ctx.ChainAccount()))
 		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 
 		// verify no state update

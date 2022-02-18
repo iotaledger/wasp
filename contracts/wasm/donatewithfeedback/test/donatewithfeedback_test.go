@@ -44,7 +44,7 @@ func TestDonateOnce(t *testing.T) {
 	donate.Params.Feedback().SetValue("Nice work!")
 	donate.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 1000-200, ctx.Balance(donator1))
+	require.EqualValues(t, 1000-100-ctx.GasFee, ctx.Balance(donator1))
 
 	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
 	donationInfo.Func.Call()
@@ -70,7 +70,7 @@ func TestDonateTwice(t *testing.T) {
 	donate.Params.Feedback().SetValue("Nice work!")
 	donate.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 1000-200, ctx.Balance(donator1))
+	require.EqualValues(t, 1000-100-ctx.GasFee, ctx.Balance(donator1))
 
 	donator2 := ctx.NewSoloAgent()
 	ctx.Chain.MustDepositIotasToL2(1000, donator2.Pair)
@@ -80,7 +80,7 @@ func TestDonateTwice(t *testing.T) {
 	donate2.Params.Feedback().SetValue("Nice work!")
 	donate2.Func.TransferIotas(2345).Post()
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 1000-200, ctx.Balance(donator2))
+	require.EqualValues(t, 1000-100-ctx.GasFee, ctx.Balance(donator2))
 
 	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
 	donationInfo.Func.Call()
