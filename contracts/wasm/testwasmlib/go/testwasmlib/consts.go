@@ -59,37 +59,41 @@ const (
 )
 
 const (
-	FuncArrayAppend  = "arrayAppend"
-	FuncArrayClear   = "arrayClear"
-	FuncArraySet     = "arraySet"
-	FuncMapClear     = "mapClear"
-	FuncMapSet       = "mapSet"
-	FuncParamTypes   = "paramTypes"
-	FuncRandom       = "random"
-	FuncTriggerEvent = "triggerEvent"
-	ViewArrayLength  = "arrayLength"
-	ViewArrayValue   = "arrayValue"
-	ViewBlockRecord  = "blockRecord"
-	ViewBlockRecords = "blockRecords"
-	ViewGetRandom    = "getRandom"
-	ViewIotaBalance  = "iotaBalance"
-	ViewMapValue     = "mapValue"
+	FuncArrayAppend   = "arrayAppend"
+	FuncArrayClear    = "arrayClear"
+	FuncArraySet      = "arraySet"
+	FuncMapClear      = "mapClear"
+	FuncMapSet        = "mapSet"
+	FuncParamTypes    = "paramTypes"
+	FuncRandom        = "random"
+	FuncTakeAllowance = "takeAllowance"
+	FuncTakeBalance   = "takeBalance"
+	FuncTriggerEvent  = "triggerEvent"
+	ViewArrayLength   = "arrayLength"
+	ViewArrayValue    = "arrayValue"
+	ViewBlockRecord   = "blockRecord"
+	ViewBlockRecords  = "blockRecords"
+	ViewGetRandom     = "getRandom"
+	ViewIotaBalance   = "iotaBalance"
+	ViewMapValue      = "mapValue"
 )
 
 const (
-	HFuncArrayAppend  = wasmtypes.ScHname(0x612f835f)
-	HFuncArrayClear   = wasmtypes.ScHname(0x88021821)
-	HFuncArraySet     = wasmtypes.ScHname(0x2c4150b3)
-	HFuncMapClear     = wasmtypes.ScHname(0x027f215a)
-	HFuncMapSet       = wasmtypes.ScHname(0xf2260404)
-	HFuncParamTypes   = wasmtypes.ScHname(0x6921c4cd)
-	HFuncRandom       = wasmtypes.ScHname(0xe86c97ca)
-	HFuncTriggerEvent = wasmtypes.ScHname(0xd5438ac6)
-	HViewArrayLength  = wasmtypes.ScHname(0x3a831021)
-	HViewArrayValue   = wasmtypes.ScHname(0x662dbd81)
-	HViewBlockRecord  = wasmtypes.ScHname(0xad13b2f8)
-	HViewBlockRecords = wasmtypes.ScHname(0x16e249ea)
-	HViewGetRandom    = wasmtypes.ScHname(0x46263045)
-	HViewIotaBalance  = wasmtypes.ScHname(0x9d3920bd)
-	HViewMapValue     = wasmtypes.ScHname(0x23149bef)
+	HFuncArrayAppend   = wasmtypes.ScHname(0x612f835f)
+	HFuncArrayClear    = wasmtypes.ScHname(0x88021821)
+	HFuncArraySet      = wasmtypes.ScHname(0x2c4150b3)
+	HFuncMapClear      = wasmtypes.ScHname(0x027f215a)
+	HFuncMapSet        = wasmtypes.ScHname(0xf2260404)
+	HFuncParamTypes    = wasmtypes.ScHname(0x6921c4cd)
+	HFuncRandom        = wasmtypes.ScHname(0xe86c97ca)
+	HFuncTakeAllowance = wasmtypes.ScHname(0x91e7bd00)
+	HFuncTakeBalance   = wasmtypes.ScHname(0x8ad1cb27)
+	HFuncTriggerEvent  = wasmtypes.ScHname(0xd5438ac6)
+	HViewArrayLength   = wasmtypes.ScHname(0x3a831021)
+	HViewArrayValue    = wasmtypes.ScHname(0x662dbd81)
+	HViewBlockRecord   = wasmtypes.ScHname(0xad13b2f8)
+	HViewBlockRecords  = wasmtypes.ScHname(0x16e249ea)
+	HViewGetRandom     = wasmtypes.ScHname(0x46263045)
+	HViewIotaBalance   = wasmtypes.ScHname(0x9d3920bd)
+	HViewMapValue      = wasmtypes.ScHname(0x23149bef)
 )

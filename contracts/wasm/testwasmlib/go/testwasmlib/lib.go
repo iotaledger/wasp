@@ -18,6 +18,8 @@ var exportMap = wasmlib.ScExportMap{
 		FuncMapSet,
 		FuncParamTypes,
 		FuncRandom,
+		FuncTakeAllowance,
+		FuncTakeBalance,
 		FuncTriggerEvent,
 		ViewArrayLength,
 		ViewArrayValue,
@@ -35,6 +37,8 @@ var exportMap = wasmlib.ScExportMap{
 		funcMapSetThunk,
 		funcParamTypesThunk,
 		funcRandomThunk,
+		funcTakeAllowanceThunk,
+		funcTakeBalanceThunk,
 		funcTriggerEventThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
@@ -201,6 +205,44 @@ func funcRandomThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcRandom(ctx, f)
 	ctx.Log("testwasmlib.funcRandom ok")
+}
+
+type TakeAllowanceContext struct {
+	Events TestWasmLibEvents
+	State  MutableTestWasmLibState
+}
+
+func funcTakeAllowanceThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcTakeAllowance")
+	f := &TakeAllowanceContext{
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcTakeAllowance(ctx, f)
+	ctx.Log("testwasmlib.funcTakeAllowance ok")
+}
+
+type TakeBalanceContext struct {
+	Events  TestWasmLibEvents
+	Results MutableTakeBalanceResults
+	State   MutableTestWasmLibState
+}
+
+func funcTakeBalanceThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcTakeBalance")
+	results := wasmlib.NewScDict()
+	f := &TakeBalanceContext{
+		Results: MutableTakeBalanceResults{
+			proxy: results.AsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcTakeBalance(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.funcTakeBalance ok")
 }
 
 type TriggerEventContext struct {

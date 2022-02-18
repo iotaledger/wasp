@@ -12,6 +12,28 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
+pub struct ImmutableTakeBalanceResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableTakeBalanceResults {
+    pub fn iotas(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_IOTAS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableTakeBalanceResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableTakeBalanceResults {
+    pub fn iotas(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_IOTAS))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableArrayLengthResults {
 	pub(crate) proxy: Proxy,
 }

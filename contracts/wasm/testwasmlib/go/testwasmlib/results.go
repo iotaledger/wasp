@@ -9,6 +9,22 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
+type ImmutableTakeBalanceResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableTakeBalanceResults) Iotas() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultIotas))
+}
+
+type MutableTakeBalanceResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableTakeBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
+}
+
 type ImmutableArrayLengthResults struct {
 	proxy wasmtypes.Proxy
 }

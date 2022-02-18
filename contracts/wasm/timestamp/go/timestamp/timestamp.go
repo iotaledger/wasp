@@ -6,9 +6,8 @@ package timestamp
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 func funcNow(ctx wasmlib.ScFuncContext, f *NowContext) {
-	f.State.Timestamp().SetValue(ctx.Timestamp())
 }
 
 func viewGetTimestamp(ctx wasmlib.ScViewContext, f *GetTimestampContext) {
-	f.Results.Timestamp().SetValue(f.State.Timestamp().Value())
+	f.Results.Timestamp().SetValue(ctx.Timestamp())
 }

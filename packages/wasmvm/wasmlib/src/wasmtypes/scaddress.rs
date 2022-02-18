@@ -45,7 +45,7 @@ pub fn address_decode(dec: &mut WasmDecoder) -> ScAddress {
 }
 
 pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress) {
-    enc.fixed_bytes(&value.to_bytes(), SC_ADDRESS_LENGTH);
+    enc.fixed_bytes(&value.id, SC_ADDRESS_LENGTH);
 }
 
 pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
