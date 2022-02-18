@@ -12,17 +12,14 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
-)
-
-var (
-	NewSandbox     func(vmctx *VMContext) iscp.Sandbox
-	NewSandboxView func(vmctx *VMContext) iscp.SandboxView
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -37,7 +34,6 @@ type VMContext struct {
 	finalStateTimestamp  time.Time
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
-	blockOutputCount     uint8
 	dustAssumptions      *transaction.DustDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
@@ -47,12 +43,11 @@ type VMContext struct {
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.Request
-	numPostedOutputs   int // how many outputs has been posted in the request
+	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue
-	contractRecord     *root.ContractRecord
 	callStack          []*callContext
 	// --- gas related
 	// max tokens cane be charged for gas fee
@@ -68,6 +63,8 @@ type VMContext struct {
 	// burn history. If disabled, it is nil
 	gasBurnLog *gas.BurnLog
 }
+
+var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
 	caller             *iscp.AgentID // calling agent
@@ -138,7 +135,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
+			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
 		})
 
 		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
@@ -148,7 +145,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
 	}
 
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
 		return ret.loadNativeTokenOutput(id)
 	}
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
@@ -156,7 +153,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
-		&task.AnchorOutputID,
+		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
 		*ret.dustAssumptions,
@@ -296,4 +293,15 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 	if vmctx.gasFeeChargedTotal != sumGasFeeCharged {
 		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
 	}
+}
+
+func (vmctx *VMContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
+		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
+	})
+	return vmtype, binary, err
+}
+
+func (vmctx *VMContext) Processors() *processors.Cache {
+	return vmctx.task.Processors
 }

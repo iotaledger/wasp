@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -13,7 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+
 	// "github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
@@ -65,14 +66,14 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 
 func NextState(
 	t *testing.T,
-	chainKey *ed25519.KeyPair,
+	chainKey *cryptolib.KeyPair,
 	vs state.VirtualStateAccess,
 	chainOutput *iscp.AliasOutputWithID,
 	ts time.Time,
 	/*reqs ...iscp.Calldata,*/
 ) (nextvs state.VirtualStateAccess, tx *iotago.Transaction, aliasOutputID *iotago.UTXOInput) {
 	if chainKey != nil {
-		require.True(t, chainOutput.GetStateAddress().Equal(cryptolib.Ed25519AddressFromPubKey(cryptolib.HivePublicKeyToCryptolibPublicKey(chainKey.PublicKey))))
+		require.True(t, chainOutput.GetStateAddress().Equal(chainKey.GetPublicKey().AsEd25519Address()))
 	}
 
 	nextvs = vs.Copy()
@@ -102,8 +103,10 @@ func NextState(
 
 	consumedOutput := chainOutput.GetAliasOutput()
 	aliasID := consumedOutput.AliasID
+	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
 	txEssence := &iotago.TransactionEssence{
-		Inputs: []iotago.Input{chainOutput.ID()},
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{
 				Amount:         consumedOutput.Amount,
@@ -118,10 +121,10 @@ func NextState(
 		},
 		Payload: nil,
 	}
-	signatures, err := txEssence.Sign(iotago.AddressKeys{
-		Address: chainOutput.GetStateAddress(),
-		Keys:    cryptolib.HivePrivateKeyToCryptolibPrivateKey(chainKey.PrivateKey),
-	})
+	signatures, err := txEssence.Sign(
+		iotago.Outputs{chainOutput.GetAliasOutput()}.MustCommitment(),
+		chainKey.GetPrivateKey().AddressKeys(chainOutput.GetStateAddress()),
+	)
 	require.NoError(t, err)
 	tx = &iotago.Transaction{
 		Essence:      txEssence,

@@ -3,11 +3,10 @@ package micropay
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -24,7 +23,7 @@ type BatchPayment struct {
 	Payments []Payment
 }
 
-func NewPayment(ord uint32, amount uint64, targetAddr iotago.Address, payerKeyPair *ed25519.KeyPair) *Payment {
+func NewPayment(ord uint32, amount uint64, targetAddr iotago.Address, payerKeyPair *cryptolib.KeyPair) *Payment {
 	panic("TODO implment")
 	// payerAddr := ledgerstate.NewED25519Address(payerKeyPair.PublicKey)
 	// data := paymentEssence(ord, amount, payerAddr, targetAddr)

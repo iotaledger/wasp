@@ -41,7 +41,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 type waspServices struct{}
@@ -136,11 +136,11 @@ func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, p
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
-	vctx := viewcontext.NewFromChain(ch)
+	vctx := viewcontext.New(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), params)
+		ret, err = vctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), params)
 		return err
 	})
 	return ret, err
@@ -175,7 +175,7 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func worker(shutdownSignal <-chan struct{}) {
+func worker(ctx context.Context) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
@@ -189,7 +189,7 @@ func worker(shutdownSignal <-chan struct{}) {
 	}()
 
 	select {
-	case <-shutdownSignal:
+	case <-ctx.Done():
 	case <-stopped:
 	}
 

@@ -3,7 +3,6 @@ package dashboard
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -45,19 +44,20 @@ func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err erro
 		return
 	}
 
-	ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = governance.GetDefaultFeeInfo(info)
-	if err != nil {
-		return
-	}
+	panic("TODO implement") // fee structure changed
+	// ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = governance.GetDefaultFeeInfo(info)
+	// if err != nil {
+	// 	return
+	// }
 
-	recs, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncGetContractRecords.Name, nil)
-	if err != nil {
-		return
-	}
-	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
-	if err != nil {
-		return
-	}
+	// recs, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncGetContractRecords.Name, nil)
+	// if err != nil {
+	// 	return
+	// }
+	// ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
+	// if err != nil {
+	// 	return
+	// }
 
-	return ret, err
+	// return ret, err
 }

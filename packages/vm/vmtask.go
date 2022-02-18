@@ -25,7 +25,7 @@ type VMTask struct {
 	ACSSessionID       uint64
 	Processors         *processors.Cache
 	AnchorOutput       *iotago.AliasOutput
-	AnchorOutputID     iotago.UTXOInput
+	AnchorOutputID     iotago.OutputID
 	RentStructure      *iotago.RentStructure
 	SolidStateBaseline coreutil.StateBaseline
 	Requests           []iscp.Request
@@ -50,6 +50,8 @@ type VMTask struct {
 	// TransactionEssence is the transaction essence for the next block,
 	// or nil if the task does not produce a normal block
 	ResultTransactionEssence *iotago.TransactionEssence
+	// ResultInputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
+	ResultInputsCommitment []byte
 	// Results contains one result for each non-skipped request
 	Results []*RequestResult
 	// If not nil, VMError is a fatal error that prevented the execution of the task

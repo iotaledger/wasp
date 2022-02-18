@@ -1,22 +1,19 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -49,12 +46,7 @@ func (vmctx *VMContext) totalL2Assets() *iscp.Assets {
 	return ret
 }
 
-func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) *root.ContractRecord {
-	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
-		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
-	}
-
-	var ret *root.ContractRecord
+func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (ret *root.ContractRecord) {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		ret = root.FindContract(s, contractHname)
 	})
@@ -70,8 +62,6 @@ func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 }
 
 func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
-	vmctx.GasBurn(gas.BurnCodeGetBalance)
-
 	var ret uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetIotaBalance(s, agentID)
@@ -80,8 +70,6 @@ func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 }
 
 func (vmctx *VMContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	vmctx.GasBurn(gas.BurnCodeGetBalance)
-
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetNativeTokenBalance(s, agentID, tokenID)
@@ -98,8 +86,6 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID
 }
 
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
-	vmctx.GasBurn(gas.BurnCodeGetBalance)
-
 	var ret *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetAssets(s, agentID)
@@ -127,19 +113,6 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 		return tokensAvailableBig.Uint64()
 	}
 	return math.MaxUint64
-}
-
-func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
-	vmtype, ok := vmctx.task.Processors.Config.GetNativeProcessorType(programHash)
-	if ok {
-		return vmtype, nil, nil
-	}
-	var binary []byte
-	var err error
-	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
-		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
-	})
-	return vmtype, binary, err
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
@@ -177,8 +150,6 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
-	vmctx.GasBurn(gas.BurnCodeEmitEventFixed)
-
 	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
 		panic(ErrTooManyEvents)
 	}

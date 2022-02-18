@@ -25,7 +25,7 @@ func addWebSocketEndpoint(e echoswagger.ApiGroup, log *logger.Logger) *webSocket
 }
 
 func (w *webSocketAPI) handleWebSocket(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return err
 	}

@@ -3,21 +3,19 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
-	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
+	if vmctx.NumPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(ErrExceededPostedOutputLimit)
 	}
 
-	vmctx.numPostedOutputs++
-	vmctx.GasBurn(gas.BurnCodeSendL1Request, uint64(vmctx.numPostedOutputs))
+	vmctx.NumPostedOutputs++
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit
-	out := transaction.ExtendedOutputFromPostData(
+	out := transaction.BasicOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,

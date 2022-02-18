@@ -3,20 +3,21 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
 // tokenOutputLoader externally supplied function which loads stored output from the state
 // Should return nil if does not exist
-type tokenOutputLoader func(*iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput)
+type tokenOutputLoader func(*iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput)
 
 // foundryLoader externally supplied function which returns foundry output and id by its serial number
 // Should return nil if foundry does not exist
@@ -28,7 +29,7 @@ type AnchorTransactionBuilder struct {
 	// anchorOutput output of the chain
 	anchorOutput *iotago.AliasOutput
 	// anchorOutputID is the ID of the anchor output
-	anchorOutputID *iotago.UTXOInput
+	anchorOutputID iotago.OutputID
 	// already consumed outputs, specified by entire Request. It is needed for checking validity
 	consumed []iscp.Request
 	// iotas which are on-chain. It does not include dust deposits on anchor and on internal outputs
@@ -54,8 +55,8 @@ type nativeTokenBalance struct {
 	tokenID            iotago.NativeTokenID
 	input              iotago.UTXOInput // if in != nil
 	dustDepositCharged bool
-	in                 *iotago.ExtendedOutput // if nil it means output does not exist, this is new account for the token_id
-	out                *iotago.ExtendedOutput // current balance of the token_id on the chain
+	in                 *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
+	out                *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
 type foundryInvoked struct {
@@ -68,7 +69,7 @@ type foundryInvoked struct {
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(
 	anchorOutput *iotago.AliasOutput,
-	anchorOutputID *iotago.UTXOInput,
+	anchorOutputID iotago.OutputID,
 	tokenBalanceLoader tokenOutputLoader,
 	foundryLoader foundryLoader,
 	dustDepositAssumptions transaction.DustDepositAssumption,
@@ -194,44 +195,59 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 }
 
 // BuildTransactionEssence builds transaction essence from tx builder data
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) (*iotago.TransactionEssence, []byte) {
 	txb.MustBalanced("BuildTransactionEssence IN")
-	return &iotago.TransactionEssence{
-		Inputs:  txb.inputs(),
-		Outputs: txb.outputs(stateData),
-		Payload: nil,
+	inputs, inputIDs := txb.inputs()
+	essence := &iotago.TransactionEssence{
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputIDs.UTXOInputs(),
+		Outputs:   txb.outputs(stateData),
+		Payload:   nil,
 	}
+	return essence, inputIDs.OrderedSet(inputs).MustCommitment()
 }
 
-// inputs generate a deterministic list of inputs for the transaction essence
+// inputIDs generates a deterministic list of inputs for the transaction essence
 // - index 0 is always alias output
-// - then goes consumed external ExtendedOutput UTXOs, the requests, in the order of processing
+// - then goes consumed external BasicOutput UTXOs, the requests, in the order of processing
 // - then goes inputs of native token UTXOs, sorted by token id
 // - then goes inputs of foundries sorted by serial number
-func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
-	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
+func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputIDs) {
+	ids := make(iotago.OutputIDs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
+	inputs := make(iotago.OutputSet, 0)
+
 	// alias output
-	ret = append(ret, txb.anchorOutputID)
+	ids = append(ids, txb.anchorOutputID)
+	inputs[txb.anchorOutputID] = txb.anchorOutput
+
 	// consumed on-ledger requests
 	for i := range txb.consumed {
-		ret = append(ret, txb.consumed[i].ID().OutputID())
+		id := txb.consumed[i].ID().OutputID()
+		ids = append(ids, id)
+		inputs[id] = txb.consumed[i].AsOnLedger().Output()
 	}
+
 	// internal native token outputs
 	for _, nt := range txb.nativeTokenOutputsSorted() {
 		if nt.requiresInput() {
-			ret = append(ret, &nt.input)
+			id := nt.input.ID()
+			ids = append(ids, id)
+			inputs[id] = nt.in
 		}
 	}
+
 	// foundries
 	for _, f := range txb.foundriesSorted() {
 		if f.requiresInput() {
-			ret = append(ret, &f.input)
+			id := f.input.ID()
+			ids = append(ids, id)
+			inputs[id] = f.in
 		}
 	}
-	if len(ret) != txb.numInputs() {
+	if len(ids) != txb.numInputs() {
 		panic("AnchorTransactionBuilder.inputs: internal inconsistency")
 	}
-	return ret
+	return inputs, ids
 }
 
 // outputs generates outputs for the transaction essence
@@ -240,7 +256,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	// creating the anchor output
 	aliasID := txb.anchorOutput.AliasID
 	if aliasID.Empty() {
-		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID.ID())
+		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID)
 	}
 	anchorOutput := &iotago.AliasOutput{
 		Amount:         txb.totalIotasInL2Accounts + txb.dustDepositAssumption.AnchorOutput,
@@ -367,11 +383,11 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 		panic(vmexceptions.ErrOutputLimitExceeded)
 	}
 
-	var out *iotago.ExtendedOutput
+	var out *iotago.BasicOutput
 	if in == nil {
 		out = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
 	} else {
-		out = cloneInternalExtendedOutputOrNil(in)
+		out = cloneInternalBasicOutputOrNil(in)
 	}
 	b := &nativeTokenBalance{
 		tokenID:            out.NativeTokens[0].ID,
@@ -436,7 +452,7 @@ func stringNativeTokenID(id *iotago.NativeTokenID) string {
 
 func (txb *AnchorTransactionBuilder) String() string {
 	ret := ""
-	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID))
+	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID.UTXOInput()))
 	ret += fmt.Sprintf("in IOTA balance: %d\n", txb.anchorOutput.Amount)
 	ret += fmt.Sprintf("current IOTA balance: %d\n", txb.totalIotasInL2Accounts)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))

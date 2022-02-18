@@ -10,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (vmctx *VMContext) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
+func (vmctx *VMContext) BuildTransactionEssence(stateData *iscp.StateData) (*iotago.TransactionEssence, []byte) {
 	return vmctx.txbuilder.BuildTransactionEssence(stateData)
 }
 
@@ -22,8 +22,8 @@ func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *VMContext) loadNativeTokenOutput(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
-	var retOut *iotago.ExtendedOutput
+func (vmctx *VMContext) loadNativeTokenOutput(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
+	var retOut *iotago.BasicOutput
 	var retInp *iotago.UTXOInput
 	var blockIndex uint32
 	var outputIndex uint16

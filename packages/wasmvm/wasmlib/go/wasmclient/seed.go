@@ -49,5 +49,5 @@ func SeedToKeyPair(mySeed string, index uint64) *cryptolib.KeyPair {
 	}
 	db := utxodb.New(utxodb.DefaultInitParams(seedBytes))
 	pair, _ := db.NewKeyPairByIndex(index)
-	return &pair
+	return pair
 }

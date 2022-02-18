@@ -18,8 +18,9 @@ func checkProperConversionsToString(t *testing.T, html *goquery.Document) {
 	require.NotContains(t, strings.ToLower(html.Text()), "{alias")
 	require.NotContains(t, strings.ToLower(html.Text()), "address {")
 	require.NotContains(t, strings.ToLower(html.Text()), "$/")
+	panic("TODO implement")
 	// For colored.Color we need to use String() instead of .Base58() ¯\_(ツ)_/¯
-	require.NotContains(t, strings.ToLower(html.Text()), "["+strings.Repeat("0 ", colored.ColorLength-1)+"0]")
+	// require.NotContains(t, strings.ToLower(html.Text()), "["+strings.Repeat("0 ", colored.ColorLength-1)+"0]")
 }
 
 func TestDashboardConfig(t *testing.T) {
@@ -55,7 +56,7 @@ func TestDashboardChainView(t *testing.T) {
 	env := initDashboardTest(t)
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChain, "/chain/:chainid", map[string]string{
-		"chainid": ch.ChainID.Base58(),
+		"chainid": ch.ChainID.String(),
 	})
 	checkProperConversionsToString(t, html)
 }
@@ -64,7 +65,7 @@ func TestDashboardChainAccount(t *testing.T) {
 	env := initDashboardTest(t)
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
-		"chainid": ch.ChainID.Base58(),
+		"chainid": ch.ChainID.String(),
 		"agentid": strings.Replace(iscp.NewRandomAgentID().String(), "/", ":", 1),
 	})
 	checkProperConversionsToString(t, html)
@@ -75,7 +76,7 @@ func TestDashboardChainBlob(t *testing.T) {
 	env := initDashboardTest(t)
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
-		"chainid": ch.ChainID.Base58(),
+		"chainid": ch.ChainID.String(),
 		"hash":    hashing.RandomHash(nil).Base58(),
 	})
 	checkProperConversionsToString(t, html)
@@ -87,7 +88,7 @@ func TestDashboardChainBlock(t *testing.T) {
 
 	for _, index := range []string{"0", "1"} {
 		html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlock, "/chain/:chainid/block/:index", map[string]string{
-			"chainid": ch.ChainID.Base58(),
+			"chainid": ch.ChainID.String(),
 			"index":   index,
 		})
 		checkProperConversionsToString(t, html)
@@ -98,7 +99,7 @@ func TestDashboardChainContract(t *testing.T) {
 	env := initDashboardTest(t)
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainContract, "/chain/:chainid/contract/:hname", map[string]string{
-		"chainid": ch.ChainID.Base58(),
+		"chainid": ch.ChainID.String(),
 		"hname":   iscp.Hname(0).String(),
 	})
 	checkProperConversionsToString(t, html)

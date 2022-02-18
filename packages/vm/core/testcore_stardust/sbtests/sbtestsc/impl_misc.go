@@ -113,3 +113,10 @@ func infiniteLoop(ctx iscp.Sandbox) dict.Dict {
 		ctx.State().Set("foo", []byte(strings.Repeat("dummy data", 1000)))
 	}
 }
+
+func infiniteLoopView(ctx iscp.SandboxView) dict.Dict {
+	for {
+		// do nothing, just waste gas
+		ctx.Call(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{})
+	}
+}

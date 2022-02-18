@@ -39,7 +39,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
+	Plugin := node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 	return Plugin
 }
 

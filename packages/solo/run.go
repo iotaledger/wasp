@@ -42,13 +42,13 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput,
-		AnchorOutputID:     *anchorOutputID,
+		AnchorOutputID:     anchorOutputID,
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
 		VirtualStateAccess: ch.State.Copy(),
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
-		Log:                ch.Log,
+		Log:                ch.Log(),
 		RentStructure:      ch.Env.utxoDB.RentStructure(),
 		// state baseline is always valid in Solo
 		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
@@ -63,13 +63,15 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 }
 
 func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
-	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
+	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
 	task := ch.runTaskNoLock(reqs, false)
 
 	var essence *iotago.TransactionEssence
+	var inputsCommitment []byte
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
+		inputsCommitment = task.ResultInputsCommitment
 	} else {
 		panic("not implemented")
 		//essence, err = rotate.MakeRotateStateControllerTransaction(
@@ -81,10 +83,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		//)
 		//require.NoError(ch.Env.T, err)
 	}
-	sigs, err := essence.Sign(iotago.AddressKeys{
-		Address: ch.StateControllerAddress,
-		Keys:    ch.StateControllerKeyPair.PrivateKey,
-	})
+	sigs, err := essence.Sign(
+		inputsCommitment,
+		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
+	)
 	require.NoError(ch.Env.T, err)
 
 	tx := &iotago.Transaction{
@@ -103,7 +105,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 		require.NoError(ch.Env.T, err)
 
-		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
+		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
 
 	return task.Results
@@ -130,9 +132,9 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	chain.PublishStateTransition(ch.ChainID, anchor.OutputID, stateOutput, len(reqids))
 	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
-	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
+	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
-	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqids))
+	ch.Log().Debugf("Batch processed: %s", batchShortStr(reqids))
 
 	ch.mempool.RemoveRequests(reqids...)
 
@@ -150,6 +152,6 @@ func batchShortStr(reqIds []iscp.RequestID) string {
 func (ch *Chain) logRequestLastBlock() {
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
-		ch.Log.Infof("REQ: '%s'", rec.Short())
+		ch.Log().Infof("REQ: '%s'", rec.Short())
 	}
 }

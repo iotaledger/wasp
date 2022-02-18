@@ -22,8 +22,8 @@ var tplChain string
 func chainBreadcrumb(e *echo.Echo, chainID *iscp.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
-		Title: fmt.Sprintf("Chain %.8s…", chainID.Hex()),
-		Href:  e.Reverse("chain", chainID.Hex()),
+		Title: fmt.Sprintf("Chain %.8s…", chainID.String()),
+		Href:  e.Reverse("chain", chainID.String()),
 	}
 }
 
@@ -34,7 +34,7 @@ func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChain(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
