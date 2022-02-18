@@ -219,7 +219,7 @@ func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
 }
 
 func loadPrevStateHashFromState(chainState kv.KVStoreReader) (hashing.HashValue, error) {
-	hashBin, err := chainState.Get(kv.Key(coreutil.StatePrefixPrevStateHash))
+	hashBin, err := chainState.Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
 	if err != nil {
 		return hashing.NilHash, err
 	}

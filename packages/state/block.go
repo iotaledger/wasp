@@ -48,15 +48,6 @@ func BlockFromBytes(data []byte) (Block, error) {
 	return ret, nil
 }
 
-// block with empty state update and nil state hash
-func newOriginBlock() Block {
-	ret, err := newBlock(NewStateUpdateWithBlocklogValues(0, time.Time{}, hashing.NilHash).Mutations())
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
 func (b *blockImpl) Bytes() []byte {
 	return util.MustBytes(b)
 }

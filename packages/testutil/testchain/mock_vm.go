@@ -86,7 +86,7 @@ func NextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
