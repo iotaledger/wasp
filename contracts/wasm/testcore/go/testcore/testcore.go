@@ -189,7 +189,7 @@ func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
 func viewGetInt(ctx wasmlib.ScViewContext, f *GetIntContext) {
 	name := f.Params.Name().Value()
 	value := f.State.Ints().GetInt64(name)
-	ctx.Require(value.Exists(), "param 'value' not found")
+	ctx.Require(value.Exists(), "param '"+name+"' not found")
 	f.Results.Values().GetInt64(name).SetValue(value.Value())
 }
 

@@ -13,18 +13,10 @@ type ImmutabletimestampState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutabletimestampState) Timestamp() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateTimestamp))
-}
-
 type MutabletimestampState struct {
 	proxy wasmtypes.Proxy
 }
 
 func (s MutabletimestampState) AsImmutable() ImmutabletimestampState {
 	return ImmutabletimestampState(s)
-}
-
-func (s MutabletimestampState) Timestamp() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateTimestamp))
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -39,6 +40,7 @@ var (
 type WasmVM interface {
 	GasBudget(budget uint64)
 	GasBurned() uint64
+	GasDisable(disable bool)
 	Instantiate() error
 	Interrupt()
 	LinkHost(proc *WasmProcessor) error
@@ -53,40 +55,11 @@ type WasmVM interface {
 }
 
 type WasmVMBase struct {
-	proc           *WasmProcessor
-	panicErr       error
 	cachedResult   []byte
+	gasDisabled    bool
+	panicErr       error
+	proc           *WasmProcessor
 	timeoutStarted bool
-}
-
-// wrapUp is used in every host function to catch any panic.
-// It will save the first panic it encounters in the WasmVMBase so that
-// the caller of the Wasm function can retrieve the correct error.
-// This is a workaround to WasmTime saving the *last* panic instead of
-// the first, thereby reporting the wrong panic error sometimes
-// wrapUp will also update the Wasm code that initiated the call with
-// the remaining gas budget (the Wasp node may have burned some)
-func (vm *WasmVMBase) wrapUp() {
-	panicMsg := recover()
-	if panicMsg == nil {
-		// update gas budget
-		ctx := vm.getContext(0)
-		ctx.GasBurned(vm.proc.vm.GasBurned())
-		return
-	}
-
-	// panic means no need to update gas budget
-	if vm.panicErr == nil {
-		switch msg := panicMsg.(type) {
-		case error:
-			vm.panicErr = msg
-		default:
-			vm.panicErr = fmt.Errorf("%v", msg)
-		}
-	}
-
-	// rethrow and let nature run its course...
-	panic(panicMsg)
 }
 
 func (vm *WasmVMBase) GasBudget(budget uint64) {
@@ -98,6 +71,10 @@ func (vm *WasmVMBase) GasBurned() uint64 {
 	return 0
 }
 
+func (vm *WasmVMBase) GasDisable(disable bool) {
+	vm.gasDisabled = disable
+}
+
 //nolint:unparam
 func (vm *WasmVMBase) getContext(id int32) *WasmContext {
 	return vm.proc.GetContext(id)
@@ -105,7 +82,6 @@ func (vm *WasmVMBase) getContext(id int32) *WasmContext {
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 	vm.reportGasBurned()
-
 	defer vm.wrapUp()
 
 	// crude implementation assumes texts to only use ASCII part of UTF-16
@@ -133,10 +109,10 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	vm.reportGasBurned()
 	defer vm.wrapUp()
-	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
 	ctx.log().Debugf("HostFdWrite(...)")
+	impl := vm.proc.vm
 
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := impl.VMGetBytes(iovs, 8)
@@ -156,9 +132,9 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	vm.reportGasBurned()
 	defer vm.wrapUp()
-	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
+	impl := vm.proc.vm
 	if HostTracing {
 		vm.traceGet(ctx, keyRef, keyLen, valRef, valLen)
 	}
@@ -195,9 +171,9 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	vm.reportGasBurned()
 	defer vm.wrapUp()
-	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
+	impl := vm.proc.vm
 	if HostTracing {
 		vm.traceSet(ctx, keyRef, keyLen, valRef, valLen)
 	}
@@ -240,9 +216,12 @@ func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 	return nil
 }
 
+// reportGasBurned updates the sandbox gas budget with the amount burned by the VM
 func (vm *WasmVMBase) reportGasBurned() {
-	ctx := vm.proc.GetContext(0)
-	vm.proc.vm.GasBudget(ctx.GasBudget())
+	if !vm.gasDisabled {
+		ctx := vm.proc.GetContext(0)
+		ctx.GasBurned(vm.proc.vm.GasBurned())
+	}
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
@@ -265,6 +244,9 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 		if vm.panicErr != nil {
 			err = vm.panicErr
 			vm.panicErr = nil
+		}
+		if err != nil && strings.Contains(err.Error(), "all fuel consumed") {
+			err = errors.New("gas budget exceeded in Wasm VM")
 		}
 		return err
 	}
@@ -414,6 +396,38 @@ func (vm *WasmVMBase) traceVal(val []byte) string {
 		}
 	}
 	return string(val)
+}
+
+// wrapUp is used in every host function to catch any panic.
+// It will save the first panic it encounters in the WasmVMBase so that
+// the caller of the Wasm function can retrieve the correct error.
+// This is a workaround to WasmTime saving the *last* panic instead of
+// the first, thereby reporting the wrong panic error sometimes
+// wrapUp will also update the Wasm code that initiated the call with
+// the remaining gas budget (the Wasp node may have burned some)
+func (vm *WasmVMBase) wrapUp() {
+	panicMsg := recover()
+	if panicMsg == nil {
+		if !vm.gasDisabled {
+			// update VM gas budget to reflect what sandbox burned
+			ctx := vm.getContext(0)
+			vm.proc.vm.GasBudget(ctx.GasBudget())
+		}
+		return
+	}
+
+	// panic means no need to update gas budget
+	if vm.panicErr == nil {
+		switch msg := panicMsg.(type) {
+		case error:
+			vm.panicErr = msg
+		default:
+			vm.panicErr = fmt.Errorf("%v", msg)
+		}
+	}
+
+	// rethrow and let nature run its course...
+	panic(panicMsg)
 }
 
 // hex returns a hex string representing the byte buffer

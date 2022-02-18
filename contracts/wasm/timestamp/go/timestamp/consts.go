@@ -20,10 +20,6 @@ const (
 )
 
 const (
-	StateTimestamp = "timestamp"
-)
-
-const (
 	FuncNow          = "now"
 	ViewGetTimestamp = "getTimestamp"
 )

@@ -328,7 +328,7 @@ func (ch *Chain) CommonAccount() *iscp.AgentID {
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetLatestBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
 
@@ -344,7 +344,7 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
 
 	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
@@ -357,7 +357,7 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncIsRequestProcessed.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	bin, err := resultDecoder.GetBytes(blocklog.ParamRequestProcessed)
 	require.NoError(ch.Env.T, err)
 	return bin != nil
@@ -368,7 +368,7 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
 		return nil, false
@@ -412,7 +412,7 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestIDsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
-		ch.Log.Warnf("GetRequestIDsForBlock: %v", err)
+		ch.Log().Warnf("GetRequestIDsForBlock: %v", err)
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
@@ -456,7 +456,7 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncControlAddresses.Name)
 	require.NoError(ch.Env.T, err)
-	par := kvdecoder.New(res, ch.Log)
+	par := kvdecoder.New(res, ch.Log())
 	ret := &blocklog.ControlAddresses{
 		StateAddress:     par.MustGetAddress(blocklog.ParamStateControllerAddress),
 		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),

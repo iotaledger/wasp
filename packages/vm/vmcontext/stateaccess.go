@@ -140,6 +140,11 @@ func (vmctx *VMContext) State() kv.KVStore {
 	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 
+func (vmctx *VMContext) StateReader() kv.KVStoreReader {
+	vmctx.task.SolidStateBaseline.MustValidate()
+	return subrealm.NewReadOnly(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
+}
+
 // Disabled because of recursive calls
 //func (vmctx *VMContext) State(burnGas ...kv.BurnGasFn) kv.KVStore {
 //	vmctx.task.SolidStateBaseline.MustValidate()

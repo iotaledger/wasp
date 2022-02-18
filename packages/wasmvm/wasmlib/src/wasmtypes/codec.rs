@@ -145,7 +145,7 @@ impl WasmEncoder {
     // encodes a fixed sized substring of bytes into the byte buffer
     pub fn fixed_bytes(&mut self, value: &[u8], length: usize) -> &WasmEncoder {
         if value.len() != length as usize {
-            panic("invalid fixed bytes length");
+            panic(&("invalid fixed bytes length (".to_string() + &length.to_string() + "), found " + &value.len().to_string()));
         }
         self.buf.extend_from_slice(value);
         self

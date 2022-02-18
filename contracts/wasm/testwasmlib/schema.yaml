@@ -82,6 +82,12 @@ funcs:
 
   random:
 
+  takeAllowance:
+
+  takeBalance:
+    results:
+      iotas: Uint64
+
   triggerEvent:
     params:
       name: String

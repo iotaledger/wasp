@@ -26,7 +26,7 @@ func TestInitLoad(t *testing.T) {
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1Iotas(userAddr, solo.Saldo)
 	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
-	_ = ch.Log.Sync()
+	_ = ch.Log().Sync()
 
 	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
 	assets := ch.L2CommonAccountAssets()
@@ -43,7 +43,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	// create chain
 	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
-	defer ch.Log.Sync()
+	defer ch.Log().Sync()
 	ch.AssertControlAddresses()
 	t.Logf("originator address iotas: %d (spent %d)",
 		env.L1Iotas(ch.OriginatorAddress), solo.Saldo-env.L1Iotas(ch.OriginatorAddress))
@@ -96,7 +96,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log.Sync()
+		defer ch.Log().Sync()
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -127,7 +127,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log.Sync()
+		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr, 0)
@@ -166,7 +166,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log.Sync()
+		defer ch.Log().Sync()
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -197,7 +197,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log.Sync()
+		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr, 0)

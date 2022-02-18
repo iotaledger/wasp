@@ -45,6 +45,7 @@ const (
 	FnUtilsHashBlake2b    = int32(-34)
 	FnUtilsHashName       = int32(-35)
 	FnUtilsHashSha3       = int32(-36)
+	FnTransferAllowed     = int32(-37)
 )
 
 type ScSandbox struct{}
@@ -302,3 +303,18 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 //func (s ScSandboxFunc) StateAnchor() interface{} {
 //	panic("implement me")
 //}
+
+// transfer assets to the specified Tangle ledger address
+func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer ScTransfers, create bool) {
+	// we need some assets to send
+	if transfer.IsEmpty() {
+		return
+	}
+
+	req := wasmrequests.TransferRequest{
+		AgentID:  agentID,
+		Create:   create,
+		Transfer: ScAssets(transfer).Bytes(),
+	}
+	Sandbox(FnTransferAllowed, req.Bytes())
+}

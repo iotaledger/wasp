@@ -43,6 +43,7 @@ pub const FN_UTILS_ED25519_VALID   : i32 = -33;
 pub const FN_UTILS_HASH_BLAKE2B    : i32 = -34;
 pub const FN_UTILS_HASH_NAME       : i32 = -35;
 pub const FN_UTILS_HASH_SHA3       : i32 = -36;
+pub const FN_TRANSFER_ALLOWED      : i32 = -37;
 // @formatter:on
 
 // Direct logging of informational text to host log
@@ -302,4 +303,19 @@ pub trait ScSandboxFunc: ScSandbox {
     //fn stateAnchor(&self) -> interface{} {
     //	panic("implement me")
     //}
+
+    // transfer assets to the specified Tangle ledger address
+    fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfers, create: bool) {
+        // we need some assets to send
+        if transfer.is_empty() {
+            return;
+        }
+
+        let req = wasmrequests::TransferRequest {
+            agent_id: agent_id.clone(),
+            create: create,
+            transfer: transfer.to_bytes(),
+        };
+        sandbox(FN_TRANSFER_ALLOWED, &req.to_bytes());
+    }
 }

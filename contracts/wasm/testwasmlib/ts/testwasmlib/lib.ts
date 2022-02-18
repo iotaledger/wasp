@@ -17,6 +17,8 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.FuncMapSet,
 		sc.FuncParamTypes,
 		sc.FuncRandom,
+		sc.FuncTakeAllowance,
+		sc.FuncTakeBalance,
 		sc.FuncTriggerEvent,
 		sc.ViewArrayLength,
 		sc.ViewArrayValue,
@@ -34,6 +36,8 @@ const exportMap: wasmlib.ScExportMap = {
 		funcMapSetThunk,
 		funcParamTypesThunk,
 		funcRandomThunk,
+		funcTakeAllowanceThunk,
+		funcTakeBalanceThunk,
 		funcTriggerEventThunk,
 	],
 	views: [
@@ -112,6 +116,23 @@ function funcRandomThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.RandomContext();
 	sc.funcRandom(ctx, f);
 	ctx.log("testwasmlib.funcRandom ok");
+}
+
+function funcTakeAllowanceThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcTakeAllowance");
+	let f = new sc.TakeAllowanceContext();
+	sc.funcTakeAllowance(ctx, f);
+	ctx.log("testwasmlib.funcTakeAllowance ok");
+}
+
+function funcTakeBalanceThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcTakeBalance");
+	let f = new sc.TakeBalanceContext();
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableTakeBalanceResults(results.asProxy());
+	sc.funcTakeBalance(ctx, f);
+	ctx.results(results);
+	ctx.log("testwasmlib.funcTakeBalance ok");
 }
 
 function funcTriggerEventThunk(ctx: wasmlib.ScFuncContext): void {
