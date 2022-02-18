@@ -153,6 +153,13 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
+	receipt := &blocklog.RequestReceipt{
+		Request:       vmctx.req,
+		GasBudget:     vmctx.gasBudgetAdjusted,
+		GasBurned:     vmctx.gasBurned,
+		GasFeeCharged: vmctx.gasFeeCharged,
+	}
+
 	var receiptError *iscp.VMError
 
 	if errProvided != nil {
@@ -163,14 +170,12 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 		}
 	}
 
-	receipt := &blocklog.RequestReceipt{
-		Request:       vmctx.req,
-		Error:         receiptError,
-		GasBudget:     vmctx.gasBudgetAdjusted,
-		GasBurned:     vmctx.gasBurned,
-		GasFeeCharged: vmctx.gasFeeCharged,
-	}
 	receipt.GasBurnLog = vmctx.gasBurnLog
+
+	if errProvided != nil {
+		receipt.Error = receiptError.AsUnresolvedError()
+	}
+
 	if vmctx.task.EnableGasBurnLogging {
 		vmctx.gasBurnLog = gas.NewGasBurnLog()
 	}

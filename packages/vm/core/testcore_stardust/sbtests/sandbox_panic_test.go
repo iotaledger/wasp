@@ -22,15 +22,26 @@ func testPanicFull(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgFullPanic)
 
-	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
-	str := strings.Join(recStr, "\n")
-	t.Logf("\n%s", str)
+	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
+	receiptsAsString := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
+	errorsAsString := ""
+
+	for _, a := range receipts {
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		if receiptError != nil {
+			errorsAsString += receiptError.Error()
+		}
+	}
+
+	receiptOutput := strings.Join(receiptsAsString, "\n")
+	t.Logf("\n%s", receiptOutput)
 	extra := 0
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 5+extra, strings.Count(str, "Block/Request index:"))
-	require.EqualValues(t, 1, strings.Count(str, sbtestsc.MsgFullPanic))
+
+	require.EqualValues(t, 5+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 1, strings.Count(errorsAsString, sbtestsc.MsgFullPanic))
 }
 
 func TestPanicViewCall(t *testing.T) { run2(t, testPanicViewCall) }
@@ -41,15 +52,26 @@ func testPanicViewCall(t *testing.T, w bool) {
 	_, err := chain.CallView(ScName, sbtestsc.FuncPanicViewEP.Name)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
-	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
-	str := strings.Join(recStr, "\n")
-	t.Logf("\n%s", str)
+	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
+	receiptsAsString := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
+	errorsAsString := ""
+
+	for _, a := range receipts {
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		if receiptError != nil {
+			errorsAsString += receiptError.Error()
+		}
+	}
+
+	receiptOutput := strings.Join(receiptsAsString, "\n")
+
+	t.Logf("\n%s", receiptOutput)
 	extra := 0
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "Block/Request index:"))
-	require.EqualValues(t, 0, strings.Count(str, sbtestsc.MsgViewPanic))
+	require.EqualValues(t, 4+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 0, strings.Count(errorsAsString, sbtestsc.MsgViewPanic))
 }
 
 func TestCallPanicFull(t *testing.T) { run2(t, testCallPanicFull) }
@@ -61,15 +83,26 @@ func testCallPanicFull(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, coreerrors.ErrUntypedError.Create(sbtestsc.MsgFullPanic))
 
-	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
-	str := strings.Join(recStr, "\n")
-	t.Logf("\n%s", str)
+	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
+	receiptsAsString := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
+	errorsAsString := ""
+
+	for _, a := range receipts {
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		if receiptError != nil {
+			errorsAsString += receiptError.Error()
+		}
+	}
+
+	receiptOutput := strings.Join(receiptsAsString, "\n")
+
+	t.Logf("\n%s", receiptOutput)
 	extra := 0
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 5+extra, strings.Count(str, "Block/Request index:"))
-	require.EqualValues(t, 1, strings.Count(str, sbtestsc.MsgFullPanic))
+	require.EqualValues(t, 5+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 1, strings.Count(errorsAsString, sbtestsc.MsgFullPanic))
 }
 
 func TestCallPanicViewFromFull(t *testing.T) { run2(t, testCallPanicViewFromFull) }
@@ -81,15 +114,26 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
-	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
-	str := strings.Join(recStr, "\n")
-	t.Logf("\n%s", str)
+	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
+	receiptsAsString := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
+	errorsAsString := ""
+
+	for _, a := range receipts {
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		if receiptError != nil {
+			errorsAsString += receiptError.Error()
+		}
+	}
+
+	receiptOutput := strings.Join(receiptsAsString, "\n")
+
+	t.Logf("\n%s", receiptOutput)
 	extra := 0
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 5+extra, strings.Count(str, "Block/Request index:"))
-	require.EqualValues(t, 1, strings.Count(str, sbtestsc.MsgViewPanic))
+	require.EqualValues(t, 5+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 1, strings.Count(errorsAsString, sbtestsc.MsgViewPanic))
 }
 
 func TestCallPanicViewFromView(t *testing.T) { run2(t, testCallPanicViewFromView) }
@@ -100,13 +144,24 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	_, err := chain.CallView(ScName, sbtestsc.FuncCallPanicViewEPFromView.Name)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
-	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
-	str := strings.Join(recStr, "\n")
-	t.Logf("\n%s", str)
+	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
+	receiptsAsString := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
+	errorsAsString := ""
+
+	for _, a := range receipts {
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		if receiptError != nil {
+			errorsAsString += receiptError.Error()
+		}
+	}
+
+	receiptOutput := strings.Join(receiptsAsString, "\n")
+
+	t.Logf("\n%s", receiptOutput)
 	extra := 0
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "Block/Request index:"))
-	require.EqualValues(t, 0, strings.Count(str, sbtestsc.MsgViewPanic))
+	require.EqualValues(t, 4+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 0, strings.Count(errorsAsString, sbtestsc.MsgViewPanic))
 }

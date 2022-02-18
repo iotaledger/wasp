@@ -304,7 +304,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
-	Error         *iscp.VMError
+	Error         *iscp.UnresolvedVMError
 	GasBudget     uint64
 	GasBurned     uint64
 	GasFeeCharged uint64
@@ -342,7 +342,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 		return ret, nil
 	}
 
-	if ret.Error, err = iscp.VMErrorFromMarshalUtil(mu, nil); err != nil {
+	if ret.Error, err = iscp.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 
@@ -376,7 +376,11 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
-	ret += fmt.Sprintf("Err: '%s'\n", r.Error)
+
+	if r.Error != nil {
+		ret += fmt.Sprintf("Err (prefixId: %v, errorId: %v)", r.Error.PrefixId(), r.Error.Id())
+	}
+
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
 	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())
@@ -392,8 +396,9 @@ func (r *RequestReceipt) Short() string {
 	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
 
 	if r.Error != nil {
-		ret += ": '" + r.Error.Error() + "'"
+		ret += fmt.Sprintf(": Err (prefixId: %v, errorId: %v)", r.Error.PrefixId(), r.Error.Id())
 	}
+
 	return ret
 }
 

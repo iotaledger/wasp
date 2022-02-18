@@ -309,6 +309,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	}
 
 	return tx, res, receipt.Error.AsGoError()
+
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -379,10 +380,13 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
+
 	if err != nil {
 		return 0, 0, err
 	}
+
 	res := ch.estimateGas(r)
+
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
@@ -415,8 +419,8 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 }
 
 // ErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
-func (ch *Chain) ErrorMessageResolver() func(*iscp.VMError) (string, error) {
-	return func(errorToResolve *iscp.VMError) (string, error) {
+func (ch *Chain) ErrorMessageResolver() func(vmError *iscp.UnresolvedVMError) (string, error) {
+	return func(errorToResolve *iscp.UnresolvedVMError) (string, error) {
 		params := dict.New()
 		params.Set(errors.ParamContractHname, codec.EncodeHname(errorToResolve.PrefixId()))
 		params.Set(errors.ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))

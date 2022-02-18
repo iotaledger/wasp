@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"golang.org/x/xerrors"
 	"hash/crc32"
 	"math"
 )
@@ -19,7 +18,6 @@ type VMErrorTemplate struct {
 }
 
 func NewVMErrorTemplate(prefixId Hname, errorId uint16, messageFormat string) *VMErrorTemplate {
-
 	return &VMErrorTemplate{prefixId: prefixId, id: errorId, messageFormat: messageFormat}
 }
 
@@ -41,15 +39,11 @@ func (e *VMErrorTemplate) MessageFormat() string {
 
 func (e *VMErrorTemplate) Create(params ...interface{}) *VMError {
 	return &VMError{
+		messageFormat: e.messageFormat,
 		prefixId:      e.PrefixId(),
 		id:            e.Id(),
-		messageFormat: e.MessageFormat(),
 		params:        params,
 	}
-}
-
-func (e *VMErrorTemplate) Panic(params ...interface{}) {
-	panic(e.Create(params...))
 }
 
 func (e *VMErrorTemplate) Serialize(mu *marshalutil.MarshalUtil) {
@@ -98,6 +92,110 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 	return &e, nil
 }
 
+type UnresolvedVMError struct {
+	prefixId Hname
+	id       uint16
+	params   []interface{}
+	hash     uint32
+}
+
+func (e *UnresolvedVMError) Error() string {
+	return fmt.Sprintf("Error (prefixId: %d, errorId: %d, hash: %x)", e.PrefixId(), e.Id(), e.hash)
+}
+
+func (e *UnresolvedVMError) Hash() uint32 {
+	return e.hash
+}
+
+func (e *UnresolvedVMError) PrefixId() Hname {
+	return e.prefixId
+}
+
+func (e *UnresolvedVMError) Id() uint16 {
+	return e.id
+}
+
+func (e *UnresolvedVMError) Params() []interface{} {
+	return e.params
+}
+
+type VMErrorMessageResolver func(*UnresolvedVMError) (string, error)
+
+func (e *UnresolvedVMError) ResolveToVMError(resolver VMErrorMessageResolver) (*VMError, error) {
+	if e == nil {
+		return nil, nil
+	}
+
+	vmError := VMError{
+		prefixId: e.prefixId,
+		id:       e.id,
+		params:   e.params,
+	}
+
+	var err error
+
+	if vmError.messageFormat, err = resolver(e); err != nil {
+		return nil, err
+	}
+
+	return &vmError, nil
+}
+
+func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error {
+	var err error
+	var paramLength uint16
+	var params []byte
+
+	if paramLength, err = mu.ReadUint16(); err != nil {
+		return err
+	}
+
+	if params, err = mu.ReadBytes(int(paramLength)); err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(params, &e.params); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
+	bytes, err := json.Marshal(e.Params())
+
+	if err != nil {
+		panic(err)
+	}
+
+	mu.WriteUint16(uint16(len(bytes)))
+	mu.WriteBytes(bytes)
+}
+
+func (e *UnresolvedVMError) Bytes() []byte {
+	mu := marshalutil.New()
+
+	mu.WriteUint32(uint32(e.PrefixId())).
+		WriteUint16(e.Id()).
+		WriteUint32(e.hash)
+
+	e.serializeParams(mu)
+
+	return mu.Bytes()
+}
+
+func (e *UnresolvedVMError) Definition() VMErrorTemplate {
+	return VMErrorTemplate{prefixId: e.PrefixId(), id: e.Id()}
+}
+
+func (e *UnresolvedVMError) AsGoError() error {
+	if e == nil {
+		return nil
+	}
+
+	return e
+}
+
 type VMError struct {
 	prefixId      Hname
 	id            uint16
@@ -114,10 +212,6 @@ func (e *VMError) Id() uint16 {
 }
 
 func (e *VMError) MessageFormat() string {
-	if e.messageFormat == "" {
-		return "%v"
-	}
-
 	return e.messageFormat
 }
 
@@ -125,38 +219,12 @@ func (e *VMError) Params() []interface{} {
 	return e.params
 }
 
-func (e *VMError) RequestMessageFormat(resolver VMErrorMessageResolver) error {
-	if e == nil {
-		return nil
-	}
-
-	var err error
-
-	if e.messageFormat, err = resolver(e); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *VMError) HasMessageFormat() bool {
-	return e.MessageFormat() != ""
-}
-
 func (e *VMError) Error() string {
-	if !e.HasMessageFormat() {
-		return ""
-	}
-
 	return fmt.Sprintf(e.MessageFormat(), e.Params()...)
 }
 
-func (e *VMError) Definition() VMErrorTemplate {
-	return VMErrorTemplate{prefixId: e.PrefixId(), id: e.Id(), messageFormat: e.MessageFormat()}
-}
-
 func (e *VMError) Hash() uint32 {
-	if !e.HasMessageFormat() {
+	if len(e.MessageFormat()) == 0 {
 		return 0
 	}
 
@@ -183,42 +251,11 @@ func (e *VMError) Bytes() []byte {
 		WriteUint16(e.Id()).
 		WriteUint32(hash)
 
-	// For now, JSON encoded.
 	e.serializeParams(mu)
 
 	return mu.Bytes()
 }
 
-func (e *VMError) deserializeParams(mu *marshalutil.MarshalUtil) error {
-	var err error
-	var paramLength uint16
-	var params []byte
-
-	if paramLength, err = mu.ReadUint16(); err != nil {
-		return err
-	}
-
-	if params, err = mu.ReadBytes(int(paramLength)); err != nil {
-		return err
-	}
-
-	if err = json.Unmarshal(params, &e.params); err != nil {
-		return err
-	}
-
-	return err
-}
-
-/*
-	AsGoError is a drop in to fix the following scenario:
-	A request finishes successfully. The receipt contains a nil error which is of type *VMError.
-    require.NoError would fail the validation and panic, as VMError is not *the* golang type "error"
-    This is why it's required to check if the value is nil and return nil again which golang will interpret as type error.
- 	If VMError is an actual error, no adjustment needs to be done.
-	Therefore, any Solo function that returns the receipt.VMError which afterwords gets checked with require.NoError needs to call this function.
-
-	See: packages/solo/req.go -> EstimateGasOffLedger, EstimateGasOnLedger, PostRequestSyncTx
-*/
 func (e *VMError) AsGoError() error {
 	if e == nil {
 		return nil
@@ -227,48 +264,45 @@ func (e *VMError) AsGoError() error {
 	return e
 }
 
-type VMErrorMessageResolver func(*VMError) (string, error)
+func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
+	return &UnresolvedVMError{
+		hash:     e.Hash(),
+		id:       e.Id(),
+		params:   e.Params(),
+		prefixId: e.PrefixId(),
+	}
+}
 
-func VMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil, errorMessageResolver VMErrorMessageResolver) (*VMError, error) {
+func (e *VMError) AsTemplate() VMErrorTemplate {
+	return VMErrorTemplate{prefixId: e.PrefixId(), id: e.Id(), messageFormat: e.MessageFormat()}
+}
+
+func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedVMError, error) {
 	var err error
-	var hash uint32
 
-	blockError := VMError{}
+	unresolvedError := UnresolvedVMError{}
 
 	var prefixId uint32
+
 	if prefixId, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 
-	blockError.prefixId = Hname(prefixId)
+	unresolvedError.prefixId = Hname(prefixId)
 
-	if blockError.id, err = mu.ReadUint16(); err != nil {
+	if unresolvedError.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
 
-	if hash, err = mu.ReadUint32(); err != nil {
+	if unresolvedError.hash, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 
-	if err = blockError.deserializeParams(mu); err != nil {
+	if err = unresolvedError.deserializeParams(mu); err != nil {
 		return nil, err
 	}
 
-	if errorMessageResolver == nil {
-		return &blockError, nil
-	}
-
-	if blockError.messageFormat, err = errorMessageResolver(&blockError); err != nil {
-		return nil, err
-	}
-
-	// If message format is resolved, do hash check
-
-	if hash != blockError.Hash() {
-		return nil, xerrors.Errorf("Hash of error %v:%v does not match serialized error! (old: %v, now: %v)", blockError.PrefixId, blockError.Id, hash, blockError.Hash())
-	}
-
-	return &blockError, nil
+	return &unresolvedError, nil
 }
 
 func GetErrorIdFromMessageFormat(messageFormat string) uint16 {
@@ -284,23 +318,46 @@ func GetErrorIdFromMessageFormat(messageFormat string) uint16 {
 	return errorId
 }
 
-func IsDefinition(error VMError, definition VMErrorTemplate) bool {
-	if error.Id() == definition.Id() && error.PrefixId() == definition.PrefixId() {
+func extractErrorPrimitive(err interface{}) (bool, Hname, uint16) {
+	if e, ok := err.(*VMError); ok {
+		return true, e.PrefixId(), e.Id()
+	}
+
+	if e, ok := err.(*UnresolvedVMError); ok {
+		return true, e.PrefixId(), e.Id()
+	}
+
+	if e, ok := err.(*VMErrorTemplate); ok {
+		return true, e.PrefixId(), e.Id()
+	}
+
+	return false, 0, 0
+}
+
+// VMErrorIs tests VMError, VMErrorTemplate and UnresolvedVMError types against each other by their unique ids
+func VMErrorIs(error1 interface{}, error2 interface{}) bool {
+	isError, prefixId1, errorId1 := extractErrorPrimitive(error1)
+
+	if !isError {
+		return false
+	}
+
+	isError, prefixId2, errorId2 := extractErrorPrimitive(error2)
+
+	if !isError {
+		return false
+	}
+
+	if prefixId1 == prefixId2 && errorId1 == errorId2 {
 		return true
 	}
 
 	return false
 }
 
-func Is(error *VMError, errorComp *VMError) bool {
-	if error.Id() == errorComp.Id() &&
-		error.PrefixId() == errorComp.PrefixId() {
-		return true
+// VMErrorMustBe tests VMError, VMErrorTemplate and UnresolvedVMError types against each other by their unique ids and panics if it fails
+func VMErrorMustBe(error1 interface{}, error2 interface{}) {
+	if !VMErrorIs(error1, error2) {
+		panic(fmt.Sprintf("%v does not match %v", error1, error2))
 	}
-
-	return false
-}
-
-func Panic(definition VMErrorTemplate, params ...interface{}) {
-	panic(definition.Create(params...))
 }
