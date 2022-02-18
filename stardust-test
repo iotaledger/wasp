@@ -19,7 +19,7 @@ WD=$PWD
 for ((i=0; i<${#PATHS[@]}; i++))
 do
     cd "${WD}/${PATHS[i]}"
-    go test || { echo "Tests in ${PATHS[i]} failed" ; exit 1; }
+    go test -failfast || { echo "Tests in ${PATHS[i]} failed" ; exit 1; }
 done
 
 echo "All tests passed"
