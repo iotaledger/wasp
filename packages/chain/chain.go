@@ -35,7 +35,7 @@ type ChainCore interface {
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	VirtualStateAccess() state.VirtualStateAccess
-	GetAnchorOutput() (*iotago.AliasOutput, iotago.OutputID)
+	GetAnchorOutput() *iscp.AliasOutputWithID
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
 }

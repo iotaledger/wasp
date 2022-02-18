@@ -478,7 +478,7 @@ func TestAccountBalances(t *testing.T) {
 			l1Iotas(chainOwnerAddr)+l1Iotas(senderAddr)+l1Iotas(ch.ChainID.AsAddress()),
 		)
 
-		anchor, _ := ch.GetAnchorOutput()
+		anchor := ch.GetAnchorOutput().GetAliasOutput()
 		require.EqualValues(t, l1Iotas(ch.ChainID.AsAddress()), anchor.Deposit())
 
 		require.LessOrEqual(t, len(ch.L2Accounts()), 3)
