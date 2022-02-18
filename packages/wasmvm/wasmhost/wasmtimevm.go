@@ -69,7 +69,12 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 }
 
 func (vm *WasmTimeVM) Instantiate() (err error) {
+	vm.GasBudget(1_000_000)
+	vm.GasDisable(true)
 	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
+	vm.GasDisable(false)
+	burned := vm.GasBurned()
+	_ = burned
 	if err != nil {
 		return err
 	}
