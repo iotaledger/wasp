@@ -261,7 +261,7 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		})
 	}
 	chain := soloEnv.NewChain(nil, chainName)
-	chain.MustDepositIotasToL2(L2FundsOriginator, &chain.OriginatorPrivateKey)
+	chain.MustDepositIotasToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
 	return chain
 }
 
@@ -424,7 +424,7 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
 	c := ctx.Chain
-	return &SoloAgent{Env: c.Env, Pair: &c.OriginatorPrivateKey, address: c.OriginatorAddress}
+	return &SoloAgent{Env: c.Env, Pair: c.OriginatorPrivateKey, address: c.OriginatorAddress}
 }
 
 // Sign is used to force a different agent for signing a Post() request

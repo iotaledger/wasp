@@ -99,7 +99,7 @@ func (s *SoloSandbox) Call(funcNr int32, params []byte) []byte {
 			return
 		}
 		if s.ctx.Err != nil {
-			s.ctx.Chain.Log.Infof("stacked error: %s", s.ctx.Err.Error())
+			s.ctx.Chain.Log().Infof("stacked error: %s", s.ctx.Err.Error())
 		}
 		switch errType := r.(type) {
 		case error:
@@ -109,7 +109,7 @@ func (s *SoloSandbox) Call(funcNr int32, params []byte) []byte {
 		default:
 			s.ctx.Err = xerrors.Errorf("RunScFunction: %v", errType)
 		}
-		s.ctx.Chain.Log.Infof("stolor error:: %s", s.ctx.Err.Error())
+		s.ctx.Chain.Log().Infof("stolor error:: %s", s.ctx.Err.Error())
 	}()
 	return sandboxFunctions[-funcNr](s, params)
 }
@@ -121,11 +121,11 @@ func (s *SoloSandbox) checkErr(err error) {
 }
 
 func (s *SoloSandbox) Panicf(format string, args ...interface{}) {
-	s.ctx.Chain.Log.Panicf(format, args...)
+	s.ctx.Chain.Log().Panicf(format, args...)
 }
 
 func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
-	s.ctx.Chain.Log.Debugf(format, args...)
+	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
 func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.Assets) []byte {
@@ -255,7 +255,7 @@ func (s *SoloSandbox) fnEvent(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnLog(args []byte) []byte {
-	s.ctx.Chain.Log.Infof(string(args))
+	s.ctx.Chain.Log().Infof(string(args))
 	return nil
 }
 
@@ -264,7 +264,7 @@ func (s *SoloSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnPanic(args []byte) []byte {
-	s.ctx.Chain.Log.Panicf("SOLO panic: %s", string(args))
+	s.ctx.Chain.Log().Panicf("SOLO panic: %s", string(args))
 	return nil
 }
 
@@ -326,7 +326,7 @@ func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnTrace(args []byte) []byte {
-	s.ctx.Chain.Log.Debugf(string(args))
+	s.ctx.Chain.Log().Debugf(string(args))
 	return nil
 }
 
