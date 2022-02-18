@@ -68,7 +68,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	consumedOutput := chainOutput.GetAliasOutput()
 	/*var aliasID iotago.AliasID
 	if consumedOutput.AliasEmpty() {
-		id := chainOutput.ID().ID()
+		id := chainOutput.OutputID()
 		hash, err := blake2b.New(160, id[:])
 		require.NoError(c.t, err)
 		hashBytes := hash.Sum([]byte{})
@@ -77,7 +77,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		aliasID = consumedOutput.AliasID
 	}*/
 	aliasID := consumedOutput.AliasID
-	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
+	inputs := iotago.OutputIDs{chainOutput.OutputID()}
 	txEssence := &iotago.TransactionEssence{
 		NetworkID: parameters.NetworkID,
 		Inputs:    inputs.UTXOInputs(),

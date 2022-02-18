@@ -38,11 +38,11 @@ func (ch *Chain) estimateGas(req iscp.Request) (result *vm.RequestResult) {
 }
 
 func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask {
-	anchorOutput, anchorOutputID := ch.GetAnchorOutput()
+	anchorOutput := ch.GetAnchorOutput()
 	task := &vm.VMTask{
 		Processors:         ch.proc,
-		AnchorOutput:       anchorOutput,
-		AnchorOutputID:     anchorOutputID,
+		AnchorOutput:       anchorOutput.GetAliasOutput(),
+		AnchorOutputID:     anchorOutput.OutputID(),
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
 		VirtualStateAccess: ch.State.Copy(),

@@ -386,11 +386,11 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, iotago.OutputID) {
+func (ch *Chain) GetAnchorOutput() *iscp.AliasOutputWithID {
 	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
 	for id, out := range outs {
-		return out, id
+		return iscp.NewAliasOutputWithID(out, id.UTXOInput())
 	}
 	panic("unreachable")
 }
