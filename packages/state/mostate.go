@@ -84,6 +84,13 @@ func (s *mustOptimisticVirtualStateAccess) ApplyBlock(block Block) error {
 	return s.state.ApplyBlock(block)
 }
 
+func (s *mustOptimisticVirtualStateAccess) ProofPath(key []byte) *trie.ProofPath {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.ProofPath(key)
+}
+
 func (s *mustOptimisticVirtualStateAccess) ExtractBlock() (Block, error) {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()

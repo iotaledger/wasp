@@ -21,6 +21,7 @@ type VirtualStateAccess interface {
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
+	ProofPath(key []byte) *trie.ProofPath
 	ExtractBlock() (Block, error)
 	Save(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStoreAccess

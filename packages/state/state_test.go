@@ -2,7 +2,9 @@ package state
 
 import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -59,30 +61,53 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
-	t.Run("block 1", func(t *testing.T) {
-		store := mapdb.NewMapDB()
+	t.Run("many blocks, associativity", func(t *testing.T) {
 		chainID := iscp.RandomChainID()
 
-		vs1, err := CreateOriginState(store, chainID)
-		require.NoError(t, err)
-		nowis := time.Now()
-		upd := NewStateUpdateWithBlockLogValues(1, nowis, vs1.StateCommitment())
-		vs1.ApplyStateUpdate(upd)
-		block, err := vs1.ExtractBlock()
-		require.NoError(t, err)
-		err = vs1.Save(block)
-		require.NoError(t, err)
-
-		_, exists, err := LoadSolidState(store, chainID)
-		require.NoError(t, err)
-		require.True(t, exists)
-
-		require.EqualValues(t, 1, vs1.BlockIndex())
-		require.True(t, vs1.Timestamp().Equal(nowis))
-
-		data, err := LoadBlockBytes(store, 1)
-		require.NoError(t, err)
-		require.EqualValues(t, block.Bytes(), data)
+		const numBlocks = 100
+		const numRepeat = 10
+		upds := make([]StateUpdate, numBlocks)
+		blocks := make([]Block, numBlocks)
+		cs := make([]trie.VectorCommitment, 0)
+		var err error
+		millis := rand.Int63()
+		for i := range upds {
+			upds[i] = NewStateUpdateWithBlockLogValues(uint32(i+2), time.UnixMilli(millis+int64(i+100)), testmisc.RandVectorCommitment())
+			blocks[i], err = newBlock(upds[i].Mutations())
+			require.NoError(t, err)
+		}
+		upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(millis), testmisc.RandVectorCommitment())
+		var exists bool
+		for i := 0; i < numRepeat; i++ {
+			t.Logf("------------------ round: %d", i)
+			store := mapdb.NewMapDB()
+			vs, err := CreateOriginState(store, chainID)
+			require.NoError(t, err)
+			vs.ApplyStateUpdate(upd1)
+			vs.Commit()
+			err = vs.Save()
+			require.NoError(t, err)
+			for bn, b := range blocks {
+				require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
+				err = vs.ApplyBlock(b)
+				require.NoError(t, err)
+				if rand.Intn(1000) < 100 {
+					t.Logf("           commit at block: #%d", bn)
+					vs.Commit()
+					err = vs.Save()
+					require.NoError(t, err)
+					vs, exists, err = LoadSolidState(store, chainID)
+					require.NoError(t, err)
+					require.True(t, exists)
+				}
+			}
+			err = vs.Save()
+			require.NoError(t, err)
+			cs = append(cs, vs.StateCommitment())
+		}
+		for i := range cs {
+			require.True(t, cs[0].Equal(cs[i]))
+		}
 	})
 	//t.Run("apply, save and load block 1", func(t *testing.T) {
 	//	store := mapdb.NewMapDB()

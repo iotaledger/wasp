@@ -28,12 +28,11 @@ func ProofFromBytes(data []byte) (*Proof, error) {
 	return ret, nil
 }
 
-func (m *trieSetup) Validate(path *trie.ProofPath, rootC trie.VectorCommitment) error {
-	return m.Proof(path).Validate(rootC)
-}
-
 // Proof converts generic proof path to the Merkle proof path
 func (m *trieSetup) Proof(path *trie.ProofPath) *Proof {
+	if path == nil {
+		return nil
+	}
 	ret := &Proof{
 		Key:  path.Key,
 		Path: make([]*ProofElement, len(path.Path)),
@@ -106,7 +105,7 @@ func (p *Proof) Validate(root trie.VectorCommitment) error {
 	}
 	cv := (vectorCommitment)(c)
 	if !(&cv).Equal(root) {
-		return xerrors.New("commitment not equal to the root")
+		return xerrors.New("invalid proof: commitment not equal to the root")
 	}
 	return nil
 }

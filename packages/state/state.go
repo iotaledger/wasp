@@ -157,6 +157,10 @@ func (vs *virtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
 	}
 }
 
+func (vs *virtualStateAccess) ProofPath(key []byte) *trie.ProofPath {
+	return vs.trie.ProofPath(key)
+}
+
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
 func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 	ret, err := newBlock(vs.kvs.Mutations())

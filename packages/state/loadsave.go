@@ -93,7 +93,8 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 	if proofPath == nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root", chainID)
 	}
-	if err = trie_merkle.CommitmentLogic.Validate(proofPath, ret.trie.RootCommitment()); err != nil {
+	merkleProof := trie_merkle.CommitmentLogic.Proof(proofPath)
+	if err = merkleProof.Validate(ret.trie.RootCommitment()); err != nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}
 	ret.kvs.Mutations().ResetModified()
