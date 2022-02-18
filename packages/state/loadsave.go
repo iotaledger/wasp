@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie/merkle_trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
@@ -33,14 +33,14 @@ func (k *mustKVStoreBatch) Del(key kv.Key) {
 
 // Commit saves updates collected in the virtual state to DB together with the provided blocks in one transaction
 // Mutations must be non-empty otherwise it is NOP
-func (vs *virtualStateAccess) Commit(blocks ...Block) error {
+func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
 		return nil
 	}
 	// generate trie update
 	sub := subRealm(vs.db, []byte{dbkeys.ObjectTypeTrie})
-	stateTrie := trie.New(merkle_trie.CommitmentLogic, kv.NewHiveKVStoreReader(sub))
+	stateTrie := trie.New(trie_merkle.CommitmentLogic, kv.NewHiveKVStoreReader(sub))
 	for k, v := range vs.kvs.Mutations().Sets {
 		stateTrie.Update([]byte(k), v)
 	}
@@ -98,7 +98,7 @@ func (vs *virtualStateAccess) Commit(blocks ...Block) error {
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
 func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, error) {
 	originState, originBlock := newZeroVirtualState(store, chainID)
-	if err := originState.Commit(originBlock); err != nil {
+	if err := originState.Save(originBlock); err != nil {
 		return nil, err
 	}
 	return originState, nil

@@ -1,4 +1,4 @@
-package merkle_trie
+package trie_merkle
 
 import (
 	"encoding/hex"

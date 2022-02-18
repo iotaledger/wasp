@@ -30,6 +30,8 @@ type virtualStateAccess struct {
 	kvs     *buffered.BufferedKVStoreAccess
 }
 
+var _ VirtualStateAccess = &virtualStateAccess{}
+
 // newVirtualState creates VirtualStateAccess interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAccess {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeState})
@@ -52,7 +54,7 @@ func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStat
 }
 
 // calcOriginStateHash is independent of db provider nor chainID. Used for testing
-func calcOriginStateHash() Commitment {
+func calcOriginStateHash() iscp.StateCommitment {
 	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
 	return emptyVirtualState.StateCommitment()
 }
@@ -158,7 +160,7 @@ func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 }
 
 // StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) StateCommitment() Commitment {
+func (vs *virtualStateAccess) StateCommitment() iscp.StateCommitment {
 	if vs.kvs.Mutations().IsEmpty() {
 		return vs.committedHash
 	}

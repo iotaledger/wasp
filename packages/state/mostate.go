@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -48,7 +49,7 @@ func (s *mustOptimisticVirtualStateAccess) PreviousStateHash() hashing.HashValue
 	return s.state.PreviousStateHash()
 }
 
-func (s *mustOptimisticVirtualStateAccess) StateCommitment() Commitment {
+func (s *mustOptimisticVirtualStateAccess) StateCommitment() iscp.StateCommitment {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
@@ -66,7 +67,7 @@ func (s *mustOptimisticVirtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	s.state.ApplyStateUpdate(upd...)
+	s.state.ApplyStateUpdate(upd)
 }
 
 func (s *mustOptimisticVirtualStateAccess) ApplyBlock(block Block) error {
@@ -83,11 +84,11 @@ func (s *mustOptimisticVirtualStateAccess) ExtractBlock() (Block, error) {
 	return s.state.ExtractBlock()
 }
 
-func (s *mustOptimisticVirtualStateAccess) Commit(blocks ...Block) error {
+func (s *mustOptimisticVirtualStateAccess) Save(blocks ...Block) error {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.state.Commit(blocks...)
+	return s.state.Save(blocks...)
 }
 
 func (s *mustOptimisticVirtualStateAccess) KVStore() *buffered.BufferedKVStoreAccess {

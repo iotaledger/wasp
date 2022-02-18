@@ -219,7 +219,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	// - If any VM task is running with the assumption of the previous state, it is obsolete and will self-cancel
 	// - any view call will return 'state invalidated message'
 	sm.chain.GlobalStateSync().InvalidateSolidIndex()
-	err := tentativeState.Commit(blocks...)
+	err := tentativeState.Save(blocks...)
 	for _, block := range blocks {
 		sm.stateManagerMetrics.RecordBlockSize(block.BlockIndex(), float64(len(block.Bytes())))
 	}

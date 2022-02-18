@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"testing"
 	"time"
 
@@ -129,7 +130,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
-		err = vs1.Commit(block1)
+		err = vs1.Save(block1)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
@@ -188,7 +189,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 2, vsOrig.BlockIndex())
 		require.True(t, time2.Equal(vsOrig.Timestamp()))
 
-		err = vsOrig.Commit(block1, block2)
+		err = vsOrig.Save(block1, block2)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, vsOrig.BlockIndex())
 		require.True(t, time2.Equal(vsOrig.Timestamp()))
@@ -241,7 +242,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
-		err = vs1.Commit()
+		err = vs1.Save()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
@@ -329,7 +330,7 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
 	sc1Node1BeforeCommit := vsNode1.StateCommitment()
 
-	err = vsNode1.Commit(block1)
+	err = vsNode1.Save(block1)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, vsNode1.BlockIndex())
 	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
@@ -361,7 +362,7 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	sc2Node2BeforeCommit := vsNode2.StateCommitment()
 	require.Equal(t, sc2Node1BeforeCommit, sc2Node2BeforeCommit)
 
-	err = vsNode1.Commit(block2)
+	err = vsNode1.Save(block2)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, vsNode1.BlockIndex())
 	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
@@ -369,9 +370,9 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	require.Equal(t, sc2Node1BeforeCommit, sc2Node1AfterCommit)
 	require.Equal(t, sc2Node1AfterCommit, sc2Node2BeforeCommit)
 
-	err = vsNode2.Commit(block1)
+	err = vsNode2.Save(block1)
 	require.NoError(t, err)
-	err = vsNode2.Commit(block2)
+	err = vsNode2.Save(block2)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, vsNode2.BlockIndex())
 	require.True(t, currentTime.Equal(vsNode2.Timestamp()))

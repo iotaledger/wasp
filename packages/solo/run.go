@@ -121,7 +121,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	require.NotNil(ch.Env.T, block)
 	block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
 
-	err = ch.State.Commit(block)
+	err = ch.State.Save(block)
 	require.NoError(ch.Env.T, err)
 
 	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())

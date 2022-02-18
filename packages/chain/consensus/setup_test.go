@@ -264,7 +264,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 				ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
 				return
 			}
-			err := newState.Commit()
+			err := newState.Save()
 			require.NoError(env.T, err)
 
 			ret.SolidState = newState
