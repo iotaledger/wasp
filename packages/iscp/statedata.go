@@ -3,46 +3,41 @@ package iscp
 import (
 	"bytes"
 	"encoding/hex"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 )
-
-type StateCommitment hashing.HashValue
 
 // StateData represents the parsed data stored as a metadata in the anchor output
 type StateData struct {
-	Commitment StateCommitment
+	Commitment trie.VectorCommitment
 }
 
 func StateDataFromBytes(data []byte) (StateData, error) {
 	ret := StateData{}
-	if len(data) != hashing.HashSize {
-		return ret, xerrors.New("StateDataFromBytes: wrong bytes")
+	var err error
+	if ret.Commitment, err = trie_merkle.NewVectorCommitmentFromBytes(data); err != nil {
+		return StateData{}, err
 	}
-	t, _ := hashing.HashValueFromBytes(data[:hashing.HashSize])
-	ret.Commitment = (StateCommitment)(t)
 	return ret, nil
 }
 
 func (s *StateData) Bytes() []byte {
 	var buf bytes.Buffer
 
-	buf.Write(s.Commitment[:])
+	buf.Write(trie.MustBytes(s.Commitment))
 	return buf.Bytes()
 }
 
-func (c StateCommitment) String() string {
-	return (hashing.HashValue)(c).String()
-}
+const OriginStateCommitmentHex = "4c8f7018f3d1e84ce978218479ce81de703ce5dcbed0662bf5307165e0a047e9"
 
-const OriginStateCommitmentHex = "96yCdioNdifMb8xTeHQVQ8BzDnXDbRBoYzTq7iVaymvV"
-
-func OriginStateCommitment() (ret StateCommitment) {
+func OriginStateCommitment() trie.VectorCommitment {
 	retBin, err := hex.DecodeString(OriginStateCommitmentHex)
 	if err != nil {
 		panic(err)
 	}
-	copy(ret[:], retBin)
-	return
+	ret, err := trie_merkle.NewVectorCommitmentFromBytes(retBin)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

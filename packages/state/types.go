@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -16,7 +16,8 @@ type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
-	StateCommitment() iscp.StateCommitment
+	Commit()
+	StateCommitment() trie.VectorCommitment
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error

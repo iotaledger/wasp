@@ -383,7 +383,7 @@ func TestTrieRnd(t *testing.T) {
 		t.Logf("root2 = %s", c2)
 		require.True(t, c1.Equal(c2))
 
-		tr2.FlushCache(store2)
+		tr2.FlushDelta(store2)
 		trieSize := len(store2.Bytes())
 		t.Logf("key entries = %d", len(data))
 		t.Logf("Trie entries = %d", len(store2))
@@ -587,7 +587,7 @@ func TestTrieProof(t *testing.T) {
 		require.EqualValues(t, 1, len(proofPath.Path))
 
 		proof := CommitmentLogic.Proof(proofPath)
-		rootC := (*[32]byte)(tr.RootCommitment().(*vectorCommitment))
+		rootC := tr.RootCommitment()
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
 
@@ -602,7 +602,7 @@ func TestTrieProof(t *testing.T) {
 		require.EqualValues(t, 1, len(proofPath.Path))
 
 		proof = CommitmentLogic.Proof(proofPath)
-		rootC = (*[32]byte)(tr.RootCommitment().(*vectorCommitment))
+		rootC = tr.RootCommitment()
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
 		require.True(t, proof.MustIsProofOfAbsence())
@@ -618,7 +618,7 @@ func TestTrieProof(t *testing.T) {
 		require.EqualValues(t, 1, len(proofPath.Path))
 
 		proof := CommitmentLogic.Proof(proofPath)
-		rootC := (*[32]byte)(tr.RootCommitment().(*vectorCommitment))
+		rootC := tr.RootCommitment()
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
 		require.True(t, proof.MustIsProofOfAbsence())
@@ -639,7 +639,7 @@ func TestTrieProof(t *testing.T) {
 
 func TestTrieProofWithDeletes(t *testing.T) {
 	var tr *trie.Trie
-	var rootC *[32]byte
+	var rootC trie.VectorCommitment
 
 	initTrie := func(dataAdd []string) {
 		store := dict.New()
@@ -653,9 +653,9 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			tr.Update([]byte(s), nil)
 		}
 	}
-	commitTrie := func() *[32]byte {
+	commitTrie := func() trie.VectorCommitment {
 		tr.Commit()
-		return (*[32]byte)(tr.RootCommitment().(*vectorCommitment))
+		return tr.RootCommitment()
 	}
 	data := []string{"a", "ab", "ac", "abc", "abd", "ad", "ada", "adb", "adc", "c", "ad+dddgsssisd"}
 	t.Run("proof many entries 1", func(t *testing.T) {

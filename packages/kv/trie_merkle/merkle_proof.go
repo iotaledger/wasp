@@ -28,6 +28,10 @@ func ProofFromBytes(data []byte) (*Proof, error) {
 	return ret, nil
 }
 
+func (m *trieSetup) Validate(path *trie.ProofPath, rootC trie.VectorCommitment) error {
+	return m.Proof(path).Validate(rootC)
+}
+
 // Proof converts generic proof path to the Merkle proof path
 func (m *trieSetup) Proof(path *trie.ProofPath) *Proof {
 	ret := &Proof{
@@ -89,7 +93,7 @@ func (p *Proof) MustIsProofOfAbsence() bool {
 	return r == nil
 }
 
-func (p *Proof) Validate(root *[32]byte) error {
+func (p *Proof) Validate(root trie.VectorCommitment) error {
 	if len(p.Path) == 0 {
 		if root != nil {
 			return xerrors.New("proof is empty")
@@ -100,7 +104,8 @@ func (p *Proof) Validate(root *[32]byte) error {
 	if err != nil {
 		return err
 	}
-	if c != *root {
+	cv := (vectorCommitment)(c)
+	if !(&cv).Equal(root) {
 		return xerrors.New("commitment not equal to the root")
 	}
 	return nil

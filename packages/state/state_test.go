@@ -1,7 +1,8 @@
 package state
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
 
@@ -14,48 +15,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVirtualStateBasic(t *testing.T) {
-	t.Run("create new1", func(t *testing.T) {
-		db := mapdb.NewMapDB()
-		vs1 := newVirtualState(db, nil)
-		require.Panics(t, func() {
-			vs1.BlockIndex()
-		})
-	})
-	t.Run("create new2", func(t *testing.T) {
-		db := mapdb.NewMapDB()
-		chainID := iscp.ChainIDFromAliasID(ledgerstate.NewAliasAddress([]byte("dummy")))
-		vs1 := newVirtualState(db, chainID)
-		require.Panics(t, func() {
-			vs1.BlockIndex()
-		})
-	})
-	t.Run("zero state", func(t *testing.T) {
-		db := mapdb.NewMapDB()
-		vs1, blk := newZeroVirtualState(db, nil)
-		h1 := vs1.StateCommitment()
-		require.EqualValues(t, OriginStateHash(), h1)
-		require.EqualValues(t, 0, vs1.BlockIndex())
-		require.EqualValues(t, newOriginBlock().Bytes(), blk.Bytes())
-	})
-}
-
 func TestOriginHashes(t *testing.T) {
+	t.Run("create new", func(t *testing.T) {
+		vs1 := newVirtualState(mapdb.NewMapDB())
+		require.Panics(t, func() {
+			vs1.BlockIndex()
+		})
+	})
 	t.Run("origin state hash consistency ", func(t *testing.T) {
 		t.Logf("origin state hash calculated: %s", calcOriginStateHash().String())
-		require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
-		require.EqualValues(t, OriginStateHash().String(), calcOriginStateHash().String())
+		require.EqualValues(t, iscp.OriginStateCommitmentHex, iscp.OriginStateCommitment().String())
+		require.EqualValues(t, iscp.OriginStateCommitment().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
-		z, origBlock := newZeroVirtualState(mapdb.NewMapDB(), nil)
-		require.EqualValues(t, 0, origBlock.BlockIndex())
-		require.True(t, origBlock.Timestamp().IsZero())
-		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
-		t.Logf("zero state hash = %s", z.StateCommitment().String())
-		require.EqualValues(t, 0, z.BlockIndex())
-		require.True(t, z.Timestamp().IsZero())
-		require.EqualValues(t, hashing.NilHash, z.PreviousStateHash())
-		require.EqualValues(t, calcOriginStateHash(), z.StateCommitment())
+		z := newVirtualState(mapdb.NewMapDB())
+		require.Nil(t, z.StateCommitment())
+	})
+	t.Run("zero state hash == origin state hash", func(t *testing.T) {
+		chainID := testmisc.RandChainID()
+		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+		require.NoError(t, err)
+		require.True(t, vs.StateCommitment().Equal(iscp.OriginStateCommitment()))
+		require.EqualValues(t, calcOriginStateHash(), vs.StateCommitment())
 	})
 }
 
@@ -276,11 +257,11 @@ func TestStateWithDB(t *testing.T) {
 }
 
 func TestVariableStateBasic(t *testing.T) {
-	chainID := iscp.ChainIDFromAliasID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+	chainID := iscp.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
+	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
 	h1 := vs1.StateCommitment()
-	require.EqualValues(t, OriginStateHash(), h1)
+	require.True(t, iscp.OriginStateCommitment().Equal(h1))
 
 	vs2 := vs1.Copy()
 	h2 := vs2.StateCommitment()
@@ -409,7 +390,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
 	h1 := vsOpt.StateCommitment()
-	require.EqualValues(t, OriginStateHash(), h1)
+	require.True(t, iscp.OriginStateCommitment().Equal(h1))
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()

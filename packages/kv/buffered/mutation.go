@@ -54,6 +54,15 @@ func (ms *Mutations) Write(w io.Writer) error {
 	return nil
 }
 
+func (ms *Mutations) Flush(kvw kv.KVWriter) {
+	for k, v := range ms.Sets {
+		kvw.Set(k, v)
+	}
+	for k := range ms.Dels {
+		kvw.Del(k)
+	}
+}
+
 //nolint:gocritic
 func (ms *Mutations) Read(r io.Reader) error {
 	var err error

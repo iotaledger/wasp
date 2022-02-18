@@ -1,6 +1,7 @@
 package trie_merkle
 
 import (
+	"bytes"
 	"encoding/hex"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -22,8 +23,10 @@ type vectorCommitment [32]byte
 type trieSetup struct{}
 
 var (
-	CommitmentLogic                      = &trieSetup{}
-	_               trie.CommitmentLogic = CommitmentLogic
+	CommitmentLogic                         = &trieSetup{}
+	_               trie.CommitmentLogic    = CommitmentLogic
+	_               trie.VectorCommitment   = &vectorCommitment{}
+	_               trie.TerminalCommitment = &terminalCommitment{}
 )
 
 func (m *trieSetup) NewTerminalCommitment() trie.TerminalCommitment {
@@ -53,6 +56,14 @@ func (m *trieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
 	hashes[257] = &tmp
 	ret := (vectorCommitment)(hashVector(&hashes))
 	return &ret
+}
+
+func NewVectorCommitmentFromBytes(data []byte) (trie.VectorCommitment, error) {
+	ret := CommitmentLogic.NewVectorCommitment()
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func hashVector(hashes *[258]*[32]byte) [32]byte {
@@ -146,6 +157,14 @@ func (v *vectorCommitment) Equal(another trie.CommitmentBase) bool {
 	return *v == *a
 }
 
+func (v *vectorCommitment) Clone() trie.VectorCommitment {
+	if v == nil {
+		return nil
+	}
+	ret := *v
+	return &ret
+}
+
 func (v *vectorCommitment) Update(delta trie.VectorCommitment) {
 	m, ok := delta.(*vectorCommitment)
 	if !ok {
@@ -207,7 +226,15 @@ func (t *terminalCommitment) Equal(another trie.CommitmentBase) bool {
 	return *t == *a
 }
 
-// returnn value of the terminal commitment and a flag which indicates if it is a hashed value (true) or original data (false)
+func (t *terminalCommitment) Clone() trie.TerminalCommitment {
+	if t == nil {
+		return nil
+	}
+	ret := *t
+	return &ret
+}
+
+// return value of the terminal commitment and a flag which indicates if it is a hashed value (true) or original data (false)
 func (t *terminalCommitment) value() ([]byte, bool) {
 	return t.bytes[:t.lenPlus1-1], t.lenPlus1 == 0
 }

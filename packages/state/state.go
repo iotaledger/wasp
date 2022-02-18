@@ -4,8 +4,9 @@
 package state
 
 import (
-	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"math"
 	"time"
 
@@ -25,38 +26,50 @@ import (
 // region VirtualStateAccess /////////////////////////////////////////////////
 
 type virtualStateAccess struct {
-	chainID *iscp.ChainID
-	db      kvstore.KVStore
-	kvs     *buffered.BufferedKVStoreAccess
+	db   kvstore.KVStore
+	kvs  *buffered.BufferedKVStoreAccess
+	trie *trie.Trie
 }
 
 var _ VirtualStateAccess = &virtualStateAccess{}
 
 // newVirtualState creates VirtualStateAccess interface with the partition of KVStore
-func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAccess {
-	sub := subRealm(db, []byte{dbkeys.ObjectTypeState})
+func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
+	subState := subRealm(db, []byte{dbkeys.ObjectTypeState})
+	subTrie := subRealm(db, []byte{dbkeys.ObjectTypeTrie})
 	ret := &virtualStateAccess{
-		db:  db,
-		kvs: buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(sub)),
-	}
-	if chainID != nil {
-		ret.chainID = chainID
+		db:   db,
+		kvs:  buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(subState)),
+		trie: trie.New(trie_merkle.CommitmentLogic, kv.NewHiveKVStoreReader(subTrie)),
 	}
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, Block) {
-	ret := newVirtualState(db, chainID)
-	originBlock := newOriginBlock()
-	ret.applyBlockNoCheck(originBlock)
-	_, _ = ret.ExtractBlock() // clear the update log
-	return ret, originBlock
+// CreateOriginState origin state and saves it. It assumes store is empty
+func newOriginState(store kvstore.KVStore) VirtualStateAccess {
+	ret := newVirtualState(store)
+	nilChainId := iscp.ChainID{}
+	// state will contain chain ID at key ''. In the origin state it 'all 0'
+	ret.KVStore().Set("", nilChainId.Bytes())
+	ret.Commit()
+	return ret
 }
 
 // calcOriginStateHash is independent of db provider nor chainID. Used for testing
-func calcOriginStateHash() iscp.StateCommitment {
-	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
-	return emptyVirtualState.StateCommitment()
+func calcOriginStateHash() trie.VectorCommitment {
+	return newOriginState(mapdb.NewMapDB()).StateCommitment()
+}
+
+// CreateOriginState creates and saves origin state in DB
+func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, error) {
+	originState := newOriginState(store)
+	if err := originState.Save(); err != nil {
+		return nil, err
+	}
+	// state will contain chain ID at key ''.
+	// We set the mutation, but we do not commit yet, it will be committed with the block #1
+	originState.KVStore().Set("", chainID.Bytes())
+	return originState, nil
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -68,15 +81,15 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
-		chainID: vs.chainID,
-		db:      vs.db,
-		kvs:     vs.kvs.Copy(),
+		db:   vs.db,
+		kvs:  vs.kvs.Copy(),
+		trie: vs.trie.Clone(),
 	}
 	return ret
 }
 
 func (vs *virtualStateAccess) DangerouslyConvertToString() string {
-	return fmt.Sprintf("#%d, ts: %v, committed hash: %s, applied block hashes: %s\n%s",
+	return fmt.Sprintf("#%d, ts: %v, state commitment: %s\n%s",
 		vs.BlockIndex(),
 		vs.Timestamp(),
 		vs.StateCommitment().String(),
@@ -134,16 +147,13 @@ func (vs *virtualStateAccess) applyBlockNoCheck(b Block) {
 	vs.ApplyStateUpdate(b.(*blockImpl).stateUpdate)
 }
 
-// ApplyStateUpdates applies one state update. Doesn't change the state hash: it can be changed by Apply block
-func (vs *virtualStateAccess) ApplyStateUpdate(stateUpd StateUpdate) {
-	for _, upd := range stateUpd {
-		upd.Mutations().ApplyTo(vs.KVStore())
-		for k, v := range upd.Mutations().Sets {
-			vs.kvs.Mutations().Set(k, v)
-		}
-		for k := range upd.Mutations().Dels {
-			vs.kvs.Mutations().Del(k)
-		}
+// ApplyStateUpdate applies one state update
+func (vs *virtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
+	for k, v := range upd.Mutations().Sets {
+		vs.kvs.Mutations().Set(k, v)
+	}
+	for k := range upd.Mutations().Dels {
+		vs.kvs.Mutations().Del(k)
 	}
 }
 
@@ -159,38 +169,23 @@ func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 	return ret, nil
 }
 
-// StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) StateCommitment() iscp.StateCommitment {
-	if vs.kvs.Mutations().IsEmpty() {
-		return vs.committedHash
+func (vs *virtualStateAccess) Commit() {
+	if !vs.kvs.Mutations().IsModified() {
+		return
 	}
-	if len(vs.appliedBlockHashes) == 0 {
-		block, err := vs.ExtractBlock()
-		if err != nil {
-			panic(xerrors.Errorf("StateCommitment: %v", err))
-		}
-		vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(block.EssenceBytes()))
+	for k, v := range vs.kvs.Mutations().Sets {
+		vs.trie.Update([]byte(k), v)
 	}
-	ret := vs.committedHash
-	for i := range vs.appliedBlockHashes {
-		ret = hashing.HashData(ret[:], vs.appliedBlockHashes[i][:])
+	for k := range vs.kvs.Mutations().Dels {
+		vs.trie.Update([]byte(k), nil)
 	}
-	return ret
+	vs.trie.Commit()
+	vs.kvs.Mutations().ResetModified()
 }
 
-func loadStateHashFromDb(state kvstore.KVStore) (hashing.HashValue, bool, error) {
-	v, err := state.Get(dbkeys.MakeKey(dbkeys.ObjectTypeTrie))
-	if errors.Is(err, kvstore.ErrKeyNotFound) {
-		return hashing.HashValue{}, false, nil
-	}
-	if err != nil {
-		return hashing.HashValue{}, false, err
-	}
-	stateHash, err := hashing.HashValueFromBytes(v)
-	if err != nil {
-		return hashing.HashValue{}, false, err
-	}
-	return stateHash, true, nil
+// StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
+func (vs *virtualStateAccess) StateCommitment() trie.VectorCommitment {
+	return vs.trie.RootCommitment()
 }
 
 func loadStateIndexFromState(chainState kv.KVStoreReader) (uint32, error) {

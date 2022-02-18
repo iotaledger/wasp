@@ -39,6 +39,18 @@ func New(setup CommitmentLogic, store kv.KVMustReader) *Trie {
 	}
 }
 
+func (t *Trie) Clone() *Trie {
+	ret := &Trie{
+		setup:     t.setup,
+		store:     t.store,
+		nodeCache: make(map[kv.Key]*Node),
+	}
+	for k, v := range t.nodeCache {
+		ret.nodeCache[k] = v.Clone()
+	}
+	return ret
+}
+
 func (t *Trie) RootCommitment() VectorCommitment {
 	n, ok := t.GetNode(nil)
 	if !ok {
@@ -70,7 +82,7 @@ func (t *Trie) CommitToNode(n *Node) VectorCommitment {
 	return t.setup.CommitToNode(n)
 }
 
-func (t *Trie) FlushCache(store kv.KVWriter) {
+func (t *Trie) FlushDelta(store kv.KVWriter) {
 	for k, v := range t.nodeCache {
 		if !v.IsEmpty() {
 			store.Set(k, MustBytes(v))
@@ -248,6 +260,14 @@ func (t *Trie) path(pathPosition int, ret *ProofPath) {
 		return
 	}
 	t.path(indexPos+1, ret)
+}
+
+func (t *Trie) VectorCommitmentFromBytes(data []byte) (VectorCommitment, error) {
+	ret := t.setup.NewVectorCommitment()
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func commonPrefix(b1, b2 []byte) []byte {

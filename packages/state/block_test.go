@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"testing"
 	"time"
 
@@ -51,8 +52,7 @@ func TestBatches(t *testing.T) {
 	assert.EqualValues(t, block1Bin, block2.Bytes())
 	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())
 
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
-	outID := ledgerstate.NewOutputID(txid1, 0)
+	outID := tpkg.RandOutputID(0).UTXOInput()
 	block1.SetApprovingOutputID(outID)
 	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())
 
@@ -64,11 +64,9 @@ func TestBatches(t *testing.T) {
 }
 
 func TestOriginBlock(t *testing.T) {
-	txid1 := ledgerstate.TransactionID{}
-	outID1 := ledgerstate.NewOutputID(txid1, 0)
-	txid2 := ledgerstate.TransactionID(hashing.RandomHash(nil))
-	outID2 := ledgerstate.NewOutputID(txid1, 0)
-	require.NotEqualValues(t, txid1, txid2)
+	outID1 := tpkg.RandOutputID(0).UTXOInput()
+	outID2 := tpkg.RandOutputID(0).UTXOInput()
+	require.NotEqualValues(t, outID1, outID2)
 	b := newOriginBlock()
 	b1 := newOriginBlock()
 	b1.SetApprovingOutputID(outID1)

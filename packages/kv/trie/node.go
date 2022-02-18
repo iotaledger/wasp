@@ -16,10 +16,12 @@ type CommitmentBase interface {
 type VectorCommitment interface {
 	CommitmentBase
 	Update(delta VectorCommitment)
+	Clone() VectorCommitment
 }
 
 type TerminalCommitment interface {
 	CommitmentBase
+	Clone() TerminalCommitment
 }
 
 // Node is a node of the 25š+-ary verkle Trie
@@ -53,6 +55,27 @@ func NodeFromBytes(setup CommitmentLogic, data []byte) (*Node, error) {
 	}
 	ret.NewTerminal = ret.Terminal
 	return ret, nil
+}
+
+func (n *Node) Clone() *Node {
+	if n == nil {
+		return nil
+	}
+	ret := &Node{
+		PathFragment:     make([]byte, len(n.PathFragment)),
+		Children:         make(map[byte]VectorCommitment),
+		Terminal:         n.Terminal.Clone(),
+		NewTerminal:      n.NewTerminal.Clone(),
+		ModifiedChildren: make(map[byte]*Node),
+	}
+	copy(ret.PathFragment, n.PathFragment)
+	for k, v := range n.Children {
+		ret.Children[k] = v.Clone()
+	}
+	for k, v := range n.ModifiedChildren {
+		ret.ModifiedChildren[k] = v.Clone()
+	}
+	return ret
 }
 
 func (n *Node) IsEmpty() bool {
