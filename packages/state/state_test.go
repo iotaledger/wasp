@@ -31,12 +31,24 @@ func TestOriginHashes(t *testing.T) {
 		z := newVirtualState(mapdb.NewMapDB())
 		require.Nil(t, z.StateCommitment())
 	})
-	t.Run("zero state hash == origin state hash", func(t *testing.T) {
+	t.Run("create origin", func(t *testing.T) {
 		chainID := testmisc.RandChainID()
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
 		require.True(t, vs.StateCommitment().Equal(iscp.OriginStateCommitment()))
 		require.EqualValues(t, calcOriginStateHash(), vs.StateCommitment())
+	})
+	t.Run("save state", func(t *testing.T) {
+		chainID := testmisc.RandChainID()
+		store := mapdb.NewMapDB()
+		vs, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+		vs.Commit()
+		err = vs.Save()
+		require.NoError(t, err)
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
 	})
 }
 
