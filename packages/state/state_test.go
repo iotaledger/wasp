@@ -1,19 +1,22 @@
 package state
 
 import (
-	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"math/rand"
-	"testing"
-	"time"
-
+	"fmt"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
+	"math"
+	"math/rand"
+	"testing"
+	"time"
 )
 
 func TestOriginHashes(t *testing.T) {
@@ -60,54 +63,6 @@ func TestStateWithDB(t *testing.T) {
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
-	})
-	t.Run("many blocks, associativity", func(t *testing.T) {
-		chainID := iscp.RandomChainID()
-
-		const numBlocks = 100
-		const numRepeat = 10
-		upds := make([]StateUpdate, numBlocks)
-		blocks := make([]Block, numBlocks)
-		cs := make([]trie.VCommitment, 0)
-		var err error
-		millis := rand.Int63()
-		for i := range upds {
-			upds[i] = NewStateUpdateWithBlockLogValues(uint32(i+2), time.UnixMilli(millis+int64(i+100)), testmisc.RandVectorCommitment())
-			blocks[i], err = newBlock(upds[i].Mutations())
-			require.NoError(t, err)
-		}
-		upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(millis), testmisc.RandVectorCommitment())
-		var exists bool
-		for i := 0; i < numRepeat; i++ {
-			t.Logf("------------------ round: %d", i)
-			store := mapdb.NewMapDB()
-			vs, err := CreateOriginState(store, chainID)
-			require.NoError(t, err)
-			vs.ApplyStateUpdate(upd1)
-			vs.Commit()
-			err = vs.Save()
-			require.NoError(t, err)
-			for bn, b := range blocks {
-				require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
-				err = vs.ApplyBlock(b)
-				require.NoError(t, err)
-				if rand.Intn(1000) < 100 {
-					t.Logf("           commit at block: #%d", bn)
-					vs.Commit()
-					err = vs.Save()
-					require.NoError(t, err)
-					vs, exists, err = LoadSolidState(store, chainID)
-					require.NoError(t, err)
-					require.True(t, exists)
-				}
-			}
-			err = vs.Save()
-			require.NoError(t, err)
-			cs = append(cs, vs.StateCommitment())
-		}
-		for i := range cs {
-			require.True(t, cs[0].Equal(cs[i]))
-		}
 	})
 	//t.Run("apply, save and load block 1", func(t *testing.T) {
 	//	store := mapdb.NewMapDB()
@@ -273,6 +228,147 @@ func TestStateWithDB(t *testing.T) {
 	//	require.Error(t, err)
 	//	require.EqualValues(t, err, coreutil.ErrorStateInvalidated)
 	//})
+}
+
+func genRnd4() []string {
+	str := "0123456789abcdef"
+	ret := make([]string, 0, len(str)*len(str)*len(str))
+	for i := range str {
+		for j := range str {
+			for k := range str {
+				for l := range str {
+					s := string([]byte{str[i], str[j], str[k], str[l]})
+					s = s + s + s + s
+					r1 := rand.Intn(len(s))
+					r2 := rand.Intn(len(s))
+					if r2 < r1 {
+						r1, r2 = r2, r1
+					}
+					ret = append(ret, s[r1:r2])
+				}
+			}
+		}
+	}
+	if len(ret) > math.MaxUint16 {
+		ret = ret[:math.MaxUint16]
+	}
+	return ret
+}
+
+func genDifferent(n int) []string {
+	orig := genRnd4()
+	// filter different
+	unique := make(map[string]bool)
+	for _, s := range orig {
+		unique[s] = true
+	}
+	ret := make([]string, 0)
+	for s := range unique {
+		ret = append(ret, s)
+	}
+	return ret
+}
+
+func genRndBlocks(start, num int) []Block {
+	strs := genDifferent(100)
+	blocks := make([]Block, num)
+	millis := rand.Int63()
+	const numMutations = 20
+	for blkNum := range blocks {
+		var buf [32]byte
+		copy(buf[:], fmt.Sprintf("kuku %d", blkNum))
+		vc, _ := trie_merkle.NewVectorCommitmentFromBytes(buf[:])
+		upd := NewStateUpdateWithBlockLogValues(uint32(blkNum+start), time.UnixMilli(millis+int64(blkNum+100)), vc)
+		for i := 0; i < numMutations; i++ {
+			s := "1111" + strs[rand.Intn(len(strs))]
+			if rand.Intn(1000) < 100 {
+				upd.Mutations().Del(kv.Key(s))
+			} else {
+				upd.Mutations().Set(kv.Key(s), []byte(s))
+			}
+		}
+		blocks[blkNum], _ = newBlock(upd.Mutations())
+	}
+	return blocks
+}
+
+func genBlocks(start, num int) []Block {
+	blocks := make([]Block, num)
+	millis := rand.Int63()
+	const numMutations = 20
+	for i := range blocks {
+		upd := NewStateUpdateWithBlockLogValues(uint32(i+start), time.UnixMilli(millis+int64(i+100)), testmisc.RandVectorCommitment())
+		for i := 0; i < numMutations; i++ {
+			s := fmt.Sprintf("xxxx%d", i)
+			if rand.Intn(1000) < 200 {
+				upd.Mutations().Del(kv.Key(s))
+			} else {
+				upd.Mutations().Set(kv.Key(s), []byte(s))
+			}
+		}
+		blocks[i], _ = newBlock(upd.Mutations())
+	}
+	return blocks
+}
+
+func TestRnd(t *testing.T) {
+	chainID := iscp.RandomChainID()
+
+	const numBlocks = 10
+	const numRepeat = 10
+	cs := make([]trie.VCommitment, 0)
+	blocks := genRndBlocks(2, numBlocks)
+	//blocks := genBlocks(2, numBlocks)
+	t.Logf("num blocks: %d", len(blocks))
+	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), testmisc.RandVectorCommitment())
+	var exists bool
+	store := make([]kvstore.KVStore, numRepeat)
+	for round := 0; round < numRepeat; round++ {
+		t.Logf("------------------ round: %d", round)
+		store[round] = mapdb.NewMapDB()
+		vs, err := CreateOriginState(store[round], chainID)
+		require.NoError(t, err)
+		vs.ApplyStateUpdate(upd1)
+		vs.Commit()
+		err = vs.Save()
+		require.NoError(t, err)
+		for bn, b := range blocks {
+			require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
+			nsets := len(b.(*blockImpl).stateUpdate.mutations.Sets)
+			ndels := len(b.(*blockImpl).stateUpdate.mutations.Dels)
+			t.Logf("           block: #%d num sets: %d num dels: %d", bn, nsets, ndels)
+			err = vs.ApplyBlock(b)
+			require.NoError(t, err)
+			if bn == round {
+				t.Logf("           commit at block: #%d", bn)
+				err = vs.Save()
+				require.NoError(t, err)
+				c1 := vs.StateCommitment()
+				vs, exists, err = LoadSolidState(store[round], chainID)
+				require.NoError(t, err)
+				require.True(t, exists)
+				c2 := vs.StateCommitment()
+				require.True(t, c1.Equal(c2))
+			}
+		}
+		err = vs.Save()
+		require.NoError(t, err)
+		cs = append(cs, vs.StateCommitment())
+	}
+	for i := range cs {
+		t.Logf("c = %s", cs[i])
+	}
+	//for i := range blocks {
+	//	s := blocks[i].(*blockImpl).stateUpdate.Mutations().Dump()
+	//	t.Logf("DUMP ------------ block #%d", i)
+	//	t.Logf("%s", s)
+	//}
+	//diff := kv.GetDiff(kv.NewHiveKVStoreReader(store[0]), kv.NewHiveKVStoreReader(store[1]))
+	//t.Logf("DIFF:\n%s", diff.Dump())
+	for i := range cs {
+		require.True(t, cs[0].Equal(cs[i]))
+	}
+
 }
 
 func TestVariableStateBasic(t *testing.T) {

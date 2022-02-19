@@ -127,8 +127,10 @@ func (t *Trie) Delete(key []byte) {
 // - 'path' the Key of the terminal value
 // - 'pathPosition' is the position in the path the current node's Key starts: Key = path[:pathPosition]
 // - 'terminal' is the new commitment to the value under Key 'path'. nil means terminal deletion
-// - returns the node under the Key = path[:pathPosition] or nil in case of terminal deletion
-func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) *Node {
+// - returns
+//   -- the node under the Key = path[:pathPosition] or nil in case of terminal deletion
+//   -- return true if upstream commitment must be updated and false if not
+func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) (*Node, bool) {
 	assert(pathPosition <= len(path), "pathPosition <= len(path)")
 	if len(path) == 0 {
 		path = []byte{}
@@ -140,10 +142,10 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) *N
 	if !ok {
 		if terminal == nil {
 			// in case of deletion do nothing
-			return nil
+			return nil, false
 		}
 		// node for the path[:pathPosition] does not exist. Create a new one with the terminal value only
-		return t.newTerminalNode(key, tail, terminal)
+		return t.newTerminalNode(key, tail, terminal), true
 	}
 	// node for the Key exists. Find common prefix between tail of the path and path fragment
 	prefix := commonPrefix(node.PathFragment, tail)
@@ -160,22 +162,27 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) *N
 		// pathFragment is part of the path. No need for a fork, continue the path
 		if nextPathPosition == len(path) {
 			// reached the terminal value on this node. In case of deletion the newTerminal will become nil
+			update := !EqualCommitments(node.NewTerminal, terminal)
 			node.NewTerminal = terminal
-			return node
+			return node, update
 		}
 		assert(nextPathPosition < len(path), "nextPathPosition < len(path)")
 		// didn't reach the end of the path
 		// choose the direction and continue down the path of the child
 		childIndex := path[nextPathPosition]
 		// recursively update the rest of the path
-		node.ModifiedChildren[childIndex] = t.updateKey(path, nextPathPosition+1, terminal)
-		return node
+		child, update := t.updateKey(path, nextPathPosition+1, terminal)
+		update = update && (node.ModifiedChildren[childIndex] != child)
+		if update {
+			node.ModifiedChildren[childIndex] = child
+		}
+		return node, update
 	}
 	assert(len(prefix) < len(node.PathFragment), "len(prefix) < len(node.pathFragment)")
 
 	if terminal == nil {
 		// node not found, do nothing in case of deletion
-		return nil
+		return nil, false
 	}
 	// split the pathFragment. The continued branch is part of the fragment
 	// Key of the next node starts at the next position after current Key plus prefix
@@ -204,7 +211,7 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) *N
 		assert(len(keyContinue) == len(keyFork), "len(keyContinue)==len(keyFork)")
 		node.ModifiedChildren[childForkIndex] = t.newTerminalNode(keyFork, path[len(keyFork):], terminal)
 	}
-	return node
+	return node, true
 }
 
 // Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodes
@@ -271,4 +278,14 @@ func (t *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+func EqualCommitments(c1, c2 CommitmentBase) bool {
+	if c1 == c2 {
+		return true
+	}
+	if c1 == nil || c2 == nil {
+		return false
+	}
+	return c1.Equal(c2)
 }

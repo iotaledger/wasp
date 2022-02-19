@@ -2,6 +2,7 @@ package buffered
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sort"
 
@@ -176,4 +177,15 @@ func (ms *Mutations) IsModified() bool {
 
 func (ms *Mutations) ResetModified() {
 	ms.modified = false
+}
+
+func (ms *Mutations) Dump() string {
+	ret := "\n"
+	for _, it := range ms.SetsSorted() {
+		ret += it.Format("    SET %-32s : %s\n")
+	}
+	for _, d := range ms.DelsSorted() {
+		ret += fmt.Sprintf("    DEL %-32s\n", d)
+	}
+	return ret
 }

@@ -133,12 +133,33 @@ func TestTrieBase(t *testing.T) {
 		c2 := tr2.RootCommitment()
 		require.True(t, c1.Equal(c2))
 	})
-	t.Run("base4", func(t *testing.T) {
+	t.Run("reverse short", func(t *testing.T) {
 		store1 := dict.New()
 		tr1 := trie.New(Model, store1)
 
-		for i := range data2 {
-			tr1.Update([]byte(data2[i]), []byte(data2[i]))
+		tr1.Update([]byte("a"), []byte("k"))
+		tr1.Update([]byte("ab"), []byte("l"))
+		tr1.Commit()
+		c1 := tr1.RootCommitment()
+
+		store2 := dict.New()
+		tr2 := trie.New(Model, store2)
+
+		tr2.Update([]byte("ab"), []byte("l"))
+		tr2.Update([]byte("a"), []byte("k"))
+		tr2.Commit()
+		c2 := tr2.RootCommitment()
+		t.Logf("root1 = %s", c1)
+		t.Logf("root2 = %s", c2)
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("reverse full", func(t *testing.T) {
+		data := data2
+		store1 := dict.New()
+		tr1 := trie.New(Model, store1)
+
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
 		}
 		tr1.Commit()
 		c1 := tr1.RootCommitment()
@@ -146,13 +167,35 @@ func TestTrieBase(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		for i := len(data2) - 1; i >= 0; i-- {
-			tr2.Update([]byte(data2[i]), []byte(data2[i]))
+		for i := len(data) - 1; i >= 0; i-- {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
 		}
 		tr2.Commit()
 		c2 := tr2.RootCommitment()
 		t.Logf("root1 = %s", c1)
 		t.Logf("root2 = %s", c2)
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("catch deletion bug", func(t *testing.T) {
+		store := dict.New()
+		tr := trie.New(Model, store)
+
+		tr.Update([]byte("ab1"), []byte("1"))
+		tr.Update([]byte("ab2c"), []byte("2"))
+		tr.Update([]byte("ab2a"), nil)
+		tr.Update([]byte("ab4"), []byte("4"))
+		tr.Commit()
+		c1 := tr.RootCommitment()
+
+		store = dict.New()
+		tr = trie.New(Model, store)
+
+		tr.Update([]byte("ab1"), []byte("1"))
+		tr.Update([]byte("ab2c"), []byte("2"))
+		tr.Update([]byte("ab4"), []byte("4"))
+		tr.Commit()
+		c2 := tr.RootCommitment()
+
 		require.True(t, c1.Equal(c2))
 	})
 }
