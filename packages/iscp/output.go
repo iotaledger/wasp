@@ -38,7 +38,7 @@ func (aowiT *AliasOutputWithID) GetStateMetadata() []byte {
 	return aowiT.output.StateMetadata
 }
 
-func (aowiT *AliasOutputWithID) GetStateCommitment() (trie.VectorCommitment, error) {
+func (aowiT *AliasOutputWithID) GetStateCommitment() (trie.VCommitment, error) {
 	sd, err := StateDataFromBytes(aowiT.output.StateMetadata)
 	if err != nil {
 		return nil, err

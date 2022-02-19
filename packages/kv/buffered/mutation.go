@@ -54,7 +54,7 @@ func (ms *Mutations) Write(w io.Writer) error {
 	return nil
 }
 
-func (ms *Mutations) Flush(kvw kv.KVWriter) {
+func (ms *Mutations) Apply(kvw kv.KVWriter) {
 	for k, v := range ms.Sets {
 		kvw.Set(k, v)
 	}

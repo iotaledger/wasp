@@ -13,7 +13,7 @@ func RandChainID() *iscp.ChainID {
 	return &ret
 }
 
-func RandVectorCommitment() trie.VectorCommitment {
+func RandVectorCommitment() trie.VCommitment {
 	h := hashing.RandomHash(nil)
 	ret, err := trie_merkle.NewVectorCommitmentFromBytes(h[:])
 	if err != nil {

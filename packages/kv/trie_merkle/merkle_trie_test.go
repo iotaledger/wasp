@@ -21,18 +21,18 @@ func TestNode(t *testing.T) {
 		t.Logf("size() = %d, size(serialize) = %d", trie.MustSize(n), len(buf.Bytes()))
 		require.EqualValues(t, trie.MustSize(n), len(buf.Bytes()))
 
-		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
+		nBack, err := trie.NodeFromBytes(Model, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
 
-		h := CommitmentLogic.CommitToNode(n)
-		hBack := CommitmentLogic.CommitToNode(nBack)
+		h := Model.CommitToNode(n)
+		hBack := Model.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base short terminal", func(t *testing.T) {
 		n := trie.NewNode([]byte("kuku"))
-		n.Terminal = CommitmentLogic.CommitToData([]byte("data"))
+		n.Terminal = Model.CommitToData([]byte("data"))
 
 		var buf bytes.Buffer
 		err := n.Write(&buf)
@@ -40,30 +40,30 @@ func TestNode(t *testing.T) {
 		t.Logf("size() = %d, size(serialize) = %d", trie.MustSize(n), len(buf.Bytes()))
 		require.EqualValues(t, trie.MustSize(n), len(buf.Bytes()))
 
-		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
+		nBack, err := trie.NodeFromBytes(Model, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
 
-		h := CommitmentLogic.CommitToNode(n)
-		hBack := CommitmentLogic.CommitToNode(nBack)
+		h := Model.CommitToNode(n)
+		hBack := Model.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
 	t.Run("base long terminal", func(t *testing.T) {
 		n := trie.NewNode([]byte("kuku"))
-		n.Terminal = CommitmentLogic.CommitToData([]byte(strings.Repeat("data", 1000)))
+		n.Terminal = Model.CommitToData([]byte(strings.Repeat("data", 1000)))
 		var buf bytes.Buffer
 		err := n.Write(&buf)
 		require.NoError(t, err)
 		t.Logf("size() = %d, size(serialize) = %d", trie.MustSize(n), len(buf.Bytes()))
 		require.EqualValues(t, trie.MustSize(n), len(buf.Bytes()))
 
-		nBack, err := trie.NodeFromBytes(CommitmentLogic, buf.Bytes())
+		nBack, err := trie.NodeFromBytes(Model, buf.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
 
-		h := CommitmentLogic.CommitToNode(n)
-		hBack := CommitmentLogic.CommitToNode(nBack)
+		h := Model.CommitToNode(n)
+		hBack := Model.CommitToNode(nBack)
 		require.EqualValues(t, h, hBack)
 		t.Logf("commitment = %s", h)
 	})
@@ -75,7 +75,7 @@ func TestTrieBase(t *testing.T) {
 
 	t.Run("base1", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(CommitmentLogic, store)
+		tr := trie.New(Model, store)
 		require.EqualValues(t, nil, tr.RootCommitment())
 
 		tr.Update([]byte(data1[0]), []byte(data1[0]))
@@ -94,7 +94,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base2", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data1 {
 			tr1.Update([]byte(data1[i]), []byte(data1[i]))
@@ -103,7 +103,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		for i := range data1 {
 			tr2.Update([]byte(data1[i]), []byte(data1[i]))
@@ -115,7 +115,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base3", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data2 {
 			tr1.Update([]byte(data2[i]), []byte(data2[i]))
@@ -124,7 +124,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		for i := range data2 {
 			tr2.Update([]byte(data2[i]), []byte(data2[i]))
@@ -135,7 +135,7 @@ func TestTrieBase(t *testing.T) {
 	})
 	t.Run("base4", func(t *testing.T) {
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data2 {
 			tr1.Update([]byte(data2[i]), []byte(data2[i]))
@@ -144,7 +144,7 @@ func TestTrieBase(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		for i := len(data2) - 1; i >= 0; i-- {
 			tr2.Update([]byte(data2[i]), []byte(data2[i]))
@@ -263,7 +263,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("rnd1", func(t *testing.T) {
 		data := genRnd1()
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -272,7 +272,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		for i := len(data) - 1; i >= 0; i-- {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
@@ -286,7 +286,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism1", func(t *testing.T) {
 		data := genRnd1()
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -295,7 +295,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -311,7 +311,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism2", func(t *testing.T) {
 		data := genRnd2()
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -320,7 +320,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -336,7 +336,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism3", func(t *testing.T) {
 		data := genRnd3()
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -345,7 +345,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -361,7 +361,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism4", func(t *testing.T) {
 		data := genRnd4()
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -370,7 +370,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -383,7 +383,7 @@ func TestTrieRnd(t *testing.T) {
 		t.Logf("root2 = %s", c2)
 		require.True(t, c1.Equal(c2))
 
-		tr2.FlushDelta(store2)
+		tr2.ApplyMutations(store2)
 		trieSize := len(store2.Bytes())
 		t.Logf("key entries = %d", len(data))
 		t.Logf("Trie entries = %d", len(store2))
@@ -393,7 +393,7 @@ func TestTrieRnd(t *testing.T) {
 	t.Run("determinism5", func(t *testing.T) {
 		data := genRnd4()
 		store1 := dict.New()
-		tr1 := trie.New(CommitmentLogic, store1)
+		tr1 := trie.New(Model, store1)
 
 		for i := range data {
 			tr1.Update([]byte(data[i]), []byte(data[i]))
@@ -402,7 +402,7 @@ func TestTrieRnd(t *testing.T) {
 		c1 := tr1.RootCommitment()
 
 		store2 := dict.New()
-		tr2 := trie.New(CommitmentLogic, store2)
+		tr2 := trie.New(Model, store2)
 
 		permutation := util.NewPermutation16(uint16(len(data)), nil)
 		permutation.ForEach(func(i uint16) bool {
@@ -422,9 +422,9 @@ func TestTrieWithDeletion(t *testing.T) {
 	var tr1, tr2 *trie.Trie
 	initTest := func() {
 		store1 := dict.New()
-		tr1 = trie.New(CommitmentLogic, store1)
+		tr1 = trie.New(Model, store1)
 		store2 := dict.New()
-		tr2 = trie.New(CommitmentLogic, store2)
+		tr2 = trie.New(Model, store2)
 	}
 	t.Run("del1", func(t *testing.T) {
 		initTest()
@@ -570,23 +570,22 @@ func TestTrieProof(t *testing.T) {
 
 	t.Run("proof empty tie", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(CommitmentLogic, store)
+		tr := trie.New(Model, store)
 		require.EqualValues(t, nil, tr.RootCommitment())
 
-		proof := tr.ProofPath(nil)
+		proof := Model.Proof(nil, tr)
 		require.EqualValues(t, 0, len(proof.Path))
 	})
 	t.Run("proof one entry 1", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(CommitmentLogic, store)
+		tr := trie.New(Model, store)
 
 		tr.Update(nil, []byte("1"))
 		tr.Commit()
 
-		proofPath := tr.ProofPath(nil)
-		require.EqualValues(t, 1, len(proofPath.Path))
+		proof := Model.Proof(nil, tr)
+		require.EqualValues(t, 1, len(proof.Path))
 
-		proof := CommitmentLogic.Proof(proofPath)
 		rootC := tr.RootCommitment()
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
@@ -598,10 +597,9 @@ func TestTrieProof(t *testing.T) {
 		require.EqualValues(t, 0, len(key))
 		require.EqualValues(t, term, c[:])
 
-		proofPath = tr.ProofPath([]byte("a"))
-		require.EqualValues(t, 1, len(proofPath.Path))
+		proof = Model.Proof([]byte("a"), tr)
+		require.EqualValues(t, 1, len(proof.Path))
 
-		proof = CommitmentLogic.Proof(proofPath)
 		rootC = tr.RootCommitment()
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
@@ -610,23 +608,21 @@ func TestTrieProof(t *testing.T) {
 	})
 	t.Run("proof one entry 2", func(t *testing.T) {
 		store := dict.New()
-		tr := trie.New(CommitmentLogic, store)
+		tr := trie.New(Model, store)
 
 		tr.Update([]byte("1"), []byte("2"))
 		tr.Commit()
-		proofPath := tr.ProofPath(nil)
-		require.EqualValues(t, 1, len(proofPath.Path))
+		proof := Model.Proof(nil, tr)
+		require.EqualValues(t, 1, len(proof.Path))
 
-		proof := CommitmentLogic.Proof(proofPath)
 		rootC := tr.RootCommitment()
 		err := proof.Validate(rootC)
 		require.NoError(t, err)
 		require.True(t, proof.MustIsProofOfAbsence())
 
-		proofPath = tr.ProofPath([]byte("1"))
-		require.EqualValues(t, 1, len(proofPath.Path))
+		proof = Model.Proof([]byte("1"), tr)
+		require.EqualValues(t, 1, len(proof.Path))
 
-		proof = CommitmentLogic.Proof(proofPath)
 		err = proof.Validate(rootC)
 		require.NoError(t, err)
 		require.False(t, proof.MustIsProofOfAbsence())
@@ -639,11 +635,11 @@ func TestTrieProof(t *testing.T) {
 
 func TestTrieProofWithDeletes(t *testing.T) {
 	var tr *trie.Trie
-	var rootC trie.VectorCommitment
+	var rootC trie.VCommitment
 
 	initTrie := func(dataAdd []string) {
 		store := dict.New()
-		tr = trie.New(CommitmentLogic, store)
+		tr = trie.New(Model, store)
 		for _, s := range dataAdd {
 			tr.Update([]byte(s), []byte(s+"++"))
 		}
@@ -653,7 +649,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			tr.Update([]byte(s), nil)
 		}
 	}
-	commitTrie := func() trie.VectorCommitment {
+	commitTrie := func() trie.VCommitment {
 		tr.Commit()
 		return tr.RootCommitment()
 	}
@@ -662,12 +658,11 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		initTrie(data)
 		rootC = commitTrie()
 		for _, s := range data {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
-			t.Logf("key: '%s', proof lenPlus1: %d", s, len(proofPath.Path))
+			t.Logf("key: '%s', proof len: %d", s, len(proof.Path))
 			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 		}
 	})
@@ -678,21 +673,19 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 
 		for _, s := range data {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
-			t.Logf("key: '%s', proof presence lenPlus1: %d", s, len(proofPath.Path))
+			t.Logf("key: '%s', proof presence lenPlus1: %d", s, len(proof.Path))
 			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 		}
 		for _, s := range delKeys {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
-			t.Logf("key: '%s', proof absence lenPlus1: %d", s, len(proofPath.Path))
+			t.Logf("key: '%s', proof absence lenPlus1: %d", s, len(proof.Path))
 			t.Logf("proof absence size = %d bytes", trie.MustSize(proof))
 		}
 	})
@@ -706,12 +699,11 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 
 		for _, s := range data {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
-			t.Logf("key: '%s', proof presence lenPlus1: %d", s, len(proofPath.Path))
+			t.Logf("key: '%s', proof presence lenPlus1: %d", s, len(proof.Path))
 			sz := trie.MustSize(proof)
 			t.Logf("proof presence size = %d bytes", sz)
 
@@ -725,12 +717,11 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.False(t, proofBack.MustIsProofOfAbsence())
 		}
 		for _, s := range delKeys {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
-			t.Logf("key: '%s', proof absence lenPlus1: %d", s, len(proofPath.Path))
+			t.Logf("key: '%s', proof absence lenPlus1: %d", s, len(proof.Path))
 			sz := trie.MustSize(proof)
 			t.Logf("proof absence size = %d bytes", sz)
 
@@ -757,12 +748,11 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		lenStats := make(map[int]int)
 		size100Stats := make(map[int]int)
 		for _, s := range addKeys {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
-			lenP := len(proofPath.Path)
+			lenP := len(proof.Path)
 			sizeP100 := trie.MustSize(proof) / 100
 			//t.Logf("key: '%s', proof presence lenPlus1: %d", s, )
 			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
@@ -773,12 +763,11 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			size100Stats[sizeP100] = sz + 1
 		}
 		for _, s := range delKeys {
-			proofPath := tr.ProofPath([]byte(s))
-			proof := CommitmentLogic.Proof(proofPath)
+			proof := Model.Proof([]byte(s), tr)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
-			//t.Logf("key: '%s', proof absence lenPlus1: %d", s, lenPlus1(proofPath.Path))
+			//t.Logf("key: '%s', proof absence len: %d", s, len(proof.Path))
 			t.Logf("proof absence size = %d bytes", trie.MustSize(proof))
 		}
 		for i := 0; i < 5000; i++ {

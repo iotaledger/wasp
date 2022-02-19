@@ -29,7 +29,8 @@ func ProofFromBytes(data []byte) (*Proof, error) {
 }
 
 // Proof converts generic proof path to the Merkle proof path
-func (m *trieSetup) Proof(path *trie.ProofPath) *Proof {
+func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
+	path := tr.ProofGeneric(key)
 	if path == nil {
 		return nil
 	}
@@ -92,7 +93,7 @@ func (p *Proof) MustIsProofOfAbsence() bool {
 	return r == nil
 }
 
-func (p *Proof) Validate(root trie.VectorCommitment) error {
+func (p *Proof) Validate(root trie.VCommitment) error {
 	if len(p.Path) == 0 {
 		if root != nil {
 			return xerrors.New("proof is empty")

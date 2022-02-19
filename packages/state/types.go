@@ -17,11 +17,11 @@ type VirtualStateAccess interface {
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
 	Commit()
-	StateCommitment() trie.VectorCommitment
+	StateCommitment() trie.VCommitment
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
-	ProofPath(key []byte) *trie.ProofPath
+	ProofGeneric(key []byte) *trie.ProofGeneric
 	ExtractBlock() (Block, error)
 	Save(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStoreAccess

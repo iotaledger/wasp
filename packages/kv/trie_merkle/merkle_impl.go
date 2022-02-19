@@ -19,25 +19,24 @@ type terminalCommitment struct {
 
 type vectorCommitment [32]byte
 
-// CommitmentLogic implements 256+ Trie based on Merkle tree, i.e. on hashing with blake2b
-type trieSetup struct{}
+// Model implements 256+ Trie based on Merkle tree, i.e. on hashing with blake2b
+type commitmentModel struct{}
 
 var (
-	CommitmentLogic                         = &trieSetup{}
-	_               trie.CommitmentLogic    = CommitmentLogic
-	_               trie.VectorCommitment   = &vectorCommitment{}
-	_               trie.TerminalCommitment = &terminalCommitment{}
+	_     trie.VCommitment = &vectorCommitment{}
+	_     trie.TCommitment = &terminalCommitment{}
+	Model                  = &commitmentModel{} // singleton
 )
 
-func (m *trieSetup) NewTerminalCommitment() trie.TerminalCommitment {
+func (m *commitmentModel) NewTerminalCommitment() trie.TCommitment {
 	return &terminalCommitment{}
 }
 
-func (m *trieSetup) NewVectorCommitment() trie.VectorCommitment {
+func (m *commitmentModel) NewVectorCommitment() trie.VCommitment {
 	return &vectorCommitment{}
 }
 
-func (m *trieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
+func (m *commitmentModel) CommitToNode(n *trie.Node) trie.VCommitment {
 	var hashes [258]*[32]byte
 
 	empty := true
@@ -58,46 +57,7 @@ func (m *trieSetup) CommitToNode(n *trie.Node) trie.VectorCommitment {
 	return &ret
 }
 
-func NewVectorCommitmentFromBytes(data []byte) (trie.VectorCommitment, error) {
-	ret := CommitmentLogic.NewVectorCommitment()
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func hashVector(hashes *[258]*[32]byte) [32]byte {
-	var buf [258 * 32]byte // 8 KB + 32 B + 32 B
-	for i, h := range hashes {
-		if h == nil {
-			continue
-		}
-		pos := 32 * int(i)
-		copy(buf[pos:pos+32], h[:])
-	}
-	return blake2b.Sum256(buf[:])
-}
-
-func commitToData(data []byte) (ret [32]byte) {
-	if len(data) <= 32 {
-		copy(ret[:], data)
-	} else {
-		ret = blake2b.Sum256(data)
-	}
-	return
-}
-
-func commitToTerminal(data []byte) *terminalCommitment {
-	ret := &terminalCommitment{
-		bytes: commitToData(data),
-	}
-	if len(data) <= 32 {
-		ret.lenPlus1 = uint8(len(data)) + 1 // 1-33
-	}
-	return ret
-}
-
-func (m *trieSetup) CommitToData(data []byte) trie.TerminalCommitment {
+func (m *commitmentModel) CommitToData(data []byte) trie.TCommitment {
 	if len(data) == 0 {
 		// empty slice -> no data (deleted)
 		return nil
@@ -105,7 +65,7 @@ func (m *trieSetup) CommitToData(data []byte) trie.TerminalCommitment {
 	return commitToTerminal(data)
 }
 
-func (m *trieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitment {
+func (m *commitmentModel) UpdateNodeCommitment(n *trie.Node) trie.VCommitment {
 	if n == nil {
 		// no node, no commitment
 		return nil
@@ -127,6 +87,14 @@ func (m *trieSetup) UpdateNodeCommitment(n *trie.Node) trie.VectorCommitment {
 	ret := m.CommitToNode(n)
 	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
 	return ret
+}
+
+func NewVectorCommitmentFromBytes(data []byte) (trie.VCommitment, error) {
+	ret := Model.NewVectorCommitment()
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (v *vectorCommitment) Read(r io.Reader) error {
@@ -157,7 +125,7 @@ func (v *vectorCommitment) Equal(another trie.CommitmentBase) bool {
 	return *v == *a
 }
 
-func (v *vectorCommitment) Clone() trie.VectorCommitment {
+func (v *vectorCommitment) Clone() trie.VCommitment {
 	if v == nil {
 		return nil
 	}
@@ -165,7 +133,7 @@ func (v *vectorCommitment) Clone() trie.VectorCommitment {
 	return &ret
 }
 
-func (v *vectorCommitment) Update(delta trie.VectorCommitment) {
+func (v *vectorCommitment) Update(delta trie.VCommitment) {
 	m, ok := delta.(*vectorCommitment)
 	if !ok {
 		panic("hash commitment expected")
@@ -226,7 +194,7 @@ func (t *terminalCommitment) Equal(another trie.CommitmentBase) bool {
 	return *t == *a
 }
 
-func (t *terminalCommitment) Clone() trie.TerminalCommitment {
+func (t *terminalCommitment) Clone() trie.TCommitment {
 	if t == nil {
 		return nil
 	}
@@ -237,4 +205,35 @@ func (t *terminalCommitment) Clone() trie.TerminalCommitment {
 // return value of the terminal commitment and a flag which indicates if it is a hashed value (true) or original data (false)
 func (t *terminalCommitment) value() ([]byte, bool) {
 	return t.bytes[:t.lenPlus1-1], t.lenPlus1 == 0
+}
+
+func hashVector(hashes *[258]*[32]byte) [32]byte {
+	var buf [258 * 32]byte // 8 KB + 32 B + 32 B
+	for i, h := range hashes {
+		if h == nil {
+			continue
+		}
+		pos := 32 * int(i)
+		copy(buf[pos:pos+32], h[:])
+	}
+	return blake2b.Sum256(buf[:])
+}
+
+func commitToData(data []byte) (ret [32]byte) {
+	if len(data) <= 32 {
+		copy(ret[:], data)
+	} else {
+		ret = blake2b.Sum256(data)
+	}
+	return
+}
+
+func commitToTerminal(data []byte) *terminalCommitment {
+	ret := &terminalCommitment{
+		bytes: commitToData(data),
+	}
+	if len(data) <= 32 {
+		ret.lenPlus1 = uint8(len(data)) + 1 // 1-33
+	}
+	return ret
 }

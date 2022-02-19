@@ -9,7 +9,7 @@ import (
 
 // StateData represents the parsed data stored as a metadata in the anchor output
 type StateData struct {
-	Commitment trie.VectorCommitment
+	Commitment trie.VCommitment
 }
 
 func StateDataFromBytes(data []byte) (StateData, error) {
@@ -30,7 +30,7 @@ func (s *StateData) Bytes() []byte {
 
 const OriginStateCommitmentHex = "4c8f7018f3d1e84ce978218479ce81de703ce5dcbed0662bf5307165e0a047e9"
 
-func OriginStateCommitment() trie.VectorCommitment {
+func OriginStateCommitment() trie.VCommitment {
 	retBin, err := hex.DecodeString(OriginStateCommitmentHex)
 	if err != nil {
 		panic(err)

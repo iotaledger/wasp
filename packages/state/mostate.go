@@ -56,7 +56,7 @@ func (s *mustOptimisticVirtualStateAccess) Commit() {
 	s.state.Commit()
 }
 
-func (s *mustOptimisticVirtualStateAccess) StateCommitment() trie.VectorCommitment {
+func (s *mustOptimisticVirtualStateAccess) StateCommitment() trie.VCommitment {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
@@ -84,11 +84,11 @@ func (s *mustOptimisticVirtualStateAccess) ApplyBlock(block Block) error {
 	return s.state.ApplyBlock(block)
 }
 
-func (s *mustOptimisticVirtualStateAccess) ProofPath(key []byte) *trie.ProofPath {
+func (s *mustOptimisticVirtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.state.ProofPath(key)
+	return s.state.ProofGeneric(key)
 }
 
 func (s *mustOptimisticVirtualStateAccess) ExtractBlock() (Block, error) {

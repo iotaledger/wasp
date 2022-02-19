@@ -13,24 +13,24 @@ type CommitmentBase interface {
 	Equal(CommitmentBase) bool
 }
 
-type VectorCommitment interface {
+type VCommitment interface {
 	CommitmentBase
-	Update(delta VectorCommitment)
-	Clone() VectorCommitment
+	Update(delta VCommitment)
+	Clone() VCommitment
 }
 
-type TerminalCommitment interface {
+type TCommitment interface {
 	CommitmentBase
-	Clone() TerminalCommitment
+	Clone() TCommitment
 }
 
 // Node is a node of the 25š+-ary verkle Trie
 type Node struct {
 	PathFragment []byte // can't be longer than 256 bytes
-	Children     map[byte]VectorCommitment
-	Terminal     TerminalCommitment
+	Children     map[byte]VCommitment
+	Terminal     TCommitment
 	// non-persistent
-	NewTerminal      TerminalCommitment
+	NewTerminal      TCommitment
 	ModifiedChildren map[byte]*Node
 }
 
@@ -42,13 +42,13 @@ const (
 func NewNode(pathFragment []byte) *Node {
 	return &Node{
 		PathFragment:     pathFragment,
-		Children:         make(map[uint8]VectorCommitment),
+		Children:         make(map[uint8]VCommitment),
 		Terminal:         nil,
 		ModifiedChildren: make(map[uint8]*Node),
 	}
 }
 
-func NodeFromBytes(setup CommitmentLogic, data []byte) (*Node, error) {
+func NodeFromBytes(setup CommitmentModel, data []byte) (*Node, error) {
 	ret := NewNode(nil)
 	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (n *Node) Clone() *Node {
 	}
 	ret := &Node{
 		PathFragment:     make([]byte, len(n.PathFragment)),
-		Children:         make(map[byte]VectorCommitment),
+		Children:         make(map[byte]VCommitment),
 		Terminal:         n.Terminal.Clone(),
 		NewTerminal:      n.NewTerminal.Clone(),
 		ModifiedChildren: make(map[byte]*Node),
@@ -124,7 +124,7 @@ func (n *Node) Write(w io.Writer) error {
 	return nil
 }
 
-func (n *Node) Read(r io.Reader, setup CommitmentLogic) error {
+func (n *Node) Read(r io.Reader, setup CommitmentModel) error {
 	var err error
 	if n.PathFragment, err = util.ReadBytes16(r); err != nil {
 		return err

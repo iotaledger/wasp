@@ -33,7 +33,7 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
 	return ret
 }
 
-func NewStateUpdateWithBlockLogValues(blockIndex uint32, timestamp time.Time, prevStateCommitment trie.VectorCommitment) StateUpdate {
+func NewStateUpdateWithBlockLogValues(blockIndex uint32, timestamp time.Time, prevStateCommitment trie.VCommitment) StateUpdate {
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
@@ -193,6 +193,6 @@ func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint64To8Bytes(uint64(blockIndex)))
 }
 
-func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VectorCommitment) {
+func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VCommitment) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateCommitment), trie.MustBytes(prevStateCommitment))
 }

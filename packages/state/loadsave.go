@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -46,8 +45,8 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 
 	batch := vs.db.Batched()
 
-	vs.trie.FlushDelta(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
-	vs.kvs.Mutations().Flush(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
+	vs.trie.ApplyMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
+	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
 	for _, blk := range blocks {
 		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
@@ -89,11 +88,9 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 		return nil, false, xerrors.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
 	}
 	ret := newVirtualState(store)
-	proofPath := ret.trie.ProofPath(nil)
-	if proofPath == nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root", chainID)
-	}
-	merkleProof := trie_merkle.CommitmentLogic.Proof(proofPath)
+
+	// explicit use of merkle trie model. Asserting that the chainID is commited by the root at the key ''
+	merkleProof := commitmentModel.Proof(nil, ret.trie)
 	if err = merkleProof.Validate(ret.trie.RootCommitment()); err != nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}

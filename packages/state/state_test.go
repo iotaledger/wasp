@@ -68,7 +68,7 @@ func TestStateWithDB(t *testing.T) {
 		const numRepeat = 10
 		upds := make([]StateUpdate, numBlocks)
 		blocks := make([]Block, numBlocks)
-		cs := make([]trie.VectorCommitment, 0)
+		cs := make([]trie.VCommitment, 0)
 		var err error
 		millis := rand.Int63()
 		for i := range upds {

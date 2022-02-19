@@ -5,43 +5,44 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
-// CommitmentLogic abstracts 256+ Trie logic from the commitment logic/cryptography
-type CommitmentLogic interface {
-	NewVectorCommitment() VectorCommitment
-	NewTerminalCommitment() TerminalCommitment
-	CommitToNode(*Node) VectorCommitment
-	CommitToData([]byte) TerminalCommitment
-	UpdateNodeCommitment(*Node) VectorCommitment // returns delta. Return nil if deletion
+// CommitmentModel abstracts 256+ Trie logic from the commitment logic/cryptography
+type CommitmentModel interface {
+	NewVectorCommitment() VCommitment
+	NewTerminalCommitment() TCommitment
+	CommitToNode(*Node) VCommitment
+	CommitToData([]byte) TCommitment
+	UpdateNodeCommitment(*Node) VCommitment // returns delta. Return nil if deletion
 }
 
 type Trie struct {
-	setup     CommitmentLogic
+	model     CommitmentModel
 	store     kv.KVMustReader
 	nodeCache map[kv.Key]*Node
 }
 
-type ProofPath struct {
+type ProofGeneric struct {
 	Key  []byte
-	Path []*ProofPathElement
+	Path []*ProofGenericElement
 }
 
-type ProofPathElement struct {
+type ProofGenericElement struct {
 	Key        []byte
 	Node       *Node
 	ChildIndex int
 }
 
-func New(setup CommitmentLogic, store kv.KVMustReader) *Trie {
-	return &Trie{
-		setup:     setup,
+func New(model CommitmentModel, store kv.KVMustReader) *Trie {
+	ret := &Trie{
+		model:     model,
 		store:     store,
 		nodeCache: make(map[kv.Key]*Node),
 	}
+	return ret
 }
 
 func (t *Trie) Clone() *Trie {
 	ret := &Trie{
-		setup:     t.setup,
+		model:     t.model,
 		store:     t.store,
 		nodeCache: make(map[kv.Key]*Node),
 	}
@@ -51,7 +52,7 @@ func (t *Trie) Clone() *Trie {
 	return ret
 }
 
-func (t *Trie) RootCommitment() VectorCommitment {
+func (t *Trie) RootCommitment() VCommitment {
 	n, ok := t.GetNode(nil)
 	if !ok {
 		return nil
@@ -59,7 +60,7 @@ func (t *Trie) RootCommitment() VectorCommitment {
 	return t.CommitToNode(n)
 }
 
-// getNode takes node from the cache of fetches it from kv store
+// GetNode takes node from the cache of fetches it from kv store
 func (t *Trie) GetNode(key []byte) (*Node, bool) {
 	k := kv.Key(key)
 	node, ok := t.nodeCache[k]
@@ -70,7 +71,7 @@ func (t *Trie) GetNode(key []byte) (*Node, bool) {
 	if nodeBin == nil {
 		return nil, false
 	}
-	node, err := NodeFromBytes(t.setup, nodeBin)
+	node, err := NodeFromBytes(t.model, nodeBin)
 	assert(err == nil, err)
 
 	t.nodeCache[k] = node
@@ -78,11 +79,11 @@ func (t *Trie) GetNode(key []byte) (*Node, bool) {
 
 }
 
-func (t *Trie) CommitToNode(n *Node) VectorCommitment {
-	return t.setup.CommitToNode(n)
+func (t *Trie) CommitToNode(n *Node) VCommitment {
+	return t.model.CommitToNode(n)
 }
 
-func (t *Trie) FlushDelta(store kv.KVWriter) {
+func (t *Trie) ApplyMutations(store kv.KVWriter) {
 	for k, v := range t.nodeCache {
 		if !v.IsEmpty() {
 			store.Set(k, MustBytes(v))
@@ -97,7 +98,7 @@ func (t *Trie) ClearCache() {
 }
 
 // newTerminalNode assumes Key does not exist in the Trie
-func (t *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TerminalCommitment) *Node {
+func (t *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
 	ret := NewNode(pathFragment)
 	ret.NewTerminal = newTerminal
 	t.nodeCache[kv.Key(key)] = ret
@@ -113,7 +114,7 @@ func (t *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 
 // Update updates Trie with the Key/value
 func (t *Trie) Update(key []byte, value []byte) {
-	c := t.setup.CommitToData(value)
+	c := t.model.CommitToData(value)
 	t.updateKey(key, 0, c)
 }
 
@@ -127,7 +128,7 @@ func (t *Trie) Delete(key []byte) {
 // - 'pathPosition' is the position in the path the current node's Key starts: Key = path[:pathPosition]
 // - 'terminal' is the new commitment to the value under Key 'path'. nil means terminal deletion
 // - returns the node under the Key = path[:pathPosition] or nil in case of terminal deletion
-func (t *Trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitment) *Node {
+func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) *Node {
 	assert(pathPosition <= len(path), "pathPosition <= len(path)")
 	if len(path) == 0 {
 		path = []byte{}
@@ -186,7 +187,7 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TerminalCommitm
 	// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
 	insertNode := t.newNodeCopy(keyContinue, node.PathFragment[len(prefix)+1:], node)
 	// clear the old one and adjust path fragment. Continue with 1 child, the new node
-	node.Children = make(map[uint8]VectorCommitment)
+	node.Children = make(map[uint8]VCommitment)
 	node.ModifiedChildren = make(map[uint8]*Node)
 	node.PathFragment = prefix
 	node.ModifiedChildren[childIndexContinue] = insertNode
@@ -213,23 +214,25 @@ func (t *Trie) Commit() {
 	if !ok {
 		return
 	}
-	t.setup.UpdateNodeCommitment(root)
+	t.model.UpdateNodeCommitment(root)
 }
 
-// ProofPath returns generic proof path
-func (t *Trie) ProofPath(key []byte) *ProofPath {
+// ProofGeneric returns generic proof path. Contains references trie node cache.
+// Should be immediately converted into the specific proof model independent of the trie
+// Normally only called by the model
+func (t *Trie) ProofGeneric(key []byte) *ProofGeneric {
 	if len(key) == 0 {
 		key = []byte{}
 	}
-	ret := &ProofPath{
+	ret := &ProofGeneric{
 		Key:  key,
-		Path: make([]*ProofPathElement, 0),
+		Path: make([]*ProofGenericElement, 0),
 	}
 	t.path(0, ret)
 	return ret
 }
 
-func (t *Trie) path(pathPosition int, ret *ProofPath) {
+func (t *Trie) path(pathPosition int, ret *ProofGeneric) {
 	assert(pathPosition <= len(ret.Key), "pathPosition <= len(path)")
 	key := ret.Key[:pathPosition]
 	// looking up for the node with the Key (with caching)
@@ -238,7 +241,7 @@ func (t *Trie) path(pathPosition int, ret *ProofPath) {
 		// Key is absent. Should not happen, except when empty trie
 		return
 	}
-	elem := &ProofPathElement{
+	elem := &ProofGenericElement{
 		Key:  key,
 		Node: node,
 	}
@@ -262,27 +265,10 @@ func (t *Trie) path(pathPosition int, ret *ProofPath) {
 	t.path(indexPos+1, ret)
 }
 
-func (t *Trie) VectorCommitmentFromBytes(data []byte) (VectorCommitment, error) {
-	ret := t.setup.NewVectorCommitment()
+func (t *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
+	ret := t.model.NewVectorCommitment()
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return ret, nil
-}
-
-func commonPrefix(b1, b2 []byte) []byte {
-	ret := make([]byte, 0)
-	for i := 0; i < len(b1) && i < len(b2); i++ {
-		if b1[i] != b2[i] {
-			break
-		}
-		ret = append(ret, b1[i])
-	}
-	return ret
-}
-
-func assert(cond bool, err interface{}) {
-	if !cond {
-		panic(err)
-	}
 }

@@ -31,7 +31,10 @@ type virtualStateAccess struct {
 	trie *trie.Trie
 }
 
-var _ VirtualStateAccess = &virtualStateAccess{}
+var (
+	commitmentModel                    = trie_merkle.Model
+	_               VirtualStateAccess = &virtualStateAccess{}
+)
 
 // newVirtualState creates VirtualStateAccess interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
@@ -40,7 +43,7 @@ func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
 	ret := &virtualStateAccess{
 		db:   db,
 		kvs:  buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(subState)),
-		trie: trie.New(trie_merkle.CommitmentLogic, kv.NewHiveKVStoreReader(subTrie)),
+		trie: trie.New(commitmentModel, kv.NewHiveKVStoreReader(subTrie)),
 	}
 	return ret
 }
@@ -56,7 +59,7 @@ func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 }
 
 // calcOriginStateHash is independent of db provider nor chainID. Used for testing
-func calcOriginStateHash() trie.VectorCommitment {
+func calcOriginStateHash() trie.VCommitment {
 	return newOriginState(mapdb.NewMapDB()).StateCommitment()
 }
 
@@ -149,16 +152,11 @@ func (vs *virtualStateAccess) applyBlockNoCheck(b Block) {
 
 // ApplyStateUpdate applies one state update
 func (vs *virtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
-	for k, v := range upd.Mutations().Sets {
-		vs.kvs.Mutations().Set(k, v)
-	}
-	for k := range upd.Mutations().Dels {
-		vs.kvs.Mutations().Del(k)
-	}
+	upd.Mutations().Apply(vs.kvs)
 }
 
-func (vs *virtualStateAccess) ProofPath(key []byte) *trie.ProofPath {
-	return vs.trie.ProofPath(key)
+func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
+	return vs.trie.ProofGeneric(key)
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
@@ -188,7 +186,7 @@ func (vs *virtualStateAccess) Commit() {
 }
 
 // StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) StateCommitment() trie.VectorCommitment {
+func (vs *virtualStateAccess) StateCommitment() trie.VCommitment {
 	return vs.trie.RootCommitment()
 }
 
