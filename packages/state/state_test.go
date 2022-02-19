@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 )
@@ -314,7 +315,7 @@ func genBlocks(start, num int) []Block {
 func TestRnd(t *testing.T) {
 	chainID := iscp.RandomChainID()
 
-	const numBlocks = 10
+	const numBlocks = 100
 	const numRepeat = 10
 	cs := make([]trie.VCommitment, 0)
 	blocks := genRndBlocks(2, numBlocks)
@@ -335,11 +336,12 @@ func TestRnd(t *testing.T) {
 		for bn, b := range blocks {
 			require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
 			nsets := len(b.(*blockImpl).stateUpdate.mutations.Sets)
-			ndels := len(b.(*blockImpl).stateUpdate.mutations.Dels)
-			t.Logf("           block: #%d num sets: %d num dels: %d", bn, nsets, ndels)
+			dels := b.(*blockImpl).stateUpdate.mutations.Dels
+			ndels := len(dels)
+			t.Logf("           block: #%d num sets: %d dels (%d): %v", bn, nsets, ndels, dels)
 			err = vs.ApplyBlock(b)
 			require.NoError(t, err)
-			if bn == round {
+			if rand.Intn(1000) < 200 {
 				t.Logf("           commit at block: #%d", bn)
 				err = vs.Save()
 				require.NoError(t, err)
@@ -354,10 +356,18 @@ func TestRnd(t *testing.T) {
 		err = vs.Save()
 		require.NoError(t, err)
 		cs = append(cs, vs.StateCommitment())
+		if round > 0 && !cs[round-1].Equal(cs[round]) {
+			kvs0 := kv.NewHiveKVStoreReader(store[round-1])
+			kvs1 := kv.NewHiveKVStoreReader(store[round])
+			dkeys := kv.DumpKeySet(kv.GetDiffKeys(kvs0, kvs1))
+			t.Logf("DIFF (len = %d:\n%s", len(dkeys), strings.Join(dkeys, "    \n"))
+			//t.Logf("DIFF:\n%s", diff)
+			t.FailNow()
+		}
 	}
-	for i := range cs {
-		t.Logf("c = %s", cs[i])
-	}
+	//for i := range cs {
+	//	t.Logf("c = %s", cs[i])
+	//}
 	//for i := range blocks {
 	//	s := blocks[i].(*blockImpl).stateUpdate.Mutations().Dump()
 	//	t.Logf("DUMP ------------ block #%d", i)
@@ -365,9 +375,9 @@ func TestRnd(t *testing.T) {
 	//}
 	//diff := kv.GetDiff(kv.NewHiveKVStoreReader(store[0]), kv.NewHiveKVStoreReader(store[1]))
 	//t.Logf("DIFF:\n%s", diff.Dump())
-	for i := range cs {
-		require.True(t, cs[0].Equal(cs[i]))
-	}
+	//for i := range cs {
+	//	require.True(t, cs[0].Equal(cs[i]))
+	//}
 
 }
 
