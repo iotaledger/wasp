@@ -21,41 +21,42 @@ func (t *Trie) Update1(key []byte, value []byte) {
 		t.newTerminalNode(nil, key, c)
 		return
 	}
-	nodes := []*Node{rootNode}
-	opt, pos, childIndex := t.path1(key, 0, nodes)
-	node := nodes[len(nodes)-1]
+	node, opt, pos, childIndex := t.findTerminalNode(key, 0, rootNode)
 	switch opt {
 	case terminal:
 		node.NewTerminal = c
 	case noChild:
+		assert(node.Children[childIndex] == nil, "node.Children[childIndex]==nil")
 		node.ModifiedChildren[childIndex] = t.newTerminalNode(key[:pos], key[pos:], c)
 	case split:
 		// TODO
 	}
 }
 
-func (t *Trie) path1(path []byte, pathPosition int, ret []*Node) (terminalOption, int, byte) {
-	assert(len(ret) > 0, "len(ret)>0")
-	assert(pathPosition <= len(path), "pathPosition<=len(path)")
-	node := ret[len(ret)-1]
-	if bytes.Equal(path[pathPosition:], node.PathFragment) {
-		return terminal, 0, 0
+func (t *Trie) findTerminalNode(path []byte, pathPosition int, node *Node) (*Node, terminalOption, int, byte) {
+	for {
+		assert(pathPosition <= len(path), "pathPosition<=len(path)")
+		if bytes.Equal(path[pathPosition:], node.PathFragment) {
+			return node, terminal, 0, 0
+		}
+		prefix := commonPrefix(path[pathPosition:], node.PathFragment)
+
+		childIndexPosition := pathPosition + len(prefix)
+		pathPosition = childIndexPosition + 1
+
+		assert(childIndexPosition < len(path), "childIndexPosition<len(path)")
+		childIndex := path[childIndexPosition]
+		if len(prefix) != len(node.PathFragment) {
+			return node, split, pathPosition, childIndex
+		}
+		child := node.Children[childIndex]
+		if child == nil {
+			return node, noChild, pathPosition, childIndex
+		}
+		var ok bool
+		node, ok = t.GetNode(path[:pathPosition])
+		if !ok {
+			panic(fmt.Sprintf("inconsistency: trie key not found: %d", hex.EncodeToString(path[:childIndexPosition+1])))
+		}
 	}
-	prefix := commonPrefix(path[pathPosition:], node.PathFragment)
-	nextPosition := pathPosition + len(prefix)
-	assert(nextPosition < len(path), "nextPosition<len(path)")
-	childIndex := path[nextPosition]
-	if len(prefix) != len(node.PathFragment) {
-		return split, nextPosition + 1, childIndex
-	}
-	child := node.Children[childIndex]
-	if child == nil {
-		return noChild, nextPosition + 1, childIndex
-	}
-	nextNode, ok := t.GetNode(path[:nextPosition+1])
-	if !ok {
-		panic(fmt.Sprintf("inconsistency: trie key not found: %d", hex.EncodeToString(path[:nextPosition+1])))
-	}
-	ret = append(ret, nextNode)
-	return t.path1(path, nextPosition+1, ret)
 }
