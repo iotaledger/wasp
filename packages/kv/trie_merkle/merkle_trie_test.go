@@ -78,7 +78,7 @@ func TestTrieBase(t *testing.T) {
 		tr := trie.New(Model, store)
 		require.EqualValues(t, nil, tr.RootCommitment())
 
-		tr.Update([]byte(data1[0]), []byte(data1[0]))
+		tr.Update([]byte(""), []byte(""))
 		tr.Commit()
 		t.Logf("root0 = %s", tr.RootCommitment())
 		_, ok := tr.GetNode(nil)

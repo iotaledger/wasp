@@ -30,7 +30,7 @@ type Node struct {
 	Children     map[byte]VCommitment
 	Terminal     TCommitment
 	// non-persistent
-	NewTerminal      TCommitment
+	ModifiedTerminal TCommitment
 	ModifiedChildren map[byte]*Node
 }
 
@@ -53,7 +53,7 @@ func NodeFromBytes(setup CommitmentModel, data []byte) (*Node, error) {
 	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
 		return nil, err
 	}
-	ret.NewTerminal = ret.Terminal
+	ret.ModifiedTerminal = ret.Terminal
 	return ret, nil
 }
 
@@ -65,7 +65,7 @@ func (n *Node) Clone() *Node {
 		PathFragment:     make([]byte, len(n.PathFragment)),
 		Children:         make(map[byte]VCommitment),
 		Terminal:         n.Terminal.Clone(),
-		NewTerminal:      n.NewTerminal.Clone(),
+		ModifiedTerminal: n.ModifiedTerminal.Clone(),
 		ModifiedChildren: make(map[byte]*Node),
 	}
 	copy(ret.PathFragment, n.PathFragment)
@@ -79,7 +79,7 @@ func (n *Node) Clone() *Node {
 }
 
 func (n *Node) IsEmpty() bool {
-	return len(n.Children) == 0 && len(n.ModifiedChildren) == 0 && n.Terminal == nil && n.NewTerminal == nil
+	return len(n.Children) == 0 && len(n.ModifiedChildren) == 0 && n.Terminal == nil && n.ModifiedTerminal == nil
 }
 
 func (n *Node) Write(w io.Writer) error {

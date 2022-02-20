@@ -70,7 +70,7 @@ func (m *commitmentModel) UpdateNodeCommitment(n *trie.Node) trie.VCommitment {
 		// no node, no commitment
 		return nil
 	}
-	n.Terminal = n.NewTerminal
+	n.Terminal = n.ModifiedTerminal
 	for i, child := range n.ModifiedChildren {
 		c := m.UpdateNodeCommitment(child)
 		if c != nil {

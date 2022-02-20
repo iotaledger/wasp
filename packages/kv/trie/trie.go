@@ -100,7 +100,7 @@ func (t *Trie) ClearCache() {
 // newTerminalNode assumes Key does not exist in the Trie
 func (t *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
 	ret := NewNode(pathFragment)
-	ret.NewTerminal = newTerminal
+	ret.ModifiedTerminal = newTerminal
 	t.nodeCache[kv.Key(key)] = ret
 	return ret
 }
@@ -113,7 +113,7 @@ func (t *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 }
 
 // Update updates Trie with the Key/value
-func (t *Trie) Update(key []byte, value []byte) {
+func (t *Trie) UpdateOld(key []byte, value []byte) {
 	c := t.model.CommitToData(value)
 	t.updateKey(key, 0, c)
 }
@@ -162,8 +162,8 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) (*
 		// pathFragment is part of the path. No need for a fork, continue the path
 		if nextPathPosition == len(path) {
 			// reached the terminal value on this node. In case of deletion the newTerminal will become nil
-			update := !EqualCommitments(node.NewTerminal, terminal)
-			node.NewTerminal = terminal
+			update := !EqualCommitments(node.ModifiedTerminal, terminal)
+			node.ModifiedTerminal = terminal
 			return node, update
 		}
 		assert(nextPathPosition < len(path), "nextPathPosition < len(path)")
@@ -184,7 +184,7 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) (*
 		// node not found, do nothing in case of deletion
 		return nil, false
 	}
-	// split the pathFragment. The continued branch is part of the fragment
+	// splitEnding the pathFragment. The continued branch is part of the fragment
 	// Key of the next node starts at the next position after current Key plus prefix
 	keyContinue := make([]byte, pathPosition+len(prefix)+1)
 	copy(keyContinue, path)
@@ -199,11 +199,11 @@ func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) (*
 	node.PathFragment = prefix
 	node.ModifiedChildren[childIndexContinue] = insertNode
 	node.Terminal = nil
-	node.NewTerminal = nil
+	node.ModifiedTerminal = nil
 
 	if pathPosition+len(prefix) == len(path) {
 		// no need for the new node
-		node.NewTerminal = terminal
+		node.ModifiedTerminal = terminal
 	} else {
 		// create the new node
 		keyFork := path[:pathPosition+len(prefix)+1]
