@@ -84,9 +84,6 @@ func (s ScSandbox) Balances() ScBalances {
 
 // calls a smart contract function
 func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
-	if params == nil {
-		params = NewScDict()
-	}
 	req := &wasmrequests.CallRequest{
 		Contract: hContract,
 		Function: hFunction,
@@ -144,9 +141,6 @@ func (s ScSandbox) Require(cond bool, msg string) {
 }
 
 func (s ScSandbox) Results(results *ScDict) {
-	if results == nil {
-		results = NewScDict()
-	}
 	Sandbox(FnResults, results.Bytes())
 }
 
@@ -200,9 +194,6 @@ func (s ScSandboxFunc) Caller() wasmtypes.ScAgentID {
 
 // deploys a smart contract
 func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, description string, initParams *ScDict) {
-	if initParams == nil {
-		initParams = NewScDict()
-	}
 	req := &wasmrequests.DeployRequest{
 		ProgHash:    programHash,
 		Name:        name,
@@ -229,12 +220,6 @@ func (s ScSandboxFunc) Minted() ScBalances {
 
 // (delayed) posts a smart contract function request
 func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers, delay uint32) {
-	if params == nil {
-		params = NewScDict()
-	}
-	if len(transfer) == 0 {
-		s.Panic("missing transfer")
-	}
 	req := &wasmrequests.PostRequest{
 		ChainID:  chainID,
 		Contract: hContract,

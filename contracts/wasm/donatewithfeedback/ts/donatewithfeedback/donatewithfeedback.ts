@@ -6,18 +6,17 @@ import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
+    const amount = ctx.allowance().balance(wasmtypes.IOTA);
+    const transfer = wasmlib.ScTransfers.iotas(amount);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
     let donation = new sc.Donation();
-    donation.amount = ctx.allowance().balance(wasmtypes.IOTA);
+    donation.amount = amount;
     donation.donator = ctx.caller();
     donation.error = "";
     donation.feedback = f.params.feedback().value();
     donation.timestamp = ctx.timestamp();
     if (donation.amount == 0 || donation.feedback.length == 0) {
         donation.error = "error: empty feedback or donated amount = 0".toString();
-        if (donation.amount > 0) {
-            ctx.send(donation.donator.address(), wasmlib.ScTransfers.iotas(donation.amount));
-            donation.amount = 0;
-        }
     }
     let log = f.state.log();
     log.appendDonation().setValue(donation);

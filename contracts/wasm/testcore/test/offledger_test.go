@@ -14,14 +14,10 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		accountBalance := ctx.Balance(ctx.Account())
-		chainBalance := ctx.Balance(ctx.ChainAccount())
-		originatorBalance := ctx.Balance(ctx.Originator())
-
 		user := ctx.NewSoloAgent()
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
+		bal := ctx.Balances(user)
 
 		// no deposit yet, so account is unverified
 
@@ -31,11 +27,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
-		ctx.Accounts(user)
-
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.VerifyBalances(t)
 	})
 }
 
@@ -43,24 +35,18 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		accountBalance := ctx.Balance(ctx.Account())
-		chainBalance := ctx.Balance(ctx.ChainAccount())
-		originatorBalance := ctx.Balance(ctx.Originator())
-
 		user := ctx.NewSoloAgent()
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
+		bal := ctx.Balances(user)
 
-		budget := uint64(1000)
+		budget := uint64(5000)
 		ctx.Chain.MustDepositIotasToL2(budget+gasFee, user.Pair)
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget, ctx.Balance(user))
 
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.Chain += gasFee
+		bal.Add(user, budget)
+		bal.VerifyBalances(t)
 
 		// Look, Ma! No .TransferIotas() necessary when doing off-ledger request!
 		// we're using setInt() here to be able to verify the state update was done
@@ -69,14 +55,12 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 		f.Params.IntValue().SetValue(314)
 		f.Func.Post()
 		require.NoError(t, ctx.Err)
-		ctx.Accounts(user)
 
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget-ctx.GasFee, ctx.Balance(user))
 
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee+ctx.GasFee, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.Chain += ctx.GasFee
+		bal.Add(user, -ctx.GasFee)
+		bal.VerifyBalances(t)
 
 		// verify state update
 		v := testcore.ScFuncs.GetInt(ctx)
@@ -91,39 +75,33 @@ func TestOffLedgerTransferWhenEnoughBudget(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		accountBalance := ctx.Balance(ctx.Account())
-		chainBalance := ctx.Balance(ctx.ChainAccount())
-		originatorBalance := ctx.Balance(ctx.Originator())
-
 		user := ctx.NewSoloAgent()
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
+		bal := ctx.Balances(user)
 
 		budget := uint64(9999)
 		ctx.Chain.MustDepositIotasToL2(budget+gasFee, user.Pair)
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget, ctx.Balance(user))
 
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.Chain += gasFee
+		bal.Add(user, budget)
+		bal.VerifyBalances(t)
 
-		// Transfer max amount of iotas that leaves enough for fee
+		// Allow 1000 iotas to be transferred. there's enough budget
+		// note that SetInt() will not try to grab them
 		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
 		f.Params.Name().SetValue("ppp")
 		f.Params.IntValue().SetValue(314)
 		f.Func.TransferIotas(1000).Post()
 		require.NoError(t, ctx.Err)
-		ctx.Accounts(user)
+		ctx.Balances(user)
 
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget-ctx.GasFee, ctx.Balance(user))
 
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee+ctx.GasFee, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.Chain += ctx.GasFee
+		bal.Add(user, -ctx.GasFee)
+		bal.VerifyBalances(t)
 
 		// verify state update
 		v := testcore.ScFuncs.GetInt(ctx)
@@ -138,41 +116,33 @@ func TestOffLedgerTransferWhenNotEnoughBudget(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		accountBalance := ctx.Balance(ctx.Account())
-		chainBalance := ctx.Balance(ctx.ChainAccount())
-		originatorBalance := ctx.Balance(ctx.Originator())
-
 		user := ctx.NewSoloAgent()
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
+		bal := ctx.Balances(user)
 
 		budget := uint64(1000)
 		ctx.Chain.MustDepositIotasToL2(budget+gasFee, user.Pair)
-		ctx.Accounts(user)
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget, ctx.Balance(user))
 
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.Chain += gasFee
+		bal.Add(user, budget)
+		bal.VerifyBalances(t)
 
-		// Look, Ma! No .TransferIotas() necessary when doing off-ledger request!
-		// we're using setInt() here to be able to verify the state update was done
+		// Allow 1000 iotas to be transferred. there's not enough budget
+		// note that SetInt() will not try to grab them
 		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
 		f.Params.Name().SetValue("ppp")
 		f.Params.IntValue().SetValue(314)
 		f.Func.TransferIotas(budget - gasFee + 1).Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
-		ctx.Accounts(user)
 
 		require.EqualValues(t, solo.Saldo-budget-gasFee, user.Balance())
-		require.EqualValues(t, budget-ctx.GasFee, ctx.Balance(user))
 
-		require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, chainBalance+gasFee+ctx.GasFee, ctx.Balance(ctx.ChainAccount()))
-		require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+		bal.Chain += ctx.GasFee
+		bal.Add(user, -ctx.GasFee)
+		bal.VerifyBalances(t)
 
 		// verify no state update
 		v := testcore.ScFuncs.GetInt(ctx)

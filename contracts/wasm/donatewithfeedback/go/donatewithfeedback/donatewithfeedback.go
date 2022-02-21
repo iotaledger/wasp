@@ -10,7 +10,7 @@ import (
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 	amount := ctx.Allowance().Balance(wasmtypes.IOTA)
-	transfer := wasmlib.NewScTransfer(wasmtypes.IOTA, amount)
+	transfer := wasmlib.NewScTransferIotas(amount)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	donation := &Donation{
 		Amount:    amount,

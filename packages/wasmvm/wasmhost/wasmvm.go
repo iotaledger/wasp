@@ -183,6 +183,9 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 		name := string(impl.VMGetBytes(valRef, valLen))
 		if keyLen < 0 {
 			// ExportWasmTag, log the wasm tag name
+			if strings.Contains(name, "TYPESCRIPT") {
+				ctx.proc.gasFactorX = 10
+			}
 			ctx.proc.log.Infof(name)
 			return
 		}
@@ -220,7 +223,7 @@ func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 func (vm *WasmVMBase) reportGasBurned() {
 	if !vm.gasDisabled {
 		ctx := vm.proc.GetContext(0)
-		ctx.GasBurned(vm.proc.vm.GasBurned())
+		ctx.GasBurned(vm.proc.vm.GasBurned() / vm.proc.gasFactor())
 	}
 }
 
@@ -411,7 +414,7 @@ func (vm *WasmVMBase) wrapUp() {
 		if !vm.gasDisabled {
 			// update VM gas budget to reflect what sandbox burned
 			ctx := vm.getContext(0)
-			vm.proc.vm.GasBudget(ctx.GasBudget())
+			vm.proc.vm.GasBudget(ctx.GasBudget() * vm.proc.gasFactor())
 		}
 		return
 	}

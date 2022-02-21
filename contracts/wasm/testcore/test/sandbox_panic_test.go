@@ -27,7 +27,7 @@ func TestPanicFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgFullPanic)
 
@@ -53,7 +53,7 @@ func TestCallPanicFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicFullEP(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgFullPanic)
 
@@ -66,7 +66,7 @@ func TestCallPanicViewFromFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicViewEPFromFull(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
