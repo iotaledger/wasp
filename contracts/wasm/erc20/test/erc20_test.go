@@ -68,7 +68,7 @@ func approve(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uin
 	appr := erc20.ScFuncs.Approve(ctx.Sign(from))
 	appr.Params.Delegation().SetValue(to.ScAgentID())
 	appr.Params.Amount().SetValue(amount)
-	appr.Func.TransferIotas(1).Post()
+	appr.Func.Post()
 	return ctx.Err
 }
 
@@ -76,7 +76,7 @@ func transfer(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount ui
 	tx := erc20.ScFuncs.Transfer(ctx.Sign(from))
 	tx.Params.Account().SetValue(to.ScAgentID())
 	tx.Params.Amount().SetValue(amount)
-	tx.Func.TransferIotas(1).Post()
+	tx.Func.Post()
 	return ctx.Err
 }
 
@@ -85,7 +85,7 @@ func transferFrom(ctx *wasmsolo.SoloContext, delegate, from, to *wasmsolo.SoloAg
 	tx.Params.Account().SetValue(from.ScAgentID())
 	tx.Params.Recipient().SetValue(to.ScAgentID())
 	tx.Params.Amount().SetValue(amount)
-	tx.Func.TransferIotas(1).Post()
+	tx.Func.Post()
 	return ctx.Err
 }
 

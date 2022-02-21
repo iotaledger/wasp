@@ -28,8 +28,8 @@ func Test2Chains(t *testing.T) {
 		ctx2 := deployTestCoreOnChain(t, w, chain2, nil)
 		require.NoError(t, ctx2.Err)
 
-		ctx1.Accounts(user)
-		ctx2.Accounts(user)
+		ctx1.Balances(user)
+		ctx2.Balances(user)
 
 		require.EqualValues(t, 0, ctx1.Balance(user))
 		require.EqualValues(t, wasmsolo.L2FundsContract, ctx1.Balance(ctx1.Account()))
@@ -56,7 +56,7 @@ func Test2Chains(t *testing.T) {
 
 		f := testcore.ScFuncs.WithdrawToChain(ctx2.Sign(user))
 		f.Params.ChainID().SetValue(ctx1.ChainID())
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx2.Err)
 
 		require.True(t, ctx1.WaitForPendingRequests(1))

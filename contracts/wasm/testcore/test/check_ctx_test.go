@@ -19,7 +19,7 @@ func TestMainCallsFromFullEP(t *testing.T) {
 		f.Params.Caller().SetValue(user.ScAgentID())
 		f.Params.ChainOwnerID().SetValue(ctx.Originator().ScAgentID())
 		f.Params.ContractCreator().SetValue(user.ScAgentID())
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 	})
 }
@@ -45,7 +45,7 @@ func TestMintedSupplyOk(t *testing.T) {
 		user := ctx.Creator()
 
 		f := testcore.ScFuncs.GetMintedSupply(ctx.Sign(user, 42))
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 
 		mintedColor, mintedAmount := ctx.Minted()

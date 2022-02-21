@@ -227,9 +227,6 @@ export class ScSandboxFunc extends ScSandbox {
 
     // (delayed) posts a smart contract function request
     public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, transfer: ScTransfers, delay: u32): void {
-        if (transfer.balances().colors().length == 0) {
-            this.panic("missing transfer");
-        }
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
         req.contract = hContract;

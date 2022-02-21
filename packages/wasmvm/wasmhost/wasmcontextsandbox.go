@@ -274,18 +274,24 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
+
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) == 0 {
-		s.Panicf("transfer is required for post")
+	allow := s.cvt.IscpAssets(scAssets)
+	assets := allow
+	// Force a minimum transfer of 1000 iotas for dust and some gas
+	// excess can always be reclaimed from the chain account by the user
+	// This also removes the silly requirement to transfer 1 iota
+	if assets.Iotas < 1000 {
+		assets = assets.Clone()
+		assets.Iotas = 1000
 	}
-	assets := s.cvt.IscpAssets(scAssets)
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
 	metadata := &iscp.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
 		Params:         params,
-		Allowance:      assets,
+		Allowance:      allow,
 		GasBudget:      1_000_000,
 	}
 	if req.Delay == 0 {

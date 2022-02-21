@@ -25,7 +25,7 @@ func TestTypesFull(t *testing.T) {
 		f.Params.Int64Zero().SetValue(0)
 		f.Params.String().SetValue("string")
 		f.Params.StringZero().SetValue("")
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 	})
 }

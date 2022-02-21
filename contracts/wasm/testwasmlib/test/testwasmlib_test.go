@@ -74,7 +74,7 @@ func TestNoParams(t *testing.T) {
 	ctx := setupTest(t)
 
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
 
@@ -104,7 +104,7 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Uint16().SetValue(12345)
 	pt.Params.Uint32().SetValue(1234567890)
 	pt.Params.Uint64().SetValue(1234567890123456789)
-	pt.Func.TransferIotas(1).Post()
+	pt.Func.Post()
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -120,7 +120,7 @@ func TestValidSizeParams(t *testing.T) {
 				bytes[0] = byte(iotago.AddressAlias)
 			}
 			pt.Params.Param().GetBytes(param).SetValue(bytes)
-			pt.Func.TransferIotas(1).Post()
+			pt.Func.Post()
 			require.Error(t, ctx.Err)
 			require.Contains(t, ctx.Err.Error(), paramMismatch)
 		})
@@ -139,20 +139,20 @@ func TestInvalidSizeParams(t *testing.T) {
 			if allLengths[index] != 1 {
 				pt := testwasmlib.ScFuncs.ParamTypes(ctx)
 				pt.Params.Param().GetBytes(param).SetValue(make([]byte, 1))
-				pt.Func.TransferIotas(1).Post()
+				pt.Func.Post()
 				require.Error(t, ctx.Err)
 				require.Contains(t, ctx.Err.Error(), invalidLength)
 
 				pt = testwasmlib.ScFuncs.ParamTypes(ctx)
 				pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
-				pt.Func.TransferIotas(1).Post()
+				pt.Func.Post()
 				require.Error(t, ctx.Err)
 				require.Contains(t, ctx.Err.Error(), invalidLength)
 			}
 
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
 			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]+1))
-			pt.Func.TransferIotas(1).Post()
+			pt.Func.Post()
 			require.Error(t, ctx.Err)
 			require.Contains(t, ctx.Err.Error(), invalidLength)
 		})
@@ -202,19 +202,19 @@ func TestClearArray(t *testing.T) {
 	as := testwasmlib.ScFuncs.ArrayAppend(ctx)
 	as.Params.Name().SetValue("bands")
 	as.Params.Value().SetValue("Simple Minds")
-	as.Func.TransferIotas(1).Post()
+	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	as = testwasmlib.ScFuncs.ArrayAppend(ctx)
 	as.Params.Name().SetValue("bands")
 	as.Params.Value().SetValue("Dire Straits")
-	as.Func.TransferIotas(1).Post()
+	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	as = testwasmlib.ScFuncs.ArrayAppend(ctx)
 	as.Params.Name().SetValue("bands")
 	as.Params.Value().SetValue("ELO")
-	as.Func.TransferIotas(1).Post()
+	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	al := testwasmlib.ScFuncs.ArrayLength(ctx)
@@ -236,7 +236,7 @@ func TestClearArray(t *testing.T) {
 
 	ac := testwasmlib.ScFuncs.ArrayClear(ctx)
 	ac.Params.Name().SetValue("bands")
-	ac.Func.TransferIotas(1).Post()
+	ac.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	al = testwasmlib.ScFuncs.ArrayLength(ctx)
@@ -264,21 +264,21 @@ func TestClearMap(t *testing.T) {
 	as.Params.Name().SetValue("albums")
 	as.Params.Key().SetValue("Simple Minds")
 	as.Params.Value().SetValue("New Gold Dream")
-	as.Func.TransferIotas(1).Post()
+	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	as = testwasmlib.ScFuncs.MapSet(ctx)
 	as.Params.Name().SetValue("albums")
 	as.Params.Key().SetValue("Dire Straits")
 	as.Params.Value().SetValue("Calling Elvis")
-	as.Func.TransferIotas(1).Post()
+	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	as = testwasmlib.ScFuncs.MapSet(ctx)
 	as.Params.Name().SetValue("albums")
 	as.Params.Key().SetValue("ELO")
 	as.Params.Value().SetValue("Mr. Blue Sky")
-	as.Func.TransferIotas(1).Post()
+	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	av := testwasmlib.ScFuncs.MapValue(ctx)
@@ -292,7 +292,7 @@ func TestClearMap(t *testing.T) {
 
 	ac := testwasmlib.ScFuncs.MapClear(ctx)
 	ac.Params.Name().SetValue("albums")
-	ac.Func.TransferIotas(1).Post()
+	ac.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	av = testwasmlib.ScFuncs.MapValue(ctx)
@@ -313,7 +313,7 @@ func TestTakeAllowance(t *testing.T) {
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
 	f.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
-	ctx.Accounts()
+	ctx.Balances()
 
 	accountBalance += 1234
 	chainBalance += ctx.GasFee
@@ -323,9 +323,9 @@ func TestTakeAllowance(t *testing.T) {
 	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
-	g.Func.TransferIotas(1111).Post()
+	g.Func.Post()
 	require.NoError(t, ctx.Err)
-	ctx.Accounts()
+	ctx.Balances()
 	require.True(t, g.Results.Iotas().Exists())
 	require.EqualValues(t, accountBalance, g.Results.Iotas().Value())
 
@@ -338,7 +338,7 @@ func TestTakeAllowance(t *testing.T) {
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	ctx.Accounts()
+	ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, accountBalance, v.Results.Iotas().Value())
 
@@ -359,7 +359,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
 	f.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
-	ctx.Accounts()
+	ctx.Balances()
 
 	chainBalance += ctx.GasFee
 	originatorBalance += 1234 - ctx.GasFee
@@ -368,9 +368,9 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
-	g.Func.TransferIotas(1111).Post()
+	g.Func.Post()
 	require.NoError(t, ctx.Err)
-	ctx.Accounts()
+	ctx.Balances()
 	require.True(t, g.Results.Iotas().Exists())
 	require.EqualValues(t, accountBalance, g.Results.Iotas().Value())
 
@@ -383,7 +383,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	ctx.Accounts()
+	ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, accountBalance, v.Results.Iotas().Value())
 
@@ -396,7 +396,7 @@ func TestRandom(t *testing.T) {
 	ctx := setupTest(t)
 
 	f := testwasmlib.ScFuncs.Random(ctx)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	v := testwasmlib.ScFuncs.GetRandom(ctx)
@@ -413,7 +413,7 @@ func TestMultiRandom(t *testing.T) {
 	numbers := make([]uint64, 0)
 	for i := 0; i < 10; i++ {
 		f := testwasmlib.ScFuncs.Random(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 
 		v := testwasmlib.ScFuncs.GetRandom(ctx)

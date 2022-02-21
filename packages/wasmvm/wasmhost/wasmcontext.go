@@ -1,6 +1,8 @@
 package wasmhost
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -20,6 +22,8 @@ type ISandbox interface {
 type WasmContext struct {
 	funcName  string
 	funcTable *WasmFuncTable
+	gasBudget uint64
+	gasBurned uint64
 	id        int32
 	proc      *WasmProcessor
 	results   dict.Dict
@@ -88,12 +92,15 @@ func (wc *WasmContext) callFunction() error {
 
 	saveID := wc.proc.currentContextID
 	wc.proc.currentContextID = wc.id
-	wc.proc.vm.GasBudget(wc.GasBudget())
+	wc.gasBudget = wc.GasBudget()
+	wc.proc.vm.GasBudget(wc.gasBudget * wc.proc.gasFactor())
 	err := wc.proc.RunScFunction(wc.funcName)
 	if err == nil {
-		wc.GasBurned(wc.proc.vm.GasBurned())
+		wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
 	}
+	wc.gasBurned = wc.gasBudget - wc.GasBudget()
 	wc.proc.currentContextID = saveID
+	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
 

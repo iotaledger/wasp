@@ -5,8 +5,6 @@ package wasmsolo
 
 import (
 	"flag"
-	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -77,51 +75,6 @@ func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
 	return false
 }
 
-// Accounts prints all known accounts, both L2 and L1.
-// It uses the L2 ledger to enumerate the known accounts.
-// Any newly created SoloAgents can be specified as extra accounts
-func (ctx *SoloContext) Accounts(agents ...*SoloAgent) {
-	accs := ctx.Chain.L2Accounts()
-	for _, agent := range agents {
-		agentID := agent.AgentID()
-		if !contains(accs, agentID) {
-			accs = append(accs, agentID)
-		}
-	}
-	sort.Slice(accs, func(i, j int) bool {
-		return accs[i].String() < accs[j].String()
-	})
-	txt := "ACCOUNTS:"
-	for _, acc := range accs {
-		l2 := ctx.Chain.L2Assets(acc)
-		l1 := ctx.Chain.Env.L1Assets(acc.Address())
-		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.Iotas)
-		if acc.Hname() == 0 {
-			txt += fmt.Sprintf(",\tL1: %10d", l1.Iotas)
-		}
-		for _, token := range l2.Tokens {
-			txt += fmt.Sprintf("\n\tL2: %10d", token.Amount)
-			tokTxt := ",\t           "
-			if acc.Hname() == 0 {
-				for i := range l1.Tokens {
-					if *l1.Tokens[i] == *token {
-						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
-						tokTxt = fmt.Sprintf(",\tL1: %10d", l1.Iotas)
-						break
-					}
-				}
-			}
-			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
-		}
-		for _, token := range l1.Tokens {
-			txt += fmt.Sprintf("\n\tL2: %10d,\tL1: %10d,\t%s", 0, l1.Iotas, token.ID.String())
-		}
-	}
-	receipt := ctx.Chain.LastReceipt()
-
-	fmt.Printf("%s\nGas: %d, fee %d (from last receipt)\n", txt, receipt.GasBurned, receipt.GasFeeCharged)
-}
-
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
 // with minimal information and will verify successful creation before returning ctx.
 // It will start a default chain "chain1" before initializing the smart contract.
@@ -148,7 +101,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 
-	ctx.Accounts()
+	ctx.Balances()
 
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
@@ -160,7 +113,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
-	ctx.Accounts()
+	ctx.Balances()
 
 	var params []interface{}
 	if len(init) != 0 {
@@ -183,12 +136,12 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
-	ctx.Accounts()
+	ctx.Balances()
 
 	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
 	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 
-	ctx.Accounts()
+	ctx.Balances()
 
 	if ctx.Err != nil {
 		return ctx
@@ -308,6 +261,13 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 	}
 }
 
+// Balances prints all known accounts, both L2 and L1.
+// It uses the L2 ledger to enumerate the known accounts.
+// Any newly created SoloAgents can be specified as extra accounts
+func (ctx *SoloContext) Balances(agents ...*SoloAgent) *SoloBalances {
+	return NewSoloBalances(ctx, agents...)
+}
+
 // ChainAccount returns a SoloAgent for the chain associated with ctx
 func (ctx *SoloContext) ChainAccount() *SoloAgent {
 	return &SoloAgent{
@@ -411,7 +371,9 @@ func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
 
 // NewSoloAgent creates a new SoloAgent with solo.Saldo tokens in its address
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
-	return NewSoloAgent(ctx.Chain.Env)
+	agent := NewSoloAgent(ctx.Chain.Env)
+	ctx.Chain.MustDepositIotasToL2(10_000_000, agent.Pair)
+	return agent
 }
 
 // OffLedger tells SoloContext to Post() the next request off-ledger

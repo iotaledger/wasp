@@ -141,6 +141,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 
 	// Retrieve the amount of plain iota tokens from the account balance
 	amount := allowance.Balance(wasmtypes.IOTA)
+
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
 
