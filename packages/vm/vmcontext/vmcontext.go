@@ -127,7 +127,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
 			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewDepositEstimate(task.RentStructure)
+		currentDustDepositValues := transaction.NewDepositEstimate(task.L1Params.RentStructure())
 		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
 			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
 			panic(ErrInconsistentDustAssumptions)
@@ -142,7 +142,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		ret.dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
+		ret.dustAssumptions = transaction.NewDepositEstimate(task.L1Params.RentStructure())
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
@@ -157,7 +157,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		nativeTokenBalanceLoader,
 		foundryLoader,
 		*ret.dustAssumptions,
-		task.RentStructure,
+		task.L1Params,
 	)
 
 	return ret

@@ -94,3 +94,25 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 	}
 	return nil
 }
+
+func sendLargeRequest(ctx iscp.Sandbox) dict.Dict {
+	req := iscp.RequestParameters{
+		TargetAddress: tpkg.RandEd25519Address(),
+		Metadata: &iscp.SendMetadata{
+			EntryPoint:     iscp.Hn("foo"),
+			TargetContract: iscp.Hn("bar"),
+			Params:         dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
+		},
+		AdjustToMinimumDustDeposit: true,
+		Assets:                     ctx.AllowanceAvailable(),
+	}
+	dust := ctx.EstimateRequiredDustDeposit(req)
+	provided := ctx.AllowanceAvailable().Iotas
+	if provided < dust {
+		panic("not enough funds for dust")
+	}
+	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAssetsIotas(dust))
+	req.Assets.Iotas = dust
+	ctx.Send(req)
+	return nil
+}

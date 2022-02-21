@@ -212,7 +212,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			},
 			Options: iscp.SendOptions{},
 		}},
-		RentStructure:                ch.Env.utxoDB.RentStructure(),
+		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
 	if err != nil {

@@ -49,7 +49,7 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log(),
-		RentStructure:      ch.Env.utxoDB.RentStructure(),
+		L1Params:           ch.Env.utxoDB.L1Params(),
 		// state baseline is always valid in Solo
 		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
 		EnableGasBurnLogging: true,
@@ -89,10 +89,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	)
 	require.NoError(ch.Env.T, err)
 
-	tx := &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sigs[0]),
-	}
+	tx := transaction.MakeAnchorTransaction(essence, sigs[0])
 
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)

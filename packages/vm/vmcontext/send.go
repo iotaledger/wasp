@@ -19,7 +19,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
-		vmctx.task.RentStructure,
+		vmctx.task.L1Params.RentStructure(),
 	)
 	if out.Amount > par.Assets.Iotas {
 		// it was adjusted
