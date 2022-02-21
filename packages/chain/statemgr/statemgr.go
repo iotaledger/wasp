@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -131,7 +131,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 	}
 }
 
-func (sm *stateManager) SetChainPeers(peers []*ed25519.PublicKey) {
+func (sm *stateManager) SetChainPeers(peers []*cryptolib.PublicKey) {
 	sm.domain.SetMainPeers(peers)
 }
 

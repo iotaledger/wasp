@@ -49,7 +49,7 @@ func setupErrorsTest(t *testing.T) (*solo.Solo, *solo.Chain) {
 	require.NoError(t, err)
 
 	chain.MustDepositIotasToL2(10_000_000, nil)
-	defer chain.Log.Sync()
+	defer chain.Log().Sync()
 
 	chain.CheckChain()
 
@@ -62,7 +62,7 @@ func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 	chain, _, _ := env.NewChainExt(nil, 1, "chain1")
 
 	chain.MustDepositIotasToL2(1, nil)
-	defer chain.Log.Sync()
+	defer chain.Log().Sync()
 	chain.CheckChain()
 
 	return env, chain

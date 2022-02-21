@@ -38,7 +38,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
-	err := chain.SendFromL1ToL2AccountIotas(1000, solo.Saldo/2, chain.OriginatorAgentID, &chain.OriginatorPrivateKey)
+	err := chain.SendFromL1ToL2AccountIotas(1000, solo.Saldo/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
 }

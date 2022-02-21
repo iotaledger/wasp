@@ -3,8 +3,9 @@ package gas
 import "golang.org/x/xerrors"
 
 const (
-	MaxGasPerBlock = uint64(100_000_000)
-	MaxGasPerCall  = MaxGasPerBlock / 20 // one call cannot be more than 5% of maximum block
+	MaxGasPerBlock         = uint64(100_000_000)
+	MaxGasPerCall          = MaxGasPerBlock / 20 // one call cannot be more than 5% of maximum block
+	MaxGasExternalViewCall = MaxGasPerCall
 )
 
 const (

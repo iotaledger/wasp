@@ -15,8 +15,8 @@ var tplMetricsChain string
 func metricsChainBreadcrumb(e *echo.Echo, chainID *iscp.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChain"),
-		Title: fmt.Sprintf("Metrics: %.8s", chainID.Base58()),
-		Href:  e.Reverse("metricsChain", chainID.Base58()),
+		Title: fmt.Sprintf("Metrics: %.8s", chainID.String()),
+		Href:  e.Reverse("metricsChain", chainID.String()),
 	}
 }
 
@@ -27,14 +27,14 @@ func (d *Dashboard) initMetricsChain(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleMetricsChain(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	tab := metricsChainBreadcrumb(c.Echo(), chainID)
 	return c.Render(http.StatusOK, c.Path(), &MetricsChainTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, tab),
-		ChainID:            chainID.Base58(),
+		ChainID:            chainID.String(),
 	})
 }
 

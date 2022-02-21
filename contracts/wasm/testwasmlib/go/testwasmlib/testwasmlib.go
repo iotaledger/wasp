@@ -111,6 +111,16 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 	f.State.Random().SetValue(ctx.Random(1000))
 }
 
+//nolint:unparam
+func funcTakeAllowance(ctx wasmlib.ScFuncContext, f *TakeAllowanceContext) {
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransfersFromBalances(ctx.Allowance()), false)
+	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Balance(wasmtypes.IOTA))))
+}
+
+func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
+	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmtypes.IOTA))
+}
+
 func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
 	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
 }

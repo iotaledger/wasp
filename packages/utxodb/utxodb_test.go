@@ -58,8 +58,8 @@ func TestAddTransactionFail(t *testing.T) {
 func TestDoubleSpend(t *testing.T) {
 	keyPair1 := cryptolib.NewKeyPair()
 
-	addr1 := cryptolib.Ed25519AddressFromPubKey(keyPair1.PublicKey)
-	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(addr1, keyPair1.PrivateKey))
+	addr1 := keyPair1.GetPublicKey().AsEd25519Address()
+	key1Signer := iotago.NewInMemoryAddressSigner(keyPair1.GetPrivateKey().AddressKeysForEd25519Address(addr1))
 
 	addr2 := tpkg.RandEd25519Address()
 	addr3 := tpkg.RandEd25519Address()
@@ -71,11 +71,12 @@ func TestDoubleSpend(t *testing.T) {
 	tx1ID, err := tx1.ID()
 	require.NoError(t, err)
 
-	spend2, err := builder.NewTransactionBuilder().
-		AddInput(&builder.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
-			TransactionID:          *tx1ID,
-			TransactionOutputIndex: 0,
-		}}).
+	spend2, err := builder.NewTransactionBuilder(0).
+		AddInput(&builder.ToBeSignedUTXOInput{
+			Address:  addr1,
+			Output:   tx1.Essence.Outputs[0],
+			OutputID: iotago.OutputIDFromTransactionIDAndIndex(*tx1ID, 0),
+		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
 			Conditions: iotago.UnlockConditions{
@@ -87,11 +88,12 @@ func TestDoubleSpend(t *testing.T) {
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
 
-	spend3, err := builder.NewTransactionBuilder().
-		AddInput(&builder.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
-			TransactionID:          *tx1ID,
-			TransactionOutputIndex: 0,
-		}}).
+	spend3, err := builder.NewTransactionBuilder(0).
+		AddInput(&builder.ToBeSignedUTXOInput{
+			Address:  addr1,
+			Output:   tx1.Essence.Outputs[0],
+			OutputID: iotago.OutputIDFromTransactionIDAndIndex(*tx1ID, 0),
+		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
 			Conditions: iotago.UnlockConditions{

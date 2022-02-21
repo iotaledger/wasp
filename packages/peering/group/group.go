@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
@@ -71,16 +71,16 @@ func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
 }
 
 // PeerIndexByNetID implements peering.GroupProvider.
-func (g *groupImpl) PeerIndexByPubKey(peerPubKey *ed25519.PublicKey) (uint16, error) {
+func (g *groupImpl) PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error) {
 	for i := range g.nodes {
-		if *g.nodes[i].PubKey() == *peerPubKey {
+		if g.nodes[i].PubKey().Equals(peerPubKey) {
 			return uint16(i), nil
 		}
 	}
 	return NotInGroup, errors.New("peer not found by pubKey")
 }
 
-func (g *groupImpl) PubKeyByIndex(index uint16) (*ed25519.PublicKey, error) {
+func (g *groupImpl) PubKeyByIndex(index uint16) (*cryptolib.PublicKey, error) {
 	if index < uint16(len(g.nodes)) {
 		return g.nodes[index].PubKey(), nil
 	}
@@ -140,7 +140,7 @@ func (g *groupImpl) ExchangeRound(
 			if err != nil {
 				g.log.Warnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
-					recvMsgNoIndex.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
+					recvMsgNoIndex.SenderPubKey.AsString(), g.netProvider.Self().PubKey().AsString(),
 					recvMsgNoIndex.MsgType, err,
 				)
 				continue
@@ -152,7 +152,7 @@ func (g *groupImpl) ExchangeRound(
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
 				g.log.Warnf(
 					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
-					recvMsg.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
+					recvMsg.SenderPubKey.AsString(), g.netProvider.Self().PubKey().AsString(),
 					recvMsg.MsgReceiver, recvMsg.MsgType,
 				)
 				continue
@@ -241,7 +241,7 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 		}
 		if err != nil {
 			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String(), err)
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.AsString(), err)
 			return
 		}
 		gRecv := &peering.PeerMessageGroupIn{

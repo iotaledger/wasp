@@ -11,7 +11,7 @@ import (
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair                cryptolib.KeyPair
+	SenderKeyPair                *cryptolib.KeyPair
 	UnspentOutputs               iotago.OutputSet
 	UnspentOutputIDs             iotago.OutputIDs
 	Requests                     []*iscp.RequestParameters
@@ -28,7 +28,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 
-	senderAddress := cryptolib.Ed25519AddressFromPubKey(par.SenderKeyPair.PublicKey)
+	senderAddress := par.SenderKeyPair.GetPublicKey().AsEd25519Address()
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
@@ -56,7 +56,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		)
 		requiredDustDeposit := out.VByteCost(par.RentStructure, nil)
 		if out.Deposit() < requiredDustDeposit {
-			xerrors.Errorf("%v: available %d < required %d iotas",
+			return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
 		}
 		outputs = append(outputs, out)
@@ -80,11 +80,11 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	essence := &iotago.TransactionEssence{
 		NetworkID: parameters.NetworkID,
 		Inputs:    inputIDs.UTXOInputs(),
-		Outputs:   outputs,
+		Outputs: outputs,
 	}
 	sigs, err := essence.Sign(
 		inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment(),
-		iotago.NewAddressKeysForEd25519Address(senderAddress, par.SenderKeyPair.PrivateKey),
+		par.SenderKeyPair.GetPrivateKey().AddressKeysForEd25519Address(senderAddress),
 	)
 	if err != nil {
 		return nil, err

@@ -31,8 +31,8 @@ func TestFakeNetwork(t *testing.T) {
 	//
 	// Node "b" sends some messages.
 	var a, c peering.PeerSender
-	a, _ = netProviders[1].PeerByPubKey(&nodeIdentities[0].PublicKey)
-	c, _ = netProviders[1].PeerByPubKey(&nodeIdentities[2].PublicKey)
+	a, _ = netProviders[1].PeerByPubKey(nodeIdentities[0].GetPublicKey())
+	c, _ = netProviders[1].PeerByPubKey(nodeIdentities[2].GetPublicKey())
 	a.SendMsg(&peering.PeerMessageData{PeeringID: chain1, MsgReceiver: receiver, MsgType: 1}) // Will be delivered.
 	a.SendMsg(&peering.PeerMessageData{PeeringID: chain2, MsgReceiver: receiver, MsgType: 2}) // Will be dropped.
 	a.SendMsg(&peering.PeerMessageData{PeeringID: chain1, MsgReceiver: byte(5), MsgType: 3})  // Will be dropped.

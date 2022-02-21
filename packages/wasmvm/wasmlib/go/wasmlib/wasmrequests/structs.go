@@ -244,3 +244,59 @@ func (o MutableSendRequest) SetValue(value *SendRequest) {
 func (o MutableSendRequest) Value() *SendRequest {
 	return NewSendRequestFromBytes(o.proxy.Get())
 }
+
+type TransferRequest struct {
+	AgentID  wasmtypes.ScAgentID
+	Create   bool
+	Transfer []byte
+}
+
+func NewTransferRequestFromBytes(buf []byte) *TransferRequest {
+	dec := wasmtypes.NewWasmDecoder(buf)
+	data := &TransferRequest{}
+	data.AgentID = wasmtypes.AgentIDDecode(dec)
+	data.Create = wasmtypes.BoolDecode(dec)
+	data.Transfer = wasmtypes.BytesDecode(dec)
+	dec.Close()
+	return data
+}
+
+func (o *TransferRequest) Bytes() []byte {
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.AgentIDEncode(enc, o.AgentID)
+	wasmtypes.BoolEncode(enc, o.Create)
+	wasmtypes.BytesEncode(enc, o.Transfer)
+	return enc.Buf()
+}
+
+type ImmutableTransferRequest struct {
+	proxy wasmtypes.Proxy
+}
+
+func (o ImmutableTransferRequest) Exists() bool {
+	return o.proxy.Exists()
+}
+
+func (o ImmutableTransferRequest) Value() *TransferRequest {
+	return NewTransferRequestFromBytes(o.proxy.Get())
+}
+
+type MutableTransferRequest struct {
+	proxy wasmtypes.Proxy
+}
+
+func (o MutableTransferRequest) Delete() {
+	o.proxy.Delete()
+}
+
+func (o MutableTransferRequest) Exists() bool {
+	return o.proxy.Exists()
+}
+
+func (o MutableTransferRequest) SetValue(value *TransferRequest) {
+	o.proxy.Set(value.Bytes())
+}
+
+func (o MutableTransferRequest) Value() *TransferRequest {
+	return NewTransferRequestFromBytes(o.proxy.Get())
+}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -48,11 +49,11 @@ func (m *mockedChain) DetachFromRequestProcessed(attachID *events.Closure) {
 
 // chain.ChainEntry implementation
 
-func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
+func (m *mockedChain) ReceiveTransaction(_ *iotago.Transaction) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
+func (m *mockedChain) ReceiveState(_ *iotago.AliasOutput, _ time.Time) {
 	panic("implement me")
 }
 
@@ -86,8 +87,8 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(_ chain.Chain, _ *iscp.AgentID) (colored.Balances, error) {
-	return colored.NewBalancesForIotas(100), nil
+func getAccountBalanceMocked(_ chain.Chain, _ *iscp.AgentID) (*iscp.Assets, error) {
+	return iscp.NewAssetsIotas(100), nil
 }
 
 func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
@@ -111,7 +112,7 @@ func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID,
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": chainID.Hex()},
+		map[string]string{"chainID": chainID.String()},
 		body,
 		nil,
 		expectedStatus,

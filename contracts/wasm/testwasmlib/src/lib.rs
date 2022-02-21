@@ -37,6 +37,8 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	FUNC_MAP_SET,
     	FUNC_PARAM_TYPES,
     	FUNC_RANDOM,
+    	FUNC_TAKE_ALLOWANCE,
+    	FUNC_TAKE_BALANCE,
     	FUNC_TRIGGER_EVENT,
     	VIEW_ARRAY_LENGTH,
     	VIEW_ARRAY_VALUE,
@@ -54,6 +56,8 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	func_map_set_thunk,
     	func_param_types_thunk,
     	func_random_thunk,
+    	func_take_allowance_thunk,
+    	func_take_balance_thunk,
     	func_trigger_event_thunk,
 	],
     views: &[
@@ -202,6 +206,39 @@ fn func_random_thunk(ctx: &ScFuncContext) {
 	};
 	func_random(ctx, &f);
 	ctx.log("testwasmlib.funcRandom ok");
+}
+
+pub struct TakeAllowanceContext {
+	events:  TestWasmLibEvents,
+	state: MutableTestWasmLibState,
+}
+
+fn func_take_allowance_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcTakeAllowance");
+	let f = TakeAllowanceContext {
+		events:  TestWasmLibEvents {},
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	func_take_allowance(ctx, &f);
+	ctx.log("testwasmlib.funcTakeAllowance ok");
+}
+
+pub struct TakeBalanceContext {
+	events:  TestWasmLibEvents,
+	results: MutableTakeBalanceResults,
+	state: MutableTestWasmLibState,
+}
+
+fn func_take_balance_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcTakeBalance");
+	let f = TakeBalanceContext {
+		events:  TestWasmLibEvents {},
+		results: MutableTakeBalanceResults { proxy: results_proxy() },
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	func_take_balance(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.funcTakeBalance ok");
 }
 
 pub struct TriggerEventContext {

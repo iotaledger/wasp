@@ -234,3 +234,57 @@ export class MutableSendRequest extends wasmtypes.ScProxy {
 		return SendRequest.fromBytes(this.proxy.get());
 	}
 }
+
+export class TransferRequest {
+	agentID  : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
+	create   : bool = false; 
+	transfer : u8[] = []; 
+
+	static fromBytes(buf: u8[]): TransferRequest {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new TransferRequest();
+		data.agentID  = wasmtypes.agentIDDecode(dec);
+		data.create   = wasmtypes.boolDecode(dec);
+		data.transfer = wasmtypes.bytesDecode(dec);
+		dec.close();
+		return data;
+	}
+
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.agentIDEncode(enc, this.agentID);
+		wasmtypes.boolEncode(enc, this.create);
+		wasmtypes.bytesEncode(enc, this.transfer);
+		return enc.buf();
+	}
+}
+
+export class ImmutableTransferRequest extends wasmtypes.ScProxy {
+
+	exists(): bool {
+		return this.proxy.exists();
+	}
+
+	value(): TransferRequest {
+		return TransferRequest.fromBytes(this.proxy.get());
+	}
+}
+
+export class MutableTransferRequest extends wasmtypes.ScProxy {
+
+	delete(): void {
+		this.proxy.delete();
+	}
+
+	exists(): bool {
+		return this.proxy.exists();
+	}
+
+	setValue(value: TransferRequest): void {
+		this.proxy.set(value.bytes());
+	}
+
+	value(): TransferRequest {
+		return TransferRequest.fromBytes(this.proxy.get());
+	}
+}

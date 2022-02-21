@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -32,7 +31,7 @@ func AddEndpoints(
 	getChain chains.ChainProvider,
 	getChainBalance getAccountAssetsFn,
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
-	nodePubKey *ed25519.PublicKey,
+	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
 	log *logger.Logger,
 ) {
@@ -60,7 +59,7 @@ type offLedgerReqAPI struct {
 	getAccountAssets        getAccountAssetsFn
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
 	requestsCache           *expiringcache.ExpiringCache
-	nodePubKey              *ed25519.PublicKey
+	nodePubKey              *cryptolib.PublicKey
 	log                     *logger.Logger
 }
 
@@ -117,19 +116,20 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	if assets.IsEmpty() {
 		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
 	}
-	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-			ChainID: ch.ID(),
-			Req:     offLedgerReq,
-		},
-		SenderPubKey: o.nodePubKey,
-	})
+	panic("TODO implement")
+	// ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
+	// 	OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
+	// 		ChainID: ch.ID(),
+	// 		Req:     offLedgerReq,
+	// 	},
+	// 	SenderPubKey: o.nodePubKey,
+	// })
 
 	return c.NoContent(http.StatusAccepted)
 }
 
 func parseParams(c echo.Context) (chainID *iscp.ChainID, req *iscp.OffLedgerRequestData, err error) {
-	chainID, err = iscp.ChainIDFromHex(c.Param("chainID"))
+	chainID, err = iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}

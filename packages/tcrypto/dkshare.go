@@ -8,8 +8,8 @@ import (
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -28,7 +28,7 @@ type DKShare struct {
 	PublicCommits []kyber.Point
 	PublicShares  []kyber.Point
 	PrivateShare  kyber.Scalar
-	NodePubKeys   []*ed25519.PublicKey
+	NodePubKeys   []*cryptolib.PublicKey
 	suite         Suite // Transient, only needed for un-marshaling.
 }
 
@@ -41,7 +41,7 @@ func NewDKShare(
 	publicCommits []kyber.Point,
 	publicShares []kyber.Point,
 	privateShare kyber.Scalar,
-	nodePubKeys []*ed25519.PublicKey,
+	nodePubKeys []*cryptolib.PublicKey,
 ) (*DKShare, error) {
 	//var err error
 	//
@@ -89,7 +89,7 @@ func (s *DKShare) Bytes() []byte {
 }
 
 // Write returns byte representation of this struct.
-//nolint:gocritic
+
 func (s *DKShare) Write(w io.Writer) error {
 	panic("TODO implement")
 	// var err error
@@ -138,7 +138,6 @@ func (s *DKShare) Write(w io.Writer) error {
 	// return nil
 }
 
-//nolint:gocritic
 func (s *DKShare) Read(r io.Reader) error {
 	panic("TODO implement")
 
@@ -201,14 +200,14 @@ func (s *DKShare) Read(r io.Reader) error {
 	// if err = util.ReadUint16(r, &arrLen); err != nil {
 	// 	return err
 	// }
-	// s.NodePubKeys = make([]*ed25519.PublicKey, arrLen)
+	// s.NodePubKeys = make([]*cryptolib.PublicKey, arrLen)
 	// for i := range s.NodePubKeys {
 	// 	var nodePubKeyBin []byte
-	// 	var nodePubKey ed25519.PublicKey
+	// 	var nodePubKey *cryptolib.PublicKey
 	// 	if nodePubKeyBin, err = util.ReadBytes16(r); err != nil {
 	// 		return err
 	// 	}
-	// 	if nodePubKey, _, err = ed25519.PublicKeyFromBytes(nodePubKeyBin); err != nil {
+	// 	if nodePubKey, _, err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin); err != nil {
 	// 		return err
 	// 	}
 	// 	s.NodePubKeys[i] = &nodePubKey

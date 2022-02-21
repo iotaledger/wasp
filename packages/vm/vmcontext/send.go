@@ -9,12 +9,16 @@ import (
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
+<<<<<<< HEAD
 	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(vm.ErrExceededPostedOutputLimit)
+=======
+	if vmctx.NumPostedOutputs >= MaxPostedOutputsInOneRequest {
+		panic(ErrExceededPostedOutputLimit)
+>>>>>>> stardust-vm
 	}
 
-	vmctx.numPostedOutputs++
-	vmctx.GasBurn(gas.BurnCodeSendL1Request, uint64(vmctx.numPostedOutputs))
+	vmctx.NumPostedOutputs++
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit

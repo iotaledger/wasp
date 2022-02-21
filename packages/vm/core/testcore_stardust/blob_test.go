@@ -150,7 +150,7 @@ func TestBigBlob(t *testing.T) {
 	bigblobSize := governance.DefaultMaxBlobSize + 100
 	blobBin := make([]byte, bigblobSize)
 
-	_, err := ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
+	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 	testmisc.RequireErrorToBe(t, err, "blob too big")
 
 	ch.MustDepositIotasToL2(100_000, nil)
@@ -163,6 +163,6 @@ func TestBigBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	// blob upload must now succeed
-	_, err = ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
+	_, err = ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 	require.NoError(t, err)
 }

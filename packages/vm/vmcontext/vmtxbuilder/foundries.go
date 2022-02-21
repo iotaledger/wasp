@@ -33,7 +33,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		MaximumSupply:     maxSupply,
 		TokenScheme:       scheme,
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress()},
+			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
 		},
 		Blocks: nil,
 	}
@@ -240,7 +240,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
 	case f1.TokenTag != f2.TokenTag:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token tags must be equal")
-	case f1.Blocks != nil || f2.Blocks != nil:
+	case len(f1.Blocks) != 0 || len(f2.Blocks) != 0:
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true

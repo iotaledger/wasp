@@ -1,0 +1,25 @@
+#!/bin/bash -l
+
+PATHS=(\
+    "packages/transaction/" \
+    "packages/vm/core/testcore_stardust/" \
+    "packages/vm/core/testcore_stardust/sbtests/" \
+    "packages/vm/core/testcore_stardust/sbtests/sbtestsc/" \
+    "packages/vm/vmcontext/" \
+    "packages/peering/" \
+    "packages/peering/domain/" \
+    "packages/peering/group/" \
+    "packages/peering/lpp/" \
+    "packages/chain/mempool/" \
+    "packages/chain/statemgr/" \
+    "packages/utxodb/" \
+)
+WD=$PWD
+
+for ((i=0; i<${#PATHS[@]}; i++))
+do
+    cd "${WD}/${PATHS[i]}"
+    go test -failfast || { echo "Tests in ${PATHS[i]} failed" ; exit 1; }
+done
+
+echo "All tests passed"

@@ -27,9 +27,9 @@ const (
 )
 
 var (
-	genesisKeyPair = cryptolib.NewKeyPairFromSeed(cryptolib.SeedFromByteArray([]byte("3.141592653589793238462643383279")))
-	genesisAddress = cryptolib.Ed25519AddressFromPubKey(genesisKeyPair.PublicKey)
-	genesisSigner  = iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(genesisAddress, genesisKeyPair.PrivateKey))
+	genesisKeyPair = cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes([]byte("3.141592653589793238462643383279")))
+	genesisAddress = genesisKeyPair.GetPublicKey().AsEd25519Address()
+	genesisSigner  = iotago.NewInMemoryAddressSigner(genesisKeyPair.GetPrivateKey().AddressKeysForEd25519Address(genesisAddress))
 )
 
 type UnixSeconds uint64
@@ -259,12 +259,12 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 }
 
 // NewKeyPairByIndex deterministic private key
-func (u *UtxoDB) NewKeyPairByIndex(index uint64) (cryptolib.KeyPair, *iotago.Ed25519Address) {
+func (u *UtxoDB) NewKeyPairByIndex(index uint64) (*cryptolib.KeyPair, *iotago.Ed25519Address) {
 	var tmp8 [8]byte
 	binary.LittleEndian.PutUint64(tmp8[:], index)
 	h := hashing.HashData(u.seed[:], tmp8[:])
-	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.Seed(h))
-	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes(h[:]))
+	addr := keyPair.GetPublicKey().AsEd25519Address()
 	return keyPair, addr
 }
 
@@ -354,7 +354,7 @@ func (u *UtxoDB) AddToLedger(tx *iotago.Transaction) error {
 	defer u.mutex.Unlock()
 
 	if err := u.validateTransaction(tx); err != nil {
-		panic(err)
+		return err
 	}
 
 	u.addTransaction(tx, false)
@@ -377,11 +377,20 @@ func (u *UtxoDB) MustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 }
 
 // GetUnspentOutputs returns all unspent outputs locked by the address with its ids
-func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) iotago.OutputSet {
+func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	return u.getUnspentOutputs(addr)
+	outs := u.getUnspentOutputs(addr)
+
+	ids := make(iotago.OutputIDs, len(outs))
+	i := 0
+	for id := range outs {
+		ids[i] = id
+		i++
+	}
+
+	return outs, ids
 }
 
 // GetAddressBalanceIotas returns the total amount of iotas owned by the address

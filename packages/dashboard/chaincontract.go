@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/labstack/echo/v4"
 )
@@ -24,7 +23,7 @@ func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainContract(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -54,21 +53,22 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	panic("TODO implement")
 
-	fees, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetFeeInfo.Name, codec.MakeDict(map[string]interface{}{
-		governance.ParamHname: codec.EncodeHname(hname),
-	}))
-	if err != nil {
-		return err
-	}
-	result.OwnerFee, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
-	if err != nil {
-		return err
-	}
-	result.ValidatorFee, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
-	if err != nil {
-		return err
-	}
+	// fees, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetFeeInfo.Name, codec.MakeDict(map[string]interface{}{
+	// 	governance.ParamHname: codec.EncodeHname(hname),
+	// }))
+	// if err != nil {
+	// 	return err
+	// }
+	// result.OwnerFee, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
+	// if err != nil {
+	// 	return err
+	// }
+	// result.ValidatorFee, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
+	// if err != nil {
+	// 	return err
+	// }
 
 	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: codec.EncodeHname(hname),

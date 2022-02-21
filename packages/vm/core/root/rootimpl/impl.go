@@ -121,7 +121,7 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	// call to load VM from binary to check if it loads successfully
 	err = ctx.Privileged().TryLoadContract(progHash)
-	ctx.RequireNoError(err, "root.deployContract.fail 1: %v")
+	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	mustStoreContractRecord(ctx, &root.ContractRecord{
