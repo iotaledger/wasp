@@ -24,6 +24,12 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Asse
 	})
 }
 
+func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, ID *iotago.NFTID) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.CreditNFTToAccount(s, agentID, ID)
+	})
+}
+
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
 func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.Assets) {

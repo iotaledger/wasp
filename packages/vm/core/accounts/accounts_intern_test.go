@@ -317,3 +317,20 @@ func TestFoundryOutputRec(t *testing.T) {
 	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
 	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)
 }
+
+func TestCreditDebitNFT1(t *testing.T) {
+	state := dict.New()
+
+	agentID1 := iscp.KnownAgentID(1, 2)
+	nft := iotago.NFTID{123}
+	CreditNFTToAccount(state, agentID1, &nft)
+
+	accNFTs := GetAccountNFTs(state, agentID1)
+	require.Len(t, accNFTs, 1)
+	require.Equal(t, accNFTs[0], nft)
+
+	DebitNFTFromAccount(state, agentID1, &nft)
+
+	accNFTs = GetAccountNFTs(state, agentID1)
+	require.Len(t, accNFTs, 0)
+}

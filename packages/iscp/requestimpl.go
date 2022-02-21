@@ -226,6 +226,10 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
+func (r *OffLedgerRequestData) NFTID() *iotago.NFTID {
+	return nil
+}
+
 // Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
 func (r *OffLedgerRequestData) Allowance() *Assets {
 	return r.allowance
@@ -454,6 +458,14 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	default:
 		panic("OnLedgerRequestData:TargetAddress implement me")
 	}
+}
+
+func (r *OnLedgerRequestData) NFTID() *iotago.NFTID {
+	out, ok := r.output.(*iotago.NFTOutput)
+	if !ok {
+		return nil
+	}
+	return &out.NFTID
 }
 
 func (r *OnLedgerRequestData) Allowance() *Assets {

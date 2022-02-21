@@ -239,12 +239,19 @@ func (vmctx *VMContext) closeBlockContexts() {
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 }
 
+// saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
+// Anchor Transaction outputs order must be:
+// 1. NativeTokens
+// 2. Foundries
+// 3. NFTs
 func (vmctx *VMContext) saveInternalUTXOs() {
 	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
 	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
 	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
 	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
+
+	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated(nativeTokenIDs)
 
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)
@@ -258,6 +265,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		for _, id := range nativeTokensToBeRemoved {
 			accounts.DeleteNativeTokenOutput(s, &id)
 		}
+
 		// update foundry UTXOs
 		for _, out := range foundrySNToBeUpdated {
 			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
@@ -265,6 +273,15 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		}
 		for _, sn := range foundriesToBeRemoved {
 			accounts.DeleteFoundryOutput(s, sn)
+		}
+
+		// update NFT Outputs
+		for _, out := range NFTOutputsToBeAdded {
+			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, sn := range NFTOutputsToBeRemoved {
+			accounts.DeleteNFTOutput(s, sn)
 		}
 	})
 }
