@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -478,7 +477,7 @@ func TestAccountBalances(t *testing.T) {
 			l1Iotas(chainOwnerAddr)+l1Iotas(senderAddr)+l1Iotas(ch.ChainID.AsAddress()),
 		)
 
-		anchor, _ := ch.GetAnchorOutput()
+		anchor := ch.GetAnchorOutput().GetAliasOutput()
 		require.EqualValues(t, l1Iotas(ch.ChainID.AsAddress()), anchor.Deposit())
 
 		require.LessOrEqual(t, len(ch.L2Accounts()), 3)
@@ -936,7 +935,7 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 	}
 
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: 0,
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs: iotago.Outputs{
 			&iotago.AliasOutput{

@@ -15,7 +15,7 @@ type NewRequestTransactionParams struct {
 	UnspentOutputs               iotago.OutputSet
 	UnspentOutputIDs             iotago.OutputIDs
 	Requests                     []*iscp.RequestParameters
-	RentStructure                *iotago.RentStructure
+	L1                           *parameters.L1
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
@@ -51,10 +51,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				GasBudget:      req.Metadata.GasBudget,
 			},
 			req.Options,
-			par.RentStructure,
+			par.L1.RentStructure(),
 			par.DisableAutoAdjustDustDeposit,
 		)
-		requiredDustDeposit := out.VByteCost(par.RentStructure, nil)
+		requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
 		if out.Deposit() < requiredDustDeposit {
 			return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
@@ -70,7 +70,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			sumTokensOut[nt.ID] = s
 		}
 	}
-	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +78,9 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		outputs = append(outputs, remainder)
 	}
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: par.L1.NetworkID,
 		Inputs:    inputIDs.UTXOInputs(),
-		Outputs: outputs,
+		Outputs:   outputs,
 	}
 	sigs, err := essence.Sign(
 		inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment(),

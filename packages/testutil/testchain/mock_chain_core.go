@@ -216,3 +216,11 @@ func (m *MockedChainCore) GetChainNodes() []peering.PeerStatusProvider {
 func (m *MockedChainCore) GetCandidateNodes() []*governance.AccessNodeInfo {
 	panic("not implemented MockedChainCore::GetCandidateNodes")
 }
+
+func (m *MockedChainCore) VirtualStateAccess() state.VirtualStateAccess {
+	panic("not implemented MockedChainCore::VirtualStateAccess")
+}
+
+func (m *MockedChainCore) GetAnchorOutput() *iscp.AliasOutputWithID {
+	panic("not implemented MockedChainCore::GetAnchorOutput")
+}

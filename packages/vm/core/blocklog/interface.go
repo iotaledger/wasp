@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"io"
 	"math"
 	"time"
@@ -16,8 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"golang.org/x/xerrors"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
@@ -61,7 +60,6 @@ const (
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
-
 type BlockInfo struct {
 	BlockIndex             uint32 // not persistent. Set from key
 	Timestamp              time.Time
@@ -306,7 +304,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
-	ErrorStr      string
+	Error         *iscp.UnresolvedVMError
 	GasBudget     uint64
 	GasBurned     uint64
 	GasFeeCharged uint64
@@ -322,16 +320,9 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 
 func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
+
 	var err error
-	var size uint16
-	if size, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	strBytes, err := mu.ReadBytes(int(size))
-	if err != nil {
-		return nil, err
-	}
-	ret.ErrorStr = string(strBytes)
+
 	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
@@ -344,17 +335,36 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.Request, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
+
+	if isError, err := mu.ReadBool(); err != nil {
+		return nil, err
+	} else if !isError {
+		return ret, nil
+	}
+
+	if ret.Error, err = iscp.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteUint16(uint16(len(r.ErrorStr))).
-		WriteBytes([]byte(r.ErrorStr)).
-		WriteUint64(r.GasBudget).
+
+	mu.WriteUint64(r.GasBudget).
 		WriteUint64(r.GasBurned).
 		WriteUint64(r.GasFeeCharged)
+
 	iscp.RequestDataToMarshalUtil(r.Request, mu)
+
+	if r.Error == nil {
+		mu.WriteBool(false)
+	} else {
+		mu.WriteBool(true)
+		mu.WriteBytes(r.Error.Bytes())
+	}
+
 	return mu.Bytes()
 }
 
@@ -366,7 +376,7 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
-	ret += fmt.Sprintf("Err: '%s'\n", r.ErrorStr)
+	ret += fmt.Sprintf("Err: %v", r.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
 	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())
@@ -378,18 +388,14 @@ func (r *RequestReceipt) Short() string {
 	if r.Request.IsOffLedger() {
 		prefix = "api"
 	}
-	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
-	if r.Error() != nil {
-		ret += ": '" + r.ErrorStr + "'"
-	}
-	return ret
-}
 
-func (r *RequestReceipt) Error() error {
-	if len(r.ErrorStr) == 0 {
-		return nil
+	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
+
+	if r.Error != nil {
+		ret += fmt.Sprintf(": Err: %v", r.Error)
 	}
-	return xerrors.New(r.ErrorStr)
+
+	return ret
 }
 
 // endregion  /////////////////////////////////////////////////////////////

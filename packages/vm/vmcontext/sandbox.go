@@ -93,6 +93,10 @@ func (s *contractSandbox) StateAnchor() *iscp.StateAnchor {
 	return s.Ctx.(*VMContext).StateAnchor()
 }
 
+func (s *contractSandbox) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
+	return s.Ctx.(*VMContext).RegisterError(messageFormat)
+}
+
 // helper methods
 
 func (s *contractSandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID, str ...string) {

@@ -3,12 +3,15 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
+
 	if vmctx.NumPostedOutputs >= MaxPostedOutputsInOneRequest {
-		panic(ErrExceededPostedOutputLimit)
+		panic(vm.ErrExceededPostedOutputLimit)
+
 	}
 
 	vmctx.NumPostedOutputs++
@@ -19,7 +22,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
-		vmctx.task.RentStructure,
+		vmctx.task.L1Params.RentStructure(),
 	)
 	if out.Amount > par.Assets.Iotas {
 		// it was adjusted

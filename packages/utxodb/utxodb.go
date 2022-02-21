@@ -38,12 +38,12 @@ type UnixSeconds uint64
 // of transactions. It ensures the consistency of the ledger and all added transactions
 // by checking inputs, outputs and signatures.
 type UtxoDB struct {
-	mutex         sync.RWMutex
-	supply        uint64
-	seed          [cryptolib.SeedSize]byte
-	rentStructure *iotago.RentStructure
-	transactions  map[iotago.TransactionID]*iotago.Transaction
-	utxo          map[iotago.OutputID]struct{}
+	mutex        sync.RWMutex
+	supply       uint64
+	seed         [cryptolib.SeedSize]byte
+	l1Params     *parameters.L1
+	transactions map[iotago.TransactionID]*iotago.Transaction
+	utxo         map[iotago.OutputID]struct{}
 	// latest milestone index and time. With each added transaction, global time moves
 	// at least 1 ns and 1 milestone index. AdvanceClockBy advances the clock by duration and N milestone indices
 	// globalLogicalTime can be ahead of real time due to AdvanceClockBy
@@ -52,11 +52,11 @@ type UtxoDB struct {
 }
 
 type InitParams struct {
-	initialTime   time.Time
-	timestep      time.Duration
-	supply        uint64
-	rentStructure *iotago.RentStructure
-	seed          [cryptolib.SeedSize]byte
+	initialTime time.Time
+	timestep    time.Duration
+	supply      uint64
+	l1Params    *parameters.L1
+	seed        [cryptolib.SeedSize]byte
 }
 
 func DefaultInitParams(seed ...[]byte) *InitParams {
@@ -65,11 +65,11 @@ func DefaultInitParams(seed ...[]byte) *InitParams {
 		copy(seedBytes[:], seed[0])
 	}
 	return &InitParams{
-		initialTime:   time.Unix(1, 0),
-		timestep:      1 * time.Millisecond,
-		supply:        DefaultIOTASupply,
-		rentStructure: &iotago.RentStructure{},
-		seed:          seedBytes,
+		initialTime: time.Unix(1, 0),
+		timestep:    1 * time.Millisecond,
+		supply:      DefaultIOTASupply,
+		l1Params:    parameters.L1ForTesting(),
+		seed:        seedBytes,
 	}
 }
 
@@ -83,8 +83,8 @@ func (i *InitParams) WithTimeStep(timestep time.Duration) *InitParams {
 	return i
 }
 
-func (i *InitParams) WithRentStructure(r *iotago.RentStructure) *InitParams {
-	i.rentStructure = r
+func (i *InitParams) WithL1Params(l1Params *parameters.L1) *InitParams {
+	i.l1Params = l1Params
 	return i
 }
 
@@ -102,11 +102,11 @@ func New(params ...*InitParams) *UtxoDB {
 		p = DefaultInitParams()
 	}
 	u := &UtxoDB{
-		supply:        p.supply,
-		seed:          p.seed,
-		rentStructure: p.rentStructure,
-		transactions:  make(map[iotago.TransactionID]*iotago.Transaction),
-		utxo:          make(map[iotago.OutputID]struct{}),
+		supply:       p.supply,
+		seed:         p.seed,
+		l1Params:     p.l1Params,
+		transactions: make(map[iotago.TransactionID]*iotago.Transaction),
+		utxo:         make(map[iotago.OutputID]struct{}),
 		globalLogicalTime: iscp.TimeData{
 			MilestoneIndex: 0,
 			Time:           p.initialTime,
@@ -121,16 +121,20 @@ func (u *UtxoDB) Seed() []byte {
 	return u.seed[:]
 }
 
+func (u *UtxoDB) L1Params() *parameters.L1 {
+	return u.l1Params
+}
+
 func (u *UtxoDB) RentStructure() *iotago.RentStructure {
-	return u.rentStructure
+	return u.l1Params.RentStructure()
 }
 
 func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
-	return &iotago.DeSerializationParameters{RentStructure: u.rentStructure}
+	return u.l1Params.DeSerializationParameters
 }
 
 func (u *UtxoDB) genesisInit() {
-	genesisTx, err := builder.NewTransactionBuilder(parameters.NetworkID).
+	genesisTx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address: genesisAddress,
 			Output: &iotago.BasicOutput{
@@ -233,7 +237,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 		fundsAmount = amount[0]
 	}
 
-	tx, err := builder.NewTransactionBuilder(parameters.NetworkID).
+	tx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  genesisAddress,
 			Output:   inputOutput,

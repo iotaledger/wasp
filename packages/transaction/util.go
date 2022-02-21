@@ -237,6 +237,13 @@ func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) io
 	return ret
 }
 
+func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signature) *iotago.Transaction {
+	return &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sig),
+	}
+}
+
 func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {

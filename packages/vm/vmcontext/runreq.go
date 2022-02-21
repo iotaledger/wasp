@@ -14,10 +14,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
@@ -60,6 +62,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 			vmctx.prepareGasBudget()
 			// run the contract program
 			receipt, callRet, callErr := vmctx.callTheContract()
+			vmctx.mustCheckTransactionSize()
 			result = &vm.RequestResult{
 				Request: req,
 				Receipt: receipt,
@@ -169,16 +172,23 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
+	case *iscp.VMError:
+		return r.(*iscp.VMError)
+	case iscp.VMError:
+		e := r.(iscp.VMError)
+		return &e
 	case *kv.DBError:
 		panic(err)
 	case string:
-		r = errors.New(err)
+		return coreerrors.ErrUntypedError.Create(err)
 	case error:
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
 		}
+
+		return coreerrors.ErrUntypedError.Create(err)
 	}
-	return xerrors.Errorf("%v", r)
+	return nil
 }
 
 // callFromRequest is the call itself. Assumes sc exists
@@ -187,7 +197,7 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 
 	if vmctx.req.SenderAccount() == nil {
 		// if sender unknown, follow panic path
-		panic(ErrSenderUnknown)
+		panic(vm.ErrSenderUnknown)
 	}
 	// TODO check if the comment below holds true
 	// calling only non view entry points. Calling the view will trigger error and fallback
@@ -327,7 +337,7 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: contract = %s", ErrTargetContractNotFound, contractHname))
+		panic(xerrors.Errorf("%v: contract = %s", vm.ErrTargetContractNotFound, contractHname))
 	}
 	return ret
 }
@@ -356,4 +366,13 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	}
 	target := vmctx.req.CallTarget()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
+}
+
+// mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
+func (vmctx *VMContext) mustCheckTransactionSize() {
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(&iscp.StateData{})
+	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
+	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
+		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
+	}
 }

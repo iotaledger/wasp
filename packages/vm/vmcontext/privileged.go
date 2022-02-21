@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -16,7 +17,7 @@ import (
 
 func (vmctx *VMContext) mustBeCalledFromContract(contract *coreutil.ContractInfo) {
 	if vmctx.CurrentContractHname() != contract.Hname() {
-		panic(fmt.Sprintf("%v: core contract '%s' expected", ErrPrivilegedCallFailed, contract.Name))
+		panic(fmt.Sprintf("%v: core contract '%s' expected", vm.ErrPrivilegedCallFailed, contract.Name))
 	}
 }
 

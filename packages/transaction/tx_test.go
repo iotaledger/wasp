@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
 )
@@ -46,7 +45,7 @@ func TestCreateOrigin(t *testing.T) {
 			0,
 			allOutputs,
 			ids,
-			testdeserparams.RentStructure(),
+			parameters.L1ForTesting(),
 		)
 		require.NoError(t, err)
 
@@ -72,7 +71,7 @@ func TestCreateOrigin(t *testing.T) {
 			"test chain",
 			allOutputs,
 			ids,
-			testdeserparams.RentStructure(),
+			parameters.L1ForTesting(),
 		)
 		require.NoError(t, err)
 
@@ -156,7 +155,7 @@ func TestConsumeRequest(t *testing.T) {
 		},
 	}
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: 0,
 		Inputs:    iotago.Inputs{aliasOut1Inp, reqInp},
 		Outputs:   iotago.Outputs{aliasOut2},
 	}

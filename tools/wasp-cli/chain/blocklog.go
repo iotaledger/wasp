@@ -83,8 +83,8 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	}
 
 	errMsg := "(empty)"
-	if receipt.Error() != nil {
-		errMsg = fmt.Sprintf("%q", receipt.ErrorStr)
+	if receipt.Error != nil {
+		errMsg = fmt.Sprintf("%q", receipt.Error)
 	}
 
 	tree := []log.TreeItem{

@@ -4,6 +4,12 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -12,8 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -124,18 +128,29 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
-	errStr := ""
-	if errProvided != nil {
-		errStr = errProvided.Error()
-	}
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.req,
-		ErrorStr:      errStr,
 		GasBudget:     vmctx.gasBudgetAdjusted,
 		GasBurned:     vmctx.gasBurned,
 		GasFeeCharged: vmctx.gasFeeCharged,
 	}
+
+	var receiptError *iscp.VMError
+
+	if errProvided != nil {
+		if _, ok := errProvided.(*iscp.VMError); ok {
+			receiptError = errProvided.(*iscp.VMError)
+		} else {
+			receiptError = coreerrors.ErrUntypedError.Create(errProvided)
+		}
+	}
+
 	receipt.GasBurnLog = vmctx.gasBurnLog
+
+	if errProvided != nil {
+		receipt.Error = receiptError.AsUnresolvedError()
+	}
+
 	if vmctx.task.EnableGasBurnLogging {
 		vmctx.gasBurnLog = gas.NewGasBurnLog()
 	}
@@ -151,10 +166,10 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
-		panic(ErrTooManyEvents)
+		panic(vm.ErrTooManyEvents)
 	}
 	if len([]byte(msg)) > int(vmctx.chainInfo.MaxEventSize) {
-		panic(ErrTooLargeEvent)
+		panic(vm.ErrTooLargeEvent)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 

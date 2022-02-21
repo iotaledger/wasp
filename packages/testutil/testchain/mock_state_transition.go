@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 
 	//"github.com/iotaledger/wasp/packages/transaction"
@@ -68,7 +67,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	consumedOutput := chainOutput.GetAliasOutput()
 	/*var aliasID iotago.AliasID
 	if consumedOutput.AliasEmpty() {
-		id := chainOutput.ID().ID()
+		id := chainOutput.OutputID()
 		hash, err := blake2b.New(160, id[:])
 		require.NoError(c.t, err)
 		hashBytes := hash.Sum([]byte{})
@@ -77,9 +76,9 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		aliasID = consumedOutput.AliasID
 	}*/
 	aliasID := consumedOutput.AliasID
-	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
+	inputs := iotago.OutputIDs{chainOutput.OutputID()}
 	txEssence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: 0,
 		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{

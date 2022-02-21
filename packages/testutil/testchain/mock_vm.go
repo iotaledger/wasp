@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 
 	// "github.com/iotaledger/wasp/packages/transaction"
@@ -103,9 +102,9 @@ func NextState(
 
 	consumedOutput := chainOutput.GetAliasOutput()
 	aliasID := consumedOutput.AliasID
-	inputs := iotago.OutputIDs{chainOutput.ID().ID()}
+	inputs := iotago.OutputIDs{chainOutput.OutputID()}
 	txEssence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: 0,
 		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{

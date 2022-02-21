@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"strings"
 	"testing"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -107,7 +107,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrTargetContractNotFound)
+		testmisc.RequireErrorToBe(t, err, vm.ErrTargetContractNotFound)
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -142,7 +142,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrTargetContractNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -177,7 +177,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -212,7 +212,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -391,7 +391,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
@@ -403,7 +403,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
@@ -415,7 +415,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
@@ -427,7 +427,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 }
@@ -487,4 +487,50 @@ func TestBurnLog(t *testing.T) {
 	rec = ch.LastReceipt()
 	t.Logf("receipt 2:\n%s", rec)
 	t.Logf("burn log 2:\n%s", rec.GasBurnLog)
+}
+
+func TestMessageSize(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true}).
+		WithNativeContract(sbtestsc.Processor)
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(10000, nil)
+
+	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
+	require.NoError(t, err)
+
+	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
+
+	reqSize := 5_000 // bytes
+	dust := uint64(reqSize * 2)
+
+	maxRequestsPerBlock := env.L1Params().MaxTransactionSize / reqSize
+
+	reqs := make([]iscp.Request, maxRequestsPerBlock+1)
+	for i := 0; i < len(reqs); i++ {
+		req, err := solo.NewIscpRequestFromCallParams(
+			ch,
+			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
+				sbtestsc.ParamSize, uint32(reqSize),
+			).
+				AddAssetsIotas(dust).
+				AddAllowanceIotas(dust).
+				WithMaxAffordableGasBudget(),
+			nil,
+		)
+		require.NoError(t, err)
+		reqs[i] = req
+	}
+
+	env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
+	ch.WaitUntilMempoolIsEmpty()
+
+	// request outputs are so large that they have to be processed in two separate blocks
+	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
+
+	for _, req := range reqs {
+		receipt, ok := ch.GetRequestReceipt(req.ID())
+		require.True(t, ok)
+		require.Nil(t, receipt.Error)
+	}
 }
