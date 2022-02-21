@@ -2,7 +2,7 @@ package root
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 var (
@@ -41,5 +41,5 @@ var (
 )
 
 var (
-	ErrChainInitConditionsFailed = xerrors.New("root.init can't be called in this state")
+	ErrChainInitConditionsFailed = coreerrors.Register("root.init can't be called in this state").Create()
 )

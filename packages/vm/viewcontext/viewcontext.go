@@ -1,6 +1,7 @@
 package viewcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"runtime/debug"
 
@@ -22,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
 )
 
@@ -65,7 +65,7 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	g := burnCode.Cost(par...)
 	ctx.gasBurnLog.Record(burnCode, g)
 	if g > ctx.gasBudget {
-		panic(vmcontext.ErrGasBudgetExceeded)
+		panic(vm.ErrGasBudgetExceeded)
 	}
 	ctx.gasBudget -= g
 }

@@ -1,6 +1,7 @@
 package sbtests
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"testing"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +28,7 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 		WithGasBudget(10_000_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
+	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
 }
 
@@ -76,7 +76,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 		AddAllowanceIotas(allowance).
 		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
+	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
 }
 
@@ -104,7 +104,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 		AddAssetsIotas(100_000).
 		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
+	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
 }
 

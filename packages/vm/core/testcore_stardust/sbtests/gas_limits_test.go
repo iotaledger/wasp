@@ -3,13 +3,14 @@ package sbtests
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +35,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	req, wallet := maxGasRequest(ch, 2)
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err) // tx expected to run out of gas
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
+	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
 	require.Less(t, receipt.GasBurned, req.GasBudget())
@@ -87,5 +88,5 @@ func testViewGasBlock(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 	_, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
 	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
+	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 }

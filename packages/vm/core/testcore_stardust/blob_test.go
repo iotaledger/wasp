@@ -2,6 +2,7 @@ package testcore
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -151,7 +152,11 @@ func TestBigBlob(t *testing.T) {
 	blobBin := make([]byte, bigblobSize)
 
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
-	testmisc.RequireErrorToBe(t, err, "blob too big")
+
+	unresolvedError := err.(*iscp.UnresolvedVMError)
+	resolvedError, _ := unresolvedError.ResolveToVMError(ch.ErrorMessageResolver)
+
+	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")
 
 	ch.MustDepositIotasToL2(100_000, nil)
 	req := solo.NewCallParams(

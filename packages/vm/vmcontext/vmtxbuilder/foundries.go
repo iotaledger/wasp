@@ -1,6 +1,7 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"sort"
 
@@ -17,10 +18,10 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	metadata []byte,
 ) (uint32, uint64) {
 	if maxSupply.Cmp(util.Big0) <= 0 {
-		panic(ErrCreateFoundryMaxSupplyMustBePositive)
+		panic(vm.ErrCreateFoundryMaxSupplyMustBePositive)
 	}
 	if maxSupply.Cmp(util.MaxUint256) > 0 {
-		panic(ErrCreateFoundryMaxSupplyTooBig)
+		panic(vm.ErrCreateFoundryMaxSupplyTooBig)
 	}
 
 	f := &iotago.FoundryOutput{
@@ -44,7 +45,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	f.Amount = f.VByteCost(txb.l1Params.RentStructure(), nil)
 	err := util.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
-	}, ErrNotEnoughIotaBalance)
+	}, vm.ErrNotEnoughIotaBalance)
 	if err != nil {
 		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
@@ -63,12 +64,12 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	sn := tokenID.FoundrySerialNumber()
 	f := txb.ensureFoundry(sn)
 	if f == nil {
-		panic(ErrFoundryDoesNotExist)
+		panic(vm.ErrFoundryDoesNotExist)
 	}
 	// check if the loaded foundry matches the tokenID
 	if *tokenID != f.in.MustNativeTokenID() {
 		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
-			ErrCantModifySupplyOfTheToken, tokenID.String(), f.in.MustNativeTokenID().String()))
+			vm.ErrCantModifySupplyOfTheToken, tokenID.String(), f.in.MustNativeTokenID().String()))
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
@@ -76,7 +77,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	// check the supply bounds
 	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
 	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
-		panic(ErrNativeTokenSupplyOutOffBounds)
+		panic(vm.ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
 	adjustment := txb.addNativeTokenBalanceDelta(tokenID, delta)
@@ -113,10 +114,10 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	f := txb.ensureFoundry(sn)
 	if f == nil {
-		panic(ErrFoundryDoesNotExist)
+		panic(vm.ErrFoundryDoesNotExist)
 	}
 	if f.in == nil {
-		panic(ErrCantDestroyFoundryBeingCreated)
+		panic(vm.ErrCantDestroyFoundryBeingCreated)
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()

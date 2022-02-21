@@ -7,6 +7,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -302,10 +304,13 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+
 	if err != nil {
 		return tx, res, err
 	}
-	return tx, res, receipt.Error()
+
+	return tx, res, receipt.Error.AsGoError()
+
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -376,11 +381,14 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
+
 	if err != nil {
 		return 0, 0, err
 	}
+
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -396,7 +404,35 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
+}
+
+// ErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
+func (ch *Chain) ErrorMessageResolver(vmError *iscp.UnresolvedVMError) (string, error) {
+	params := dict.New()
+	params.Set(errors.ParamContractHname, codec.EncodeHname(vmError.ContractId()))
+	params.Set(errors.ParamErrorId, codec.EncodeUint16(vmError.Id()))
+
+	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, params)
+
+	if err != nil {
+		return "", err
+	}
+
+	errorMessageFormat, err := ret.Get(errors.ParamErrorMessageFormat)
+
+	if err != nil {
+		return "", err
+	}
+
+	errorMessageFormatString, err := codec.DecodeString(errorMessageFormat)
+
+	if err != nil {
+		return "", err
+	}
+
+	return errorMessageFormatString, nil
 }
 
 // CallView calls the view entry point of the smart contract.

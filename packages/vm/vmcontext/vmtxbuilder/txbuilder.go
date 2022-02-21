@@ -3,6 +3,7 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -349,7 +350,7 @@ func (txb *AnchorTransactionBuilder) addDeltaIotasToTotal(delta uint64) {
 	// safe arithmetics
 	n := txb.totalIotasInL2Accounts + delta
 	if n+txb.dustDepositAssumption.AnchorOutput < txb.totalIotasInL2Accounts {
-		panic(xerrors.Errorf("addDeltaIotasToTotal: %w", ErrOverflow))
+		panic(xerrors.Errorf("addDeltaIotasToTotal: %w", vm.ErrOverflow))
 	}
 	txb.totalIotasInL2Accounts = n
 }
@@ -361,7 +362,7 @@ func (txb *AnchorTransactionBuilder) subDeltaIotasFromTotal(delta uint64) {
 	}
 	// safe arithmetics
 	if delta > txb.totalIotasInL2Accounts {
-		panic(ErrNotEnoughIotaBalance)
+		panic(vm.ErrNotEnoughIotaBalance)
 	}
 	txb.totalIotasInL2Accounts -= delta
 }
@@ -412,10 +413,10 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
 		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
-			id, delta, ErrNotEnoughNativeAssetBalance))
+			id, delta, vm.ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", ErrOverflow))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", vm.ErrOverflow))
 	}
 	nt.setOutValue(tmp)
 	switch {
