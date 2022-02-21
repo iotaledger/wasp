@@ -66,7 +66,7 @@ func NewChainOriginTransaction(
 	essence := &iotago.TransactionEssence{
 		NetworkID: parameters.NetworkID,
 		Inputs:    txInputs.UTXOInputs(),
-		Outputs: outputs,
+		Outputs:   outputs,
 	}
 	sigs, err := essence.Sign(
 		txInputs.OrderedSet(unspentOutputs).MustCommitment(),

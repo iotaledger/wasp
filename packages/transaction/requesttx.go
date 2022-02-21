@@ -38,7 +38,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
-		out := MakeBasicOutput(
+		out := MakeOutput(
 			req.TargetAddress,
 			senderAddress,
 			assets,
@@ -50,6 +50,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				Allowance:      req.Metadata.Allowance,
 				GasBudget:      req.Metadata.GasBudget,
 			},
+			nil,
 			req.Options,
 			par.RentStructure,
 			par.DisableAutoAdjustDustDeposit,
@@ -60,8 +61,8 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
 		}
 		outputs = append(outputs, out)
-		sumIotasOut += out.Amount
-		for _, nt := range out.NativeTokens {
+		sumIotasOut += out.(*iotago.BasicOutput).Amount
+		for _, nt := range out.(*iotago.BasicOutput).NativeTokens {
 			s, ok := sumTokensOut[nt.ID]
 			if !ok {
 				s = new(big.Int)
@@ -80,7 +81,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	essence := &iotago.TransactionEssence{
 		NetworkID: parameters.NetworkID,
 		Inputs:    inputIDs.UTXOInputs(),
-		Outputs: outputs,
+		Outputs:   outputs,
 	}
 	sigs, err := essence.Sign(
 		inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment(),

@@ -134,6 +134,8 @@ type RequestParameters struct {
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters
 	Options SendOptions
+	// NFTID (optional)
+	NFTID *iotago.NFTID
 }
 
 type Gas interface {

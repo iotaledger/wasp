@@ -251,7 +251,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
 	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
 
-	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated(nativeTokenIDs)
+	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated()
 
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)

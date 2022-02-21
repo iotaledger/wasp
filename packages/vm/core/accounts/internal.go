@@ -777,6 +777,103 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 
 // endregion //////////////////////////////////////////
 
+// region NFT outputs /////////////////////////////////
+type NFTOutputRec struct {
+	DustIotas   uint64 // always dust deposit
+	NFTID       iotago.NFTID
+	BlockIndex  uint32
+	OutputIndex uint16
+}
+
+func (r *NFTOutputRec) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteUint32(r.BlockIndex).
+		WriteUint16(r.OutputIndex).
+		WriteUint64(r.DustIotas).
+		WriteBytes(r.NFTID[:])
+	return mu.Bytes()
+}
+
+func (r *NFTOutputRec) String() string {
+	return fmt.Sprintf("NFT Record: iotas: %d, ID: %s, block: %d, outIdx: %d",
+		r.DustIotas, r.NFTID.String(), r.BlockIndex, r.OutputIndex)
+}
+
+func NFTOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFTOutputRec, error) {
+	ret := &NFTOutputRec{}
+	var err error
+	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	if ret.DustIotas, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if idBytes, err := mu.ReadBytes(iotago.NFTIDLength); err != nil {
+		return nil, err
+	} else {
+		copy(ret.NFTID[:], idBytes)
+	}
+	return ret, nil
+}
+
+func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
+	ret, err := NFTOutputRecFromMarshalUtil(marshalutil.New(data))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// getAccountsMap is a map which contains all foundries owned by the chain
+func getNFTOutputMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixNFTOutputRecords)
+}
+
+func getNFTOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixNFTOutputRecords)
+}
+
+// SaveNFTOutput map tokenID -> foundryRec
+func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, blockIndex uint32, outputIndex uint16) {
+	tokenRec := NFTOutputRec{
+		DustIotas:   out.Amount,
+		NFTID:       out.NFTID,
+		BlockIndex:  blockIndex,
+		OutputIndex: outputIndex,
+	}
+	getNFTOutputMap(state).MustSetAt(out.NFTID[:], tokenRec.Bytes())
+}
+
+func DeleteNFTOutput(state kv.KVStore, id *iotago.NFTID) {
+	getNFTOutputMap(state).MustDelAt(id[:])
+}
+
+func GetNFTOutput(state kv.KVStoreReader, id *iotago.NFTID, chainID *iscp.ChainID) (*iotago.NFTOutput, uint32, uint16) {
+	data := getNFTOutputMapR(state).MustGetAt(id[:])
+	if data == nil {
+		return nil, 0, 0
+	}
+	tokenRec := mustNFTOutputRecFromBytes(data)
+	ret := &iotago.NFTOutput{
+		Amount: tokenRec.DustIotas,
+		NFTID:  tokenRec.NFTID,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+		},
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: chainID.AsAddress(),
+			},
+		},
+	}
+	return ret, tokenRec.BlockIndex, tokenRec.OutputIndex
+}
+
+// endregion //////////////////////////////////////////
+
 func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumption {
 	bin := state.MustGet(kv.Key(stateVarMinimumDustDepositAssumptionsBin))
 	ret, err := transaction.DustDepositAssumptionFromBytes(bin)

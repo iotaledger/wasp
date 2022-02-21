@@ -42,6 +42,8 @@ type AnchorTransactionBuilder struct {
 	loadFoundry foundryLoader
 	// balances of native tokens loaded during the batch run
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
+	// all nfts loaded during the batch run
+	nftsIncluded map[iotago.NFTID]bool
 	// invoked foundries. Foundry serial number is used as a key
 	invokedFoundries map[uint32]*foundryInvoked
 	// requests posted by smart contracts
@@ -244,6 +246,16 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 			inputs[id] = f.in
 		}
 	}
+
+	// nfts
+	for _, nft := range txb.nftsSorted() {
+		if nft.in != nil {
+			id := nft.input.ID()
+			ids = append(ids, id)
+			inputs[id] = nft.in
+		}
+	}
+
 	if len(ids) != txb.numInputs() {
 		panic("AnchorTransactionBuilder.inputs: internal inconsistency")
 	}
