@@ -214,7 +214,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			},
 			Options: iscp.SendOptions{},
 		}},
-		RentStructure:                ch.Env.utxoDB.RentStructure(),
+		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
 	if err != nil {
@@ -409,32 +409,30 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 }
 
 // ErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
-func (ch *Chain) ErrorMessageResolver() func(vmError *iscp.UnresolvedVMError) (string, error) {
-	return func(errorToResolve *iscp.UnresolvedVMError) (string, error) {
-		params := dict.New()
-		params.Set(errors.ParamContractHname, codec.EncodeHname(errorToResolve.PrefixId()))
-		params.Set(errors.ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
+func (ch *Chain) ErrorMessageResolver(vmError *iscp.UnresolvedVMError) (string, error) {
+	params := dict.New()
+	params.Set(errors.ParamContractHname, codec.EncodeHname(vmError.PrefixId()))
+	params.Set(errors.ParamErrorId, codec.EncodeUint16(vmError.Id()))
 
-		ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, params)
+	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, params)
 
-		if err != nil {
-			return "", err
-		}
-
-		errorMessageFormat, err := ret.Get(errors.ParamErrorMessageFormat)
-
-		if err != nil {
-			return "", err
-		}
-
-		errorMessageFormatString, err := codec.DecodeString(errorMessageFormat)
-
-		if err != nil {
-			return "", err
-		}
-
-		return errorMessageFormatString, nil
+	if err != nil {
+		return "", err
 	}
+
+	errorMessageFormat, err := ret.Get(errors.ParamErrorMessageFormat)
+
+	if err != nil {
+		return "", err
+	}
+
+	errorMessageFormatString, err := codec.DecodeString(errorMessageFormat)
+
+	if err != nil {
+		return "", err
+	}
+
+	return errorMessageFormatString, nil
 }
 
 // CallView calls the view entry point of the smart contract.

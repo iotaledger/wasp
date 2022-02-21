@@ -11,7 +11,7 @@ func (vmctx *VMContext) EstimateRequiredDustDeposit(par iscp.RequestParameters) 
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
-		vmctx.task.RentStructure,
+		vmctx.task.L1Params.RentStructure(),
 	)
-	return out.VByteCost(vmctx.task.RentStructure, nil)
+	return out.VByteCost(vmctx.task.L1Params.RentStructure(), nil)
 }

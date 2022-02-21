@@ -42,7 +42,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 			Data: metadata,
 		}}
 	}
-	f.Amount = f.VByteCost(txb.rentStructure, nil)
+	f.Amount = f.VByteCost(txb.l1Params.RentStructure(), nil)
 	err := util.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)
@@ -73,7 +73,6 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
-	defer txb.mustCheckMessageSize()
 
 	// check the supply bounds
 	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
@@ -122,7 +121,6 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
-	defer txb.mustCheckMessageSize()
 
 	f.out = nil
 	// return dust deposit to accounts

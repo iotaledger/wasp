@@ -27,7 +27,7 @@ func testPanicFull(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -57,7 +57,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -88,7 +88,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -119,7 +119,7 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -149,7 +149,7 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver())
+		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
