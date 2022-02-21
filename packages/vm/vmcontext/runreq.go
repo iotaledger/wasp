@@ -335,7 +335,7 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: contract = %s", ErrTargetContractNotFound, contractHname))
+		panic(xerrors.Errorf("%v: contract = %s", vm.ErrTargetContractNotFound, contractHname))
 	}
 	return ret
 }

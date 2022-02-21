@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,5 +88,5 @@ func testViewGasBlock(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 	_, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
 	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
+	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 }

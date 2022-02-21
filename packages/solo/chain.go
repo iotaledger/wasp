@@ -346,7 +346,7 @@ func (ch *Chain) GetErrorMessageFormat(contract iscp.Hname, errorId uint16) (str
 	if err != nil {
 		return "", err
 	}
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
 
 	require.NoError(ch.Env.T, err)
