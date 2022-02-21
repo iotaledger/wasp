@@ -67,8 +67,8 @@ func (t *Trie) Update(key []byte, value []byte) {
 			// no need for the new node
 			last.Node.ModifiedTerminal = c
 		} else {
-			// create the new node
-			keyFork := key[:splitChildIndex]
+			// create a new node
+			keyFork := key[:len(keyContinue)]
 			childForkIndex := keyFork[len(keyFork)-1]
 			assert(int(childForkIndex) != splitChildIndex, "childForkIndex != splitChildIndex")
 			last.Node.ModifiedChildren[childForkIndex] = t.newTerminalNode(keyFork, key[len(keyFork):], c)
