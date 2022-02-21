@@ -25,22 +25,38 @@
     {
       "username": "admin",
       "password": "admin",
-      "claims": ["dashboard", "webapi", "chain.read", "chain.write"]
+      "claims": ["dashboard", "api", "chain.read", "chain.write"]
     }
   ],
   "webapi": {
     "auth": {
-      "scheme": "jwt",
-      "claim": "webapi",
-      "duration": 24
+      "jwt": {
+        "accessClaim": "webapi",
+        "duration": 24
+      },
+      "basic": {
+        "accountName": "admin"
+      },
+      "ip": {
+        "whitelist": ["127.0.0.1"]
+      },
+      "addRoutes": true,
+      "scheme": "jwt"
     },
     "bindAddress": "0.0.0.0:9090"
   },
   "dashboard": {
     "auth": {
-      "scheme": "jwt",
-      "claim": "dashboard",
-      "duration": 24
+      "jwt": {
+        "accessClaim": "webapi",
+        "duration": 24
+      },
+      "basic": {},
+      "ip": {
+        "whitelist": ["127.0.0.1"]
+      },
+      "addRoutes": true,
+      "scheme": "jwt"
     },
     "bindAddress": "0.0.0.0:7000"
   },

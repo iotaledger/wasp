@@ -1,4 +1,4 @@
-package jwt_auth
+package jwt
 
 import (
 	"crypto/subtle"
@@ -6,7 +6,6 @@ import (
 	jwt "github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	"net/http"
 	"time"
 )
@@ -23,26 +22,21 @@ type JWTAuth struct {
 	secret         []byte
 }
 
-type ClaimValidator = func(claims *AuthClaims) bool
-type MiddlewareValidator = func(c echo.Context, claims *AuthClaims) bool
+type ClaimValidator = func(claims *JWTAuthClaims) bool
+type MiddlewareValidator = func(c echo.Context, claims *JWTAuthClaims) bool
 
 // return error to continue to error routine, otherwise handle redirection or other stuff and return nil
 type ErrorHandler = func(c echo.Context, error error) error
 
-func NewJWTAuth(sessionTimeout time.Duration, nodeID string, secret crypto.PrivKey) (*JWTAuth, error) {
-	secretBytes, err := crypto.MarshalPrivateKey(secret)
-	if err != nil {
-		return nil, fmt.Errorf("unable to convert private key: %w", err)
-	}
-
+func NewJWTAuth(sessionTimeout time.Duration, nodeID string, secret []byte) (*JWTAuth, error) {
 	return &JWTAuth{
 		sessionTimeout: sessionTimeout,
 		nodeID:         nodeID,
-		secret:         secretBytes,
+		secret:         secret,
 	}, nil
 }
 
-type AuthClaims struct {
+type JWTAuthClaims struct {
 	jwt.StandardClaims
 	Dashboard  bool `json:"dashboard"`
 	API        bool `json:"api"`
@@ -50,7 +44,7 @@ type AuthClaims struct {
 	ChainWrite bool `json:"chain.write"`
 }
 
-func (c *AuthClaims) HasClaim(claim string) bool {
+func (c *JWTAuthClaims) HasClaim(claim string) bool {
 	var stdClaims jwt.Claims = c
 	mapClaims := stdClaims.(jwt.MapClaims)
 
@@ -61,7 +55,7 @@ func (c *AuthClaims) HasClaim(claim string) bool {
 	return false
 }
 
-func (c *AuthClaims) compare(field string, expected string) bool {
+func (c *JWTAuthClaims) compare(field string, expected string) bool {
 	if field == "" {
 		return false
 	}
@@ -72,16 +66,17 @@ func (c *AuthClaims) compare(field string, expected string) bool {
 	return false
 }
 
-func (c *AuthClaims) VerifySubject(expected string) bool {
+func (c *JWTAuthClaims) VerifySubject(expected string) bool {
 	return c.compare(c.Subject, expected)
 }
 
 func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidator) echo.MiddlewareFunc {
 
 	config := middleware.JWTConfig{
-		ContextKey: "jwt",
-		Claims:     &AuthClaims{},
-		SigningKey: j.secret,
+		ContextKey:  "jwt",
+		Claims:      &JWTAuthClaims{},
+		SigningKey:  j.secret,
+		TokenLookup: "header:Authorization,cookie:jwt",
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -111,7 +106,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 			}
 
 			// read the claims set by the JWT middleware on the context
-			claims, ok := token.Claims.(*AuthClaims)
+			claims, ok := token.Claims.(*JWTAuthClaims)
 
 			// do extended claims validation
 			if !ok || !claims.VerifyAudience(j.nodeID, true) {
@@ -129,7 +124,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 	}
 }
 
-func (j *JWTAuth) IssueJWT(username string, authClaims *AuthClaims) (string, error) {
+func (j *JWTAuth) IssueJWT(username string, authClaims *JWTAuthClaims) (string, error) {
 
 	now := time.Now()
 
@@ -156,20 +151,21 @@ func (j *JWTAuth) IssueJWT(username string, authClaims *AuthClaims) (string, err
 	return token.SignedString(j.secret)
 }
 
-func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
-	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		// validate the signing method we expect
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return j.secret, nil
+func (j *JWTAuth) keyFunc(token *jwt.Token) (interface{}, error) {
+	// validate the signing method we expect
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
 
-	t, err := jwt.ParseWithClaims(token, &AuthClaims{}, keyFunc)
+	return j.secret, nil
+}
+
+func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
+
+	t, err := jwt.ParseWithClaims(token, &JWTAuthClaims{}, j.keyFunc)
 
 	if err == nil && t.Valid {
-		claims, ok := t.Claims.(*AuthClaims)
+		claims, ok := t.Claims.(*JWTAuthClaims)
 
 		if !ok || !claims.VerifyAudience(j.nodeID, true) {
 			return false

@@ -139,6 +139,10 @@ func GetStruct(path string, object interface{}) error {
 	return all.Unmarshal(path, object)
 }
 
+func GetStructWithConf(path string, object interface{}, uc koanf.UnmarshalConf) error {
+	return all.UnmarshalWithConf(path, object, uc)
+}
+
 func Dump() map[string]interface{} {
 	// hack to access private member Node.config
 	rf := reflect.ValueOf(all).Elem().FieldByName("config")

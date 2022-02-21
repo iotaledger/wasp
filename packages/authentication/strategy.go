@@ -1,97 +1,91 @@
-package auth
+package authentication
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/authentication/jwt"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/mitchellh/mapstructure"
 	"net"
 	"strings"
 	"time"
 
-	jwt "github.com/iotaledger/wasp/packages/jwt_auth"
 	"github.com/iotaledger/wasp/plugins/accounts"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/libp2p/go-libp2p-core/crypto"
 )
 
 const (
-	Authentication_JWT   = "jwt"
-	Authentication_BASIC = "basic"
-	Authentication_IP    = "ip"
+	AuthJWT         = "jwt"
+	AuthBasic       = "basic"
+	AuthIpWhitelist = "ip"
 )
 
-type BaseAuthConfiguration map[string]interface{}
-
-func (b *BaseAuthConfiguration) GetScheme() string {
-	var config AuthConfiguration
-	mapstructure.Decode(b, &config)
-	return config.Scheme
-}
-
-func (b *BaseAuthConfiguration) GetJWTAuthConfiguration() JWTAuthConfiguration {
-	var config JWTAuthConfiguration
-	mapstructure.Decode(b, &config)
-	return config
-}
-
-func (b *BaseAuthConfiguration) GetBasicAuthConfiguration() BasicAuthConfiguration {
-	var config BasicAuthConfiguration
-	mapstructure.Decode(b, &config)
-	return config
-}
-
-func (b *BaseAuthConfiguration) GetIPWhiteListAuthConfiguration() IPWhiteListAuthConfiguration {
-	var config IPWhiteListAuthConfiguration
-	mapstructure.Decode(b, &config)
-	return config
-}
-
 type AuthConfiguration struct {
-	Scheme string `mapstructure:"scheme"`
+	Scheme    string `koanf:"scheme"`
+	AddRoutes bool   `koanf:"addRoutes"`
+
+	JWTConfig         JWTAuthConfiguration         `koanf:"jwt"`
+	BasicAuthConfig   BasicAuthConfiguration       `koanf:"basic"`
+	IPWhitelistConfig IPWhiteListAuthConfiguration `koanf:"ip"`
 }
 
 type JWTAuthConfiguration struct {
-	AuthConfiguration `mapstructure:",squash"`
-	Duration          int      `mapstructure:"duration"`
-	Claims            []string `mapstructure:"claims"`
+	Duration    int    `koanf:"duration"`
+	AccessClaim string `koanf:"accessClaim"`
 }
 
 type BasicAuthConfiguration struct {
-	AuthConfiguration `mapstructure:",squash"`
+	AccountName string `koanf:"accountName"`
 }
 
 type IPWhiteListAuthConfiguration struct {
-	AuthConfiguration `mapstructure:",squash"`
-	IPWhiteList       []string `mapstructure:"adminWhitelist"`
+	IPWhiteList []string `koanf:"whitelist"`
 }
 
 type WebAPI interface {
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	Use(middleware ...echo.MiddlewareFunc)
 }
 
-func AddAuthentication(webAPI WebAPI, config BaseAuthConfiguration) {
+func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string) {
+	var config AuthConfiguration
+	parameters.GetStruct(configSectionPath, &config)
+
 	accounts := accounts.GetAccounts()
 
-	switch config.GetScheme() {
-	case Authentication_BASIC:
+	switch config.Scheme {
+	case AuthBasic:
 		addBasicAuth(webAPI, accounts)
-	case Authentication_JWT:
-		jwtAuth := addJWTAuth(webAPI, config.GetJWTAuthConfiguration(), accounts)
+	case AuthJWT:
+		nodeIdentity, err := registryProvider().GetNodeIdentity()
 
-		authHandler := &AuthRoute{jwt: jwtAuth, accounts: accounts}
-		webAPI.POST("/adm/auth", authHandler.CrossAPIAuthHandler)
-	case Authentication_IP:
-		addIPWhiteListauth(webAPI, config.GetIPWhiteListAuthConfiguration())
+		if err != nil {
+			panic(err)
+		}
+
+		privateKey := nodeIdentity.PrivateKey.Bytes()
+		jwtAuth := addJWTAuth(webAPI, config.JWTConfig, privateKey, accounts)
+
+		if config.AddRoutes {
+			authHandler := &AuthHandler{jwt: jwtAuth, accounts: accounts}
+			webAPI.POST(AuthRoute(), authHandler.CrossAPIAuthHandler)
+		}
+
+	case AuthIpWhitelist:
+		addIPWhiteListauth(webAPI, config.IPWhitelistConfig)
 	default:
-		panic(fmt.Sprintf("Unknown auth scheme %s", config.GetScheme()))
+		panic(fmt.Sprintf("Unknown auth scheme %s", config.Scheme))
+	}
+
+	if config.AddRoutes {
+		addAuthenticationStatus(webAPI, config)
 	}
 }
 
-func initJWT(duration int, nodeId string, accounts *[]accounts.Account) (*jwt.JWTAuth, func(context echo.Context) bool, jwt.MiddlewareValidator, error) {
-	privKey, _, _ := crypto.GenerateKeyPair(2, 256)
-	jwtAuth, err := jwt.NewJWTAuth(time.Duration(duration)*time.Hour, nodeId, privKey)
+func initJWT(duration int, nodeId string, privateKey []byte, accounts *[]accounts.Account) (*jwt.JWTAuth, func(context echo.Context) bool, jwt.MiddlewareValidator, error) {
+	jwtAuth, err := jwt.NewJWTAuth(time.Duration(duration)*time.Hour, nodeId, privateKey)
 
 	if err != nil {
 		return nil, nil, nil, err
@@ -100,15 +94,14 @@ func initJWT(duration int, nodeId string, accounts *[]accounts.Account) (*jwt.JW
 	jwtAuthSkipper := func(context echo.Context) bool {
 		path := context.Request().RequestURI
 
-		if strings.HasSuffix(path, "/auth") {
+		if strings.HasSuffix(path, AuthRoute()) || strings.HasSuffix(path, AuthStatusRoute()) || path == "/" {
 			return true
 		}
 
 		return false
 	}
 
-	// Only allow JWT created for the dashboard
-	jwtAuthAllow := func(_ echo.Context, claims *jwt.AuthClaims) bool {
+	jwtAuthAllow := func(_ echo.Context, claims *jwt.JWTAuthClaims) bool {
 		isValidSubject := false
 
 		for _, account := range *accounts {
@@ -127,14 +120,14 @@ func initJWT(duration int, nodeId string, accounts *[]accounts.Account) (*jwt.JW
 	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
 }
 
-func addJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, accounts *[]accounts.Account) *jwt.JWTAuth {
+func addJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, accounts *[]accounts.Account) *jwt.JWTAuth {
 	duration := config.Duration
 
 	if duration <= 0 {
 		duration = 24
 	}
 
-	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", accounts)
+	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, accounts)
 
 	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
 
