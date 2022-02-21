@@ -287,34 +287,25 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
-	metadata := &iscp.SendMetadata{
-		TargetContract: contract,
-		EntryPoint:     function,
-		Params:         params,
-		Allowance:      allow,
-		GasBudget:      1_000_000,
+	sendReq := iscp.RequestParameters{
+		AdjustToMinimumDustDeposit: true,
+		TargetAddress:              chainID.AsAddress(),
+		Assets:                     assets,
+		Metadata: &iscp.SendMetadata{
+			TargetContract: contract,
+			EntryPoint:     function,
+			Params:         params,
+			Allowance:      allow,
+			GasBudget:      1_000_000,
+		},
 	}
-	if req.Delay == 0 {
-		s.ctx.Send(iscp.RequestParameters{
-			AdjustToMinimumDustDeposit: true,
-			TargetAddress:              s.ctx.Caller().Address(),
-			Assets:                     assets,
-			Metadata:                   metadata,
-		})
-		return nil
+	if req.Delay != 0 {
+		timeLock := time.Unix(0, s.ctx.Timestamp())
+		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
+		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
 	}
 
-	timeLock := time.Unix(0, s.ctx.Timestamp())
-	timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
-	s.ctx.Send(iscp.RequestParameters{
-		AdjustToMinimumDustDeposit: true,
-		TargetAddress:              s.ctx.Caller().Address(),
-		Assets:                     assets,
-		Metadata:                   metadata,
-		Options: iscp.SendOptions{
-			Timelock: &iscp.TimeData{Time: timeLock},
-		},
-	})
+	s.ctx.Send(sendReq)
 	return nil
 }
 
