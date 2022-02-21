@@ -20,7 +20,7 @@ import (
 // If it is successful VM takes over and replaces resulting transaction with
 // governance transition. The state of the chain remains unchanged
 func rotateStateController(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("rotateStateController")
+	ctx.RequireCallerIsChainOwner()
 	newStateControllerAddr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
@@ -52,7 +52,7 @@ func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 }
 
 func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("addAllowedStateControllerAddress")
+	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustSetAt(iscp.BytesFromAddress(addr), []byte{0xFF})
@@ -60,7 +60,7 @@ func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 }
 
 func removeAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("removeAllowedStateControllerAddress")
+	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustDelAt(iscp.BytesFromAddress(addr))

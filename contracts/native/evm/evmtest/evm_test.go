@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 )
@@ -153,7 +154,7 @@ func TestOwner(t *testing.T) {
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
 				AddAssetsIotas(100000).
 				WithMaxAffordableGasBudget(),
-			&evmChain.soloChain.OriginatorPrivateKey,
+			evmChain.soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
@@ -204,11 +205,11 @@ func TestGasRatio(t *testing.T) {
 		newGasRatio := util.Ratio32{A: evm.DefaultGasRatio.A * 10, B: evm.DefaultGasRatio.B}
 		newUserWallet, _ := evmChain.solo.NewKeyPairWithFunds()
 		err = evmChain.setGasRatio(newGasRatio, iotaCallOptions{wallet: newUserWallet})
-		require.Contains(t, err.Error(), "unauthorized access")
+		require.True(t, iscp.VMErrorIs(err, vm.ErrUnauthorized))
 		require.Equal(t, evm.DefaultGasRatio, evmChain.getGasRatio())
 
 		// current owner is able to set a new gasRatio
-		err = evmChain.setGasRatio(newGasRatio, iotaCallOptions{wallet: &evmChain.soloChain.OriginatorPrivateKey})
+		err = evmChain.setGasRatio(newGasRatio, iotaCallOptions{wallet: evmChain.soloChain.OriginatorPrivateKey})
 		require.NoError(t, err)
 		require.Equal(t, newGasRatio, evmChain.getGasRatio())
 
@@ -226,7 +227,7 @@ func TestGasLimit(t *testing.T) {
 		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
 		// set a gas ratio such that evm gas cost in iotas is larger than dust cost
-		err := evmChain.setGasRatio(util.Ratio32{A: 10, B: 1}, iotaCallOptions{wallet: &evmChain.soloChain.OriginatorPrivateKey})
+		err := evmChain.setGasRatio(util.Ratio32{A: 10, B: 1}, iotaCallOptions{wallet: evmChain.soloChain.OriginatorPrivateKey})
 		require.NoError(t, err)
 
 		// estimate gas by sending a valid tx

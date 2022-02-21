@@ -134,7 +134,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 //   ParamForceMinimumIotas specify how may iotas should be left on the common account
 //   but not less that MinimumIotasOnCommonAccount constant
 func harvest(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("accounts.harvest")
+	ctx.RequireCallerIsChainOwner()
 
 	state := ctx.State()
 	checkLedger(state, "accounts.harvest.begin")
