@@ -10,6 +10,7 @@ import (
 )
 
 const VMErrorMessageLimit = math.MaxUint16
+const VMCoreErrorID = math.MaxUint32
 
 type VMErrorTemplate struct {
 	contractId    Hname

@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"math"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -51,7 +50,7 @@ func funcGetErrorMessageFormat(ctx iscp.SandboxView) dict.Dict {
 	var e coreerrors.ErrorCollection
 
 	// All errors with a MaxUint32 contract id will be considered as core errors.
-	if contract == math.MaxUint32 {
+	if contract == iscp.VMCoreErrorID {
 		e = coreerrors.All()
 	} else {
 		e = NewStateErrorCollectionReader(ctx.State(), iscp.Hname(contract))
