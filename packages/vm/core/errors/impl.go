@@ -50,6 +50,7 @@ func funcGetErrorMessageFormat(ctx iscp.SandboxView) dict.Dict {
 
 	var e coreerrors.ErrorCollection
 
+	// All errors with a MaxUint32 contract id will be considered as core errors.
 	if contract == math.MaxUint32 {
 		e = coreerrors.All()
 	} else {

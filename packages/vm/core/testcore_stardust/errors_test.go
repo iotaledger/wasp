@@ -186,7 +186,7 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 
 	require.Error(t, err)
 	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
-	require.Equal(t, testError.PrefixId(), typedError.PrefixId())
+	require.Equal(t, testError.ContractId(), typedError.ContractId())
 
 	// Further, this error will add the arg '42'
 	require.True(t, strings.HasSuffix(err.Error(), "42"))
@@ -216,7 +216,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 
 	require.Error(t, err)
 	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
-	require.Equal(t, testError.PrefixId(), typedError.PrefixId())
+	require.Equal(t, testError.ContractId(), typedError.ContractId())
 
 	t.Log(err.Error())
 
@@ -253,7 +253,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
 	require.EqualValues(t, receipt.Error.Id(), typedError.Id())
-	require.EqualValues(t, receipt.Error.PrefixId(), typedError.PrefixId())
+	require.EqualValues(t, receipt.Error.ContractId(), typedError.ContractId())
 	require.EqualValues(t, receipt.Error.Hash(), typedError.Hash())
 	require.EqualValues(t, receipt.Error.Params(), typedError.Params())
 }
@@ -287,7 +287,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
 	require.EqualValues(t, receipt.Error.Id(), typedError.Id())
-	require.EqualValues(t, receipt.Error.PrefixId(), typedError.PrefixId())
+	require.EqualValues(t, receipt.Error.ContractId(), typedError.ContractId())
 	require.EqualValues(t, receipt.Error.Hash(), typedError.Hash())
 	require.Equal(t, receipt.Error.Params(), typedError.Params())
 }

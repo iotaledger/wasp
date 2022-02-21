@@ -10,7 +10,7 @@ import (
 func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*iscp.VMError) (string, error) {
 	return func(errorToResolve *iscp.VMError) (string, error) {
 		params := dict.New()
-		params.Set(ParamContractHname, codec.EncodeHname(errorToResolve.PrefixId()))
+		params.Set(ParamContractHname, codec.EncodeHname(errorToResolve.ContractId()))
 		params.Set(ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
 
 		ret := ctx.Call(Contract.Hname(), FuncGetErrorMessageFormat.Hname(), params)

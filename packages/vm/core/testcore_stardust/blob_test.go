@@ -154,7 +154,7 @@ func TestBigBlob(t *testing.T) {
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 
 	unresolvedError := err.(*iscp.UnresolvedVMError)
-	resolvedError, _ := unresolvedError.ResolveToVMError(ch.ErrorMessageResolver())
+	resolvedError, _ := unresolvedError.ResolveToVMError(ch.ErrorMessageResolver)
 
 	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")
 

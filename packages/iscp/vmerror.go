@@ -12,21 +12,21 @@ import (
 const VMErrorMessageLimit = math.MaxUint16
 
 type VMErrorTemplate struct {
-	prefixId      Hname
+	contractId    Hname
 	id            uint16
 	messageFormat string
 }
 
 func NewVMErrorTemplate(prefixId Hname, errorId uint16, messageFormat string) *VMErrorTemplate {
-	return &VMErrorTemplate{prefixId: prefixId, id: errorId, messageFormat: messageFormat}
+	return &VMErrorTemplate{contractId: prefixId, id: errorId, messageFormat: messageFormat}
 }
 
 func (e *VMErrorTemplate) Error() string {
 	return e.messageFormat
 }
 
-func (e *VMErrorTemplate) PrefixId() Hname {
-	return e.prefixId
+func (e *VMErrorTemplate) ContractId() Hname {
+	return e.contractId
 }
 
 func (e *VMErrorTemplate) Id() uint16 {
@@ -40,7 +40,7 @@ func (e *VMErrorTemplate) MessageFormat() string {
 func (e *VMErrorTemplate) Create(params ...interface{}) *VMError {
 	return &VMError{
 		messageFormat: e.MessageFormat(),
-		prefixId:      e.PrefixId(),
+		contractId:    e.ContractId(),
 		id:            e.Id(),
 		params:        params,
 	}
@@ -49,7 +49,7 @@ func (e *VMErrorTemplate) Create(params ...interface{}) *VMError {
 func (e *VMErrorTemplate) Serialize(mu *marshalutil.MarshalUtil) {
 	messageFormatBytes := []byte(e.MessageFormat())
 
-	mu.WriteUint32(uint32(e.PrefixId())).
+	mu.WriteUint32(uint32(e.ContractId())).
 		WriteUint16(e.Id()).
 		WriteUint16(uint16(len(messageFormatBytes))).
 		WriteBytes(messageFormatBytes)
@@ -73,7 +73,7 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 		return nil, err
 	}
 
-	e.prefixId = Hname(prefixId)
+	e.contractId = Hname(prefixId)
 
 	if e.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -93,22 +93,22 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 }
 
 type UnresolvedVMError struct {
-	prefixId Hname
-	id       uint16
-	params   []interface{}
-	hash     uint32
+	contractId Hname
+	id         uint16
+	params     []interface{}
+	hash       uint32
 }
 
 func (e *UnresolvedVMError) Error() string {
-	return fmt.Sprintf("UnresolvedError (prefixId: %d, errorId: %d, hash: %x)", e.PrefixId(), e.Id(), e.hash)
+	return fmt.Sprintf("UnresolvedError (contractId: %d, errorId: %d, hash: %x)", e.ContractId(), e.Id(), e.hash)
 }
 
 func (e *UnresolvedVMError) Hash() uint32 {
 	return e.hash
 }
 
-func (e *UnresolvedVMError) PrefixId() Hname {
-	return e.prefixId
+func (e *UnresolvedVMError) ContractId() Hname {
+	return e.contractId
 }
 
 func (e *UnresolvedVMError) Id() uint16 {
@@ -127,9 +127,9 @@ func (e *UnresolvedVMError) ResolveToVMError(resolver VMErrorMessageResolver) (*
 	}
 
 	vmError := VMError{
-		prefixId: e.PrefixId(),
-		id:       e.Id(),
-		params:   e.Params(),
+		contractId: e.ContractId(),
+		id:         e.Id(),
+		params:     e.Params(),
 	}
 
 	var err error
@@ -175,7 +175,7 @@ func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
 func (e *UnresolvedVMError) Bytes() []byte {
 	mu := marshalutil.New()
 
-	mu.WriteUint32(uint32(e.PrefixId())).
+	mu.WriteUint32(uint32(e.ContractId())).
 		WriteUint16(e.Id()).
 		WriteUint32(e.hash)
 
@@ -185,7 +185,7 @@ func (e *UnresolvedVMError) Bytes() []byte {
 }
 
 func (e *UnresolvedVMError) Definition() VMErrorTemplate {
-	return VMErrorTemplate{prefixId: e.PrefixId(), id: e.Id()}
+	return VMErrorTemplate{contractId: e.ContractId(), id: e.Id()}
 }
 
 func (e *UnresolvedVMError) AsGoError() error {
@@ -197,14 +197,14 @@ func (e *UnresolvedVMError) AsGoError() error {
 }
 
 type VMError struct {
-	prefixId      Hname
+	contractId    Hname
 	id            uint16
 	messageFormat string
 	params        []interface{}
 }
 
-func (e *VMError) PrefixId() Hname {
-	return e.prefixId
+func (e *VMError) ContractId() Hname {
+	return e.contractId
 }
 
 func (e *VMError) Id() uint16 {
@@ -247,7 +247,7 @@ func (e *VMError) Bytes() []byte {
 	mu := marshalutil.New()
 	hash := e.Hash()
 
-	mu.WriteUint32(uint32(e.PrefixId())).
+	mu.WriteUint32(uint32(e.ContractId())).
 		WriteUint16(e.Id()).
 		WriteUint32(hash)
 
@@ -266,15 +266,15 @@ func (e *VMError) AsGoError() error {
 
 func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 	return &UnresolvedVMError{
-		hash:     e.Hash(),
-		id:       e.Id(),
-		params:   e.Params(),
-		prefixId: e.PrefixId(),
+		hash:       e.Hash(),
+		id:         e.Id(),
+		params:     e.Params(),
+		contractId: e.ContractId(),
 	}
 }
 
 func (e *VMError) AsTemplate() VMErrorTemplate {
-	return VMErrorTemplate{prefixId: e.PrefixId(), id: e.Id(), messageFormat: e.MessageFormat()}
+	return VMErrorTemplate{contractId: e.ContractId(), id: e.Id(), messageFormat: e.MessageFormat()}
 }
 
 func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedVMError, error) {
@@ -288,7 +288,7 @@ func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedV
 		return nil, err
 	}
 
-	unresolvedError.prefixId = Hname(prefixId)
+	unresolvedError.contractId = Hname(prefixId)
 
 	if unresolvedError.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -320,15 +320,15 @@ func GetErrorIdFromMessageFormat(messageFormat string) uint16 {
 
 func extractErrorPrimitive(err interface{}) (bool, Hname, uint16) {
 	if e, ok := err.(*VMError); ok {
-		return true, e.PrefixId(), e.Id()
+		return true, e.ContractId(), e.Id()
 	}
 
 	if e, ok := err.(*UnresolvedVMError); ok {
-		return true, e.PrefixId(), e.Id()
+		return true, e.ContractId(), e.Id()
 	}
 
 	if e, ok := err.(*VMErrorTemplate); ok {
-		return true, e.PrefixId(), e.Id()
+		return true, e.ContractId(), e.Id()
 	}
 
 	return false, 0, 0

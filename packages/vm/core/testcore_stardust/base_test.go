@@ -531,6 +531,6 @@ func TestMessageSize(t *testing.T) {
 	for _, req := range reqs {
 		receipt, ok := ch.GetRequestReceipt(req.ID())
 		require.True(t, ok)
-		require.Empty(t, receipt.ErrorStr)
+		require.Nil(t, receipt.Error)
 	}
 }

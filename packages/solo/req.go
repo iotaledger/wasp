@@ -411,7 +411,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 // ErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
 func (ch *Chain) ErrorMessageResolver(vmError *iscp.UnresolvedVMError) (string, error) {
 	params := dict.New()
-	params.Set(errors.ParamContractHname, codec.EncodeHname(vmError.PrefixId()))
+	params.Set(errors.ParamContractHname, codec.EncodeHname(vmError.ContractId()))
 	params.Set(errors.ParamErrorId, codec.EncodeUint16(vmError.Id()))
 
 	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, params)
