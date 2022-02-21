@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -19,7 +19,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := config.WaspClient()
-		if chainIDStr == "" {
+		if chainAlias == "" {
 			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 			log.Check(err)
 			log.Printf("Following chains subscribed to L1 events:\n")
@@ -28,8 +28,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 			}
 			printMessagesMetrics(&nodeconnMetrics.NodeConnectionMessagesMetrics)
 		} else {
-			chid, err := iscp.ChainIDFromBase58(chainIDStr)
-			log.Check(err)
+			chid := chain.GetChainFromAlias(chainAlias)
 			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
 			log.Check(err)
 			printMessagesMetrics(msgsMetrics)

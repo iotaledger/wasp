@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -18,8 +18,10 @@ var consensusMetricsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := config.WaspClient()
-		chid, err := iscp.ChainIDFromBase58(chainIDStr)
-		log.Check(err)
+		if chainAlias == "" {
+			log.Fatalf("Call `chain metrics consensus --chain=<alias>`")
+		}
+		chid := chain.GetChainFromAlias(chainAlias)
 		workflowStatus, err := client.GetChainConsensusWorkflowStatus(chid)
 		log.Check(err)
 		pipeMetrics, err := client.GetChainConsensusPipeMetrics(chid)
