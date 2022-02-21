@@ -17,8 +17,8 @@ type VMErrorTemplate struct {
 	messageFormat string
 }
 
-func NewVMErrorTemplate(prefixId Hname, errorId uint16, messageFormat string) *VMErrorTemplate {
-	return &VMErrorTemplate{contractId: prefixId, id: errorId, messageFormat: messageFormat}
+func NewVMErrorTemplate(contractId Hname, errorId uint16, messageFormat string) *VMErrorTemplate {
+	return &VMErrorTemplate{contractId: contractId, id: errorId, messageFormat: messageFormat}
 }
 
 func (e *VMErrorTemplate) Error() string {
@@ -67,13 +67,13 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 
 	e := VMErrorTemplate{}
 
-	var prefixId uint32
+	var contractId uint32
 
-	if prefixId, err = mu.ReadUint32(); err != nil {
+	if contractId, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 
-	e.contractId = Hname(prefixId)
+	e.contractId = Hname(contractId)
 
 	if e.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -282,13 +282,13 @@ func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedV
 
 	unresolvedError := UnresolvedVMError{}
 
-	var prefixId uint32
+	var contractId uint32
 
-	if prefixId, err = mu.ReadUint32(); err != nil {
+	if contractId, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 
-	unresolvedError.contractId = Hname(prefixId)
+	unresolvedError.contractId = Hname(contractId)
 
 	if unresolvedError.id, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -336,19 +336,19 @@ func extractErrorPrimitive(err interface{}) (bool, Hname, uint16) {
 
 // VMErrorIs tests VMError, VMErrorTemplate and UnresolvedVMError types against each other by their unique ids
 func VMErrorIs(error1 interface{}, error2 interface{}) bool {
-	isError, prefixId1, errorId1 := extractErrorPrimitive(error1)
+	isError, contractId1, errorId1 := extractErrorPrimitive(error1)
 
 	if !isError {
 		return false
 	}
 
-	isError, prefixId2, errorId2 := extractErrorPrimitive(error2)
+	isError, contractId2, errorId2 := extractErrorPrimitive(error2)
 
 	if !isError {
 		return false
 	}
 
-	if prefixId1 == prefixId2 && errorId1 == errorId2 {
+	if contractId1 == contractId2 && errorId1 == errorId2 {
 		return true
 	}
 
