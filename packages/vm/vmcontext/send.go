@@ -4,18 +4,14 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
-<<<<<<< HEAD
-	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
-		panic(vm.ErrExceededPostedOutputLimit)
-=======
+
 	if vmctx.NumPostedOutputs >= MaxPostedOutputsInOneRequest {
-		panic(ErrExceededPostedOutputLimit)
->>>>>>> stardust-vm
+		panic(vm.ErrExceededPostedOutputLimit)
+
 	}
 
 	vmctx.NumPostedOutputs++
