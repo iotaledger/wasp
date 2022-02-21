@@ -1,12 +1,14 @@
-package jwt
+package authentication
 
 import (
 	"crypto/subtle"
 	"fmt"
 	jwt "github.com/golang-jwt/jwt"
+	"github.com/iotaledger/wasp/plugins/accounts"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -25,9 +27,6 @@ type JWTAuth struct {
 type ClaimValidator = func(claims *JWTAuthClaims) bool
 type MiddlewareValidator = func(c echo.Context, claims *JWTAuthClaims) bool
 
-// return error to continue to error routine, otherwise handle redirection or other stuff and return nil
-type ErrorHandler = func(c echo.Context, error error) error
-
 func NewJWTAuth(sessionTimeout time.Duration, nodeID string, secret []byte) (*JWTAuth, error) {
 	return &JWTAuth{
 		sessionTimeout: sessionTimeout,
@@ -42,17 +41,6 @@ type JWTAuthClaims struct {
 	API        bool `json:"api"`
 	ChainRead  bool `json:"chain.read"`
 	ChainWrite bool `json:"chain.write"`
-}
-
-func (c *JWTAuthClaims) HasClaim(claim string) bool {
-	var stdClaims jwt.Claims = c
-	mapClaims := stdClaims.(jwt.MapClaims)
-
-	if _, ok := mapClaims[claim]; ok {
-		return true
-	}
-
-	return false
 }
 
 func (c *JWTAuthClaims) compare(field string, expected string) bool {
@@ -82,6 +70,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return func(c echo.Context) error {
+			authContext := c.Get("auth").(*AuthContext)
 
 			// skip unprotected endpoints
 			if skipper(c) {
@@ -107,6 +96,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 
 			// read the claims set by the JWT middleware on the context
 			claims, ok := token.Claims.(*JWTAuthClaims)
+			mapClaims, ok := token.Claims.(jwt.MapClaims)
 
 			// do extended claims validation
 			if !ok || !claims.VerifyAudience(j.nodeID, true) {
@@ -117,6 +107,8 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 			if !allow(c, claims) {
 				return ErrJWTInvalidClaims
 			}
+
+			authContext.IsAuthenticated = true
 
 			// go to the next handler
 			return next(c)
@@ -179,4 +171,59 @@ func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
 		return true
 	}
 	return false
+}
+
+func initJWT(duration int, nodeId string, privateKey []byte, accounts *[]accounts.Account, primaryClaim string) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
+	jwtAuth, err := NewJWTAuth(time.Duration(duration)*time.Hour, nodeId, privateKey)
+
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	jwtAuthSkipper := func(context echo.Context) bool {
+		path := context.Request().RequestURI
+
+		if strings.HasSuffix(path, AuthRoute()) || strings.HasSuffix(path, AuthStatusRoute()) || path == "/" {
+			return true
+		}
+
+		return false
+	}
+
+	jwtAuthAllow := func(_ echo.Context, claims *JWTAuthClaims) bool {
+		isValidSubject := false
+
+		for _, account := range *accounts {
+			if claims.VerifySubject(account.Username) {
+				isValidSubject = true
+			}
+		}
+
+		if !claims.HasClaim(primaryClaim) {
+			return false
+		}
+
+		if isValidSubject {
+			return true
+		}
+
+		return false
+	}
+
+	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
+}
+
+func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, accounts *[]accounts.Account, primaryClaim string) *JWTAuth {
+	duration := config.Duration
+
+	// If duration is 0, we set 24h as the default duration.
+	if duration <= 0 {
+		duration = 24
+	}
+
+	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, accounts, primaryClaim)
+
+	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
+
+	return jwtAuth
 }

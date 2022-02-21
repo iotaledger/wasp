@@ -6,7 +6,6 @@ package admapi
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/authentication/jwt"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
@@ -18,7 +17,7 @@ import (
 )
 
 var log *logger.Logger
-var jwtAuth *jwt.JWTAuth
+var jwtAuth *authentication.JWTAuth
 
 func initLogger() {
 	log = logger.NewLogger("webapi/adm")
@@ -37,7 +36,7 @@ func AddEndpoints(
 ) {
 	initLogger()
 
-	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth)
+	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, "api")
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)

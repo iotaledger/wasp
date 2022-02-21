@@ -4,12 +4,12 @@ func AuthRoute() string {
 	return "/auth"
 }
 
-func AuthStatusRoute() string {
-	return "/auth/status"
+func AuthRouteSuccess() string {
+	return "/auth/success"
 }
 
-func AuthTestRoute() string {
-	return "/auth/test"
+func AuthStatusRoute() string {
+	return "/auth/status"
 }
 
 type AuthStatusModel struct {

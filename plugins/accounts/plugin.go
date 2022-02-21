@@ -1,10 +1,8 @@
 package accounts
 
 import (
-	"encoding/json"
 	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/authentication/jwt"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -12,31 +10,6 @@ type Account struct {
 	Username string
 	Password string
 	Claims   []string
-}
-
-func (a *Account) GetTypedClaims() (*jwt.JWTAuthClaims, error) {
-	claims := jwt.JWTAuthClaims{}
-	fakeClaims := make(map[string]interface{})
-
-	for _, v := range a.Claims {
-		fakeClaims[v] = true
-	}
-
-	// TODO: Find a better solution for
-	// Turning a list of strings into JWTAuthClaims map by their json tag names
-	enc, err := json.Marshal(fakeClaims)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(enc, &claims)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &claims, err
 }
 
 // PluginName is the name of the account plugin.

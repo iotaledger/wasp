@@ -5,6 +5,7 @@ package dashboard
 
 import (
 	_ "embed"
+	"github.com/iotaledger/wasp/packages/authentication"
 	"html/template"
 	"strings"
 
@@ -30,11 +31,12 @@ type Tab struct {
 }
 
 type BaseTemplateParams struct {
-	NavPages    []Tab
-	Breadcrumbs []Tab
-	Path        string
-	MyNetworkID string
-	Version     string
+	IsAuthenticated bool
+	NavPages        []Tab
+	Breadcrumbs     []Tab
+	Path            string
+	MyNetworkID     string
+	Version         string
 }
 
 type WaspServices interface {
@@ -89,16 +91,28 @@ func (d *Dashboard) Stop() {
 }
 
 func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {
+	var isAuthenticated bool
+
+	auth, ok := c.Get("auth").(*authentication.AuthContext)
+
+	if !ok {
+		isAuthenticated = false
+	} else {
+		isAuthenticated = auth.IsAuthenticated
+	}
+
 	return BaseTemplateParams{
-		NavPages:    d.navPages,
-		Breadcrumbs: breadcrumbs,
-		Path:        c.Path(),
-		MyNetworkID: d.wasp.MyNetworkID(),
-		Version:     wasp.Version,
+		IsAuthenticated: isAuthenticated,
+		NavPages:        d.navPages,
+		Breadcrumbs:     breadcrumbs,
+		Path:            c.Path(),
+		MyNetworkID:     d.wasp.MyNetworkID(),
+		Version:         wasp.Version,
 	}
 }
 
 func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
+
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
 		"formatTimestampOrNever": formatTimestampOrNever,

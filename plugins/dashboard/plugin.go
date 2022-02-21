@@ -170,7 +170,7 @@ func configure(*node.Plugin) {
 	}))
 	Server.Use(middleware.Recover())
 
-	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth)
+	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth, "dashboard")
 
 	d = dashboard.Init(Server, &waspServices{}, log)
 }

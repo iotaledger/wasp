@@ -1,7 +1,7 @@
 package authentication
 
 import (
-	jwt2 "github.com/iotaledger/wasp/packages/authentication/jwt"
+	"encoding/json"
 	"github.com/iotaledger/wasp/plugins/accounts"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -10,18 +10,43 @@ import (
 )
 
 type AuthHandler struct {
-	jwt      *jwt2.JWTAuth
-	accounts *[]accounts.Account
+	Jwt      *JWTAuth
+	Accounts *[]accounts.Account
 }
 
 func (s *AuthHandler) validateLogin(username string, password string) bool {
-	for _, v := range *s.accounts {
+	for _, v := range *s.Accounts {
 		if username == v.Username && password == v.Password {
 			return true
 		}
 	}
 
 	return false
+}
+
+func (a *AuthHandler) GetTypedClaims(account *accounts.Account) (*JWTAuthClaims, error) {
+	claims := JWTAuthClaims{}
+	fakeClaims := make(map[string]interface{})
+
+	for _, v := range account.Claims {
+		fakeClaims[v] = true
+	}
+
+	// TODO: Find a better solution for
+	// Turning a list of strings into JWTAuthClaims map by their json tag names
+	enc, err := json.Marshal(fakeClaims)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(enc, &claims)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &claims, err
 }
 
 func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
@@ -48,13 +73,13 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	claims, err := account.GetTypedClaims()
+	claims, err := s.GetTypedClaims(account)
 
 	if err != nil {
 		return err
 	}
 
-	token, err := s.jwt.IssueJWT(request.Username, claims)
+	token, err := s.Jwt.IssueJWT(request.Username, claims)
 
 	if err != nil {
 		return err
@@ -63,7 +88,7 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 	contentType := c.Request().Header.Get(echo.HeaderContentType)
 
 	if contentType == echo.MIMEApplicationJSON {
-		return c.JSON(http.StatusOK, map[string]string{
+		return c.JSON(http.StatusMovedPermanently, map[string]string{
 			"jwt": token,
 		})
 	}
@@ -80,7 +105,7 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 
 		c.SetCookie(&cookie)
 
-		return c.Redirect(http.StatusOK, "/")
+		return c.Redirect(http.StatusMovedPermanently, AuthRouteSuccess())
 	}
 
 	return c.NoContent(http.StatusUnauthorized)

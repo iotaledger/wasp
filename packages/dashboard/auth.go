@@ -15,6 +15,7 @@ import (
 var tplLogin string
 
 func (d *Dashboard) loginInit(e *echo.Echo, r renderer) Tab {
+	e.GET(authentication.AuthRouteSuccess(), d.handleLoginSuccess)
 	route := e.GET(authentication.AuthRoute(), d.handleLogin)
 	route.Name = "auth"
 
@@ -32,6 +33,20 @@ func (d *Dashboard) handleLogin(c echo.Context) error {
 		BaseTemplateParams: d.BaseParams(c),
 		Configuration:      d.wasp.ConfigDump(),
 	})
+}
+
+func (d *Dashboard) handleLoginSuccess(c echo.Context) error {
+	auth, ok := c.Get("auth").(*authentication.AuthContext)
+
+	if !ok {
+		return c.Redirect(http.StatusMovedPermanently, authentication.AuthRoute())
+	}
+
+	if auth.IsAuthenticated {
+		return c.Redirect(http.StatusMovedPermanently, "/config")
+	}
+
+	return c.Redirect(http.StatusMovedPermanently, authentication.AuthRoute())
 }
 
 type LoginTemplateParams struct {
