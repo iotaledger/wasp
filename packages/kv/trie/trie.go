@@ -21,14 +21,15 @@ type Trie struct {
 }
 
 type ProofGeneric struct {
-	Key  []byte
-	Path []*ProofGenericElement
+	Key    []byte
+	Path   []*ProofGenericElement
+	Ending endingCode
 }
 
 type ProofGenericElement struct {
 	Key        []byte
 	Node       *Node
-	ChildIndex int
+	ChildIndex byte
 }
 
 func New(model CommitmentModel, store kv.KVMustReader) *Trie {
@@ -255,17 +256,19 @@ func (t *Trie) path(pathPosition int, ret *ProofGeneric) {
 	ret.Path = append(ret.Path, elem)
 	tail := ret.Key[pathPosition:]
 	if !bytes.HasPrefix(tail, node.PathFragment) {
-		elem.ChildIndex = 257
+		elem.ChildIndex = 0
+		ret.Ending = endingSplit
 		return
 	}
 	if bytes.Equal(tail, node.PathFragment) {
-		elem.ChildIndex = 256
+		ret.Ending = endingTerminal
+		elem.ChildIndex = 0
 		return
 	}
 	indexPos := pathPosition + len(node.PathFragment)
 	assert(indexPos < len(ret.Key), "assertion: pathPosition+len(node.pathFragment)<=len(ret.Key)")
-	elem.ChildIndex = int(ret.Key[indexPos])
-	if node.Children[byte(elem.ChildIndex)] == nil {
+	elem.ChildIndex = ret.Key[indexPos]
+	if node.Children[elem.ChildIndex] == nil {
 		// no way further
 		return
 	}

@@ -71,7 +71,8 @@ func TestNode(t *testing.T) {
 
 func TestTrieBase(t *testing.T) {
 	var data1 = []string{"", "1", "2"}
-	var data2 = []string{"a", "ab", "ac", "abc", "abd", "ad", "ada", "adb", "adc", "c"}
+	var data2 = []string{"a", "ab", "ac", "abc", "abd", "ad", "ada", "adb", "adc", "c", "abcd", "abcde", "abcdef", "ab"}
+	var data3 = []string{"", "a", "ab", "abc", "abcd", "abcdAAA", "abd", "abe", "abcd"}
 
 	t.Run("base1", func(t *testing.T) {
 		store := dict.New()
@@ -93,11 +94,12 @@ func TestTrieBase(t *testing.T) {
 		require.EqualValues(t, c, tr.CommitToNode(rootNode))
 	})
 	t.Run("base2", func(t *testing.T) {
+		data := data1
 		store1 := dict.New()
 		tr1 := trie.New(Model, store1)
 
-		for i := range data1 {
-			tr1.Update([]byte(data1[i]), []byte(data1[i]))
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
 			tr1.Commit()
 		}
 		c1 := tr1.RootCommitment()
@@ -105,8 +107,52 @@ func TestTrieBase(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		for i := range data1 {
-			tr2.Update([]byte(data1[i]), []byte(data1[i]))
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr2.Commit()
+		c2 := tr2.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("base2-1", func(t *testing.T) {
+		data := data2
+		store1 := dict.New()
+		tr1 := trie.New(Model, store1)
+
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+			tr1.Commit()
+		}
+		c1 := tr1.RootCommitment()
+
+		store2 := dict.New()
+		tr2 := trie.New(Model, store2)
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
+		}
+		tr2.Commit()
+		c2 := tr2.RootCommitment()
+
+		require.True(t, c1.Equal(c2))
+	})
+	t.Run("base2-2", func(t *testing.T) {
+		data := data3
+		store1 := dict.New()
+		tr1 := trie.New(Model, store1)
+
+		for i := range data {
+			tr1.Update([]byte(data[i]), []byte(data[i]))
+			tr1.Commit()
+		}
+		c1 := tr1.RootCommitment()
+
+		store2 := dict.New()
+		tr2 := trie.New(Model, store2)
+
+		for i := range data {
+			tr2.Update([]byte(data[i]), []byte(data[i]))
 		}
 		tr2.Commit()
 		c2 := tr2.RootCommitment()

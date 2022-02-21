@@ -43,13 +43,13 @@ func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
 			PathFragment: eg.Node.PathFragment,
 			Children:     make(map[byte]*vectorCommitment),
 			Terminal:     nil,
-			ChildIndex:   eg.ChildIndex,
+			ChildIndex:   int(eg.ChildIndex),
 		}
 		if eg.Node.Terminal != nil {
 			em.Terminal = eg.Node.Terminal.(*terminalCommitment)
 		}
 		for k, v := range eg.Node.Children {
-			if int(k) == eg.ChildIndex {
+			if k == eg.ChildIndex {
 				// skipping the commitment which must come from the next child. 256 and 257 will be skipped too
 				continue
 			}
