@@ -10,6 +10,8 @@ import (
 )
 
 const VMErrorMessageLimit = math.MaxUint16
+
+// VMCoreErrorID defines that all errors with a MaxUint32 contract id will be considered as core errors.
 const VMCoreErrorID = math.MaxUint32
 
 type VMErrorTemplate struct {
