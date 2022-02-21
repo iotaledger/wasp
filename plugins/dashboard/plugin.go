@@ -6,6 +6,7 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"github.com/iotaledger/wasp/packages/authentication"
 	"net/http"
 	"strings"
 	"time"
@@ -21,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -170,9 +170,7 @@ func configure(*node.Plugin) {
 	}))
 	Server.Use(middleware.Recover())
 
-	config := auth.BaseAuthConfiguration{}
-	parameters.GetStruct(parameters.DashboardAuth, &config)
-	auth.AddAuthentication(Server, config)
+	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth)
 
 	d = dashboard.Init(Server, &waspServices{}, log)
 }

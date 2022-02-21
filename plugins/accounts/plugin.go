@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/jwt_auth"
+	"github.com/iotaledger/wasp/packages/authentication/jwt"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -14,8 +14,8 @@ type Account struct {
 	Claims   []string
 }
 
-func (a *Account) GetTypedClaims() (*jwt_auth.AuthClaims, error) {
-	claims := jwt_auth.AuthClaims{}
+func (a *Account) GetTypedClaims() (*jwt.JWTAuthClaims, error) {
+	claims := jwt.JWTAuthClaims{}
 	fakeClaims := make(map[string]interface{})
 
 	for _, v := range a.Claims {
@@ -23,7 +23,7 @@ func (a *Account) GetTypedClaims() (*jwt_auth.AuthClaims, error) {
 	}
 
 	// TODO: Find a better solution for
-	// Turning a list of strings into AuthClaims map by their json tag names
+	// Turning a list of strings into JWTAuthClaims map by their json tag names
 	enc, err := json.Marshal(fakeClaims)
 
 	if err != nil {
@@ -47,7 +47,7 @@ var accounts []Account
 
 func Init(_config *configuration.Configuration) *node.Plugin {
 	config = _config
-	return node.NewPlugin(PluginName, node.Enabled, configure, nil)
+	return node.NewPlugin(PluginName, node.Enabled, configure)
 }
 
 func configure(plugin *node.Plugin) {
