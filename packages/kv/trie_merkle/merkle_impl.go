@@ -83,7 +83,9 @@ func (m *commitmentModel) UpdateNodeCommitment(n *trie.Node) trie.VCommitment {
 			delete(n.Children, i)
 		}
 	}
-	n.ModifiedChildren = make(map[byte]*trie.Node)
+	if len(n.ModifiedChildren) > 0 {
+		n.ModifiedChildren = make(map[byte]*trie.Node)
+	}
 	ret := m.CommitToNode(n)
 	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
 	return ret

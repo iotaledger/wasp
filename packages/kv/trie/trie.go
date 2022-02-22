@@ -2,6 +2,7 @@ package trie
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -22,15 +23,22 @@ type Trie struct {
 
 type ProofGeneric struct {
 	Key    []byte
-	Path   []*ProofGenericElement
-	Ending endingCode
+	Path   []ProofGenericElement
+	Ending ProofEndingCode
 }
 
 type ProofGenericElement struct {
-	Key        []byte
-	Node       *Node
-	ChildIndex byte
+	Key  []byte
+	Node *Node
 }
+
+type ProofEndingCode byte
+
+const (
+	EndingTerminal = iota
+	EndingSplit
+	EndingExtend
+)
 
 func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 	ret := &Trie{
@@ -113,106 +121,9 @@ func (t *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 	return &ret
 }
 
-// Update updates Trie with the Key/value
-func (t *Trie) UpdateOld(key []byte, value []byte) {
-	c := t.model.CommitToData(value)
-	t.updateKey(key, 0, c)
-}
-
 // Delete deletes Key/value from the Trie
 func (t *Trie) Delete(key []byte) {
 	t.Update(key, nil)
-}
-
-// updateKey updates tree (recursively) by adding or updating terminal commitment at specified Key
-// - 'path' the Key of the terminal value
-// - 'pathPosition' is the position in the path the current node's Key starts: Key = path[:pathPosition]
-// - 'terminal' is the new commitment to the value under Key 'path'. nil means terminal deletion
-// - returns
-//   -- the node under the Key = path[:pathPosition] or nil in case of terminal deletion
-//   -- return true if upstream commitment must be updated and false if not
-func (t *Trie) updateKey(path []byte, pathPosition int, terminal TCommitment) (*Node, bool) {
-	assert(pathPosition <= len(path), "pathPosition <= len(path)")
-	if len(path) == 0 {
-		path = []byte{}
-	}
-	key := path[:pathPosition]
-	tail := path[pathPosition:]
-	// looking up for the node with the key (with caching)
-	node, ok := t.GetNode(key)
-	if !ok {
-		if terminal == nil {
-			// in case of deletion do nothing
-			return nil, false
-		}
-		// node for the path[:pathPosition] does not exist. Create a new one with the terminal value only
-		return t.newTerminalNode(key, tail, terminal), true
-	}
-	// node for the Key exists. Find common prefix between tail of the path and path fragment
-	prefix := commonPrefix(node.PathFragment, tail)
-	assert(len(prefix) <= len(node.PathFragment), "len(prefix)<= len(node.pathFragment)")
-	// the following parameters define how it goes:
-	// - len(path)
-	// - pathPosition
-	// - len(node.pathFragment)
-	// - len(prefix)
-	nextPathPosition := pathPosition + len(prefix)
-	assert(nextPathPosition <= len(path), "nextPathPosition <= len(path)")
-
-	if len(prefix) == len(node.PathFragment) {
-		// pathFragment is part of the path. No need for a fork, continue the path
-		if nextPathPosition == len(path) {
-			// reached the terminal value on this node. In case of deletion the newTerminal will become nil
-			update := !EqualCommitments(node.ModifiedTerminal, terminal)
-			node.ModifiedTerminal = terminal
-			return node, update
-		}
-		assert(nextPathPosition < len(path), "nextPathPosition < len(path)")
-		// didn't reach the end of the path
-		// choose the direction and continue down the path of the child
-		childIndex := path[nextPathPosition]
-		// recursively update the rest of the path
-		child, update := t.updateKey(path, nextPathPosition+1, terminal)
-		update = update && (node.ModifiedChildren[childIndex] != child)
-		if update {
-			node.ModifiedChildren[childIndex] = child
-		}
-		return node, update
-	}
-	assert(len(prefix) < len(node.PathFragment), "len(prefix) < len(node.pathFragment)")
-
-	if terminal == nil {
-		// node not found, do nothing in case of deletion
-		return nil, false
-	}
-	// splitEnding the pathFragment. The continued branch is part of the fragment
-	// Key of the next node starts at the next position after current Key plus prefix
-	keyContinue := make([]byte, pathPosition+len(prefix)+1)
-	copy(keyContinue, path)
-	keyContinue[len(keyContinue)-1] = node.PathFragment[len(prefix)]
-	// add child index to the end of the keyContinue
-	childIndexContinue := keyContinue[len(keyContinue)-1]
-	// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
-	insertNode := t.newNodeCopy(keyContinue, node.PathFragment[len(prefix)+1:], node)
-	// clear the old one and adjust path fragment. Continue with 1 child, the new node
-	node.Children = make(map[uint8]VCommitment)
-	node.ModifiedChildren = make(map[uint8]*Node)
-	node.PathFragment = prefix
-	node.ModifiedChildren[childIndexContinue] = insertNode
-	node.Terminal = nil
-	node.ModifiedTerminal = nil
-
-	if pathPosition+len(prefix) == len(path) {
-		// no need for the new node
-		node.ModifiedTerminal = terminal
-	} else {
-		// create the new node
-		keyFork := path[:pathPosition+len(prefix)+1]
-		childForkIndex := keyFork[len(keyFork)-1]
-		assert(len(keyContinue) == len(keyFork), "len(keyContinue)==len(keyFork)")
-		node.ModifiedChildren[childForkIndex] = t.newTerminalNode(keyFork, path[len(keyFork):], terminal)
-	}
-	return node, true
 }
 
 // Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodes
@@ -232,47 +143,128 @@ func (t *Trie) ProofGeneric(key []byte) *ProofGeneric {
 	if len(key) == 0 {
 		key = []byte{}
 	}
-	ret := &ProofGeneric{
-		Key:  key,
-		Path: make([]*ProofGenericElement, 0),
+	p, _, _, ending := t.path(key, 0)
+	return &ProofGeneric{
+		Key:    key,
+		Path:   p,
+		Ending: ending,
 	}
-	t.path(0, ret)
-	return ret
 }
 
-func (t *Trie) path(pathPosition int, ret *ProofGeneric) {
-	assert(pathPosition <= len(ret.Key), "pathPosition <= len(path)")
-	key := ret.Key[:pathPosition]
-	// looking up for the node with the Key (with caching)
-	node, ok := t.GetNode(key)
+// Update updates Trie with the key/value.
+// value == nil means deletion
+func (t *Trie) Update(key []byte, value []byte) {
+	c := t.model.CommitToData(value)
+	proof, lastKey, lastCommonPrefix, ending := t.path(key, 0)
+	if len(proof) == 0 {
+		if c != nil {
+			t.newTerminalNode(nil, key, c)
+		}
+		return
+
+	}
+	last := proof[len(proof)-1].Node
+	switch ending {
+	case EndingTerminal:
+		last.ModifiedTerminal = c
+
+	case EndingExtend:
+		if c == nil {
+			break
+		}
+		childIndexPosition := len(lastKey) + len(lastCommonPrefix)
+		assert(childIndexPosition < len(key), "childPosition < len(key)")
+		childIndex := key[childIndexPosition]
+		assert(last.Children[childIndex] == nil, "last.Children[key[childPosition]] == nil")
+		assert(last.ModifiedChildren[childIndex] == nil, "last.ModifiedChildren[key[childPosition]] == nil")
+		last.ModifiedChildren[childIndex] = t.newTerminalNode(key[:childIndexPosition+1], key[childIndexPosition+1:], c)
+
+	case EndingSplit:
+		if c == nil {
+			break
+		}
+		childPosition := len(lastKey) + len(lastCommonPrefix)
+		assert(childPosition <= len(key), "childPosition < len(key)")
+		keyContinue := make([]byte, childPosition+1)
+		copy(keyContinue, key)
+		splitChildIndex := len(lastCommonPrefix)
+		assert(splitChildIndex < len(last.PathFragment), "splitChildIndex<len(last.Node.PathFragment)")
+		childContinue := last.PathFragment[splitChildIndex]
+		keyContinue[len(keyContinue)-1] = childContinue
+
+		// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
+		insertNode := t.newNodeCopy(keyContinue, last.PathFragment[splitChildIndex+1:], last)
+		// clear the old one and adjust path fragment. Continue with 1 child, the new node
+		last.Children = make(map[uint8]VCommitment)
+		last.ModifiedChildren = make(map[uint8]*Node)
+		last.PathFragment = lastCommonPrefix
+		last.ModifiedChildren[childContinue] = insertNode
+		last.Terminal = nil
+		last.ModifiedTerminal = nil
+		// insert terminal
+		if childPosition == len(key) {
+			// no need for the new node
+			last.ModifiedTerminal = c
+		} else {
+			// create a new node
+			keyFork := key[:len(keyContinue)]
+			childForkIndex := keyFork[len(keyFork)-1]
+			assert(int(childForkIndex) != splitChildIndex, "childForkIndex != splitChildIndex")
+			last.ModifiedChildren[childForkIndex] = t.newTerminalNode(keyFork, key[len(keyFork):], c)
+		}
+
+	default:
+		panic("inconsistency: unknown path ending code")
+	}
+	// update commitment path back to root
+	for i := len(proof) - 2; i >= 0; i-- {
+		k := proof[i+1].Key
+		childIndex := k[len(k)-1]
+		proof[i].Node.ModifiedChildren[childIndex] = proof[i+1].Node
+	}
+}
+
+// returns key of the last node and common prefix with the fragment
+func (t *Trie) path(path []byte, pathPosition int) ([]ProofGenericElement, []byte, []byte, ProofEndingCode) {
+	node, ok := t.GetNode(nil)
 	if !ok {
-		// Key is absent. Should not happen, except when empty trie
-		return
+		return nil, nil, nil, 0
 	}
-	elem := &ProofGenericElement{
-		Key:  key,
-		Node: node,
+
+	proof := []ProofGenericElement{{Key: nil, Node: node}}
+	key := path[:pathPosition]
+	tail := path[pathPosition:]
+
+	for {
+		assert(len(key) <= len(path), "pathPosition<=len(path)")
+		if bytes.Equal(tail, node.PathFragment) {
+			return proof, nil, nil, EndingTerminal
+		}
+		prefix := commonPrefix(tail, node.PathFragment)
+
+		if len(prefix) < len(node.PathFragment) {
+			return proof, key, prefix, EndingSplit
+		}
+		// continue with the path. 2 options:
+		// - it ends here
+		// - it goes further
+		assert(len(prefix) == len(node.PathFragment), "len(prefix)==len(node.PathFragment)")
+		childIndexPosition := len(key) + len(prefix)
+		assert(childIndexPosition < len(path), "childIndexPosition<len(path)")
+		childIndex := path[childIndexPosition]
+		if node.Children[childIndex] == nil && node.ModifiedChildren[childIndex] == nil {
+			// if there are no commitment to the child at the position, it means trie must be extended at this point
+			return proof, key, prefix, EndingExtend
+		}
+		// it means we continue the branch of commitment
+		key = path[:childIndexPosition+1]
+		tail = path[childIndexPosition+1:]
+		node, ok = t.GetNode(key)
+		if !ok {
+			panic(fmt.Sprintf("inconsistency: trie key not found: '%s'", string(key)))
+		}
+		proof = append(proof, ProofGenericElement{Key: key, Node: node})
 	}
-	ret.Path = append(ret.Path, elem)
-	tail := ret.Key[pathPosition:]
-	if !bytes.HasPrefix(tail, node.PathFragment) {
-		elem.ChildIndex = 0
-		ret.Ending = endingSplit
-		return
-	}
-	if bytes.Equal(tail, node.PathFragment) {
-		ret.Ending = endingTerminal
-		elem.ChildIndex = 0
-		return
-	}
-	indexPos := pathPosition + len(node.PathFragment)
-	assert(indexPos < len(ret.Key), "assertion: pathPosition+len(node.pathFragment)<=len(ret.Key)")
-	elem.ChildIndex = ret.Key[indexPos]
-	if node.Children[elem.ChildIndex] == nil {
-		// no way further
-		return
-	}
-	t.path(indexPos+1, ret)
 }
 
 func (t *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {

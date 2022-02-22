@@ -116,7 +116,7 @@ func TestTrieBase(t *testing.T) {
 		require.True(t, c1.Equal(c2))
 	})
 	t.Run("base2-1", func(t *testing.T) {
-		data := data2
+		data := data2[:4]
 		store1 := dict.New()
 		tr1 := trie.New(Model, store1)
 
@@ -657,7 +657,7 @@ func TestTrieWithDeletion(t *testing.T) {
 func TestTrieProof(t *testing.T) {
 	//data1 := []string{"", "1", "2"}
 
-	t.Run("proof empty tie", func(t *testing.T) {
+	t.Run("proof empty trie", func(t *testing.T) {
 		store := dict.New()
 		tr := trie.New(Model, store)
 		require.EqualValues(t, nil, tr.RootCommitment())
@@ -748,9 +748,9 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 		for _, s := range data {
 			proof := Model.Proof([]byte(s), tr)
+			require.False(t, proof.MustIsProofOfAbsence())
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
-			require.False(t, proof.MustIsProofOfAbsence())
 			t.Logf("key: '%s', proof len: %d", s, len(proof.Path))
 			t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 		}

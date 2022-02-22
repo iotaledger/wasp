@@ -30,27 +30,46 @@ func ProofFromBytes(data []byte) (*Proof, error) {
 
 // Proof converts generic proof path to the Merkle proof path
 func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
-	path := tr.ProofGeneric(key)
-	if path == nil {
+	proofGeneric := tr.ProofGeneric(key)
+	if proofGeneric == nil {
 		return nil
 	}
 	ret := &Proof{
-		Key:  path.Key,
-		Path: make([]*ProofElement, len(path.Path)),
+		Key:  proofGeneric.Key,
+		Path: make([]*ProofElement, len(proofGeneric.Path)),
 	}
-	for i, eg := range path.Path {
+	var elemKeyPosition int
+	var isLast bool
+	var childIndex int
+
+	for i, eg := range proofGeneric.Path {
+		isLast = i == len(proofGeneric.Path)-1
+		if !isLast {
+			elemKeyPosition += len(eg.Node.PathFragment)
+			childIndex = int(key[elemKeyPosition])
+			elemKeyPosition++
+		} else {
+			switch proofGeneric.Ending {
+			case trie.EndingTerminal:
+				childIndex = 256
+			case trie.EndingExtend, trie.EndingSplit:
+				childIndex = 257
+			default:
+				panic("wrong ending code")
+			}
+		}
 		em := &ProofElement{
 			PathFragment: eg.Node.PathFragment,
 			Children:     make(map[byte]*vectorCommitment),
 			Terminal:     nil,
-			ChildIndex:   int(eg.ChildIndex),
+			ChildIndex:   childIndex,
 		}
 		if eg.Node.Terminal != nil {
 			em.Terminal = eg.Node.Terminal.(*terminalCommitment)
 		}
 		for k, v := range eg.Node.Children {
-			if k == eg.ChildIndex {
-				// skipping the commitment which must come from the next child. 256 and 257 will be skipped too
+			if int(k) == childIndex {
+				// skipping the commitment which must come from the next child
 				continue
 			}
 			em.Children[k] = v.(*vectorCommitment)
