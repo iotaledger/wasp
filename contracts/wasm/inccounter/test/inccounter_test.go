@@ -147,22 +147,24 @@ func TestIncrementLocalStatePost(t *testing.T) {
 }
 
 func TestVliCodec(t *testing.T) {
-	wasmhost.DisableWasmTimeout = true
 	ctx := setupTest(t)
-	wasmhost.DisableWasmTimeout = false
 
 	f := inccounter.ScFuncs.TestVliCodec(ctx)
+	save := wasmhost.DisableWasmTimeout
+	wasmhost.DisableWasmTimeout = false
 	f.Func.Post()
+	wasmhost.DisableWasmTimeout = save
 	require.NoError(t, ctx.Err)
 }
 
 func TestVluCodec(t *testing.T) {
-	wasmhost.DisableWasmTimeout = true
 	ctx := setupTest(t)
-	wasmhost.DisableWasmTimeout = false
 
 	f := inccounter.ScFuncs.TestVluCodec(ctx)
+	save := wasmhost.DisableWasmTimeout
+	wasmhost.DisableWasmTimeout = false
 	f.Func.Post()
+	wasmhost.DisableWasmTimeout = save
 	require.NoError(t, ctx.Err)
 }
 
@@ -209,7 +211,7 @@ func TestLoop(t *testing.T) {
 	endlessLoop := inccounter.ScFuncs.EndlessLoop(ctx)
 	endlessLoop.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "interrupt")
+	require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
 	wasmhost.DisableWasmTimeout = save
 
 	inccounter.ScFuncs.Increment(ctx).Func.Post()

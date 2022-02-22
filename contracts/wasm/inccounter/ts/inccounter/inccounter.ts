@@ -104,7 +104,7 @@ export function funcRepeatMany(ctx: wasmlib.ScFuncContext, f: sc.RepeatManyConte
 }
 
 export function funcTestVliCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVliCodecContext): void {
-    for (let i: i64 = -1000000; i < 1000000; i++) {
+    for (let i: i64 = -1600; i < 1600; i++) {
         let enc = new wasmtypes.WasmEncoder();
         wasmtypes.int64Encode(enc, i);
         let buf = enc.buf();
@@ -144,7 +144,7 @@ export function funcTestVliCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVliCodecC
 }
 
 export function funcTestVluCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVluCodecContext): void {
-    for (let i: u64 = 0; i < 2000000; i++) {
+    for (let i: u64 = 0; i < 3200; i++) {
         let enc = new wasmtypes.WasmEncoder();
         wasmtypes.uint64Encode(enc, i);
         let buf = enc.buf();
