@@ -305,7 +305,7 @@ func TestClearMap(t *testing.T) {
 
 func TestTakeAllowance(t *testing.T) {
 	ctx := setupTest(t)
-    bal := ctx.Balances()
+	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
 	f.Func.TransferIotas(1234).Post()

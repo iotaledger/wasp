@@ -159,7 +159,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, asse
 		}
 	}
 	_ = wasmhost.Connect(ctx.wc)
-	ctx.UpdateGas()
+	ctx.UpdateGasFees()
 	if ctx.Err != nil {
 		return nil
 	}

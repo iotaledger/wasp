@@ -456,7 +456,7 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	return result
 }
 
-func (ctx *SoloContext) UpdateGas() {
+func (ctx *SoloContext) UpdateGasFees() {
 	receipt := ctx.Chain.LastReceipt()
 	ctx.Gas = receipt.GasBurned
 	ctx.GasFee = receipt.GasFeeCharged

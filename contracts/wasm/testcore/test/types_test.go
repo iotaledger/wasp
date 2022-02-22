@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:dupl
 func TestTypesFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
@@ -30,6 +31,7 @@ func TestTypesFull(t *testing.T) {
 	})
 }
 
+//nolint:dupl
 func TestTypesView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)

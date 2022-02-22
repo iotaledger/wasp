@@ -41,6 +41,7 @@ func TestDoNothingUser(t *testing.T) {
 }
 
 func TestWithdrawToAddress(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -77,21 +78,13 @@ func TestDoPanicUser(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		user := ctx.NewSoloAgent()
-		require.EqualValues(t, solo.Saldo, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(user))
 		bal := ctx.Balances(user)
-
-		ctx.Chain.MustDepositIotasToL2(4444, user.Pair)
-		require.EqualValues(t, solo.Saldo-4444, user.Balance())
-
-		bal.Chain += gasFee
-		bal.Add(user, 4444-gasFee)
-		bal.VerifyBalances(t)
+		userL1 := user.Balance()
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
 		f.Func.TransferIotas(1234).Post()
 		require.Error(t, ctx.Err)
-		require.EqualValues(t, solo.Saldo-4444-1234, user.Balance())
+		require.EqualValues(t, userL1-1234, user.Balance())
 
 		bal.Chain += ctx.GasFee
 		bal.Add(user, 1234-ctx.GasFee)
@@ -179,32 +172,25 @@ func TestRequestToView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 		user := ctx.NewSoloAgent()
+		userL1 := user.Balance()
+		bal := ctx.Balances(user)
 
-		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
-		require.EqualValues(t, 0, ctx.Balance(user))
-		originatorBalanceReducedBy(ctx, w, 2)
-		chainAccountBalances(ctx, w, 2, 2)
-
-		// SoloContext disallows Sign()/Post() to a view
+		// SoloContext prevents Sign()/Post() to a view
+		// Therefore we cannot simply do the following:
 		// f := testcore.ScFuncs.JustView(ctx.Sign(user))
 		// f.Func.TransferIotas(1234).Post()
 		// require.Error(t, ctx.Err)
 
 		// sending request to the view entry point should
-		// return an error and invoke fallback for tokens
+		// return an error and leave tokens in L2 minus gas fee
 		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddAssetsIotas(42), user.Pair)
+		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddAssetsIotas(1234), user.Pair)
 		require.Error(t, ctx.Err)
+		require.EqualValues(t, userL1-1234, user.Balance())
+		ctx.UpdateGasFees()
 
-		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
-		require.EqualValues(t, 0, ctx.Balance(user))
-		originatorBalanceReducedBy(ctx, w, 2)
-		chainAccountBalances(ctx, w, 2, 2)
+		bal.Chain += ctx.GasFee
+		bal.Add(user, 1234-ctx.GasFee)
+		bal.VerifyBalances(t)
 	})
 }

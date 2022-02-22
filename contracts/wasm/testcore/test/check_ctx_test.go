@@ -40,7 +40,7 @@ func TestMainCallsFromViewEP(t *testing.T) {
 }
 
 func TestMintedSupplyOk(t *testing.T) {
-	//TODO no minting yet
+	// TODO no minting yet
 	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w, true)
