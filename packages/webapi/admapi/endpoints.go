@@ -36,7 +36,11 @@ func AddEndpoints(
 ) {
 	initLogger()
 
-	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, "api")
+	claimValidator := func(claims *authentication.WaspClaims) bool {
+		return claims.API
+	}
+
+	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, claimValidator)
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)

@@ -24,8 +24,7 @@ type JWTAuth struct {
 	secret         []byte
 }
 
-type ClaimValidator = func(claims *JWTAuthClaims) bool
-type MiddlewareValidator = func(c echo.Context, claims *JWTAuthClaims) bool
+type MiddlewareValidator = func(c echo.Context, authContext *AuthContext) bool
 
 func NewJWTAuth(sessionTimeout time.Duration, nodeID string, secret []byte) (*JWTAuth, error) {
 	return &JWTAuth{
@@ -35,7 +34,7 @@ func NewJWTAuth(sessionTimeout time.Duration, nodeID string, secret []byte) (*JW
 	}, nil
 }
 
-type JWTAuthClaims struct {
+type WaspClaims struct {
 	jwt.StandardClaims
 	Dashboard  bool `json:"dashboard"`
 	API        bool `json:"api"`
@@ -43,7 +42,7 @@ type JWTAuthClaims struct {
 	ChainWrite bool `json:"chain.write"`
 }
 
-func (c *JWTAuthClaims) compare(field string, expected string) bool {
+func (c *WaspClaims) compare(field string, expected string) bool {
 	if field == "" {
 		return false
 	}
@@ -54,7 +53,7 @@ func (c *JWTAuthClaims) compare(field string, expected string) bool {
 	return false
 }
 
-func (c *JWTAuthClaims) VerifySubject(expected string) bool {
+func (c *WaspClaims) VerifySubject(expected string) bool {
 	return c.compare(c.Subject, expected)
 }
 
@@ -62,7 +61,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 
 	config := middleware.JWTConfig{
 		ContextKey:  "jwt",
-		Claims:      &JWTAuthClaims{},
+		Claims:      &WaspClaims{},
 		SigningKey:  j.secret,
 		TokenLookup: "header:Authorization,cookie:jwt",
 	}
@@ -95,20 +94,19 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 			}
 
 			// read the claims set by the JWT middleware on the context
-			claims, ok := token.Claims.(*JWTAuthClaims)
-			mapClaims, ok := token.Claims.(jwt.MapClaims)
+			authContext.claims = token.Claims.(*WaspClaims)
 
-			// do extended claims validation
-			if !ok || !claims.VerifyAudience(j.nodeID, true) {
+			// do extended authClaims validation
+			if !authContext.claims.VerifyAudience(j.nodeID, true) {
 				return ErrJWTInvalidClaims
 			}
 
 			// validate claims
-			if !allow(c, claims) {
+			if !allow(c, authContext) {
 				return ErrJWTInvalidClaims
 			}
 
-			authContext.IsAuthenticated = true
+			authContext.isAuthenticated = true
 
 			// go to the next handler
 			return next(c)
@@ -116,7 +114,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 	}
 }
 
-func (j *JWTAuth) IssueJWT(username string, authClaims *JWTAuthClaims) (string, error) {
+func (j *JWTAuth) IssueJWT(username string, authClaims *WaspClaims) (string, error) {
 
 	now := time.Now()
 
@@ -154,10 +152,10 @@ func (j *JWTAuth) keyFunc(token *jwt.Token) (interface{}, error) {
 
 func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
 
-	t, err := jwt.ParseWithClaims(token, &JWTAuthClaims{}, j.keyFunc)
+	t, err := jwt.ParseWithClaims(token, &WaspClaims{}, j.keyFunc)
 
 	if err == nil && t.Valid {
-		claims, ok := t.Claims.(*JWTAuthClaims)
+		claims, ok := t.Claims.(*WaspClaims)
 
 		if !ok || !claims.VerifyAudience(j.nodeID, true) {
 			return false
@@ -173,7 +171,7 @@ func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
 	return false
 }
 
-func initJWT(duration int, nodeId string, privateKey []byte, accounts *[]accounts.Account, primaryClaim string) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
+func initJWT(duration int, nodeId string, privateKey []byte, accounts *[]accounts.Account, claimValidator ClaimValidator) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
 	jwtAuth, err := NewJWTAuth(time.Duration(duration)*time.Hour, nodeId, privateKey)
 
 	if err != nil {
@@ -190,30 +188,30 @@ func initJWT(duration int, nodeId string, privateKey []byte, accounts *[]account
 		return false
 	}
 
-	jwtAuthAllow := func(_ echo.Context, claims *JWTAuthClaims) bool {
+	jwtAuthAllow := func(e echo.Context, authContext *AuthContext) bool {
 		isValidSubject := false
 
 		for _, account := range *accounts {
-			if claims.VerifySubject(account.Username) {
+			if authContext.claims.VerifySubject(account.Username) {
 				isValidSubject = true
 			}
 		}
 
-		if !claims.HasClaim(primaryClaim) {
+		if !claimValidator(authContext.claims) {
 			return false
 		}
 
-		if isValidSubject {
-			return true
+		if !isValidSubject {
+			return false
 		}
 
-		return false
+		return true
 	}
 
 	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
 }
 
-func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, accounts *[]accounts.Account, primaryClaim string) *JWTAuth {
+func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, accounts *[]accounts.Account, claimValidator ClaimValidator) *JWTAuth {
 	duration := config.Duration
 
 	// If duration is 0, we set 24h as the default duration.
@@ -221,7 +219,7 @@ func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, a
 		duration = 24
 	}
 
-	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, accounts, primaryClaim)
+	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, accounts, claimValidator)
 
 	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
 

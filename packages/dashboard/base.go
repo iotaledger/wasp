@@ -74,7 +74,7 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 	d.errorInit(server, r)
 
 	d.navPages = []Tab{
-		d.loginInit(server, r),
+		d.authInit(server, r),
 		d.configInit(server, r),
 		d.peeringInit(server, r),
 		d.chainsInit(server, r),
@@ -98,7 +98,7 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 	if !ok {
 		isAuthenticated = false
 	} else {
-		isAuthenticated = auth.IsAuthenticated
+		isAuthenticated = auth.IsAuthenticated()
 	}
 
 	return BaseTemplateParams{

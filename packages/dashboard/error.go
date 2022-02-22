@@ -6,7 +6,6 @@ package dashboard
 import (
 	_ "embed"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/authentication"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -35,12 +34,6 @@ func (d *Dashboard) errorInit(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleError(err error, c echo.Context) {
 	he, ok := err.(*echo.HTTPError)
 	if ok {
-		if he.Code == http.StatusUnauthorized {
-			// Any failure to authenticate will lead back to /login
-			c.Redirect(http.StatusTemporaryRedirect, authentication.AuthRoute())
-			return
-		}
-
 		if he.Internal != nil {
 			if herr, ok := he.Internal.(*echo.HTTPError); ok {
 				he = herr

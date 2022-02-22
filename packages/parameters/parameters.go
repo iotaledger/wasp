@@ -151,6 +151,7 @@ func Dump() map[string]interface{} {
 
 	m := map[string]interface{}{}
 	flatten(m, tree, "")
+
 	return m
 }
 

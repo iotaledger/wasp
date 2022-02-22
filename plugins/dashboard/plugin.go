@@ -170,7 +170,11 @@ func configure(*node.Plugin) {
 	}))
 	Server.Use(middleware.Recover())
 
-	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth, "dashboard")
+	claimValidator := func(claims *authentication.WaspClaims) bool {
+		return claims.Dashboard
+	}
+
+	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth, claimValidator)
 
 	d = dashboard.Init(Server, &waspServices{}, log)
 }

@@ -24,8 +24,8 @@ func (s *AuthHandler) validateLogin(username string, password string) bool {
 	return false
 }
 
-func (a *AuthHandler) GetTypedClaims(account *accounts.Account) (*JWTAuthClaims, error) {
-	claims := JWTAuthClaims{}
+func (a *AuthHandler) GetTypedClaims(account *accounts.Account) (*WaspClaims, error) {
+	claims := WaspClaims{}
 	fakeClaims := make(map[string]interface{})
 
 	for _, v := range account.Claims {
@@ -33,7 +33,7 @@ func (a *AuthHandler) GetTypedClaims(account *accounts.Account) (*JWTAuthClaims,
 	}
 
 	// TODO: Find a better solution for
-	// Turning a list of strings into JWTAuthClaims map by their json tag names
+	// Turning a list of strings into WaspClaims map by their json tag names
 	enc, err := json.Marshal(fakeClaims)
 
 	if err != nil {

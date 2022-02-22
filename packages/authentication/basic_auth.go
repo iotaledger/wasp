@@ -12,7 +12,7 @@ func AddBasicAuth(webAPI WebAPI, accounts *[]accounts.Account) {
 
 		for _, v := range *accounts {
 			if user == v.Username && password == v.Password {
-				authContext.IsAuthenticated = true
+				authContext.isAuthenticated = true
 				return true, nil
 			}
 		}

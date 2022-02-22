@@ -23,8 +23,8 @@
   },
   "accounts": [
     {
-      "username": "admin",
-      "password": "admin",
+      "username": "wasp",
+      "password": "wasp",
       "claims": ["dashboard", "api", "chain.read", "chain.write"]
     }
   ],
@@ -56,7 +56,7 @@
         "whitelist": ["127.0.0.1"]
       },
       "addRoutes": true,
-      "scheme": "jwt"
+      "scheme": "ip"
     },
     "bindAddress": "0.0.0.0:7000"
   },

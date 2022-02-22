@@ -1,30 +1,37 @@
 package authentication
 
 import (
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
+
+type ClaimValidator func(claims *WaspClaims) bool
+type AccessValidator func(validator ClaimValidator) bool
 
 type AuthContext struct {
 	echo.Context
 
-	Scheme          string
-	IsAuthenticated bool
-	Claims          JWTAuthClaims
+	scheme          string
+	isAuthenticated bool
+	claims          *WaspClaims
 }
 
-func (a *AuthContext) IsPermitted(permission string) bool {
-	if a.Scheme == AuthJWT {
-		token := a.Get("jwt").(*jwt.Token)
-		claims, ok := token.Claims.(jwt.MapClaims)
+func (a *AuthContext) IsAuthenticated() bool {
+	return a.isAuthenticated
+}
 
-		if !ok {
-			return false
-		}
+func (a *AuthContext) Scheme() string {
+	return a.scheme
+}
 
-		return claims[permission] == true
+func (a *AuthContext) IsAllowedTo(validator ClaimValidator) bool {
+	if !a.isAuthenticated {
+		return false
 	}
 
-	// Only JWT has claims, therefore basic auth and ip whitelisting allows *ANY* call
+	if a.scheme == AuthJWT {
+		return validator(a.claims)
+	}
+
+	// IP Whitelist and Basic Auth will always give access to everything!
 	return true
 }

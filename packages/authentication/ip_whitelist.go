@@ -41,7 +41,7 @@ func protected(whitelist []net.IP) echo.MiddlewareFunc {
 			if len(parts) == 2 {
 				ip := net.ParseIP(parts[0])
 				if ip != nil && isAllowed(ip) {
-					authContext.IsAuthenticated = true
+					authContext.isAuthenticated = true
 					return next(c)
 				}
 			}

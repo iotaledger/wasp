@@ -42,7 +42,7 @@ type WebAPI interface {
 	Use(middleware ...echo.MiddlewareFunc)
 }
 
-func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, primaryClaim string) {
+func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, claimValidator ClaimValidator) {
 	var config AuthConfiguration
 	parameters.GetStruct(configSectionPath, &config)
 
@@ -63,7 +63,7 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 		privateKey := nodeIdentity.PrivateKey.Bytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, accounts, primaryClaim)
+		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, accounts, claimValidator)
 
 		if config.AddRoutes {
 			authHandler := &AuthHandler{Jwt: jwtAuth, Accounts: accounts}
@@ -85,7 +85,7 @@ func addAuthContext(webAPI WebAPI, config AuthConfiguration) {
 	webAPI.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			cc := &AuthContext{
-				Scheme: config.Scheme,
+				scheme: config.Scheme,
 			}
 
 			c.Set("auth", cc)
