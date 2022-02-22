@@ -28,21 +28,11 @@ func TestDoNothingUser(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		user := ctx.NewSoloAgent()
-		require.EqualValues(t, solo.Saldo, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(user))
 		bal := ctx.Balances(user)
-
-		ctx.Chain.MustDepositIotasToL2(4444, user.Pair)
-		require.EqualValues(t, solo.Saldo-4444, user.Balance())
-
-		bal.Chain += gasFee
-		bal.Add(user, 4444-gasFee)
-		bal.VerifyBalances(t)
 
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
 		nop.Func.TransferIotas(1234).Post()
 		require.NoError(t, ctx.Err)
-		require.EqualValues(t, solo.Saldo-4444-1234, user.Balance())
 
 		bal.Chain += ctx.GasFee
 		bal.Add(user, 1234-ctx.GasFee)
@@ -55,21 +45,11 @@ func TestWithdrawToAddress(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		user := ctx.NewSoloAgent()
-		require.EqualValues(t, solo.Saldo, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(user))
 		bal := ctx.Balances(user)
-
-		ctx.Chain.MustDepositIotasToL2(4444, user.Pair)
-		require.EqualValues(t, solo.Saldo-4444, user.Balance())
-
-		bal.Chain += gasFee
-		bal.Add(user, 4444-gasFee)
-		bal.VerifyBalances(t)
 
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
 		nop.Func.TransferIotas(1234).Post()
 		require.NoError(t, ctx.Err)
-		require.EqualValues(t, solo.Saldo-4444-1234, user.Balance())
 
 		bal.Chain += ctx.GasFee
 		bal.Add(user, 1234-ctx.GasFee)
@@ -77,7 +57,6 @@ func TestWithdrawToAddress(t *testing.T) {
 
 		// TODO
 		// send entire contract balance back to user
-		// note that that includes the token that we transfer here
 		xfer := testcore.ScFuncs.SendToAddress(ctx.Sign(ctx.Originator()))
 		xfer.Params.Address().SetValue(user.ScAddress())
 		xfer.Func.Post()
