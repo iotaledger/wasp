@@ -31,4 +31,5 @@ var (
 	ErrGasBudgetExceeded                  = coreerrors.Register("gas budget exceeded").Create()
 	ErrSenderUnknown                      = coreerrors.Register("sender unknown").Create()
 	ErrGasBudgetDetail                    = coreerrors.Register("%v: burned (budget) = %d (%d)")
+	ErrUnauthorized                       = coreerrors.Register("unauthorized access").Create()
 )

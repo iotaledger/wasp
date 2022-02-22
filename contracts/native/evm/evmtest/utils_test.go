@@ -124,7 +124,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
-		opt.wallet = &e.soloChain.OriginatorPrivateKey
+		opt.wallet = e.soloChain.OriginatorPrivateKey
 	}
 	return opt
 }
@@ -330,7 +330,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 		opt.sender = e.creator
 	}
 	if opt.iota.wallet == nil {
-		opt.iota.wallet = &e.chain.soloChain.OriginatorPrivateKey
+		opt.iota.wallet = e.chain.soloChain.OriginatorPrivateKey
 	}
 	if opt.value == nil {
 		opt.value = big.NewInt(0)

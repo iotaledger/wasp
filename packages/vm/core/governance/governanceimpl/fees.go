@@ -14,7 +14,7 @@ import (
 // Input:
 // - governance.ParamFeePolicyBytes must contain bytes of the policy record
 func setFeePolicy(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("governance.setFeePolicy: not authorized")
+	ctx.RequireCallerIsChainOwner()
 
 	data := ctx.Params().MustGetBytes(governance.ParamFeePolicyBytes)
 	_, err := gas.GasFeePolicyFromBytes(data)

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
 )
@@ -99,7 +100,7 @@ func (s *contractSandbox) RegisterError(messageFormat string) *iscp.VMErrorTempl
 
 // helper methods
 
-func (s *contractSandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID, str ...string) {
+func (s *contractSandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID) {
 	ok := false
 	for _, agentID := range agentIDs {
 		if s.Caller().Equals(agentID) {
@@ -107,20 +108,16 @@ func (s *contractSandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID, str ...st
 		}
 	}
 	if !ok {
-		if len(str) > 0 {
-			s.Log().Panicf("'%s': unauthorized access", str[0])
-		} else {
-			s.Log().Panicf("unauthorized access")
-		}
+		panic(vm.ErrUnauthorized)
 	}
 }
 
-func (s *contractSandbox) RequireCaller(agentID *iscp.AgentID, str ...string) {
-	s.RequireCallerAnyOf([]*iscp.AgentID{agentID}, str...)
+func (s *contractSandbox) RequireCaller(agentID *iscp.AgentID) {
+	s.RequireCallerAnyOf([]*iscp.AgentID{agentID})
 }
 
-func (s *contractSandbox) RequireCallerIsChainOwner(str ...string) {
-	s.RequireCaller(s.ChainOwnerID(), str...)
+func (s *contractSandbox) RequireCallerIsChainOwner() {
+	s.RequireCaller(s.ChainOwnerID())
 }
 
 func (s *contractSandbox) Privileged() iscp.Privileged {

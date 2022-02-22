@@ -50,9 +50,9 @@ type Helpers interface {
 }
 
 type Authorize interface {
-	RequireCaller(agentID *AgentID, str ...string)
-	RequireCallerAnyOf(agentID []*AgentID, str ...string)
-	RequireCallerIsChainOwner(str ...string)
+	RequireCaller(agentID *AgentID)
+	RequireCallerAnyOf(agentID []*AgentID)
+	RequireCallerIsChainOwner()
 }
 
 type Balance interface {
