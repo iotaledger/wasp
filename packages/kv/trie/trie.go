@@ -143,7 +143,7 @@ func (t *Trie) ProofGeneric(key []byte) *ProofGeneric {
 	if len(key) == 0 {
 		key = []byte{}
 	}
-	p, _, _, ending := t.path(key, 0)
+	p, _, _, ending := t.proofPath(key, 0)
 	return &ProofGeneric{
 		Key:    key,
 		Path:   p,
@@ -155,7 +155,7 @@ func (t *Trie) ProofGeneric(key []byte) *ProofGeneric {
 // value == nil means deletion
 func (t *Trie) Update(key []byte, value []byte) {
 	c := t.model.CommitToData(value)
-	proof, lastKey, lastCommonPrefix, ending := t.path(key, 0)
+	proof, lastKey, lastCommonPrefix, ending := t.proofPath(key, 0)
 	if len(proof) == 0 {
 		if c != nil {
 			t.newTerminalNode(nil, key, c)
@@ -225,7 +225,7 @@ func (t *Trie) Update(key []byte, value []byte) {
 }
 
 // returns key of the last node and common prefix with the fragment
-func (t *Trie) path(path []byte, pathPosition int) ([]ProofGenericElement, []byte, []byte, ProofEndingCode) {
+func (t *Trie) proofPath(path []byte, pathPosition int) ([]ProofGenericElement, []byte, []byte, ProofEndingCode) {
 	node, ok := t.GetNode(nil)
 	if !ok {
 		return nil, nil, nil, 0
