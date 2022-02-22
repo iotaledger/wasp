@@ -11,9 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO determine dynamically because it could change
-const minDust = uint64(1000)
-
 func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(agent.ScAddress())
@@ -78,7 +75,7 @@ func TestDivide1Member(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += minDust - ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	dividendDivide(ctx, 1001)
@@ -100,7 +97,7 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += minDust - ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent()
@@ -110,7 +107,7 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += minDust - ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	dividendDivide(ctx, 1999)
@@ -134,7 +131,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += minDust - ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent()
@@ -144,7 +141,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += minDust - ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	member3 := ctx.NewSoloAgent()
@@ -154,7 +151,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += minDust - ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	dividendDivide(ctx, 1999)

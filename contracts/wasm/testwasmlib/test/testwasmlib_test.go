@@ -193,7 +193,7 @@ func TestViewBlockRecords(t *testing.T) {
 	rec.Func.Call()
 	require.NoError(t, ctx.Err)
 	require.True(t, rec.Results.Record().Exists())
-	require.EqualValues(t, 211, len(rec.Results.Record().Value()))
+	require.EqualValues(t, 210, len(rec.Results.Record().Value()))
 }
 
 func TestClearArray(t *testing.T) {
@@ -305,54 +305,39 @@ func TestClearMap(t *testing.T) {
 
 func TestTakeAllowance(t *testing.T) {
 	ctx := setupTest(t)
-
-	accountBalance := ctx.Balance(ctx.Account())
-	chainBalance := ctx.Balance(ctx.ChainAccount())
-	originatorBalance := ctx.Balance(ctx.Originator())
+	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
 	f.Func.TransferIotas(1234).Post()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
 
-	accountBalance += 1234
-	chainBalance += ctx.GasFee
-	originatorBalance -= ctx.GasFee
-	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+	bal.Account += 1234
+	bal.Chain += ctx.GasFee
+	bal.Originator -= ctx.GasFee
+	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
 	g.Func.Post()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
-	require.True(t, g.Results.Iotas().Exists())
-	require.EqualValues(t, accountBalance, g.Results.Iotas().Value())
+	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
 
-	chainBalance += ctx.GasFee
-	originatorBalance += 1111 - ctx.GasFee
-	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, accountBalance, v.Results.Iotas().Value())
+	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
 
-	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+	bal.VerifyBalances(t)
 }
 
 func TestTakeNoAllowance(t *testing.T) {
 	ctx := setupTest(t)
-
-	accountBalance := ctx.Balance(ctx.Account())
-	chainBalance := ctx.Balance(ctx.ChainAccount())
-	originatorBalance := ctx.Balance(ctx.Originator())
+	bal := ctx.Balances()
 
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
@@ -361,35 +346,27 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 
-	chainBalance += ctx.GasFee
-	originatorBalance += 1234 - ctx.GasFee
-	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+	bal.Chain += ctx.GasFee
+	bal.Originator += 1234 - ctx.GasFee
+	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
 	g.Func.Post()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
-	require.True(t, g.Results.Iotas().Exists())
-	require.EqualValues(t, accountBalance, g.Results.Iotas().Value())
+	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
 
-	chainBalance += ctx.GasFee
-	originatorBalance += 1111 - ctx.GasFee
-	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, accountBalance, v.Results.Iotas().Value())
+	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
 
-	require.EqualValues(t, accountBalance, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, chainBalance, ctx.Balance(ctx.ChainAccount()))
-	require.EqualValues(t, originatorBalance, ctx.Balance(ctx.Originator()))
+	bal.VerifyBalances(t)
 }
 
 func TestRandom(t *testing.T) {

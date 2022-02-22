@@ -6,10 +6,11 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"io"
 	"math"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -376,7 +377,7 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
-	ret += fmt.Sprintf("Err: %v", r.Error)
+	ret += fmt.Sprintf("Err: %v\n", r.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
 	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())

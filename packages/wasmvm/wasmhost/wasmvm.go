@@ -282,6 +282,9 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 		err = vm.panicErr
 		vm.panicErr = nil
 	}
+	if err != nil && strings.Contains(err.Error(), "all fuel consumed") {
+		err = errors.New("gas budget exceeded in Wasm VM")
+	}
 	return err
 }
 

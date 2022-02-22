@@ -21,16 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const ( // TODO set back to false
-	SoloDebug        = true
-	SoloHostTracing  = true
-	SoloStackTracing = true
-
-	L2FundsContract   = 1_000_000
-	L2FundsCreator    = 2_000_000
-	L2FundsOriginator = 3_000_000
-)
-
 var (
 	// the following 3 flags will cause Wasm code to be loaded and run
 	// they are checked in sequence and the first one set determines the Wasm language mode
@@ -42,10 +32,23 @@ var (
 	UseWasmEdge = flag.Bool("wasmedge", false, "use WasmEdge instead of WasmTime")
 )
 
+const ( // TODO set back to false
+	WasmDustDeposit = 1000
+
+	L2FundsContract   = 1_000_000
+	L2FundsCreator    = 2_000_000
+	L2FundsOriginator = 3_000_000
+
+	SoloDebug        = true
+	SoloHostTracing  = true
+	SoloStackTracing = true
+)
+
 type SoloContext struct {
 	Chain       *solo.Chain
 	Convertor   wasmhost.WasmConvertor
 	creator     *SoloAgent
+	Dust        uint64
 	Err         error
 	Gas         uint64
 	GasFee      uint64
@@ -187,7 +190,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 }
 
 func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
-	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator}
+	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, Dust: WasmDustDeposit}
 	if chain == nil {
 		ctx.Chain = StartChain(t, "chain1")
 	}
@@ -453,7 +456,7 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	return result
 }
 
-func (ctx *SoloContext) UpdateGas() {
+func (ctx *SoloContext) UpdateGasFees() {
 	receipt := ctx.Chain.LastReceipt()
 	ctx.Gas = receipt.GasBurned
 	ctx.GasFee = receipt.GasFeeCharged
