@@ -1,10 +1,13 @@
 #!/bin/bash -l
 
+# use: stardust-test [arguments for `go test`]
+#
+# example: stardust-test -failfast
+
 PATHS=(\
     "packages/transaction/" \
     "packages/vm/core/testcore_stardust/" \
     "packages/vm/core/testcore_stardust/sbtests/" \
-    "packages/vm/core/testcore_stardust/sbtests/sbtestsc/" \
     "packages/vm/vmcontext/" \
     "packages/peering/" \
     "packages/peering/domain/" \
@@ -13,13 +16,15 @@ PATHS=(\
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/utxodb/" \
+    "contracts/native/evm/evmchain/emulator/" \
+    "contracts/native/evm/evmlight/emulator/" \
+    "contracts/native/evm/evmtest/" \
 )
 WD=$PWD
 
 for ((i=0; i<${#PATHS[@]}; i++))
 do
-    cd "${WD}/${PATHS[i]}"
-    go test -failfast || { echo "Tests in ${PATHS[i]} failed" ; exit 1; }
+    go test "${WD}/${PATHS[i]}" $* || { echo "Tests in ${PATHS[i]} failed" ; exit 1; }
 done
 
 echo "All tests passed"
