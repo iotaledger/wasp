@@ -1,58 +1,45 @@
-package accounts
+package users
 
 import (
 	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/users"
 )
 
-type Account struct {
-	Username string
-	Password string
-	Claims   []string
-}
+// PluginName is the name of the user plugin.
+const PluginName = "Users"
 
-// PluginName is the name of the account plugin.
-const PluginName = "Accounts"
+var userMap map[string]*users.UserData
 
 var config *configuration.Configuration
-var accounts []Account
 
 func Init(_config *configuration.Configuration) *node.Plugin {
 	config = _config
-	return node.NewPlugin(PluginName, node.Enabled, configure)
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
+
+func run(_ *node.Plugin) {
 }
 
 func configure(plugin *node.Plugin) {
-	err := loadAccountsFromConfiguration()
-
+	err := loadUsersFromConfiguration()
 	if err != nil {
-		plugin.LogErrorf("Failed to pull accounts: {#err}")
+		plugin.LogErrorf("Failed to pull users: {#err}")
 	}
+
+	users.InitUsers(userMap)
 }
 
-func loadAccountsFromConfiguration() error {
-	err := config.Unmarshal(parameters.AccountsList, &accounts)
-
+func loadUsersFromConfiguration() error {
+	err := config.Unmarshal(parameters.UserList, &userMap)
 	if err != nil {
-		accounts = make([]Account, 0)
+		userMap = make(map[string]*users.UserData)
+	}
+
+	for username, userData := range userMap {
+		userData.Username = username
 	}
 
 	return err
-}
-
-// TODO: Maybe add a DB connection later on, including functionality to remove/edit accounts?
-
-func GetAccounts() *[]Account {
-	return &accounts
-}
-
-func GetAccountByName(name string) *Account {
-	for _, account := range accounts {
-		if account.Username == name {
-			return &account
-		}
-	}
-
-	return nil
 }

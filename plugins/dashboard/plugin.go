@@ -6,10 +6,11 @@ package dashboard
 import (
 	"context"
 	"errors"
-	"github.com/iotaledger/wasp/packages/authentication"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/authentication"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
@@ -171,6 +172,7 @@ func configure(*node.Plugin) {
 	Server.Use(middleware.Recover())
 
 	claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The Dashboard will be accessible if the token has a 'Dashboard' claim
 		return claims.Dashboard
 	}
 
