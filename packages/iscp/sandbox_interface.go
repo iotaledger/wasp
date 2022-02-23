@@ -90,16 +90,16 @@ type Sandbox interface {
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take
 	// from the caller with TransferAllowedFunds. Nil means no allowance left (zero budget)
 	// AllowanceAvailable MUTATES with each call to TransferAllowedFunds
-	AllowanceAvailable() *Assets
+	AllowanceAvailable() *Allowance
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
 	// TransferAllowedFunds fails if target does not exist
-	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
+	TransferAllowedFunds(target *AgentID, transfer ...*Allowance) *Allowance
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
 	// If it is a random target, funds may be inaccessible (less safe)
-	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
+	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
 	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
@@ -172,7 +172,7 @@ type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
 	Params         dict.Dict
-	Allowance      *Assets
+	Allowance      *Allowance
 	GasBudget      uint64
 }
 

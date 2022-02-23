@@ -279,7 +279,7 @@ func debitNFTFromAccount(account *collections.Map, id *iotago.NFTID) bool {
 }
 
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) bool {
 	checkLedger(state, "MoveBetweenAccounts.IN")
 	defer checkLedger(state, "MoveBetweenAccounts.OUT")
 
@@ -290,19 +290,26 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	// total assets doesn't change
 	fromAccount := getAccount(state, fromAgentID)
 	toAccount := getAccount(state, toAgentID)
-	if !debitFromAccount(fromAccount, transfer) {
+	if !debitFromAccount(fromAccount, transfer.Assets) {
 		return false
 	}
-	creditToAccount(toAccount, transfer)
+	creditToAccount(toAccount, transfer.Assets)
+
+	for _, nft := range transfer.NFTs {
+		if !debitNFTFromAccount(fromAccount, nft) {
+			return false
+		}
+		creditNFTToAccount(toAccount, nft)
+	}
 
 	touchAccount(state, fromAccount)
 	touchAccount(state, toAccount)
 	return true
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, assets *iscp.Assets) {
-	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %v. assets: %s", fromAgentID, ErrNotEnoughFunds, assets))
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) {
+	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, transfer) {
+		panic(xerrors.Errorf(" agentID: %s. %v. assets: %s", fromAgentID, ErrNotEnoughFunds, transfer))
 	}
 }
 
@@ -891,6 +898,7 @@ func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
 	}
 	commonAccount := commonaccount.Get(ctx.ChainID())
 	dustAssets := iscp.NewAssetsIotas(amount)
-	ctx.TransferAllowedFunds(commonAccount, dustAssets)
+	transfer := iscp.NewAllowanceFromAssets(dustAssets, nil)
+	ctx.TransferAllowedFunds(commonAccount, transfer)
 	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
 }

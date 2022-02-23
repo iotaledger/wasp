@@ -50,7 +50,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				Allowance:      req.Metadata.Allowance,
 				GasBudget:      req.Metadata.GasBudget,
 			},
-			nil,
+			req.NFTID,
 			req.Options,
 			par.RentStructure,
 			par.DisableAutoAdjustDustDeposit,
@@ -61,8 +61,8 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
 		}
 		outputs = append(outputs, out)
-		sumIotasOut += out.(*iotago.BasicOutput).Amount
-		for _, nt := range out.(*iotago.BasicOutput).NativeTokens {
+		sumIotasOut += out.Deposit()
+		for _, nt := range out.NativeTokenSet() {
 			s, ok := sumTokensOut[nt.ID]
 			if !ok {
 				s = new(big.Int)

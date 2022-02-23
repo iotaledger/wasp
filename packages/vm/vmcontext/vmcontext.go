@@ -67,10 +67,10 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             *iscp.AgentID // calling agent
-	contract           iscp.Hname    // called contract
-	params             iscp.Params   // params passed
-	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             *iscp.AgentID   // calling agent
+	contract           iscp.Hname      // called contract
+	params             iscp.Params     // params passed
+	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 type blockContext struct {
@@ -151,11 +151,15 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
 		return ret.loadFoundry(serNum)
 	}
+	nftLoader := func(id *iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+		return ret.loadNFT(id)
+	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
+		nftLoader,
 		*ret.dustAssumptions,
 		task.RentStructure,
 	)

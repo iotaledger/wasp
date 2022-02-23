@@ -71,10 +71,10 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
 
-func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
+func (vmctx *VMContext) AllowanceAvailable() *iscp.Allowance {
 	allowance := vmctx.getCallContext().allowanceAvailable
 	if allowance == nil {
-		return iscp.NewEmptyAssets()
+		return iscp.NewEmptyAllowance()
 	}
 	return allowance.Clone()
 }
@@ -113,14 +113,14 @@ func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
 	return accountExists
 }
 
-func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
+func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
 	if !vmctx.getCallContext().allowanceAvailable.SpendFromBudget(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, assets ...*iscp.Assets) *iscp.Assets {
+func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = commonaccount.Get(vmctx.ChainID())
@@ -132,18 +132,18 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 		}
 	}
 
-	var assetsToMove *iscp.Assets
-	if len(assets) == 0 {
-		assetsToMove = vmctx.AllowanceAvailable()
+	var toMove *iscp.Allowance
+	if len(transfer) == 0 {
+		toMove = vmctx.AllowanceAvailable()
 	} else {
-		assetsToMove = assets[0]
+		toMove = transfer[0]
 	}
 
-	vmctx.spendAllowedBudget(assetsToMove) // panics if not enough
+	vmctx.spendAllowedBudget(toMove) // panics if not enough
 
 	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MoveBetweenAccounts(s, caller, target, assetsToMove)
+		accounts.MoveBetweenAccounts(s, caller, target, toMove)
 	})
 	return vmctx.AllowanceAvailable()
 }

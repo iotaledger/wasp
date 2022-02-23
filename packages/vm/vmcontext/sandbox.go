@@ -54,19 +54,19 @@ func (s *contractSandbox) GetEntropy() hashing.HashValue {
 	return s.Ctx.(*VMContext).Entropy()
 }
 
-func (s *contractSandbox) AllowanceAvailable() *iscp.Assets {
+func (s *contractSandbox) AllowanceAvailable() *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetAllowance)
 	return s.Ctx.(*VMContext).AllowanceAvailable()
 }
 
-func (s *contractSandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+func (s *contractSandbox) TransferAllowedFunds(target *iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, assets...)
+	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, transfer...)
 }
 
-func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, assets...)
+	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, transfer...)
 }
 
 func (s *contractSandbox) Request() iscp.Calldata {

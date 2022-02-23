@@ -15,7 +15,7 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 	iotasToWithdrawal := params.MustGetUint64(ParamIotasToWithdrawal)
 	gasBudget := params.MustGetUint64(ParamGasBudgetToSend)
 
-	availableIotas := ctx.AllowanceAvailable().Iotas
+	availableIotas := ctx.AllowanceAvailable().Assets.Iotas
 
 	request := iscp.RequestParameters{
 		TargetAddress: targetChain.AsAddress(),

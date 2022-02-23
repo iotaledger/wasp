@@ -64,6 +64,7 @@ func NewAnchorTransactionBuilder(
 	anchorOutputID iotago.OutputID,
 	tokenBalanceLoader tokenOutputLoader,
 	foundryLoader foundryLoader,
+	nftLoader NFTOutputLoader,
 	dustDepositAssumptions transaction.DustDepositAssumption,
 	rentStructure *iotago.RentStructure,
 ) *AnchorTransactionBuilder {
@@ -77,6 +78,7 @@ func NewAnchorTransactionBuilder(
 		dustDepositAssumption:  dustDepositAssumptions,
 		loadTokenOutput:        tokenBalanceLoader,
 		loadFoundry:            foundryLoader,
+		loadNFTOutput:          nftLoader,
 		consumed:               make([]iscp.Request, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:    make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:          make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
@@ -128,11 +130,11 @@ func (txb *AnchorTransactionBuilder) TotalIotasInL2Accounts() uint64 {
 // Returns delta of iotas needed to adjust the common account due to dust deposit requirement for internal UTXOs
 // NOTE: if call panics with ErrNotEnoughFundsForInternalDustDeposit, the state of the builder becomes inconsistent
 // It means, in the caller context it should be rolled back altogether
-func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
+func (txb *AnchorTransactionBuilder) Consume(req iscp.Request) int64 {
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume IN")
 	}
-	if inp.IsOffLedger() {
+	if req.IsOffLedger() {
 		panic("txbuilder.Consume: must be UTXO")
 	}
 	if txb.InputsAreFull() {
@@ -142,17 +144,20 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 	defer txb.mustCheckTotalNativeTokensExceeded()
 	defer txb.mustCheckMessageSize()
 
-	txb.consumed = append(txb.consumed, inp)
+	txb.consumed = append(txb.consumed, req)
 
 	// first we add all iotas arrived with the output to anchor balance
-	txb.addDeltaIotasToTotal(inp.AsOnLedger().Output().Deposit())
+	txb.addDeltaIotasToTotal(req.AsOnLedger().Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
-	for _, nt := range inp.Assets().Tokens {
+	for _, nt := range req.Assets().Tokens {
 		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume OUT")
+	}
+	if req.NFTID() != nil {
+		txb.includeNFT(req.AsOnLedger().Output().(*iotago.NFTOutput))
 	}
 	return deltaIotasDustDepositAdjustment
 }
@@ -451,6 +456,12 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 }
 
 func (txb *AnchorTransactionBuilder) includeNFT(o *iotago.NFTOutput) {
+	if txb.nftsIncluded[o.NFTID] != nil {
+		// NFT comes in and out in the same block
+		txb.nftsIncluded[o.NFTID].sentOutside = true
+		txb.nftsIncluded[o.NFTID].out = o
+		return
+	}
 	in, input := txb.loadNFTOutput(&o.NFTID) // output will be nil if no such token id accounted yet
 	if in != nil && txb.InputsAreFull() {
 		panic(vmexceptions.ErrInputLimitExceeded)
@@ -464,6 +475,7 @@ func (txb *AnchorTransactionBuilder) includeNFT(o *iotago.NFTOutput) {
 		in:                 in,
 		out:                o,
 		dustDepositCharged: in != nil,
+		sentOutside:        false,
 	}
 	if input != nil {
 		b.input = *input

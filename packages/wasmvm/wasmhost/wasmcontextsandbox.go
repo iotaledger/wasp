@@ -155,8 +155,9 @@ func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
-	assets := s.ctx.AllowanceAvailable()
-	return s.cvt.ScBalances(assets).Bytes()
+	allowance := s.ctx.AllowanceAvailable()
+	// TODO check, allowance.Assets is wrong
+	return s.cvt.ScBalances(allowance.Assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -366,10 +367,11 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
+		transfer := iscp.NewAllowanceFromAssets(assets, nil) // TODO check, this is not right
 		if req.Create {
-			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, assets)
+			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, transfer)
 		} else {
-			s.ctx.TransferAllowedFunds(agentID, assets)
+			s.ctx.TransferAllowedFunds(agentID, transfer)
 		}
 	}
 	return nil

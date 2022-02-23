@@ -64,3 +64,21 @@ func (vmctx *VMContext) getUTXOInput(blockIndex uint32, outputIndex uint16) (ret
 	})
 	return
 }
+
+func (vmctx *VMContext) loadNFT(id *iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+	var retOut *iotago.NFTOutput
+	var retInp *iotago.UTXOInput
+	var blockIndex uint32
+	var outputIndex uint16
+
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		retOut, blockIndex, outputIndex = accounts.GetNFTOutput(s, id, vmctx.ChainID())
+	})
+	if retOut == nil {
+		return nil, nil
+	}
+	if retInp = vmctx.getUTXOInput(blockIndex, outputIndex); retOut == nil {
+		panic(xerrors.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+	}
+	return retOut, retInp
+}

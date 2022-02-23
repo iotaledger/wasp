@@ -14,6 +14,7 @@ import (
 type DustDepositAssumption struct {
 	AnchorOutput      uint64
 	NativeTokenOutput uint64
+	NFTOutput         uint64
 }
 
 func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error) {
@@ -26,6 +27,9 @@ func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error)
 	if ret.NativeTokenOutput, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
+	if ret.NFTOutput, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -33,6 +37,7 @@ func (d *DustDepositAssumption) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint64(d.AnchorOutput).
 		WriteUint64(d.NativeTokenOutput).
+		WriteUint64(d.NFTOutput).
 		Bytes()
 }
 
@@ -45,6 +50,7 @@ func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
 	return &DustDepositAssumption{
 		AnchorOutput:      aliasOutputDustDeposit(rent),
 		NativeTokenOutput: nativeTokenOutputDustDeposit(rent),
+		NFTOutput:         nftOutputDustDeposit(rent),
 	}
 }
 
@@ -83,6 +89,26 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		},
 		nil,
 		nil,
+		iscp.SendOptions{},
+		rent,
+	)
+	return o.VByteCost(rent, nil)
+}
+
+func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
+	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
+	o := MakeOutput(
+		&addr,
+		&addr,
+		&iscp.Assets{
+			Iotas: 1,
+			Tokens: iotago.NativeTokens{&iotago.NativeToken{
+				ID:     iotago.NativeTokenID{},
+				Amount: abi.MaxUint256,
+			}},
+		},
+		nil,
+		&iotago.NFTID{0},
 		iscp.SendOptions{},
 		rent,
 	)

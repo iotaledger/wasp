@@ -38,7 +38,7 @@ func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.A
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) {
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, transfer)
 	})

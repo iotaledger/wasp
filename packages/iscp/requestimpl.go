@@ -55,7 +55,7 @@ type OffLedgerRequestData struct {
 	sender     *iotago.Ed25519Address
 	signature  []byte
 	nonce      uint64
-	allowance  *Assets
+	allowance  *Allowance
 	gasBudget  uint64
 }
 
@@ -203,7 +203,7 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	}
 	r.allowance = nil
 	if transferNotNil {
-		if r.allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+		if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}
@@ -231,7 +231,7 @@ func (r *OffLedgerRequestData) NFTID() *iotago.NFTID {
 }
 
 // Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
-func (r *OffLedgerRequestData) Allowance() *Assets {
+func (r *OffLedgerRequestData) Allowance() *Allowance {
 	return r.allowance
 }
 
@@ -240,7 +240,7 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestData {
+func (r *OffLedgerRequestData) WithTransfer(transfer *Allowance) *OffLedgerRequestData {
 	r.allowance = transfer.Clone()
 	return r
 }
@@ -334,11 +334,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbo, ok := o.(iotago.FeatureBlockOutput)
-	if !ok {
-		panic("wrong type. Expected iotago.FeatureBlockOutput")
-	}
-	fbSet, err = fbo.FeatureBlocks().Set()
+	fbSet, err = o.FeatureBlocks().Set()
 	if err != nil {
 		return nil, err
 	}
@@ -348,11 +344,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		return nil, err
 	}
 
-	uco, ok := o.(iotago.UnlockConditionOutput)
-	if !ok {
-		panic("wrong type. Expected iotago.UnlockConditionOutput")
-	}
-	ucSet, err := uco.UnlockConditions().Set()
+	ucSet, err := o.UnlockConditions().Set()
 	if err != nil {
 		return nil, err
 	}
@@ -468,16 +460,14 @@ func (r *OnLedgerRequestData) NFTID() *iotago.NFTID {
 	return &out.NFTID
 }
 
-func (r *OnLedgerRequestData) Allowance() *Assets {
+func (r *OnLedgerRequestData) Allowance() *Allowance {
 	return r.requestMetadata.Allowance
 }
 
 func (r *OnLedgerRequestData) Assets() *Assets {
 	amount := r.output.Deposit()
 	var tokens iotago.NativeTokens
-	if output, ok := r.output.(iotago.NativeTokenOutput); ok {
-		tokens = output.NativeTokenSet()
-	}
+	tokens = r.output.NativeTokenSet()
 	return NewAssets(amount, tokens)
 }
 
@@ -574,7 +564,7 @@ func (r *OnLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
 }
 
 func (r *OnLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock := r.unlockConditions.DustDepositReturn()
+	senderBlock := r.unlockConditions.StorageDepositReturn()
 	if senderBlock == nil {
 		return 0, false
 	}
@@ -696,7 +686,7 @@ type RequestMetadata struct {
 	// request arguments
 	Params dict.Dict
 	// Allowance intended to the target contract to take. Nil means zero allowance
-	Allowance *Assets
+	Allowance *Allowance
 	// gas budget
 	GasBudget uint64
 }
@@ -756,7 +746,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 	if allowanceNotEmpty {
-		if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+		if p.Allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}

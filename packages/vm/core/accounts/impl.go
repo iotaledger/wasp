@@ -93,7 +93,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	}
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
-	fundsToWithdraw := ctx.AllowanceAvailable()
+	fundsToWithdraw := ctx.AllowanceAvailable().Assets
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
@@ -150,7 +150,7 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	if toWithdraw.Iotas > bottomIotas {
 		toWithdraw.Iotas -= bottomIotas
 	}
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), iscp.NewAllowanceFromAssets(toWithdraw, nil))
 	return nil
 }
 
