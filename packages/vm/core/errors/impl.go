@@ -29,38 +29,25 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 		panic(coreerrors.ErrMessageFormatEmpty)
 	}
 
-	errorDefinition, err := e.Register(errorMessageFormat)
-
+	template, err := e.Register(errorMessageFormat)
 	ctx.RequireNoError(err)
 
-	ret := dict.New()
-	ret.Set(ParamContractHname, codec.EncodeHname(ctx.Caller().Hname()))
-	ret.Set(ParamErrorId, codec.EncodeUint16(errorDefinition.Id()))
-	ret.Set(ParamErrorDefinitionAdded, codec.EncodeBool(errorDefinition != nil))
-
-	return ret
+	return dict.Dict{ParamErrorCode: codec.EncodeVMErrorCode(template.Code())}
 }
 
 func funcGetErrorMessageFormat(ctx iscp.SandboxView) dict.Dict {
-	params := kvdecoder.New(ctx.Params())
-
-	contract := params.MustGetUint32(ParamContractHname)
-	errorId := params.MustGetUint16(ParamErrorId)
+	code := codec.MustDecodeVMErrorCode(ctx.Params().MustGet(ParamErrorCode))
 
 	var e coreerrors.ErrorCollection
 
-	if contract == iscp.VMCoreErrorID {
+	if code.ContractID == iscp.VMCoreErrorContractID {
 		e = coreerrors.All()
 	} else {
-		e = NewStateErrorCollectionReader(ctx.State(), iscp.Hname(contract))
+		e = NewStateErrorCollectionReader(ctx.State(), code.ContractID)
 	}
 
-	errorDefinition, err := e.Get(errorId)
-
+	template, err := e.Get(code.ID)
 	ctx.RequireNoError(err)
 
-	ret := dict.New()
-	ret.Set(ParamErrorMessageFormat, codec.EncodeString(errorDefinition.MessageFormat()))
-
-	return ret
+	return dict.Dict{ParamErrorMessageFormat: codec.EncodeString(template.MessageFormat())}
 }

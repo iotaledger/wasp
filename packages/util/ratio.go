@@ -2,7 +2,10 @@ package util
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
 )
 
@@ -60,4 +63,28 @@ func (r Ratio32) XFloor64(y uint64) uint64 {
 // XCeil64 computes x = ceil(y * a / b)
 func (r Ratio32) XCeil64(y uint64) uint64 {
 	return ceil(y, uint64(r.A), uint64(r.B))
+}
+
+// Set is part of the pflag.Value interface. It accepts a string in the form "a:b".
+func (r Ratio32) Set(s string) error {
+	parts := strings.Split(s, ":")
+	if len(parts) != 2 {
+		return errors.New("invalid format for Ratio32")
+	}
+	a, err := strconv.ParseUint(parts[0], 10, 32)
+	if err != nil {
+		return err
+	}
+	b, err := strconv.ParseUint(parts[1], 10, 32)
+	if err != nil {
+		return err
+	}
+	r.A = uint32(a)
+	r.B = uint32(b)
+	return nil
+}
+
+// Type is part of the pflag.Value interface.
+func (r Ratio32) Type() string {
+	return "Ratio32"
 }

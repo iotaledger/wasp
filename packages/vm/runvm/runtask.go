@@ -19,7 +19,6 @@ func (r VMRunner) Run(task *vm.VMTask) {
 		coreutil.ErrorStateInvalidated,
 	)
 	if err != nil {
-
 		switch e := err.(type) {
 		case *iscp.VMError:
 			task.VMError = e
@@ -29,7 +28,6 @@ func (r VMRunner) Run(task *vm.VMTask) {
 		default:
 			task.VMError = coreerrors.ErrUntypedError.Create(e)
 		}
-
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
 }

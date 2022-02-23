@@ -2,37 +2,34 @@ package coreerrors
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"math"
 )
 
 // CoreErrorCollection implements ErrorCollection. Is used for global errors. Does not require vm context state.
 type CoreErrorCollection map[uint16]*iscp.VMErrorTemplate
 
 func NewCoreErrorCollection() ErrorCollection {
-	return &CoreErrorCollection{}
+	return CoreErrorCollection{}
 }
 
-func (e *CoreErrorCollection) Get(errorId uint16) (*iscp.VMErrorTemplate, error) {
-
-	if errorDefinition, ok := (*e)[errorId]; ok {
-		return errorDefinition, nil
+func (e CoreErrorCollection) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
+	if template, ok := e[errorID]; ok {
+		return template, nil
 	}
-
 	return nil, nil
 }
 
-func (e *CoreErrorCollection) Register(messageFormat string) (*iscp.VMErrorTemplate, error) {
+func (e CoreErrorCollection) Register(messageFormat string) (*iscp.VMErrorTemplate, error) {
 	if len(messageFormat) > iscp.VMErrorMessageLimit {
 		return nil, ErrErrorMessageTooLong
 	}
 
-	errorId := iscp.GetErrorIdFromMessageFormat(messageFormat)
+	errorID := iscp.GetErrorIDFromMessageFormat(messageFormat)
 
-	if _, exists := (*e)[errorId]; exists {
-		return nil, ErrErrorAlreadyRegistered.Create(errorId)
+	if _, exists := e[errorID]; exists {
+		return nil, ErrErrorAlreadyRegistered.Create(errorID)
 	}
 
-	(*e)[errorId] = iscp.NewVMErrorTemplate(math.MaxUint32, errorId, messageFormat)
+	e[errorID] = iscp.NewVMErrorTemplate(iscp.NewCoreVMErrorCode(errorID), messageFormat)
 
-	return (*e)[errorId], nil
+	return e[errorID], nil
 }

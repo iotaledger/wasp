@@ -2,17 +2,16 @@ package testcore
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
@@ -154,7 +153,7 @@ func TestBigBlob(t *testing.T) {
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 
 	unresolvedError := err.(*iscp.UnresolvedVMError)
-	resolvedError, _ := unresolvedError.ResolveToVMError(ch.ErrorMessageResolver)
+	resolvedError := ch.ResolveVMError(unresolvedError)
 
 	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")
 

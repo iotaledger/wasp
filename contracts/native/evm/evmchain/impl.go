@@ -64,7 +64,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, _ uint32, gasBudget uint64) (uint64, error) {
 		_, gasUsed, error := getEmulatorInBlockContext(ctx).SendTransaction(tx, gasBudget)
 		return gasUsed, error
-	})
+	}, false)
 }
 
 func getBalance(ctx iscp.SandboxView) dict.Dict {

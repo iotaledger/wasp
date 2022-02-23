@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
 )
 
@@ -37,6 +38,13 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 
 func NewAssetsIotas(amount uint64) *Assets {
 	return &Assets{Iotas: amount}
+}
+
+func NewAssetsForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *Assets {
+	if p.GasFeeTokenID == nil {
+		return NewAssetsIotas(feeAmount)
+	}
+	return NewEmptyAssets().AddNativeTokens(*p.GasFeeTokenID, feeAmount)
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {

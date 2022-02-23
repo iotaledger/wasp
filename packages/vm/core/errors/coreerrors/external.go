@@ -7,13 +7,11 @@ import (
 var coreErrorCollection ErrorCollection = NewCoreErrorCollection()
 
 func Register(messageFormat string) *iscp.VMErrorTemplate {
-	errorDefinition, err := coreErrorCollection.Register(messageFormat)
-
+	template, err := coreErrorCollection.Register(messageFormat)
 	if err != nil {
 		panic(err)
 	}
-
-	return errorDefinition
+	return template
 }
 
 func All() ErrorCollection {

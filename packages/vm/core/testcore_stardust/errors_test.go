@@ -1,18 +1,19 @@
 package testcore
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 var errorMessageToTest = "Test error message %v"
@@ -69,7 +70,7 @@ func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 }
 
 // Panics and returned errors will eventually land into the error handling hook.
-// Typical xerror/error types will be wrapped into a vmerrors.UnresolvedVMError type (Err ErrUntypedError)
+// Typical xerror/error types will be wrapped into an UnresolvedVMError type (Err ErrUntypedError)
 // Panicked vmerrors will be stored as is.
 // The first test validates a typed vmerror UnresolvedVMError (Not enough Gas)
 // The second test validates the wrapped generic ErrUntypedError
@@ -85,7 +86,7 @@ func TestErrorWithCustomError(t *testing.T) {
 	require.ErrorAs(t, err, &testError)
 
 	typedError := err.(*iscp.VMError)
-	require.Equal(t, typedError.AsTemplate(), *vm.ErrGasBudgetDetail)
+	require.Equal(t, typedError.AsTemplate(), vm.ErrGasBudgetDetail)
 }
 
 // This test does not supply the required kv pair 'ParamErrorMessageFormat' which makes the kvdecoder fail with an xerror
@@ -101,7 +102,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 	require.ErrorAs(t, err, &testError)
 
 	typedError := err.(*iscp.VMError)
-	require.Equal(t, typedError.AsTemplate(), *coreerrors.ErrUntypedError)
+	require.Equal(t, typedError.AsTemplate(), coreerrors.ErrUntypedError)
 
 	require.Equal(t, err.Error(), "cannot decode key 'm': cannot decode nil bytes")
 }
@@ -112,36 +113,27 @@ func TestSuccessfulRegisterError(t *testing.T) {
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name, errors.ParamErrorMessageFormat, "poof").
 		WithGasBudget(100_000)
 
-	_, dict, err := chain.PostRequestSyncTx(req, nil)
-
+	_, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
-
-	kv := kvdecoder.New(dict)
-	errorCreated := kv.MustGetBool(errors.ParamErrorDefinitionAdded)
-
-	require.True(t, errorCreated)
 }
 
 func TestRetrievalOfErrorMessage(t *testing.T) {
-
 	_, chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name, errors.ParamErrorMessageFormat, errorMessageToTest).
 		WithGasBudget(100_000)
 
 	_, dict, err := chain.PostRequestSyncTx(req, nil)
-
 	require.NoError(t, err)
 
-	kv := kvdecoder.New(dict)
-	errorId := kv.MustGetUint16(errors.ParamErrorId)
-	contract := kv.MustGetUint32(errors.ParamContractHname)
+	errorCode := codec.MustDecodeVMErrorCode(dict.MustGet(errors.ParamErrorCode))
 
-	req = solo.NewCallParams(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, errors.ParamContractHname, contract, errors.ParamErrorId, errorId).
+	req = solo.NewCallParams(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
+		errors.ParamErrorCode, errorCode,
+	).
 		WithGasBudget(100_000)
 
 	_, dict, err = chain.PostRequestSyncTx(req, nil)
-
 	require.NoError(t, err)
 
 	message := dict.MustGet(errors.ParamErrorMessageFormat)
@@ -159,7 +151,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Code().ID, iscp.GetErrorIDFromMessageFormat(errorMessageToTest))
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {
@@ -185,8 +177,8 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 	typedError := err.(*iscp.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
-	require.Equal(t, testError.ContractId(), typedError.ContractId())
+	require.Equal(t, testError.Code().ID, iscp.GetErrorIDFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Code().ContractID, typedError.Code().ContractID)
 
 	// Further, this error will add the arg '42'
 	require.True(t, strings.HasSuffix(err.Error(), "42"))
@@ -215,8 +207,8 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	typedError := err.(*iscp.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Id(), iscp.GetErrorIdFromMessageFormat(errorMessageToTest))
-	require.Equal(t, testError.ContractId(), typedError.ContractId())
+	require.Equal(t, testError.Code().ID, iscp.GetErrorIDFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Code().ContractID, typedError.Code().ContractID)
 
 	t.Log(err.Error())
 
@@ -252,8 +244,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.ErrorAs(t, err, &errorTestType)
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
-	require.EqualValues(t, receipt.Error.Id(), typedError.Id())
-	require.EqualValues(t, receipt.Error.ContractId(), typedError.ContractId())
+	require.EqualValues(t, receipt.Error.Code(), typedError.Code())
 	require.EqualValues(t, receipt.Error.Hash(), typedError.Hash())
 	require.EqualValues(t, receipt.Error.Params(), typedError.Params())
 }
@@ -286,29 +277,28 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	require.ErrorAs(t, err, &errorTestType)
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
-	require.EqualValues(t, receipt.Error.Id(), typedError.Id())
-	require.EqualValues(t, receipt.Error.ContractId(), typedError.ContractId())
+	require.EqualValues(t, receipt.Error.Code(), typedError.Code())
 	require.EqualValues(t, receipt.Error.Hash(), typedError.Hash())
 	require.Equal(t, receipt.Error.Params(), typedError.Params())
 }
 
 func TestIsComparer(t *testing.T) {
-	errorDefinition := iscp.NewVMErrorTemplate(1234, 1, "fooBar")
-	vmerror := errorDefinition.Create()
+	template := iscp.NewVMErrorTemplate(iscp.NewVMErrorCode(1234, 1), "fooBar")
+	vmerror := template.Create()
 	vmerrorUnresolved := vmerror.AsUnresolvedError()
 
-	errorDefinition2 := iscp.NewVMErrorTemplate(4321, 2, "barFoo")
+	template2 := iscp.NewVMErrorTemplate(iscp.NewVMErrorCode(4321, 2), "barFoo")
 
-	require.True(t, iscp.VMErrorIs(errorDefinition, vmerrorUnresolved))
-	require.True(t, iscp.VMErrorIs(errorDefinition, vmerror))
-	require.True(t, iscp.VMErrorIs(vmerror, errorDefinition))
+	require.True(t, iscp.VMErrorIs(template, vmerrorUnresolved))
+	require.True(t, iscp.VMErrorIs(template, vmerror))
+	require.True(t, iscp.VMErrorIs(vmerror, template))
 	require.True(t, iscp.VMErrorIs(vmerror, vmerrorUnresolved))
-	require.True(t, iscp.VMErrorIs(vmerrorUnresolved, errorDefinition))
+	require.True(t, iscp.VMErrorIs(vmerrorUnresolved, template))
 	require.True(t, iscp.VMErrorIs(vmerrorUnresolved, vmerror))
 
-	require.False(t, iscp.VMErrorIs(errorDefinition2, vmerrorUnresolved))
-	require.False(t, iscp.VMErrorIs(errorDefinition2, vmerror))
-	require.False(t, iscp.VMErrorIs(errorDefinition2, errorDefinition))
-	require.False(t, iscp.VMErrorIs(vmerror, errorDefinition2))
-	require.False(t, iscp.VMErrorIs(vmerrorUnresolved, errorDefinition2))
+	require.False(t, iscp.VMErrorIs(template2, vmerrorUnresolved))
+	require.False(t, iscp.VMErrorIs(template2, vmerror))
+	require.False(t, iscp.VMErrorIs(template2, template))
+	require.False(t, iscp.VMErrorIs(vmerror, template2))
+	require.False(t, iscp.VMErrorIs(vmerrorUnresolved, template2))
 }
