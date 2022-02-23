@@ -7,7 +7,7 @@ import (
 
 func (vmctx *VMContext) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
 	par.AdjustToMinimumDustDeposit = false
-	out := transaction.BasicOutputFromPostData(
+	out := transaction.OutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,

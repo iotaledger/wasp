@@ -9,6 +9,15 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// nativeTokenBalance represents on-chain account of the specific native token
+type nativeTokenBalance struct {
+	tokenID            iotago.NativeTokenID
+	input              iotago.UTXOInput // if in != nil
+	dustDepositCharged bool
+	in                 *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
+	out                *iotago.BasicOutput // current balance of the token_id on the chain
+}
+
 func (n *nativeTokenBalance) clone() *nativeTokenBalance {
 	return &nativeTokenBalance{
 		tokenID:            n.tokenID,

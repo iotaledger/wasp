@@ -280,8 +280,8 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
-		for _, sn := range NFTOutputsToBeRemoved {
-			accounts.DeleteNFTOutput(s, sn)
+		for _, out := range NFTOutputsToBeRemoved {
+			accounts.DeleteNFTOutput(s, &out.NFTID)
 		}
 	})
 }

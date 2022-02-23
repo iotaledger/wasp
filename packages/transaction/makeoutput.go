@@ -8,7 +8,7 @@ import (
 
 // OutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of iotas required for the dust deposit
-func BasicOutputFromPostData(
+func OutputFromPostData(
 	senderAddress iotago.Address,
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,

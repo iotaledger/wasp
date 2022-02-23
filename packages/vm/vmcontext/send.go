@@ -15,16 +15,16 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit
-	out := transaction.BasicOutputFromPostData(
+	out := transaction.OutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
 		vmctx.task.RentStructure,
 	)
-	if out.Amount > par.Assets.Iotas {
+	if out.Deposit() > par.Assets.Iotas {
 		// it was adjusted
 		assets = assets.Clone()
-		assets.Iotas = out.Amount
+		assets.Iotas = out.Deposit()
 	}
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough iotas for dust because

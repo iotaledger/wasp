@@ -65,7 +65,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			},
 		},
 	}
-	exout := transaction.BasicOutputFromPostData(
+	exout := transaction.OutputFromPostData(
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
 		iscp.RequestParameters{
@@ -643,10 +643,11 @@ func TestDustDeposit(t *testing.T) {
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
+			nil,
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
-		require.Equal(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
+		require.Equal(t, out.Deposit(), out.VByteCost(parameters.RentStructure(), nil))
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
@@ -655,10 +656,11 @@ func TestDustDeposit(t *testing.T) {
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
+			nil,
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
-		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
+		require.GreaterOrEqual(t, out.Deposit(), out.VByteCost(parameters.RentStructure(), nil))
 	})
 }
 
@@ -760,6 +762,7 @@ func TestSerDe(t *testing.T) {
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
+			nil,
 			iscp.SendOptions{},
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
@@ -768,12 +771,12 @@ func TestSerDe(t *testing.T) {
 		outBack := &iotago.BasicOutput{}
 		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
-		condSet := out.Conditions.MustSet()
+		condSet := out.(*iotago.BasicOutput).Conditions.MustSet()
 		condSetBack := outBack.Conditions.MustSet()
 		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
-		require.EqualValues(t, out.Amount, outBack.Amount)
+		require.EqualValues(t, out.Deposit(), outBack.Amount)
 		require.EqualValues(t, 0, len(outBack.NativeTokens))
-		require.True(t, outBack.Blocks.Equal(out.Blocks))
+		require.True(t, outBack.Blocks.Equal(out.(*iotago.BasicOutput).Blocks))
 	})
 	t.Run("serde FoundryOutput", func(t *testing.T) {
 		out := &iotago.FoundryOutput{
