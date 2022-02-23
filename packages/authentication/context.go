@@ -4,8 +4,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ClaimValidator func(claims *WaspClaims) bool
-type AccessValidator func(validator ClaimValidator) bool
+type (
+	ClaimValidator  func(claims *WaspClaims) bool
+	AccessValidator func(validator ClaimValidator) bool
+)
 
 type AuthContext struct {
 	echo.Context

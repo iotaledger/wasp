@@ -1,9 +1,10 @@
 package authentication
 
 import (
-	"github.com/labstack/echo/v4"
 	"net"
 	"strings"
+
+	"github.com/labstack/echo/v4"
 )
 
 func AddIPWhiteListAuth(webAPI WebAPI, config IPWhiteListAuthConfiguration) {
@@ -20,7 +21,6 @@ func createIPWhiteList(config IPWhiteListAuthConfiguration) []net.IP {
 }
 
 func protected(whitelist []net.IP) echo.MiddlewareFunc {
-
 	isAllowed := func(ip net.IP) bool {
 		if ip.IsLoopback() {
 			return true

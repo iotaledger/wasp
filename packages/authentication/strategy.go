@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -12,7 +13,7 @@ import (
 const (
 	AuthJWT         = "jwt"
 	AuthBasic       = "basic"
-	AuthIpWhitelist = "ip"
+	AuthIPWhitelist = "ip"
 )
 
 type AuthConfiguration struct {
@@ -42,22 +43,25 @@ type WebAPI interface {
 	Use(middleware ...echo.MiddlewareFunc)
 }
 
-var log = logger.NewLogger("authentication")
+var log *logger.Logger
 
 func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, claimValidator ClaimValidator) {
 	var config AuthConfiguration
-	parameters.GetStruct(configSectionPath, &config)
 
-	users := users.All()
+	if err := parameters.GetStruct(configSectionPath, &config); err != nil {
+		return
+	}
+
+	log = logger.NewLogger("authentication")
+	userMap := users.All()
 
 	addAuthContext(webAPI, config)
 
 	switch config.Scheme {
 	case AuthBasic:
-		AddBasicAuth(webAPI, users)
+		AddBasicAuth(webAPI, userMap)
 	case AuthJWT:
 		nodeIdentity, err := registryProvider().GetNodeIdentity()
-
 		if err != nil {
 			panic(err)
 		}
@@ -65,14 +69,14 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 		privateKey := nodeIdentity.PrivateKey.Bytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, users, claimValidator)
+		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, userMap, claimValidator)
 
 		if config.AddRoutes {
-			authHandler := &AuthHandler{Jwt: jwtAuth, Users: users}
+			authHandler := &AuthHandler{Jwt: jwtAuth, Users: userMap}
 			webAPI.POST(AuthRoute(), authHandler.CrossAPIAuthHandler)
 		}
 
-	case AuthIpWhitelist:
+	case AuthIPWhitelist:
 		AddIPWhiteListAuth(webAPI, config.IPWhitelistConfig)
 	default:
 		panic(fmt.Sprintf("Unknown auth scheme %s", config.Scheme))

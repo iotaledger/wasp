@@ -1,29 +1,23 @@
 package users
 
-type User struct {
+type UserData struct {
 	Username string
 	Password string
 	Claims   []string
 }
 
-var users *[]User
+var users map[string]*UserData
 
-func InitUsers(userList *[]User) {
+func InitUsers(userList map[string]*UserData) {
 	users = userList
 }
 
 // TODO: Maybe add a DB connection later on, including functionality to remove/edit users?
 
-func All() *[]User {
+func All() map[string]*UserData {
 	return users
 }
 
-func GetUserByName(name string) *User {
-	for _, user := range *users {
-		if user.Username == name {
-			return &user
-		}
-	}
-
-	return nil
+func GetUserByName(name string) *UserData {
+	return users[name]
 }

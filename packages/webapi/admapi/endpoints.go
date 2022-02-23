@@ -17,7 +17,6 @@ import (
 )
 
 var log *logger.Logger
-var jwtAuth *authentication.JWTAuth
 
 func initLogger() {
 	log = logger.NewLogger("webapi/adm")

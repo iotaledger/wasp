@@ -1,30 +1,36 @@
 package authentication
 
 import (
+	"crypto/subtle"
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 type AuthHandler struct {
 	Jwt   *JWTAuth
-	Users *[]users.User
+	Users map[string]*users.UserData
 }
 
-func (s *AuthHandler) validateLogin(username string, password string) bool {
-	for _, v := range *s.Users {
-		if username == v.Username && password == v.Password {
-			return true
-		}
+func (a *AuthHandler) validateLogin(username, password string) bool {
+	userDetail := a.Users[username]
+
+	if userDetail == nil {
+		return false
+	}
+
+	if subtle.ConstantTimeCompare([]byte(userDetail.Password), []byte(password)) != 0 {
+		return true
 	}
 
 	return false
 }
 
-func (a *AuthHandler) GetTypedClaims(user *users.User) (*WaspClaims, error) {
+func (a *AuthHandler) GetTypedClaims(user *users.UserData) (*WaspClaims, error) {
 	claims := WaspClaims{}
 	fakeClaims := make(map[string]interface{})
 
@@ -35,7 +41,6 @@ func (a *AuthHandler) GetTypedClaims(user *users.User) (*WaspClaims, error) {
 	// TODO: Find a better solution for
 	// Turning a list of strings into WaspClaims map by their json tag names
 	enc, err := json.Marshal(fakeClaims)
-
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +54,7 @@ func (a *AuthHandler) GetTypedClaims(user *users.User) (*WaspClaims, error) {
 	return &claims, err
 }
 
-func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
-
+func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 	type loginRequest struct {
 		JWT      string `json:"jwt"`
 		Username string `json:"username" form:"Username"`
@@ -60,10 +64,10 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 	request := &loginRequest{}
 
 	if err := c.Bind(request); err != nil {
-		return errors.WithMessage(err, "invalid request, error: %s")
+		return errors.WithMessage(err, "invalid request, error: %a")
 	}
 
-	if !s.validateLogin(request.Username, request.Password) {
+	if !a.validateLogin(request.Username, request.Password) {
 		return echo.ErrUnauthorized
 	}
 
@@ -73,14 +77,12 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	claims, err := s.GetTypedClaims(user)
-
+	claims, err := a.GetTypedClaims(user)
 	if err != nil {
 		return err
 	}
 
-	token, err := s.Jwt.IssueJWT(request.Username, claims)
-
+	token, err := a.Jwt.IssueJWT(request.Username, claims)
 	if err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 			Name:     "jwt",
 			Value:    token,
 			HttpOnly: true, // JWT Token will be stored in a http only cookie, this is important to mitigate XSS/XSRF attacks
-			Expires:  time.Now().Add(s.Jwt.durationHours),
+			Expires:  time.Now().Add(a.Jwt.durationHours),
 			Path:     "/",
 			SameSite: http.SameSiteStrictMode,
 		}

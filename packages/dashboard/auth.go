@@ -5,8 +5,9 @@ package dashboard
 
 import (
 	_ "embed"
-	"github.com/iotaledger/wasp/packages/authentication"
 	"net/http"
+
+	"github.com/iotaledger/wasp/packages/authentication"
 
 	"github.com/labstack/echo/v4"
 )

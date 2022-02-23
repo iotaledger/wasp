@@ -5,9 +5,10 @@ package dashboard
 
 import (
 	_ "embed"
-	"github.com/iotaledger/wasp/packages/authentication"
 	"html/template"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/authentication"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -112,7 +113,6 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 }
 
 func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
-
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
 		"formatTimestampOrNever": formatTimestampOrNever,

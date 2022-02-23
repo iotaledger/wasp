@@ -27,13 +27,6 @@
       "claims": ["dashboard", "api", "chain.read", "chain.write"]
     }
   },
-  "accounts": [
-    {
-      "username": "wasp",
-      "password": "wasp",
-      "claims": ["dashboard", "api", "chain.read", "chain.write"]
-    }
-  ],
   "webapi": {
     "auth": {
       "jwt": {

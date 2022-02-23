@@ -1,8 +1,9 @@
 package authentication
 
 import (
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 type StatusWebAPIModel struct {
