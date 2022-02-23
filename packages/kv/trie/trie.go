@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // CommitmentModel abstracts 256+ Trie logic from the commitment logic/cryptography
@@ -12,7 +13,6 @@ type CommitmentModel interface {
 	NewTerminalCommitment() TCommitment
 	CommitToNode(*Node) VCommitment
 	CommitToData([]byte) TCommitment
-	UpdateNodeCommitment(*Node) VCommitment // returns delta. Return nil if deletion
 }
 
 type Trie struct {
@@ -96,7 +96,10 @@ func (t *Trie) ApplyMutations(store kv.KVWriter) {
 	for k, v := range t.nodeCache {
 		if !v.IsEmpty() {
 			store.Set(k, MustBytes(v))
-		} else {
+		}
+	}
+	for k, v := range t.nodeCache {
+		if v.IsEmpty() {
 			store.Del(k)
 		}
 	}
@@ -133,7 +136,33 @@ func (t *Trie) Commit() {
 	if !ok {
 		return
 	}
-	t.model.UpdateNodeCommitment(root)
+	t.UpdateNodeCommitment(root)
+}
+
+func (t *Trie) UpdateNodeCommitment(n *Node) VCommitment {
+	if n == nil {
+		// no node, no commitment
+		return nil
+	}
+	n.Terminal = n.ModifiedTerminal
+	for i, child := range n.ModifiedChildren {
+		c := t.UpdateNodeCommitment(child)
+		if c != nil {
+			if n.Children[i] == nil {
+				n.Children[i] = t.model.NewVectorCommitment()
+			}
+			n.Children[i].Update(c)
+		} else {
+			// deletion
+			delete(n.Children, i)
+		}
+	}
+	if len(n.ModifiedChildren) > 0 {
+		n.ModifiedChildren = make(map[byte]*Node)
+	}
+	ret := t.model.CommitToNode(n)
+	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
+	return ret
 }
 
 // ProofGeneric returns generic proof path. Contains references trie node cache.
@@ -283,4 +312,20 @@ func EqualCommitments(c1, c2 CommitmentBase) bool {
 		return false
 	}
 	return c1.Equal(c2)
+}
+
+// ComputeCommitment computes commitment to arbitrary key/value iterator
+func ComputeCommitment(model CommitmentModel, store kv.KVIterator) (VCommitment, error) {
+	emptyStore := dict.New()
+	tr := New(model, emptyStore)
+
+	err := store.Iterate("", func(key kv.Key, value []byte) bool {
+		tr.Update([]byte(key), value)
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	tr.Commit()
+	return tr.RootCommitment(), nil
 }

@@ -27,7 +27,7 @@ func GetAllKeys(pref Key, kvr1, kvr2 KVStoreReader) map[Key]struct{} {
 	return ret
 }
 
-func GetDiffKeys(kvr1, kvr2 KVStoreReader) map[Key]struct{} {
+func GetDiffKeyValues(kvr1, kvr2 KVStoreReader) map[Key]struct{} {
 	ret := make(map[Key]struct{})
 	kvr1.MustIterate("", func(k Key, v1 []byte) bool {
 		v2 := kvr2.MustGet(k)
@@ -46,9 +46,35 @@ func GetDiffKeys(kvr1, kvr2 KVStoreReader) map[Key]struct{} {
 	return ret
 }
 
+func GetDiffKeys(kvr1, kvr2 KVStoreReader) map[Key]struct{} {
+	ret := make(map[Key]struct{})
+	kvr1.MustIterateKeys("", func(k Key) bool {
+		if !kvr2.MustHas(k) {
+			ret[k] = struct{}{}
+		}
+		return true
+	})
+	kvr2.MustIterateKeys("", func(k Key) bool {
+		if !kvr1.MustHas(k) {
+			ret[k] = struct{}{}
+		}
+		return true
+	})
+	return ret
+}
+
+func NumKeys(kvr KVMustIterator) int {
+	ret := 0
+	kvr.MustIterateKeys("", func(_ Key) bool {
+		ret++
+		return true
+	})
+	return ret
+}
+
 func GetAllKeysWithDiff(kvr1, kvr2 KVStoreReader) string {
 	allkeys := GetAllKeys("", kvr1, kvr2)
-	diffKeys := GetDiffKeys(kvr1, kvr2)
+	diffKeys := GetDiffKeyValues(kvr1, kvr2)
 	keys := make([]Key, 0)
 	for k := range allkeys {
 		keys = append(keys, k)

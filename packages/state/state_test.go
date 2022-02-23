@@ -315,7 +315,7 @@ func genBlocks(start, num int) []Block {
 func TestRnd(t *testing.T) {
 	chainID := iscp.RandomChainID()
 
-	const numBlocks = 100
+	const numBlocks = 20
 	const numRepeat = 10
 	cs := make([]trie.VCommitment, 0)
 	blocks := genRndBlocks(2, numBlocks)
@@ -324,7 +324,15 @@ func TestRnd(t *testing.T) {
 	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), testmisc.RandVectorCommitment())
 	var exists bool
 	store := make([]kvstore.KVStore, numRepeat)
+	rndCommits := make([][]bool, numRepeat)
+	for i := range rndCommits {
+		rndCommits[i] = make([]bool, numBlocks)
+		for j := range rndCommits[i] {
+			rndCommits[i][j] = rand.Intn(1000) < 200
+		}
+	}
 	for round := 0; round < numRepeat; round++ {
+
 		t.Logf("------------------ round: %d", round)
 		store[round] = mapdb.NewMapDB()
 		vs, err := CreateOriginState(store[round], chainID)
@@ -335,13 +343,9 @@ func TestRnd(t *testing.T) {
 		require.NoError(t, err)
 		for bn, b := range blocks {
 			require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
-			nsets := len(b.(*blockImpl).stateUpdate.mutations.Sets)
-			dels := b.(*blockImpl).stateUpdate.mutations.Dels
-			ndels := len(dels)
-			t.Logf("           block: #%d num sets: %d dels (%d): %v", bn, nsets, ndels, dels)
 			err = vs.ApplyBlock(b)
 			require.NoError(t, err)
-			if rand.Intn(1000) < 200 {
+			if rndCommits[round][bn] {
 				t.Logf("           commit at block: #%d", bn)
 				err = vs.Save()
 				require.NoError(t, err)
@@ -357,11 +361,41 @@ func TestRnd(t *testing.T) {
 		require.NoError(t, err)
 		cs = append(cs, vs.StateCommitment())
 		if round > 0 && !cs[round-1].Equal(cs[round]) {
+			t.Logf("cs[%d] = %s != cs[%d] = %s", round-1, cs[round-1], round, cs[round])
 			kvs0 := kv.NewHiveKVStoreReader(store[round-1])
 			kvs1 := kv.NewHiveKVStoreReader(store[round])
-			dkeys := kv.DumpKeySet(kv.GetDiffKeys(kvs0, kvs1))
-			t.Logf("DIFF (len = %d:\n%s", len(dkeys), strings.Join(dkeys, "    \n"))
-			//t.Logf("DIFF:\n%s", diff)
+			dkeys := kv.DumpKeySet(kv.GetDiffKeyValues(kvs0, kvs1))
+			t.Logf("len store #%d = %d != len store #%d = %d", round-1, kv.NumKeys(kvs0), round, kv.NumKeys(kvs1))
+
+			t.Logf("DIFF key/values (len = %d:\n%s", len(dkeys), strings.Join(dkeys, "    \n"))
+			diffKeys := kv.GetDiffKeys(kvs0, kvs1)
+
+			var badBlock int
+			var badKey kv.Key
+			for k := range diffKeys {
+				rawKey := k[1:]
+				t.Logf("=============DIFF key: '%s'", rawKey)
+				for bn, block := range blocks {
+					//t.Logf("=========              block #%d", bn)
+					mut := block.(*blockImpl).stateUpdate.mutations
+					for x := range mut.Sets {
+						if strings.Contains(string(x), string(rawKey)) {
+							t.Logf("                SET in block #%d. Orig: '%s'", bn, x)
+							badBlock = bn
+							badKey = x
+						}
+					}
+					for x := range mut.Dels {
+						if strings.Contains(string(x), string(rawKey)) {
+							t.Logf("                DEL in block #%d. Orig: '%s'", bn, x)
+							badBlock = bn
+							badKey = x
+						}
+					}
+				}
+			}
+			t.Logf("======================= bad key '%s' in block #%d", badKey, badBlock)
+
 			t.FailNow()
 		}
 	}

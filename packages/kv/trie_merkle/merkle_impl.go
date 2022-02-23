@@ -65,32 +65,6 @@ func (m *commitmentModel) CommitToData(data []byte) trie.TCommitment {
 	return commitToTerminal(data)
 }
 
-func (m *commitmentModel) UpdateNodeCommitment(n *trie.Node) trie.VCommitment {
-	if n == nil {
-		// no node, no commitment
-		return nil
-	}
-	n.Terminal = n.ModifiedTerminal
-	for i, child := range n.ModifiedChildren {
-		c := m.UpdateNodeCommitment(child)
-		if c != nil {
-			if n.Children[i] == nil {
-				n.Children[i] = m.NewVectorCommitment()
-			}
-			n.Children[i].Update(c)
-		} else {
-			// deletion
-			delete(n.Children, i)
-		}
-	}
-	if len(n.ModifiedChildren) > 0 {
-		n.ModifiedChildren = make(map[byte]*trie.Node)
-	}
-	ret := m.CommitToNode(n)
-	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
-	return ret
-}
-
 func NewVectorCommitmentFromBytes(data []byte) (trie.VCommitment, error) {
 	ret := Model.NewVectorCommitment()
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
