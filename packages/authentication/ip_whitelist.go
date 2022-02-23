@@ -1,7 +1,6 @@
 package authentication
 
 import (
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"net"
 	"strings"
@@ -46,7 +45,7 @@ func protected(whitelist []net.IP) echo.MiddlewareFunc {
 				}
 			}
 
-			fmt.Printf("Blocking request from %s: %s %s", c.Request().RemoteAddr, c.Request().Method, c.Request().RequestURI)
+			log.Infof("Blocking request from %s: %s %s", c.Request().RemoteAddr, c.Request().Method, c.Request().RequestURI)
 			return echo.ErrUnauthorized
 		}
 	}

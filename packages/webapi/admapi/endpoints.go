@@ -37,6 +37,7 @@ func AddEndpoints(
 	initLogger()
 
 	claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The API will be accessible if the token has an 'API' claim
 		return claims.API
 	}
 

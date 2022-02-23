@@ -21,6 +21,12 @@
     "disablePlugins": [],
     "enablePlugins": []
   },
+  "users": {
+    "admin": {
+      "password": "wasp",
+      "claims": ["dashboard", "api", "chain.read", "chain.write"]
+    }
+  },
   "accounts": [
     {
       "username": "wasp",
@@ -31,11 +37,10 @@
   "webapi": {
     "auth": {
       "jwt": {
-        "accessClaim": "webapi",
-        "duration": 24
+        "durationHours": 24
       },
       "basic": {
-        "accountName": "admin"
+        "userName": "admin"
       },
       "ip": {
         "whitelist": ["127.0.0.1"]
@@ -48,10 +53,11 @@
   "dashboard": {
     "auth": {
       "jwt": {
-        "accessClaim": "webapi",
-        "duration": 24
+        "durationHours": 24
       },
-      "basic": {},
+      "basic": {
+        "userName": "admin"
+      },
       "ip": {
         "whitelist": ["127.0.0.1"]
       },

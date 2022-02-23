@@ -15,7 +15,7 @@ import (
 var all *configuration.Configuration
 
 const (
-	AccountsList       = "accounts"
+	UserList           = "users"
 	NodeOwnerAddresses = "node.ownerAddresses"
 
 	LoggerLevel             = "logger.level"

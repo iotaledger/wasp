@@ -2,7 +2,7 @@ package authentication
 
 import (
 	"encoding/json"
-	"github.com/iotaledger/wasp/plugins/accounts"
+	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"net/http"
@@ -10,12 +10,12 @@ import (
 )
 
 type AuthHandler struct {
-	Jwt      *JWTAuth
-	Accounts *[]accounts.Account
+	Jwt   *JWTAuth
+	Users *[]users.User
 }
 
 func (s *AuthHandler) validateLogin(username string, password string) bool {
-	for _, v := range *s.Accounts {
+	for _, v := range *s.Users {
 		if username == v.Username && password == v.Password {
 			return true
 		}
@@ -24,11 +24,11 @@ func (s *AuthHandler) validateLogin(username string, password string) bool {
 	return false
 }
 
-func (a *AuthHandler) GetTypedClaims(account *accounts.Account) (*WaspClaims, error) {
+func (a *AuthHandler) GetTypedClaims(user *users.User) (*WaspClaims, error) {
 	claims := WaspClaims{}
 	fakeClaims := make(map[string]interface{})
 
-	for _, v := range account.Claims {
+	for _, v := range user.Claims {
 		fakeClaims[v] = true
 	}
 
@@ -67,13 +67,13 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	account := accounts.GetAccountByName(request.Username)
+	user := users.GetUserByName(request.Username)
 
-	if account == nil {
+	if user == nil {
 		return echo.ErrUnauthorized
 	}
 
-	claims, err := s.GetTypedClaims(account)
+	claims, err := s.GetTypedClaims(user)
 
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (s *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 			Name:     "jwt",
 			Value:    token,
 			HttpOnly: true, // JWT Token will be stored in a http only cookie, this is important to mitigate XSS/XSRF attacks
-			Expires:  time.Now().Add(24 * time.Hour),
+			Expires:  time.Now().Add(s.Jwt.durationHours),
 			Path:     "/",
 			SameSite: http.SameSiteStrictMode,
 		}

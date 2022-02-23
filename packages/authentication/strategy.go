@@ -2,9 +2,10 @@ package authentication
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/accounts"
+	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
 )
 
@@ -24,12 +25,11 @@ type AuthConfiguration struct {
 }
 
 type JWTAuthConfiguration struct {
-	Duration    int    `koanf:"duration"`
-	AccessClaim string `koanf:"accessClaim"`
+	DurationHours int `koanf:"durationHours"`
 }
 
 type BasicAuthConfiguration struct {
-	AccountName string `koanf:"accountName"`
+	UserName string `koanf:"userName"`
 }
 
 type IPWhiteListAuthConfiguration struct {
@@ -42,17 +42,19 @@ type WebAPI interface {
 	Use(middleware ...echo.MiddlewareFunc)
 }
 
+var log = logger.NewLogger("authentication")
+
 func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, claimValidator ClaimValidator) {
 	var config AuthConfiguration
 	parameters.GetStruct(configSectionPath, &config)
 
-	accounts := accounts.GetAccounts()
+	users := users.All()
 
 	addAuthContext(webAPI, config)
 
 	switch config.Scheme {
 	case AuthBasic:
-		AddBasicAuth(webAPI, accounts)
+		AddBasicAuth(webAPI, users)
 	case AuthJWT:
 		nodeIdentity, err := registryProvider().GetNodeIdentity()
 
@@ -63,10 +65,10 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 		privateKey := nodeIdentity.PrivateKey.Bytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, accounts, claimValidator)
+		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, users, claimValidator)
 
 		if config.AddRoutes {
-			authHandler := &AuthHandler{Jwt: jwtAuth, Accounts: accounts}
+			authHandler := &AuthHandler{Jwt: jwtAuth, Users: users}
 			webAPI.POST(AuthRoute(), authHandler.CrossAPIAuthHandler)
 		}
 
