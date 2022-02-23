@@ -156,7 +156,7 @@ func (vs *virtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
 }
 
 func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
-	return vs.trie.ProofGeneric(key)
+	return vs.trie.ProofGeneric(dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
@@ -188,6 +188,11 @@ func (vs *virtualStateAccess) Commit() {
 // StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
 func (vs *virtualStateAccess) StateCommitment() trie.VCommitment {
 	return vs.trie.RootCommitment()
+}
+
+// ReconcileTrie a heavy operation
+func (vs *virtualStateAccess) ReconcileTrie() []kv.Key {
+	return vs.trie.Reconcile(vs.kvs)
 }
 
 func loadStateIndexFromState(chainState kv.KVStoreReader) (uint32, error) {

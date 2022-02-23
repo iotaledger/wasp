@@ -293,45 +293,35 @@ func genRndBlocks(start, num int) []Block {
 	return blocks
 }
 
-func genBlocks(start, num int) []Block {
-	blocks := make([]Block, num)
-	millis := rand.Int63()
-	const numMutations = 20
-	for i := range blocks {
-		upd := NewStateUpdateWithBlockLogValues(uint32(i+start), time.UnixMilli(millis+int64(i+100)), testmisc.RandVectorCommitment())
-		for i := 0; i < numMutations; i++ {
-			s := fmt.Sprintf("xxxx%d", i)
-			if rand.Intn(1000) < 200 {
-				upd.Mutations().Del(kv.Key(s))
-			} else {
-				upd.Mutations().Set(kv.Key(s), []byte(s))
-			}
-		}
-		blocks[i], _ = newBlock(upd.Mutations())
-	}
-	return blocks
-}
-
 func TestRnd(t *testing.T) {
 	chainID := iscp.RandomChainID()
 
 	const numBlocks = 20
-	const numRepeat = 10
+	const numRepeat = 20
 	cs := make([]trie.VCommitment, 0)
 	blocks := genRndBlocks(2, numBlocks)
+	for bn, blk := range blocks {
+		t.Logf("--------- #%d\nDELS: %v", bn,
+			blk.(*blockImpl).stateUpdate.mutations.Dels)
+	}
+
 	//blocks := genBlocks(2, numBlocks)
 	t.Logf("num blocks: %d", len(blocks))
 	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), testmisc.RandVectorCommitment())
 	var exists bool
 	store := make([]kvstore.KVStore, numRepeat)
 	rndCommits := make([][]bool, numRepeat)
+	//rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := range rndCommits {
 		rndCommits[i] = make([]bool, numBlocks)
 		for j := range rndCommits[i] {
 			rndCommits[i][j] = rand.Intn(1000) < 200
 		}
 	}
-	for round := 0; round < numRepeat; round++ {
+	var badBlock int
+	var badKey kv.Key
+	var round int
+	for round = 0; round < numRepeat; round++ {
 
 		t.Logf("------------------ round: %d", round)
 		store[round] = mapdb.NewMapDB()
@@ -354,11 +344,26 @@ func TestRnd(t *testing.T) {
 				require.NoError(t, err)
 				require.True(t, exists)
 				c2 := vs.StateCommitment()
+
+				diff := vs.ReconcileTrie()
+				if len(diff) > 0 {
+					t.Logf("============== reconcile failed: %v", diff)
+				}
+
 				require.True(t, c1.Equal(c2))
 			}
 		}
 		err = vs.Save()
 		require.NoError(t, err)
+
+		vstmp, exists, err := LoadSolidState(store[round], chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+		diff := vstmp.ReconcileTrie()
+		if len(diff) > 0 {
+			t.Logf("============== reconcile failed: %v", diff)
+		}
+
 		cs = append(cs, vs.StateCommitment())
 		if round > 0 && !cs[round-1].Equal(cs[round]) {
 			t.Logf("cs[%d] = %s != cs[%d] = %s", round-1, cs[round-1], round, cs[round])
@@ -370,8 +375,6 @@ func TestRnd(t *testing.T) {
 			t.Logf("DIFF key/values (len = %d:\n%s", len(dkeys), strings.Join(dkeys, "    \n"))
 			diffKeys := kv.GetDiffKeys(kvs0, kvs1)
 
-			var badBlock int
-			var badKey kv.Key
 			for k := range diffKeys {
 				rawKey := k[1:]
 				t.Logf("=============DIFF key: '%s'", rawKey)
@@ -395,10 +398,27 @@ func TestRnd(t *testing.T) {
 				}
 			}
 			t.Logf("======================= bad key '%s' in block #%d", badKey, badBlock)
+			vs0, _, _ := LoadSolidState(store[round-1], chainID)
+			badKeys0 := vs0.ReconcileTrie()
+			if len(badKeys0) > 0 {
+				t.Logf("vs0 bad keys: %v", badKeys0)
+			}
+			pg := vs0.ProofGeneric([]byte(badKey))
+			t.Logf(">>>>>>>>>> vs[%d] key '%s' ending '%s', path: %d", round-1, badKey, pg.Ending, len(pg.Path))
+			vs1, _, _ := LoadSolidState(store[round], chainID)
+			badKeys1 := vs1.ReconcileTrie()
+			if len(badKeys0) > 0 {
+				t.Logf("vs1 bad keys: %v", badKeys1)
+			}
+			pg = vs1.ProofGeneric([]byte(badKey))
+			t.Logf(">>>>>>>>>> vs[%d] key '%s' ending '%s', path: %d", round, badKey, pg.Ending, len(pg.Path))
 
+			t.Logf(">>>>>>>>> vs[%d] C = %s", round-1, vs0.StateCommitment())
+			t.Logf(">>>>>>>>> vs[%d] C = %s", round, vs1.StateCommitment())
 			t.FailNow()
 		}
 	}
+
 	//for i := range cs {
 	//	t.Logf("c = %s", cs[i])
 	//}

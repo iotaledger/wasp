@@ -2,6 +2,7 @@ package trie_merkle
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -867,5 +868,22 @@ func TestTrieProofWithDeletes(t *testing.T) {
 				t.Logf("size[%d] = %d", i*100, size100Stats[i])
 			}
 		}
+	})
+	t.Run("reconcile", func(t *testing.T) {
+		data = genRnd4()
+		t.Logf("data len = %d", len(data))
+		store := dict.New()
+		for _, s := range data {
+			store.Set(kv.Key("1"+s), []byte(s+"2"))
+		}
+		trieStore := dict.New()
+		tr = trie.New(Model, trieStore)
+		store.MustIterate("", func(k kv.Key, v []byte) bool {
+			tr.Update([]byte(k), v)
+			return true
+		})
+		tr.Commit()
+		diff := tr.Reconcile(store)
+		require.EqualValues(t, 0, len(diff))
 	})
 }

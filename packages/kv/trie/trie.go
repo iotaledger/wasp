@@ -40,6 +40,19 @@ const (
 	EndingExtend
 )
 
+func (e ProofEndingCode) String() string {
+	switch e {
+	case EndingTerminal:
+		return "EndingTerminal"
+	case EndingSplit:
+		return "EndingSplit"
+	case EndingExtend:
+		return "EndingExtend"
+	default:
+		panic("wrong ending code")
+	}
+}
+
 func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 	ret := &Trie{
 		model:     model,
@@ -49,107 +62,108 @@ func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 	return ret
 }
 
-func (t *Trie) Clone() *Trie {
+func (tr *Trie) Clone() *Trie {
 	ret := &Trie{
-		model:     t.model,
-		store:     t.store,
+		model:     tr.model,
+		store:     tr.store,
 		nodeCache: make(map[kv.Key]*Node),
 	}
-	for k, v := range t.nodeCache {
+	for k, v := range tr.nodeCache {
 		ret.nodeCache[k] = v.Clone()
 	}
 	return ret
 }
 
-func (t *Trie) RootCommitment() VCommitment {
-	n, ok := t.GetNode(nil)
+func (tr *Trie) RootCommitment() VCommitment {
+	n, ok := tr.GetNode(nil)
 	if !ok {
 		return nil
 	}
-	return t.CommitToNode(n)
+	return tr.CommitToNode(n)
 }
 
 // GetNode takes node from the cache of fetches it from kv store
-func (t *Trie) GetNode(key []byte) (*Node, bool) {
+func (tr *Trie) GetNode(key []byte) (*Node, bool) {
 	k := kv.Key(key)
-	node, ok := t.nodeCache[k]
+	node, ok := tr.nodeCache[k]
 	if ok {
 		return node, true
 	}
-	nodeBin := t.store.MustGet(k)
+	nodeBin := tr.store.MustGet(k)
 	if nodeBin == nil {
 		return nil, false
 	}
-	node, err := NodeFromBytes(t.model, nodeBin)
+	node, err := NodeFromBytes(tr.model, nodeBin)
 	assert(err == nil, err)
 
-	t.nodeCache[k] = node
+	tr.nodeCache[k] = node
 	return node, true
 
 }
 
-func (t *Trie) CommitToNode(n *Node) VCommitment {
-	return t.model.CommitToNode(n)
+func (tr *Trie) CommitToNode(n *Node) VCommitment {
+	return tr.model.CommitToNode(n)
 }
 
-func (t *Trie) ApplyMutations(store kv.KVWriter) {
-	for k, v := range t.nodeCache {
+func (tr *Trie) ApplyMutations(store kv.KVWriter) {
+	for k, v := range tr.nodeCache {
 		if !v.IsEmpty() {
 			store.Set(k, MustBytes(v))
 		}
 	}
-	for k, v := range t.nodeCache {
+	for k, v := range tr.nodeCache {
 		if v.IsEmpty() {
+			fmt.Printf("$$$$$$$$$$$$$$$$$$$$$$$ deleting '%s' with path fragment '%s'\n", k, string(v.PathFragment))
 			store.Del(k)
 		}
 	}
 }
 
-func (t *Trie) ClearCache() {
-	t.nodeCache = make(map[kv.Key]*Node)
+func (tr *Trie) ClearCache() {
+	tr.nodeCache = make(map[kv.Key]*Node)
 }
 
 // newTerminalNode assumes Key does not exist in the Trie
-func (t *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
+func (tr *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
 	ret := NewNode(pathFragment)
 	ret.ModifiedTerminal = newTerminal
-	t.nodeCache[kv.Key(key)] = ret
+	tr.nodeCache[kv.Key(key)] = ret
 	return ret
 }
 
-func (t *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
+func (tr *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 	ret := *copyFrom
 	ret.PathFragment = pathFragment
-	t.nodeCache[kv.Key(key)] = &ret
+	tr.nodeCache[kv.Key(key)] = &ret
 	return &ret
 }
 
 // Delete deletes Key/value from the Trie
-func (t *Trie) Delete(key []byte) {
-	t.Update(key, nil)
+func (tr *Trie) Delete(key []byte) {
+	tr.Update(key, nil)
 }
 
 // Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodes
 // Doesn't delete cached nodes
-func (t *Trie) Commit() {
-	root, ok := t.GetNode(nil)
+func (tr *Trie) Commit() {
+	root, ok := tr.GetNode(nil)
 	if !ok {
 		return
 	}
-	t.UpdateNodeCommitment(root)
+	tr.UpdateNodeCommitment(root)
 }
 
-func (t *Trie) UpdateNodeCommitment(n *Node) VCommitment {
+func (tr *Trie) UpdateNodeCommitment(n *Node) VCommitment {
 	if n == nil {
 		// no node, no commitment
 		return nil
 	}
 	n.Terminal = n.ModifiedTerminal
 	for i, child := range n.ModifiedChildren {
-		c := t.UpdateNodeCommitment(child)
+		c := tr.UpdateNodeCommitment(child)
 		if c != nil {
 			if n.Children[i] == nil {
-				n.Children[i] = t.model.NewVectorCommitment()
+				n.Children[i] = tr.model.NewVectorCommitment()
 			}
 			n.Children[i].Update(c)
 		} else {
@@ -160,7 +174,7 @@ func (t *Trie) UpdateNodeCommitment(n *Node) VCommitment {
 	if len(n.ModifiedChildren) > 0 {
 		n.ModifiedChildren = make(map[byte]*Node)
 	}
-	ret := t.model.CommitToNode(n)
+	ret := tr.model.CommitToNode(n)
 	assert((ret == nil) == n.IsEmpty(), "assert: (ret==nil) == n.IsEmpty()")
 	return ret
 }
@@ -168,11 +182,11 @@ func (t *Trie) UpdateNodeCommitment(n *Node) VCommitment {
 // ProofGeneric returns generic proof path. Contains references trie node cache.
 // Should be immediately converted into the specific proof model independent of the trie
 // Normally only called by the model
-func (t *Trie) ProofGeneric(key []byte) *ProofGeneric {
+func (tr *Trie) ProofGeneric(key []byte) *ProofGeneric {
 	if len(key) == 0 {
 		key = []byte{}
 	}
-	p, _, _, ending := t.proofPath(key, 0)
+	p, _, _, ending := tr.proofPath(key, 0)
 	return &ProofGeneric{
 		Key:    key,
 		Path:   p,
@@ -182,12 +196,12 @@ func (t *Trie) ProofGeneric(key []byte) *ProofGeneric {
 
 // Update updates Trie with the key/value.
 // value == nil means deletion
-func (t *Trie) Update(key []byte, value []byte) {
-	c := t.model.CommitToData(value)
-	proof, lastKey, lastCommonPrefix, ending := t.proofPath(key, 0)
+func (tr *Trie) Update(key []byte, value []byte) {
+	c := tr.model.CommitToData(value)
+	proof, lastKey, lastCommonPrefix, ending := tr.proofPath(key, 0)
 	if len(proof) == 0 {
 		if c != nil {
-			t.newTerminalNode(nil, key, c)
+			tr.newTerminalNode(nil, key, c)
 		}
 		return
 
@@ -195,22 +209,25 @@ func (t *Trie) Update(key []byte, value []byte) {
 	last := proof[len(proof)-1].Node
 	switch ending {
 	case EndingTerminal:
+		// deleting means c == nil
 		last.ModifiedTerminal = c
 
 	case EndingExtend:
 		if c == nil {
-			break
+			// deleting: nothing change
+			return
 		}
 		childIndexPosition := len(lastKey) + len(lastCommonPrefix)
 		assert(childIndexPosition < len(key), "childPosition < len(key)")
 		childIndex := key[childIndexPosition]
 		assert(last.Children[childIndex] == nil, "last.Children[key[childPosition]] == nil")
 		assert(last.ModifiedChildren[childIndex] == nil, "last.ModifiedChildren[key[childPosition]] == nil")
-		last.ModifiedChildren[childIndex] = t.newTerminalNode(key[:childIndexPosition+1], key[childIndexPosition+1:], c)
+		last.ModifiedChildren[childIndex] = tr.newTerminalNode(key[:childIndexPosition+1], key[childIndexPosition+1:], c)
 
 	case EndingSplit:
 		if c == nil {
-			break
+			// deleting: nothing change
+			return
 		}
 		childPosition := len(lastKey) + len(lastCommonPrefix)
 		assert(childPosition <= len(key), "childPosition < len(key)")
@@ -222,7 +239,7 @@ func (t *Trie) Update(key []byte, value []byte) {
 		keyContinue[len(keyContinue)-1] = childContinue
 
 		// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
-		insertNode := t.newNodeCopy(keyContinue, last.PathFragment[splitChildIndex+1:], last)
+		insertNode := tr.newNodeCopy(keyContinue, last.PathFragment[splitChildIndex+1:], last)
 		// clear the old one and adjust path fragment. Continue with 1 child, the new node
 		last.Children = make(map[uint8]VCommitment)
 		last.ModifiedChildren = make(map[uint8]*Node)
@@ -239,7 +256,7 @@ func (t *Trie) Update(key []byte, value []byte) {
 			keyFork := key[:len(keyContinue)]
 			childForkIndex := keyFork[len(keyFork)-1]
 			assert(int(childForkIndex) != splitChildIndex, "childForkIndex != splitChildIndex")
-			last.ModifiedChildren[childForkIndex] = t.newTerminalNode(keyFork, key[len(keyFork):], c)
+			last.ModifiedChildren[childForkIndex] = tr.newTerminalNode(keyFork, key[len(keyFork):], c)
 		}
 
 	default:
@@ -254,8 +271,8 @@ func (t *Trie) Update(key []byte, value []byte) {
 }
 
 // returns key of the last node and common prefix with the fragment
-func (t *Trie) proofPath(path []byte, pathPosition int) ([]ProofGenericElement, []byte, []byte, ProofEndingCode) {
-	node, ok := t.GetNode(nil)
+func (tr *Trie) proofPath(path []byte, pathPosition int) ([]ProofGenericElement, []byte, []byte, ProofEndingCode) {
+	node, ok := tr.GetNode(nil)
 	if !ok {
 		return nil, nil, nil, 0
 	}
@@ -288,7 +305,7 @@ func (t *Trie) proofPath(path []byte, pathPosition int) ([]ProofGenericElement, 
 		// it means we continue the branch of commitment
 		key = path[:childIndexPosition+1]
 		tail = path[childIndexPosition+1:]
-		node, ok = t.GetNode(key)
+		node, ok = tr.GetNode(key)
 		if !ok {
 			panic(fmt.Sprintf("inconsistency: trie key not found: '%s'", string(key)))
 		}
@@ -296,12 +313,29 @@ func (t *Trie) proofPath(path []byte, pathPosition int) ([]ProofGenericElement, 
 	}
 }
 
-func (t *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
-	ret := t.model.NewVectorCommitment()
+func (tr *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
+	ret := tr.model.NewVectorCommitment()
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return ret, nil
+}
+
+// Reconcile returns a list of keys in the store which cannot be proven in the trie
+func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
+	ret := make([]kv.Key, 0)
+	store.MustIterate("", func(k kv.Key, v []byte) bool {
+		p, _, _, ending := tr.proofPath([]byte(k), 0)
+		if ending == EndingTerminal {
+			if !EqualCommitments(tr.model.CommitToData(v), p[len(p)-1].Node.Terminal) {
+				ret = append(ret, k)
+			}
+		} else {
+			ret = append(ret, k)
+		}
+		return true
+	})
+	return ret
 }
 
 func EqualCommitments(c1, c2 CommitmentBase) bool {

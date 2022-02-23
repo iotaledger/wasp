@@ -63,6 +63,13 @@ func (s *mustOptimisticVirtualStateAccess) StateCommitment() trie.VCommitment {
 	return s.state.StateCommitment()
 }
 
+func (s *mustOptimisticVirtualStateAccess) ReconcileTrie() []kv.Key {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.ReconcileTrie()
+}
+
 func (s *mustOptimisticVirtualStateAccess) KVStoreReader() kv.KVStoreReader {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()

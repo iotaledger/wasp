@@ -18,6 +18,7 @@ type VirtualStateAccess interface {
 	PreviousStateHash() hashing.HashValue
 	Commit()
 	StateCommitment() trie.VCommitment
+	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
