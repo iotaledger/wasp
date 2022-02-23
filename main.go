@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/plugins/accounts"
 	"github.com/iotaledger/wasp/plugins/banner"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/cli"
@@ -22,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/profiling"
 	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/users"
 	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -32,7 +32,7 @@ func main() {
 	registry.InitFlags()
 
 	plugins := node.Plugins(
-		accounts.Init(params),
+		users.Init(params),
 		banner.Init(),
 		config.Init(params),
 		logger.Init(params),
