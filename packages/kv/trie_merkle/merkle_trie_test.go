@@ -2,6 +2,7 @@ package trie_merkle
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/trie"
@@ -724,31 +725,31 @@ func TestTrieProof(t *testing.T) {
 }
 
 func TestTrieProofWithDeletes(t *testing.T) {
-	var tr *trie.Trie
+	var tr1 *trie.Trie
 	var rootC trie.VCommitment
 
 	initTrie := func(dataAdd []string) {
 		store := dict.New()
-		tr = trie.New(Model, store)
+		tr1 = trie.New(Model, store)
 		for _, s := range dataAdd {
-			tr.Update([]byte(s), []byte(s+"++"))
+			tr1.Update([]byte(s), []byte(s+"++"))
 		}
 	}
 	deleteKeys := func(keysDelete []string) {
 		for _, s := range keysDelete {
-			tr.Update([]byte(s), nil)
+			tr1.Update([]byte(s), nil)
 		}
 	}
 	commitTrie := func() trie.VCommitment {
-		tr.Commit()
-		return tr.RootCommitment()
+		tr1.Commit()
+		return tr1.RootCommitment()
 	}
 	data := []string{"a", "ab", "ac", "abc", "abd", "ad", "ada", "adb", "adc", "c", "ad+dddgsssisd"}
 	t.Run("proof many entries 1", func(t *testing.T) {
 		initTrie(data)
 		rootC = commitTrie()
 		for _, s := range data {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			require.False(t, proof.MustIsProofOfAbsence())
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
@@ -763,7 +764,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 
 		for _, s := range data {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
@@ -771,7 +772,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			//t.Logf("proof presence size = %d bytes", trie.MustSize(proof))
 		}
 		for _, s := range delKeys {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
@@ -789,7 +790,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		rootC = commitTrie()
 
 		for _, s := range data {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
@@ -807,7 +808,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			require.False(t, proofBack.MustIsProofOfAbsence())
 		}
 		for _, s := range delKeys {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
@@ -838,7 +839,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 		lenStats := make(map[int]int)
 		size100Stats := make(map[int]int)
 		for _, s := range addKeys {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.False(t, proof.MustIsProofOfAbsence())
@@ -853,7 +854,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			size100Stats[sizeP100] = sz + 1
 		}
 		for _, s := range delKeys {
-			proof := Model.Proof([]byte(s), tr)
+			proof := Model.Proof([]byte(s), tr1)
 			err := proof.Validate(rootC)
 			require.NoError(t, err)
 			require.True(t, proof.MustIsProofOfAbsence())
@@ -877,13 +878,55 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			store.Set(kv.Key("1"+s), []byte(s+"2"))
 		}
 		trieStore := dict.New()
-		tr = trie.New(Model, trieStore)
+		tr1 = trie.New(Model, trieStore)
 		store.MustIterate("", func(k kv.Key, v []byte) bool {
-			tr.Update([]byte(k), v)
+			tr1.Update([]byte(k), v)
 			return true
 		})
-		tr.Commit()
-		diff := tr.Reconcile(store)
+		tr1.Commit()
+		diff := tr1.Reconcile(store)
 		require.EqualValues(t, 0, len(diff))
 	})
+}
+
+type act struct {
+	key    string
+	del    bool
+	commit [2]bool
+}
+
+var flow = []act{
+	{"ab", false, [2]bool{false, false}},
+	{"abc", false, [2]bool{false, false}},
+	{"abc", true, [2]bool{false, true}},
+	{"abcd1", false, [2]bool{false, false}},
+}
+
+func TestDeleteCommit(t *testing.T) {
+	var c [2]trie.VCommitment
+
+	for round := range []int{0, 1} {
+		t.Logf("------- run %d", round)
+		store := dict.New()
+		tr := trie.New(Model, store)
+		for i, a := range flow {
+			if a.del {
+				t.Logf("round %d: DEL '%s'", round, a.key)
+				tr.DeleteStr(a.key)
+			} else {
+				t.Logf("round %d: SET '%s'", round, a.key)
+				tr.UpdateStr(a.key, fmt.Sprintf("%s-%d", a.key, i))
+			}
+			if a.commit[round] {
+				t.Logf("round %d: COMMIT ++++++", round)
+				tr.Commit()
+			}
+		}
+		tr.Commit()
+		c[round] = tr.RootCommitment()
+		t.Logf("c[%d] = %s", round, c[round])
+		diff := tr.Reconcile(store)
+		require.EqualValues(t, 0, len(diff))
+	}
+	require.True(t, c[0].Equal(c[1]))
 }

@@ -2,6 +2,7 @@ package trie
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 )
@@ -24,14 +25,14 @@ type TCommitment interface {
 	Clone() TCommitment
 }
 
-// Node is a node of the 25š+-ary verkle Trie
+// Node is a node of the 256+-ary verkle Trie
 type Node struct {
-	PathFragment []byte // can't be longer than 256 bytes
-	Children     map[byte]VCommitment
-	Terminal     TCommitment
-	// non-persistent
-	ModifiedTerminal TCommitment
-	ModifiedChildren map[byte]*Node
+	PathFragment     []byte
+	ChildCommitments map[byte]VCommitment
+	Terminal         TCommitment
+	// non-persistent, used for caching
+	NewTerminal      TCommitment
+	ModifiedChildren map[uint8]struct{} // to be updated child commitments
 }
 
 const (
@@ -42,9 +43,9 @@ const (
 func NewNode(pathFragment []byte) *Node {
 	return &Node{
 		PathFragment:     pathFragment,
-		Children:         make(map[uint8]VCommitment),
+		ChildCommitments: make(map[uint8]VCommitment),
 		Terminal:         nil,
-		ModifiedChildren: make(map[uint8]*Node),
+		ModifiedChildren: make(map[uint8]struct{}),
 	}
 }
 
@@ -53,7 +54,7 @@ func NodeFromBytes(setup CommitmentModel, data []byte) (*Node, error) {
 	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
 		return nil, err
 	}
-	ret.ModifiedTerminal = ret.Terminal
+	ret.NewTerminal = ret.Terminal
 	return ret, nil
 }
 
@@ -63,23 +64,46 @@ func (n *Node) Clone() *Node {
 	}
 	ret := &Node{
 		PathFragment:     make([]byte, len(n.PathFragment)),
-		Children:         make(map[byte]VCommitment),
+		ChildCommitments: make(map[byte]VCommitment),
 		Terminal:         n.Terminal.Clone(),
-		ModifiedTerminal: n.ModifiedTerminal.Clone(),
-		ModifiedChildren: make(map[byte]*Node),
+		NewTerminal:      n.NewTerminal.Clone(),
+		ModifiedChildren: make(map[byte]struct{}),
 	}
 	copy(ret.PathFragment, n.PathFragment)
-	for k, v := range n.Children {
-		ret.Children[k] = v.Clone()
+	for k, v := range n.ChildCommitments {
+		ret.ChildCommitments[k] = v.Clone()
 	}
 	for k, v := range n.ModifiedChildren {
-		ret.ModifiedChildren[k] = v.Clone()
+		ret.ModifiedChildren[k] = v
 	}
 	return ret
 }
 
-func (n *Node) IsEmpty() bool {
-	return len(n.Children) == 0 && len(n.ModifiedChildren) == 0 && n.Terminal == nil && n.ModifiedTerminal == nil
+func (n *Node) IsTerminalModified() bool {
+	return n.Terminal != n.NewTerminal
+}
+
+func (n *Node) IsChildModified(childIndex byte) bool {
+	_, ok := n.ModifiedChildren[childIndex]
+	return ok
+}
+
+func (n *Node) IsModified() bool {
+	if n.IsTerminalModified() {
+		return true
+	}
+	if len(n.ModifiedChildren) > 0 {
+		return true
+	}
+	return false
+}
+
+func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {
+	var buf bytes.Buffer
+	buf.Write([]byte(nodeKey))
+	buf.Write(n.PathFragment)
+	buf.WriteByte(childIndex)
+	return kv.Key(buf.Bytes())
 }
 
 func (n *Node) Write(w io.Writer) error {
@@ -93,7 +117,7 @@ func (n *Node) Write(w io.Writer) error {
 	}
 	// compress children flags 32 bytes (if any)
 	var flags [32]byte
-	for i := range n.Children {
+	for i := range n.ChildCommitments {
 		flags[i/8] |= 0x1 << (i % 8)
 		smallFlags |= hasChildrenFlag
 	}
@@ -112,7 +136,7 @@ func (n *Node) Write(w io.Writer) error {
 			return err
 		}
 		for i := 0; i < 256; i++ {
-			child, ok := n.Children[uint8(i)]
+			child, ok := n.ChildCommitments[uint8(i)]
 			if !ok {
 				continue
 			}
@@ -149,8 +173,8 @@ func (n *Node) Read(r io.Reader, setup CommitmentModel) error {
 		for i := 0; i < 256; i++ {
 			ib := uint8(i)
 			if flags[i/8]&(0x1<<(i%8)) != 0 {
-				n.Children[ib] = setup.NewVectorCommitment()
-				if err := n.Children[ib].Read(r); err != nil {
+				n.ChildCommitments[ib] = setup.NewVectorCommitment()
+				if err := n.ChildCommitments[ib].Read(r); err != nil {
 					return err
 				}
 			}

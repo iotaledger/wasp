@@ -67,7 +67,7 @@ func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
 		if eg.Node.Terminal != nil {
 			em.Terminal = eg.Node.Terminal.(*terminalCommitment)
 		}
-		for k, v := range eg.Node.Children {
+		for k, v := range eg.Node.ChildCommitments {
 			if int(k) == childIndex {
 				// skipping the commitment which must come from the next child
 				continue

@@ -40,7 +40,7 @@ func (m *commitmentModel) CommitToNode(n *trie.Node) trie.VCommitment {
 	var hashes [258]*[32]byte
 
 	empty := true
-	for i, c := range n.Children {
+	for i, c := range n.ChildCommitments {
 		hashes[i] = (*[32]byte)(c.(*vectorCommitment))
 		empty = false
 	}
