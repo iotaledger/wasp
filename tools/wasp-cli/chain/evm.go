@@ -47,8 +47,9 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 			deployContract(deployParams.Name(), deployParams.Description(), deployParams.EVMFlavor().ProgramHash, dict.Dict{
 				evm.FieldChainID:         codec.EncodeUint16(uint16(deployParams.ChainID)),
 				evm.FieldGenesisAlloc:    evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
-				evm.FieldGasLimit:        codec.EncodeUint64(deployParams.GasLimit),
+				evm.FieldBlockGasLimit:   codec.EncodeUint64(deployParams.BlockGasLimit),
 				evm.FieldBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
+				evm.FieldGasRatio:        codec.EncodeRatio32(deployParams.GasRatio),
 			})
 			log.Printf("%s contract successfully deployed.\n", deployParams.Name())
 

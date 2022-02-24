@@ -72,7 +72,7 @@ func start(cmd *cobra.Command, args []string) {
 	blockKeepAmount := deployParams.BlockKeepAmount()
 	evmFlavor := deployParams.EVMFlavor()
 
-	env := solo.New(solo.NewTestContext("evmemulator"), log.DebugFlag, log.DebugFlag).
+	env := solo.New(solo.NewTestContext("evmemulator"), &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag}).
 		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
@@ -82,8 +82,8 @@ func start(cmd *cobra.Command, args []string) {
 		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
-		evm.FieldGasPerIota, deployParams.GasPerIOTA,
-		evm.FieldBlockGasLimit, deployParams.GasLimit,
+		evm.FieldGasRatio, deployParams.GasRatio,
+		evm.FieldBlockGasLimit, deployParams.BlockGasLimit,
 		evm.FieldBlockKeepAmount, blockKeepAmount,
 	)
 	log.Check(err)
@@ -100,7 +100,7 @@ func start(cmd *cobra.Command, args []string) {
 			const step = 1 * time.Second
 			for {
 				time.Sleep(step)
-				env.AdvanceClockBy(step)
+				env.AdvanceClockBy(step, 1)
 			}
 		}()
 	}

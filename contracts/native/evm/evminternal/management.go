@@ -44,7 +44,9 @@ func EVMStateSubrealm(state kv.KVStore) kv.KVStore {
 }
 
 func InitializeManagement(ctx iscp.Sandbox) {
-	ctx.State().Set(keyGasRatio, evm.DefaultGasRatio.Bytes())
+	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evm.DefaultGasRatio)
+	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
+
 	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 }
 
