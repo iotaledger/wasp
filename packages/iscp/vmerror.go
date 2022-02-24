@@ -179,22 +179,7 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 }
 
 func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
-
-	var params []interface{}
-	params = make([]interface{}, 0)
-
-	for _, param := range e.Params() {
-		switch v := param.(type) {
-		case error:
-			params = append(params, v.Error())
-
-		default:
-			params = append(params, v)
-		}
-	}
-
-	bytes, err := json.Marshal(params)
-
+	bytes, err := json.Marshal(e.Params())
 	if err != nil {
 		panic(err)
 	}

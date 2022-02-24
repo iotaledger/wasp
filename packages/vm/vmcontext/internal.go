@@ -138,7 +138,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 		if _, ok := errProvided.(*iscp.VMError); ok {
 			vmError = errProvided.(*iscp.VMError)
 		} else {
-			vmError = coreerrors.ErrUntypedError.Create(errProvided)
+			vmError = coreerrors.ErrUntypedError.Create(errProvided.Error())
 		}
 		receipt.Error = vmError.AsUnresolvedError()
 	}

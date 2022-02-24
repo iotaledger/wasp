@@ -14,7 +14,7 @@ func verifyErrorInReceipts(t *testing.T, ctx *wasmsolo.SoloContext, msg string) 
 	receipts := ctx.Chain.GetRequestReceiptsForBlockRange(0, 0)
 	errorCount := 0
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(ctx.Chain.ErrorMessageResolver)
+		receiptError := ctx.Chain.ResolveVMError(a.Error)
 		if receiptError != nil {
 			errorCount++
 			if msg != "" {
