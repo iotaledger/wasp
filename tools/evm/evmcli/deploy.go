@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -26,8 +27,8 @@ type DeployParams struct {
 	description     string
 	alloc           []string
 	allocBase64     string
-	GasPerIOTA      uint64
-	GasLimit        uint64
+	GasRatio        util.Ratio32
+	BlockGasLimit   uint64
 	blockTime       uint32
 	blockKeepAmount int32
 }
@@ -39,9 +40,10 @@ func (d *DeployParams) InitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&d.description, "description", "", "", "Contract description")
 	cmd.Flags().StringSliceVarP(&d.alloc, "alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")
 	cmd.Flags().StringVarP(&d.allocBase64, "alloc-bytes", "", "", "Genesis allocation (base64-encoded)")
-	cmd.Flags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "", evm.DefaultGasPerIota, "Gas per IOTA charged as fee")
+	d.GasRatio = util.Ratio32{A: 1, B: 1}
+	cmd.Flags().VarP(d.GasRatio, "gas-ratio", "", "ISC Gas : EVM gas ratio")
 	cmd.Flags().Uint32VarP(&d.blockTime, "block-time", "", 0, "Average block time (0: disabled) [evmlight only]")
-	cmd.Flags().Uint64VarP(&d.GasLimit, "gas-limit", "", evm.GasLimitDefault, "Block gas limit")
+	cmd.Flags().Uint64VarP(&d.BlockGasLimit, "gas-limit", "", evm.BlockGasLimitDefault, "Block gas limit")
 	cmd.Flags().Int32VarP(&d.blockKeepAmount, "block-keep-amount", "", evm.BlockKeepAmountDefault, "Amount of blocks to keep in DB (-1: keep all blocks) [evmlight only]")
 }
 

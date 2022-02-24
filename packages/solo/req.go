@@ -7,8 +7,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -19,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
@@ -408,31 +407,12 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
-// ErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
-func (ch *Chain) ErrorMessageResolver(vmError *iscp.UnresolvedVMError) (string, error) {
-	params := dict.New()
-	params.Set(errors.ParamContractHname, codec.EncodeHname(vmError.ContractId()))
-	params.Set(errors.ParamErrorId, codec.EncodeUint16(vmError.Id()))
-
-	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name, params)
-
-	if err != nil {
-		return "", err
-	}
-
-	errorMessageFormat, err := ret.Get(errors.ParamErrorMessageFormat)
-
-	if err != nil {
-		return "", err
-	}
-
-	errorMessageFormatString, err := codec.DecodeString(errorMessageFormat)
-
-	if err != nil {
-		return "", err
-	}
-
-	return errorMessageFormatString, nil
+func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
+	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+		return ch.CallView(contractName, funcName, params)
+	})
+	require.NoError(ch.Env.T, err)
+	return resolved
 }
 
 // CallView calls the view entry point of the smart contract.

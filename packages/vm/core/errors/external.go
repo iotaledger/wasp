@@ -6,27 +6,28 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// SandboxErrorMessageResolver has the signature of VMErrorMessageResolver to provide a way to resolve the error format
-func SandboxErrorMessageResolver(ctx iscp.SandboxView) func(*iscp.VMError) (string, error) {
-	return func(errorToResolve *iscp.VMError) (string, error) {
-		params := dict.New()
-		params.Set(ParamContractHname, codec.EncodeHname(errorToResolve.ContractId()))
-		params.Set(ParamErrorId, codec.EncodeUint16(errorToResolve.Id()))
+// ViewCaller is a generic interface for any function that can call views
+type ViewCaller func(contractName string, funcName string, params dict.Dict) (dict.Dict, error)
 
-		ret := ctx.Call(Contract.Hname(), FuncGetErrorMessageFormat.Hname(), params)
-
-		errorMessageFormat, err := ret.Get(ParamErrorMessageFormat)
-
-		if err != nil {
-			return "", err
-		}
-
-		errorMessageFormatString, err := codec.DecodeString(errorMessageFormat)
-
-		if err != nil {
-			return "", err
-		}
-
-		return errorMessageFormatString, nil
+func GetMessageFormat(code iscp.VMErrorCode, callView ViewCaller) (string, error) {
+	ret, err := callView(Contract.Name, FuncGetErrorMessageFormat.Name, dict.Dict{
+		ParamErrorCode: codec.EncodeVMErrorCode(code),
+	})
+	if err != nil {
+		return "", err
 	}
+	return codec.DecodeString(ret.MustGet(ParamErrorMessageFormat))
+}
+
+func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, error) {
+	if e == nil {
+		return nil, nil
+	}
+
+	messageFormat, err := GetMessageFormat(e.Code(), callView)
+	if err != nil {
+		return nil, err
+	}
+
+	return iscp.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params()), nil
 }

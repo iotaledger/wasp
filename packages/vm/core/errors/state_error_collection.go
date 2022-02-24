@@ -10,6 +10,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func errorTemplateKey(contractID iscp.Hname) string {
+	return prefixErrorTemplateMap + string(contractID.Bytes())
+}
+
 // StateErrorCollectionWriter implements ErrorCollection. Is used for contract internal errors.
 // It requires a reference to a KVStore such as the vmctx and the hname of the caller.
 type StateErrorCollectionWriter struct {
@@ -26,15 +30,13 @@ func NewStateErrorCollectionWriter(partition kv.KVStore, hname iscp.Hname) coree
 	return &errorCollection
 }
 
-func (e *StateErrorCollectionWriter) getErrorDefinitionMap() *collections.Map {
-	mapName := ParamErrorDefinitionMap + string(e.hname.Bytes())
-
-	return collections.NewMap(e.partition, mapName)
+func (e *StateErrorCollectionWriter) getErrorTemplateMap() *collections.Map {
+	return collections.NewMap(e.partition, errorTemplateKey(e.hname))
 }
 
-func (e *StateErrorCollectionWriter) Get(errorId uint16) (*iscp.VMErrorTemplate, error) {
-	errorMap := e.getErrorDefinitionMap()
-	errorIdKey := codec.EncodeUint16(errorId)
+func (e *StateErrorCollectionWriter) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
+	errorMap := e.getErrorTemplateMap()
+	errorIdKey := codec.EncodeUint16(errorID)
 
 	errorBytes, err := errorMap.GetAt(errorIdKey)
 
@@ -42,32 +44,32 @@ func (e *StateErrorCollectionWriter) Get(errorId uint16) (*iscp.VMErrorTemplate,
 		return nil, err
 	}
 
-	errorDefinition, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
+	template, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return errorDefinition, nil
+	return template, nil
 }
 
 func (e *StateErrorCollectionWriter) Register(messageFormat string) (*iscp.VMErrorTemplate, error) {
-	errorMap := e.getErrorDefinitionMap()
-	errorId := iscp.GetErrorIdFromMessageFormat(messageFormat)
+	errorMap := e.getErrorTemplateMap()
+	errorID := iscp.GetErrorIDFromMessageFormat(messageFormat)
 
 	if len(messageFormat) > iscp.VMErrorMessageLimit {
 		return nil, coreerrors.ErrErrorMessageTooLong
 	}
 
-	mapKey := codec.EncodeUint16(errorId)
+	mapKey := codec.EncodeUint16(errorID)
 
 	if errorBytes, err := errorMap.GetAt(mapKey); err != nil {
 		return nil, err
 	} else if len(errorBytes) > 0 {
-		return nil, coreerrors.ErrErrorAlreadyRegistered.Create(errorId)
+		return nil, coreerrors.ErrErrorAlreadyRegistered.Create(errorID)
 	}
 
-	newError := iscp.NewVMErrorTemplate(e.hname, errorId, messageFormat)
+	newError := iscp.NewVMErrorTemplate(iscp.NewVMErrorCode(e.hname, errorID), messageFormat)
 
 	if err := errorMap.SetAt(mapKey, newError.Bytes()); err != nil {
 		return nil, err
@@ -83,10 +85,8 @@ type StateErrorCollectionReader struct {
 	hname     iscp.Hname
 }
 
-func (e *StateErrorCollectionReader) getErrorDefinitionMap() *collections.ImmutableMap {
-	mapName := ParamErrorDefinitionMap + string(e.hname.Bytes())
-
-	return collections.NewMapReadOnly(e.partition, mapName)
+func (e *StateErrorCollectionReader) getErrorTemplateMap() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(e.partition, errorTemplateKey(e.hname))
 }
 
 func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname iscp.Hname) coreerrors.ErrorCollection {
@@ -98,9 +98,9 @@ func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname iscp.Hname)
 	return &errorCollection
 }
 
-func (e *StateErrorCollectionReader) Get(errorId uint16) (*iscp.VMErrorTemplate, error) {
-	errorMap := e.getErrorDefinitionMap()
-	errorIdKey := codec.EncodeUint16(errorId)
+func (e *StateErrorCollectionReader) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
+	errorMap := e.getErrorTemplateMap()
+	errorIdKey := codec.EncodeUint16(errorID)
 
 	errorBytes, err := errorMap.GetAt(errorIdKey)
 
@@ -108,13 +108,13 @@ func (e *StateErrorCollectionReader) Get(errorId uint16) (*iscp.VMErrorTemplate,
 		return nil, err
 	}
 
-	errorDefinition, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
+	template, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return errorDefinition, nil
+	return template, nil
 }
 
 func (e *StateErrorCollectionReader) Register(messageFormat string) (*iscp.VMErrorTemplate, error) {

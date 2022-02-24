@@ -47,7 +47,8 @@ func newSoloTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *soloTestEnv
 
 	chainID := evm.DefaultChainID
 
-	s := solo.New(t, true, false).WithNativeContract(evmflavors.Processors[evmFlavor.Name])
+	s := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true}).
+		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain := s.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, evmFlavor.Name, evmFlavor.ProgramHash,

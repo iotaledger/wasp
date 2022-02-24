@@ -9,8 +9,6 @@ import (
 	"math"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -25,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -339,9 +338,10 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	return blockInfo
 }
 
-func (ch *Chain) GetErrorMessageFormat(contract iscp.Hname, errorId uint16) (string, error) {
+func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
 	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
-		errors.ParamErrorId, errorId, errors.ParamContractHname, contract)
+		errors.ParamErrorCode, code.Bytes(),
+	)
 
 	if err != nil {
 		return "", err

@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -200,18 +199,9 @@ func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplat
 	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
 
 	result := vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
-	data := kvdecoder.New(result)
+	errorCode := codec.MustDecodeVMErrorCode(result.MustGet(errors.ParamErrorCode))
 
-	errorAdded := data.MustGetBool(errors.ParamErrorDefinitionAdded)
+	vmctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
 
-	if !errorAdded {
-		return nil
-	}
-
-	errorId := data.MustGetUint16(errors.ParamErrorId)
-	errorPrefixId := data.MustGetHname(errors.ParamContractHname)
-
-	vmctx.Debugf("vmcontext.RegisterError: errorId: '%v'", errorId)
-
-	return iscp.NewVMErrorTemplate(errorPrefixId, errorId, messageFormat)
+	return iscp.NewVMErrorTemplate(errorCode, messageFormat)
 }

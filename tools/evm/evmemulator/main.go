@@ -83,7 +83,7 @@ func start(cmd *cobra.Command, args []string) {
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
 		evm.FieldGasPerIota, deployParams.GasPerIOTA,
-		evm.FieldGasLimit, deployParams.GasLimit,
+		evm.FieldBlockGasLimit, deployParams.GasLimit,
 		evm.FieldBlockKeepAmount, blockKeepAmount,
 	)
 	log.Check(err)

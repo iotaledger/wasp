@@ -186,7 +186,7 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 
-		return coreerrors.ErrUntypedError.Create(err)
+		return coreerrors.ErrUntypedError.Create(err.Error())
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ var Contract = coreutil.NewContract(coreutil.CoreContractErrors, "Errors contrac
 const (
 	prefixBlockRegistry = string('a' + iota)
 	prefixControlAddresses
+	prefixErrorTemplateMap
 )
 
 var (
@@ -16,11 +17,8 @@ var (
 	FuncGetErrorMessageFormat = coreutil.ViewFunc("getErrorMessageFormat")
 )
 
+// parameters
 const (
-	// parameters
-	ParamErrorDefinitionMap   = "e"
-	ParamErrorId              = "i"
-	ParamContractHname        = "h"
-	ParamErrorMessageFormat   = "m"
-	ParamErrorDefinitionAdded = "a"
+	ParamErrorCode          = "c"
+	ParamErrorMessageFormat = "m"
 )

@@ -1,13 +1,12 @@
 package sbtests
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +26,7 @@ func testPanicFull(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
+		receiptError := chain.ResolveVMError(a.Error)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -57,7 +56,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
+		receiptError := chain.ResolveVMError(a.Error)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -88,7 +87,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
+		receiptError := chain.ResolveVMError(a.Error)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -119,7 +118,7 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
+		receiptError := chain.ResolveVMError(a.Error)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}
@@ -149,7 +148,7 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	errorsAsString := ""
 
 	for _, a := range receipts {
-		receiptError, _ := a.Error.ResolveToVMError(chain.ErrorMessageResolver)
+		receiptError := chain.ResolveVMError(a.Error)
 		if receiptError != nil {
 			errorsAsString += receiptError.Error()
 		}

@@ -89,7 +89,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 		}
 		_, gasUsed, err := emu.SendTransaction(tx, gasBudget)
 		return gasUsed, err
-	})
+	}, true)
 }
 
 func getBalance(ctx iscp.SandboxView) dict.Dict {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 var (
@@ -83,3 +84,15 @@ var (
 	// <ISC gas> = <EVM Gas> * <A> / <B>
 	DefaultGasRatio = util.Ratio32{A: 1, B: 1}
 )
+
+func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio util.Ratio32) uint64 {
+	// EVM gas budget = floor(ISC gas budget * B / A)
+	return gasRatio.YFloor64(iscGasBudget)
+}
+
+func EVMGasToISC(evmGas uint64, gasRatio util.Ratio32) uint64 {
+	// ISC gas burned = ceil(EVM gas * A / B)
+	return gasRatio.XCeil64(evmGas)
+}
+
+var ErrNotEnoughGasBudget = coreerrors.Register("not enough ISC budget (%d ISC gas units = %d EVM gas units) to cover for EVM tx gas limit (%d)")

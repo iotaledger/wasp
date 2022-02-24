@@ -19,6 +19,7 @@ PATHS=(\
     "contracts/native/evm/evmchain/emulator/" \
     "contracts/native/evm/evmlight/emulator/" \
     "contracts/native/evm/evmtest/" \
+    "packages/evm/jsonrpc/jsonrpctest" \
 )
 WD=$PWD
 

@@ -4,20 +4,18 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -135,21 +133,17 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 		GasFeeCharged: vmctx.gasFeeCharged,
 	}
 
-	var receiptError *iscp.VMError
-
 	if errProvided != nil {
+		var vmError *iscp.VMError
 		if _, ok := errProvided.(*iscp.VMError); ok {
-			receiptError = errProvided.(*iscp.VMError)
+			vmError = errProvided.(*iscp.VMError)
 		} else {
-			receiptError = coreerrors.ErrUntypedError.Create(errProvided)
+			vmError = coreerrors.ErrUntypedError.Create(errProvided.Error())
 		}
+		receipt.Error = vmError.AsUnresolvedError()
 	}
 
 	receipt.GasBurnLog = vmctx.gasBurnLog
-
-	if errProvided != nil {
-		receipt.Error = receiptError.AsUnresolvedError()
-	}
 
 	if vmctx.task.EnableGasBurnLogging {
 		vmctx.gasBurnLog = gas.NewGasBurnLog()
