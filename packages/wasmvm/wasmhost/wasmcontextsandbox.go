@@ -187,12 +187,14 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	assets := s.cvt.IscpAssets(scAssets)
+	// TODO check, probably not right
+	transfer := iscp.NewAllowanceFromAssets(assets, nil)
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
-	results := s.callUnlocked(contract, function, params, assets)
+	results := s.callUnlocked(contract, function, params, transfer)
 	return results.Bytes()
 }
 
-func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Assets) dict.Dict {
+func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
@@ -280,13 +282,15 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 		s.Panicf("transfer is required for post")
 	}
 	assets := s.cvt.IscpAssets(scAssets)
+	// TODO check, probably not right
+	allowance := iscp.NewAllowanceFromAssets(assets, nil)
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
 	metadata := &iscp.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
 		Params:         params,
-		Allowance:      assets,
+		Allowance:      allowance,
 		GasBudget:      1_000_000,
 	}
 	if req.Delay == 0 {

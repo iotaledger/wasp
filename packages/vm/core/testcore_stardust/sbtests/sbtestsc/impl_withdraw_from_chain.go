@@ -24,7 +24,7 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 			TargetContract: accounts.Contract.Hname(),
 			EntryPoint:     accounts.FuncWithdraw.Hname(),
 			GasBudget:      gasBudget,
-			Allowance:      iscp.NewAssetsIotas(iotasToWithdrawal),
+			Allowance:      iscp.NewAllowanceIotas(iotasToWithdrawal),
 		},
 	}
 	requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)

@@ -78,7 +78,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
+	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point

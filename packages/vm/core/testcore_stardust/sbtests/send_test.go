@@ -98,7 +98,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := iscp.NewAssetsIotas(100_000).AddNativeTokens(tokenID, 100)
+	allowance := iscp.NewAllowanceIotas(100_000).AddNativeTokens(tokenID, 100)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).
@@ -129,7 +129,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 
 	amountTokensToSend := int64(3)
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := iscp.NewAssetsIotas(100_000).AddNativeTokens(tokenID, amountTokensToSend)
+	allowance := iscp.NewAllowanceIotas(100_000).AddNativeTokens(tokenID, amountTokensToSend)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).
@@ -188,7 +188,7 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
 	// should fail without enough iotas to pay for a L1 transaction dust
-	allowance := iscp.NewAssetsIotas(1)
+	allowance := iscp.NewAllowanceIotas(1)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).
@@ -198,7 +198,7 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	// should succeed with enough iotas to pay for a L1 transaction dust
-	allowance = iscp.NewAssetsIotas(100_000)
+	allowance = iscp.NewAllowanceIotas(100_000)
 	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).

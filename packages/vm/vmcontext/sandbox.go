@@ -26,7 +26,7 @@ func NewSandbox(vmctx *VMContext) iscp.Sandbox {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) dict.Dict {
+func (s *contractSandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.Ctx.Call(target, entryPoint, params, transfer)
 }

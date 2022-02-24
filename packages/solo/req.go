@@ -28,7 +28,7 @@ type CallParams struct {
 	epName     string
 	entryPoint iscp.Hname
 	assets     *iscp.Assets // ignored off-ledger
-	allowance  *iscp.Assets
+	allowance  *iscp.Allowance
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -60,12 +60,12 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-func (r *CallParams) WithAllowance(allowance *iscp.Assets) *CallParams {
+func (r *CallParams) WithAllowance(allowance *iscp.Allowance) *CallParams {
 	r.allowance = allowance.Clone()
 	return r
 }
 
-func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
+func (r *CallParams) AddAllowance(allowance *iscp.Allowance) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
 	} else {
@@ -75,25 +75,36 @@ func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceIotas(amount uint64) *CallParams {
-	return r.AddAllowance(iscp.NewAssets(amount, nil))
+	return r.AddAllowance(iscp.NewAllowance(amount, nil, nil))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAllowance(&iscp.Assets{
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.allowance.Assets.Add(&iscp.Assets{
 		Tokens: tokens,
 	})
+	return r
 }
 
 func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAllowance(&iscp.Assets{
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.allowance.Assets.Add(&iscp.Assets{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+	return r
 }
 
 func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
 	r.assets = assets.Clone()
 	return r
 }
@@ -330,7 +341,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 			available += req.assets.Iotas
 		}
 		if req.allowance != nil {
-			available -= req.allowance.Iotas
+			available -= req.allowance.Assets.Iotas
 		}
 	} else {
 		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
@@ -338,7 +349,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 			n.Add(n, req.assets.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if req.allowance != nil {
-			n.Sub(n, req.allowance.AmountNativeToken(policy.GasFeeTokenID))
+			n.Sub(n, req.allowance.Assets.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if n.IsUint64() {
 			available = n.Uint64()

@@ -26,6 +26,10 @@ func NewAllowance(iotas uint64, tokens iotago.NativeTokens, NFTs []*iotago.NFTID
 	}
 }
 
+func NewAllowanceIotas(iotas uint64) *Allowance {
+	return NewAllowance(iotas, nil, nil)
+}
+
 func NewAllowanceFromAssets(assets *Assets, NFTs []*iotago.NFTID) *Allowance {
 	return &Allowance{
 		Assets: assets,
@@ -34,6 +38,9 @@ func NewAllowanceFromAssets(assets *Assets, NFTs []*iotago.NFTID) *Allowance {
 }
 
 func (a *Allowance) Clone() *Allowance {
+	if a == nil {
+		return nil
+	}
 	nfts := make([]*iotago.NFTID, len(a.NFTs))
 	for i, nft := range a.NFTs {
 		id := *nft
@@ -109,7 +116,18 @@ func (a *Allowance) NFTSet() map[iotago.NFTID]bool {
 }
 
 func (a *Allowance) IsEmpty() bool {
-	return a.Assets.IsEmpty() && len(a.NFTs) == 0
+	return a == nil || (a.Assets.IsEmpty() && len(a.NFTs) == 0)
+}
+
+func (a *Allowance) Add(b *Allowance) *Allowance {
+	a.Assets.Add(b.Assets)
+	a.NFTs = append(a.NFTs, b.NFTs...)
+	return a
+}
+
+func (a *Allowance) AddNativeTokens(tokenID iotago.NativeTokenID, amount interface{}) *Allowance {
+	a.Assets.AddNativeTokens(tokenID, amount)
+	return a
 }
 
 func (a *Allowance) String() string {

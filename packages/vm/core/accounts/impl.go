@@ -103,6 +103,10 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	isCallerAContract := caller.Hname() != 0
 
 	if isCallerAContract {
+		allowance := iscp.NewAllowanceFromAssets(
+			iscp.NewAssetsIotas(fundsToWithdraw.Iotas-ConstDepositFeeTmp),
+			nil,
+		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
 			TargetAddress: ctx.Caller().Address(),
@@ -110,7 +114,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 			Metadata: &iscp.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
-				Allowance:      iscp.NewAssetsIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+				Allowance:      allowance,
 				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(caller)},
 				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
 			},
