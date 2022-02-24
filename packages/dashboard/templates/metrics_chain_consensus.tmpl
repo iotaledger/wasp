@@ -63,6 +63,36 @@
 					<td>{{ .Status.GetCurrentStateIndex }}</td>
 					<td></td>
 				</tr>
+                <tr>
+                    <td>Event state transition message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventStateTransitionMsgPipeSize }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Event signed result msg pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventSignedResultMsgPipeSize }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Event signed result ack message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventSignedResultAckMsgPipeSize }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Event inclusion state message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventInclusionStateMsgPipeSize }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Event vm result message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventVMResultMsgPipeSize }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Event timer message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventTimerMsgPipeSize }}</td>
+                    <td></td>
+                </tr>
 			</tbody>
 		</table>
 	{{else}}
