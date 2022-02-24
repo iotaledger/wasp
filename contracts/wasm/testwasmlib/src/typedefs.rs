@@ -11,6 +11,36 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
+pub struct MapInt32ToImmutableLocation {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapInt32ToImmutableLocation {
+    pub fn get_location(&self, key: i32) -> ImmutableLocation {
+        ImmutableLocation { proxy: self.proxy.key(&int32_to_bytes(key)) }
+    }
+}
+
+pub type ImmutableLongitude = MapInt32ToImmutableLocation;
+
+#[derive(Clone)]
+pub struct MapInt32ToMutableLocation {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapInt32ToMutableLocation {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_location(&self, key: i32) -> MutableLocation {
+        MutableLocation { proxy: self.proxy.key(&int32_to_bytes(key)) }
+    }
+}
+
+pub type MutableLongitude = MapInt32ToMutableLocation;
+
+#[derive(Clone)]
 pub struct ArrayOfImmutableString {
 	pub(crate) proxy: Proxy,
 }

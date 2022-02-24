@@ -21,27 +21,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const ( // TODO set back to false
+	SoloDebug        = true
+	SoloHostTracing  = true
+	SoloStackTracing = true
+)
+
 var (
-	// the following 3 flags will cause Wasm code to be loaded and run
-	// they are checked in sequence and the first one set determines the Wasm language mode
-	// if none of them are set, solo will try to run the Go SC code directly (no Wasm)
+	// GoWasm / RsWasm / TsWasm are used to specify the Wasm language mode,
+	// By default, SoloContext will try to run the Go SC code directly (no Wasm)
+	// The 3 flags can be used to cause Wasm code to be loaded and run instead.
+	// They are checked in sequence and the first one set determines the Wasm language used.
 	GoWasm = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
 	RsWasm = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
 	TsWasm = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
 
+	// UseWasmEdge flag is kept here in case we decide to use WasmEdge again. Some tests
+	// refer to this flag, so we keep it here instead of having to comment out a bunch
+	// of code. To actually enable WasmEdge you need to uncomment the relevant lines in
+	// NewSoloContextForChain(), and remove the go:build directives from wasmedge.go, so
+	// that the linker can actually pull in the WasmEdge runtime.
 	UseWasmEdge = flag.Bool("wasmedge", false, "use WasmEdge instead of WasmTime")
 )
 
-const ( // TODO set back to false
-	WasmDustDeposit = 1000
-
+const (
 	L2FundsContract   = 1_000_000
 	L2FundsCreator    = 2_000_000
 	L2FundsOriginator = 3_000_000
 
-	SoloDebug        = true
-	SoloHostTracing  = true
-	SoloStackTracing = true
+	WasmDustDeposit = 1000
 )
 
 type SoloContext struct {

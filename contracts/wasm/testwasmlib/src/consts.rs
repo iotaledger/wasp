@@ -46,9 +46,11 @@ pub const RESULT_RANDOM : &str = "random";
 pub const RESULT_RECORD : &str = "record";
 pub const RESULT_VALUE  : &str = "value";
 
-pub const STATE_ARRAYS : &str = "arrays";
-pub const STATE_MAPS   : &str = "maps";
-pub const STATE_RANDOM : &str = "random";
+pub const STATE_ARRAYS     : &str = "arrays";
+pub const STATE_LAT_LONG   : &str = "latLong";
+pub const STATE_MAPS       : &str = "maps";
+pub const STATE_RANDOM     : &str = "random";
+pub const STATE_STRINGS2_D : &str = "strings2D";
 
 pub const FUNC_ARRAY_APPEND   : &str = "arrayAppend";
 pub const FUNC_ARRAY_CLEAR    : &str = "arrayClear";

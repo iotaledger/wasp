@@ -2,37 +2,38 @@ name: TestWasmLib
 description: Exercise several aspects of WasmLib
 
 # ##################################
+
 events:
-# ##################################
   test:
     name: String
     address: Address
 
 # ##################################
+
 structs:
-# ##################################
-# Location:
-#   x: Int32
-#   y: Int32
+  Location:
+    x: Int32
+    y: Int32
 
 # ##################################
+
 typedefs:
-# ##################################
   StringArray: String[]
   StringMap: map[String]String
-# Longitude: map[Int32]Location
+  Longitude: map[Int32]Location
 
 # ##################################
+
 state:
-# ##################################
   arrays: map[String]StringArray
   maps: map[String]StringMap
   random: Uint64
-# latLong: map[Int32]Longitude
+  latLong: map[Int32]Longitude
+  strings2D: StringArray[]
 
 # ##################################
+
 funcs:
-# ##################################
   arrayAppend:
     params:
       name: String
@@ -94,8 +95,8 @@ funcs:
       address: Address
 
 # ##################################
+
 views:
-# ##################################
   arrayLength:
     params:
       name: String

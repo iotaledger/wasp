@@ -24,6 +24,17 @@ impl MapStringToImmutableStringArray {
 }
 
 #[derive(Clone)]
+pub struct MapInt32ToImmutableLongitude {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapInt32ToImmutableLongitude {
+    pub fn get_longitude(&self, key: i32) -> ImmutableLongitude {
+        ImmutableLongitude { proxy: self.proxy.key(&int32_to_bytes(key)) }
+    }
+}
+
+#[derive(Clone)]
 pub struct MapStringToImmutableStringMap {
 	pub(crate) proxy: Proxy,
 }
@@ -32,6 +43,22 @@ impl MapStringToImmutableStringMap {
     pub fn get_string_map(&self, key: &str) -> ImmutableStringMap {
         ImmutableStringMap { proxy: self.proxy.key(&string_to_bytes(key)) }
     }
+}
+
+#[derive(Clone)]
+pub struct ArrayOfImmutableStringArray {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfImmutableStringArray {
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+
+	pub fn get_string_array(&self, index: u32) -> ImmutableStringArray {
+		ImmutableStringArray { proxy: self.proxy.index(index) }
+	}
 }
 
 #[derive(Clone)]
@@ -44,12 +71,20 @@ impl ImmutableTestWasmLibState {
 		MapStringToImmutableStringArray { proxy: self.proxy.root(STATE_ARRAYS) }
 	}
 
+    pub fn lat_long(&self) -> MapInt32ToImmutableLongitude {
+		MapInt32ToImmutableLongitude { proxy: self.proxy.root(STATE_LAT_LONG) }
+	}
+
     pub fn maps(&self) -> MapStringToImmutableStringMap {
 		MapStringToImmutableStringMap { proxy: self.proxy.root(STATE_MAPS) }
 	}
 
     pub fn random(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(STATE_RANDOM))
+	}
+
+    pub fn strings2_d(&self) -> ArrayOfImmutableStringArray {
+		ArrayOfImmutableStringArray { proxy: self.proxy.root(STATE_STRINGS2_D) }
 	}
 }
 
@@ -69,6 +104,21 @@ impl MapStringToMutableStringArray {
 }
 
 #[derive(Clone)]
+pub struct MapInt32ToMutableLongitude {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapInt32ToMutableLongitude {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_longitude(&self, key: i32) -> MutableLongitude {
+        MutableLongitude { proxy: self.proxy.key(&int32_to_bytes(key)) }
+    }
+}
+
+#[derive(Clone)]
 pub struct MapStringToMutableStringMap {
 	pub(crate) proxy: Proxy,
 }
@@ -81,6 +131,30 @@ impl MapStringToMutableStringMap {
     pub fn get_string_map(&self, key: &str) -> MutableStringMap {
         MutableStringMap { proxy: self.proxy.key(&string_to_bytes(key)) }
     }
+}
+
+#[derive(Clone)]
+pub struct ArrayOfMutableStringArray {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfMutableStringArray {
+
+	pub fn append_string_array(&self) -> MutableStringArray {
+		MutableStringArray { proxy: self.proxy.append() }
+	}
+	pub fn clear(&self) {
+        self.proxy.clear_array();
+    }
+
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+
+	pub fn get_string_array(&self, index: u32) -> MutableStringArray {
+		MutableStringArray { proxy: self.proxy.index(index) }
+	}
 }
 
 #[derive(Clone)]
@@ -97,11 +171,19 @@ impl MutableTestWasmLibState {
 		MapStringToMutableStringArray { proxy: self.proxy.root(STATE_ARRAYS) }
 	}
 
+    pub fn lat_long(&self) -> MapInt32ToMutableLongitude {
+		MapInt32ToMutableLongitude { proxy: self.proxy.root(STATE_LAT_LONG) }
+	}
+
     pub fn maps(&self) -> MapStringToMutableStringMap {
 		MapStringToMutableStringMap { proxy: self.proxy.root(STATE_MAPS) }
 	}
 
     pub fn random(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(STATE_RANDOM))
+	}
+
+    pub fn strings2_d(&self) -> ArrayOfMutableStringArray {
+		ArrayOfMutableStringArray { proxy: self.proxy.root(STATE_STRINGS2_D) }
 	}
 }
