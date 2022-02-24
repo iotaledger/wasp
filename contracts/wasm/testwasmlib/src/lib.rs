@@ -16,6 +16,7 @@ use crate::events::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
+use crate::structs::*;
 use crate::typedefs::*;
 
 mod consts;
@@ -24,6 +25,7 @@ mod events;
 mod params;
 mod results;
 mod state;
+mod structs;
 mod typedefs;
 
 mod testwasmlib;

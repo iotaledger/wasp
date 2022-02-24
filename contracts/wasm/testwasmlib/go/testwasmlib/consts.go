@@ -53,9 +53,11 @@ const (
 )
 
 const (
-	StateArrays = "arrays"
-	StateMaps   = "maps"
-	StateRandom = "random"
+	StateArrays    = "arrays"
+	StateLatLong   = "latLong"
+	StateMaps      = "maps"
+	StateRandom    = "random"
+	StateStrings2D = "strings2D"
 )
 
 const (

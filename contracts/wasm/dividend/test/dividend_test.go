@@ -191,7 +191,6 @@ func TestGetFactor(t *testing.T) {
 	member3 := ctx.NewSoloAgent()
 	dividendMember(ctx, member3, 75)
 	require.NoError(t, ctx.Err)
-	ctx.Balances(member1, member2, member3)
 
 	value := dividendGetFactor(ctx, member3)
 	require.NoError(t, ctx.Err)
