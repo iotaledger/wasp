@@ -104,12 +104,19 @@ func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
 	return node, true
 }
 
+func (tr *Trie) MustGetNode(key kv.Key) *Node {
+	ret, ok := tr.GetNode(key)
+	assert(ok, fmt.Sprintf("MustGetNode: not found key '%s'", key))
+	return ret
+}
+
 func (tr *Trie) isDeleted(key kv.Key) bool {
 	_, ret := tr.deleted[key]
 	return ret
 }
 
-func (tr *Trie) markDeleted(key kv.Key) {
+func (tr *Trie) removeKey(key kv.Key) {
+	delete(tr.nodeCache, key)
 	tr.deleted[key] = struct{}{}
 }
 
@@ -220,10 +227,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		return
 	}
 	lastKey := proof[len(proof)-1]
-	lastNode, ok := tr.GetNode(kv.Key(lastKey))
-	if !ok {
-		panic(xerrors.Errorf("Update: can't find node key '%s'", kv.Key(lastKey)))
-	}
+	lastNode := tr.MustGetNode(kv.Key(lastKey))
 	switch ending {
 	case EndingTerminal:
 		lastNode.NewTerminal = c
@@ -232,6 +236,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		childIndexPosition := len(lastKey) + len(lastCommonPrefix)
 		assert(childIndexPosition < len(key), "childPosition < len(key)")
 		childIndex := key[childIndexPosition]
+		tr.removeKey(kv.Key(key[:childIndexPosition+1]))
 		tr.newTerminalNode(key[:childIndexPosition+1], key[childIndexPosition+1:], c)
 		lastNode.ModifiedChildren[childIndex] = struct{}{}
 
@@ -280,31 +285,48 @@ func (tr *Trie) Delete(key []byte) {
 		return
 	}
 	lastKey := proof[len(proof)-1]
-	lastNode, reorg, mergeChildIndex := tr.removeTerminal(kv.Key(lastKey))
-	if lastNode == nil {
+	lastNode, ok := tr.GetNode(kv.Key(lastKey))
+	if !ok {
 		return
 	}
+	lastNode.NewTerminal = nil
+	reorg, mergeChildIndex := tr.checkReorg(kv.Key(lastKey), lastNode)
 	switch reorg {
 	case nodeReorgNOP:
 		// do nothing
+		tr.markModifiedCommitmentsBackToRoot(proof)
 	case nodeReorgRemove:
 		// last node does not commit to anything, should be removed
-		tr.markDeleted(kv.Key(lastKey))
-	case nodeReorgMerge:
-		// last node commits to exactly one child, must be merged at mergeChildIndex
-		nextKey := lastNode.ChildKey(kv.Key(lastKey), mergeChildIndex)
-		nextNode, ok := tr.GetNode(nextKey)
-		if !ok {
-			panic(xerrors.Errorf("Delete: can't find child node key '%s'", kv.Key(nextKey)))
+		tr.removeKey(kv.Key(lastKey))
+		if len(proof) >= 2 {
+			// check if
+			prevKey := proof[len(proof)-2]
+			prevNode, ok := tr.GetNode(kv.Key(prevKey))
+			if !ok {
+				panic(xerrors.Errorf("Delete: can't find node key '%s'", kv.Key(prevKey)))
+			}
+			tr.markModifiedCommitmentsBackToRoot(proof)
+			reorg, mergeChildIndex = tr.checkReorg(kv.Key(prevKey), prevNode)
+			if reorg == nodeReorgMerge {
+				tr.mergeNode(prevKey, prevNode, mergeChildIndex)
+			}
 		}
-		newPathFragment := make([]byte, 0, len(lastNode.PathFragment)+len(nextNode.PathFragment))
-		newPathFragment = append(newPathFragment, lastNode.PathFragment...)
-		newPathFragment = append(newPathFragment, nextNode.PathFragment...)
-
-		tr.newNodeCopy(lastKey, newPathFragment, nextNode)
-		tr.markDeleted(nextKey)
+	case nodeReorgMerge:
+		tr.mergeNode(lastKey, lastNode, mergeChildIndex)
+		tr.markModifiedCommitmentsBackToRoot(proof)
 	}
-	tr.markModifiedCommitmentsBackToRoot(proof)
+}
+
+func (tr *Trie) mergeNode(key []byte, n *Node, childIndex byte) {
+	nextKey := n.ChildKey(kv.Key(key), childIndex)
+	nextNode := tr.MustGetNode(nextKey)
+	var newPathFragment bytes.Buffer
+	newPathFragment.Write(n.PathFragment)
+	newPathFragment.WriteByte(childIndex)
+	newPathFragment.Write(nextNode.PathFragment)
+
+	tr.newNodeCopy(key, newPathFragment.Bytes(), nextNode)
+	tr.removeKey(nextKey)
 }
 
 func (tr *Trie) markModifiedCommitmentsBackToRoot(proof [][]byte) {
@@ -312,10 +334,7 @@ func (tr *Trie) markModifiedCommitmentsBackToRoot(proof [][]byte) {
 		k := proof[i]
 		kPrev := proof[i-1]
 		childIndex := k[len(k)-1]
-		n, ok := tr.GetNode(kv.Key(kPrev))
-		if !ok {
-			panic(xerrors.Errorf("markModifiedCommitmentsBackToRoot: can't find node key '%s'", kv.Key(kPrev)))
-		}
+		n := tr.MustGetNode(kv.Key(kPrev))
 		n.ModifiedChildren[childIndex] = struct{}{}
 	}
 }
@@ -353,14 +372,9 @@ const (
 	nodeReorgNOP
 )
 
-func (tr *Trie) removeTerminal(key kv.Key) (*Node, reorgStatus, byte) {
-	n, ok := tr.GetNode(key)
-	if !ok {
-		return nil, nodeReorgNOP, 0
-	}
-	n.NewTerminal = nil
+func (tr *Trie) checkReorg(key kv.Key, n *Node) (reorgStatus, byte) {
 	if n.CommitsToTerminal() {
-		return n, nodeReorgNOP, 0
+		return nodeReorgNOP, 0
 	}
 	toCheck := make(map[byte]struct{})
 	for c := range n.ChildCommitments {
@@ -375,13 +389,19 @@ func (tr *Trie) removeTerminal(key kv.Key) (*Node, reorgStatus, byte) {
 	}
 	switch len(toCheck) {
 	case 0:
-		return n, nodeReorgRemove, 0
+		return nodeReorgRemove, 0
 	case 1:
 		for ret := range toCheck {
-			return n, nodeReorgMerge, ret
+			return nodeReorgMerge, ret
 		}
 	}
-	return n, nodeReorgNOP, 0
+	return nodeReorgNOP, 0
+}
+
+func (tr *Trie) mustCheckNode(key kv.Key) {
+	n := tr.MustGetNode(key)
+	status, _ := tr.checkReorg(key, n)
+	assert(status == nodeReorgNOP, "status == nodeReorgNOP")
 }
 
 func (tr *Trie) UpdateStr(key interface{}, value interface{}) {
@@ -410,7 +430,18 @@ func (tr *Trie) UpdateStr(key interface{}, value interface{}) {
 }
 
 func (tr *Trie) DeleteStr(key interface{}) {
-	tr.UpdateStr(key, nil)
+	var k []byte
+	if key != nil {
+		switch kt := key.(type) {
+		case []byte:
+			k = kt
+		case string:
+			k = []byte(kt)
+		default:
+			panic("[]byte or string expected")
+		}
+	}
+	tr.Delete(k)
 }
 
 // returns

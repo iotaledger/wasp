@@ -274,6 +274,28 @@ func TestTrieBase(t *testing.T) {
 
 		require.True(t, trie.EqualCommitments(c1, c2))
 	})
+	t.Run("deletion edge cases 2", func(t *testing.T) {
+		store := dict.New()
+		tr := trie.New(Model, store)
+
+		tr.UpdateStr("abcd", []byte("1"))
+		tr.UpdateStr("ab1234", []byte("2"))
+		tr.DeleteStr("ab1234")
+		tr.Commit()
+		c1 := tr.RootCommitment()
+
+		store = dict.New()
+		tr = trie.New(Model, store)
+
+		tr.UpdateStr("abcd", []byte("1"))
+		tr.UpdateStr("ab1234", []byte("2"))
+		tr.Commit()
+		tr.DeleteStr("ab1234")
+		tr.Commit()
+		c2 := tr.RootCommitment()
+
+		require.True(t, trie.EqualCommitments(c1, c2))
+	})
 }
 
 func genRnd1() []string {

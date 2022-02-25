@@ -80,14 +80,7 @@ func (n *Node) Clone() *Node {
 }
 
 func (n *Node) CommitsToTerminal() bool {
-	if n.NewTerminal != nil {
-		return true
-	}
-	// n.NewTerminal == nil
-	if n.Terminal == nil {
-		return false
-	}
-	return true
+	return n.NewTerminal != nil
 }
 
 func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {
