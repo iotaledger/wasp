@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"golang.org/x/xerrors"
 )
 
 // CommitmentModel abstracts 256+ Trie logic from the commitment logic/cryptography
@@ -24,13 +25,12 @@ type Trie struct {
 
 type ProofGeneric struct {
 	Key    []byte
-	Path   []ProofGenericElement
+	Path   [][]byte
 	Ending ProofEndingCode
 }
 
 type ProofGenericElement struct {
-	Key  []byte
-	Node *Node
+	Key []byte
 }
 
 type ProofEndingCode byte
@@ -85,7 +85,7 @@ func (tr *Trie) RootCommitment() VCommitment {
 
 // GetNode takes node from the cache of fetches it from kv store
 func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
-	if _, deleted := tr.deleted[key]; deleted {
+	if tr.isDeleted(key) {
 		return nil, false
 	}
 	node, ok := tr.nodeCache[key]
@@ -101,7 +101,19 @@ func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
 
 	tr.nodeCache[key] = node
 	return node, true
+}
 
+func (tr *Trie) isDeleted(key kv.Key) bool {
+	_, ret := tr.deleted[key]
+	return ret
+}
+
+func (tr *Trie) markDeleted(key kv.Key) {
+	tr.deleted[key] = struct{}{}
+}
+
+func (tr *Trie) unDelete(key kv.Key) {
+	delete(tr.deleted, key)
 }
 
 func (tr *Trie) CommitToNode(n *Node) VCommitment {
@@ -127,6 +139,7 @@ func (tr *Trie) ClearCache() {
 
 // newTerminalNode assumes Key does not exist in the Trie
 func (tr *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
+	tr.unDelete(kv.Key(key))
 	ret := NewNode(pathFragment)
 	ret.NewTerminal = newTerminal
 	_, already := tr.nodeCache[kv.Key(key)]
@@ -136,6 +149,7 @@ func (tr *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitmen
 }
 
 func (tr *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
+	tr.unDelete(kv.Key(key))
 	ret := *copyFrom
 	ret.PathFragment = pathFragment
 	tr.nodeCache[kv.Key(key)] = &ret
@@ -182,7 +196,7 @@ func (tr *Trie) ProofGeneric(key []byte) *ProofGeneric {
 	if len(key) == 0 {
 		key = []byte{}
 	}
-	p, _, _, ending := tr.proofPath(key)
+	p, _, ending := tr.proofPath(key)
 	return &ProofGeneric{
 		Key:    key,
 		Path:   p,
@@ -199,22 +213,26 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		return
 	}
 
-	proof, lastKey, lastCommonPrefix, ending := tr.proofPath(key)
+	proof, lastCommonPrefix, ending := tr.proofPath(key)
 	if len(proof) == 0 {
 		tr.newTerminalNode(nil, key, c)
 		return
 	}
-	last := proof[len(proof)-1].Node
+	lastKey := proof[len(proof)-1]
+	lastNode, ok := tr.GetNode(kv.Key(lastKey))
+	if !ok {
+		panic(xerrors.Errorf("Update: can't find node key '%s'", kv.Key(lastKey)))
+	}
 	switch ending {
 	case EndingTerminal:
-		last.NewTerminal = c
+		lastNode.NewTerminal = c
 
 	case EndingExtend:
 		childIndexPosition := len(lastKey) + len(lastCommonPrefix)
 		assert(childIndexPosition < len(key), "childPosition < len(key)")
 		childIndex := key[childIndexPosition]
 		tr.newTerminalNode(key[:childIndexPosition+1], key[childIndexPosition+1:], c)
-		last.ModifiedChildren[childIndex] = struct{}{}
+		lastNode.ModifiedChildren[childIndex] = struct{}{}
 
 	case EndingSplit:
 		childPosition := len(lastKey) + len(lastCommonPrefix)
@@ -222,123 +240,147 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		keyContinue := make([]byte, childPosition+1)
 		copy(keyContinue, key)
 		splitChildIndex := len(lastCommonPrefix)
-		assert(splitChildIndex < len(last.PathFragment), "splitChildIndex<len(last.Node.PathFragment)")
-		childContinue := last.PathFragment[splitChildIndex]
+		assert(splitChildIndex < len(lastNode.PathFragment), "splitChildIndex<len(last.Node.PathFragment)")
+		childContinue := lastNode.PathFragment[splitChildIndex]
 		keyContinue[len(keyContinue)-1] = childContinue
 
 		// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
-		tr.newNodeCopy(keyContinue, last.PathFragment[splitChildIndex+1:], last)
+		tr.newNodeCopy(keyContinue, lastNode.PathFragment[splitChildIndex+1:], lastNode)
 		// clear the old one and adjust path fragment. Continue with 1 child, the new node
-		last.ChildCommitments = make(map[uint8]VCommitment)
-		last.ModifiedChildren = make(map[uint8]struct{})
-		last.PathFragment = lastCommonPrefix
-		last.ModifiedChildren[childContinue] = struct{}{}
-		last.Terminal = nil
-		last.NewTerminal = nil
+		lastNode.ChildCommitments = make(map[uint8]VCommitment)
+		lastNode.ModifiedChildren = make(map[uint8]struct{})
+		lastNode.PathFragment = lastCommonPrefix
+		lastNode.ModifiedChildren[childContinue] = struct{}{}
+		lastNode.Terminal = nil
+		lastNode.NewTerminal = nil
 		// insert terminal
 		if childPosition == len(key) {
 			// no need for the new node
-			last.NewTerminal = c
+			lastNode.NewTerminal = c
 		} else {
 			// create a new node
 			keyFork := key[:len(keyContinue)]
 			childForkIndex := keyFork[len(keyFork)-1]
 			assert(int(childForkIndex) != splitChildIndex, "childForkIndex != splitChildIndex")
 			tr.newTerminalNode(keyFork, key[len(keyFork):], c)
-			last.ModifiedChildren[childForkIndex] = struct{}{}
+			lastNode.ModifiedChildren[childForkIndex] = struct{}{}
 		}
 
 	default:
 		panic("inconsistency: unknown path ending code")
 	}
-	// update commitment path back to root
-	for i := len(proof) - 2; i >= 0; i-- {
-		k := proof[i+1].Key
-		childIndex := k[len(k)-1]
-		proof[i].Node.ModifiedChildren[childIndex] = struct{}{}
-	}
-}
-
-func (tr *Trie) HasCommitment(key kv.Key) bool {
-	n, ok := tr.GetNode(key)
-	if !ok {
-		return false
-	}
-	if n.NewTerminal != nil {
-		return true
-	}
-	if n.Terminal == nil {
-		return false
-	}
-	for childIndex := range n.ModifiedChildren {
-		if tr.HasCommitment(n.ChildKey(key, childIndex)) {
-			return true
-		}
-	}
-	if len(n.ChildCommitments) > 0 {
-		return true
-	}
-	return false
-}
-
-// OneChildCommitted checks condition of the node to be merged
-func (tr *Trie) OneChildCommitted(key kv.Key) (byte, bool) {
-	n, ok := tr.GetNode(key)
-	if !ok {
-		return 0, false
-	}
-	if n.NewTerminal != nil || n.Terminal == nil {
-		return 0, false
-	}
-	coms := make(map[byte]struct{})
-	for c := range n.ChildCommitments {
-		coms[c] = struct{}{}
-	}
-	for c := range n.ModifiedChildren {
-		if tr.HasCommitment(n.ChildKey(key, c)) {
-			coms[c] = struct{}{}
-		}
-	}
-	if len(coms) != 1 {
-		return 0, false
-	}
-	var c byte
-	for tmp := range coms {
-		c = tmp
-		break
-	}
-	return c, true
+	tr.markModifiedCommitmentsBackToRoot(proof)
 }
 
 // Delete deletes Key/value from the Trie
 func (tr *Trie) Delete(key []byte) {
-	proof, _, _, ending := tr.proofPath(key)
-	if len(proof) == 0 {
+	proof, _, ending := tr.proofPath(key)
+	if len(proof) == 0 || ending != EndingTerminal {
 		return
 	}
-	if ending != EndingTerminal {
+	lastKey := proof[len(proof)-1]
+	lastNode, reorg, mergeChildIndex := tr.removeTerminal(kv.Key(lastKey))
+	if lastNode == nil {
 		return
 	}
-	last := proof[len(proof)-1]
-	last.Node.NewTerminal = nil
-	// if it is empty, mark it as deleted
-	if !tr.HasCommitment(kv.Key(last.Key)) {
-		tr.deleted[kv.Key(key)] = struct{}{}
-
-		for i := len(proof) - 2; i >= 0; i-- {
-			k := proof[i+1].Key
-			childIndex := k[len(k)-1]
-			proof[i].Node.ModifiedChildren[childIndex] = struct{}{}
+	switch reorg {
+	case nodeReorgNOP:
+		// do nothing
+	case nodeReorgRemove:
+		// last node does not commit to anything, should be removed
+		tr.markDeleted(kv.Key(lastKey))
+	case nodeReorgMerge:
+		// last node commits to exactly one child, must be merged at mergeChildIndex
+		nextKey := lastNode.ChildKey(kv.Key(lastKey), mergeChildIndex)
+		nextNode, ok := tr.GetNode(nextKey)
+		if !ok {
+			panic(xerrors.Errorf("Delete: can't find child node key '%s'", kv.Key(nextKey)))
 		}
-		return
-	}
-	// if only one committed child left
-	childIndex, ok := tr.OneChildCommitted(kv.Key(last.Key))
-	if !ok {
-		return
-	}
-	// TODO merge nodes
+		newPathFragment := make([]byte, 0, len(lastNode.PathFragment)+len(nextNode.PathFragment))
+		newPathFragment = append(newPathFragment, lastNode.PathFragment...)
+		newPathFragment = append(newPathFragment, nextNode.PathFragment...)
 
+		tr.newNodeCopy(lastKey, newPathFragment, nextNode)
+		tr.markDeleted(nextKey)
+	}
+	tr.markModifiedCommitmentsBackToRoot(proof)
+}
+
+func (tr *Trie) markModifiedCommitmentsBackToRoot(proof [][]byte) {
+	for i := len(proof) - 1; i > 0; i-- {
+		k := proof[i]
+		kPrev := proof[i-1]
+		childIndex := k[len(k)-1]
+		n, ok := tr.GetNode(kv.Key(kPrev))
+		if !ok {
+			panic(xerrors.Errorf("markModifiedCommitmentsBackToRoot: can't find node key '%s'", kv.Key(kPrev)))
+		}
+		n.ModifiedChildren[childIndex] = struct{}{}
+	}
+}
+
+// hasCommitment returns if trie will contain commitment to the key in the (future) committed state
+func (tr *Trie) hasCommitment(key kv.Key) bool {
+	n, ok := tr.GetNode(key)
+	if !ok {
+		return false
+	}
+	if n.CommitsToTerminal() {
+		// commits to terminal
+		return true
+	}
+	for childIndex := range n.ModifiedChildren {
+		if tr.hasCommitment(n.ChildKey(key, childIndex)) {
+			// modified child commits to something
+			return true
+		}
+	}
+	// new commitments do not come from children
+	if len(n.ChildCommitments) > 0 {
+		// existing children commit
+		return true
+	}
+	// node does not commit to anything
+	return false
+}
+
+type reorgStatus int
+
+const (
+	nodeReorgRemove = reorgStatus(iota)
+	nodeReorgMerge
+	nodeReorgNOP
+)
+
+func (tr *Trie) removeTerminal(key kv.Key) (*Node, reorgStatus, byte) {
+	n, ok := tr.GetNode(key)
+	if !ok {
+		return nil, nodeReorgNOP, 0
+	}
+	n.NewTerminal = nil
+	if n.CommitsToTerminal() {
+		return n, nodeReorgNOP, 0
+	}
+	toCheck := make(map[byte]struct{})
+	for c := range n.ChildCommitments {
+		toCheck[c] = struct{}{}
+	}
+	for c := range n.ModifiedChildren {
+		if tr.hasCommitment(n.ChildKey(key, c)) {
+			toCheck[c] = struct{}{}
+		} else {
+			delete(toCheck, c)
+		}
+	}
+	switch len(toCheck) {
+	case 0:
+		return n, nodeReorgRemove, 0
+	case 1:
+		for ret := range toCheck {
+			return n, nodeReorgMerge, ret
+		}
+	}
+	return n, nodeReorgNOP, 0
 }
 
 func (tr *Trie) UpdateStr(key interface{}, value interface{}) {
@@ -370,27 +412,29 @@ func (tr *Trie) DeleteStr(key interface{}) {
 	tr.UpdateStr(key, nil)
 }
 
-// returns key of the last node and common prefix with the fragment
-func (tr *Trie) proofPath(path []byte) ([]ProofGenericElement, []byte, []byte, ProofEndingCode) {
+// returns
+// - path of keys which leads to 'path'
+// - common prefix between the last key and the fragment
+func (tr *Trie) proofPath(path []byte) ([][]byte, []byte, ProofEndingCode) {
 	node, ok := tr.GetNode("")
 	if !ok {
-		return nil, nil, nil, 0
+		return nil, nil, 0
 	}
 
-	proof := make([]ProofGenericElement, 0)
+	proof := make([][]byte, 0)
 	var key []byte
 
 	for {
 		// it means we continue the branch of commitment
-		proof = append(proof, ProofGenericElement{Key: key, Node: node})
+		proof = append(proof, key)
 		assert(len(path) <= len(key), "pathPosition<=len(path)")
 		if bytes.Equal(path[len(key):], node.PathFragment) {
-			return proof, nil, nil, EndingTerminal
+			return proof, nil, EndingTerminal
 		}
 		prefix := commonPrefix(path[len(key):], node.PathFragment)
 
 		if len(prefix) < len(node.PathFragment) {
-			return proof, key, prefix, EndingSplit
+			return proof, prefix, EndingSplit
 		}
 		assert(len(prefix) == len(node.PathFragment), "len(prefix)==len(node.PathFragment)")
 		childIndexPosition := len(key) + len(prefix)
@@ -401,7 +445,7 @@ func (tr *Trie) proofPath(path []byte) ([]ProofGenericElement, []byte, []byte, P
 		node, ok = tr.GetNode(childKey)
 		if !ok {
 			// if there are no commitment to the child at the position, it means trie must be extended at this point
-			return proof, key, prefix, EndingExtend
+			return proof, prefix, EndingExtend
 		}
 		key = []byte(childKey)
 	}
@@ -419,10 +463,16 @@ func (tr *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
 func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 	ret := make([]kv.Key, 0)
 	store.MustIterate("", func(k kv.Key, v []byte) bool {
-		p, _, _, ending := tr.proofPath([]byte(k))
+		p, _, ending := tr.proofPath([]byte(k))
 		if ending == EndingTerminal {
-			if !EqualCommitments(tr.model.CommitToData(v), p[len(p)-1].Node.Terminal) {
+			lastKey := p[len(p)-1]
+			n, ok := tr.GetNode(kv.Key(lastKey))
+			if !ok {
 				ret = append(ret, k)
+			} else {
+				if !EqualCommitments(tr.model.CommitToData(v), n.Terminal) {
+					ret = append(ret, k)
+				}
 			}
 		} else {
 			ret = append(ret, k)

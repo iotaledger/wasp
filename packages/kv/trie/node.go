@@ -79,23 +79,15 @@ func (n *Node) Clone() *Node {
 	return ret
 }
 
-func (n *Node) IsTerminalModified() bool {
-	return n.Terminal != n.NewTerminal
-}
-
-func (n *Node) IsChildModified(childIndex byte) bool {
-	_, ok := n.ModifiedChildren[childIndex]
-	return ok
-}
-
-func (n *Node) IsModified() bool {
-	if n.IsTerminalModified() {
+func (n *Node) CommitsToTerminal() bool {
+	if n.NewTerminal != nil {
 		return true
 	}
-	if len(n.ModifiedChildren) > 0 {
-		return true
+	// n.NewTerminal == nil
+	if n.Terminal == nil {
+		return false
 	}
-	return false
+	return true
 }
 
 func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {

@@ -2,6 +2,7 @@ package trie_merkle
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -42,10 +43,14 @@ func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
 	var isLast bool
 	var childIndex int
 
-	for i, eg := range proofGeneric.Path {
+	for i, k := range proofGeneric.Path {
+		node, ok := tr.GetNode(kv.Key(k))
+		if !ok {
+			panic(xerrors.Errorf("can't find node key '%d'", kv.Key(k)))
+		}
 		isLast = i == len(proofGeneric.Path)-1
 		if !isLast {
-			elemKeyPosition += len(eg.Node.PathFragment)
+			elemKeyPosition += len(node.PathFragment)
 			childIndex = int(key[elemKeyPosition])
 			elemKeyPosition++
 		} else {
@@ -59,15 +64,15 @@ func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
 			}
 		}
 		em := &ProofElement{
-			PathFragment: eg.Node.PathFragment,
+			PathFragment: node.PathFragment,
 			Children:     make(map[byte]*vectorCommitment),
 			Terminal:     nil,
 			ChildIndex:   childIndex,
 		}
-		if eg.Node.Terminal != nil {
-			em.Terminal = eg.Node.Terminal.(*terminalCommitment)
+		if node.Terminal != nil {
+			em.Terminal = node.Terminal.(*terminalCommitment)
 		}
-		for k, v := range eg.Node.ChildCommitments {
+		for k, v := range node.ChildCommitments {
 			if int(k) == childIndex {
 				// skipping the commitment which must come from the next child
 				continue
