@@ -16,6 +16,7 @@ type WasmProcessor struct {
 	contexts         map[int32]*WasmContext
 	currentContextID int32
 	funcTable        *WasmFuncTable
+	gasFactorX       uint64
 	instanceLock     sync.Mutex
 	log              *logger.Logger
 	mainProcessor    *WasmProcessor
@@ -32,10 +33,11 @@ var GoWasmVM func() WasmVM
 // GetProcessor creates a new Wasm VM processor.
 func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error) {
 	proc := &WasmProcessor{
-		contexts:  make(map[int32]*WasmContext),
-		funcTable: NewWasmFuncTable(),
-		log:       log,
-		wasmVM:    NewWasmTimeVM,
+		contexts:   make(map[int32]*WasmContext),
+		funcTable:  NewWasmFuncTable(),
+		gasFactorX: 1,
+		log:        log,
+		wasmVM:     NewWasmTimeVM,
 	}
 
 	// By default, we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
@@ -127,6 +129,13 @@ func (proc *WasmProcessor) KillContext(id int32) {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
 	delete(proc.contexts, id)
+}
+
+func (proc *WasmProcessor) gasFactor() uint64 {
+	if proc.mainProcessor != nil {
+		return proc.mainProcessor.gasFactorX
+	}
+	return proc.gasFactorX
 }
 
 func (proc *WasmProcessor) wasmContext(function string) *WasmContext {

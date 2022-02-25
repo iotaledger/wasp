@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -45,7 +44,9 @@ func EVMStateSubrealm(state kv.KVStore) kv.KVStore {
 }
 
 func InitializeManagement(ctx iscp.Sandbox) {
-	ctx.State().Set(keyGasRatio, evm.DefaultGasRatio.Bytes())
+	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evm.DefaultGasRatio)
+	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
+
 	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 }
 
@@ -139,7 +140,7 @@ func getGasRatio(ctx iscp.SandboxView) dict.Dict {
 	return Result(ctx.State().MustGet(keyGasRatio))
 }
 
-func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockTime uint32, gasBudget uint64) (uint64, error)) dict.Dict {
+func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockTime uint32, gasBudget uint64) (uint64, error), ignoreEVMGasBudget bool) dict.Dict {
 	a := assert.NewAssert(ctx.Log())
 
 	tx := &types.Transaction{}
@@ -150,25 +151,21 @@ func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockT
 
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evm.DefaultGasRatio)
 
-	// ignore the evm gas budget set in the evm tx, use the remaining ISC gas budget instead
-	gasBudget := ISCGasBudgetToEVM(ctx.Gas().Budget(), gasRatio)
+	gasBudget := evm.ISCGasBudgetToEVM(ctx.Gas().Budget(), gasRatio)
+	if !ignoreEVMGasBudget && gasBudget < tx.Gas() {
+		panic(evm.ErrNotEnoughGasBudget.Create(
+			ctx.Gas().Budget(),
+			gasBudget,
+			tx.Gas(),
+		))
+	}
 
 	gasUsed, err := apply(tx, blockTime, gasBudget)
 
 	// burn gas even on error
-	ctx.Gas().Burn(gas.BurnCodeEVM1P, EVMGasToISC(gasUsed, gasRatio))
+	ctx.Gas().Burn(gas.BurnCodeEVM1P, evm.EVMGasToISC(gasUsed, gasRatio))
 
 	ctx.RequireNoError(err)
 
 	return nil
-}
-
-func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio util.Ratio32) uint64 {
-	// EVM gas budget = floor(ISC gas budget * B / A)
-	return gasRatio.YFloor64(iscGasBudget)
-}
-
-func EVMGasToISC(evmGas uint64, gasRatio util.Ratio32) uint64 {
-	// ISC gas burned = ceil(EVM gas * A / B)
-	return gasRatio.XCeil64(evmGas)
 }

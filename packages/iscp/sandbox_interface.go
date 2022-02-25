@@ -50,9 +50,9 @@ type Helpers interface {
 }
 
 type Authorize interface {
-	RequireCaller(agentID *AgentID, str ...string)
-	RequireCallerAnyOf(agentID []*AgentID, str ...string)
-	RequireCallerIsChainOwner(str ...string)
+	RequireCaller(agentID *AgentID)
+	RequireCallerAnyOf(agentID []*AgentID)
+	RequireCallerIsChainOwner()
 }
 
 type Balance interface {
@@ -85,6 +85,8 @@ type Sandbox interface {
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
 	Event(msg string)
+	// RegisterError registers an error
+	RegisterError(messageFormat string) *VMErrorTemplate
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take

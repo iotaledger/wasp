@@ -34,7 +34,7 @@ func getChainInfo(ctx iscp.SandboxView) dict.Dict {
 // - ParamMaxEventsPerRequestUint16 - uint16 maximum number of events per request.
 // Does not set gas fee policy!
 func setChainInfo(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("governance.setChainInfo: not authorized")
+	ctx.RequireCallerIsChainOwner()
 
 	// max blob size
 	maxBlobSize := ctx.Params().MustGetUint32(governance.ParamMaxBlobSizeUint32, 0)

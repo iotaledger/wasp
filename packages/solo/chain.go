@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -337,6 +338,21 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	return blockInfo
 }
 
+func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
+	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
+		errors.ParamErrorCode, code.Bytes(),
+	)
+
+	if err != nil {
+		return "", err
+	}
+	resultDecoder := kvdecoder.New(ret, ch.Log())
+	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
+
+	require.NoError(ch.Env.T, err)
+	return messageFormat, nil
+}
+
 // GetBlockInfo return BlockInfo for the particular block index in the chain
 func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetBlockInfo.Name,
@@ -374,6 +390,7 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 		return nil, false
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
+
 	require.NoError(ch.Env.T, err)
 	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)

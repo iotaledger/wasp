@@ -274,41 +274,38 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
+
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) == 0 {
-		s.Panicf("transfer is required for post")
+	allow := s.cvt.IscpAssets(scAssets)
+	assets := allow
+	// Force a minimum transfer of 1000 iotas for dust and some gas
+	// excess can always be reclaimed from the chain account by the user
+	// This also removes the silly requirement to transfer 1 iota
+	if assets.Iotas < 1000 {
+		assets = assets.Clone()
+		assets.Iotas = 1000
 	}
-	assets := s.cvt.IscpAssets(scAssets)
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
-	metadata := &iscp.SendMetadata{
-		TargetContract: contract,
-		EntryPoint:     function,
-		Params:         params,
-		Allowance:      assets,
-		GasBudget:      1_000_000,
+	sendReq := iscp.RequestParameters{
+		AdjustToMinimumDustDeposit: true,
+		TargetAddress:              chainID.AsAddress(),
+		Assets:                     assets,
+		Metadata: &iscp.SendMetadata{
+			TargetContract: contract,
+			EntryPoint:     function,
+			Params:         params,
+			Allowance:      allow,
+			GasBudget:      1_000_000,
+		},
 	}
-	if req.Delay == 0 {
-		s.ctx.Send(iscp.RequestParameters{
-			AdjustToMinimumDustDeposit: true,
-			TargetAddress:              s.ctx.Caller().Address(),
-			Assets:                     assets,
-			Metadata:                   metadata,
-		})
-		return nil
+	if req.Delay != 0 {
+		timeLock := time.Unix(0, s.ctx.Timestamp())
+		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
+		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
 	}
 
-	timeLock := time.Unix(0, s.ctx.Timestamp())
-	timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
-	s.ctx.Send(iscp.RequestParameters{
-		AdjustToMinimumDustDeposit: true,
-		TargetAddress:              s.ctx.Caller().Address(),
-		Assets:                     assets,
-		Metadata:                   metadata,
-		Options: iscp.SendOptions{
-			Timelock: &iscp.TimeData{Time: timeLock},
-		},
-	})
+	s.ctx.Send(sendReq)
 	return nil
 }
 

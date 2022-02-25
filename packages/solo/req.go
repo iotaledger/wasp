@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
@@ -212,7 +213,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			},
 			Options: iscp.SendOptions{},
 		}},
-		RentStructure:                ch.Env.utxoDB.RentStructure(),
+		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
 	if err != nil {
@@ -302,10 +303,13 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+
 	if err != nil {
 		return tx, res, err
 	}
-	return tx, res, receipt.Error()
+
+	return tx, res, receipt.Error.AsGoError()
+
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -376,11 +380,14 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
+
 	if err != nil {
 		return 0, 0, err
 	}
+
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -396,7 +403,16 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
+}
+
+func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
+	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+		return ch.CallView(contractName, funcName, params)
+	})
+	require.NoError(ch.Env.T, err)
+	return resolved
 }
 
 // CallView calls the view entry point of the smart contract.

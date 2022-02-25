@@ -20,6 +20,9 @@ var (
 )
 
 func startAuction(t *testing.T) *wasmsolo.SoloContext {
+	// TODO minting is not implemented
+	t.SkipNow()
+
 	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
 
 	// set up auctioneer account and mint some tokens to auction off
@@ -125,7 +128,7 @@ func TestFaOneBid(t *testing.T) {
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
 	placeBid.Params.Color().SetValue(tokenColor)
-	placeBid.Func.TransferIotas(500).Post()
+	placeBid.Func.TransferIotas(5000).Post()
 	require.NoError(t, ctx.Err)
 
 	// wait for finalize_auction
@@ -138,6 +141,6 @@ func TestFaOneBid(t *testing.T) {
 
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 1, getInfo.Results.Bidders().Value())
-	require.EqualValues(t, 500, getInfo.Results.HighestBid().Value())
+	require.EqualValues(t, 5000, getInfo.Results.HighestBid().Value())
 	require.Equal(t, bidder.ScAddress().AsAgentID(), getInfo.Results.HighestBidder().Value())
 }

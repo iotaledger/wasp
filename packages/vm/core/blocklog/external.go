@@ -16,6 +16,7 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 		return []iscp.RequestID{}, nil
 	}
 	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Contract.Hname().Bytes()))
+
 	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
 	if err != nil {
 		return nil, err

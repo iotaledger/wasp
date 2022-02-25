@@ -30,6 +30,10 @@ func (aowiT *AliasOutputWithID) ID() *iotago.UTXOInput {
 	return aowiT.id
 }
 
+func (aowiT *AliasOutputWithID) OutputID() iotago.OutputID {
+	return aowiT.id.ID()
+}
+
 func (aowiT *AliasOutputWithID) GetStateIndex() uint32 {
 	return aowiT.output.StateIndex
 }

@@ -1,11 +1,14 @@
 package runvm
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -18,7 +21,15 @@ func (r VMRunner) Run(task *vm.VMTask) {
 		coreutil.ErrorStateInvalidated,
 	)
 	if err != nil {
-		task.VMError = err
+		switch e := err.(type) {
+		case *iscp.VMError:
+			task.VMError = e
+		case error:
+			// May require a different error type here?
+			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
+		default:
+			task.VMError = coreerrors.ErrUntypedError.Create(fmt.Sprintf("%v", e))
+		}
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
 }

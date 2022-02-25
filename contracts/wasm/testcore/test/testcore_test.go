@@ -72,7 +72,7 @@ func run2(t *testing.T, test func(*testing.T, bool)) {
 		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
-		*wasmsolo.RsWasm = true
+		*wasmsolo.RsWasm = false
 	}
 
 	exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
@@ -141,7 +141,7 @@ func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.Sol
 	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctxRoot.Err)
 }
 
@@ -150,13 +150,13 @@ func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
 	f := coregovernance.ScFuncs.SetContractFee(ctxGov)
 	f.Params.Hname().SetValue(testcore.HScName)
 	f.Params.OwnerFee().SetValue(amount)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctxGov.Err)
 }
 
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
 	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctxAcc.Err)
 }

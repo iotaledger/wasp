@@ -136,10 +136,10 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
     // Create an ScBalances map proxy to the account balances for this
     // smart contract. Note that ScBalances wraps an ScImmutableMap of
     // token color/amount combinations in a simpler to use interface.
-    let balances: wasmlib.ScBalances = ctx.balances();
+    let allowance: wasmlib.ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens from the account balance.
-    let amount: u64 = balances.balance(wasmlib.IOTA);
+    let amount: u64 = allowance.balance(wasmlib.IOTA);
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
     let totalFactor: u64 = f.state.totalFactor().value();
@@ -167,7 +167,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
 
         // Is there anything to disperse to this member?
         if (share > 0) {
-            // Yes, so let's set up an ScTransfers map proxy that transfers the
+             // Yes, so let's set up an ScTransfers map proxy that transfers the
             // calculated amount of iotas. Note that ScTransfers wraps an
             // ScMutableMap of token color/amount combinations in a simpler to use
             // interface. The constructor we use here creates and initializes a
@@ -179,7 +179,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
             // member address. The transferToAddress() method receives the address
             // value and the proxy to the new transfers map on the host, and will
             // call the corresponding host sandbox function with these values.
-            ctx.send(address, transfers);
+            ctx.transferAllowed(address.asAgentID(), transfers, true);
         }
     }
 }

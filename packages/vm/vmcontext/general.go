@@ -7,8 +7,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -128,7 +130,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 		// check if target exists, if it is not forced
 		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
 		if !forceOpenAccount && !vmctx.targetAccountExists(target) {
-			panic(ErrTransferTargetAccountDoesNotExists)
+			panic(vm.ErrTransferTargetAccountDoesNotExists)
 		}
 	}
 
@@ -188,4 +190,18 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	par.Set(root.ParamName, codec.EncodeString(name))
 	par.Set(root.ParamDescription, codec.EncodeString(description))
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
+}
+
+func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
+	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
+
+	params := dict.New()
+	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
+
+	result := vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	errorCode := codec.MustDecodeVMErrorCode(result.MustGet(errors.ParamErrorCode))
+
+	vmctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
+
+	return iscp.NewVMErrorTemplate(errorCode, messageFormat)
 }

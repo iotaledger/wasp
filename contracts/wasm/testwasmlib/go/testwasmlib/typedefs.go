@@ -9,6 +9,30 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
+type MapInt32ToImmutableLocation struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToImmutableLocation) GetLocation(key int32) ImmutableLocation {
+	return ImmutableLocation{proxy: m.proxy.Key(wasmtypes.Int32ToBytes(key))}
+}
+
+type ImmutableLongitude = MapInt32ToImmutableLocation
+
+type MapInt32ToMutableLocation struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToMutableLocation) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapInt32ToMutableLocation) GetLocation(key int32) MutableLocation {
+	return MutableLocation{proxy: m.proxy.Key(wasmtypes.Int32ToBytes(key))}
+}
+
+type MutableLongitude = MapInt32ToMutableLocation
+
 type ArrayOfImmutableString struct {
 	proxy wasmtypes.Proxy
 }

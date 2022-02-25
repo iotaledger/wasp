@@ -71,9 +71,11 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
 func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
+
 	if !found {
 		return nil
 	}
+
 	return dict.Dict{
 		ParamRequestRecord: recBin,
 		ParamBlockIndex:    codec.EncodeUint32(blockIndex),

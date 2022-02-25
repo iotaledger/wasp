@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
@@ -151,7 +151,11 @@ func TestBigBlob(t *testing.T) {
 	blobBin := make([]byte, bigblobSize)
 
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
-	testmisc.RequireErrorToBe(t, err, "blob too big")
+
+	unresolvedError := err.(*iscp.UnresolvedVMError)
+	resolvedError := ch.ResolveVMError(unresolvedError)
+
+	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")
 
 	ch.MustDepositIotasToL2(100_000, nil)
 	req := solo.NewCallParams(

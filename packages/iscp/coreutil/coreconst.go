@@ -12,6 +12,7 @@ const (
 	CoreContractBlob            = "blob"
 	CoreContractEventlog        = "eventlog"
 	CoreContractBlocklog        = "blocklog"
+	CoreContractErrors          = "errors"
 	CoreContractGovernance      = "governance"
 	CoreEPRotateStateController = "rotateStateController"
 )
@@ -23,6 +24,7 @@ var (
 	CoreContractBlobHname            = iscp.Hn(CoreContractBlob)
 	CoreContractEventlogHname        = iscp.Hn(CoreContractEventlog)
 	CoreContractBlocklogHname        = iscp.Hn(CoreContractBlocklog)
+	CoreContractErrorsHname          = iscp.Hn(CoreContractErrors)
 	CoreContractGovernanceHname      = iscp.Hn(CoreContractGovernance)
 	CoreEPRotateStateControllerHname = iscp.Hn(CoreEPRotateStateController)
 
@@ -34,6 +36,7 @@ var (
 		CoreContractEventlog:   CoreContractEventlogHname,
 		CoreContractBlocklog:   CoreContractBlocklogHname,
 		CoreContractGovernance: CoreContractGovernanceHname,
+		CoreContractErrors:     CoreContractErrorsHname,
 	}
 )
 

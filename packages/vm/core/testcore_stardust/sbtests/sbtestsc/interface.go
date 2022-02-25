@@ -50,6 +50,7 @@ var Processor = Contract.Processor(initialize,
 	FuncSplitFunds.WithHandler(testSplitFunds),
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
+	FuncSendLargeRequest.WithHandler(sendLargeRequest),
 	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
@@ -101,6 +102,7 @@ var (
 	FuncSplitFunds             = coreutil.Func("splitFunds")
 	FuncSplitFundsNativeTokens = coreutil.Func("splitFundsNativeTokens")
 	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
+	FuncSendLargeRequest       = coreutil.Func("sendLargeRequest")
 	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
 	FuncInfiniteLoop           = coreutil.Func("infiniteLoop")
 	FuncInfiniteLoopView       = coreutil.ViewFunc("infiniteLoopView")
@@ -128,6 +130,7 @@ const (
 	ParamHnameContract     = "hnameContract"
 	ParamHnameEP           = "hnameEP"
 	ParamVarName           = "varName"
+	ParamSize              = "size"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="

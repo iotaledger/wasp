@@ -59,6 +59,8 @@ func Encode(v interface{}) []byte {
 		return EncodeRequestID(*vt)
 	case iscp.Hname:
 		return vt.Bytes()
+	case iscp.VMErrorCode:
+		return vt.Bytes()
 	case time.Time:
 		return EncodeTime(vt)
 	case util.Ratio32:

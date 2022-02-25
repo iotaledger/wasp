@@ -15,10 +15,28 @@ export class MapStringToImmutableStringArray extends wasmtypes.ScProxy {
 	}
 }
 
+export class MapInt32ToImmutableLongitude extends wasmtypes.ScProxy {
+
+	getLongitude(key: i32): sc.ImmutableLongitude {
+		return new sc.ImmutableLongitude(this.proxy.key(wasmtypes.int32ToBytes(key)));
+	}
+}
+
 export class MapStringToImmutableStringMap extends wasmtypes.ScProxy {
 
 	getStringMap(key: string): sc.ImmutableStringMap {
 		return new sc.ImmutableStringMap(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
+}
+
+export class ArrayOfImmutableStringArray extends wasmtypes.ScProxy {
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getStringArray(index: u32): sc.ImmutableStringArray {
+		return new sc.ImmutableStringArray(this.proxy.index(index));
 	}
 }
 
@@ -27,12 +45,20 @@ export class ImmutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.MapStringToImmutableStringArray(this.proxy.root(sc.StateArrays));
 	}
 
+	latLong(): sc.MapInt32ToImmutableLongitude {
+		return new sc.MapInt32ToImmutableLongitude(this.proxy.root(sc.StateLatLong));
+	}
+
 	maps(): sc.MapStringToImmutableStringMap {
 		return new sc.MapStringToImmutableStringMap(this.proxy.root(sc.StateMaps));
 	}
 
 	random(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateRandom));
+	}
+
+	strings2D(): sc.ArrayOfImmutableStringArray {
+		return new sc.ArrayOfImmutableStringArray(this.proxy.root(sc.StateStrings2D));
 	}
 }
 
@@ -47,6 +73,17 @@ export class MapStringToMutableStringArray extends wasmtypes.ScProxy {
 	}
 }
 
+export class MapInt32ToMutableLongitude extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
+	}
+
+	getLongitude(key: i32): sc.MutableLongitude {
+		return new sc.MutableLongitude(this.proxy.key(wasmtypes.int32ToBytes(key)));
+	}
+}
+
 export class MapStringToMutableStringMap extends wasmtypes.ScProxy {
 
 	clear(): void {
@@ -55,6 +92,25 @@ export class MapStringToMutableStringMap extends wasmtypes.ScProxy {
 
 	getStringMap(key: string): sc.MutableStringMap {
 		return new sc.MutableStringMap(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
+}
+
+export class ArrayOfMutableStringArray extends wasmtypes.ScProxy {
+
+	appendStringArray(): sc.MutableStringArray {
+		return new sc.MutableStringArray(this.proxy.append());
+	}
+
+	clear(): void {
+		this.proxy.clearArray();
+	}
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getStringArray(index: u32): sc.MutableStringArray {
+		return new sc.MutableStringArray(this.proxy.index(index));
 	}
 }
 
@@ -67,11 +123,19 @@ export class MutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.MapStringToMutableStringArray(this.proxy.root(sc.StateArrays));
 	}
 
+	latLong(): sc.MapInt32ToMutableLongitude {
+		return new sc.MapInt32ToMutableLongitude(this.proxy.root(sc.StateLatLong));
+	}
+
 	maps(): sc.MapStringToMutableStringMap {
 		return new sc.MapStringToMutableStringMap(this.proxy.root(sc.StateMaps));
 	}
 
 	random(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateRandom));
+	}
+
+	strings2D(): sc.ArrayOfMutableStringArray {
+		return new sc.ArrayOfMutableStringArray(this.proxy.root(sc.StateStrings2D));
 	}
 }
