@@ -5,50 +5,59 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncArrayAppend,
-		FuncArrayClear,
-		FuncArraySet,
-		FuncMapClear,
-		FuncMapSet,
-		FuncParamTypes,
-		FuncRandom,
-		FuncTakeAllowance,
-		FuncTakeBalance,
-		FuncTriggerEvent,
-		ViewArrayLength,
-		ViewArrayValue,
-		ViewBlockRecord,
-		ViewBlockRecords,
-		ViewGetRandom,
-		ViewIotaBalance,
-		ViewMapValue,
+    	FuncArrayAppend,
+    	FuncArrayArrayAppend,
+    	FuncArrayArrayClear,
+    	FuncArrayClear,
+    	FuncArraySet,
+    	FuncMapClear,
+    	FuncMapSet,
+    	FuncParamTypes,
+    	FuncRandom,
+    	FuncTakeAllowance,
+    	FuncTakeBalance,
+    	FuncTriggerEvent,
+    	ViewArrayArrayLength,
+    	ViewArrayArrayValue,
+    	ViewArrayLength,
+    	ViewArrayValue,
+    	ViewBlockRecord,
+    	ViewBlockRecords,
+    	ViewGetRandom,
+    	ViewIotaBalance,
+    	ViewMapValue,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcArrayAppendThunk,
-		funcArrayClearThunk,
-		funcArraySetThunk,
-		funcMapClearThunk,
-		funcMapSetThunk,
-		funcParamTypesThunk,
-		funcRandomThunk,
-		funcTakeAllowanceThunk,
-		funcTakeBalanceThunk,
-		funcTriggerEventThunk,
+    	funcArrayAppendThunk,
+    	funcArrayArrayAppendThunk,
+    	funcArrayArrayClearThunk,
+    	funcArrayClearThunk,
+    	funcArraySetThunk,
+    	funcMapClearThunk,
+    	funcMapSetThunk,
+    	funcParamTypesThunk,
+    	funcRandomThunk,
+    	funcTakeAllowanceThunk,
+    	funcTakeBalanceThunk,
+    	funcTriggerEventThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewArrayLengthThunk,
-		viewArrayValueThunk,
-		viewBlockRecordThunk,
-		viewBlockRecordsThunk,
-		viewGetRandomThunk,
-		viewIotaBalanceThunk,
-		viewMapValueThunk,
+    	viewArrayArrayLengthThunk,
+    	viewArrayArrayValueThunk,
+    	viewArrayLengthThunk,
+    	viewArrayValueThunk,
+    	viewBlockRecordThunk,
+    	viewBlockRecordsThunk,
+    	viewGetRandomThunk,
+    	viewIotaBalanceThunk,
+    	viewMapValueThunk,
 	},
 }
 
@@ -62,9 +71,9 @@ func OnLoad(index int32) {
 }
 
 type ArrayAppendContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayAppendParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayAppendParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayAppendThunk(ctx wasmlib.ScFuncContext) {
@@ -83,10 +92,47 @@ func funcArrayAppendThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcArrayAppend ok")
 }
 
+type ArrayArrayAppendContext struct {
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayArrayAppendParams
+	State   MutableTestWasmLibState
+}
+
+func funcArrayArrayAppendThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcArrayArrayAppend")
+	f := &ArrayArrayAppendContext{
+		Params: ImmutableArrayArrayAppendParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
+	funcArrayArrayAppend(ctx, f)
+	ctx.Log("testwasmlib.funcArrayArrayAppend ok")
+}
+
+type ArrayArrayClearContext struct {
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
+}
+
+func funcArrayArrayClearThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcArrayArrayClear")
+	f := &ArrayArrayClearContext{
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcArrayArrayClear(ctx, f)
+	ctx.Log("testwasmlib.funcArrayArrayClear ok")
+}
+
 type ArrayClearContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayClearParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayClearParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayClearThunk(ctx wasmlib.ScFuncContext) {
@@ -105,9 +151,9 @@ func funcArrayClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArraySetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArraySetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArraySetParams
+	State   MutableTestWasmLibState
 }
 
 func funcArraySetThunk(ctx wasmlib.ScFuncContext) {
@@ -128,9 +174,9 @@ func funcArraySetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type MapClearContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableMapClearParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableMapClearParams
+	State   MutableTestWasmLibState
 }
 
 func funcMapClearThunk(ctx wasmlib.ScFuncContext) {
@@ -149,9 +195,9 @@ func funcMapClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type MapSetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableMapSetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableMapSetParams
+	State   MutableTestWasmLibState
 }
 
 func funcMapSetThunk(ctx wasmlib.ScFuncContext) {
@@ -172,9 +218,9 @@ func funcMapSetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ParamTypesContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableParamTypesParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableParamTypesParams
+	State   MutableTestWasmLibState
 }
 
 func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
@@ -192,8 +238,8 @@ func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type RandomContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcRandomThunk(ctx wasmlib.ScFuncContext) {
@@ -208,8 +254,8 @@ func funcRandomThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TakeAllowanceContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcTakeAllowanceThunk(ctx wasmlib.ScFuncContext) {
@@ -246,9 +292,9 @@ func funcTakeBalanceThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TriggerEventContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableTriggerEventParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableTriggerEventParams
+	State   MutableTestWasmLibState
 }
 
 func funcTriggerEventThunk(ctx wasmlib.ScFuncContext) {
@@ -265,6 +311,54 @@ func funcTriggerEventThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	funcTriggerEvent(ctx, f)
 	ctx.Log("testwasmlib.funcTriggerEvent ok")
+}
+
+type ArrayArrayLengthContext struct {
+	Results MutableArrayArrayLengthResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewArrayArrayLengthThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewArrayArrayLength")
+	results := wasmlib.NewScDict()
+	f := &ArrayArrayLengthContext{
+		Results: MutableArrayArrayLengthResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	viewArrayArrayLength(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewArrayArrayLength ok")
+}
+
+type ArrayArrayValueContext struct {
+	Params  ImmutableArrayArrayValueParams
+	Results MutableArrayArrayValueResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewArrayArrayValueThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewArrayArrayValue")
+	results := wasmlib.NewScDict()
+	f := &ArrayArrayValueContext{
+		Params: ImmutableArrayArrayValueParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableArrayArrayValueResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index0().Exists(), "missing mandatory index0")
+	ctx.Require(f.Params.Index1().Exists(), "missing mandatory index1")
+	viewArrayArrayValue(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewArrayArrayValue ok")
 }
 
 type ArrayLengthContext struct {

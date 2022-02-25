@@ -13,20 +13,20 @@ import (
 
 func funcArrayAppend(ctx wasmlib.ScFuncContext, f *ArrayAppendContext) {
 	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
+	array := f.State.StringArrays().GetStringArray(name)
 	value := f.Params.Value().Value()
 	array.AppendString().SetValue(value)
 }
 
 func funcArrayClear(ctx wasmlib.ScFuncContext, f *ArrayClearContext) {
 	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
+	array := f.State.StringArrays().GetStringArray(name)
 	array.Clear()
 }
 
 func funcArraySet(ctx wasmlib.ScFuncContext, f *ArraySetContext) {
 	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
+	array := f.State.StringArrays().GetStringArray(name)
 	index := f.Params.Index().Value()
 	value := f.Params.Value().Value()
 	array.GetString(index).SetValue(value)
@@ -34,13 +34,13 @@ func funcArraySet(ctx wasmlib.ScFuncContext, f *ArraySetContext) {
 
 func funcMapClear(ctx wasmlib.ScFuncContext, f *MapClearContext) {
 	name := f.Params.Name().Value()
-	myMap := f.State.Maps().GetStringMap(name)
+	myMap := f.State.StringMaps().GetStringMap(name)
 	myMap.Clear()
 }
 
 func funcMapSet(ctx wasmlib.ScFuncContext, f *MapSetContext) {
 	name := f.Params.Name().Value()
-	myMap := f.State.Maps().GetStringMap(name)
+	myMap := f.State.StringMaps().GetStringMap(name)
 	key := f.Params.Key().Value()
 	value := f.Params.Value().Value()
 	myMap.GetString(key).SetValue(value)
@@ -127,7 +127,7 @@ func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
 
 func viewArrayValue(ctx wasmlib.ScViewContext, f *ArrayValueContext) {
 	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
+	array := f.State.StringArrays().GetStringArray(name)
 	index := f.Params.Index().Value()
 	value := array.GetString(index).Value()
 	f.Results.Value().SetValue(value)
@@ -135,7 +135,7 @@ func viewArrayValue(ctx wasmlib.ScViewContext, f *ArrayValueContext) {
 
 func viewArrayLength(ctx wasmlib.ScViewContext, f *ArrayLengthContext) {
 	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
+	array := f.State.StringArrays().GetStringArray(name)
 	length := array.Length()
 	f.Results.Length().SetValue(length)
 }
@@ -166,7 +166,46 @@ func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
 
 func viewMapValue(ctx wasmlib.ScViewContext, f *MapValueContext) {
 	name := f.Params.Name().Value()
-	myMap := f.State.Maps().GetStringMap(name)
+	myMap := f.State.StringMaps().GetStringMap(name)
 	key := f.Params.Key().Value()
 	f.Results.Value().SetValue(myMap.GetString(key).Value())
+}
+
+func funcArrayArrayAppend(ctx wasmlib.ScFuncContext, f *ArrayArrayAppendContext) {
+	index := f.Params.Index().Value()
+	valLen := f.Params.Value().Length()
+
+	var sa ArrayOfMutableString
+	if f.State.StringArrayArrays().Length() <= index {
+		sa = f.State.StringArrayArrays().AppendStringArray()
+	} else {
+		sa = f.State.StringArrayArrays().GetStringArray(index)
+	}
+
+	for i := uint32(0); i < valLen; i++ {
+		elt := f.Params.Value().GetString(i).String()
+		sa.AppendString().SetValue(elt)
+	}
+}
+
+func funcArrayArrayClear(ctx wasmlib.ScFuncContext, f *ArrayArrayClearContext) {
+	length := f.State.StringArrayArrays().Length()
+	for i := uint32(0); i < length; i++ {
+		array := f.State.StringArrayArrays().GetStringArray(i)
+		array.Clear()
+	}
+	f.State.StringArrayArrays().Clear()
+}
+
+func viewArrayArrayValue(ctx wasmlib.ScViewContext, f *ArrayArrayValueContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+
+	elt := f.State.StringArrayArrays().GetStringArray(index0).GetString(index1).Value()
+	f.Results.Value().SetValue(elt)
+}
+
+func viewArrayArrayLength(ctx wasmlib.ScViewContext, f *ArrayArrayLengthContext) {
+	length := f.State.StringArrayArrays().Length()
+	f.Results.Length().SetValue(length)
 }

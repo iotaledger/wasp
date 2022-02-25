@@ -33,6 +33,30 @@ func (s MutableArrayAppendParams) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
+type ImmutableArrayArrayAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayArrayAppendParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableArrayArrayAppendParams) Value() ArrayOfImmutableString {
+	return ArrayOfImmutableString{proxy: s.proxy.Root(ParamValue)}
+}
+
+type MutableArrayArrayAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayArrayAppendParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableArrayArrayAppendParams) Value() ArrayOfMutableString {
+	return ArrayOfMutableString{proxy: s.proxy.Root(ParamValue)}
+}
+
 type ImmutableArrayClearParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -333,6 +357,30 @@ func (s MutableTriggerEventParams) Address() wasmtypes.ScMutableAddress {
 
 func (s MutableTriggerEventParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableArrayArrayValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayArrayValueParams) Index0() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex0))
+}
+
+func (s ImmutableArrayArrayValueParams) Index1() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+type MutableArrayArrayValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayArrayValueParams) Index0() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex0))
+}
+
+func (s MutableArrayArrayValueParams) Index1() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex1))
 }
 
 type ImmutableArrayLengthParams struct {

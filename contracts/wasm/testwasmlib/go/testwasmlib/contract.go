@@ -10,41 +10,50 @@ package testwasmlib
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ArrayAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayAppendParams
+}
+
+type ArrayArrayAppendCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayArrayAppendParams
+}
+
+type ArrayArrayClearCall struct {
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayClearParams
 }
 
 type ArraySetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArraySetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArraySetParams
 }
 
 type MapClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapClearParams
 }
 
 type MapSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapSetParams
 }
 
 type ParamTypesCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableParamTypesParams
+	Func    *wasmlib.ScFunc
+	Params  MutableParamTypesParams
 }
 
 type RandomCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type TakeAllowanceCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type TakeBalanceCall struct {
@@ -53,8 +62,19 @@ type TakeBalanceCall struct {
 }
 
 type TriggerEventCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTriggerEventParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTriggerEventParams
+}
+
+type ArrayArrayLengthCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableArrayArrayLengthResults
+}
+
+type ArrayArrayValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableArrayArrayValueParams
+	Results ImmutableArrayArrayValueResults
 }
 
 type ArrayLengthCall struct {
@@ -107,6 +127,16 @@ func (sc Funcs) ArrayAppend(ctx wasmlib.ScFuncCallContext) *ArrayAppendCall {
 	return f
 }
 
+func (sc Funcs) ArrayArrayAppend(ctx wasmlib.ScFuncCallContext) *ArrayArrayAppendCall {
+	f := &ArrayArrayAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayArrayAppend)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayArrayClearCall {
+	return &ArrayArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayArrayClear)}
+}
+
 func (sc Funcs) ArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayClearCall {
 	f := &ArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayClear)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -154,6 +184,19 @@ func (sc Funcs) TakeBalance(ctx wasmlib.ScFuncCallContext) *TakeBalanceCall {
 func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {
 	f := &TriggerEventCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTriggerEvent)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayArrayLength(ctx wasmlib.ScViewCallContext) *ArrayArrayLengthCall {
+	f := &ArrayArrayLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayArrayLength)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) ArrayArrayValue(ctx wasmlib.ScViewCallContext) *ArrayArrayValueCall {
+	f := &ArrayArrayValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayArrayValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 

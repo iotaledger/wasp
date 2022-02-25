@@ -25,6 +25,38 @@ func (s MutableTakeBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
 }
 
+type ImmutableArrayArrayLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayArrayLengthResults) Length() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
+}
+
+type MutableArrayArrayLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayArrayLengthResults) Length() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
+}
+
+type ImmutableArrayArrayValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayArrayValueResults) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
+}
+
+type MutableArrayArrayValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayArrayValueResults) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
+}
+
 type ImmutableArrayLengthResults struct {
 	proxy wasmtypes.Proxy
 }

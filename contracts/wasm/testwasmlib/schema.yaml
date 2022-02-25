@@ -18,18 +18,54 @@ structs:
 # ##################################
 
 typedefs:
+  ### Array
   StringArray: String[]
+  Int32Array: Int32[]
+  Int64Array: Int64[]
+  Uint64Array: Uint64[]
+  BytesArray: Bytes[]
+  AddressArray: Address[]
+  AgentIDArray: AgentID[]
+  ChainIDArray: ChainID[]
+  ColorArray: Color[]
+  # ContractIDArray: ContractID[] // FIXME not able to use ContractID
+  HashArray: Hash[]
+  HnameArray: Hname[]
+  RequestIDArray: RequestID[]
+  ### Map
   StringMap: map[String]String
+  Int32Map: map[Int32]Int32
+  Int64Map: map[Int64]Int64
+  Uint64Map: map[Uint64]Uint64
+  BytesMap: map[Bytes]Bytes
+  AddressMap: map[Address]Address
+  AgentIDMap: map[AgentID]AgentID
+  ChainIDMap: map[ChainID]ChainID
+  ColorMap: map[Color]Color
+  # ContractIDMap: map[ContractID]ContractID # FIXME not able to use ContractID
+  HashMap: map[Hash]Hash
+  HnameMap: map[Hname]Hname
+  RequestIDMap: map[RequestID]RequestID
   Longitude: map[Int32]Location
 
 # ##################################
 
 state:
-  arrays: map[String]StringArray
-  maps: map[String]StringMap
+  # basic value datatypes
+  stringArrays: map[String]StringArray
+  stringMaps: map[String]StringMap
+  stringMapArrays: StringMap[]
+  stringArrayArrays: StringArray[]
+  # contracts-specific value datatypes
+  AddressArrays: map[Address]AddressArray
+  AddressMaps: map[Address]AddressMap
+  AddressMapArrays: AddressMap[]
+  AddressArrayArrays: AddressArray[]
+  # Other
   random: Uint64
   latLong: map[Int32]Longitude
-  strings2D: StringArray[]
+  # LongID: map[Longitude]Int32 # FIXME Map with struct key would cause error
+  
 
 # ##################################
 
@@ -39,9 +75,16 @@ funcs:
       name: String
       value: String
 
+  arrayArrayAppend:
+    params:
+      index: Uint32
+      value: String[]
+
   arrayClear:
     params:
       name: String
+  
+  arrayArrayClear:
 
   arraySet:
     params:
@@ -103,10 +146,21 @@ views:
     results:
       length: Uint32
 
+  arrayArrayLength:
+    results:
+      length: Uint32
+
   arrayValue:
     params:
       index: Uint32
       name: String
+    results:
+      value: String
+  
+  arrayArrayValue:
+    params:
+      index0: Uint32
+      index1: Uint32
     results:
       value: String
 
