@@ -135,7 +135,6 @@ func (tr *Trie) ApplyMutations(store kv.KVWriter) {
 	for k := range tr.deleted {
 		_, inCache := tr.nodeCache[k]
 		assert(!inCache, "!inCache")
-		fmt.Printf("$$$$$$$$$$$$$$$$$$$$$$$ deleting key '%s' from trie", k)
 		store.Del(k)
 	}
 }

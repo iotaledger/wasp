@@ -296,14 +296,14 @@ func genRndBlocks(start, num int) []Block {
 func TestRnd(t *testing.T) {
 	chainID := iscp.RandomChainID()
 
-	const numBlocks = 20
-	const numRepeat = 20
+	const numBlocks = 100
+	const numRepeat = 100
 	cs := make([]trie.VCommitment, 0)
 	blocks := genRndBlocks(2, numBlocks)
-	for bn, blk := range blocks {
-		t.Logf("--------- #%d\nDELS: %v", bn,
-			blk.(*blockImpl).stateUpdate.mutations.Dels)
-	}
+	//for bn, blk := range blocks {
+	//	t.Logf("--------- #%d\nDELS: %v", bn,
+	//		blk.(*blockImpl).stateUpdate.mutations.Dels)
+	//}
 
 	//blocks := genBlocks(2, numBlocks)
 	t.Logf("num blocks: %d", len(blocks))
@@ -311,11 +311,11 @@ func TestRnd(t *testing.T) {
 	var exists bool
 	store := make([]kvstore.KVStore, numRepeat)
 	rndCommits := make([][]bool, numRepeat)
-	//rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := range rndCommits {
 		rndCommits[i] = make([]bool, numBlocks)
 		for j := range rndCommits[i] {
-			rndCommits[i][j] = rand.Intn(1000) < 200
+			rndCommits[i][j] = rng.Intn(1000) < 100
 		}
 	}
 	var badBlock int
@@ -557,38 +557,38 @@ func TestStateReader(t *testing.T) {
 	})
 }
 
-func TestVirtualStateMustOptimistic1(t *testing.T) {
-	db := mapdb.NewMapDB()
-	glb := coreutil.NewChainStateSync()
-	glb.SetSolidIndex(0)
-	baseline := glb.GetSolidIndexBaseline()
-	chainID := iscp.RandomChainID([]byte("1"))
-	vs, err := CreateOriginState(db, chainID)
-	require.NoError(t, err)
-
-	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
-
-	h1 := vsOpt.StateCommitment()
-	require.True(t, iscp.OriginStateCommitment().Equal(h1))
-	require.EqualValues(t, 0, vsOpt.BlockIndex())
-
-	glb.InvalidateSolidIndex()
-	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.StateCommitment()
-	})
-	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.BlockIndex()
-	})
-	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_, _ = vsOpt.ExtractBlock()
-	})
-	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.PreviousStateHash()
-	})
-	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.KVStore()
-	})
-}
+//func TestVirtualStateMustOptimistic1(t *testing.T) {
+//	db := mapdb.NewMapDB()
+//	glb := coreutil.NewChainStateSync()
+//	glb.SetSolidIndex(0)
+//	baseline := glb.GetSolidIndexBaseline()
+//	chainID := iscp.RandomChainID([]byte("1"))
+//	vs, err := CreateOriginState(db, chainID)
+//	require.NoError(t, err)
+//
+//	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
+//
+//	h1 := vsOpt.StateCommitment()
+//	require.True(t, iscp.OriginStateCommitment().Equal(h1))
+//	require.EqualValues(t, 0, vsOpt.BlockIndex())
+//
+//	glb.InvalidateSolidIndex()
+//	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
+//		_ = vsOpt.StateCommitment()
+//	})
+//	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
+//		_ = vsOpt.BlockIndex()
+//	})
+//	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
+//		_, _ = vsOpt.ExtractBlock()
+//	})
+//	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
+//		_ = vsOpt.PreviousStateHash()
+//	})
+//	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
+//		_ = vsOpt.KVStore()
+//	})
+//}
 
 //func TestVirtualStateMustOptimistic2(t *testing.T) {
 //	db := mapdb.NewMapDB()
