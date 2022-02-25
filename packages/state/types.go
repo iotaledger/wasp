@@ -15,9 +15,9 @@ import (
 type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
-	PreviousStateHash() hashing.HashValue
-	Commit()
 	StateCommitment() trie.VCommitment
+	PreviousStateCommitment() trie.VCommitment
+	Commit()
 	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdate(StateUpdate)
@@ -33,7 +33,6 @@ type VirtualStateAccess interface {
 type OptimisticStateReader interface {
 	BlockIndex() (uint32, error)
 	Timestamp() (time.Time, error)
-	Hash() (hashing.HashValue, error)
 	KVStoreReader() kv.KVStoreReader
 	SetBaseline()
 }

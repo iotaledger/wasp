@@ -1,7 +1,6 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -42,11 +41,11 @@ func (s *mustOptimisticVirtualStateAccess) Timestamp() time.Time {
 	return s.state.Timestamp()
 }
 
-func (s *mustOptimisticVirtualStateAccess) PreviousStateHash() hashing.HashValue {
+func (s *mustOptimisticVirtualStateAccess) PreviousStateCommitment() trie.VCommitment {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.state.PreviousStateHash()
+	return s.state.PreviousStateCommitment()
 }
 
 func (s *mustOptimisticVirtualStateAccess) Commit() {

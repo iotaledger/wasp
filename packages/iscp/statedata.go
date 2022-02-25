@@ -28,7 +28,7 @@ func (s *StateData) Bytes() []byte {
 	return buf.Bytes()
 }
 
-const OriginStateCommitmentHex = "4c8f7018f3d1e84ce978218479ce81de703ce5dcbed0662bf5307165e0a047e9"
+const OriginStateCommitmentHex = "5924dc2f04542fc93b02fa5c8b230f62110a9fbda78fca024cf58087bd32204f"
 
 func OriginStateCommitment() trie.VCommitment {
 	retBin, err := hex.DecodeString(OriginStateCommitmentHex)

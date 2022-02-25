@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -53,7 +52,10 @@ func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 	ret := newVirtualState(store)
 	nilChainId := iscp.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
+	var zero8 [8]byte
 	ret.KVStore().Set("", nilChainId.Bytes())
+	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), zero8[:])
+	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), zero8[:])
 	ret.Commit()
 	return ret
 }
@@ -124,12 +126,16 @@ func (vs *virtualStateAccess) Timestamp() time.Time {
 	return ts
 }
 
-func (vs *virtualStateAccess) PreviousStateHash() hashing.HashValue {
-	ph, err := loadPrevStateHashFromState(vs.kvs)
+func (vs *virtualStateAccess) PreviousStateCommitment() trie.VCommitment {
+	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
 	if err != nil {
-		panic(xerrors.Errorf("state.PreviousStateHash: %w", err))
+		panic(xerrors.Errorf("state.PreviousStateCommitment: %w", err))
 	}
-	return ph
+	c, err := vs.trie.VectorCommitmentFromBytes(cBin)
+	if err != nil {
+		panic(xerrors.Errorf("loadPrevStateHashFromState: %w", err))
+	}
+	return c
 }
 
 // ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
@@ -223,16 +229,4 @@ func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
 		return time.Time{}, xerrors.Errorf("loadTimestampFromState: %w", err)
 	}
 	return ts, nil
-}
-
-func loadPrevStateHashFromState(chainState kv.KVStoreReader) (hashing.HashValue, error) {
-	hashBin, err := chainState.Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
-	if err != nil {
-		return hashing.NilHash, err
-	}
-	ph, err := codec.DecodeHashValue(hashBin)
-	if err != nil {
-		return hashing.NilHash, xerrors.Errorf("loadPrevStateHashFromState: %w", err)
-	}
-	return ph, nil
 }

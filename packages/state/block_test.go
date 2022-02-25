@@ -83,7 +83,7 @@ func TestBatches(t *testing.T) {
 //	require.True(t, b1.Timestamp().IsZero())
 //	require.True(t, b2.Timestamp().IsZero())
 //
-//	require.EqualValues(t, hashing.NilHash, b.PreviousStateHash())
-//	require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
-//	require.EqualValues(t, hashing.NilHash, b2.PreviousStateHash())
+//	require.EqualValues(t, hashing.NilHash, b.PreviousStateCommitment())
+//	require.EqualValues(t, hashing.NilHash, b1.PreviousStateCommitment())
+//	require.EqualValues(t, hashing.NilHash, b2.PreviousStateCommitment())
 //}

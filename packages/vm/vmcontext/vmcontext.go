@@ -214,7 +214,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasBurned:              vmctx.gasBurnedTotal,
 		GasFeeCharged:          vmctx.gasFeeChargedTotal,
 	}
-	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
+	if vmctx.virtualState.PreviousStateCommitment() != blockInfo.PreviousStateHash {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
 

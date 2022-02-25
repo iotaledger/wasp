@@ -3,7 +3,6 @@ package state
 import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -39,24 +38,6 @@ func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 		return time.Time{}, err
 	}
 	return ts, nil
-}
-
-func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
-	if !r.chainState.IsStateValid() {
-		return [32]byte{}, coreutil.ErrorStateInvalidated
-	}
-	hashBIn, err := r.db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeTrie))
-	if err != nil {
-		return [32]byte{}, err
-	}
-	ret, err := hashing.HashValueFromBytes(hashBIn)
-	if err != nil {
-		return [32]byte{}, err
-	}
-	if !r.chainState.IsStateValid() {
-		return [32]byte{}, coreutil.ErrorStateInvalidated
-	}
-	return ret, nil
 }
 
 func (r *OptimisticStateReaderImpl) KVStoreReader() kv.KVStoreReader {
