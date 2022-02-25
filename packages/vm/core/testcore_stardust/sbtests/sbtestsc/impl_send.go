@@ -95,3 +95,20 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 	}
 	return nil
 }
+
+// tries to sendback whaever NFTs are specified in allowance
+func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
+	allowance := ctx.AllowanceAvailable()
+	ctx.TransferAllowedFunds(ctx.AccountID())
+	for _, nftID := range allowance.NFTs {
+		ctx.Send(iscp.RequestParameters{
+			TargetAddress:              ctx.Caller().Address(),
+			Assets:                     &iscp.Assets{},
+			AdjustToMinimumDustDeposit: true,
+			Metadata:                   &iscp.SendMetadata{},
+			Options:                    iscp.SendOptions{},
+			NFTID:                      nftID,
+		})
+	}
+	return nil
+}

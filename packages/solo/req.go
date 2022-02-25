@@ -28,6 +28,7 @@ type CallParams struct {
 	epName     string
 	entryPoint iscp.Hname
 	assets     *iscp.Assets // ignored off-ledger
+	NFTID      *iotago.NFTID
 	allowance  *iscp.Allowance
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
@@ -135,6 +136,12 @@ func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+}
+
+// Adds an nft to be sent (only appliable when the call is made via on-ledger request)
+func (r *CallParams) WithNFT(nftID *iotago.NFTID) *CallParams {
+	r.NFTID = nftID
+	return r
 }
 
 func (r *CallParams) GasBudget() uint64 {

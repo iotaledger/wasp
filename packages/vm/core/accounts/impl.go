@@ -93,7 +93,12 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	}
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
-	fundsToWithdraw := ctx.AllowanceAvailable().Assets
+	allowance := ctx.AllowanceAvailable()
+	fundsToWithdraw := allowance.Assets
+	var NFTID *iotago.NFTID = nil
+	if len(allowance.NFTs) > 0 {
+		NFTID = allowance.NFTs[0]
+	}
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
@@ -111,6 +116,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 		tx := iscp.RequestParameters{
 			TargetAddress: ctx.Caller().Address(),
 			Assets:        fundsToWithdraw,
+			NFTID:         NFTID,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
