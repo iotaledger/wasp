@@ -224,27 +224,55 @@ func TestTrieBase(t *testing.T) {
 		t.Logf("root2 = %s", c2)
 		require.True(t, c1.Equal(c2))
 	})
-	t.Run("catch deletion bug", func(t *testing.T) {
+	t.Run("deletion edge cases 1", func(t *testing.T) {
 		store := dict.New()
 		tr := trie.New(Model, store)
 
-		tr.Update([]byte("ab1"), []byte("1"))
-		tr.Update([]byte("ab2c"), []byte("2"))
-		tr.Update([]byte("ab2a"), nil)
-		tr.Update([]byte("ab4"), []byte("4"))
+		tr.UpdateStr("ab1", []byte("1"))
+		tr.UpdateStr("ab2c", []byte("2"))
+		tr.DeleteStr("ab2a")
+		tr.UpdateStr("ab4", []byte("4"))
 		tr.Commit()
 		c1 := tr.RootCommitment()
 
 		store = dict.New()
 		tr = trie.New(Model, store)
 
-		tr.Update([]byte("ab1"), []byte("1"))
-		tr.Update([]byte("ab2c"), []byte("2"))
-		tr.Update([]byte("ab4"), []byte("4"))
+		tr.UpdateStr("ab1", []byte("1"))
+		tr.UpdateStr("ab2c", []byte("2"))
+		tr.UpdateStr("ab4", []byte("4"))
 		tr.Commit()
 		c2 := tr.RootCommitment()
 
 		require.True(t, c1.Equal(c2))
+	})
+	t.Run("deletion edge cases 2", func(t *testing.T) {
+		store := dict.New()
+		tr := trie.New(Model, store)
+
+		tr.UpdateStr("abc", []byte("1"))
+		tr.UpdateStr("abcd", []byte("2"))
+		tr.UpdateStr("abcde", []byte("2"))
+		tr.DeleteStr("abcde")
+		tr.DeleteStr("abcd")
+		tr.DeleteStr("abc")
+		tr.Commit()
+		c1 := tr.RootCommitment()
+
+		store = dict.New()
+		tr = trie.New(Model, store)
+
+		tr.UpdateStr("abc", []byte("1"))
+		tr.UpdateStr("abcd", []byte("2"))
+		tr.UpdateStr("abcde", []byte("2"))
+		tr.DeleteStr("abcde")
+		tr.Commit()
+		tr.DeleteStr("abcd")
+		tr.DeleteStr("abc")
+		tr.Commit()
+		c2 := tr.RootCommitment()
+
+		require.True(t, trie.EqualCommitments(c1, c2))
 	})
 }
 

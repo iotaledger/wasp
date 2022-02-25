@@ -59,6 +59,7 @@ func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 		model:     model,
 		store:     store,
 		nodeCache: make(map[kv.Key]*Node),
+		deleted:   make(map[kv.Key]struct{}),
 	}
 	return ret
 }
@@ -427,7 +428,7 @@ func (tr *Trie) proofPath(path []byte) ([][]byte, []byte, ProofEndingCode) {
 	for {
 		// it means we continue the branch of commitment
 		proof = append(proof, key)
-		assert(len(path) <= len(key), "pathPosition<=len(path)")
+		assert(len(key) <= len(path), "len(key) <= len(path)")
 		if bytes.Equal(path[len(key):], node.PathFragment) {
 			return proof, nil, EndingTerminal
 		}
