@@ -47,7 +47,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(c.t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -59,7 +59,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}*/
 
-	nextvs.ApplyStateUpdates(suBlockIndex, suCounter /*, suReqs*/)
+	nextvs.ApplyStateUpdate(suBlockIndex, suCounter /*, suReqs*/)
 	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
 	//nextStateHash := nextvs.StateCommitment()

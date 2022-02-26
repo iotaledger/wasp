@@ -5,9 +5,8 @@ package iscp
 
 import (
 	"bytes"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
 type AliasOutputWithID struct {
@@ -42,10 +41,10 @@ func (aowiT *AliasOutputWithID) GetStateMetadata() []byte {
 	return aowiT.output.StateMetadata
 }
 
-func (aowiT *AliasOutputWithID) GetStateCommitment() (hashing.HashValue, error) {
+func (aowiT *AliasOutputWithID) GetStateCommitment() (trie.VCommitment, error) {
 	sd, err := StateDataFromBytes(aowiT.output.StateMetadata)
 	if err != nil {
-		return hashing.NilHash, err
+		return nil, err
 	}
 	return sd.Commitment, nil
 }

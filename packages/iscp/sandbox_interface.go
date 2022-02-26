@@ -167,7 +167,7 @@ type Expiration struct {
 	ReturnAddress iotago.Address
 }
 
-// RequestMetadata represents content of the data payload of the output
+// SendMetadata represents content of the data payload of the output
 type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname

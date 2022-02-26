@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -14,13 +15,16 @@ import (
 type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
-	PreviousStateHash() hashing.HashValue
-	StateCommitment() hashing.HashValue
+	StateCommitment() trie.VCommitment
+	PreviousStateCommitment() trie.VCommitment
+	Commit()
+	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
-	ApplyStateUpdates(...StateUpdate)
+	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
+	ProofGeneric(key []byte) *trie.ProofGeneric
 	ExtractBlock() (Block, error)
-	Commit(blocks ...Block) error
+	Save(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStoreAccess
 	Copy() VirtualStateAccess
 	DangerouslyConvertToString() string
@@ -29,9 +33,9 @@ type VirtualStateAccess interface {
 type OptimisticStateReader interface {
 	BlockIndex() (uint32, error)
 	Timestamp() (time.Time, error)
-	Hash() (hashing.HashValue, error)
 	KVStoreReader() kv.KVStoreReader
 	SetBaseline()
+	StateCommitment() trie.VCommitment
 }
 
 // StateUpdate is a set of mutations
@@ -51,14 +55,4 @@ type Block interface {
 	PreviousStateHash() hashing.HashValue
 	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
-}
-
-const OriginStateHashBase58 = "96yCdioNdifMb8xTeHQVQ8BzDnXDbRBoYzTq7iVaymvV"
-
-func OriginStateHash() hashing.HashValue {
-	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }

@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -96,14 +97,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	stateHashFromState := optimisticStateAccess.StateCommitment()
+	commitmentFromState := optimisticStateAccess.StateCommitment()
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if stateData.Commitment != stateHashFromState || blockIndex != task.AnchorOutput.StateIndex {
+	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
-	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
+	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
+	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	ret := &VMContext{
@@ -138,7 +139,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
 		})
 
-		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
+		ret.virtualState.ApplyStateUpdate(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
@@ -165,13 +166,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, trie.VCommitment, time.Time, iotago.Address) {
 	vmctx.gasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
 	vmctx.saveInternalUTXOs()
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.virtualState.Commit()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -202,19 +204,19 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:             vmctx.virtualState.BlockIndex(),
-		Timestamp:              vmctx.virtualState.Timestamp(),
-		TotalRequests:          numRequests,
-		NumSuccessfulRequests:  numSuccess,
-		NumOffLedgerRequests:   numOffLedger,
-		PreviousStateHash:      prevStateData.Commitment,
-		AnchorTransactionID:    iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TotalIotasInL2Accounts: totalIotasInContracts,
-		TotalDustDeposit:       totalDustOnChain,
-		GasBurned:              vmctx.gasBurnedTotal,
-		GasFeeCharged:          vmctx.gasFeeChargedTotal,
+		BlockIndex:              vmctx.virtualState.BlockIndex(),
+		Timestamp:               vmctx.virtualState.Timestamp(),
+		TotalRequests:           numRequests,
+		NumSuccessfulRequests:   numSuccess,
+		NumOffLedgerRequests:    numOffLedger,
+		PreviousStateCommitment: prevStateData.Commitment,
+		AnchorTransactionID:     iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TotalIotasInL2Accounts:  totalIotasInContracts,
+		TotalDustDeposit:        totalDustOnChain,
+		GasBurned:               vmctx.gasBurnedTotal,
+		GasFeeCharged:           vmctx.gasFeeChargedTotal,
 	}
-	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
+	if !trie.EqualCommitments(vmctx.virtualState.PreviousStateCommitment(), blockInfo.PreviousStateCommitment) {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
 
@@ -236,7 +238,7 @@ func (vmctx *VMContext) closeBlockContexts() {
 		b := vmctx.blockContext[hname]
 		b.onClose(b.obj)
 	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 }
 
 func (vmctx *VMContext) saveInternalUTXOs() {

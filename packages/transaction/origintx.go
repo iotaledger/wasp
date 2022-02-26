@@ -31,7 +31,7 @@ func NewChainOriginTransaction(
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
-		StateMetadata: state.OriginStateHash().Bytes(),
+		StateMetadata: state.OriginStateData().Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},

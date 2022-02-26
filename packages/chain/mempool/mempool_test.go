@@ -230,7 +230,7 @@ func TestProcessedRequest(t *testing.T) {
 	err := blocklog.SaveRequestReceipt(blocklogPartition, rec, [6]byte{})
 	require.NoError(t, err)
 	blocklogPartition.Set(coreutil.StateVarBlockIndex, util.Uint64To8Bytes(1))
-	err = vs.Commit()
+	err = vs.Save()
 	require.NoError(t, err)
 
 	pool.ReceiveRequests(requests[0])

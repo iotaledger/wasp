@@ -1,112 +1,67 @@
 package state
 
 import (
-	"testing"
-	"time"
-
+	"fmt"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
+	"math"
+	"math/rand"
+	"testing"
+	"time"
 )
 
-func TestVirtualStateBasic(t *testing.T) {
-	t.Run("create new1", func(t *testing.T) {
-		db := mapdb.NewMapDB()
-		vs1 := newVirtualState(db, nil)
-		require.Panics(t, func() {
-			vs1.BlockIndex()
-		})
-	})
-	t.Run("create new2", func(t *testing.T) {
-		db := mapdb.NewMapDB()
-		chainID := iscp.ChainIDFromAliasID(ledgerstate.NewAliasAddress([]byte("dummy")))
-		vs1 := newVirtualState(db, chainID)
-		require.Panics(t, func() {
-			vs1.BlockIndex()
-		})
-	})
-	t.Run("zero state", func(t *testing.T) {
-		db := mapdb.NewMapDB()
-		vs1, blk := newZeroVirtualState(db, nil)
-		h1 := vs1.StateCommitment()
-		require.EqualValues(t, OriginStateHash(), h1)
-		require.EqualValues(t, 0, vs1.BlockIndex())
-		require.EqualValues(t, newOriginBlock().Bytes(), blk.Bytes())
-	})
-}
-
 func TestOriginHashes(t *testing.T) {
+	t.Run("create new", func(t *testing.T) {
+		vs1 := newVirtualState(mapdb.NewMapDB())
+		require.Panics(t, func() {
+			vs1.BlockIndex()
+		})
+	})
 	t.Run("origin state hash consistency ", func(t *testing.T) {
 		t.Logf("origin state hash calculated: %s", calcOriginStateHash().String())
-		require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
-		require.EqualValues(t, OriginStateHash().String(), calcOriginStateHash().String())
+		require.EqualValues(t, OriginStateCommitmentHex, OriginStateCommitment().String())
+		require.EqualValues(t, OriginStateCommitment().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
-		z, origBlock := newZeroVirtualState(mapdb.NewMapDB(), nil)
-		require.EqualValues(t, 0, origBlock.BlockIndex())
-		require.True(t, origBlock.Timestamp().IsZero())
-		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
-		t.Logf("zero state hash = %s", z.StateCommitment().String())
-		require.EqualValues(t, 0, z.BlockIndex())
-		require.True(t, z.Timestamp().IsZero())
-		require.EqualValues(t, hashing.NilHash, z.PreviousStateHash())
-		require.EqualValues(t, calcOriginStateHash(), z.StateCommitment())
+		z := newVirtualState(mapdb.NewMapDB())
+		require.Nil(t, z.StateCommitment())
+	})
+	t.Run("create origin", func(t *testing.T) {
+		chainID := testmisc.RandChainID()
+		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+		require.NoError(t, err)
+		require.True(t, vs.StateCommitment().Equal(OriginStateCommitment()))
+		require.EqualValues(t, calcOriginStateHash(), vs.StateCommitment())
 	})
 }
 
 func TestStateWithDB(t *testing.T) {
+	t.Run("save state", func(t *testing.T) {
+		chainID := testmisc.RandChainID()
+		store := mapdb.NewMapDB()
+		vs, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+		vs.Commit()
+		err = vs.Save()
+		require.NoError(t, err)
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+	})
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
 		chainID := iscp.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
-	})
-	t.Run("save zero state", func(t *testing.T) {
-		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(store, chainID)
-		require.NoError(t, err)
-		require.False(t, exists)
-
-		vs1, err := CreateOriginState(store, chainID)
-		require.NoError(t, err)
-		require.EqualValues(t, 0, vs1.BlockIndex())
-		require.True(t, vs1.Timestamp().IsZero())
-
-		vs2, exists, err := LoadSolidState(store, chainID)
-		require.NoError(t, err)
-		require.True(t, exists)
-
-		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
-		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
-		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
-		require.EqualValues(t, vs1.PreviousStateHash(), vs2.PreviousStateHash())
-		require.True(t, vs2.Timestamp().IsZero())
-		require.EqualValues(t, 0, vs2.BlockIndex())
-		require.EqualValues(t, hashing.NilHash, vs2.PreviousStateHash())
-
-		require.EqualValues(t, vs1.Copy().StateCommitment(), vs2.Copy().StateCommitment())
-	})
-	t.Run("load 0 block", func(t *testing.T) {
-		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(store, chainID)
-		require.NoError(t, err)
-		require.False(t, exists)
-
-		vs1, err := CreateOriginState(store, chainID)
-		require.NoError(t, err)
-		require.EqualValues(t, 0, vs1.BlockIndex())
-		require.True(t, vs1.Timestamp().IsZero())
-
-		data, err := LoadBlockBytes(store, 0)
-		require.NoError(t, err)
-		require.EqualValues(t, newOriginBlock().Bytes(), data)
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -119,7 +74,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		currentTime := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, currentTime, hashing.NilHash)
+		su := NewStateUpdateWithBlockLogValues(1, currentTime, testmisc.RandVectorCommitment())
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -129,7 +84,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
-		err = vs1.Commit(block1)
+		err = vs1.Save(block1)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
@@ -145,7 +100,7 @@ func TestStateWithDB(t *testing.T) {
 
 		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
-		require.EqualValues(t, newOriginBlock().Bytes(), data)
+		//require.EqualValues(t, newBlock().Bytes(), data)
 
 		data, err = LoadBlockBytes(store, 1)
 		require.NoError(t, err)
@@ -167,7 +122,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		time1 := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, time1, hashing.NilHash)
+		su := NewStateUpdateWithBlockLogValues(1, time1, testmisc.RandVectorCommitment())
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -178,7 +133,7 @@ func TestStateWithDB(t *testing.T) {
 		require.True(t, time1.Equal(vsOrig.Timestamp()))
 
 		time2 := time.Now()
-		su = NewStateUpdateWithBlocklogValues(2, time2, vsOrig.PreviousStateHash())
+		su = NewStateUpdateWithBlockLogValues(2, time2, vsOrig.PreviousStateCommitment())
 		su.Mutations().Set("other_key", []byte("other_value"))
 		block2, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -188,7 +143,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 2, vsOrig.BlockIndex())
 		require.True(t, time2.Equal(vsOrig.Timestamp()))
 
-		err = vsOrig.Commit(block1, block2)
+		err = vsOrig.Save(block1, block2)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, vsOrig.BlockIndex())
 		require.True(t, time2.Equal(vsOrig.Timestamp()))
@@ -203,7 +158,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 2, vsLoaded.BlockIndex())
 
 		time3 := time.Now()
-		su = NewStateUpdateWithBlocklogValues(3, time3, vsLoaded.PreviousStateHash())
+		su = NewStateUpdateWithBlockLogValues(3, time3, vsLoaded.PreviousStateCommitment())
 		su.Mutations().Set("more_keys", []byte("more_values"))
 		block3, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -231,7 +186,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		currentTime := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, currentTime, hashing.NilHash)
+		su := NewStateUpdateWithBlockLogValues(1, currentTime, testmisc.RandVectorCommitment())
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -241,7 +196,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
-		err = vs1.Commit()
+		err = vs1.Save()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, currentTime.Equal(vs1.Timestamp()))
@@ -262,24 +217,215 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, vs2.Timestamp(), ts)
 
-		h, err := rdr.Hash()
+		_, err = rdr.KVStoreReader().Get("1")
 		require.NoError(t, err)
-		require.EqualValues(t, vs2.StateCommitment(), h)
 		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
 
 		glb.InvalidateSolidIndex()
-		_, err = rdr.Hash()
+		_, err = rdr.KVStoreReader().Get("1")
 		require.Error(t, err)
 		require.EqualValues(t, err, coreutil.ErrorStateInvalidated)
 	})
 }
 
-func TestVariableStateBasic(t *testing.T) {
-	chainID := iscp.ChainIDFromAliasID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+func genRnd4() []string {
+	str := "0123456789abcdef"
+	ret := make([]string, 0, len(str)*len(str)*len(str))
+	for i := range str {
+		for j := range str {
+			for k := range str {
+				for l := range str {
+					s := string([]byte{str[i], str[j], str[k], str[l]})
+					s = s + s + s + s
+					r1 := rand.Intn(len(s))
+					r2 := rand.Intn(len(s))
+					if r2 < r1 {
+						r1, r2 = r2, r1
+					}
+					ret = append(ret, s[r1:r2])
+				}
+			}
+		}
+	}
+	if len(ret) > math.MaxUint16 {
+		ret = ret[:math.MaxUint16]
+	}
+	return ret
+}
+
+func genDifferent() []string {
+	orig := genRnd4()
+	// filter different
+	unique := make(map[string]bool)
+	for _, s := range orig {
+		unique[s] = true
+	}
+	ret := make([]string, 0)
+	for s := range unique {
+		ret = append(ret, s)
+	}
+	return ret
+}
+
+func genRndBlocks(start, num int) []Block {
+	strs := genDifferent()
+	blocks := make([]Block, num)
+	millis := rand.Int63()
+	const numMutations = 20
+	for blkNum := range blocks {
+		var buf [32]byte
+		copy(buf[:], fmt.Sprintf("kuku %d", blkNum))
+		vc, _ := CommitmentModel.VectorCommitmentFromBytes(buf[:])
+		upd := NewStateUpdateWithBlockLogValues(uint32(blkNum+start), time.UnixMilli(millis+int64(blkNum+100)), vc)
+		for i := 0; i < numMutations; i++ {
+			s := "1111" + strs[rand.Intn(len(strs))]
+			if rand.Intn(1000) < 100 {
+				upd.Mutations().Del(kv.Key(s))
+			} else {
+				upd.Mutations().Set(kv.Key(s), []byte(s))
+			}
+		}
+		blocks[blkNum], _ = newBlock(upd.Mutations())
+	}
+	return blocks
+}
+
+func TestRnd(t *testing.T) {
+	chainID := iscp.RandomChainID()
+
+	const numBlocks = 100
+	const numRepeat = 100
+	cs := make([]trie.VCommitment, 0)
+	blocks := genRndBlocks(2, numBlocks)
+	//for bn, blk := range blocks {
+	//	t.Logf("--------- #%d\nDELS: %v", bn,
+	//		blk.(*blockImpl).stateUpdate.mutations.Dels)
+	//}
+
+	//blocks := genBlocks(2, numBlocks)
+	t.Logf("num blocks: %d", len(blocks))
+	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), testmisc.RandVectorCommitment())
+	var exists bool
+	store := make([]kvstore.KVStore, numRepeat)
+	rndCommits := make([][]bool, numRepeat)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := range rndCommits {
+		rndCommits[i] = make([]bool, numBlocks)
+		for j := range rndCommits[i] {
+			rndCommits[i][j] = rng.Intn(1000) < 100
+		}
+	}
+	//var badBlock int
+	//var badKey kv.Key
+	var round int
+	for round = 0; round < numRepeat; round++ {
+
+		t.Logf("------------------ round: %d", round)
+		store[round] = mapdb.NewMapDB()
+		vs, err := CreateOriginState(store[round], chainID)
+		require.NoError(t, err)
+		vs.ApplyStateUpdate(upd1)
+		vs.Commit()
+		err = vs.Save()
+		require.NoError(t, err)
+		for bn, b := range blocks {
+			require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
+			err = vs.ApplyBlock(b)
+			require.NoError(t, err)
+			if rndCommits[round][bn] {
+				//t.Logf("           commit at block: #%d", bn)
+				err = vs.Save()
+				require.NoError(t, err)
+				c1 := vs.StateCommitment()
+				vs, exists, err = LoadSolidState(store[round], chainID)
+				require.NoError(t, err)
+				require.True(t, exists)
+				c2 := vs.StateCommitment()
+
+				diff := vs.ReconcileTrie()
+				if len(diff) > 0 {
+					t.Logf("============== reconcile failed: %v", diff)
+				}
+
+				require.True(t, c1.Equal(c2))
+			}
+		}
+		err = vs.Save()
+		require.NoError(t, err)
+
+		vstmp, exists, err := LoadSolidState(store[round], chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+		diff := vstmp.ReconcileTrie()
+		if len(diff) > 0 {
+			t.Logf("============== reconcile failed: %v", diff)
+		}
+
+		cs = append(cs, vs.StateCommitment())
+		if round > 0 {
+			require.True(t, trie.EqualCommitments(cs[round-1], cs[round]))
+		}
+		//if round > 0 && !cs[round-1].Equal(cs[round]) {
+		//	t.Logf("cs[%d] = %s != cs[%d] = %s", round-1, cs[round-1], round, cs[round])
+		//	kvs0 := kv.NewHiveKVStoreReader(store[round-1])
+		//	kvs1 := kv.NewHiveKVStoreReader(store[round])
+		//	dkeys := kv.DumpKeySet(kv.GetDiffKeyValues(kvs0, kvs1))
+		//	t.Logf("len store #%d = %d != len store #%d = %d", round-1, kv.NumKeys(kvs0), round, kv.NumKeys(kvs1))
+		//
+		//	t.Logf("DIFF key/values (len = %d:\n%s", len(dkeys), strings.Join(dkeys, "    \n"))
+		//	diffKeys := kv.GetDiffKeys(kvs0, kvs1)
+		//
+		//	for k := range diffKeys {
+		//		rawKey := k[1:]
+		//		t.Logf("=============DIFF key: '%s'", rawKey)
+		//		for bn, block := range blocks {
+		//			//t.Logf("=========              block #%d", bn)
+		//			mut := block.(*blockImpl).stateUpdate.mutations
+		//			for x := range mut.Sets {
+		//				if strings.Contains(string(x), string(rawKey)) {
+		//					t.Logf("                SET in block #%d. Orig: '%s'", bn, x)
+		//					badBlock = bn
+		//					badKey = x
+		//				}
+		//			}
+		//			for x := range mut.Dels {
+		//				if strings.Contains(string(x), string(rawKey)) {
+		//					t.Logf("                DEL in block #%d. Orig: '%s'", bn, x)
+		//					badBlock = bn
+		//					badKey = x
+		//				}
+		//			}
+		//		}
+		//	}
+		//	t.Logf("======================= bad key '%s' in block #%d", badKey, badBlock)
+		//	vs0, _, _ := LoadSolidState(store[round-1], chainID)
+		//	badKeys0 := vs0.ReconcileTrie()
+		//	if len(badKeys0) > 0 {
+		//		t.Logf("vs0 bad keys: %v", badKeys0)
+		//	}
+		//	pg := vs0.ProofGeneric([]byte(badKey))
+		//	t.Logf(">>>>>>>>>> vs[%d] key '%s' ending '%s', path: %d", round-1, badKey, pg.Ending, len(pg.Path))
+		//	vs1, _, _ := LoadSolidState(store[round], chainID)
+		//	badKeys1 := vs1.ReconcileTrie()
+		//	if len(badKeys0) > 0 {
+		//		t.Logf("vs1 bad keys: %v", badKeys1)
+		//	}
+		//	pg = vs1.ProofGeneric([]byte(badKey))
+		//	t.Logf(">>>>>>>>>> vs[%d] key '%s' ending '%s', path: %d", round, badKey, pg.Ending, len(pg.Path))
+		//
+		//	t.Logf(">>>>>>>>> vs[%d] C = %s", round-1, vs0.StateCommitment())
+		//	t.Logf(">>>>>>>>> vs[%d] C = %s", round, vs1.StateCommitment())
+		//	t.FailNow()
+		//}
+	}
+}
+
+func TestStateBasic(t *testing.T) {
+	chainID := iscp.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
+	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
 	h1 := vs1.StateCommitment()
-	require.EqualValues(t, OriginStateHash(), h1)
+	require.True(t, OriginStateCommitment().Equal(h1))
 
 	vs2 := vs1.Copy()
 	h2 := vs2.StateCommitment()
@@ -303,89 +449,15 @@ func TestVariableStateBasic(t *testing.T) {
 	require.EqualValues(t, vs3.StateCommitment(), vs4.StateCommitment())
 }
 
-func TestStateCommitmentAssociativity(t *testing.T) {
-	store1 := mapdb.NewMapDB()
-	store2 := mapdb.NewMapDB()
-	chainID := iscp.RandomChainID([]byte("associative"))
-
-	// vsNode1 index 0 vsNode2 index 0
-
-	vsNode1, err := CreateOriginState(store1, chainID)
-	require.NoError(t, err)
-	vsNode2, err := CreateOriginState(store2, chainID)
-	require.NoError(t, err)
-
-	// vsNode1 index 1 vsNode2 index 0
-
-	currentTime := time.Now()
-	su := NewStateUpdateWithBlocklogValues(1, currentTime, hashing.NilHash)
-	su.Mutations().Set("key", []byte("value"))
-	block1, err := newBlock(su.Mutations())
-	require.NoError(t, err)
-
-	err = vsNode1.ApplyBlock(block1)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, vsNode1.BlockIndex())
-	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
-	sc1Node1BeforeCommit := vsNode1.StateCommitment()
-
-	err = vsNode1.Commit(block1)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, vsNode1.BlockIndex())
-	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
-	sc1Node1AfterCommit := vsNode1.StateCommitment()
-	require.Equal(t, sc1Node1BeforeCommit, sc1Node1AfterCommit)
-
-	// vsNode1 index 2 vsNode2 index 0
-
-	currentTime = time.Now()
-	su = NewStateUpdateWithBlocklogValues(2, currentTime, vsNode1.PreviousStateHash())
-	su.Mutations().Set("otherKey", []byte("otherValue"))
-	block2, err := newBlock(su.Mutations())
-	require.NoError(t, err)
-
-	err = vsNode1.ApplyBlock(block2)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, vsNode1.BlockIndex())
-	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
-	sc2Node1BeforeCommit := vsNode1.StateCommitment()
-
-	// vsNode1 index 2 vsNode2 index 2
-
-	err = vsNode2.ApplyBlock(block1)
-	require.NoError(t, err)
-	err = vsNode2.ApplyBlock(block2)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, vsNode2.BlockIndex())
-	require.True(t, currentTime.Equal(vsNode2.Timestamp()))
-	sc2Node2BeforeCommit := vsNode2.StateCommitment()
-	require.Equal(t, sc2Node1BeforeCommit, sc2Node2BeforeCommit)
-
-	err = vsNode1.Commit(block2)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, vsNode1.BlockIndex())
-	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
-	sc2Node1AfterCommit := vsNode1.StateCommitment()
-	require.Equal(t, sc2Node1BeforeCommit, sc2Node1AfterCommit)
-	require.Equal(t, sc2Node1AfterCommit, sc2Node2BeforeCommit)
-
-	err = vsNode2.Commit(block1)
-	require.NoError(t, err)
-	err = vsNode2.Commit(block2)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, vsNode2.BlockIndex())
-	require.True(t, currentTime.Equal(vsNode2.Timestamp()))
-	sc2Node2AfterCommit := vsNode2.StateCommitment()
-	require.Equal(t, sc2Node2BeforeCommit, sc2Node2AfterCommit)
-	require.Equal(t, sc2Node1AfterCommit, sc2Node2AfterCommit)
-}
-
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
 		chainID := iscp.RandomChainID([]byte("1"))
-		_, err := CreateOriginState(store, chainID)
+		os, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
+		err = os.Save()
+		require.NoError(t, err)
+		c1 := os.StateCommitment()
 
 		glb := coreutil.NewChainStateSync()
 		glb.SetSolidIndex(0)
@@ -393,6 +465,9 @@ func TestStateReader(t *testing.T) {
 		ok, err := st.KVStoreReader().Has("kuku")
 		require.NoError(t, err)
 		require.False(t, ok)
+
+		c2 := st.StateCommitment()
+		require.True(t, trie.EqualCommitments(c1, c2))
 	})
 }
 
@@ -408,7 +483,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
 	h1 := vsOpt.StateCommitment()
-	require.EqualValues(t, OriginStateHash(), h1)
+	require.True(t, OriginStateCommitment().Equal(h1))
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()
@@ -422,7 +497,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 		_, _ = vsOpt.ExtractBlock()
 	})
 	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.PreviousStateHash()
+		_ = vsOpt.PreviousStateCommitment()
 	})
 	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.KVStore()
@@ -445,10 +520,10 @@ func TestVirtualStateMustOptimistic2(t *testing.T) {
 	require.EqualValues(t, hash, hashOpt)
 
 	hashPrev := hash
-	upd := NewStateUpdateWithBlocklogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), vsOpt.PreviousStateHash())
-	vsOpt.ApplyStateUpdates(upd)
+	upd := NewStateUpdateWithBlockLogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), vsOpt.StateCommitment())
+	vsOpt.ApplyStateUpdate(upd)
 	hash = vs.StateCommitment()
 	hashOpt = vsOpt.StateCommitment()
 	require.EqualValues(t, hash, hashOpt)
-	require.NotEqualValues(t, hashPrev, hashOpt)
+	require.EqualValues(t, hashPrev, hashOpt)
 }

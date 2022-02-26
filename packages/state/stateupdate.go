@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"io"
 	"math"
 	"time"
@@ -32,13 +33,13 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
 	return ret
 }
 
-func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) StateUpdate {
+func NewStateUpdateWithBlockLogValues(blockIndex uint32, timestamp time.Time, prevStateCommitment trie.VCommitment) StateUpdate {
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
 	ret.setBlockIndexMutation(blockIndex)
 	ret.setTimestampMutation(timestamp)
-	ret.setPrevStateHashMutation(prevStateHash)
+	ret.setPrevStateCommitmentMutation(prevStateCommitment)
 	return ret
 }
 
@@ -100,7 +101,7 @@ func (su *stateUpdateImpl) timestampMutation() (time.Time, bool, error) {
 }
 
 func (su *stateUpdateImpl) previousStateHashMutation() (hashing.HashValue, bool, error) {
-	hashBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevStateHash))
+	hashBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
 	if !ok {
 		return hashing.NilHash, false, nil
 	}
@@ -192,6 +193,6 @@ func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint64To8Bytes(uint64(blockIndex)))
 }
 
-func (su *stateUpdateImpl) setPrevStateHashMutation(prevStateHash hashing.HashValue) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateHash), prevStateHash.Bytes())
+func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VCommitment) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateCommitment), prevStateCommitment.Bytes())
 }

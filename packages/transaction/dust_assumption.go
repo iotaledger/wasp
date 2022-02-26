@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"fmt"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -55,7 +54,7 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       iotago.AliasID{},
 		Amount:        1000,
-		StateMetadata: state.OriginStateHash().Bytes(),
+		StateMetadata: state.OriginStateCommitment().Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: addr},
 			&iotago.GovernorAddressUnlockCondition{Address: addr},
