@@ -11,6 +11,10 @@ type StateData struct {
 	Commitment trie.VCommitment
 }
 
+func NewStateData(c trie.VCommitment) *StateData {
+	return &StateData{Commitment: c}
+}
+
 func StateDataFromBytes(data []byte) (StateData, error) {
 	ret := StateData{}
 	var err error
@@ -25,4 +29,15 @@ func (s *StateData) Bytes() []byte {
 
 	buf.Write(s.Commitment.Bytes())
 	return buf.Bytes()
+}
+
+var StateDataNil *StateData
+
+func init() {
+	var z [32]byte
+	zs, err := StateDataFromBytes(z[:])
+	if err != nil {
+		panic(err)
+	}
+	StateDataNil = &zs
 }

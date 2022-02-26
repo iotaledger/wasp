@@ -62,6 +62,7 @@ const (
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
+
 type BlockInfo struct {
 	BlockIndex              uint32 // not persistent. Set from key
 	Timestamp               time.Time

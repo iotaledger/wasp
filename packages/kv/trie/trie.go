@@ -70,9 +70,13 @@ func (tr *Trie) Clone() *Trie {
 		model:     tr.model,
 		store:     tr.store,
 		nodeCache: make(map[kv.Key]*Node),
+		deleted:   make(map[kv.Key]struct{}),
 	}
 	for k, v := range tr.nodeCache {
 		ret.nodeCache[k] = v.Clone()
+	}
+	for k := range tr.deleted {
+		ret.deleted[k] = struct{}{}
 	}
 	return ret
 }
@@ -245,13 +249,13 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		assert(childPosition <= len(key), "childPosition < len(key)")
 		keyContinue := make([]byte, childPosition+1)
 		copy(keyContinue, key)
-		splitChildIndex := len(lastCommonPrefix)
-		assert(splitChildIndex < len(lastNode.PathFragment), "splitChildIndex<len(last.Node.PathFragment)")
-		childContinue := lastNode.PathFragment[splitChildIndex]
+		splitIndex := len(lastCommonPrefix)
+		assert(splitIndex < len(lastNode.PathFragment), "splitIndex<len(last.Node.PathFragment)")
+		childContinue := lastNode.PathFragment[splitIndex]
 		keyContinue[len(keyContinue)-1] = childContinue
 
 		// create new node on keyContinue, move everything from old to the new node and adjust the path fragment
-		tr.newNodeCopy(keyContinue, lastNode.PathFragment[splitChildIndex+1:], lastNode)
+		tr.newNodeCopy(keyContinue, lastNode.PathFragment[splitIndex+1:], lastNode)
 		// clear the old one and adjust path fragment. Continue with 1 child, the new node
 		lastNode.ChildCommitments = make(map[uint8]VCommitment)
 		lastNode.ModifiedChildren = make(map[uint8]struct{})
@@ -267,7 +271,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 			// create a new node
 			keyFork := key[:len(keyContinue)]
 			childForkIndex := keyFork[len(keyFork)-1]
-			assert(int(childForkIndex) != splitChildIndex, "childForkIndex != splitChildIndex")
+			assert(childForkIndex != childContinue, "childForkIndex != childContinue")
 			tr.newTerminalNode(keyFork, key[len(keyFork):], c)
 			lastNode.ModifiedChildren[childForkIndex] = struct{}{}
 		}

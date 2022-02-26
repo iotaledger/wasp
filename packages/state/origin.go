@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/hex"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
@@ -17,4 +18,8 @@ func OriginStateCommitment() trie.VCommitment {
 		panic(err)
 	}
 	return ret
+}
+
+func OriginStateData() *iscp.StateData {
+	return iscp.NewStateData(OriginStateCommitment())
 }

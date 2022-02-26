@@ -97,9 +97,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	stateHashFromState := optimisticStateAccess.StateCommitment()
+	commitmentFromState := optimisticStateAccess.StateCommitment()
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if stateData.Commitment != stateHashFromState || blockIndex != task.AnchorOutput.StateIndex {
+	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
@@ -173,6 +173,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.closeBlockContexts()
 	vmctx.saveInternalUTXOs()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.virtualState.Commit()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -215,7 +216,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasBurned:               vmctx.gasBurnedTotal,
 		GasFeeCharged:           vmctx.gasFeeChargedTotal,
 	}
-	if vmctx.virtualState.PreviousStateCommitment() != blockInfo.PreviousStateCommitment {
+	if !trie.EqualCommitments(vmctx.virtualState.PreviousStateCommitment(), blockInfo.PreviousStateCommitment) {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
 
