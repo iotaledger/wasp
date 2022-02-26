@@ -1,25 +1,8 @@
 package trie
 
 import (
-	"bytes"
 	"io"
 )
-
-func Bytes(o interface{ Write(w io.Writer) error }) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := o.Write(&buf); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func MustBytes(o interface{ Write(w io.Writer) error }) []byte {
-	ret, err := Bytes(o)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
 
 type byteCounter int
 

@@ -194,5 +194,5 @@ func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
 }
 
 func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VCommitment) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateCommitment), trie.MustBytes(prevStateCommitment))
+	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateCommitment), prevStateCommitment.Bytes())
 }

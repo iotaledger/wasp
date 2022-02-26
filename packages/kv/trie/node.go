@@ -12,6 +12,7 @@ type CommitmentBase interface {
 	Write(w io.Writer) error
 	String() string
 	Equal(CommitmentBase) bool
+	Bytes() []byte
 }
 
 type VCommitment interface {
@@ -166,4 +167,10 @@ func (n *Node) Read(r io.Reader, setup CommitmentModel) error {
 		}
 	}
 	return nil
+}
+
+func (n *Node) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = n.Write(&buf)
+	return buf.Bytes()
 }

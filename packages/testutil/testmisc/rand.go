@@ -15,9 +15,18 @@ func RandChainID() *iscp.ChainID {
 
 func RandVectorCommitment() trie.VCommitment {
 	h := hashing.RandomHash(nil)
-	ret, err := trie_merkle.NewVectorCommitmentFromBytes(h[:])
+	ret, err := trie_merkle.VectorCommitmentFromBytes(h[:])
 	if err != nil {
 		panic(err)
 	}
 	return ret
+}
+
+func RandStateData() *iscp.StateData {
+	h := hashing.RandomHash(nil)
+	sd, err := iscp.StateDataFromBytes(h[:])
+	if err != nil {
+		panic(err)
+	}
+	return &sd
 }

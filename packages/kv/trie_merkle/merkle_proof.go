@@ -84,6 +84,12 @@ func (m *commitmentModel) Proof(key []byte, tr *trie.Trie) *Proof {
 	return ret
 }
 
+func (p *Proof) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = p.Write(&buf)
+	return buf.Bytes()
+}
+
 // MustKeyTerminal returns key and terminal commitment the proof is about. If it returns:
 // - key
 // - commitment slice of up to 32 bytes long. If it is nil, the proof is an absence proof

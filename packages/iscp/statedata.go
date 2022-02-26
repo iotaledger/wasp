@@ -2,7 +2,6 @@ package iscp
 
 import (
 	"bytes"
-	"encoding/hex"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 )
@@ -15,7 +14,7 @@ type StateData struct {
 func StateDataFromBytes(data []byte) (StateData, error) {
 	ret := StateData{}
 	var err error
-	if ret.Commitment, err = trie_merkle.NewVectorCommitmentFromBytes(data); err != nil {
+	if ret.Commitment, err = trie_merkle.VectorCommitmentFromBytes(data); err != nil {
 		return StateData{}, err
 	}
 	return ret, nil
@@ -24,20 +23,6 @@ func StateDataFromBytes(data []byte) (StateData, error) {
 func (s *StateData) Bytes() []byte {
 	var buf bytes.Buffer
 
-	buf.Write(trie.MustBytes(s.Commitment))
+	buf.Write(s.Commitment.Bytes())
 	return buf.Bytes()
-}
-
-const OriginStateCommitmentHex = "5924dc2f04542fc93b02fa5c8b230f62110a9fbda78fca024cf58087bd32204f"
-
-func OriginStateCommitment() trie.VCommitment {
-	retBin, err := hex.DecodeString(OriginStateCommitmentHex)
-	if err != nil {
-		panic(err)
-	}
-	ret, err := trie_merkle.NewVectorCommitmentFromBytes(retBin)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }

@@ -5,9 +5,8 @@ package iscp
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
 type AliasOutputWithID struct {

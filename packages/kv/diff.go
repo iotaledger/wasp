@@ -6,6 +6,8 @@ import (
 	"sort"
 )
 
+// used mostly for testing
+
 type Diff []*DiffElement
 
 type DiffElement struct {

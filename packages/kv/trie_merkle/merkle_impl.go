@@ -65,12 +65,22 @@ func (m *commitmentModel) CommitToData(data []byte) trie.TCommitment {
 	return commitToTerminal(data)
 }
 
-func NewVectorCommitmentFromBytes(data []byte) (trie.VCommitment, error) {
-	ret := Model.NewVectorCommitment()
+func (m *commitmentModel) VectorCommitmentFromBytes(data []byte) (trie.VCommitment, error) {
+	ret := m.NewVectorCommitment()
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return ret, nil
+}
+
+func VectorCommitmentFromBytes(data []byte) (trie.VCommitment, error) {
+	return Model.VectorCommitmentFromBytes(data)
+}
+
+func (v *vectorCommitment) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = v.Write(&buf)
+	return buf.Bytes()
 }
 
 func (v *vectorCommitment) Read(r io.Reader) error {
@@ -150,6 +160,12 @@ func (t *terminalCommitment) Read(r io.Reader) error {
 		return xerrors.New("bad data length")
 	}
 	return nil
+}
+
+func (t *terminalCommitment) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = t.Write(&buf)
+	return buf.Bytes()
 }
 
 func (t *terminalCommitment) String() string {

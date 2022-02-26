@@ -12,6 +12,7 @@ import (
 type CommitmentModel interface {
 	NewVectorCommitment() VCommitment
 	NewTerminalCommitment() TCommitment
+	VectorCommitmentFromBytes([]byte) (VCommitment, error)
 	CommitToNode(*Node) VCommitment
 	CommitToData([]byte) TCommitment
 }
@@ -130,7 +131,7 @@ func (tr *Trie) CommitToNode(n *Node) VCommitment {
 
 func (tr *Trie) ApplyMutations(store kv.KVWriter) {
 	for k, v := range tr.nodeCache {
-		store.Set(k, MustBytes(v))
+		store.Set(k, v.Bytes())
 	}
 	for k := range tr.deleted {
 		_, inCache := tr.nodeCache[k]

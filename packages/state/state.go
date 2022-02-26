@@ -31,7 +31,7 @@ type virtualStateAccess struct {
 }
 
 var (
-	commitmentModel                    = trie_merkle.Model
+	CommitmentModel                    = trie_merkle.Model
 	_               VirtualStateAccess = &virtualStateAccess{}
 )
 
@@ -42,7 +42,7 @@ func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
 	ret := &virtualStateAccess{
 		db:   db,
 		kvs:  buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(subState)),
-		trie: trie.New(commitmentModel, kv.NewHiveKVStoreReader(subTrie)),
+		trie: trie.New(CommitmentModel, kv.NewHiveKVStoreReader(subTrie)),
 	}
 	return ret
 }

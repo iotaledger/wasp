@@ -26,7 +26,7 @@ func TestNode(t *testing.T) {
 
 		nBack, err := trie.NodeFromBytes(Model, buf.Bytes())
 		require.NoError(t, err)
-		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
+		require.EqualValues(t, buf.Bytes(), nBack.Bytes())
 
 		h := Model.CommitToNode(n)
 		hBack := Model.CommitToNode(nBack)
@@ -45,7 +45,7 @@ func TestNode(t *testing.T) {
 
 		nBack, err := trie.NodeFromBytes(Model, buf.Bytes())
 		require.NoError(t, err)
-		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
+		require.EqualValues(t, buf.Bytes(), nBack.Bytes())
 
 		h := Model.CommitToNode(n)
 		hBack := Model.CommitToNode(nBack)
@@ -63,7 +63,7 @@ func TestNode(t *testing.T) {
 
 		nBack, err := trie.NodeFromBytes(Model, buf.Bytes())
 		require.NoError(t, err)
-		require.EqualValues(t, buf.Bytes(), trie.MustBytes(nBack))
+		require.EqualValues(t, buf.Bytes(), nBack.Bytes())
 
 		h := Model.CommitToNode(n)
 		hBack := Model.CommitToNode(nBack)
@@ -881,7 +881,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			sz := trie.MustSize(proof)
 			t.Logf("proof presence size = %d bytes", sz)
 
-			proofBin := trie.MustBytes(proof)
+			proofBin := proof.Bytes()
 			require.EqualValues(t, len(proofBin), sz)
 			proofBack, err := ProofFromBytes(proofBin)
 			require.NoError(t, err)
@@ -899,7 +899,7 @@ func TestTrieProofWithDeletes(t *testing.T) {
 			sz := trie.MustSize(proof)
 			t.Logf("proof absence size = %d bytes", sz)
 
-			proofBin := trie.MustBytes(proof)
+			proofBin := proof.Bytes()
 			require.EqualValues(t, len(proofBin), sz)
 			proofBack, err := ProofFromBytes(proofBin)
 			require.NoError(t, err)

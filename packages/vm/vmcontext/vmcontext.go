@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -165,7 +166,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, trie.VCommitment, time.Time, iotago.Address) {
 	vmctx.gasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
@@ -202,19 +203,19 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:             vmctx.virtualState.BlockIndex(),
-		Timestamp:              vmctx.virtualState.Timestamp(),
-		TotalRequests:          numRequests,
-		NumSuccessfulRequests:  numSuccess,
-		NumOffLedgerRequests:   numOffLedger,
-		PreviousStateHash:      prevStateData.Commitment,
-		AnchorTransactionID:    iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TotalIotasInL2Accounts: totalIotasInContracts,
-		TotalDustDeposit:       totalDustOnChain,
-		GasBurned:              vmctx.gasBurnedTotal,
-		GasFeeCharged:          vmctx.gasFeeChargedTotal,
+		BlockIndex:              vmctx.virtualState.BlockIndex(),
+		Timestamp:               vmctx.virtualState.Timestamp(),
+		TotalRequests:           numRequests,
+		NumSuccessfulRequests:   numSuccess,
+		NumOffLedgerRequests:    numOffLedger,
+		PreviousStateCommitment: prevStateData.Commitment,
+		AnchorTransactionID:     iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TotalIotasInL2Accounts:  totalIotasInContracts,
+		TotalDustDeposit:        totalDustOnChain,
+		GasBurned:               vmctx.gasBurnedTotal,
+		GasFeeCharged:           vmctx.gasFeeChargedTotal,
 	}
-	if vmctx.virtualState.PreviousStateCommitment() != blockInfo.PreviousStateHash {
+	if vmctx.virtualState.PreviousStateCommitment() != blockInfo.PreviousStateCommitment {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
 

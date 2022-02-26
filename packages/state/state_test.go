@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
 	"math"
@@ -28,8 +27,8 @@ func TestOriginHashes(t *testing.T) {
 	})
 	t.Run("origin state hash consistency ", func(t *testing.T) {
 		t.Logf("origin state hash calculated: %s", calcOriginStateHash().String())
-		require.EqualValues(t, iscp.OriginStateCommitmentHex, iscp.OriginStateCommitment().String())
-		require.EqualValues(t, iscp.OriginStateCommitment().String(), calcOriginStateHash().String())
+		require.EqualValues(t, OriginStateCommitmentHex, OriginStateCommitment().String())
+		require.EqualValues(t, OriginStateCommitment().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
 		z := newVirtualState(mapdb.NewMapDB())
@@ -39,7 +38,7 @@ func TestOriginHashes(t *testing.T) {
 		chainID := testmisc.RandChainID()
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
-		require.True(t, vs.StateCommitment().Equal(iscp.OriginStateCommitment()))
+		require.True(t, vs.StateCommitment().Equal(OriginStateCommitment()))
 		require.EqualValues(t, calcOriginStateHash(), vs.StateCommitment())
 	})
 }
@@ -276,7 +275,7 @@ func genRndBlocks(start, num int) []Block {
 	for blkNum := range blocks {
 		var buf [32]byte
 		copy(buf[:], fmt.Sprintf("kuku %d", blkNum))
-		vc, _ := trie_merkle.NewVectorCommitmentFromBytes(buf[:])
+		vc, _ := CommitmentModel.VectorCommitmentFromBytes(buf[:])
 		upd := NewStateUpdateWithBlockLogValues(uint32(blkNum+start), time.UnixMilli(millis+int64(blkNum+100)), vc)
 		for i := 0; i < numMutations; i++ {
 			s := "1111" + strs[rand.Intn(len(strs))]
@@ -426,7 +425,7 @@ func TestStateBasic(t *testing.T) {
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
 	h1 := vs1.StateCommitment()
-	require.True(t, iscp.OriginStateCommitment().Equal(h1))
+	require.True(t, OriginStateCommitment().Equal(h1))
 
 	vs2 := vs1.Copy()
 	h2 := vs2.StateCommitment()
@@ -484,7 +483,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
 	h1 := vsOpt.StateCommitment()
-	require.True(t, iscp.OriginStateCommitment().Equal(h1))
+	require.True(t, OriginStateCommitment().Equal(h1))
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()
