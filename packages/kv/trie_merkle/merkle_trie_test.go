@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNode(t *testing.T) {
@@ -669,7 +670,7 @@ func TestTrieWithDeletion(t *testing.T) {
 
 		require.True(t, c1.Equal(c2))
 	})
-	t.Run("del determ", func(t *testing.T) {
+	t.Run("del determ 1", func(t *testing.T) {
 		initTest()
 		data = genRnd4()
 		dels := genDels(data, 1000)
@@ -703,6 +704,38 @@ func TestTrieWithDeletion(t *testing.T) {
 		t.Logf("root1 = %s", c1)
 		t.Logf("root2 = %s", c2)
 		require.True(t, c1.Equal(c2))
+	})
+	t.Run("del determ 2", func(t *testing.T) {
+		initTest()
+		data = genRnd4()
+		t.Logf("data len = %d", len(data))
+
+		const rounds = 5
+		var c, cPrev trie.VCommitment
+
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		for i := 0; i < rounds; i++ {
+			t.Logf("-------- round #%d", i)
+			perm := rng.Perm(len(data))
+			for _, j := range perm {
+				tr1.UpdateStr(data[j], []byte(data[j]))
+			}
+			tr1.Commit()
+			if cPrev != nil {
+				require.True(t, trie.EqualCommitments(c, cPrev))
+			}
+			perm = rng.Perm(len(data))
+			for _, j := range perm {
+				tr1.DeleteStr(data[j])
+				if rng.Intn(1000) < 100 {
+					tr1.Commit()
+				}
+			}
+			tr1.Commit()
+			cPrev = c
+			c = tr1.RootCommitment()
+			require.True(t, trie.EqualCommitments(c, nil))
+		}
 	})
 }
 

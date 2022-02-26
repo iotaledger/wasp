@@ -35,6 +35,7 @@ type OptimisticStateReader interface {
 	Timestamp() (time.Time, error)
 	KVStoreReader() kv.KVStoreReader
 	SetBaseline()
+	StateCommitment() trie.VCommitment
 }
 
 // StateUpdate is a set of mutations

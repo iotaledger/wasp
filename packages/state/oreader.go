@@ -6,26 +6,37 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"time"
 )
 
 // OptimisticStateReaderImpl state reader reads the chain state from db and validates it
 type OptimisticStateReaderImpl struct {
-	db         kvstore.KVStore
-	chainState *optimism.OptimisticKVStoreReader
+	db          kvstore.KVStore
+	stateReader *optimism.OptimisticKVStoreReader
+	trie        *trie.Trie
 }
 
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
-func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *OptimisticStateReaderImpl {
-	chainState := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeState}))
+func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync, commitmentModel ...trie.CommitmentModel) *OptimisticStateReaderImpl {
+	chainReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeState}))
+	trieReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeTrie}))
+	baseline := glb.GetSolidIndexBaseline()
+	m := trie.CommitmentModel(trie_merkle.Model)
+
+	if len(commitmentModel) > 0 {
+		m = commitmentModel[0]
+	}
 	return &OptimisticStateReaderImpl{
-		db:         db,
-		chainState: optimism.NewOptimisticKVStoreReader(chainState, glb.GetSolidIndexBaseline()),
+		db:          db,
+		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
+		trie:        trie.New(m, optimism.NewOptimisticKVStoreReader(trieReader, baseline)),
 	}
 }
 
 func (r *OptimisticStateReaderImpl) BlockIndex() (uint32, error) {
-	blockIndex, err := loadStateIndexFromState(r.chainState)
+	blockIndex, err := loadStateIndexFromState(r.stateReader)
 	if err != nil {
 		return 0, err
 	}
@@ -33,7 +44,7 @@ func (r *OptimisticStateReaderImpl) BlockIndex() (uint32, error) {
 }
 
 func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
-	ts, err := loadTimestampFromState(r.chainState)
+	ts, err := loadTimestampFromState(r.stateReader)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -41,9 +52,13 @@ func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 }
 
 func (r *OptimisticStateReaderImpl) KVStoreReader() kv.KVStoreReader {
-	return r.chainState
+	return r.stateReader
 }
 
 func (r *OptimisticStateReaderImpl) SetBaseline() {
-	r.chainState.SetBaseline()
+	r.stateReader.SetBaseline()
+}
+
+func (r *OptimisticStateReaderImpl) StateCommitment() trie.VCommitment {
+	return r.trie.RootCommitment()
 }
