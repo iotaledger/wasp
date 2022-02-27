@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -54,7 +55,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 
 	// catches protocol exception error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	err = util.CatchPanicReturnError(
+	err = panicutil.CatchPanicReturnError(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()

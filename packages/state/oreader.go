@@ -56,3 +56,7 @@ func (r *OptimisticStateReaderImpl) SetBaseline() {
 func (r *OptimisticStateReaderImpl) StateCommitment() trie.VCommitment {
 	return r.trie.RootCommitment()
 }
+
+func (r *OptimisticStateReaderImpl) Trie() *trie.Trie {
+	return r.trie
+}

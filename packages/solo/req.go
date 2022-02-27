@@ -4,6 +4,9 @@
 package solo
 
 import (
+	"bytes"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"math"
 	"time"
 
@@ -430,6 +433,34 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
+}
+
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
+	ch.Log().Debugf("GetMerkleProof")
+
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	ret, err := vmctx.GetMerkleProof(key)
+	require.NoError(ch.Env.T, err)
+	return ret
+}
+
+func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Proof {
+	var buf bytes.Buffer
+	buf.Write(scHname.Bytes())
+	buf.Write(key)
+	return ch.GetMerkleProofRaw(buf.Bytes())
+}
+
+func (ch *Chain) GetStateCommitment() trie.VCommitment {
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	ret, err := vmctx.GetStateCommitment()
+	require.NoError(ch.Env.T, err)
+	return ret
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true

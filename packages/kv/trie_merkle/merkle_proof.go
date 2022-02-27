@@ -123,7 +123,7 @@ func (p *Proof) MustIsProofOfAbsence() bool {
 	return r == nil
 }
 
-func (p *Proof) Validate(root trie.VCommitment) error {
+func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 	if len(p.Path) == 0 {
 		if root != nil {
 			return xerrors.New("proof is empty")
@@ -137,6 +137,13 @@ func (p *Proof) Validate(root trie.VCommitment) error {
 	cv := (vectorCommitment)(c)
 	if !(&cv).Equal(root) {
 		return xerrors.New("invalid proof: commitment not equal to the root")
+	}
+	if len(value) > 0 {
+		tc := p.Path[len(p.Path)-1].Terminal
+		tc1 := commitToTerminal(value[0])
+		if !trie.EqualCommitments(tc1, tc) {
+			return xerrors.New("invalid proof: terminal commitment and terminal proof are not valid")
+		}
 	}
 	return nil
 }

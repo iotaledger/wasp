@@ -2,6 +2,7 @@ package vmtxbuilder
 
 import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -16,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"github.com/stretchr/testify/require"
 )
@@ -403,7 +403,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		numTokenIDs = 4
 
 		initTest()
-		err := util.CatchPanicReturnError(func() {
+		err := panicutil.CatchPanicReturnError(func() {
 			runConsume(runTimes, testAmount)
 		}, vmexceptions.ErrInputLimitExceeded)
 		require.Error(t, err, vmexceptions.ErrInputLimitExceeded)
@@ -426,7 +426,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
 
-		err = util.CatchPanicReturnError(func() {
+		err = panicutil.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, 1)
 		}, vmexceptions.ErrOutputLimitExceeded)
 
@@ -450,7 +450,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
 
-		err = util.CatchPanicReturnError(func() {
+		err = panicutil.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, 1)
 		}, vmexceptions.ErrOutputLimitExceeded)
 
@@ -732,7 +732,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("create foundry not enough", func(t *testing.T) {
 		initTest()
-		err := util.CatchPanicReturnError(func() {
+		err := panicutil.CatchPanicReturnError(func() {
 			createNFoundries(5)
 		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)

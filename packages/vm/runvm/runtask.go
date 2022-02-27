@@ -5,7 +5,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -15,7 +15,7 @@ type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
-	err := util.CatchPanicReturnError(
+	err := panicutil.CatchPanicReturnError(
 		func() { runTask(task) },
 		coreutil.ErrorStateInvalidated,
 	)
