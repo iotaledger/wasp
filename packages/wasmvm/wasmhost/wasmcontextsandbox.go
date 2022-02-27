@@ -287,7 +287,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	}
 
 	options := iscp.SendOptions{
-		TimeLock: uint32(time.Unix(0, s.ctx.GetTimestamp()).Unix()) + req.Delay,
+		TimeLock: uint32(time.Duration(s.ctx.GetTimestamp())/time.Second) + req.Delay,
 	}
 	if !s.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
 		s.Panicf("failed to send to %s", chainID.AsAddress().String())

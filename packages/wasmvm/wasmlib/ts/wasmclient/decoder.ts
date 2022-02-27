@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // The Results struct is used to gather all arguments for a smart
 // contract function call and encode it into a deterministic byte array
 import * as wasmclient from "./index";

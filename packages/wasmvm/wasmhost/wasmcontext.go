@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
@@ -72,7 +75,7 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		return nil, nil
 	}
 
-	wc.trace("Calling " + wc.funcName)
+	wc.tracef("Calling " + wc.funcName)
 	wc.results = nil
 	err := wc.callFunction()
 	if err != nil {
@@ -96,7 +99,7 @@ func (wc *WasmContext) callFunction() error {
 func (wc *WasmContext) ExportName(index int32, name string) {
 	if index >= 0 {
 		if HostTracing {
-			wc.trace("ExportName(%d, %s)", index, name)
+			wc.tracef("ExportName(%d, %s)", index, name)
 		}
 		wc.funcTable.SetExport(index, name)
 		return
@@ -130,11 +133,11 @@ func (wc *WasmContext) log() iscp.LogInterface {
 
 func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
 	if HostTracing && funcNr != wasmlib.FnLog {
-		wc.trace("Sandbox(%s)", traceSandbox(funcNr, params))
+		wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
 	}
 	res := wc.sandbox.Call(funcNr, params)
 	if HostTracing && funcNr != wasmlib.FnLog {
-		wc.trace("  => %s", hex(res))
+		wc.tracef("  => %s", hex(res))
 	}
 	return res
 }
@@ -154,7 +157,7 @@ func (wc *WasmContext) state() kv.KVStoreReader {
 
 func (wc *WasmContext) StateDelete(key []byte) {
 	if HostTracing {
-		wc.trace("StateDelete(%s)", traceHex(key))
+		wc.tracef("StateDelete(%s)", traceHex(key))
 	}
 	ctx := wc.wcSandbox.ctx
 	if ctx == nil {
@@ -169,7 +172,7 @@ func (wc *WasmContext) StateExists(key []byte) bool {
 		panic("StateExists: " + err.Error())
 	}
 	if HostTracing {
-		wc.trace("StateExists(%s) = %v", traceHex(key), exists)
+		wc.tracef("StateExists(%s) = %v", traceHex(key), exists)
 	}
 	return exists
 }
@@ -180,15 +183,15 @@ func (wc *WasmContext) StateGet(key []byte) []byte {
 		panic("StateGet: " + err.Error())
 	}
 	if HostTracing {
-		wc.trace("StateGet(%s)", traceHex(key))
-		wc.trace("  => %s", hex(res))
+		wc.tracef("StateGet(%s)", traceHex(key))
+		wc.tracef("  => %s", hex(res))
 	}
 	return res
 }
 
 func (wc *WasmContext) StateSet(key, value []byte) {
 	if HostTracing {
-		wc.trace("StateSet(%s, %s)", traceHex(key), traceVal(value))
+		wc.tracef("StateSet(%s, %s)", traceHex(key), traceVal(value))
 	}
 	ctx := wc.wcSandbox.ctx
 	if ctx == nil {
@@ -197,7 +200,7 @@ func (wc *WasmContext) StateSet(key, value []byte) {
 	ctx.State().Set(kv.Key(key), value)
 }
 
-func (wc *WasmContext) trace(format string, args ...interface{}) {
+func (wc *WasmContext) tracef(format string, args ...interface{}) {
 	if wc.proc != nil {
 		wc.log().Debugf(format, args...)
 	}
