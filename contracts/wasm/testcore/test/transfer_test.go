@@ -64,7 +64,7 @@ func TestWithdrawToAddress(t *testing.T) {
 		// note that that includes the token that we transfer here
 		xfer := testcore.ScFuncs.SendToAddress(ctx.Sign(ctx.Originator()))
 		xfer.Params.Address().SetValue(user.ScAddress())
-		xfer.Func.TransferIotas(1).Post()
+		xfer.Func.Post()
 		require.NoError(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())

@@ -166,31 +166,32 @@ func (s *SoloSandbox) fnBlockContext(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
+	ctx := s.ctx
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract := s.cvt.IscpHname(req.Contract)
-	if contract != iscp.Hn(s.ctx.scName) {
-		s.Panicf("unknown contract: %s vs. %s", contract.String(), s.ctx.scName)
+	if contract != iscp.Hn(ctx.scName) {
+		s.Panicf("unknown contract: %s vs. %s", contract.String(), ctx.scName)
 	}
 	function := s.cvt.IscpHname(req.Function)
-	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
+	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
-	s.Tracef("CALL c'%s' f'%s'", s.ctx.scName, funcName)
+	s.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
 	s.checkErr(err)
 
 	if len(transfer) != 0 {
-		return s.postSync(s.ctx.scName, funcName, params, transfer)
+		return s.postSync(ctx.scName, funcName, params, transfer)
 	}
 
-	_ = wasmhost.Connect(s.ctx.wasmHostOld)
-	res, err := s.ctx.Chain.CallView(s.ctx.scName, funcName, params)
-	_ = wasmhost.Connect(s.ctx.wc)
-	s.ctx.Err = err
-	if err != nil {
+	_ = wasmhost.Connect(ctx.wasmHostOld)
+	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
+	_ = wasmhost.Connect(ctx.wc)
+	ctx.Err = err
+	if ctx.Err != nil {
 		return nil
 	}
 	return res.Bytes()
@@ -266,13 +267,13 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
-	s.Tracef("POST c'%s' f'%s'", s.ctx.scName, funcName)
+	s.Tracef("POST %s.%s", s.ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
 	s.checkErr(err)
 	if len(transfer) == 0 && !s.ctx.offLedger {
-		s.Panicf("transfer is required for post")
+		transfer.Add(colored.Color{}, 1)
 	}
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
@@ -292,7 +293,7 @@ func (s *SoloSandbox) fnResults(args []byte) []byte {
 	panic("implement me")
 }
 
-// transfer tokens to address
+// transfer tokens to L1 address
 func (s *SoloSandbox) fnSend(args []byte) []byte {
 	panic("implement me")
 }

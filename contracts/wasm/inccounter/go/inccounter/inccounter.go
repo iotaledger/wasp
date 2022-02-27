@@ -55,7 +55,7 @@ func funcIncrement(ctx wasmlib.ScFuncContext, f *IncrementContext) {
 func funcIncrementWithDelay(ctx wasmlib.ScFuncContext, f *IncrementWithDelayContext) {
 	delay := f.Params.Delay().Value()
 	inc := ScFuncs.CallIncrement(ctx)
-	inc.Func.Delay(delay).TransferIotas(1).Post()
+	inc.Func.Delay(delay).Post()
 }
 
 func funcLocalStateInternalCall(ctx wasmlib.ScFuncContext, f *LocalStateInternalCallContext) {
@@ -93,7 +93,7 @@ func funcPostIncrement(ctx wasmlib.ScFuncContext, f *PostIncrementContext) {
 	value := counter.Value()
 	counter.SetValue(value + 1)
 	if value == 0 {
-		ScFuncs.PostIncrement(ctx).Func.TransferIotas(1).Post()
+		ScFuncs.PostIncrement(ctx).Func.Post()
 	}
 }
 
@@ -110,7 +110,7 @@ func funcRepeatMany(ctx wasmlib.ScFuncContext, f *RepeatManyContext) {
 		}
 	}
 	stateRepeats.SetValue(repeats - 1)
-	ScFuncs.RepeatMany(ctx).Func.TransferIotas(1).Post()
+	ScFuncs.RepeatMany(ctx).Func.Post()
 }
 
 //nolint:unparam
@@ -214,7 +214,7 @@ func localStatePost(ctx wasmlib.ScFuncContext, nr int64) {
 	// note: we add a dummy parameter here to prevent "duplicate outputs not allowed" error
 	f := ScFuncs.WhenMustIncrement(ctx)
 	f.Params.Dummy().SetValue(nr)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 }
 
 func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {

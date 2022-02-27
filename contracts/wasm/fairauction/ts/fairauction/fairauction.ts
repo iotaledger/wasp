@@ -42,7 +42,7 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
     let size = bidderList.length();
     for (let i: u32 = 0; i < size; i++) {
         let loser = bidderList.getAgentID(i).value();
-        if (loser != auction.highestBidder) {
+        if (!loser.equals(auction.highestBidder)) {
             let bid = bids.getBid(loser).value();
             transferTokens(ctx, loser, wasmtypes.IOTA, bid.amount);
         }
@@ -172,7 +172,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
 
     let fa = sc.ScFuncs.finalizeAuction(ctx);
     fa.params.color().setValue(auction.color);
-    fa.func.delay(duration * 60).transferIotas(1).post();
+    fa.func.delay(duration * 60).post();
 }
 
 export function viewGetInfo(ctx: wasmlib.ScViewContext, f: sc.GetInfoContext): void {

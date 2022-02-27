@@ -270,26 +270,24 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
 	s.checkErr(err)
 	if len(transfer) == 0 {
-		s.Panicf("transfer is required for post")
+		transfer.Add(colored.Color{}, 1)
 	}
 
-	s.Tracef("POST hContract '%s, hFunction %s, chain ", contract.String(), function.String(), chainID.String())
+	s.Tracef("POST hContract '%s, hFunction %s, chain %s", contract.String(), function.String(), chainID.String())
 	metadata := &iscp.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
 		Args:           params,
 	}
-	if req.Delay == 0 {
+	if req.Delay != 0 {
 		if !s.ctx.Send(chainID.AsAddress(), transfer, metadata) {
 			s.Panicf("failed to send to %s", chainID.AsAddress().String())
 		}
 		return nil
 	}
 
-	timeLock := time.Unix(0, s.ctx.GetTimestamp())
-	timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
 	options := iscp.SendOptions{
-		TimeLock: uint32(timeLock.Unix()),
+		TimeLock: uint32(time.Unix(0, s.ctx.GetTimestamp()).Unix()) + req.Delay,
 	}
 	if !s.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
 		s.Panicf("failed to send to %s", chainID.AsAddress().String())

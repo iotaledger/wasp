@@ -180,7 +180,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 
 	fa := ScFuncs.FinalizeAuction(ctx)
 	fa.Params.Color().SetValue(auction.Color)
-	fa.Func.Delay(duration * 60).TransferIotas(1).Post()
+	fa.Func.Delay(duration * 60).Post()
 }
 
 func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {

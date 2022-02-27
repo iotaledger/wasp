@@ -72,7 +72,7 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		return nil, nil
 	}
 
-	wc.log().Debugf("Calling " + wc.funcName)
+	wc.trace("Calling " + wc.funcName)
 	wc.results = nil
 	err := wc.callFunction()
 	if err != nil {
@@ -95,6 +95,9 @@ func (wc *WasmContext) callFunction() error {
 
 func (wc *WasmContext) ExportName(index int32, name string) {
 	if index >= 0 {
+		if HostTracing {
+			wc.trace("ExportName(%d, %s)", index, name)
+		}
 		wc.funcTable.SetExport(index, name)
 		return
 	}
@@ -126,7 +129,14 @@ func (wc *WasmContext) log() iscp.LogInterface {
 }
 
 func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
-	return wc.sandbox.Call(funcNr, params)
+	if HostTracing && funcNr != wasmlib.FnLog {
+		wc.trace("Sandbox(%s)", traceSandbox(funcNr, params))
+	}
+	res := wc.sandbox.Call(funcNr, params)
+	if HostTracing && funcNr != wasmlib.FnLog {
+		wc.trace("  => %s", hex(res))
+	}
+	return res
 }
 
 // state reduces the context state to a KVStoreReader
@@ -143,6 +153,9 @@ func (wc *WasmContext) state() kv.KVStoreReader {
 }
 
 func (wc *WasmContext) StateDelete(key []byte) {
+	if HostTracing {
+		wc.trace("StateDelete(%s)", traceHex(key))
+	}
 	ctx := wc.wcSandbox.ctx
 	if ctx == nil {
 		panic("StateDelete: readonly state")
@@ -155,6 +168,9 @@ func (wc *WasmContext) StateExists(key []byte) bool {
 	if err != nil {
 		panic("StateExists: " + err.Error())
 	}
+	if HostTracing {
+		wc.trace("StateExists(%s) = %v", traceHex(key), exists)
+	}
 	return exists
 }
 
@@ -163,13 +179,80 @@ func (wc *WasmContext) StateGet(key []byte) []byte {
 	if err != nil {
 		panic("StateGet: " + err.Error())
 	}
+	if HostTracing {
+		wc.trace("StateGet(%s)", traceHex(key))
+		wc.trace("  => %s", hex(res))
+	}
 	return res
 }
 
 func (wc *WasmContext) StateSet(key, value []byte) {
+	if HostTracing {
+		wc.trace("StateSet(%s, %s)", traceHex(key), traceVal(value))
+	}
 	ctx := wc.wcSandbox.ctx
 	if ctx == nil {
 		panic("StateSet: readonly state")
 	}
 	ctx.State().Set(kv.Key(key), value)
+}
+
+func (wc *WasmContext) trace(format string, args ...interface{}) {
+	if wc.proc != nil {
+		wc.log().Debugf(format, args...)
+	}
+}
+
+func traceHex(key []byte) string {
+	name := ""
+	for i, b := range key {
+		if b == '.' {
+			return string(key[:i+1]) + hex(key[i+1:])
+		}
+		if b == '#' {
+			name = string(key[:i+1])
+			j := i + 1
+			for ; (key[j] & 0x80) != 0; j++ {
+			}
+			dec := wasmtypes.NewWasmDecoder(key[i+1 : j+1])
+			index := wasmtypes.Uint64Decode(dec)
+			name += wasmtypes.Uint64ToString(index)
+			if j+1 == len(key) {
+				return name
+			}
+			return name + "..." + hex(key[j+1:])
+		}
+	}
+	return `"` + string(key) + `"`
+}
+
+func traceSandbox(funcNr int32, params []byte) string {
+	name := sandboxFuncNames[-funcNr]
+	if name[0] == '$' {
+		return name[1:] + ", " + string(params)
+	}
+	if name[0] != '#' {
+		return name
+	}
+	return name[1:] + ", " + hex(params)
+}
+
+func traceVal(val []byte) string {
+	for _, b := range val {
+		if b < ' ' || b > '~' {
+			return hex(val)
+		}
+	}
+	return string(val)
+}
+
+// hex returns a hex string representing the byte buffer
+func hex(buf []byte) string {
+	const hexa = "0123456789abcdef"
+	res := make([]byte, len(buf)*2)
+	for i, b := range buf {
+		res[i*2] = hexa[b>>4]
+		res[i*2+1] = hexa[b&0x0f]
+	}
+	return string(res)
 }

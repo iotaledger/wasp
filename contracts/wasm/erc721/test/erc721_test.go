@@ -161,7 +161,7 @@ func approve(ctx *wasmsolo.SoloContext, owner, approved *wasmsolo.SoloAgent, tok
 		f.Params.Approved().SetValue(approved.ScAgentID())
 	}
 	f.Params.TokenID().SetValue(tokenID)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 }
 
 func getApproved(t *testing.T, ctx *wasmsolo.SoloContext, tokenID wasmtypes.ScHash) *wasmtypes.ScAgentID {
@@ -189,7 +189,7 @@ func isApprovedForAll(t *testing.T, ctx *wasmsolo.SoloContext, owner, friend *wa
 func mint(ctx *wasmsolo.SoloContext, owner *wasmsolo.SoloAgent, tokenID wasmtypes.ScHash) {
 	f := erc721.ScFuncs.Mint(ctx.Sign(owner))
 	f.Params.TokenID().SetValue(tokenID)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 }
 
 func ownerOf(t *testing.T, ctx *wasmsolo.SoloContext, tokenID wasmtypes.ScHash) wasmtypes.ScAgentID {
@@ -204,7 +204,7 @@ func setApprovalForAll(ctx *wasmsolo.SoloContext, owner, operator *wasmsolo.Solo
 	f := erc721.ScFuncs.SetApprovalForAll(ctx.Sign(owner))
 	f.Params.Operator().SetValue(operator.ScAgentID())
 	f.Params.Approval().SetValue(approval)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 }
 
 func transferFrom(ctx *wasmsolo.SoloContext, sender, from, to *wasmsolo.SoloAgent, tokenID wasmtypes.ScHash) {
@@ -212,5 +212,5 @@ func transferFrom(ctx *wasmsolo.SoloContext, sender, from, to *wasmsolo.SoloAgen
 	f.Params.From().SetValue(from.ScAgentID())
 	f.Params.To().SetValue(to.ScAgentID())
 	f.Params.TokenID().SetValue(tokenID)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 }

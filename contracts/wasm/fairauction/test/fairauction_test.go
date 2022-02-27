@@ -97,7 +97,6 @@ func TestFaNoBids(t *testing.T) {
 
 func TestFaOneBidTooLow(t *testing.T) {
 	ctx := startAuction(t)
-	chain := ctx.Chain
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
@@ -105,9 +104,15 @@ func TestFaOneBidTooLow(t *testing.T) {
 	placeBid.Func.TransferIotas(100).Post()
 	require.Error(t, ctx.Err)
 
+	// TODO this should be a simple 1 request to wait for, but sometimes
+	// the finalizeAuction will have already been triggered (bug), so
+	// instead of waiting for that single finalizeAuction request we
+	// will (erroneously) wait for the inbuf and outbuf counts to equalize
+	info := ctx.Chain.MempoolInfo()
+
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	ctx.AdvanceClockBy(61 * time.Minute)
+	require.True(t, ctx.WaitForPendingRequests(-info.InBufCounter))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
 	getInfo.Params.Color().SetValue(tokenColor)
@@ -120,7 +125,6 @@ func TestFaOneBidTooLow(t *testing.T) {
 
 func TestFaOneBid(t *testing.T) {
 	ctx := startAuction(t)
-	chain := ctx.Chain
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
@@ -128,9 +132,15 @@ func TestFaOneBid(t *testing.T) {
 	placeBid.Func.TransferIotas(500).Post()
 	require.NoError(t, ctx.Err)
 
+	// TODO this should be a simple 1 request to wait for, but sometimes
+	// the finalizeAuction will have already been triggered (bug), so
+	// instead of waiting for that single finalizeAuction request we
+	// will (erroneously) wait for the inbuf and outbuf counts to equalize
+	info := ctx.Chain.MempoolInfo()
+
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	ctx.AdvanceClockBy(61 * time.Minute)
+	require.True(t, ctx.WaitForPendingRequests(-info.InBufCounter))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
 	getInfo.Params.Color().SetValue(tokenColor)

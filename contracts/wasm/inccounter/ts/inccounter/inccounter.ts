@@ -47,7 +47,7 @@ export function funcIncrement(ctx: wasmlib.ScFuncContext, f: sc.IncrementContext
 export function funcIncrementWithDelay(ctx: wasmlib.ScFuncContext, f: sc.IncrementWithDelayContext): void {
     let delay = f.params.delay().value();
     let inc = sc.ScFuncs.callIncrement(ctx);
-    inc.func.delay(delay).transferIotas(1).post();
+    inc.func.delay(delay).post();
 }
 
 export function funcLocalStateInternalCall(ctx: wasmlib.ScFuncContext, f: sc.LocalStateInternalCallContext): void {
@@ -83,7 +83,7 @@ export function funcPostIncrement(ctx: wasmlib.ScFuncContext, f: sc.PostIncremen
     let value = counter.value();
     counter.setValue(value + 1);
     if (value == 0) {
-        sc.ScFuncs.increment(ctx).func.transferIotas(1).post();
+        sc.ScFuncs.increment(ctx).func.post();
     }
 }
 
@@ -100,7 +100,7 @@ export function funcRepeatMany(ctx: wasmlib.ScFuncContext, f: sc.RepeatManyConte
         }
     }
     stateRepeats.setValue(repeats - 1);
-    sc.ScFuncs.repeatMany(ctx).func.transferIotas(1).post();
+    sc.ScFuncs.repeatMany(ctx).func.post();
 }
 
 export function funcTestVliCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVliCodecContext): void {
@@ -234,7 +234,7 @@ function localStatePost(ctx: wasmlib.ScFuncContext, nr: i64): void {
     //note: we add a dummy parameter here to prevent "duplicate outputs not allowed" error
     let f = sc.ScFuncs.whenMustIncrement(ctx);
     f.params.dummy().setValue(nr);
-    f.func.transferIotas(1).post();
+    f.func.post();
 }
 
 function vliSave(ctx: wasmlib.ScFuncContext, name: string, value: i64): void {

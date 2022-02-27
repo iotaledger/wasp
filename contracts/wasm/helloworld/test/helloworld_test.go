@@ -24,7 +24,7 @@ func TestFuncHelloWorld(t *testing.T) {
 	ctx := setupTest(t)
 
 	helloWorld := helloworld.ScFuncs.HelloWorld(ctx)
-	helloWorld.Func.TransferIotas(1).Post()
+	helloWorld.Func.Post()
 	require.NoError(t, ctx.Err)
 }
 

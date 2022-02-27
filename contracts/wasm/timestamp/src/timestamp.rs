@@ -8,6 +8,6 @@ use crate::*;
 pub fn func_now(_ctx: &ScFuncContext, _f: &NowContext) {
 }
 
-pub fn view_get_timestamp(ctx: &ScViewContext, _f: &GetTimestampContext) {
+pub fn view_get_timestamp(ctx: &ScViewContext, f: &GetTimestampContext) {
     f.results.timestamp().set_value(ctx.timestamp());
 }
