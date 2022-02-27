@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"golang.org/x/xerrors"
+	"reflect"
 )
 
 // CommitmentModel abstracts 256+ Trie logic from the commitment logic/cryptography
@@ -522,7 +523,12 @@ func EqualCommitments(c1, c2 CommitmentBase) bool {
 	if c1 == c2 {
 		return true
 	}
-	if c1 == nil || c2 == nil {
+	c1Nil := c1 == nil || (reflect.ValueOf(c1).Kind() == reflect.Ptr && reflect.ValueOf(c1).IsNil())
+	c2Nil := c2 == nil || (reflect.ValueOf(c2).Kind() == reflect.Ptr && reflect.ValueOf(c2).IsNil())
+	if c1Nil && c2Nil {
+		return true
+	}
+	if c1Nil || c2Nil {
 		return false
 	}
 	return c1.Equal(c2)

@@ -142,7 +142,7 @@ func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 		tc := p.Path[len(p.Path)-1].Terminal
 		tc1 := commitToTerminal(value[0])
 		if !trie.EqualCommitments(tc1, tc) {
-			return xerrors.New("invalid proof: terminal commitment and terminal proof are not valid")
+			return xerrors.New("invalid proof: terminal commitment and terminal proof are not equal")
 		}
 	}
 	return nil

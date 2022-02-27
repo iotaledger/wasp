@@ -1,6 +1,7 @@
 package blob
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -12,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-const varStateDirectory = "d"
+const DirectoryPrefix = "d"
 
 func valuesKey(blobHash hashing.HashValue) string {
 	return "v" + string(blobHash[:])
@@ -20,6 +21,17 @@ func valuesKey(blobHash hashing.HashValue) string {
 
 func sizesKey(blobHash hashing.HashValue) string {
 	return "s" + string(blobHash[:])
+}
+
+// FieldValueKey returns key of the blob field value in the SC state.
+// TODO make better UX
+func FieldValueKey(h hashing.HashValue, field string) []byte {
+	var buf bytes.Buffer
+	buf.WriteByte('v')
+	buf.Write(h[:])
+	buf.WriteByte('#')
+	buf.Write([]byte(field))
+	return buf.Bytes()
 }
 
 func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
@@ -43,12 +55,12 @@ func MustGetBlobHash(fields dict.Dict) hashing.HashValue {
 
 // GetDirectory retrieves the blob directory from the state
 func GetDirectory(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, varStateDirectory)
+	return collections.NewMap(state, DirectoryPrefix)
 }
 
 // GetDirectoryR retrieves the blob directory from the read-only state
 func GetDirectoryR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, varStateDirectory)
+	return collections.NewMapReadOnly(state, DirectoryPrefix)
 }
 
 // GetBlobValues retrieves the blob field-value map from the state

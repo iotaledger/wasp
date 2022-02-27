@@ -456,6 +456,13 @@ func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Pro
 }
 
 func (ch *Chain) GetStateCommitment() trie.VCommitment {
+	anchorOutput := ch.GetAnchorOutput()
+	ret, err := anchorOutput.GetStateCommitment()
+	require.NoError(ch.Env.T, err)
+	return ret
+}
+
+func (ch *Chain) GetRootCommitmentFromState() trie.VCommitment {
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	ret, err := vmctx.GetStateCommitment()
