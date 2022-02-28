@@ -80,13 +80,6 @@ func TestConcurrency(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		// note that because SoloContext is not thread-safe we cannot use
-		// the following in parallel go-routines
-		// f := testcore.ScFuncs.IncCounter(ctx)
-
-		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			AddAssetsIotas(1)
-
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
 		if wasmsolo.SoloDebug {
 			for i := range repeats {
@@ -98,6 +91,13 @@ func TestConcurrency(t *testing.T) {
 		for _, n := range repeats {
 			sum += n
 		}
+
+		// note that because SoloContext is not thread-safe we cannot use
+		// the following in parallel go-routines
+		// f := testcore.ScFuncs.IncCounter(ctx)
+
+		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
+			AddAssetsIotas(1)
 
 		chain := ctx.Chain
 		for r, n := range repeats {

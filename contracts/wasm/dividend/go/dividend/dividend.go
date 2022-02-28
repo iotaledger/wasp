@@ -11,6 +11,7 @@
 // step by step what is happening in the code. We also unnecessarily annotate
 // all 'var' statements with their assignment type to improve understanding.
 
+//nolint:revive
 package dividend
 
 import (
@@ -140,7 +141,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	var allowance wasmlib.ScBalances = ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	amount := allowance.Balance(wasmtypes.IOTA)
+	var amount uint64 = allowance.Balance(wasmtypes.IOTA)
 
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
