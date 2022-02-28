@@ -4,7 +4,7 @@
 import * as wasmclient from "./index"
 import {Base58} from "./crypto";
 import {Buffer} from "./buffer";
-import { Colors } from "./colors";
+import {Colors} from "./colors";
 
 export class Transfer {
     private xfer = new Map<string, wasmclient.Uint64>();

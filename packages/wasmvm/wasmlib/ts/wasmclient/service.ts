@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import { Hash, IKeyPair } from "./crypto";
-import { IOnLedger } from "./goshimmer/models/on_ledger";
-import { Colors } from "./colors";
-import { Buffer } from "./buffer";
+import {Hash, IKeyPair} from "./crypto";
+import {IOnLedger} from "./goshimmer/models/on_ledger";
+import {Colors} from "./colors";
+import {Buffer} from "./buffer";
 
 export interface IEventHandler {
     callHandler(topic: string, params: string[]): void;
@@ -42,7 +42,7 @@ export class Service {
         onLedger: boolean
     ): Promise<string> {
         const chainId = this.serviceClient.configuration.chainId;
-        if (!onLedger) {
+        if (! onLedger) {
             // requested off-ledger request
             const requestID = await this.serviceClient.waspClient.postOffLedgerRequest(chainId, this.scHname, hFuncName, args, transfer, keyPair);
             return requestID;

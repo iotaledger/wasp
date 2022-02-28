@@ -285,15 +285,10 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
 }
 
-// transfer assetss to the specified Tangle ledger address
+// transfer assets to the specified Tangle ledger address
 func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 	// we need some assets to send
-	assets := uint64(0)
-	for _, amount := range transfer {
-		assets += amount
-	}
-	if assets == 0 {
-		// only try to send when non-zero assets
+	if transfer.IsEmpty() {
 		return
 	}
 

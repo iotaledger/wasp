@@ -274,17 +274,10 @@ export class ScSandboxFunc extends ScSandbox {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
     }
 
-    // transfer assetss to the specified Tangle ledger address
+    // transfer assets to the specified Tangle ledger address
     public send(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
         // we need some assets to send
-        let assets: u64 = 0;
-        const colors = transfer.balances().colors();
-        for (let i = 0; i < colors.length; i++) {
-            const color = colors[i];
-            assets += transfer.balances().balance(color);
-        }
-        if (assets == 0) {
-            // only try to send when non-zero assets
+        if (transfer.isEmpty()) {
             return;
         }
 

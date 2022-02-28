@@ -87,6 +87,16 @@ export class ScTransfers extends ScAssets {
         return transfer;
     }
 
+    public isEmpty(): bool {
+        const keys = this.assets.keys();
+        for (let i = 0; i < keys.length; i++) {
+            if (this.assets.get(keys[i]) != 0) {
+                return false;
+            }
+         }
+        return true;
+    }
+
     public set(color: wasmtypes.ScColor, amount: u64): void {
         this.assets.set(ScDict.toKey(color.id), amount);
     }

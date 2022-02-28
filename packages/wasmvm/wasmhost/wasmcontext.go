@@ -17,6 +17,7 @@ const (
 
 type ISandbox interface {
 	Call(funcNr int32, params []byte) []byte
+	Tracef(format string, args ...interface{})
 }
 
 type WasmContext struct {
@@ -132,13 +133,13 @@ func (wc *WasmContext) log() iscp.LogInterface {
 }
 
 func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
-	if HostTracing && funcNr != wasmlib.FnLog {
-		wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
+	if !HostTracing || funcNr == wasmlib.FnLog || funcNr == wasmlib.FnTrace {
+		return wc.sandbox.Call(funcNr, params)
 	}
+
+	wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
 	res := wc.sandbox.Call(funcNr, params)
-	if HostTracing && funcNr != wasmlib.FnLog {
-		wc.tracef("  => %s", hex(res))
-	}
+	wc.tracef("  => %s", hex(res))
 	return res
 }
 
@@ -203,7 +204,9 @@ func (wc *WasmContext) StateSet(key, value []byte) {
 func (wc *WasmContext) tracef(format string, args ...interface{}) {
 	if wc.proc != nil {
 		wc.log().Debugf(format, args...)
+		return
 	}
+	wc.sandbox.Tracef(format, args...)
 }
 
 func traceHex(key []byte) string {

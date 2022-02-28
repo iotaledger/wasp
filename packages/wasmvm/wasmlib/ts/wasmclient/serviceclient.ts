@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import { Configuration, IConfiguration } from "./configuration";
-import { CoreAccountsService } from "./coreaccounts/service";
+import {Configuration, IConfiguration} from "./configuration";
+import {CoreAccountsService} from "./coreaccounts/service";
 
 export class ServiceClient {
     waspClient: wasmclient.WaspClient;

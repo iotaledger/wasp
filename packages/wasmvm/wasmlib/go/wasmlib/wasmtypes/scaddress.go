@@ -6,9 +6,9 @@ package wasmtypes
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
-	ScAddressEd25519 byte = 0 // length 32
-	ScAddressNFT     byte = 1 // actually 16, length 20
-	ScAddressAlias   byte = 2 // actually 8, length 20
+	ScAddressAlias   byte = 2
+	ScAddressEd25519 byte = 0
+	ScAddressNFT     byte = 1
 
 	ScAddressLength = 33
 )
@@ -32,17 +32,21 @@ func (o ScAddress) String() string {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// TODO address type-dependent encoding/decoding?
 func AddressDecode(dec *WasmDecoder) ScAddress {
-	return addressFromBytesUnchecked(dec.FixedBytes(ScAddressLength))
+	addr := ScAddress{}
+	copy(addr.id[:], dec.FixedBytes(ScAddressLength))
+	return addr
 }
 
 func AddressEncode(enc *WasmEncoder, value ScAddress) {
-	enc.FixedBytes(value.Bytes(), ScAddressLength)
+	enc.FixedBytes(value.id[:], ScAddressLength)
 }
 
 func AddressFromBytes(buf []byte) ScAddress {
+	addr := ScAddress{}
 	if len(buf) == 0 {
-		return ScAddress{}
+		return addr
 	}
 	if len(buf) != ScAddressLength {
 		panic("invalid Address length")
@@ -50,7 +54,8 @@ func AddressFromBytes(buf []byte) ScAddress {
 	if buf[0] > ScAddressAlias {
 		panic("invalid Address type")
 	}
-	return addressFromBytesUnchecked(buf)
+	copy(addr.id[:], buf)
+	return addr
 }
 
 func AddressToBytes(value ScAddress) []byte {
@@ -60,12 +65,6 @@ func AddressToBytes(value ScAddress) []byte {
 func AddressToString(value ScAddress) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])
-}
-
-func addressFromBytesUnchecked(buf []byte) ScAddress {
-	o := ScAddress{}
-	copy(o.id[:], buf)
-	return o
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

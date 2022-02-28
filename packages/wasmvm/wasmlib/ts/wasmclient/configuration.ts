@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import { Buffer } from './buffer';
+import {Buffer} from './buffer';
 
 export interface IConfiguration {
     seed: Buffer | null;
@@ -18,7 +18,7 @@ export class Configuration implements IConfiguration {
     chainId: string = '';
 
     constructor(configuration: IConfiguration) {
-        if(!configuration) throw new Error("Configuration not defined");
+        if (!configuration) throw new Error("Configuration not defined");
 
         this.seed = configuration.seed;
         this.waspWebSocketUrl = configuration.waspWebSocketUrl;
