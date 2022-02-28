@@ -61,7 +61,7 @@ func (sm *stateManager) isSynced() bool {
 		return false
 	}
 	// GetStateMetadata is supposed to return hash of state data (state commitment)
-	return bytes.Equal(sm.solidState.StateCommitment().Bytes(), sm.stateOutput.GetStateMetadata())
+	return bytes.Equal(sm.solidState.RootCommitment().Bytes(), sm.stateOutput.GetStateMetadata())
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -86,7 +86,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"hash", nextState.StateCommitment(),
+		"hash", nextState.RootCommitment(),
 		"output", iscp.OID(approvingOutputID),
 	)
 
@@ -164,11 +164,11 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.StateCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.RootCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
-		SyncedStateHash:       sm.solidState.StateCommitment(),
+		SyncedStateHash:       sm.solidState.RootCommitment(),
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),

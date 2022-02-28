@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"math"
 	"os"
 
@@ -38,7 +39,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
+	fmt.Fprintf(&buf, "Root commitment: %s\n", trie.RootCommitment(ch.State.TrieAccess()))
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }

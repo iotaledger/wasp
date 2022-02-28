@@ -4,23 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"golang.org/x/xerrors"
-	"reflect"
 )
 
-// CommitmentModel abstracts 256+ Trie logic from the commitment logic/cryptography
-type CommitmentModel interface {
-	NewVectorCommitment() VCommitment
-	NewTerminalCommitment() TCommitment
-	VectorCommitmentFromBytes([]byte) (VCommitment, error)
-	CommitToNode(*Node) VCommitment
-	CommitToData([]byte) TCommitment
-}
-
 type Trie struct {
-	model     CommitmentModel
-	store     kv.KVMustReader
+	access    accessTrie
 	nodeCache map[kv.Key]*Node
 	deleted   map[kv.Key]struct{}
 }
@@ -58,8 +46,7 @@ func (e ProofEndingCode) String() string {
 
 func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 	ret := &Trie{
-		model:     model,
-		store:     store,
+		access:    *NewTrieAccess(store, model),
 		nodeCache: make(map[kv.Key]*Node),
 		deleted:   make(map[kv.Key]struct{}),
 	}
@@ -68,8 +55,7 @@ func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 
 func (tr *Trie) Clone() *Trie {
 	ret := &Trie{
-		model:     tr.model,
-		store:     tr.store,
+		access:    tr.access,
 		nodeCache: make(map[kv.Key]*Node),
 		deleted:   make(map[kv.Key]struct{}),
 	}
@@ -82,14 +68,6 @@ func (tr *Trie) Clone() *Trie {
 	return ret
 }
 
-func (tr *Trie) RootCommitment() VCommitment {
-	n, ok := tr.GetNode("")
-	if !ok {
-		return nil
-	}
-	return tr.CommitToNode(n)
-}
-
 // GetNode takes node from the cache of fetches it from kv store
 func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
 	if tr.isDeleted(key) {
@@ -99,20 +77,21 @@ func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
 	if ok {
 		return node, true
 	}
-	nodeBin := tr.store.MustGet(key)
-	if nodeBin == nil {
+	node, ok = tr.access.GetNode(key)
+	if !ok {
 		return nil, false
 	}
-	node, err := NodeFromBytes(tr.model, nodeBin)
-	assert(err == nil, err)
-
 	tr.nodeCache[key] = node
 	return node, true
 }
 
-func (tr *Trie) MustGetNode(key kv.Key) *Node {
+func (tr *Trie) Model() CommitmentModel {
+	return tr.access.model
+}
+
+func (tr *Trie) mustGetNode(key kv.Key) *Node {
 	ret, ok := tr.GetNode(key)
-	assert(ok, fmt.Sprintf("MustGetNode: not found key '%s'", key))
+	assert(ok, fmt.Sprintf("mustGetNode: not found key '%s'", key))
 	return ret
 }
 
@@ -131,7 +110,7 @@ func (tr *Trie) unDelete(key kv.Key) {
 }
 
 func (tr *Trie) CommitToNode(n *Node) VCommitment {
-	return tr.model.CommitToNode(n)
+	return tr.access.model.CommitToNode(n)
 }
 
 func (tr *Trie) ApplyMutations(store kv.KVWriter) {
@@ -187,7 +166,7 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 		c := tr.UpdateNodeCommitment(childKey)
 		if c != nil {
 			if n.ChildCommitments[childIndex] == nil {
-				n.ChildCommitments[childIndex] = tr.model.NewVectorCommitment()
+				n.ChildCommitments[childIndex] = tr.access.model.NewVectorCommitment()
 			}
 			n.ChildCommitments[childIndex].Update(c)
 		} else {
@@ -198,41 +177,26 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 	if len(n.ModifiedChildren) > 0 {
 		n.ModifiedChildren = make(map[byte]struct{})
 	}
-	ret := tr.model.CommitToNode(n)
+	ret := tr.access.model.CommitToNode(n)
 	return ret
-}
-
-// ProofGeneric returns generic proof path. Contains references trie node cache.
-// Should be immediately converted into the specific proof model independent of the trie
-// Normally only called by the model
-func (tr *Trie) ProofGeneric(key []byte) *ProofGeneric {
-	if len(key) == 0 {
-		key = []byte{}
-	}
-	p, _, ending := tr.proofPath(key)
-	return &ProofGeneric{
-		Key:    key,
-		Path:   p,
-		Ending: ending,
-	}
 }
 
 // Update updates Trie with the key/value.
 // value == nil means deletion
 func (tr *Trie) Update(key []byte, value []byte) {
-	c := tr.model.CommitToData(value)
+	c := tr.access.model.CommitToData(value)
 	if c == nil {
 		tr.Delete(key)
 		return
 	}
 
-	proof, lastCommonPrefix, ending := tr.proofPath(key)
+	proof, lastCommonPrefix, ending := proofPath(tr, key)
 	if len(proof) == 0 {
 		tr.newTerminalNode(nil, key, c)
 		return
 	}
 	lastKey := proof[len(proof)-1]
-	lastNode := tr.MustGetNode(kv.Key(lastKey))
+	lastNode := tr.mustGetNode(kv.Key(lastKey))
 	switch ending {
 	case EndingTerminal:
 		lastNode.NewTerminal = c
@@ -285,7 +249,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 
 // Delete deletes Key/value from the Trie
 func (tr *Trie) Delete(key []byte) {
-	proof, _, ending := tr.proofPath(key)
+	proof, _, ending := proofPath(tr, key)
 	if len(proof) == 0 || ending != EndingTerminal {
 		return
 	}
@@ -324,7 +288,7 @@ func (tr *Trie) Delete(key []byte) {
 
 func (tr *Trie) mergeNode(key []byte, n *Node, childIndex byte) {
 	nextKey := n.ChildKey(kv.Key(key), childIndex)
-	nextNode := tr.MustGetNode(nextKey)
+	nextNode := tr.mustGetNode(nextKey)
 	var newPathFragment bytes.Buffer
 	newPathFragment.Write(n.PathFragment)
 	newPathFragment.WriteByte(childIndex)
@@ -339,7 +303,7 @@ func (tr *Trie) markModifiedCommitmentsBackToRoot(proof [][]byte) {
 		k := proof[i]
 		kPrev := proof[i-1]
 		childIndex := k[len(k)-1]
-		n := tr.MustGetNode(kv.Key(kPrev))
+		n := tr.mustGetNode(kv.Key(kPrev))
 		n.ModifiedChildren[childIndex] = struct{}{}
 	}
 }
@@ -404,7 +368,7 @@ func (tr *Trie) checkReorg(key kv.Key, n *Node) (reorgStatus, byte) {
 }
 
 func (tr *Trie) mustCheckNode(key kv.Key) {
-	n := tr.MustGetNode(key)
+	n := tr.mustGetNode(key)
 	status, _ := tr.checkReorg(key, n)
 	assert(status == nodeReorgNOP, "status == nodeReorgNOP")
 }
@@ -449,47 +413,8 @@ func (tr *Trie) DeleteStr(key interface{}) {
 	tr.Delete(k)
 }
 
-// returns
-// - path of keys which leads to 'path'
-// - common prefix between the last key and the fragment
-func (tr *Trie) proofPath(path []byte) ([][]byte, []byte, ProofEndingCode) {
-	node, ok := tr.GetNode("")
-	if !ok {
-		return nil, nil, 0
-	}
-
-	proof := make([][]byte, 0)
-	var key []byte
-
-	for {
-		// it means we continue the branch of commitment
-		proof = append(proof, key)
-		assert(len(key) <= len(path), "len(key) <= len(path)")
-		if bytes.Equal(path[len(key):], node.PathFragment) {
-			return proof, nil, EndingTerminal
-		}
-		prefix := commonPrefix(path[len(key):], node.PathFragment)
-
-		if len(prefix) < len(node.PathFragment) {
-			return proof, prefix, EndingSplit
-		}
-		assert(len(prefix) == len(node.PathFragment), "len(prefix)==len(node.PathFragment)")
-		childIndexPosition := len(key) + len(prefix)
-		assert(childIndexPosition < len(path), "childIndexPosition<len(path)")
-
-		childKey := node.ChildKey(kv.Key(key), path[childIndexPosition])
-
-		node, ok = tr.GetNode(childKey)
-		if !ok {
-			// if there are no commitment to the child at the position, it means trie must be extended at this point
-			return proof, prefix, EndingExtend
-		}
-		key = []byte(childKey)
-	}
-}
-
 func (tr *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
-	ret := tr.model.NewVectorCommitment()
+	ret := tr.access.model.NewVectorCommitment()
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
@@ -500,14 +425,14 @@ func (tr *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
 func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 	ret := make([]kv.Key, 0)
 	store.MustIterate("", func(k kv.Key, v []byte) bool {
-		p, _, ending := tr.proofPath([]byte(k))
+		p, _, ending := proofPath(tr, []byte(k))
 		if ending == EndingTerminal {
 			lastKey := p[len(p)-1]
 			n, ok := tr.GetNode(kv.Key(lastKey))
 			if !ok {
 				ret = append(ret, k)
 			} else {
-				if !EqualCommitments(tr.model.CommitToData(v), n.Terminal) {
+				if !EqualCommitments(tr.access.model.CommitToData(v), n.Terminal) {
 					ret = append(ret, k)
 				}
 			}
@@ -517,35 +442,4 @@ func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 		return true
 	})
 	return ret
-}
-
-func EqualCommitments(c1, c2 CommitmentBase) bool {
-	if c1 == c2 {
-		return true
-	}
-	c1Nil := c1 == nil || (reflect.ValueOf(c1).Kind() == reflect.Ptr && reflect.ValueOf(c1).IsNil())
-	c2Nil := c2 == nil || (reflect.ValueOf(c2).Kind() == reflect.Ptr && reflect.ValueOf(c2).IsNil())
-	if c1Nil && c2Nil {
-		return true
-	}
-	if c1Nil || c2Nil {
-		return false
-	}
-	return c1.Equal(c2)
-}
-
-// ComputeCommitment computes commitment to arbitrary key/value iterator
-func ComputeCommitment(model CommitmentModel, store kv.KVIterator) (VCommitment, error) {
-	emptyStore := dict.New()
-	tr := New(model, emptyStore)
-
-	err := store.Iterate("", func(key kv.Key, value []byte) bool {
-		tr.Update([]byte(key), value)
-		return true
-	})
-	if err != nil {
-		return nil, err
-	}
-	tr.Commit()
-	return tr.RootCommitment(), nil
 }

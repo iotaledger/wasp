@@ -47,7 +47,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(c.t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, vs.RootCommitment())
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -62,7 +62,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	nextvs.ApplyStateUpdate(suBlockIndex, suCounter /*, suReqs*/)
 	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
-	//nextStateHash := nextvs.StateCommitment()
+	//nextStateHash := nextvs.RootCommitment()
 
 	consumedOutput := chainOutput.GetAliasOutput()
 	/*var aliasID iotago.AliasID
@@ -86,7 +86,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  nextvs.StateCommitment().Bytes(),
+				StateMetadata:  nextvs.RootCommitment().Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Blocks:         consumedOutput.Blocks,

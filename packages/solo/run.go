@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -95,16 +96,21 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
 
+	anchor, _, err := transaction.GetAnchorFromTransaction(tx)
+
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualStateAccess
 		ch.settleStateTransition(tx, task.GetProcessedRequestIDs())
 	} else {
-		anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 		require.NoError(ch.Env.T, err)
 
 		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
+
+	rootC := ch.GetRootCommitment()
+	stateC := ch.GetStateCommitment()
+	require.True(ch.Env.T, trie.EqualCommitments(rootC, stateC))
 
 	return task.Results
 }

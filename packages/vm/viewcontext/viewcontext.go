@@ -196,7 +196,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 
 func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = trie_merkle.Model.Proof(key, ctx.stateReader.Trie())
+		ret = trie_merkle.Model.Proof(key, ctx.stateReader.TrieAccess())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {
@@ -205,9 +205,10 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err 
 	return ret, err
 }
 
-func (ctx *ViewContext) GetStateCommitment() (ret trie.VCommitment, err error) {
+// GetRootCommitment calculates root commitment from state. It must be equal to the RootCommitment from the anchor
+func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = ctx.stateReader.StateCommitment()
+		ret = trie.RootCommitment(ctx.stateReader.TrieAccess())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {

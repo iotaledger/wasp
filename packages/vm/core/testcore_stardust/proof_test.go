@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/stretchr/testify/require"
@@ -29,16 +28,14 @@ func TestProofs(t *testing.T) {
 		h, err := ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
 
-		cFromLedger := ch.GetStateCommitment()
-		cFromState := ch.GetRootCommitmentFromState()
-		require.True(t, trie.EqualCommitments(cFromState, cFromLedger))
-
 		data, err := os.ReadFile(randomFile)
 		require.NoError(t, err)
 
-		proof := ch.GetMerkleProof(blob.Contract.Hname(), blob.FieldValueKey(h, "file"))
-		err = proof.Validate(cFromLedger, data)
+		key := blob.FieldValueKey(h, "file")
+		proof := ch.GetMerkleProof(blob.Contract.Hname(), key)
+		err = proof.Validate(ch.GetStateCommitment(), data)
 		require.NoError(t, err)
+		t.Logf("key size = %d", len(key))
 		t.Logf("proof size = %d", len(proof.Bytes()))
 	})
 }

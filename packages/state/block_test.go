@@ -2,11 +2,12 @@ package state
 
 import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,12 +20,13 @@ func TestBlockBasic(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("ok block index", func(t *testing.T) {
-		su := NewStateUpdateWithBlockLogValues(42, time.Time{}, testmisc.RandVectorCommitment())
+		h := testmisc.RandVectorCommitment()
+		su := NewStateUpdateWithBlockLogValues(42, time.Time{}, h)
 		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
-		require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
+		require.True(t, trie.EqualCommitments(h, b1.PreviousStateCommitment(trie_merkle.Model)))
 	})
 	t.Run("with timestamp", func(t *testing.T) {
 		currentTime := time.Now()
@@ -34,7 +36,7 @@ func TestBlockBasic(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, currentTime.Equal(b1.Timestamp()))
-		require.EqualValues(t, ph, b1.PreviousStateHash())
+		require.EqualValues(t, ph, b1.PreviousStateCommitment(trie_merkle.Model))
 	})
 }
 

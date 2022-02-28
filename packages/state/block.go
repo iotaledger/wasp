@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"golang.org/x/xerrors"
 )
@@ -79,8 +79,8 @@ func (b *blockImpl) Timestamp() time.Time {
 }
 
 // PreviousStateHash of the last state update
-func (b *blockImpl) PreviousStateHash() hashing.HashValue {
-	ph, err := findPrevStateHashMutation(b.stateUpdate)
+func (b *blockImpl) PreviousStateCommitment(model trie.CommitmentModel) trie.VCommitment {
+	ph, err := findPrevStateCommitmentMutation(b.stateUpdate, model)
 	if err != nil {
 		panic(err)
 	}
@@ -114,6 +114,9 @@ func (b *blockImpl) writeEssence(w io.Writer) error {
 }
 
 func (b *blockImpl) writeOutputID(w io.Writer) error {
+	if err := util.WriteBoolByte(w, b.stateOutputID != nil); err != nil {
+		return err
+	}
 	if b.stateOutputID == nil {
 		return nil
 	}
@@ -145,6 +148,13 @@ func (b *blockImpl) readEssence(r io.Reader) error {
 }
 
 func (b *blockImpl) readOutputID(r io.Reader) error {
+	var oidPresent bool
+	if err := util.ReadBoolByte(r, &oidPresent); err != nil {
+		return err
+	}
+	if !oidPresent {
+		return nil
+	}
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(r); err != nil {
 		return err

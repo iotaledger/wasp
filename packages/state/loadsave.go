@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -91,7 +92,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 
 	// explicit use of merkle trie model. Asserting that the chainID is commited by the root at the key ''
 	merkleProof := CommitmentModel.Proof(nil, ret.trie)
-	if err = merkleProof.Validate(ret.trie.RootCommitment()); err != nil {
+	if err = merkleProof.Validate(trie.RootCommitment(ret.trie)); err != nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}
 	ret.kvs.Mutations().ResetModified()

@@ -1,7 +1,6 @@
 package blob
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -15,23 +14,12 @@ import (
 
 const DirectoryPrefix = "d"
 
-func valuesKey(blobHash hashing.HashValue) string {
+func valuesMapName(blobHash hashing.HashValue) string {
 	return "v" + string(blobHash[:])
 }
 
-func sizesKey(blobHash hashing.HashValue) string {
+func sizesMapName(blobHash hashing.HashValue) string {
 	return "s" + string(blobHash[:])
-}
-
-// FieldValueKey returns key of the blob field value in the SC state.
-// TODO make better UX
-func FieldValueKey(h hashing.HashValue, field string) []byte {
-	var buf bytes.Buffer
-	buf.WriteByte('v')
-	buf.Write(h[:])
-	buf.WriteByte('#')
-	buf.Write([]byte(field))
-	return buf.Bytes()
 }
 
 func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
@@ -65,22 +53,22 @@ func GetDirectoryR(state kv.KVStoreReader) *collections.ImmutableMap {
 
 // GetBlobValues retrieves the blob field-value map from the state
 func GetBlobValues(state kv.KVStore, blobHash hashing.HashValue) *collections.Map {
-	return collections.NewMap(state, valuesKey(blobHash))
+	return collections.NewMap(state, valuesMapName(blobHash))
 }
 
 // GetBlobValuesR retrieves the blob field-value map from the read-only state
 func GetBlobValuesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, valuesKey(blobHash))
+	return collections.NewMapReadOnly(state, valuesMapName(blobHash))
 }
 
 // GetBlobSizes retrieves the writeable blob field-size map from the state
 func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *collections.Map {
-	return collections.NewMap(state, sizesKey(blobHash))
+	return collections.NewMap(state, sizesMapName(blobHash))
 }
 
 // GetBlobSizesR retrieves the blob field-size map from the read-only state
 func GetBlobSizesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, sizesKey(blobHash))
+	return collections.NewMapReadOnly(state, sizesMapName(blobHash))
 }
 
 func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (string, []byte, error) {

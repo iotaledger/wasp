@@ -455,6 +455,7 @@ func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Pro
 	return ch.GetMerkleProofRaw(buf.Bytes())
 }
 
+// GetStateCommitment returns state commitment from anchor output
 func (ch *Chain) GetStateCommitment() trie.VCommitment {
 	anchorOutput := ch.GetAnchorOutput()
 	ret, err := anchorOutput.GetStateCommitment()
@@ -462,10 +463,11 @@ func (ch *Chain) GetStateCommitment() trie.VCommitment {
 	return ret
 }
 
-func (ch *Chain) GetRootCommitmentFromState() trie.VCommitment {
+// GetRootCommitment calculates root commitment from state
+func (ch *Chain) GetRootCommitment() trie.VCommitment {
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
-	ret, err := vmctx.GetStateCommitment()
+	ret, err := vmctx.GetRootCommitment()
 	require.NoError(ch.Env.T, err)
 	return ret
 }

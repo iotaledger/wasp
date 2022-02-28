@@ -27,7 +27,7 @@ func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualState
 		stateCommitment = hashing.NilHash
 	} else {
 		local = true
-		stateCommitment = nextStateIfProvided.StateCommitment()
+		stateCommitment = nextStateIfProvided.RootCommitment()
 	}
 	return &candidateBlock{
 		block:               block,

@@ -32,14 +32,14 @@ func TestOriginHashes(t *testing.T) {
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
 		z := newVirtualState(mapdb.NewMapDB())
-		require.Nil(t, z.StateCommitment())
+		require.Nil(t, trie.RootCommitment(z.TrieAccess()))
 	})
 	t.Run("create origin", func(t *testing.T) {
 		chainID := testmisc.RandChainID()
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
-		require.True(t, vs.StateCommitment().Equal(OriginStateCommitment()))
-		require.EqualValues(t, calcOriginStateHash(), vs.StateCommitment())
+		require.True(t, trie.RootCommitment(vs.TrieAccess()).Equal(OriginStateCommitment()))
+		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieAccess()))
 	})
 }
 
@@ -50,8 +50,11 @@ func TestStateWithDB(t *testing.T) {
 		vs, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 		vs.Commit()
+		cc := trie.RootCommitment(vs.TrieAccess())
 		err = vs.Save()
 		require.NoError(t, err)
+		cs := trie.RootCommitment(vs.TrieAccess())
+		require.True(t, trie.EqualCommitments(cc, cs))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.True(t, exists)
@@ -93,7 +96,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
+		require.EqualValues(t, trie.RootCommitment(vs1.TrieAccess()), trie.RootCommitment(vs2.TrieAccess()))
 		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, 1, vs2.BlockIndex())
@@ -109,7 +112,7 @@ func TestStateWithDB(t *testing.T) {
 		data = vs2.KVStoreReader().MustGet("key")
 		require.EqualValues(t, []byte("value"), data)
 
-		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
+		require.EqualValues(t, trie.RootCommitment(vs1.TrieAccess()), trie.RootCommitment(vs2.TrieAccess()))
 	})
 	t.Run("apply block after loading", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -152,7 +155,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		require.EqualValues(t, vsOrig.StateCommitment(), vsLoaded.StateCommitment())
+		require.EqualValues(t, trie.RootCommitment(vsOrig.TrieAccess()), trie.RootCommitment(vsLoaded.TrieAccess()))
 		require.EqualValues(t, vsOrig.BlockIndex(), vsLoaded.BlockIndex())
 		require.EqualValues(t, vsOrig.Timestamp(), vsLoaded.Timestamp())
 		require.EqualValues(t, 2, vsLoaded.BlockIndex())
@@ -173,7 +176,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 3, vsLoaded.BlockIndex())
 		require.True(t, time3.Equal(vsLoaded.Timestamp()))
 
-		require.EqualValues(t, vsOrig.StateCommitment(), vsLoaded.StateCommitment())
+		require.EqualValues(t, trie.RootCommitment(vsOrig.TrieAccess()), trie.RootCommitment(vsLoaded.TrieAccess()))
 	})
 	t.Run("state reader", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -326,8 +329,11 @@ func TestRnd(t *testing.T) {
 		require.NoError(t, err)
 		vs.ApplyStateUpdate(upd1)
 		vs.Commit()
+		c1 := trie.RootCommitment(vs.TrieAccess())
 		err = vs.Save()
 		require.NoError(t, err)
+		c2 := trie.RootCommitment(vs.TrieAccess())
+		require.True(t, trie.EqualCommitments(c1, c2))
 		for bn, b := range blocks {
 			require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
 			err = vs.ApplyBlock(b)
@@ -336,11 +342,11 @@ func TestRnd(t *testing.T) {
 				//t.Logf("           commit at block: #%d", bn)
 				err = vs.Save()
 				require.NoError(t, err)
-				c1 := vs.StateCommitment()
+				c1 := trie.RootCommitment(vs.TrieAccess())
 				vs, exists, err = LoadSolidState(store[round], chainID)
 				require.NoError(t, err)
 				require.True(t, exists)
-				c2 := vs.StateCommitment()
+				c2 := trie.RootCommitment(vs.TrieAccess())
 
 				diff := vs.ReconcileTrie()
 				if len(diff) > 0 {
@@ -350,8 +356,12 @@ func TestRnd(t *testing.T) {
 				require.True(t, c1.Equal(c2))
 			}
 		}
+		vs.Commit()
+		c1 = trie.RootCommitment(vs.TrieAccess())
 		err = vs.Save()
 		require.NoError(t, err)
+		c2 = trie.RootCommitment(vs.TrieAccess())
+		require.True(t, trie.EqualCommitments(c1, c2))
 
 		vstmp, exists, err := LoadSolidState(store[round], chainID)
 		require.NoError(t, err)
@@ -361,7 +371,7 @@ func TestRnd(t *testing.T) {
 			t.Logf("============== reconcile failed: %v", diff)
 		}
 
-		cs = append(cs, vs.StateCommitment())
+		cs = append(cs, trie.RootCommitment(vs.TrieAccess()))
 		if round > 0 {
 			require.True(t, trie.EqualCommitments(cs[round-1], cs[round]))
 		}
@@ -413,8 +423,8 @@ func TestRnd(t *testing.T) {
 		//	pg = vs1.ProofGeneric([]byte(badKey))
 		//	t.Logf(">>>>>>>>>> vs[%d] key '%s' ending '%s', path: %d", round, badKey, pg.Ending, len(pg.Path))
 		//
-		//	t.Logf(">>>>>>>>> vs[%d] C = %s", round-1, vs0.StateCommitment())
-		//	t.Logf(">>>>>>>>> vs[%d] C = %s", round, vs1.StateCommitment())
+		//	t.Logf(">>>>>>>>> vs[%d] C = %s", round-1, vs0.RootCommitment())
+		//	t.Logf(">>>>>>>>> vs[%d] C = %s", round, vs1.RootCommitment())
 		//	t.FailNow()
 		//}
 	}
@@ -424,11 +434,11 @@ func TestStateBasic(t *testing.T) {
 	chainID := iscp.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
-	h1 := vs1.StateCommitment()
+	h1 := trie.RootCommitment(vs1.TrieAccess())
 	require.True(t, OriginStateCommitment().Equal(h1))
 
 	vs2 := vs1.Copy()
-	h2 := vs2.StateCommitment()
+	h2 := trie.RootCommitment(vs2.TrieAccess())
 	require.EqualValues(t, h1, h2)
 
 	vs1.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
@@ -441,12 +451,12 @@ func TestStateBasic(t *testing.T) {
 	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
 	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 
-	require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
+	require.EqualValues(t, trie.RootCommitment(vs1.TrieAccess()), trie.RootCommitment(vs2.TrieAccess()))
 
 	vs3 := vs1.Copy()
 	vs4 := vs2.Copy()
 
-	require.EqualValues(t, vs3.StateCommitment(), vs4.StateCommitment())
+	require.EqualValues(t, trie.RootCommitment(vs3.TrieAccess()), trie.RootCommitment(vs4.TrieAccess()))
 }
 
 func TestStateReader(t *testing.T) {
@@ -457,7 +467,7 @@ func TestStateReader(t *testing.T) {
 		require.NoError(t, err)
 		err = os.Save()
 		require.NoError(t, err)
-		c1 := os.StateCommitment()
+		c1 := trie.RootCommitment(os.TrieAccess())
 
 		glb := coreutil.NewChainStateSync()
 		glb.SetSolidIndex(0)
@@ -466,7 +476,7 @@ func TestStateReader(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, ok)
 
-		c2 := st.StateCommitment()
+		c2 := trie.RootCommitment(st.TrieAccess())
 		require.True(t, trie.EqualCommitments(c1, c2))
 	})
 }
@@ -482,13 +492,13 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
-	h1 := vsOpt.StateCommitment()
+	h1 := trie.RootCommitment(vsOpt.TrieAccess())
 	require.True(t, OriginStateCommitment().Equal(h1))
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()
 	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.StateCommitment()
+		_ = trie.RootCommitment(vsOpt.TrieAccess())
 	})
 	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.BlockIndex()
@@ -515,15 +525,15 @@ func TestVirtualStateMustOptimistic2(t *testing.T) {
 
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
-	hash := vs.StateCommitment()
-	hashOpt := vsOpt.StateCommitment()
+	hash := trie.RootCommitment(vs.TrieAccess())
+	hashOpt := trie.RootCommitment(vsOpt.TrieAccess())
 	require.EqualValues(t, hash, hashOpt)
 
 	hashPrev := hash
-	upd := NewStateUpdateWithBlockLogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), vsOpt.StateCommitment())
+	upd := NewStateUpdateWithBlockLogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), trie.RootCommitment(vsOpt.TrieAccess()))
 	vsOpt.ApplyStateUpdate(upd)
-	hash = vs.StateCommitment()
-	hashOpt = vsOpt.StateCommitment()
+	hash = trie.RootCommitment(vs.TrieAccess())
+	hashOpt = trie.RootCommitment(vsOpt.TrieAccess())
 	require.EqualValues(t, hash, hashOpt)
 	require.EqualValues(t, hashPrev, hashOpt)
 }

@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -257,7 +258,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), vs.StateCommitment().String())
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieAccess()))
 
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())

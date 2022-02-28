@@ -62,7 +62,7 @@ func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 
 // calcOriginStateHash is independent of db provider nor chainID. Used for testing
 func calcOriginStateHash() trie.VCommitment {
-	return newOriginState(mapdb.NewMapDB()).StateCommitment()
+	return trie.RootCommitment(newOriginState(mapdb.NewMapDB()).TrieAccess())
 }
 
 // CreateOriginState creates and saves origin state in DB
@@ -97,7 +97,7 @@ func (vs *virtualStateAccess) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %v, state commitment: %s\n%s",
 		vs.BlockIndex(),
 		vs.Timestamp(),
-		vs.StateCommitment().String(),
+		trie.RootCommitment(vs.TrieAccess()),
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
@@ -157,12 +157,12 @@ func (vs *virtualStateAccess) applyBlockNoCheck(b Block) {
 }
 
 // ApplyStateUpdate applies one state update
-func (vs *virtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
+func (vs *virtualStateAccess) ApplyStateUpdate(upd Update) {
 	upd.Mutations().Apply(vs.kvs)
 }
 
 func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
-	return vs.trie.ProofGeneric(dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
+	return trie.GetProofGeneric(vs.trie, dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
@@ -192,8 +192,8 @@ func (vs *virtualStateAccess) Commit() {
 }
 
 // StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) StateCommitment() trie.VCommitment {
-	return vs.trie.RootCommitment()
+func (vs *virtualStateAccess) TrieAccess() trie.Access {
+	return vs.trie
 }
 
 // ReconcileTrie a heavy operation

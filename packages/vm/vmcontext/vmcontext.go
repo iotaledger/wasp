@@ -47,7 +47,7 @@ type VMContext struct {
 	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
-	currentStateUpdate state.StateUpdate
+	currentStateUpdate state.Update
 	entropy            hashing.HashValue
 	callStack          []*callContext
 	// --- gas related
@@ -97,7 +97,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	commitmentFromState := optimisticStateAccess.StateCommitment()
+	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieAccess())
 	blockIndex := optimisticStateAccess.BlockIndex()
 	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
@@ -176,7 +176,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.virtualState.Commit()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
-	stateCommitment := vmctx.virtualState.StateCommitment()
+	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieAccess())
 	timestamp := vmctx.virtualState.Timestamp()
 
 	return blockIndex, stateCommitment, timestamp, rotationAddr

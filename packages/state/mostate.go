@@ -55,11 +55,11 @@ func (s *mustOptimisticVirtualStateAccess) Commit() {
 	s.state.Commit()
 }
 
-func (s *mustOptimisticVirtualStateAccess) StateCommitment() trie.VCommitment {
+func (s *mustOptimisticVirtualStateAccess) TrieAccess() trie.Access {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.state.StateCommitment()
+	return s.state.TrieAccess()
 }
 
 func (s *mustOptimisticVirtualStateAccess) ReconcileTrie() []kv.Key {
@@ -76,7 +76,7 @@ func (s *mustOptimisticVirtualStateAccess) KVStoreReader() kv.KVStoreReader {
 	return s.state.KVStoreReader()
 }
 
-func (s *mustOptimisticVirtualStateAccess) ApplyStateUpdate(upd StateUpdate) {
+func (s *mustOptimisticVirtualStateAccess) ApplyStateUpdate(upd Update) {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 

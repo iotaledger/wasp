@@ -14,7 +14,7 @@ import (
 type OptimisticStateReaderImpl struct {
 	db          kvstore.KVStore
 	stateReader *optimism.OptimisticKVStoreReader
-	trie        *trie.Trie
+	trie        trie.Access
 }
 
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
@@ -25,7 +25,7 @@ func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *
 	return &OptimisticStateReaderImpl{
 		db:          db,
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
-		trie:        trie.New(CommitmentModel, optimism.NewOptimisticKVStoreReader(trieReader, baseline)),
+		trie:        trie.NewTrieAccess(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
 	}
 }
 
@@ -53,10 +53,6 @@ func (r *OptimisticStateReaderImpl) SetBaseline() {
 	r.stateReader.SetBaseline()
 }
 
-func (r *OptimisticStateReaderImpl) StateCommitment() trie.VCommitment {
-	return r.trie.RootCommitment()
-}
-
-func (r *OptimisticStateReaderImpl) Trie() *trie.Trie {
+func (r *OptimisticStateReaderImpl) TrieAccess() trie.Access {
 	return r.trie
 }
