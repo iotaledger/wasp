@@ -4,7 +4,9 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -89,6 +91,7 @@ func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
+	nftsOut []*iotago.NFTID,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
@@ -97,6 +100,9 @@ func computeInputsAndRemainder(
 	*iotago.BasicOutput,
 	error,
 ) {
+	// TODO "refactor to handle NFTs")
+	// Keep in mind: NFT output might not have an NFTID defined yet... (if it is still 000, we need to `iotago.NFTID{}.FromOutputID(....)` )
+
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 
@@ -243,4 +249,25 @@ func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) 
 		ret[i] = out.VByteCost(rentStructure, nil)
 	}
 	return ret
+}
+
+func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair) (*iotago.Transaction, error) {
+	essence := &iotago.TransactionEssence{
+		NetworkID: parameters.NetworkID,
+		Inputs:    inputs.UTXOInputs(),
+		Outputs:   outputs,
+	}
+
+	sigs, err := essence.Sign(
+		inputsCommitment,
+		wallet.GetPrivateKey().AddressKeysForEd25519Address(wallet.Address()),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+	}, nil
 }

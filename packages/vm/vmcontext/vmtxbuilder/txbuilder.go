@@ -83,6 +83,7 @@ func NewAnchorTransactionBuilder(
 		balanceNativeTokens:    make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:          make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:       make(map[uint32]*foundryInvoked),
+		nftsIncluded:           make(map[iotago.NFTID]*nftIncluded),
 		rentStructure:          rentStructure,
 	}
 }
@@ -100,6 +101,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		balanceNativeTokens:    make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:          make([]iotago.Output, 0, cap(txb.postedOutputs)),
 		invokedFoundries:       make(map[uint32]*foundryInvoked),
+		nftsIncluded:           make(map[iotago.NFTID]*nftIncluded),
 		rentStructure:          txb.rentStructure,
 	}
 

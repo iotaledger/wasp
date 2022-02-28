@@ -445,6 +445,8 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 		return out.Ident()
 	case *iotago.FoundryOutput:
 		return out.Ident()
+	case *iotago.NFTOutput:
+		return out.Ident()
 	case *iotago.AliasOutput:
 		return out.AliasID.ToAddress()
 	default:

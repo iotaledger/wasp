@@ -546,3 +546,62 @@ func (env *Solo) L1Ledger() *utxodb.UtxoDB {
 func (env *Solo) RentStructure() *iotago.RentStructure {
 	return env.utxoDB.RentStructure()
 }
+
+// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
+// Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) error {
+	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
+
+	tx, err := transaction.NewMintNFTTransaction(transaction.MintNftTransactionParams{
+		IssuerKeyPair:     issuer,
+		Target:            target,
+		UnspentOutputs:    allOuts,
+		UnspentOutputIDs:  allOutIDs,
+		RentStructure:     env.RentStructure(),
+		ImmutableMetadata: immutableMetadata,
+	})
+	if err != nil {
+		return err
+	}
+	err = env.AddToLedger(tx)
+	if err != nil {
+		return err
+	}
+
+	// TODO remove below
+	// TODO check what happened after the NFT is minted
+	allOuts, allOutIDs = env.utxoDB.GetUnspentOutputs(issuer.Address())
+
+	var nftOutID iotago.OutputID
+	for _, id := range allOutIDs {
+		if _, ok := allOuts[id].(*iotago.NFTOutput); ok {
+			nftOutID = id
+			break
+		}
+	}
+
+	inputs := iotago.OutputIDs{nftOutID}
+	inputsCommitment := inputs.OrderedSet(allOuts).MustCommitment()
+
+	out := allOuts[nftOutID].Clone()
+
+	nftID := iotago.NFTID{}
+	nftID.FromOutputID(nftOutID)
+
+	out.(*iotago.NFTOutput).NFTID = nftID
+	outputs := iotago.Outputs{out}
+
+	tx2, err := transaction.CreateAndSignTx(inputs, inputsCommitment, outputs, issuer)
+	if err != nil {
+		return err
+	}
+	err = env.AddToLedger(tx2)
+	if err != nil {
+		return err
+	}
+
+	allOuts, allOutIDs = env.utxoDB.GetUnspentOutputs(issuer.Address())
+
+	println("?")
+	return nil
+}

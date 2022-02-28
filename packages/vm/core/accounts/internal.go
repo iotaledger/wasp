@@ -295,6 +295,11 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	}
 	creditToAccount(toAccount, transfer.Assets)
 
+	defer func() {
+		touchAccount(state, fromAccount)
+		touchAccount(state, toAccount)
+	}()
+
 	for _, nft := range transfer.NFTs {
 		if !debitNFTFromAccount(fromAccount, nft) {
 			return false
@@ -302,8 +307,6 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 		creditNFTToAccount(toAccount, nft)
 	}
 
-	touchAccount(state, fromAccount)
-	touchAccount(state, toAccount)
 	return true
 }
 

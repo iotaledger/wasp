@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -27,8 +26,9 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	outputs := iotago.Outputs{}
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
+	sumNFTsOut := make([]*iotago.NFTID, 0)
 
-	senderAddress := par.SenderKeyPair.GetPublicKey().AsEd25519Address()
+	senderAddress := par.SenderKeyPair.Address()
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
@@ -70,29 +70,20 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			s.Add(s, nt.Amount)
 			sumTokensOut[nt.ID] = s
 		}
+
+		if req.NFTID != nil {
+			sumNFTsOut = append(sumNFTsOut, req.NFTID)
+		}
 	}
-	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
+	// TODO needs refactoring - so that computeInputsAndRemainder includes the correct NFT inputs
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
 	if err != nil {
 		return nil, err
 	}
 	if remainder != nil {
 		outputs = append(outputs, remainder)
 	}
-	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
-		Inputs:    inputIDs.UTXOInputs(),
-		Outputs:   outputs,
-	}
-	sigs, err := essence.Sign(
-		inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment(),
-		par.SenderKeyPair.GetPrivateKey().AddressKeysForEd25519Address(senderAddress),
-	)
-	if err != nil {
-		return nil, err
-	}
 
-	return &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputIDs), sigs[0]),
-	}, nil
+	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair)
 }

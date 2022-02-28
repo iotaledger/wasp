@@ -214,13 +214,15 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
 	nftID1 := &iotago.NFTID{1}
 	iotasToSend := uint64(300_000)
 	iotasForGas := uint64(100_000)
 	assetsToSend := iscp.NewAssetsIotas(iotasToSend)
 	assetsToAllow := iscp.NewAssetsIotas(iotasToSend - iotasForGas)
+
+	ch.Env.MintNFTL1(wallet, addr, []byte("foobar"))
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
@@ -229,10 +231,10 @@ func testSendNFTsBack(t *testing.T, w bool) {
 		AddAllowance(iscp.NewAllowanceFromAssets(assetsToAllow, []*iotago.NFTID{nftID1})).
 		WithMaxAffordableGasBudget()
 
-	// deposit an NFT, then claim it back via offleger-request
-
 	_, err := ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
+
+	// deposit an NFT, then claim it back via offleger-request
 
 	// try to
 }

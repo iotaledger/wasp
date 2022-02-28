@@ -228,6 +228,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
+			NFTID:   req.NFTID,
 			Options: iscp.SendOptions{},
 		}},
 		RentStructure:                ch.Env.utxoDB.RentStructure(),

@@ -115,12 +115,13 @@ func MakeOutput(
 	return finalOutput
 }
 
-func nftOutputFromBasicOutput(o *iotago.BasicOutput, NFTID *iotago.NFTID) *iotago.NFTOutput {
+func nftOutputFromBasicOutput(o *iotago.BasicOutput, nftID *iotago.NFTID) *iotago.NFTOutput {
 	return &iotago.NFTOutput{
 		Amount:       o.Amount,
 		NativeTokens: o.NativeTokens,
 		Blocks:       o.Blocks,
 		Conditions:   o.Conditions,
+		NFTID:        *nftID,
 	}
 }
 
