@@ -7,8 +7,9 @@ use crate::*;
 use crate::structs::*;
 
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
+    let amount = ctx.incoming().balance(&ScColor::IOTA);
     let mut donation = Donation {
-        amount: ctx.incoming().balance(&ScColor::IOTA),
+        amount: amount,
         donator: ctx.caller(),
         error: String::new(),
         feedback: f.params.feedback().value(),

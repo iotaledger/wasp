@@ -20,10 +20,6 @@ impl ScAgentID {
         ScAgentID { address: address_from_bytes(&address.to_bytes()), hname: hname_from_bytes(&hname.to_bytes()) }
     }
 
-    pub fn from_bytes(buf: &[u8]) -> ScAgentID {
-        agent_id_from_bytes(buf)
-    }
-
     pub fn address(&self) -> ScAddress {
         self.address.clone()
     }

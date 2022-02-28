@@ -6,8 +6,9 @@ import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
+    const amount = ctx.incoming().balance(wasmtypes.IOTA);
     let donation = new sc.Donation();
-    donation.amount = ctx.incoming().balance(wasmtypes.IOTA);
+    donation.amount = amount;
     donation.donator = ctx.caller();
     donation.error = "";
     donation.feedback = f.params.feedback().value();

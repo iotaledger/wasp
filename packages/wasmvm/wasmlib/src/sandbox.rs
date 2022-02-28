@@ -233,9 +233,6 @@ pub trait ScSandboxFunc: ScSandbox {
 
     // (delayed) posts a smart contract function request
     fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, transfer: ScTransfers, delay: u32) {
-        if transfer.balances().colors().len() == 0 {
-            self.panic("missing transfer");
-        }
         let req = wasmrequests::PostRequest {
             chain_id,
             contract: h_contract,

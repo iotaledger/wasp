@@ -149,7 +149,7 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
 func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
-	return s.common.AccountID().Bytes()
+	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -191,23 +191,23 @@ func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params 
 }
 
 func (s *WasmContextSandbox) fnCaller(args []byte) []byte {
-	return s.ctx.Caller().Bytes()
+	return s.cvt.ScAgentID(s.ctx.Caller()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnChainID(args []byte) []byte {
-	return s.common.ChainID().Bytes()
+	return s.cvt.ScChainID(s.common.ChainID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnChainOwnerID(args []byte) []byte {
-	return s.common.ChainOwnerID().Bytes()
+	return s.cvt.ScAgentID(s.common.ChainOwnerID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnContract(args []byte) []byte {
-	return s.common.Contract().Bytes()
+	return s.cvt.ScHname(s.common.Contract()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
-	return s.common.ContractCreator().Bytes()
+	return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
@@ -230,7 +230,7 @@ func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name,
 }
 
 func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
-	return s.ctx.GetEntropy().Bytes()
+	return s.cvt.ScHash(s.ctx.GetEntropy()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
@@ -252,7 +252,7 @@ func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
-	s.common.Log().Panicf("WASM panic: %s", string(args))
+	s.common.Log().Panicf(string(args))
 	return nil
 }
 
@@ -300,7 +300,7 @@ func (s *WasmContextSandbox) fnRequest(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
-	return s.ctx.Request().ID().Bytes()
+	return s.cvt.ScRequestID(s.ctx.Request().ID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnResults(args []byte) []byte {
@@ -352,7 +352,7 @@ func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
 func (s WasmContextSandbox) fnUtilsBlsAddress(args []byte) []byte {
 	address, err := s.common.Utils().BLS().AddressFromPublicKey(args)
 	s.checkErr(err)
-	return address.Bytes()
+	return s.cvt.ScAddress(address).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsBlsAggregate(args []byte) []byte {
@@ -384,7 +384,7 @@ func (s WasmContextSandbox) fnUtilsBlsValid(args []byte) []byte {
 func (s WasmContextSandbox) fnUtilsEd25519Address(args []byte) []byte {
 	address, err := s.common.Utils().ED25519().AddressFromPublicKey(args)
 	s.checkErr(err)
-	return address.Bytes()
+	return s.cvt.ScAddress(address).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsEd25519Valid(args []byte) []byte {
@@ -397,13 +397,13 @@ func (s WasmContextSandbox) fnUtilsEd25519Valid(args []byte) []byte {
 }
 
 func (s WasmContextSandbox) fnUtilsHashBlake2b(args []byte) []byte {
-	return s.common.Utils().Hashing().Blake2b(args).Bytes()
+	return s.cvt.ScHash(s.common.Utils().Hashing().Blake2b(args)).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsHashName(args []byte) []byte {
-	return codec.EncodeHname(s.common.Utils().Hashing().Hname(string(args)))
+	return s.cvt.ScHname(s.common.Utils().Hashing().Hname(string(args))).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsHashSha3(args []byte) []byte {
-	return s.common.Utils().Hashing().Sha3(args).Bytes()
+	return s.cvt.ScHash(s.common.Utils().Hashing().Sha3(args)).Bytes()
 }

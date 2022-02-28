@@ -80,7 +80,7 @@ func (cvt WasmConvertor) ScColor(color *colored.Color) wasmtypes.ScColor {
 	return wasmtypes.ColorFromBytes(color.Bytes())
 }
 
-func (cvt WasmConvertor) ScHash(hash *hashing.HashValue) wasmtypes.ScHash {
+func (cvt WasmConvertor) ScHash(hash hashing.HashValue) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(hash.Bytes())
 }
 
@@ -88,6 +88,6 @@ func (cvt WasmConvertor) ScHname(hname iscp.Hname) wasmtypes.ScHname {
 	return wasmtypes.ScHname(hname)
 }
 
-func (cvt WasmConvertor) ScRequestID(requestID *iscp.RequestID) wasmtypes.ScRequestID {
+func (cvt WasmConvertor) ScRequestID(requestID iscp.RequestID) wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(requestID.Bytes())
 }

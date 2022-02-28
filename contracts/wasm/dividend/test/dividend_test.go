@@ -4,7 +4,6 @@
 package test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
@@ -53,7 +52,7 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 	member.Params.Factor().SetValue(100)
 	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory address"))
+	require.Contains(t, ctx.Err.Error(), "missing mandatory address")
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
@@ -64,7 +63,7 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 	member.Params.Address().SetValue(member1.ScAddress())
 	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory factor"))
+	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")
 }
 
 func TestDivide1Member(t *testing.T) {
