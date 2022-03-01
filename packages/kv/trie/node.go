@@ -32,8 +32,8 @@ type Node struct {
 	ChildCommitments map[byte]VCommitment
 	Terminal         TCommitment
 	// non-persistent, used for caching
-	NewTerminal      TCommitment
-	ModifiedChildren map[uint8]struct{} // to be updated child commitments
+	newTerminal      TCommitment
+	modifiedChildren map[uint8]struct{} // to be updated child commitments
 }
 
 const (
@@ -46,7 +46,7 @@ func NewNode(pathFragment []byte) *Node {
 		PathFragment:     pathFragment,
 		ChildCommitments: make(map[uint8]VCommitment),
 		Terminal:         nil,
-		ModifiedChildren: make(map[uint8]struct{}),
+		modifiedChildren: make(map[uint8]struct{}),
 	}
 }
 
@@ -55,7 +55,7 @@ func NodeFromBytes(setup CommitmentModel, data []byte) (*Node, error) {
 	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
 		return nil, err
 	}
-	ret.NewTerminal = ret.Terminal
+	ret.newTerminal = ret.Terminal
 	return ret, nil
 }
 
@@ -67,21 +67,21 @@ func (n *Node) Clone() *Node {
 		PathFragment:     make([]byte, len(n.PathFragment)),
 		ChildCommitments: make(map[byte]VCommitment),
 		Terminal:         n.Terminal.Clone(),
-		NewTerminal:      n.NewTerminal.Clone(),
-		ModifiedChildren: make(map[byte]struct{}),
+		newTerminal:      n.newTerminal.Clone(),
+		modifiedChildren: make(map[byte]struct{}),
 	}
 	copy(ret.PathFragment, n.PathFragment)
 	for k, v := range n.ChildCommitments {
 		ret.ChildCommitments[k] = v.Clone()
 	}
-	for k, v := range n.ModifiedChildren {
-		ret.ModifiedChildren[k] = v
+	for k, v := range n.modifiedChildren {
+		ret.modifiedChildren[k] = v
 	}
 	return ret
 }
 
 func (n *Node) CommitsToTerminal() bool {
-	return n.NewTerminal != nil
+	return n.newTerminal != nil
 }
 
 func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {

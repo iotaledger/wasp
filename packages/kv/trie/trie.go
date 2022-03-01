@@ -1,3 +1,9 @@
+// Package trie implements functionality of generic verkle trie with 256 child commitment in each node
+// + terminal commitment + commitment to the path fragment: 258 commitments in total.
+// It mainly follows the definition from https://hackmd.io/@Evaldas/H13YFOVGt (except commitment to the path fragment)
+// The commitment to the path fragment is needed to provide proofs of absence of keys
+//
+// The specific implementation of the commitment model is presented as a CommitmentModel interface
 package trie
 
 import (
@@ -7,6 +13,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// Trie is an updatable trie implemented on top of the key/value store. It is virtualized and optimized by cashing of the
+// trie update operation and keeping consistent trie in the cache
 type Trie struct {
 	access    accessTrie
 	nodeCache map[kv.Key]*Node
@@ -133,7 +141,7 @@ func (tr *Trie) ClearCache() {
 func (tr *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
 	tr.unDelete(kv.Key(key))
 	ret := NewNode(pathFragment)
-	ret.NewTerminal = newTerminal
+	ret.newTerminal = newTerminal
 	_, already := tr.nodeCache[kv.Key(key)]
 	assert(!already, "!already")
 	tr.nodeCache[kv.Key(key)] = ret
@@ -160,8 +168,8 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 		// no node, no commitment
 		return nil
 	}
-	n.Terminal = n.NewTerminal
-	for childIndex := range n.ModifiedChildren {
+	n.Terminal = n.newTerminal
+	for childIndex := range n.modifiedChildren {
 		childKey := n.ChildKey(key, childIndex)
 		c := tr.UpdateNodeCommitment(childKey)
 		if c != nil {
@@ -174,8 +182,8 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 			delete(n.ChildCommitments, childIndex)
 		}
 	}
-	if len(n.ModifiedChildren) > 0 {
-		n.ModifiedChildren = make(map[byte]struct{})
+	if len(n.modifiedChildren) > 0 {
+		n.modifiedChildren = make(map[byte]struct{})
 	}
 	ret := tr.access.model.CommitToNode(n)
 	return ret
@@ -199,7 +207,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 	lastNode := tr.mustGetNode(kv.Key(lastKey))
 	switch ending {
 	case EndingTerminal:
-		lastNode.NewTerminal = c
+		lastNode.newTerminal = c
 
 	case EndingExtend:
 		childIndexPosition := len(lastKey) + len(lastCommonPrefix)
@@ -207,7 +215,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		childIndex := key[childIndexPosition]
 		tr.removeKey(kv.Key(key[:childIndexPosition+1]))
 		tr.newTerminalNode(key[:childIndexPosition+1], key[childIndexPosition+1:], c)
-		lastNode.ModifiedChildren[childIndex] = struct{}{}
+		lastNode.modifiedChildren[childIndex] = struct{}{}
 
 	case EndingSplit:
 		childPosition := len(lastKey) + len(lastCommonPrefix)
@@ -223,22 +231,22 @@ func (tr *Trie) Update(key []byte, value []byte) {
 		tr.newNodeCopy(keyContinue, lastNode.PathFragment[splitIndex+1:], lastNode)
 		// clear the old one and adjust path fragment. Continue with 1 child, the new node
 		lastNode.ChildCommitments = make(map[uint8]VCommitment)
-		lastNode.ModifiedChildren = make(map[uint8]struct{})
+		lastNode.modifiedChildren = make(map[uint8]struct{})
 		lastNode.PathFragment = lastCommonPrefix
-		lastNode.ModifiedChildren[childContinue] = struct{}{}
+		lastNode.modifiedChildren[childContinue] = struct{}{}
 		lastNode.Terminal = nil
-		lastNode.NewTerminal = nil
+		lastNode.newTerminal = nil
 		// insert terminal
 		if childPosition == len(key) {
 			// no need for the new node
-			lastNode.NewTerminal = c
+			lastNode.newTerminal = c
 		} else {
 			// create a new node
 			keyFork := key[:len(keyContinue)]
 			childForkIndex := keyFork[len(keyFork)-1]
 			assert(childForkIndex != childContinue, "childForkIndex != childContinue")
 			tr.newTerminalNode(keyFork, key[len(keyFork):], c)
-			lastNode.ModifiedChildren[childForkIndex] = struct{}{}
+			lastNode.modifiedChildren[childForkIndex] = struct{}{}
 		}
 
 	default:
@@ -258,7 +266,7 @@ func (tr *Trie) Delete(key []byte) {
 	if !ok {
 		return
 	}
-	lastNode.NewTerminal = nil
+	lastNode.newTerminal = nil
 	reorg, mergeChildIndex := tr.checkReorg(kv.Key(lastKey), lastNode)
 	switch reorg {
 	case nodeReorgNOP:
@@ -304,7 +312,7 @@ func (tr *Trie) markModifiedCommitmentsBackToRoot(proof [][]byte) {
 		kPrev := proof[i-1]
 		childIndex := k[len(k)-1]
 		n := tr.mustGetNode(kv.Key(kPrev))
-		n.ModifiedChildren[childIndex] = struct{}{}
+		n.modifiedChildren[childIndex] = struct{}{}
 	}
 }
 
@@ -318,7 +326,7 @@ func (tr *Trie) hasCommitment(key kv.Key) bool {
 		// commits to terminal
 		return true
 	}
-	for childIndex := range n.ModifiedChildren {
+	for childIndex := range n.modifiedChildren {
 		if tr.hasCommitment(n.ChildKey(key, childIndex)) {
 			// modified child commits to something
 			return true
@@ -349,7 +357,7 @@ func (tr *Trie) checkReorg(key kv.Key, n *Node) (reorgStatus, byte) {
 	for c := range n.ChildCommitments {
 		toCheck[c] = struct{}{}
 	}
-	for c := range n.ModifiedChildren {
+	for c := range n.modifiedChildren {
 		if tr.hasCommitment(n.ChildKey(key, c)) {
 			toCheck[c] = struct{}{}
 		} else {

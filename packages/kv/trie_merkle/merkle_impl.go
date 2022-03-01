@@ -1,3 +1,4 @@
+// Package trie_merkle implements trie.CommitmentModel based on the Merkle tree
 package trie_merkle
 
 import (

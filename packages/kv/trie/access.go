@@ -16,6 +16,7 @@ type CommitmentModel interface {
 	CommitToData([]byte) TCommitment
 }
 
+// Access is an interface for read only access to the trie
 type Access interface {
 	GetNode(key kv.Key) (*Node, bool)
 	Model() CommitmentModel
@@ -73,8 +74,8 @@ func GetProofGeneric(tr Access, key []byte) *ProofGeneric {
 // returns
 // - path of keys which leads to 'path'
 // - common prefix between the last key and the fragment
-func proofPath(nodeGetter Access, path []byte) ([][]byte, []byte, ProofEndingCode) {
-	node, ok := nodeGetter.GetNode("")
+func proofPath(trieAccess Access, path []byte) ([][]byte, []byte, ProofEndingCode) {
+	node, ok := trieAccess.GetNode("")
 	if !ok {
 		return nil, nil, 0
 	}
@@ -100,7 +101,7 @@ func proofPath(nodeGetter Access, path []byte) ([][]byte, []byte, ProofEndingCod
 
 		childKey := node.ChildKey(kv.Key(key), path[childIndexPosition])
 
-		node, ok = nodeGetter.GetNode(childKey)
+		node, ok = trieAccess.GetNode(childKey)
 		if !ok {
 			// if there are no commitment to the child at the position, it means trie must be extended at this point
 			return proof, prefix, EndingExtend
