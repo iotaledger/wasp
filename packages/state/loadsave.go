@@ -90,9 +90,9 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 	}
 	ret := newVirtualState(store)
 
-	// explicit use of merkle trie model. Asserting that the chainID is commited by the root at the key ''
+	// explicit use of merkle trie model. Asserting that the chainID is committed by the root at the key ''
 	merkleProof := CommitmentModel.Proof(nil, ret.trie)
-	if err = merkleProof.Validate(trie.RootCommitment(ret.trie)); err != nil {
+	if err = merkleProof.Validate(trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}
 	ret.kvs.Mutations().ResetModified()

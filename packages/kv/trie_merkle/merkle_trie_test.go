@@ -84,6 +84,7 @@ func TestTrieBase(t *testing.T) {
 
 		tr.Update([]byte(""), []byte(""))
 		tr.Commit()
+		require.EqualValues(t, nil, trie.RootCommitment(tr))
 		t.Logf("root0 = %s", trie.RootCommitment(tr))
 		_, ok := tr.GetNode("")
 		require.False(t, ok)
@@ -200,7 +201,7 @@ func TestTrieBase(t *testing.T) {
 		c2 := trie.RootCommitment(tr2)
 		t.Logf("root1 = %s", c1)
 		t.Logf("root2 = %s", c2)
-		require.True(t, c1.Equal(c2))
+		require.True(t, trie.EqualCommitments(c1, c2))
 	})
 	t.Run("reverse full", func(t *testing.T) {
 		data := data2
