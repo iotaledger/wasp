@@ -83,8 +83,7 @@ func GetToken() string {
 }
 
 func SetToken(token string) {
-	viper.Set("authentication.token", token)
-	viper.WriteConfig()
+	Set("authentication.token", token)
 }
 
 func WaspClient() *client.WaspClient {
