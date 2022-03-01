@@ -30,7 +30,6 @@
 	{{ $title := index . 0 }}
 	{{ $href := index . 1 }}
 	{{ $active := index . 2 }}
-	{{ $isAuthenticated := index . 3}}
 
 	<a href="{{$href}}" class="button"
 			{{- if $active -}}
@@ -150,16 +149,16 @@
 
 					{{- if $isAuthenticated}}
 						{{- if ne $tab.Title "Auth" -}}
-							{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path) $isAuthenticated ) }}
+							{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path)  ) }}
 						{{end}}
 					{{else}}
 						{{- if eq $tab.Title "Auth" -}}
-							{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path) $isAuthenticated ) }}
+							{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path) ) }}
 						{{end}}
 					{{end}}
 				{{end}}
 				{{range $_, $tab := .Breadcrumbs}}
-					{{ template "tab" (args (printf "🢒 %s" $tab.Title) $tab.Href (eq $path $tab.Path)) $isAuthenticated }}
+					{{ template "tab" (args (printf "🢒 %s" $tab.Title) $tab.Href (eq $path $tab.Path))}}
 				{{end}}
 		</header>
 		<main>
