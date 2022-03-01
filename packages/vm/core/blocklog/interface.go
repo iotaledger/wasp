@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"io"
@@ -70,6 +71,7 @@ type BlockInfo struct {
 	NumSuccessfulRequests   uint16
 	NumOffLedgerRequests    uint16
 	PreviousStateCommitment trie.VCommitment
+	StateCommitment         trie.VCommitment // nil if not known
 	AnchorTransactionID     iotago.TransactionID
 	TotalIotasInL2Accounts  uint64
 	TotalDustDeposit        uint64
@@ -132,6 +134,14 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.PreviousStateCommitment.Bytes()); err != nil {
 		return err
 	}
+	if err := util.WriteBoolByte(w, bi.StateCommitment != nil); err != nil {
+		return err
+	}
+	if bi.StateCommitment != nil {
+		if _, err := w.Write(bi.StateCommitment.Bytes()); err != nil {
+			return err
+		}
+	}
 	if err := util.WriteUint64(w, bi.TotalIotasInL2Accounts); err != nil {
 		return err
 	}
@@ -166,6 +176,17 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	bi.PreviousStateCommitment = state.CommitmentModel.NewVectorCommitment()
 	if err := bi.PreviousStateCommitment.Read(r); err != nil {
 		return err
+	}
+	var knownStateCommitments bool
+	if err := util.ReadBoolByte(r, &knownStateCommitments); err != nil {
+		return err
+	}
+	bi.StateCommitment = nil
+	if knownStateCommitments {
+		bi.StateCommitment = state.CommitmentModel.NewVectorCommitment()
+		if err := bi.StateCommitment.Read(r); err != nil {
+			return err
+		}
 	}
 	if err := util.ReadUint64(r, &bi.TotalIotasInL2Accounts); err != nil {
 		return err
@@ -402,6 +423,10 @@ func (r *RequestReceipt) Short() string {
 	return ret
 }
 
+func (r *RequestReceipt) LookupKey() RequestLookupKey {
+	return NewRequestLookupKey(r.BlockIndex, r.RequestIndex)
+}
+
 // endregion  /////////////////////////////////////////////////////////////
 
 // region ControlAddresses ///////////////////////////////////////////////
@@ -453,3 +478,7 @@ func (ca *ControlAddresses) String() string {
 }
 
 // endregion /////////////////////////////////////////////////////////////
+
+func BlockInfoKey(index uint32) []byte {
+	return collections.Array32ElemKey(prefixBlockRegistry, index)
+}
