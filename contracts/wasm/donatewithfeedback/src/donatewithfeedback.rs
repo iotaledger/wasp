@@ -18,7 +18,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
     if donation.amount == 0 || donation.feedback.len() == 0 {
         donation.error = "error: empty feedback or donated amount = 0".to_string();
         if donation.amount > 0 {
-            ctx.transfer_to_address(&donation.donator.address(), ScTransfers::iotas(donation.amount));
+            ctx.send(&donation.donator.address(), &ScTransfers::iotas(donation.amount));
             donation.amount = 0;
         }
     }
@@ -45,7 +45,7 @@ pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
     }
 
     let sc_creator = ctx.contract_creator().address();
-    ctx.transfer_to_address(&sc_creator, ScTransfers::iotas(amount));
+    ctx.send(&sc_creator, &ScTransfers::iotas(amount));
 }
 
 pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {

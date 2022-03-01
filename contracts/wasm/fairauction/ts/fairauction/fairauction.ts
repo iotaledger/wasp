@@ -200,10 +200,10 @@ export function viewGetInfo(ctx: wasmlib.ScViewContext, f: sc.GetInfoContext): v
 function transferTokens(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, color: wasmlib.ScColor, amount: i64): void {
     if (agent.isAddress()) {
         // send back to original Tangle address
-        ctx.transferToAddress(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
+        ctx.send(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.transferToAddress(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
+    ctx.send(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
 }

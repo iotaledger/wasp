@@ -205,10 +205,10 @@ pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
 fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, color: &ScColor, amount: u64) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
+        ctx.send(&agent.address(), &ScTransfers::transfer(color, amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
+    ctx.send(&agent.address(), &ScTransfers::transfer(color, amount));
 }

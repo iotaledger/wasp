@@ -16,7 +16,7 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
     if (donation.amount == 0 || donation.feedback.length == 0) {
         donation.error = "error: empty feedback or donated amount = 0".toString();
         if (donation.amount > 0) {
-            ctx.transferToAddress(donation.donator.address(), wasmlib.ScTransfers.iotas(donation.amount));
+            ctx.send(donation.donator.address(), wasmlib.ScTransfers.iotas(donation.amount));
             donation.amount = 0;
         }
     }
@@ -43,7 +43,7 @@ export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext):
     }
 
     let scCreator = ctx.contractCreator().address();
-    ctx.transferToAddress(scCreator, wasmlib.ScTransfers.iotas(amount));
+    ctx.send(scCreator, wasmlib.ScTransfers.iotas(amount));
 }
 
 export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext): void {

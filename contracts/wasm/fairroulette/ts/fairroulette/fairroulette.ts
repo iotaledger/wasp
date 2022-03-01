@@ -209,7 +209,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
             // of the winner. The transferToAddress() method receives the address value and
             // the proxy to the new transfers map on the host, and will call the corresponding
             // host sandbox function with these values.
-            ctx.transferToAddress(bet.better.address(), transfers);
+            ctx.send(bet.better.address(), transfers);
         }
 
         // Announce who got sent what as event.
@@ -224,7 +224,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
         let transfers: wasmlib.ScTransfers = wasmlib.ScTransfers.iotas(remainder);
 
         // Send the remainder to the contract creator.
-        ctx.transferToAddress(ctx.contractCreator().address(), transfers);
+        ctx.send(ctx.contractCreator().address(), transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended
