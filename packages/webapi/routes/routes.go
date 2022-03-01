@@ -27,10 +27,6 @@ func StateGet(chainID, key string) string {
 	return "/chain/" + chainID + "/state/" + key
 }
 
-func Auth() string {
-	return "/adm/auth"
-}
-
 func ActivateChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/activate"
 }

@@ -3,6 +3,8 @@ package authentication
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -73,7 +75,7 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 
 		if config.AddRoutes {
 			authHandler := &AuthHandler{Jwt: jwtAuth, Users: userMap}
-			webAPI.POST(AuthRoute(), authHandler.CrossAPIAuthHandler)
+			webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
 		}
 
 	case AuthIPWhitelist:

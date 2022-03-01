@@ -78,10 +78,19 @@ func GoshimmerClient() *goshimmer.Client {
 	return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
 }
 
+func GetToken() string {
+	return viper.GetString("authentication.token")
+}
+
+func SetToken(token string) {
+	viper.Set("authentication.token", token)
+	viper.WriteConfig()
+}
+
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())
-	return client.NewWaspClient(WaspAPI())
+	return client.NewWaspClient(WaspAPI()).WithToken(GetToken())
 }
 
 func WaspAPI() string {

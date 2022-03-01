@@ -7,6 +7,8 @@ import (
 	_ "embed"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
+
 	"github.com/iotaledger/wasp/packages/authentication"
 
 	"github.com/labstack/echo/v4"
@@ -16,10 +18,10 @@ import (
 var tplLogin string
 
 func (d *Dashboard) authInit(e *echo.Echo, r renderer) Tab {
-	e.GET(authentication.AuthRouteSuccess(), d.handleAuthCheck)
+	e.GET(shared.AuthRouteSuccess(), d.handleAuthCheck)
 	e.GET("/", d.handleAuthCheck)
 
-	route := e.GET(authentication.AuthRoute(), d.handleAuth)
+	route := e.GET(shared.AuthRoute(), d.handleAuth)
 	route.Name = "auth"
 
 	r[route.Path] = d.makeTemplate(e, tplLogin)
@@ -48,14 +50,14 @@ func (d *Dashboard) handleAuthCheck(c echo.Context) error {
 	auth, ok := c.Get("auth").(*authentication.AuthContext)
 
 	if !ok {
-		return c.Redirect(http.StatusMovedPermanently, authentication.AuthRoute())
+		return c.Redirect(http.StatusMovedPermanently, shared.AuthRoute())
 	}
 
 	if auth.IsAuthenticated() {
 		return c.Redirect(http.StatusMovedPermanently, "/config")
 	}
 
-	return c.Redirect(http.StatusMovedPermanently, authentication.AuthRoute())
+	return c.Redirect(http.StatusMovedPermanently, shared.AuthRoute())
 }
 
 type AuthTemplateParams struct {

@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
+
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 )
 
 type AuthHandler struct {
@@ -55,44 +56,36 @@ func (a *AuthHandler) GetTypedClaims(user *users.UserData) (*WaspClaims, error) 
 }
 
 func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
-	type loginRequest struct {
-		JWT      string `json:"jwt"`
-		Username string `json:"username" form:"Username"`
-		Password string `json:"password" form:"Password"`
-	}
-
-	request := &loginRequest{}
+	request := &shared.LoginRequest{}
 
 	if err := c.Bind(request); err != nil {
-		return errors.WithMessage(err, "invalid request, error: %a")
+		return c.NoContent(http.StatusUnauthorized)
 	}
 
 	if !a.validateLogin(request.Username, request.Password) {
-		return echo.ErrUnauthorized
+		return c.NoContent(http.StatusUnauthorized)
 	}
 
 	user := users.GetUserByName(request.Username)
 
 	if user == nil {
-		return echo.ErrUnauthorized
+		return c.NoContent(http.StatusUnauthorized)
 	}
 
 	claims, err := a.GetTypedClaims(user)
 	if err != nil {
-		return err
+		return c.NoContent(http.StatusUnauthorized)
 	}
 
 	token, err := a.Jwt.IssueJWT(request.Username, claims)
 	if err != nil {
-		return err
+		return c.NoContent(http.StatusUnauthorized)
 	}
 
 	contentType := c.Request().Header.Get(echo.HeaderContentType)
 
 	if contentType == echo.MIMEApplicationJSON {
-		return c.JSON(http.StatusMovedPermanently, map[string]string{
-			"jwt": token,
-		})
+		return c.JSON(http.StatusOK, shared.LoginResponse{JWT: token})
 	}
 
 	if contentType == echo.MIMEApplicationForm {
@@ -107,7 +100,7 @@ func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 
 		c.SetCookie(&cookie)
 
-		return c.Redirect(http.StatusMovedPermanently, AuthRouteSuccess())
+		return c.Redirect(http.StatusMovedPermanently, shared.AuthRouteSuccess())
 	}
 
 	return c.NoContent(http.StatusUnauthorized)

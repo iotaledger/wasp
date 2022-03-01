@@ -3,6 +3,8 @@ package authentication
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -11,12 +13,12 @@ type StatusWebAPIModel struct {
 }
 
 func (a *StatusWebAPIModel) handleAuthenticationStatus(c echo.Context) error {
-	model := AuthStatusModel{
+	model := shared.AuthInfoModel{
 		Scheme: a.config.Scheme,
 	}
 
 	if model.Scheme == AuthJWT {
-		model.AuthURL = AuthRoute()
+		model.AuthURL = shared.AuthRoute()
 	}
 
 	return c.JSON(http.StatusOK, model)
@@ -27,5 +29,5 @@ func addAuthenticationStatus(webAPI WebAPI, config AuthConfiguration) {
 		config: config,
 	}
 
-	webAPI.GET(AuthStatusRoute(), c.handleAuthenticationStatus)
+	webAPI.GET(shared.AuthInfoRoute(), c.handleAuthenticationStatus)
 }

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
+
 	jwt "github.com/golang-jwt/jwt"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
@@ -176,7 +178,7 @@ func initJWT(durationHours int, nodeID string, privateKey []byte, userMap map[st
 	jwtAuthSkipper := func(context echo.Context) bool {
 		path := context.Request().RequestURI
 
-		if strings.HasSuffix(path, AuthRoute()) || strings.HasSuffix(path, AuthStatusRoute()) || path == "/" {
+		if strings.HasSuffix(path, shared.AuthRoute()) || strings.HasSuffix(path, shared.AuthInfoRoute()) || path == "/" {
 			return true
 		}
 
