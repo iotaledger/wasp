@@ -23,7 +23,7 @@ func TestChainOwnerIDFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestChainOwnerIDFull(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 		require.EqualValues(t, ctx.Originator().ScAgentID(), f.Results.ChainOwnerID().Value())
 	})

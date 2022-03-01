@@ -226,9 +226,6 @@ export class ScSandboxFunc extends ScSandbox {
 
     // (delayed) posts a smart contract function request
     public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, transfer: ScTransfers, delay: u32): void {
-        if (transfer.balances().colors().length == 0) {
-            this.panic("missing transfer");
-        }
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
         req.contract = hContract;
@@ -274,17 +271,10 @@ export class ScSandboxFunc extends ScSandbox {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
     }
 
-    // transfer assetss to the specified Tangle ledger address
+    // transfer assets to the specified Tangle ledger address
     public send(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
         // we need some assets to send
-        let assets: u64 = 0;
-        const colors = transfer.balances().colors();
-        for (let i = 0; i < colors.length; i++) {
-            const color = colors[i];
-            assets += transfer.balances().balance(color);
-        }
-        if (assets == 0) {
-            // only try to send when non-zero assets
+        if (transfer.isEmpty()) {
             return;
         }
 

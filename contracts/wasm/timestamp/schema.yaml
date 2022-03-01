@@ -3,7 +3,6 @@ description: Extremely simple timestamp server
 structs: {}
 typedefs: {}
 state:
-  timestamp: Uint64 // last official timestamp generated
 funcs:
   now:
 views:

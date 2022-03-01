@@ -1,16 +1,15 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function stringDecode(dec: WasmDecoder): string {
+export function stringDecode(dec: wasmtypes.WasmDecoder): string {
     return stringFromBytes(dec.bytes());
 }
 
-export function stringEncode(enc: WasmEncoder, value: string): void {
+export function stringEncode(enc: wasmtypes.WasmEncoder, value: string): void {
     enc.bytes(stringToBytes(value));
 }
 
@@ -35,9 +34,9 @@ export function stringToString(value: string): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableString {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

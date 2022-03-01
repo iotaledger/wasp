@@ -5,7 +5,7 @@ package wasmsolo
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	cryptolib "github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -15,7 +15,7 @@ import (
 
 type SoloAgent struct {
 	Env     *solo.Solo
-	Pair    *ed25519.KeyPair
+	Pair    *cryptolib.KeyPair
 	address ledgerstate.Address
 	hname   iscp.Hname
 }

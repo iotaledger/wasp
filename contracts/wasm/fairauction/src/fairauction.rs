@@ -167,7 +167,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         description: description,
         duration: duration,
         highest_bid: 0,
-        highest_bidder: ScAgentID::from_bytes(&[0; 37]),
+        highest_bidder: agent_id_from_bytes(&[]),
         minimum_bid: minimum_bid,
         num_tokens: num_tokens,
         owner_margin: owner_margin,
@@ -177,7 +177,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
 
     let fa = ScFuncs::finalize_auction(ctx);
     fa.params.color().set_value(&auction.color);
-    fa.func.delay(duration * 60).transfer_iotas(1).post();
+    fa.func.delay(duration * 60).post();
 }
 
 pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
@@ -205,10 +205,10 @@ pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
 fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, color: &ScColor, amount: u64) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
+        ctx.send(&agent.address(), &ScTransfers::transfer(color, amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
+    ctx.send(&agent.address(), &ScTransfers::transfer(color, amount));
 }

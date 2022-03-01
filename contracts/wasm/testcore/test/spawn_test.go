@@ -13,8 +13,8 @@ func TestSpawn(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Spawn(ctx)
-		f.Params.ProgHash().SetValue(ctx.Convertor.ScHash(&ctx.Hprog))
-		f.Func.TransferIotas(1).Post()
+		f.Params.ProgHash().SetValue(ctx.Convertor.ScHash(ctx.Hprog))
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 
 		spawnedName := testcore.ScName + "_spawned"

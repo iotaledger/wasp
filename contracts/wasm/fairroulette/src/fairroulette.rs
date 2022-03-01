@@ -114,10 +114,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
             // amount of seconds. This will lock in the playing period, during which more bets can
             // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
-            ScFuncs::pay_winners(ctx).func
-                .delay(play_period)
-                .transfer_iotas(1)
-                .post();
+            ScFuncs::pay_winners(ctx).func.delay(play_period).post();
         }
     }
 }
@@ -215,7 +212,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
             // of the winner. The transfer_to_address() method receives the address value and
             // the proxy to the new transfers map on the host, and will call the corresponding
             // host sandbox function with these values.
-            ctx.transfer_to_address(&bet.better.address(), transfers);
+            ctx.send(&bet.better.address(), &transfers);
         }
 
         // Announce who got sent what as event.
@@ -230,7 +227,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         let transfers: ScTransfers = ScTransfers::iotas(remainder);
 
         // Send the remainder to the contract creator.
-        ctx.transfer_to_address(&ctx.contract_creator().address(), transfers);
+        ctx.send(&ctx.contract_creator().address(), &transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended

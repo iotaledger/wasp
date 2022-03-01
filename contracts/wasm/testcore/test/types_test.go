@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:dupl
 func TestTypesFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
@@ -19,18 +20,19 @@ func TestTypesFull(t *testing.T) {
 		f.Params.ChainID().SetValue(ctx.ChainID())
 		f.Params.ContractID().SetValue(ctx.AccountID())
 		hashValue := hashing.HashStrings("Hash")
-		f.Params.Hash().SetValue(ctx.Convertor.ScHash(&hashValue))
+		f.Params.Hash().SetValue(ctx.Convertor.ScHash(hashValue))
 		f.Params.Hname().SetValue(ctx.Convertor.ScHname(iscp.Hn("Hname")))
 		f.Params.HnameZero().SetValue(0)
 		f.Params.Int64().SetValue(42)
 		f.Params.Int64Zero().SetValue(0)
 		f.Params.String().SetValue("string")
 		f.Params.StringZero().SetValue("")
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 	})
 }
 
+//nolint:dupl
 func TestTypesView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
@@ -41,7 +43,7 @@ func TestTypesView(t *testing.T) {
 		v.Params.ChainID().SetValue(ctx.ChainID())
 		v.Params.ContractID().SetValue(ctx.AccountID())
 		hashValue := hashing.HashStrings("Hash")
-		v.Params.Hash().SetValue(ctx.Convertor.ScHash(&hashValue))
+		v.Params.Hash().SetValue(ctx.Convertor.ScHash(hashValue))
 		v.Params.Hname().SetValue(ctx.Convertor.ScHname(iscp.Hn("Hname")))
 		v.Params.HnameZero().SetValue(0)
 		v.Params.Int64().SetValue(42)

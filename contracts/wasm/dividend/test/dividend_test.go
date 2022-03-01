@@ -4,7 +4,6 @@
 package test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
@@ -17,7 +16,7 @@ func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(agent.ScAddress())
 	member.Params.Factor().SetValue(factor)
-	member.Func.TransferIotas(1).Post()
+	member.Func.Post()
 }
 
 func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
@@ -51,9 +50,9 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Factor().SetValue(100)
-	member.Func.TransferIotas(1).Post()
+	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory address"))
+	require.Contains(t, ctx.Err.Error(), "missing mandatory address")
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
@@ -62,9 +61,9 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 	member1 := ctx.NewSoloAgent()
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(member1.ScAddress())
-	member.Func.TransferIotas(1).Post()
+	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory factor"))
+	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")
 }
 
 func TestDivide1Member(t *testing.T) {

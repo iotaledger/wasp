@@ -5,7 +5,7 @@ package wasmclient
 
 import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	cryptolib "github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/mr-tron/base58"
 )
@@ -39,7 +39,7 @@ func SeedToAgentID(mySeed string, index uint64) AgentID {
 	return AgentID(base58.Encode(agentID.Bytes()))
 }
 
-func SeedToKeyPair(mySeed string, index uint64) *ed25519.KeyPair {
+func SeedToKeyPair(mySeed string, index uint64) *cryptolib.KeyPair {
 	seedBytes, err := base58.Decode(mySeed)
 	if err != nil {
 		panic(err)

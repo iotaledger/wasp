@@ -2,24 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {addressFromBytes, ScAddress, ScAddressAlias} from "./scaddress";
-import {bytesCompare} from "./scbytes";
+import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScChainIDLength = 33;
 
 export class ScChainID {
-    id: u8[] = zeroes(ScChainIDLength);
+    id: u8[] = wasmtypes.zeroes(ScChainIDLength);
 
-    public address(): ScAddress {
-        return addressFromBytes(this.id);
+    public address(): wasmtypes.ScAddress {
+        return wasmtypes.addressFromBytes(this.id);
     }
 
     public equals(other: ScChainID): bool {
-        return bytesCompare(this.id, other.id) == 0;
+        return wasmtypes.bytesCompare(this.id, other.id) == 0;
     }
 
     // convert to byte array representation
@@ -35,24 +32,24 @@ export class ScChainID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function chainIDDecode(dec: WasmDecoder): ScChainID {
+export function chainIDDecode(dec: wasmtypes.WasmDecoder): ScChainID {
     return chainIDFromBytesUnchecked(dec.fixedBytes(ScChainIDLength));
 }
 
-export function chainIDEncode(enc: WasmEncoder, value: ScChainID): void {
+export function chainIDEncode(enc: wasmtypes.WasmEncoder, value: ScChainID): void {
     enc.fixedBytes(value.toBytes(), ScChainIDLength);
 }
 
 export function chainIDFromBytes(buf: u8[]): ScChainID {
     if (buf.length == 0) {
         const chainID =  new ScChainID();
-        chainID.id[0] = ScAddressAlias;
+        chainID.id[0] = wasmtypes.ScAddressAlias;
         return chainID;
     }
     if (buf.length != ScChainIDLength) {
         panic("invalid ChainID length");
     }
-    if (buf[0] != ScAddressAlias) {
+    if (buf[0] != wasmtypes.ScAddressAlias) {
         panic("invalid ChainID: not an alias address");
     }
     return chainIDFromBytesUnchecked(buf);
@@ -64,7 +61,7 @@ export function chainIDToBytes(value: ScChainID): u8[] {
 
 export function chainIDToString(value: ScChainID): string {
     // TODO standardize human readable string
-    return base58Encode(value.id);
+    return wasmtypes.base58Encode(value.id);
 }
 
 function chainIDFromBytesUnchecked(buf: u8[]): ScChainID {
@@ -76,9 +73,9 @@ function chainIDFromBytesUnchecked(buf: u8[]): ScChainID {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableChainID {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

@@ -1,10 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {uint32Decode, uint32Encode} from "./scuint32";
-import {stringToBytes} from "./scstring";
 import {panic} from "../sandbox";
+import * as wasmtypes from "./index"
 
 export interface IKvStore {
     delete(key: u8[]): void;
@@ -73,8 +71,8 @@ export class Proxy {
     }
 
     protected element(index: u32): Proxy {
-        let enc = new WasmEncoder();
-        uint32Encode(enc, index);
+        let enc = new wasmtypes.WasmEncoder();
+        wasmtypes.uint32Encode(enc, index);
         // 0x23 is '#'
         return this.sub(0x23, enc.buf());
     }
@@ -87,8 +85,8 @@ export class Proxy {
     //TODO have a Grow function that grows an array?
     protected expand(length: u32): void {
         // update the length counter
-        let enc = new WasmEncoder();
-        uint32Encode(enc, length);
+        let enc = new wasmtypes.WasmEncoder();
+        wasmtypes.uint32Encode(enc, length);
         this.set(enc.buf());
     }
 
@@ -124,14 +122,14 @@ export class Proxy {
         if (buf.length == 0) {
             return 0;
         }
-        const dec = new WasmDecoder(buf)
-        return uint32Decode(dec);
+        const dec = new wasmtypes.WasmDecoder(buf)
+        return wasmtypes.uint32Decode(dec);
     }
 
     // Root returns a Proxy for an element of a root container (Params/Results/State).
     // The key is always a string.
     public root(key: string): Proxy {
-        return this.proxy(this.kvStore, stringToBytes(key));
+        return this.proxy(this.kvStore, wasmtypes.stringToBytes(key));
     }
 
     set(value: u8[]): void {

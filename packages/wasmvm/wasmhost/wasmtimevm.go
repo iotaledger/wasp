@@ -11,25 +11,82 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
-	engine    *wasmtime.Engine
-	instance  *wasmtime.Instance
-	interrupt *wasmtime.InterruptHandle
-	linker    *wasmtime.Linker
-	memory    *wasmtime.Memory
-	module    *wasmtime.Module
-	store     *wasmtime.Store
+	engine     *wasmtime.Engine
+	instance   *wasmtime.Instance
+	interrupt  *wasmtime.InterruptHandle
+	linker     *wasmtime.Linker
+	memory     *wasmtime.Memory
+	module     *wasmtime.Module
+	store      *wasmtime.Store
+	lastBudget uint64
 }
 
 func NewWasmTimeVM() WasmVM {
 	vm := &WasmTimeVM{}
 	config := wasmtime.NewConfig()
 	config.SetInterruptable(true)
+	// config.SetConsumeFuel(true)
 	vm.engine = wasmtime.NewEngineWithConfig(config)
 	return vm
 }
 
-func (vm *WasmTimeVM) NewInstance() WasmVM {
-	return &WasmTimeVM{engine: vm.engine, module: vm.module}
+// GasBudget sets the gas budget for the VM.
+func (vm *WasmTimeVM) GasBudget(budget uint64) {
+	// save budget so we can later determine how much the VM burned
+	vm.lastBudget = budget
+
+	// new budget for VM, top up to desired budget
+	err := vm.store.AddFuel(budget)
+	if err != nil {
+		panic("GasBudget.set: " + err.Error())
+	}
+
+	// consume 0 fuel to determine remaining budget
+	remainingBudget, err := vm.store.ConsumeFuel(0)
+	if err != nil {
+		panic("GasBudget.determine: " + err.Error())
+	}
+
+	if remainingBudget > budget {
+		// burn excess budget
+		_, err = vm.store.ConsumeFuel(remainingBudget - budget)
+		if err != nil {
+			panic("GasBudget.burn: " + err.Error())
+		}
+	}
+}
+
+// GasBurned will return the gas burned since the last time GasBudget() was called
+func (vm *WasmTimeVM) GasBurned() uint64 {
+	// consume 0 fuel to determine remaining budget
+	remainingBudget, err := vm.store.ConsumeFuel(0)
+	if err != nil {
+		panic("GasBurned.determine: " + err.Error())
+	}
+
+	burned := vm.lastBudget - remainingBudget
+	return burned
+}
+
+func (vm *WasmTimeVM) Instantiate() (err error) {
+	// vm.GasBudget(1_000_000)
+	// vm.GasDisable(true)
+	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
+	// vm.GasDisable(false)
+	// burned := vm.GasBurned()
+	// _ = burned
+	if err != nil {
+		return err
+	}
+	memory := vm.instance.GetExport(vm.store, "memory")
+	if memory == nil {
+		return errors.New("no memory export")
+	}
+	vm.memory = memory.Memory()
+	if vm.memory == nil {
+		return errors.New("not a memory type")
+	}
+	return nil
 }
 
 func (vm *WasmTimeVM) Interrupt() {
@@ -79,20 +136,8 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 	return vm.Instantiate()
 }
 
-func (vm *WasmTimeVM) Instantiate() (err error) {
-	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
-	if err != nil {
-		return err
-	}
-	memory := vm.instance.GetExport(vm.store, "memory")
-	if memory == nil {
-		return errors.New("no memory export")
-	}
-	vm.memory = memory.Memory()
-	if vm.memory == nil {
-		return errors.New("not a memory type")
-	}
-	return nil
+func (vm *WasmTimeVM) NewInstance() WasmVM {
+	return &WasmTimeVM{engine: vm.engine, module: vm.module}
 }
 
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {

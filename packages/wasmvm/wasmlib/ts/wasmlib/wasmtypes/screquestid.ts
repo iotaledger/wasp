@@ -2,20 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
-import {ScHashLength} from "./schash";
+import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScRequestIDLength = 34;
 
 export class ScRequestID {
-    id: u8[] = zeroes(ScRequestIDLength);
+    id: u8[] = wasmtypes.zeroes(ScRequestIDLength);
 
     public equals(other: ScRequestID): bool {
-        return bytesCompare(this.id, other.id) == 0;
+        return wasmtypes.bytesCompare(this.id, other.id) == 0;
     }
 
     // convert to byte array representation
@@ -31,11 +28,11 @@ export class ScRequestID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function requestIDDecode(dec: WasmDecoder): ScRequestID {
+export function requestIDDecode(dec: wasmtypes.WasmDecoder): ScRequestID {
     return requestIDFromBytesUnchecked(dec.fixedBytes(ScRequestIDLength));
 }
 
-export function requestIDEncode(enc: WasmEncoder, value: ScRequestID): void {
+export function requestIDEncode(enc: wasmtypes.WasmEncoder, value: ScRequestID): void {
     enc.fixedBytes(value.toBytes(), ScRequestIDLength);
 }
 
@@ -59,7 +56,7 @@ export function requestIDToBytes(value: ScRequestID): u8[] {
 
 export function requestIDToString(value: ScRequestID): string {
     // TODO standardize human readable string
-    return base58Encode(value.id);
+    return wasmtypes.base58Encode(value.id);
 }
 
 function requestIDFromBytesUnchecked(buf: u8[]): ScRequestID {
@@ -71,9 +68,9 @@ function requestIDFromBytesUnchecked(buf: u8[]): ScRequestID {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableRequestID {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

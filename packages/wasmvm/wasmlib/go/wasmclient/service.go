@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	cryptolib "github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -43,7 +43,7 @@ type IEventHandler interface {
 type Service struct {
 	chainID       *iscp.ChainID
 	eventHandlers []IEventHandler
-	keyPair       *ed25519.KeyPair
+	keyPair       *cryptolib.KeyPair
 	scHname       iscp.Hname
 	waspClient    *client.WaspClient
 }
@@ -74,7 +74,7 @@ func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
 	return ResMap(res), nil
 }
 
-func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer, keyPair *ed25519.KeyPair, onLedger bool) Request {
+func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer, keyPair *cryptolib.KeyPair, onLedger bool) Request {
 	bal, err := makeBalances(transfer)
 	if err != nil {
 		return Request{err: err}
@@ -99,7 +99,7 @@ func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer,
 	return Request{id: &id}
 }
 
-func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *ed25519.KeyPair) Request {
+func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *cryptolib.KeyPair) Request {
 	// TODO implement
 	return Request{}
 }
@@ -118,7 +118,7 @@ func (s *Service) ServiceContractName(contractName string) {
 	s.scHname = iscp.Hn(contractName)
 }
 
-func (s *Service) SignRequests(keyPair *ed25519.KeyPair) {
+func (s *Service) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
 }
 

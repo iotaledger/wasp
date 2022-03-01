@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build wasmer
 // +build wasmer
 
 package wasmhost
@@ -18,16 +19,12 @@ type WasmerVM struct {
 	store    *wasmer.Store
 }
 
-var i32 = []wasmer.ValueKind{wasmer.I32, wasmer.I32, wasmer.I32, wasmer.I32, wasmer.I32}
+var wasmerI32Params = []wasmer.ValueKind{wasmer.I32, wasmer.I32, wasmer.I32, wasmer.I32, wasmer.I32}
 
 func NewWasmerVM() WasmVM {
 	vm := &WasmerVM{}
 	vm.store = wasmer.NewStore(wasmer.NewEngine())
 	return vm
-}
-
-func (vm *WasmerVM) NewInstance() WasmVM {
-	return &WasmerVM{store: vm.store}
 }
 
 //TODO
@@ -60,13 +57,6 @@ func (vm *WasmerVM) LinkHost(proc *WasmProcessor) error {
 	return nil
 }
 
-func (vm *WasmerVM) importFunc(nrParams, nrResults int, function func([]wasmer.Value) ([]wasmer.Value, error)) *wasmer.Extern {
-	params := wasmer.NewValueTypes(i32[:nrParams]...)
-	results := wasmer.NewValueTypes(i32[:nrResults]...)
-	funcType := wasmer.NewFunctionType(params, results)
-	return wasmer.NewFunction(vm.store, funcType, function).IntoExtern()
-}
-
 func (vm *WasmerVM) LoadWasm(wasmData []byte) error {
 	var err error
 	vm.module, err = wasmer.NewModule(vm.store, wasmData)
@@ -79,6 +69,10 @@ func (vm *WasmerVM) LoadWasm(wasmData []byte) error {
 	}
 	vm.memory, err = vm.instance.Exports.GetMemory("memory")
 	return err
+}
+
+func (vm *WasmerVM) NewInstance() WasmVM {
+	return &WasmerVM{store: vm.store}
 }
 
 func (vm *WasmerVM) RunFunction(functionName string, args ...interface{}) error {
@@ -142,4 +136,11 @@ func (vm *WasmerVM) exportHostStateSet(args []wasmer.Value) ([]wasmer.Value, err
 	valLen := args[3].I32()
 	vm.HostStateSet(keyRef, keyLen, valRef, valLen)
 	return nil, nil
+}
+
+func (vm *WasmerVM) importFunc(nrParams, nrResults int, function func([]wasmer.Value) ([]wasmer.Value, error)) *wasmer.Extern {
+	params := wasmer.NewValueTypes(wasmerI32Params[:nrParams]...)
+	results := wasmer.NewValueTypes(wasmerI32Params[:nrResults]...)
+	funcType := wasmer.NewFunctionType(params, results)
+	return wasmer.NewFunction(vm.store, funcType, function).IntoExtern()
 }

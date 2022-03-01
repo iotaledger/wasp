@@ -38,7 +38,7 @@ func TestCallFibonacciIndirect(t *testing.T) {
 		f.Params.IntValue().SetValue(fiboN)
 		f.Params.HnameContract().SetValue(testcore.HScName)
 		f.Params.HnameEP().SetValue(testcore.HViewFibonacci)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 		result := f.Results.IntValue()
 		require.True(t, result.Exists())
@@ -61,7 +61,7 @@ func TestCallRecursive(t *testing.T) {
 		f.Params.IntValue().SetValue(31)
 		f.Params.HnameContract().SetValue(testcore.HScName)
 		f.Params.HnameEP().SetValue(testcore.HFuncRunRecursion)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 
 		v := testcore.ScFuncs.GetCounter(ctx)
@@ -80,7 +80,7 @@ func TestGetSet(t *testing.T) {
 		f := testcore.ScFuncs.SetInt(ctx)
 		f.Params.Name().SetValue("ppp")
 		f.Params.IntValue().SetValue(314)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 
 		v := testcore.ScFuncs.GetInt(ctx)

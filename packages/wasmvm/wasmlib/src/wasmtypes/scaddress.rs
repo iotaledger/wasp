@@ -7,9 +7,9 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+pub const SC_ADDRESS_ALIAS: u8 = 2;
 pub const SC_ADDRESS_ED25519: u8 = 0;
 pub const SC_ADDRESS_NFT: u8 = 1;
-pub const SC_ADDRESS_ALIAS: u8 = 2;
 
 pub const SC_ADDRESS_LENGTH: usize = 33;
 

@@ -10,11 +10,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    },
+    }
   },
   "preferBuiltins": true,
   "include": ["./**/*.ts"],
   "exclude": [
     "node_modules"
-  ],
+  ]
 }

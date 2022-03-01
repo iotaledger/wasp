@@ -111,10 +111,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
             // amount of seconds. This will lock in the playing period, during which more bets can
             // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
-            sc.ScFuncs.payWinners(ctx).func
-                .delay(playPeriod)
-                .transferIotas(1)
-                .post();
+            sc.ScFuncs.payWinners(ctx).func.delay(playPeriod).post();
         }
     }
 }
@@ -212,7 +209,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
             // of the winner. The transferToAddress() method receives the address value and
             // the proxy to the new transfers map on the host, and will call the corresponding
             // host sandbox function with these values.
-            ctx.transferToAddress(bet.better.address(), transfers);
+            ctx.send(bet.better.address(), transfers);
         }
 
         // Announce who got sent what as event.
@@ -227,7 +224,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
         let transfers: wasmlib.ScTransfers = wasmlib.ScTransfers.iotas(remainder);
 
         // Send the remainder to the contract creator.
-        ctx.transferToAddress(ctx.contractCreator().address(), transfers);
+        ctx.send(ctx.contractCreator().address(), transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended

@@ -233,9 +233,6 @@ pub trait ScSandboxFunc: ScSandbox {
 
     // (delayed) posts a smart contract function request
     fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, transfer: ScTransfers, delay: u32) {
-        if transfer.balances().colors().len() == 0 {
-            self.panic("missing transfer");
-        }
         let req = wasmrequests::PostRequest {
             chain_id,
             contract: h_contract,
@@ -285,17 +282,10 @@ pub trait ScSandboxFunc: ScSandbox {
         return request_id_from_bytes(&sandbox(FN_REQUEST_ID, &[]));
     }
 
-    // transfer assetss to the specified Tangle ledger address
+    // transfer assets to the specified Tangle ledger address
     fn send(&self, address: &ScAddress, transfer: &ScTransfers) {
         // we need some assets to send
-        let mut assets: u64 = 0;
-        let colors = transfer.balances().colors();
-        for i in 0..colors.len() {
-            let color = colors.get(i).unwrap();
-            assets += transfer.balances().balance(color);
-        }
-        if assets == 0 {
-            // only try to send when non-zero assets
+        if transfer.is_empty() {
             return;
         }
 

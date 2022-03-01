@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build wasmedge
 // +build wasmedge
 
 package wasmhost
@@ -24,7 +25,7 @@ type HostFunction func(params []interface{}) []interface{}
 
 const I32 = wasmedge.ValType_I32
 
-var i32 = []wasmedge.ValType{I32, I32, I32, I32, I32}
+var wasmedgerI32Params = []wasmedge.ValType{I32, I32, I32, I32, I32}
 
 func NewWasmEdgeVM() WasmVM {
 	vm := &WasmEdgeVM{}
@@ -39,27 +40,21 @@ func NewWasmEdgeVM() WasmVM {
 	return vm
 }
 
-func (vm *WasmEdgeVM) NewInstance() WasmVM {
-	return NewWasmEdgeVM()
+func (vm *WasmEdgeVM) Instantiate() error {
+	err := vm.edge.Instantiate()
+	if err != nil {
+		return err
+	}
+	vm.memory = vm.edge.GetStore().FindMemory("memory")
+	if vm.memory == nil {
+		return errors.New("no memory export")
+	}
+	return nil
 }
 
 //TODO
 func (vm *WasmEdgeVM) Interrupt() {
 	panic("implement me")
-}
-
-func (vm *WasmEdgeVM) importFunc(nrParams int, nrResults int, funcName string, function HostFunction) {
-	wrapper := func(_data interface{}, _mem *wasmedge.Memory, params []interface{}) ([]interface{}, wasmedge.Result) {
-		return function(params), wasmedge.Result_Success
-	}
-	funcType := wasmedge.NewFunctionType(i32[:nrParams], i32[:nrResults])
-	funcWrapper := wasmedge.NewFunction(funcType, wrapper, nil, 0)
-	vm.module.AddFunction(funcName, funcWrapper)
-}
-
-func (vm *WasmEdgeVM) importModule(name string) {
-	vm.module = wasmedge.NewImportObject(name)
-	vm.importers = append(vm.importers, vm.module)
 }
 
 func (vm *WasmEdgeVM) LinkHost(proc *WasmProcessor) error {
@@ -105,16 +100,8 @@ func (vm *WasmEdgeVM) LoadWasm(wasmData []byte) error {
 	return vm.Instantiate()
 }
 
-func (vm *WasmEdgeVM) Instantiate() error {
-	err := vm.edge.Instantiate()
-	if err != nil {
-		return err
-	}
-	vm.memory = vm.edge.GetStore().FindMemory("memory")
-	if vm.memory == nil {
-		return errors.New("no memory export")
-	}
-	return nil
+func (vm *WasmEdgeVM) NewInstance() WasmVM {
+	return NewWasmEdgeVM()
 }
 
 func (vm *WasmEdgeVM) RunFunction(functionName string, args ...interface{}) error {
@@ -192,4 +179,18 @@ func (vm *WasmEdgeVM) exportHostStateSet(args []interface{}) []interface{} {
 	valLen := args[3].(int32)
 	vm.HostStateSet(keyRef, keyLen, valRef, valLen)
 	return nil
+}
+
+func (vm *WasmEdgeVM) importFunc(nrParams int, nrResults int, funcName string, function HostFunction) {
+	wrapper := func(_data interface{}, _mem *wasmedge.Memory, params []interface{}) ([]interface{}, wasmedge.Result) {
+		return function(params), wasmedge.Result_Success
+	}
+	funcType := wasmedge.NewFunctionType(wasmedgerI32Params[:nrParams], wasmedgerI32Params[:nrResults])
+	funcWrapper := wasmedge.NewFunction(funcType, wrapper, nil, 0)
+	vm.module.AddFunction(funcName, funcWrapper)
+}
+
+func (vm *WasmEdgeVM) importModule(name string) {
+	vm.module = wasmedge.NewImportObject(name)
+	vm.importers = append(vm.importers, vm.module)
 }

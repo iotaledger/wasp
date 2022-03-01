@@ -7,8 +7,9 @@ use crate::*;
 use crate::structs::*;
 
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
+    let amount = ctx.incoming().balance(&ScColor::IOTA);
     let mut donation = Donation {
-        amount: ctx.incoming().balance(&ScColor::IOTA),
+        amount: amount,
         donator: ctx.caller(),
         error: String::new(),
         feedback: f.params.feedback().value(),
@@ -17,7 +18,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
     if donation.amount == 0 || donation.feedback.len() == 0 {
         donation.error = "error: empty feedback or donated amount = 0".to_string();
         if donation.amount > 0 {
-            ctx.transfer_to_address(&donation.donator.address(), ScTransfers::iotas(donation.amount));
+            ctx.send(&donation.donator.address(), &ScTransfers::iotas(donation.amount));
             donation.amount = 0;
         }
     }
@@ -44,7 +45,7 @@ pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
     }
 
     let sc_creator = ctx.contract_creator().address();
-    ctx.transfer_to_address(&sc_creator, ScTransfers::iotas(amount));
+    ctx.send(&sc_creator, &ScTransfers::iotas(amount));
 }
 
 pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {

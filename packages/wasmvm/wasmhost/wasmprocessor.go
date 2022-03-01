@@ -16,6 +16,7 @@ type WasmProcessor struct {
 	contexts         map[int32]*WasmContext
 	currentContextID int32
 	funcTable        *WasmFuncTable
+	gasFactorX       uint64
 	instanceLock     sync.Mutex
 	log              *logger.Logger
 	mainProcessor    *WasmProcessor
@@ -32,10 +33,11 @@ var GoWasmVM func() WasmVM
 // GetProcessor creates a new Wasm VM processor.
 func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error) {
 	proc := &WasmProcessor{
-		contexts:  make(map[int32]*WasmContext),
-		funcTable: NewWasmFuncTable(),
-		log:       log,
-		wasmVM:    NewWasmTimeVM,
+		contexts:   make(map[int32]*WasmContext),
+		funcTable:  NewWasmFuncTable(),
+		gasFactorX: 1,
+		log:        log,
+		wasmVM:     NewWasmTimeVM,
 	}
 
 	// By default, we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
@@ -58,7 +60,12 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	if err != nil {
 		return nil, err
 	}
+	// proc.vm.GasBudget(1_000_000)
+	// proc.vm.GasDisable(true)
 	err = proc.vm.RunFunction("on_load")
+	// proc.vm.GasDisable(false)
+	// burned := proc.vm.GasBurned()
+	// _ = burned
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +81,7 @@ func (proc *WasmProcessor) GetContext(id int32) *WasmContext {
 		return proc.scContext
 	}
 
-	mainProcessor := proc.MainProc()
+	mainProcessor := proc.mainProc()
 	mainProcessor.contextLock.Lock()
 	defer mainProcessor.contextLock.Unlock()
 
@@ -118,10 +125,34 @@ func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
 	return processor
 }
 
+func (proc *WasmProcessor) IsView(function string) bool {
+	return (proc.mainProc().funcTable.funcToIndex[function] & 0x8000) != 0
+}
+
 func (proc *WasmProcessor) KillContext(id int32) {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
 	delete(proc.contexts, id)
+}
+
+func (proc *WasmProcessor) RunScFunction(functionName string) (err error) {
+	index, ok := proc.mainProc().funcTable.funcToIndex[functionName]
+	if !ok {
+		return errors.New("unknown SC function name: " + functionName)
+	}
+	return proc.vm.RunScFunction(index)
+}
+
+//nolint:unused
+func (proc *WasmProcessor) gasFactor() uint64 {
+	return proc.mainProc().gasFactorX
+}
+
+func (proc *WasmProcessor) mainProc() *WasmProcessor {
+	if proc.mainProcessor == nil {
+		return proc
+	}
+	return proc.mainProcessor
 }
 
 func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
@@ -139,23 +170,4 @@ func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
 	wc.id = proc.nextContextID
 	proc.contexts[wc.id] = wc
 	return wc
-}
-
-func (proc *WasmProcessor) RunScFunction(functionName string) (err error) {
-	index, ok := proc.MainProc().funcTable.funcToIndex[functionName]
-	if !ok {
-		return errors.New("unknown SC function name: " + functionName)
-	}
-	return proc.vm.RunScFunction(index)
-}
-
-func (proc *WasmProcessor) IsView(function string) bool {
-	return (proc.MainProc().funcTable.funcToIndex[function] & 0x8000) != 0
-}
-
-func (proc *WasmProcessor) MainProc() *WasmProcessor {
-	if proc.mainProcessor == nil {
-		return proc
-	}
-	return proc.mainProcessor
 }

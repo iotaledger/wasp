@@ -3,11 +3,11 @@
 
 package wasmclient
 
-import "github.com/iotaledger/hive.go/crypto/ed25519"
+import cryptolib "github.com/iotaledger/hive.go/crypto/ed25519"
 
 type ClientFunc struct {
 	svc      *Service
-	keyPair  *ed25519.KeyPair
+	keyPair  *cryptolib.KeyPair
 	onLedger bool
 	xfer     *Transfer
 }
@@ -32,7 +32,7 @@ func (f *ClientFunc) Post(hFuncName uint32, args *Arguments) Request {
 }
 
 // Sign optionally overrides the default keypair from the service
-func (f *ClientFunc) Sign(keyPair *ed25519.KeyPair) {
+func (f *ClientFunc) Sign(keyPair *cryptolib.KeyPair) {
 	f.keyPair = keyPair
 }
 
