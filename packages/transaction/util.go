@@ -91,7 +91,6 @@ func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
-	nftsOut []*iotago.NFTID,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
@@ -100,9 +99,6 @@ func computeInputsAndRemainder(
 	*iotago.BasicOutput,
 	error,
 ) {
-	// TODO "refactor to handle NFTs")
-	// Keep in mind: NFT output might not have an NFTID defined yet... (if it is still 000, we need to `iotago.NFTID{}.FromOutputID(....)` )
-
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 
@@ -118,13 +114,13 @@ func computeInputsAndRemainder(
 		inputCount++
 		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
-		for _, nt := range a.Tokens {
-			s, ok := tokensIn[nt.ID]
+		for _, nativeToken := range a.Tokens {
+			nativeTokenAmountSum, ok := tokensIn[nativeToken.ID]
 			if !ok {
-				s = new(big.Int)
+				nativeTokenAmountSum = new(big.Int)
 			}
-			s.Add(s, nt.Amount)
-			tokensIn[nt.ID] = s
+			nativeTokenAmountSum.Add(nativeTokenAmountSum, nativeToken.Amount)
+			tokensIn[nativeToken.ID] = nativeTokenAmountSum
 		}
 		// calculate remainder. It will return  err != nil if inputs not enough.
 		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)

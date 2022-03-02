@@ -3,7 +3,6 @@ package transaction
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"golang.org/x/xerrors"
 )
 
 // OutputFromPostData creates extended output object from parameters.
@@ -31,7 +30,7 @@ func OutputFromPostData(
 			Allowance:      metadata.Allowance,
 			GasBudget:      metadata.GasBudget,
 		},
-		par.NFTID,
+		par.NFT,
 		par.Options,
 		rentStructure,
 		!par.AdjustToMinimumDustDeposit,
@@ -47,7 +46,7 @@ func MakeOutput(
 	senderAddress iotago.Address,
 	assets *iscp.Assets,
 	metadata *iscp.RequestMetadata,
-	NFTID *iotago.NFTID,
+	nft *iscp.NFT,
 	options iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
 	disableAutoAdjustDustDeposit ...bool,
@@ -93,8 +92,8 @@ func MakeOutput(
 	}
 
 	var finalOutput iotago.Output = out
-	if NFTID != nil {
-		finalOutput = nftOutputFromBasicOutput(out, NFTID)
+	if nft != nil {
+		finalOutput = nftOutputFromBasicOutput(out, nft)
 	}
 
 	// Adjust to minimum dust deposit, if needed
@@ -102,10 +101,10 @@ func MakeOutput(
 		return finalOutput
 	}
 
-	requiredDustDeposit := out.VByteCost(rentStructure, nil)
+	requiredDustDeposit := finalOutput.VByteCost(rentStructure, nil)
 	if finalOutput.Deposit() < requiredDustDeposit {
 		// adjust the amount to the minimum required
-		if NFTID != nil {
+		if nft != nil {
 			finalOutput.(*iotago.NFTOutput).Amount = requiredDustDeposit
 		} else {
 			finalOutput.(*iotago.BasicOutput).Amount = requiredDustDeposit
@@ -115,24 +114,23 @@ func MakeOutput(
 	return finalOutput
 }
 
-func nftOutputFromBasicOutput(o *iotago.BasicOutput, nftID *iotago.NFTID) *iotago.NFTOutput {
+func nftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTOutput {
 	return &iotago.NFTOutput{
 		Amount:       o.Amount,
 		NativeTokens: o.NativeTokens,
 		Blocks:       o.Blocks,
 		Conditions:   o.Conditions,
-		NFTID:        *nftID,
+		NFTID:        nft.ID,
+		ImmutableBlocks: iotago.FeatureBlocks{
+			&iotago.IssuerFeatureBlock{Address: nft.Issuer},
+			&iotago.MetadataFeatureBlock{Data: nft.Metadata},
+		},
 	}
 }
 
 func AssetsFromOutput(o iotago.Output) *iscp.Assets {
-	switch o := o.(type) {
-	case *iotago.BasicOutput:
-		return &iscp.Assets{
-			Iotas:  o.Amount,
-			Tokens: o.NativeTokens,
-		}
-	default:
-		panic(xerrors.Errorf("AssetsFromBasicOutput: not supported output type: %T", o))
+	return &iscp.Assets{
+		Iotas:  o.Deposit(),
+		Tokens: o.NativeTokenSet(),
 	}
 }

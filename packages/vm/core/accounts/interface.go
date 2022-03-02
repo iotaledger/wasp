@@ -43,8 +43,10 @@ const (
 	prefixNativeTokenOutputMap
 	// prefixFoundryOutputRecords a map with all foundry outputs
 	prefixFoundryOutputRecords
-	// prefixNFTOutputRecords a map with all NFT outputs
+	// prefixNFTOutput Records a map with all NFT outputs
 	prefixNFTOutputRecords
+	// prefixNFTData Records a map with all NFT data (issuer/metadata)
+	prefixNFTData
 	//
 	stateVarMinimumDustDepositAssumptionsBin
 

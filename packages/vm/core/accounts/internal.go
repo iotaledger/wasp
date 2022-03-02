@@ -74,6 +74,14 @@ func AccountExists(state kv.KVStoreReader, agentID *iscp.AgentID) bool {
 	return getAccountR(state, agentID).MustLen() > 0
 }
 
+func getNFTState(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixNFTData)
+}
+
+func getNFTStateR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixNFTData)
+}
+
 // GetMaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests
 func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 	nonce, err := codec.DecodeUint64(state.MustGet(nonceKey(address)), 0)
@@ -231,8 +239,8 @@ func debitFromAccount(account *collections.Map, assets *iscp.Assets) bool {
 }
 
 // CreditNFTToAccount credits an NFT to the on chain ledger
-func CreditNFTToAccount(state kv.KVStore, agentID *iscp.AgentID, id *iotago.NFTID) {
-	if id == nil {
+func CreditNFTToAccount(state kv.KVStore, agentID *iscp.AgentID, nft *iscp.NFT) {
+	if nft == nil {
 		return
 	}
 	account := getAccount(state, agentID)
@@ -240,9 +248,36 @@ func CreditNFTToAccount(state kv.KVStore, agentID *iscp.AgentID, id *iotago.NFTI
 	checkLedger(state, "CreditNFTToAccount IN")
 	defer checkLedger(state, "CreditNFTToAccount OUT")
 
-	creditNFTToAccount(account, id)
-	creditNFTToAccount(getTotalL2AssetsAccount(state), id)
+	saveNFTData(state, nft, agentID)
+	creditNFTToAccount(account, &nft.ID)
+	creditNFTToAccount(getTotalL2AssetsAccount(state), &nft.ID)
 	touchAccount(state, account)
+}
+
+func saveNFTData(state kv.KVStore, nft *iscp.NFT, owner *iscp.AgentID) {
+	nftMap := getNFTState(state)
+	if nftMap.MustHasAt(nft.ID[:]) {
+		panic("saveNFTData: inconsistency - NFT data already exists")
+	}
+	// TODO (maybe) - for optimization we could avoid saving the NFTID twice (in key an value)
+	nftMap.SetAt(nft.ID[:], nft.Bytes())
+}
+
+func deleteNFTData(state kv.KVStore, id *iotago.NFTID) {
+	nftMap := getNFTState(state)
+	if !nftMap.MustHasAt(id[:]) {
+		panic("deleteNFTData: inconsistency - NFT data doesn't exists")
+	}
+	nftMap.MustDelAt(id[:])
+}
+
+func GetNFTData(state kv.KVStoreReader, id *iotago.NFTID) *iscp.NFT {
+	nftMap := getNFTStateR(state)
+	nft, err := iscp.NFTFromBytes(nftMap.MustGetAt(id[:]))
+	if err != nil {
+		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
+	}
+	return nft
 }
 
 func creditNFTToAccount(account *collections.Map, id *iotago.NFTID) {
@@ -265,6 +300,9 @@ func DebitNFTFromAccount(state kv.KVStore, agentID *iscp.AgentID, id *iotago.NFT
 	if !debitNFTFromAccount(getTotalL2AssetsAccount(state), id) {
 		panic("debitNFTFromAccount: inconsistent ledger state")
 	}
+
+	deleteNFTData(state, id)
+
 	touchAccount(state, account)
 }
 

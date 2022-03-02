@@ -36,7 +36,7 @@ func ChainIDFromString(s string) (*ChainID, error) {
 	if err != nil {
 		return &ChainID{}, err
 	}
-	ret := ChainIDFromAddress(addr.(*iotago.Ed25519Address))
+	ret := ChainIDFromAddress(addr.(*iotago.AliasAddress))
 	return &ret, nil
 }
 
@@ -49,7 +49,7 @@ func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
 	return ChainIDFromBytes(bin)
 }
 
-func ChainIDFromAddress(addr *iotago.Ed25519Address) ChainID {
+func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
 	var alias iotago.AliasID
 	copy(alias[:], addr[:])
 	return ChainIDFromAliasID(alias)

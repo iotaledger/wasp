@@ -158,7 +158,7 @@ func (txb *AnchorTransactionBuilder) Consume(req iscp.Request) int64 {
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume OUT")
 	}
-	if req.NFTID() != nil {
+	if req.NFT() != nil {
 		txb.includeNFT(req.AsOnLedger().Output().(*iotago.NFTOutput))
 	}
 	return deltaIotasDustDepositAdjustment

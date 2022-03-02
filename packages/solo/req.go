@@ -28,7 +28,7 @@ type CallParams struct {
 	epName     string
 	entryPoint iscp.Hname
 	assets     *iscp.Assets // ignored off-ledger
-	NFTID      *iotago.NFTID
+	nft        *iscp.NFT
 	allowance  *iscp.Allowance
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
@@ -139,8 +139,8 @@ func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount
 }
 
 // Adds an nft to be sent (only appliable when the call is made via on-ledger request)
-func (r *CallParams) WithNFT(nftID *iotago.NFTID) *CallParams {
-	r.NFTID = nftID
+func (r *CallParams) WithNFT(nft *iscp.NFT) *CallParams {
+	r.nft = nft
 	return r
 }
 
@@ -228,7 +228,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
-			NFTID:   req.NFTID,
+			NFT:     req.nft,
 			Options: iscp.SendOptions{},
 		}},
 		RentStructure:                ch.Env.utxoDB.RentStructure(),

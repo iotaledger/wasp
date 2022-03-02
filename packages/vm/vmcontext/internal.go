@@ -24,9 +24,9 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Asse
 	})
 }
 
-func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, ID *iotago.NFTID) {
+func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, nft *iscp.NFT) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditNFTToAccount(s, agentID, ID)
+		accounts.CreditNFTToAccount(s, agentID, nft)
 	})
 }
 
@@ -35,6 +35,14 @@ func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, ID *iotago.NFT
 func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitFromAccount(s, agentID, transfer)
+	})
+}
+
+// debitNFTFromAccount removes a NFT from account.
+// should be called only when posting request
+func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID *iotago.NFTID) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.DebitNFTFromAccount(s, agentID, nftID)
 	})
 }
 

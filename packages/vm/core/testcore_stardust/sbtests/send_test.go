@@ -216,22 +216,28 @@ func testSendNFTsBack(t *testing.T, w bool) {
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	nftID1 := &iotago.NFTID{1}
+	nftMetadata := []byte("foobar")
+	nftInfo, err := ch.Env.MintNFTL1(wallet, addr, nftMetadata)
+	nft := &iscp.NFT{
+		ID:       nftInfo.NFTID,
+		Issuer:   addr,
+		Metadata: nftMetadata,
+	}
+	require.NoError(t, err)
+
 	iotasToSend := uint64(300_000)
 	iotasForGas := uint64(100_000)
 	assetsToSend := iscp.NewAssetsIotas(iotasToSend)
 	assetsToAllow := iscp.NewAssetsIotas(iotasToSend - iotasForGas)
 
-	ch.Env.MintNFTL1(wallet, addr, []byte("foobar"))
-
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
 		AddAssets(assetsToSend).
-		WithNFT(nftID1).
-		AddAllowance(iscp.NewAllowanceFromAssets(assetsToAllow, []*iotago.NFTID{nftID1})).
+		WithNFT(nft).
+		AddAllowance(iscp.NewAllowanceFromAssets(assetsToAllow, []*iotago.NFTID{&nftInfo.NFTID})).
 		WithMaxAffordableGasBudget()
 
-	_, err := ch.PostRequestSync(req, wallet)
+	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 
 	// deposit an NFT, then claim it back via offleger-request

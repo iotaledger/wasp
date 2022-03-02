@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
@@ -108,7 +109,11 @@ func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			}},
 		},
 		nil,
-		&iotago.NFTID{0},
+		&iscp.NFT{
+			ID:       iotago.NFTID{0},
+			Issuer:   tpkg.RandEd25519Address(),
+			Metadata: make([]byte, iotago.MaxMetadataLength),
+		},
 		iscp.SendOptions{},
 		rent,
 	)

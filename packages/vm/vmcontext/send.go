@@ -2,8 +2,22 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
+
+func (vmctx *VMContext) FillNFTData(par iscp.RequestParameters) iscp.RequestParameters {
+	if par.NFTID == nil {
+		return par
+	}
+	var nft *iscp.NFT
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		nft = accounts.GetNFTData(s, par.NFTID)
+	})
+	par.NFT = nft
+	return par
+}
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
@@ -18,7 +32,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	out := transaction.OutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
-		par,
+		vmctx.FillNFTData(par),
 		vmctx.task.RentStructure,
 	)
 	if out.Deposit() > par.Assets.Iotas {
@@ -36,5 +50,6 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
 	vmctx.debitFromAccount(vmctx.AccountID(), assets)
+	vmctx.debitNFTFromAccount(vmctx.AccountID(), par.NFTID)
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
 }

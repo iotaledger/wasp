@@ -226,7 +226,7 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-func (r *OffLedgerRequestData) NFTID() *iotago.NFTID {
+func (r *OffLedgerRequestData) NFT() *NFT {
 	return nil
 }
 
@@ -454,12 +454,31 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	}
 }
 
-func (r *OnLedgerRequestData) NFTID() *iotago.NFTID {
+func (r *OnLedgerRequestData) NFT() *NFT {
 	out, ok := r.output.(*iotago.NFTOutput)
 	if !ok {
 		return nil
 	}
-	return &out.NFTID
+
+	ret := &NFT{}
+	if out.NFTID.Empty() {
+		// NFT outputs might not have an NFTID defined yet (when initially minted, the NFTOutput will have an empty NFTID, so we need to compute it)
+		utxoInput := r.UTXOInput()
+		ret.ID = iotago.NFTIDFromOutputID(utxoInput.ID())
+	} else {
+		ret.ID = out.NFTID
+	}
+
+	for _, featureBlock := range out.ImmutableBlocks {
+		if block, ok := featureBlock.(*iotago.IssuerFeatureBlock); ok {
+			ret.Issuer = block.Address
+		}
+		if block, ok := featureBlock.(*iotago.MetadataFeatureBlock); ok {
+			ret.Metadata = block.Data
+		}
+	}
+
+	return ret
 }
 
 func (r *OnLedgerRequestData) Allowance() *Allowance {

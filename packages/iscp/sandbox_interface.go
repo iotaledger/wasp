@@ -136,6 +136,8 @@ type RequestParameters struct {
 	Options SendOptions
 	// NFTID (optional)
 	NFTID *iotago.NFTID
+	// when sending a request via smartcontract (ctx.Send) the NFT data will be automatically filled if NFTID is present
+	NFT *NFT
 }
 
 type Gas interface {

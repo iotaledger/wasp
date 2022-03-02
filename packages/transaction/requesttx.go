@@ -26,7 +26,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	outputs := iotago.Outputs{}
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
-	sumNFTsOut := make([]*iotago.NFTID, 0)
+	// sumNFTsOut := make([]*iotago.NFTID, 0)
 
 	senderAddress := par.SenderKeyPair.Address()
 
@@ -50,7 +50,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				Allowance:      req.Metadata.Allowance,
 				GasBudget:      req.Metadata.GasBudget,
 			},
-			req.NFTID,
+			req.NFT,
 			req.Options,
 			par.RentStructure,
 			par.DisableAutoAdjustDustDeposit,
@@ -70,13 +70,9 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			s.Add(s, nt.Amount)
 			sumTokensOut[nt.ID] = s
 		}
-
-		if req.NFTID != nil {
-			sumNFTsOut = append(sumNFTsOut, req.NFTID)
-		}
 	}
-	// TODO needs refactoring - so that computeInputsAndRemainder includes the correct NFT inputs
-	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
+
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
 	if err != nil {
 		return nil, err
 	}

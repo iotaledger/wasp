@@ -99,7 +99,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		account = commonaccount.Get(vmctx.ChainID())
 	}
 	vmctx.creditToAccount(account, vmctx.req.Assets())
-	vmctx.creditNFTToAccount(account, vmctx.req.NFTID())
+	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the dust consumed or returned by internal UTXOs
 	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
