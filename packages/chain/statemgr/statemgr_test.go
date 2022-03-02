@@ -20,7 +20,7 @@ import (
 //---------------------------------------------
 //Tests if state manager is started and initialized correctly
 func TestEnv(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, false)
+	env, _ := NewMockedEnv(2, t, true)
 	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
 
