@@ -55,7 +55,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
-		StateMetadata: iscp.NewStateData(state.OriginStateCommitment()).Bytes(),
+		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: addr},
 			&iotago.GovernorAddressUnlockCondition{Address: addr},

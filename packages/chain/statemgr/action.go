@@ -61,11 +61,12 @@ func (sm *stateManager) isSynced() bool {
 		return false
 	}
 	// GetStateMetadata is supposed to return hash of state data (state commitment)
-	stateCommitment, err := sm.stateOutput.GetStateCommitment()
+	stateL1Commitment, err := state.L1CommitmentFromAliasOutputWithID(sm.stateOutput)
 	if err != nil {
 		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
 		return false
 	}
+	stateCommitment := stateL1Commitment.Commitment
 	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieAccess()), stateCommitment)
 }
 
@@ -163,11 +164,12 @@ func (sm *stateManager) storeSyncingData() {
 		sm.log.Debugf("storeSyncingData not needed: stateOutput is nil")
 		return
 	}
-	outputStateCommitment, err := sm.stateOutput.GetStateCommitment()
+	outputStateL1Commitment, err := state.L1CommitmentFromAliasOutputWithID(sm.stateOutput)
 	if err != nil {
 		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state data hash: %v", err)
 		return
 	}
+	outputStateCommitment := outputStateL1Commitment.Commitment
 	solidStateCommitment := trie.RootCommitment(sm.solidState.TrieAccess())
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
 		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment.String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)

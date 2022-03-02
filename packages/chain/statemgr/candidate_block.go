@@ -62,10 +62,11 @@ func (cT *candidateBlock) isApproved() bool {
 func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 	if cT.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
-		finalCommitment, err := output.GetStateCommitment()
+		finalL1Commitment, err := state.L1CommitmentFromAliasOutputWithID(output)
 		if err != nil {
 			return
 		}
+		finalCommitment := finalL1Commitment.Commitment
 		if cT.isLocal() {
 			if cT.nextStateCommitment == finalCommitment {
 				cT.approved = true

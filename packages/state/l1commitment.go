@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
@@ -22,6 +23,14 @@ func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
 		return L1Commitment{}, err
 	}
 	return ret, nil
+}
+
+func L1CommitmentFromAliasOutputWithID(output *iscp.AliasOutputWithID) (*L1Commitment, error) {
+	l1c, err := L1CommitmentFromBytes(output.GetStateMetadata())
+	if err != nil {
+		return nil, err
+	}
+	return &l1c, nil
 }
 
 func (s *L1Commitment) Bytes() []byte {
