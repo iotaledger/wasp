@@ -15,13 +15,13 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
-	myChainID = "pDtVgzXtTwc2B9bnrf2RbpWuexynqNiGU7waLknsgjWf"
+	myChainID = "dCzCyHxMvtogk5yCsZkTYKnEotR1kaBtRkDtK1Ddxjqi"
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
 func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 	// for now skip client tests
-	t.SkipNow()
+	// t.SkipNow()
 
 	require.True(t, wasmclient.SeedIsValid(mySeed))
 	require.True(t, wasmclient.ChainIsValid(myChainID))
@@ -82,7 +82,7 @@ func TestClientRandom(t *testing.T) {
 	v := svc.GetRandom()
 	res := v.Call()
 	require.NoError(t, v.Error())
-	require.GreaterOrEqual(t, res.Random(), int64(0))
+	require.GreaterOrEqual(t, res.Random(), uint64(0))
 	fmt.Println("Random: ", res.Random())
 }
 
@@ -95,9 +95,8 @@ func TestClientArray(t *testing.T) {
 	require.NoError(t, v.Error())
 	require.EqualValues(t, 0, res.Length())
 
-	f := svc.ArraySet()
+	f := svc.ArrayAppend()
 	f.Name("Bands")
-	f.Index(0)
 	f.Value("Dire Straits")
 	req := f.Post()
 	require.NoError(t, req.Error())
@@ -124,9 +123,11 @@ func TestClientArray(t *testing.T) {
 	require.EqualValues(t, 0, res.Length())
 }
 
-func TestAccountBalance(t *testing.T) {
+func TestClientAccountBalance(t *testing.T) {
+	// note: this calls core accounts contract instead of testwasmlib
+
 	// for now skip client tests
-	t.SkipNow()
+	// t.SkipNow()
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultServiceClient()

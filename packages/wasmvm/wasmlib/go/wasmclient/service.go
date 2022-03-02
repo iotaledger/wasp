@@ -17,6 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/mr-tron/base58"
 )
 
@@ -42,8 +44,10 @@ type IEventHandler interface {
 
 type Service struct {
 	chainID       *iscp.ChainID
+	Err           error
 	eventHandlers []IEventHandler
 	keyPair       *cryptolib.KeyPair
+	Req           Request
 	scHname       iscp.Hname
 	waspClient    *client.WaspClient
 }
@@ -74,10 +78,25 @@ func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
 	return ResMap(res), nil
 }
 
+func (s *Service) ChainID() wasmtypes.ScChainID {
+	return wasmtypes.ChainIDFromBytes(s.chainID.Bytes())
+}
+
+func (s *Service) InitFuncCallContext() {
+	_ = wasmhost.Connect(s)
+}
+
+func (s *Service) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = wasmhost.Connect(s)
+	return wasmtypes.ScHname(s.scHname)
+}
+
 func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer, keyPair *cryptolib.KeyPair, onLedger bool) Request {
 	bal, err := makeBalances(transfer)
 	if err != nil {
-		return Request{err: err}
+		s.Err = err
+		s.Req.err = err
+		return s.Req
 	}
 	reqArgs := requestargs.New()
 	if args != nil {
@@ -88,15 +107,22 @@ func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer,
 		return s.postRequestOnLedger(hFuncName, reqArgs, bal, keyPair)
 	}
 
+	return s.postRequestOffLedger(hFuncName, reqArgs, bal, keyPair)
+}
+
+func (s *Service) postRequestOffLedger(hFuncName uint32, reqArgs requestargs.RequestArgs, bal colored.Balances, keyPair *cryptolib.KeyPair) Request {
 	req := request.NewOffLedger(s.chainID, s.scHname, iscp.Hname(hFuncName), reqArgs)
 	req.WithTransfer(bal)
 	req.Sign(keyPair)
-	err = s.waspClient.PostOffLedgerRequest(s.chainID, req)
-	if err != nil {
-		return Request{err: err}
+	s.Err = s.waspClient.PostOffLedgerRequest(s.chainID, req)
+	if s.Err != nil {
+		s.Req.err = s.Err
+		return s.Req
 	}
+	s.Req.err = nil
 	id := req.ID()
-	return Request{id: &id}
+	s.Req.id = &id
+	return s.Req
 }
 
 func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *cryptolib.KeyPair) Request {
