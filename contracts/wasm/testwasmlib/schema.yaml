@@ -52,10 +52,10 @@ typedefs:
 
 state:
   # basic value datatypes
-  stringArrays: map[String]StringArray
-  stringMaps: map[String]StringMap
-  stringMapArrays: StringMap[]
-  stringArrayArrays: StringArray[]
+  stringMapOfArrays: map[String]StringArray
+  stringMapOfMaps: map[String]StringMap
+  stringArrayOfMaps: StringMap[]
+  stringArrayOfArrays: StringArray[]
   # contracts-specific value datatypes
   AddressArrays: map[Address]AddressArray
   AddressMaps: map[Address]AddressMap
@@ -70,39 +70,39 @@ state:
 # ##################################
 
 funcs:
-  arrayAppend:
+  mapOfArraysAppend:
     params:
       name: String
       value: String
 
-  arrayArrayAppend:
+  arrayOfArraysAppend:
     params:
       index: Uint32
       value: String[]
 
-  arrayClear:
+  mapOfArraysClear:
     params:
       name: String
   
-  arrayArrayClear:
+  arrayOfArraysClear:
 
-  arraySet:
+  mapOfArraysSet:
     params:
       index: Uint32
       name: String
       value: String
 
-  arrayArraySet:
+  arrayOfArraysSet:
     params:
       index0: Uint32
       index1: Uint32
       value: String
 
-  mapClear:
+  mapOfMapsClear:
     params:
       name: String
 
-  mapSet:
+  mapOfMapsSet:
     params:
       name: String
       key: String
@@ -146,27 +146,34 @@ funcs:
 # ##################################
 
 views:
-  arrayLength:
+  mapOfArraysLength:
     params:
       name: String
     results:
       length: Uint32
 
-  arrayArrayLength:
+  arrayOfArraysLength:
     results:
       length: Uint32
 
-  arrayValue:
+  mapOfArraysValue:
     params:
       index: Uint32
       name: String
     results:
       value: String
   
-  arrayArrayValue:
+  arrayOfArraysValue:
     params:
       index0: Uint32
       index1: Uint32
+    results:
+      value: String
+
+  mapOfMapsValue:
+    params:
+      name: String
+      key: String
     results:
       value: String
 
@@ -186,13 +193,6 @@ views:
   iotaBalance:
     results:
       iotas: Uint64
-
-  mapValue:
-    params:
-      name: String
-      key: String
-    results:
-      value: String
 
   getRandom:
     results:

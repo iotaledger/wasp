@@ -69,14 +69,6 @@ func (a ArrayOfImmutableStringArray) GetStringArray(index uint32) ImmutableStrin
 	return ImmutableStringArray{proxy: a.proxy.Index(index)}
 }
 
-type MapStringToImmutableStringArray struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapStringToImmutableStringArray) GetStringArray(key string) ImmutableStringArray {
-	return ImmutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
-}
-
 type ArrayOfImmutableStringMap struct {
 	proxy wasmtypes.Proxy
 }
@@ -87,6 +79,14 @@ func (a ArrayOfImmutableStringMap) Length() uint32 {
 
 func (a ArrayOfImmutableStringMap) GetStringMap(index uint32) ImmutableStringMap {
 	return ImmutableStringMap{proxy: a.proxy.Index(index)}
+}
+
+type MapStringToImmutableStringArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapStringToImmutableStringArray) GetStringArray(key string) ImmutableStringArray {
+	return ImmutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type MapStringToImmutableStringMap struct {
@@ -125,20 +125,20 @@ func (s ImmutableTestWasmLibState) Random() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateRandom))
 }
 
-func (s ImmutableTestWasmLibState) StringArrayArrays() ArrayOfImmutableStringArray {
-	return ArrayOfImmutableStringArray{proxy: s.proxy.Root(StateStringArrayArrays)}
+func (s ImmutableTestWasmLibState) StringArrayOfArrays() ArrayOfImmutableStringArray {
+	return ArrayOfImmutableStringArray{proxy: s.proxy.Root(StateStringArrayOfArrays)}
 }
 
-func (s ImmutableTestWasmLibState) StringArrays() MapStringToImmutableStringArray {
-	return MapStringToImmutableStringArray{proxy: s.proxy.Root(StateStringArrays)}
+func (s ImmutableTestWasmLibState) StringArrayOfMaps() ArrayOfImmutableStringMap {
+	return ArrayOfImmutableStringMap{proxy: s.proxy.Root(StateStringArrayOfMaps)}
 }
 
-func (s ImmutableTestWasmLibState) StringMapArrays() ArrayOfImmutableStringMap {
-	return ArrayOfImmutableStringMap{proxy: s.proxy.Root(StateStringMapArrays)}
+func (s ImmutableTestWasmLibState) StringMapOfArrays() MapStringToImmutableStringArray {
+	return MapStringToImmutableStringArray{proxy: s.proxy.Root(StateStringMapOfArrays)}
 }
 
-func (s ImmutableTestWasmLibState) StringMaps() MapStringToImmutableStringMap {
-	return MapStringToImmutableStringMap{proxy: s.proxy.Root(StateStringMaps)}
+func (s ImmutableTestWasmLibState) StringMapOfMaps() MapStringToImmutableStringMap {
+	return MapStringToImmutableStringMap{proxy: s.proxy.Root(StateStringMapOfMaps)}
 }
 
 type ArrayOfMutableAddressArray struct {
@@ -237,18 +237,6 @@ func (a ArrayOfMutableStringArray) GetStringArray(index uint32) MutableStringArr
 	return MutableStringArray{proxy: a.proxy.Index(index)}
 }
 
-type MapStringToMutableStringArray struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapStringToMutableStringArray) Clear() {
-	m.proxy.ClearMap()
-}
-
-func (m MapStringToMutableStringArray) GetStringArray(key string) MutableStringArray {
-	return MutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
-}
-
 type ArrayOfMutableStringMap struct {
 	proxy wasmtypes.Proxy
 }
@@ -267,6 +255,18 @@ func (a ArrayOfMutableStringMap) Length() uint32 {
 
 func (a ArrayOfMutableStringMap) GetStringMap(index uint32) MutableStringMap {
 	return MutableStringMap{proxy: a.proxy.Index(index)}
+}
+
+type MapStringToMutableStringArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapStringToMutableStringArray) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapStringToMutableStringArray) GetStringArray(key string) MutableStringArray {
+	return MutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type MapStringToMutableStringMap struct {
@@ -313,18 +313,18 @@ func (s MutableTestWasmLibState) Random() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateRandom))
 }
 
-func (s MutableTestWasmLibState) StringArrayArrays() ArrayOfMutableStringArray {
-	return ArrayOfMutableStringArray{proxy: s.proxy.Root(StateStringArrayArrays)}
+func (s MutableTestWasmLibState) StringArrayOfArrays() ArrayOfMutableStringArray {
+	return ArrayOfMutableStringArray{proxy: s.proxy.Root(StateStringArrayOfArrays)}
 }
 
-func (s MutableTestWasmLibState) StringArrays() MapStringToMutableStringArray {
-	return MapStringToMutableStringArray{proxy: s.proxy.Root(StateStringArrays)}
+func (s MutableTestWasmLibState) StringArrayOfMaps() ArrayOfMutableStringMap {
+	return ArrayOfMutableStringMap{proxy: s.proxy.Root(StateStringArrayOfMaps)}
 }
 
-func (s MutableTestWasmLibState) StringMapArrays() ArrayOfMutableStringMap {
-	return ArrayOfMutableStringMap{proxy: s.proxy.Root(StateStringMapArrays)}
+func (s MutableTestWasmLibState) StringMapOfArrays() MapStringToMutableStringArray {
+	return MapStringToMutableStringArray{proxy: s.proxy.Root(StateStringMapOfArrays)}
 }
 
-func (s MutableTestWasmLibState) StringMaps() MapStringToMutableStringMap {
-	return MapStringToMutableStringMap{proxy: s.proxy.Root(StateStringMaps)}
+func (s MutableTestWasmLibState) StringMapOfMaps() MapStringToMutableStringMap {
+	return MapStringToMutableStringMap{proxy: s.proxy.Root(StateStringMapOfMaps)}
 }
