@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
+	"github.com/iotaledger/wasp/packages/state"
 	"math"
 	"time"
 
@@ -460,9 +461,9 @@ func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Pro
 // GetStateCommitment returns state commitment taken from the anchor output
 func (ch *Chain) GetStateCommitment() trie.VCommitment {
 	anchorOutput := ch.GetAnchorOutput()
-	ret, err := anchorOutput.GetStateCommitment()
+	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
-	return ret
+	return ret.Commitment
 }
 
 // GetRootCommitment calculates root commitment from state

@@ -90,7 +90,7 @@ func TestCreateOrigin(t *testing.T) {
 		require.EqualValues(t, 0, anchor.StateIndex)
 		require.True(t, stateAddr.Equal(anchor.StateController))
 		require.True(t, stateAddr.Equal(anchor.GovernanceController))
-		require.True(t, bytes.Equal(state.OriginStateData().Bytes(), anchor.StateData.Bytes()))
+		require.True(t, bytes.Equal(state.OriginL1Commitment().Bytes(), anchor.StateData))
 
 		// only one output is expected in the ledger under the address of chainID
 		outs, ids := u.GetUnspentOutputs(chainID.AsAddress())

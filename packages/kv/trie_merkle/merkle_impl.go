@@ -74,10 +74,6 @@ func (m *commitmentModel) VectorCommitmentFromBytes(data []byte) (trie.VCommitme
 	return ret, nil
 }
 
-func VectorCommitmentFromBytes(data []byte) (trie.VCommitment, error) {
-	return Model.VectorCommitmentFromBytes(data)
-}
-
 func (v *vectorCommitment) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = v.Write(&buf)

@@ -6,7 +6,6 @@ package iscp
 import (
 	"bytes"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
 type AliasOutputWithID struct {
@@ -39,14 +38,6 @@ func (aowiT *AliasOutputWithID) GetStateIndex() uint32 {
 
 func (aowiT *AliasOutputWithID) GetStateMetadata() []byte {
 	return aowiT.output.StateMetadata
-}
-
-func (aowiT *AliasOutputWithID) GetStateCommitment() (trie.VCommitment, error) {
-	sd, err := StateDataFromBytes(aowiT.output.StateMetadata)
-	if err != nil {
-		return nil, err
-	}
-	return sd.Commitment, nil
 }
 
 func (aowiT *AliasOutputWithID) GetStateAddress() iotago.Address {
