@@ -154,7 +154,7 @@ func (syncsT *syncingBlocks) approveBlockCandidates(output *iscp.AliasOutputWith
 		for blockHash, candidate := range sync.blockCandidates {
 			alreadyApproved := candidate.isApproved()
 			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
-				blockHash.String(), candidate.isLocal(), candidate.getNextStateCommitment().String(), iscp.OID(candidate.getApprovingOutputID()), alreadyApproved)
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateCommitmentString(), iscp.OID(candidate.getApprovingOutputID()), alreadyApproved)
 			if !alreadyApproved {
 				candidate.approveIfRightOutput(output)
 				if candidate.isApproved() {

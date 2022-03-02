@@ -78,7 +78,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 				txID, err := tx.ID()
 				require.NoError(env.T, err)
 				outputID := iotago.OutputIDFromTransactionIDAndIndex(*txID, uint16(index)).UTXOInput()
-				ret.Log.Debugf("Transaction %v received, alias output %v found, enqueing state message", txID, outputID)
+				ret.Log.Debugf("Transaction %v received, alias output %v found, enqueing state message", txID, outputID) // TODO: print txID normally
 				go ret.StateManager.EnqueueStateMsg(&messages.StateMsg{
 					ChainOutput: iscp.NewAliasOutputWithID(aliasOutput, outputID),
 					Timestamp:   time.Now(),

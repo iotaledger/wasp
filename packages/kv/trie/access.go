@@ -2,9 +2,10 @@ package trie
 
 import (
 	"bytes"
+	"reflect"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"reflect"
 )
 
 // CommitmentModel abstracts 256+ Trie logic from the commitment logic/cryptography

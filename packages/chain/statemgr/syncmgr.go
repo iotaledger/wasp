@@ -157,9 +157,10 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state hashes must be equal
+		calculatedPrevState.Commit()
 		finalStateCommitment := trie.RootCommitment(calculatedPrevState.TrieAccess())
 		finalCandidateCommitment := candidateAcc[len(candidateAcc)-1].getNextStateCommitment()
-		if trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
+		if !trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its hash does not match last candidate expected hash: %v != %v",
 				fromStateIndex, toStateIndex, finalStateCommitment.String(), finalCandidateCommitment.String())
 			return nil, nil, false
@@ -183,8 +184,8 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		candidatePrevStateCommitment := stateCandidateBlock.getBlock().PreviousStateCommitment(state.CommitmentModel)
 		calculatedPrevStateCommitment := trie.RootCommitment(calculatedPrevState.TrieAccess())
-		if trie.EqualCommitments(candidatePrevStateCommitment, calculatedPrevStateCommitment) {
-			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state hash does not match calculated state hash: %v <> %v",
+		if !trie.EqualCommitments(candidatePrevStateCommitment, calculatedPrevStateCommitment) {
+			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state hash does not match calculated state hash: %v != %v",
 				fromStateIndex, toStateIndex, candidatePrevStateCommitment.String(), calculatedPrevStateCommitment.String())
 			return nil, nil, false
 		}

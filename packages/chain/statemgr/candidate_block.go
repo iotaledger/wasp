@@ -68,7 +68,7 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 		}
 		finalCommitment := finalL1Commitment.Commitment
 		if cT.isLocal() {
-			if cT.nextStateCommitment == finalCommitment {
+			if trie.EqualCommitments(cT.nextStateCommitment, finalCommitment) {
 				cT.approved = true
 				cT.block.SetApprovingOutputID(outputID)
 			}
@@ -83,6 +83,14 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 
 func (cT *candidateBlock) getNextStateCommitment() trie.CommitmentBase {
 	return cT.nextStateCommitment
+}
+
+func (cT *candidateBlock) getNextStateCommitmentString() string {
+	commitment := cT.getNextStateCommitment()
+	if commitment == nil {
+		return "-"
+	}
+	return commitment.String()
 }
 
 func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (state.VirtualStateAccess, error) {

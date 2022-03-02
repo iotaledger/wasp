@@ -4,11 +4,12 @@ package trie_merkle
 import (
 	"bytes"
 	"encoding/hex"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
-	"io"
 )
 
 // implements commitment scheme based on blake2b hashing

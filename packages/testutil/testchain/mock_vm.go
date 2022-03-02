@@ -99,6 +99,7 @@ func NextState(
 
 	nextvs.ApplyStateUpdate(suBlockIndex)
 	nextvs.ApplyStateUpdate(suCounter /*, suReqs*/)
+	nextvs.Commit()
 	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
 
 	consumedOutput := chainOutput.GetAliasOutput()

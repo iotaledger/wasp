@@ -150,7 +150,7 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 	if isBlockNew {
 		if sm.stateOutput != nil {
 			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateHash %v, approvingOutputID %v, already approved %v) is approved by current stateOutput",
-				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitment().String(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
+				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitmentString(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
 			candidate.approveIfRightOutput(sm.stateOutput)
 		}
 		sm.log.Debugf("addBlockAndCheckStateOutput: block index %v approved %v", block.BlockIndex(), candidate.isApproved())
