@@ -435,6 +435,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
 }
 
+// GetMerkleProofRaw returns Merkle proof of the key in the state
 func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
 	ch.Log().Debugf("GetMerkleProof")
 
@@ -448,6 +449,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
 	return ret
 }
 
+// GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Mekle model is used
 func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Proof {
 	var buf bytes.Buffer
 	buf.Write(scHname.Bytes())
@@ -455,7 +457,7 @@ func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Pro
 	return ch.GetMerkleProofRaw(buf.Bytes())
 }
 
-// GetStateCommitment returns state commitment from anchor output
+// GetStateCommitment returns state commitment taken from the anchor output
 func (ch *Chain) GetStateCommitment() trie.VCommitment {
 	anchorOutput := ch.GetAnchorOutput()
 	ret, err := anchorOutput.GetStateCommitment()

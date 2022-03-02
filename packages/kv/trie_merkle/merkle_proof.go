@@ -123,6 +123,8 @@ func (p *Proof) MustIsProofOfAbsence() bool {
 	return r == nil
 }
 
+// Validate check the proof agains the provided root commitments
+// if 'value' is specified, checks if commitment to that value is the terminal of the last element in path
 func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 	if len(p.Path) == 0 {
 		if root != nil {
@@ -135,7 +137,7 @@ func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 		return err
 	}
 	cv := (vectorCommitment)(c)
-	if !(&cv).Equal(root) {
+	if !trie.EqualCommitments(&cv, root) {
 		return xerrors.New("invalid proof: commitment not equal to the root")
 	}
 	if len(value) > 0 {
