@@ -196,7 +196,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 
 func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = trie_merkle.Model.Proof(key, ctx.stateReader.TrieAccess())
+		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieAccess())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {
