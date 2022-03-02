@@ -155,20 +155,6 @@ func (t *terminalCommitment) String() string {
 	return hex.EncodeToString(t.bytes[:])
 }
 
-func (t *terminalCommitment) Equal(another trie.CommitmentBase) bool {
-	if t == nil && another == nil {
-		return true
-	}
-	if t == nil || another == nil {
-		return false
-	}
-	a, ok := another.(*terminalCommitment)
-	if !ok {
-		return false
-	}
-	return *t == *a
-}
-
 func (t *terminalCommitment) Clone() trie.TCommitment {
 	if t == nil {
 		return nil
