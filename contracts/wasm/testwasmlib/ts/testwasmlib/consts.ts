@@ -44,9 +44,11 @@ export const ResultRandom = "random";
 export const ResultRecord = "record";
 export const ResultValue  = "value";
 
-export const StateArrays = "arrays";
-export const StateMaps   = "maps";
-export const StateRandom = "random";
+export const StateArrays    = "arrays";
+export const StateLatLong   = "latLong";
+export const StateMaps      = "maps";
+export const StateRandom    = "random";
+export const StateStrings2D = "strings2D";
 
 export const FuncArrayAppend   = "arrayAppend";
 export const FuncArrayClear    = "arrayClear";

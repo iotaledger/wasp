@@ -180,7 +180,7 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
             // member address. The transfer_to_address() method receives the address
             // value and the proxy to the new transfers map on the host, and will
             // call the corresponding host sandbox function with these values.
-            ctx.send(&address, &transfers);
+            ctx.transfer_allowed(&address.as_agent_id(), &transfers, true);
         }
     }
 }

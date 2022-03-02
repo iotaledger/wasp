@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -239,6 +238,13 @@ func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) io
 	return ret
 }
 
+func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signature) *iotago.Transaction {
+	return &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sig),
+	}
+}
+
 func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {
@@ -247,9 +253,9 @@ func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) 
 	return ret
 }
 
-func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair) (*iotago.Transaction, error) {
+func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.NetworkID,
+		NetworkID: networkID,
 		Inputs:    inputs.UTXOInputs(),
 		Outputs:   outputs,
 	}

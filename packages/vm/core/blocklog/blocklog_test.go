@@ -13,8 +13,7 @@ func TestSerdeRequestReceipt(t *testing.T) {
 	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce)
 
 	rec := &RequestReceipt{
-		Request:  req,
-		ErrorStr: "some log data",
+		Request: req,
 	}
 	forward := rec.Bytes()
 	back, err := RequestReceiptFromBytes(forward)

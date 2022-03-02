@@ -112,3 +112,25 @@ func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
 	}
 	return nil
 }
+
+func sendLargeRequest(ctx iscp.Sandbox) dict.Dict {
+	req := iscp.RequestParameters{
+		TargetAddress: tpkg.RandEd25519Address(),
+		Metadata: &iscp.SendMetadata{
+			EntryPoint:     iscp.Hn("foo"),
+			TargetContract: iscp.Hn("bar"),
+			Params:         dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
+		},
+		AdjustToMinimumDustDeposit: true,
+		Assets:                     ctx.AllowanceAvailable().Assets,
+	}
+	dust := ctx.EstimateRequiredDustDeposit(req)
+	provided := ctx.AllowanceAvailable().Assets.Iotas
+	if provided < dust {
+		panic("not enough funds for dust")
+	}
+	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowanceIotas(dust))
+	req.Assets.Iotas = dust
+	ctx.Send(req)
+	return nil
+}

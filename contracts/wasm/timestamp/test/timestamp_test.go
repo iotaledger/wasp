@@ -27,7 +27,7 @@ func TestStamp(t *testing.T) {
 	require.EqualValues(t, t1, v.Results.Timestamp().Value())
 
 	f := timestamp.ScFuncs.Now(ctx)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	v = timestamp.ScFuncs.GetTimestamp(ctx)
@@ -42,7 +42,7 @@ func TestStamp(t *testing.T) {
 	require.EqualValues(t, t2, v.Results.Timestamp().Value())
 
 	f = timestamp.ScFuncs.Now(ctx)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	v = timestamp.ScFuncs.GetTimestamp(ctx)

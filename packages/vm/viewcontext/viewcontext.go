@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -22,11 +23,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 )
 
-// ViewContext implements the needed infrastucture to run external view calls, its more lightweight than vmcontext
+// ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
 type ViewContext struct {
 	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
@@ -45,7 +46,7 @@ func New(ch chain.ChainCore) *ViewContext {
 		processors:  ch.Processors(),
 		stateReader: ch.GetStateReader(),
 		chainID:     ch.ID(),
-		log:         ch.Log(),
+		log:         ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 	}
 }
 
@@ -65,7 +66,7 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	g := burnCode.Cost(par...)
 	ctx.gasBurnLog.Record(burnCode, g)
 	if g > ctx.gasBudget {
-		panic(vmcontext.ErrGasBudgetExceeded)
+		panic(vm.ErrGasBudgetExceeded)
 	}
 	ctx.gasBudget -= g
 }

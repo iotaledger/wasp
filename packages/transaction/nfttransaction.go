@@ -3,6 +3,7 @@ package transaction
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type MintNftTransactionParams struct {
@@ -10,7 +11,7 @@ type MintNftTransactionParams struct {
 	Target            iotago.Address
 	UnspentOutputs    iotago.OutputSet
 	UnspentOutputIDs  iotago.OutputIDs
-	RentStructure     *iotago.RentStructure
+	L1Params          *parameters.L1
 	ImmutableMetadata []byte
 }
 
@@ -27,12 +28,12 @@ func NewMintNFTTransaction(par MintNftTransactionParams) (*iotago.Transaction, e
 			&iotago.MetadataFeatureBlock{Data: par.ImmutableMetadata},
 		},
 	}
-	requiredDust := out.VByteCost(par.RentStructure, nil)
+	requiredDust := out.VByteCost(par.L1Params.RentStructure(), nil)
 	out.Amount = requiredDust
 
 	outputs := iotago.Outputs{out}
 
-	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
+	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, par.UnspentOutputs, par.UnspentOutputIDs, par.L1Params.RentStructure())
 	if err != nil {
 		return nil, err
 	}
@@ -41,5 +42,5 @@ func NewMintNFTTransaction(par MintNftTransactionParams) (*iotago.Transaction, e
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair)
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair, par.L1Params.NetworkID)
 }

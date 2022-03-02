@@ -114,7 +114,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 			// amount of seconds. This will lock in the playing period, during which more bets can
 			// be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather
 			// all bets up to that moment as the ones to consider for determining the winner.
-			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).TransferIotas(1).Post()
+			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).Post()
 		}
 	}
 }

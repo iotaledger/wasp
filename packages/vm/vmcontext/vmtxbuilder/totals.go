@@ -3,6 +3,7 @@ package vmtxbuilder
 import (
 	"fmt"
 	"math/big"
+	"github.com/iotaledger/wasp/packages/vm"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -157,7 +158,7 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 		ins, outs, err := txb.Totals()
 		if err != nil {
 			fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
-			panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, ErrFatalTxBuilderNotBalanced, err))
+			panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
 		}
 	}
 }
@@ -165,11 +166,11 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.Assets, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
-		panic(xerrors.Errorf("%v: %v", ErrFatalTxBuilderNotBalanced, err))
+		panic(xerrors.Errorf("%v: %v", vm.ErrFatalTxBuilderNotBalanced, err))
 	}
 	if outTotal.TotalIotasInL2Accounts != l2Totals.Iotas {
 		panic(xerrors.Errorf("'%s': iotas L1 (%d) != iotas L2 (%d): %v",
-			checkpoint, outTotal.TotalIotasInL2Accounts, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
+			checkpoint, outTotal.TotalIotasInL2Accounts, l2Totals.Iotas, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 	}
 	for _, nt := range l2Totals.Tokens {
 		b1, ok := outTotal.NativeTokenBalances[nt.ID]
@@ -179,7 +180,7 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp
 		}
 		if nt.Amount.Cmp(b1) != 0 {
 			panic(xerrors.Errorf("token %s L1 (%d) != L2 (%d): %v",
-				nt.ID.String(), nt.Amount, b1, ErrInconsistentL2LedgerWithL1TxBuilder))
+				nt.ID.String(), nt.Amount, b1, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 		}
 	}
 }
@@ -192,7 +193,7 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 			t.TotalIotasInL2Accounts, t.TotalIotasInDustDeposit)
 		msgOut := fmt.Sprintf("out.TotalIotasInL2Accounts: %d\n+ out.TotalIotasInDustDeposit: %d\n+ out.SentOutIotas: %d",
 			another.TotalIotasInL2Accounts, another.TotalIotasInDustDeposit, another.SentOutIotas)
-		return xerrors.Errorf("%v:\n %s\n    !=\n%s", ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
+		return xerrors.Errorf("%v:\n %s\n    !=\n%s", vm.ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
 	}
 	tokenIDs := make(map[iotago.NativeTokenID]bool)
 	for id := range t.TokenCirculatingSupplies {
@@ -243,7 +244,7 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 		end.Add(end, sent)
 		begin.Add(begin, delta)
 		if begin.Cmp(end) != 0 {
-			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", ErrFatalTxBuilderNotBalanced, id, begin, end)
+			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", vm.ErrFatalTxBuilderNotBalanced, id, begin, end)
 		}
 	}
 	return nil

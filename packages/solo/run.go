@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
@@ -48,8 +49,8 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 		VirtualStateAccess: ch.State.Copy(),
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
-		Log:                ch.Log(),
-		RentStructure:      ch.Env.utxoDB.RentStructure(),
+		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		L1Params:           ch.Env.utxoDB.L1Params(),
 		// state baseline is always valid in Solo
 		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
 		EnableGasBurnLogging: true,
@@ -89,10 +90,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	)
 	require.NoError(ch.Env.T, err)
 
-	tx := &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sigs[0]),
-	}
+	tx := transaction.MakeAnchorTransaction(essence, sigs[0])
 
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)

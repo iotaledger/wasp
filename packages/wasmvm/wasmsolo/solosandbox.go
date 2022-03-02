@@ -129,9 +129,14 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 }
 
 func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.Assets) []byte {
+	allow := assets
+	if assets.Iotas < 1000 {
+		assets = allow.Clone()
+		assets.Iotas = 1000
+	}
 	req := solo.NewCallParamsFromDic(contract, function, params)
 	req.AddAssets(assets)
-	req.WithAllowance(assets)
+	req.WithAllowance(allow)
 	req.WithMaxAffordableGasBudget()
 	ctx := s.ctx
 	//TODO mint!
@@ -154,7 +159,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, asse
 		}
 	}
 	_ = wasmhost.Connect(ctx.wc)
-	ctx.UpdateGas()
+	ctx.UpdateGasFees()
 	if ctx.Err != nil {
 		return nil
 	}
@@ -214,7 +219,6 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
 	_ = wasmhost.Connect(ctx.wc)
 	ctx.Err = err
-	ctx.UpdateGas()
 	if ctx.Err != nil {
 		return nil
 	}
@@ -290,9 +294,6 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) == 0 && !s.ctx.offLedger {
-		s.Panicf("transfer is required for post")
-	}
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}

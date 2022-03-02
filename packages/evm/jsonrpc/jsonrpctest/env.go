@@ -325,7 +325,7 @@ func (e *Env) TestRPCGasLimit() {
 
 	err = e.Client.SendTransaction(context.Background(), tx)
 	require.Error(e.T, err)
-	require.Regexp(e.T, `insufficient funds for gas \* price \+ value: address 0x\w+ have \d+ want \d+`, err.Error())
+	require.Contains(e.T, err.Error(), "insufficient funds for gas")
 }
 
 func (e *Env) TestRPCInvalidNonce() {

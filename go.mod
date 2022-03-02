@@ -13,7 +13,7 @@ require (
 	github.com/iotaledger/goshimmer v0.8.5
 	github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220222135056-1fc9e672f66d
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220301185329-7357f22aa59e
 	github.com/knadh/koanf v1.3.3
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.15.0
@@ -37,10 +37,10 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	golang.org/x/sys v0.0.0-20220222200937-f2425489ef4c // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	google.golang.org/genproto v0.0.0-20220222213610-43724f9ea8cf // indirect
+	google.golang.org/genproto v0.0.0-20220302033224-9aa15565e42a // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7
 )

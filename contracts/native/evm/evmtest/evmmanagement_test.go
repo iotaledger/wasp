@@ -46,7 +46,7 @@ func TestRequestGasFees(t *testing.T) {
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, managerAgentID).
 				AddAssetsIotas(1000).
 				WithMaxAffordableGasBudget(),
-			&soloChain.OriginatorPrivateKey,
+			soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
@@ -55,7 +55,7 @@ func TestRequestGasFees(t *testing.T) {
 			solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).
 				AddAssetsIotas(1000).
 				WithMaxAffordableGasBudget(),
-			&soloChain.OriginatorPrivateKey,
+			soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 	})

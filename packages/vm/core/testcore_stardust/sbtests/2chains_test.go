@@ -119,7 +119,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain1WithdrawalReceipt := chain1.LastReceipt()
 	require.Equal(t, chain1WithdrawalReceipt.Request.CallTarget().Contract, accounts.Contract.Hname())
 	require.Equal(t, chain1WithdrawalReceipt.Request.CallTarget().EntryPoint, accounts.FuncWithdraw.Hname())
-	require.Nil(t, chain1WithdrawalReceipt.Error())
+	require.Nil(t, chain1WithdrawalReceipt.Error)
 
 	env.AssertL1Iotas(userAddress, solo.Saldo-2*iotasToSend)
 

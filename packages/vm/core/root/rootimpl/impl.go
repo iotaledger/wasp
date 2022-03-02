@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -71,8 +72,12 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// passing dust assumptions
 	extParams.Set(accounts.ParamDustDepositAssumptionsBin, ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin))
 	mustStoreAndInitCoreContract(ctx, accounts.Contract, extParams)
+
 	// store 'blocklog' into the registry and run init
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, nil)
+
+	// store 'errors' into the registry and run init
+	mustStoreAndInitCoreContract(ctx, errors.Contract, nil)
 
 	// store 'governance' into the registry and run init
 	// passing init parameters
@@ -152,7 +157,7 @@ func findContract(ctx iscp.SandboxView) dict.Dict {
 // Input:
 //  - ParamDeployer iscp.AgentID
 func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("root.grantDeployPermissions: not authorized")
+	ctx.RequireCallerIsChainOwner()
 
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 
@@ -165,7 +170,7 @@ func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 // Input:
 //  - ParamDeployer iscp.AgentID
 func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
+	ctx.RequireCallerIsChainOwner()
 
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 
@@ -188,7 +193,7 @@ func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 }
 
 func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
+	ctx.RequireCallerIsChainOwner()
 	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
 	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
 	return nil

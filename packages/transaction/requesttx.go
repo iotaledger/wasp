@@ -6,6 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -14,7 +15,7 @@ type NewRequestTransactionParams struct {
 	UnspentOutputs               iotago.OutputSet
 	UnspentOutputIDs             iotago.OutputIDs
 	Requests                     []*iscp.RequestParameters
-	RentStructure                *iotago.RentStructure
+	L1                           *parameters.L1
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
@@ -52,10 +53,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			},
 			req.NFT,
 			req.Options,
-			par.RentStructure,
+			par.L1.RentStructure(),
 			par.DisableAutoAdjustDustDeposit,
 		)
-		requiredDustDeposit := out.VByteCost(par.RentStructure, nil)
+		requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
 		if out.Deposit() < requiredDustDeposit {
 			return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
@@ -71,8 +72,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			sumTokensOut[nt.ID] = s
 		}
 	}
-
-	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())
 	if err != nil {
 		return nil, err
 	}
@@ -81,5 +81,5 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair)
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, par.L1.NetworkID)
 }

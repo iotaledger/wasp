@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:dupl
 func TestTypesFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
@@ -25,11 +26,12 @@ func TestTypesFull(t *testing.T) {
 		f.Params.Int64Zero().SetValue(0)
 		f.Params.String().SetValue("string")
 		f.Params.StringZero().SetValue("")
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx.Err)
 	})
 }
 
+//nolint:dupl
 func TestTypesView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)

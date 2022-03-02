@@ -329,6 +329,7 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 }
 
 func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
+
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(ctx.State(), prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
@@ -342,6 +343,7 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 		recBin, found := getRequestRecordDataByRef(ctx.State(), lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
 		a.Requiref(found, "inconsistency: request log record wasn't found by exact reference")
 		rec, err := RequestReceiptFromBytes(recBin)
+
 		a.RequireNoError(err)
 		if rec.Request.ID() == reqID {
 			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
