@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -65,6 +66,15 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 	}
 
 	fname := c.Param("fname")
+	var functionHname iscp.Hname
+	if strings.HasPrefix(fname, "0x") {
+		functionHname, err = iscp.HnameFromString(fname[2:])
+		if err != nil {
+			return httperrors.BadRequest(fmt.Sprintf("Invalid function ID: %+v", c.Param("fname")))
+		}
+	} else {
+		functionHname = iscp.Hn(fname)
+	}
 
 	var params dict.Dict
 	if c.Request().Body != http.NoBody {
@@ -76,7 +86,7 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-	ret, err := webapiutil.CallView(theChain, contractHname, iscp.Hn(fname), params)
+	ret, err := webapiutil.CallView(theChain, contractHname, functionHname, params)
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}
