@@ -23,6 +23,11 @@ type ArrayArrayClearCall struct {
 	Func    *wasmlib.ScFunc
 }
 
+type ArrayArraySetCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayArraySetParams
+}
+
 type ArrayClearCall struct {
 	Func    *wasmlib.ScFunc
 	Params  MutableArrayClearParams
@@ -135,6 +140,12 @@ func (sc Funcs) ArrayArrayAppend(ctx wasmlib.ScFuncCallContext) *ArrayArrayAppen
 
 func (sc Funcs) ArrayArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayArrayClearCall {
 	return &ArrayArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayArrayClear)}
+}
+
+func (sc Funcs) ArrayArraySet(ctx wasmlib.ScFuncCallContext) *ArrayArraySetCall {
+	f := &ArrayArraySetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayArraySet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
 }
 
 func (sc Funcs) ArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayClearCall {

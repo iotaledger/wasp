@@ -197,6 +197,14 @@ func funcArrayArrayClear(ctx wasmlib.ScFuncContext, f *ArrayArrayClearContext) {
 	f.State.StringArrayArrays().Clear()
 }
 
+func funcArrayArraySet(ctx wasmlib.ScFuncContext, f *ArrayArraySetContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+	array := f.State.StringArrayArrays().GetStringArray(index0)
+	value := f.Params.Value().Value()
+	array.GetString(index1).SetValue(value)
+}
+
 func viewArrayArrayValue(ctx wasmlib.ScViewContext, f *ArrayArrayValueContext) {
 	index0 := f.Params.Index0().Value()
 	index1 := f.Params.Index1().Value()

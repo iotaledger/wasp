@@ -15,6 +15,7 @@ var exportMap = wasmlib.ScExportMap{
     	FuncArrayAppend,
     	FuncArrayArrayAppend,
     	FuncArrayArrayClear,
+    	FuncArrayArraySet,
     	FuncArrayClear,
     	FuncArraySet,
     	FuncMapClear,
@@ -38,6 +39,7 @@ var exportMap = wasmlib.ScExportMap{
     	funcArrayAppendThunk,
     	funcArrayArrayAppendThunk,
     	funcArrayArrayClearThunk,
+    	funcArrayArraySetThunk,
     	funcArrayClearThunk,
     	funcArraySetThunk,
     	funcMapClearThunk,
@@ -127,6 +129,29 @@ func funcArrayArrayClearThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcArrayArrayClear(ctx, f)
 	ctx.Log("testwasmlib.funcArrayArrayClear ok")
+}
+
+type ArrayArraySetContext struct {
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayArraySetParams
+	State   MutableTestWasmLibState
+}
+
+func funcArrayArraySetThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcArrayArraySet")
+	f := &ArrayArraySetContext{
+		Params: ImmutableArrayArraySetParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index0().Exists(), "missing mandatory index0")
+	ctx.Require(f.Params.Index1().Exists(), "missing mandatory index1")
+	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
+	funcArrayArraySet(ctx, f)
+	ctx.Log("testwasmlib.funcArrayArraySet ok")
 }
 
 type ArrayClearContext struct {

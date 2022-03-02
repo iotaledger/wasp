@@ -71,6 +71,7 @@ const (
 	FuncArrayAppend      = "arrayAppend"
 	FuncArrayArrayAppend = "arrayArrayAppend"
 	FuncArrayArrayClear  = "arrayArrayClear"
+	FuncArrayArraySet    = "arrayArraySet"
 	FuncArrayClear       = "arrayClear"
 	FuncArraySet         = "arraySet"
 	FuncMapClear         = "mapClear"
@@ -95,6 +96,7 @@ const (
 	HFuncArrayAppend      = wasmtypes.ScHname(0x612f835f)
 	HFuncArrayArrayAppend = wasmtypes.ScHname(0x33c0f142)
 	HFuncArrayArrayClear  = wasmtypes.ScHname(0xd449b1ec)
+	HFuncArrayArraySet    = wasmtypes.ScHname(0x00596dbc)
 	HFuncArrayClear       = wasmtypes.ScHname(0x88021821)
 	HFuncArraySet         = wasmtypes.ScHname(0x2c4150b3)
 	HFuncMapClear         = wasmtypes.ScHname(0x027f215a)

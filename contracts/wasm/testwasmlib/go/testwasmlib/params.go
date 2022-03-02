@@ -57,6 +57,38 @@ func (s MutableArrayArrayAppendParams) Value() ArrayOfMutableString {
 	return ArrayOfMutableString{proxy: s.proxy.Root(ParamValue)}
 }
 
+type ImmutableArrayArraySetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayArraySetParams) Index0() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex0))
+}
+
+func (s ImmutableArrayArraySetParams) Index1() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+func (s ImmutableArrayArraySetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableArrayArraySetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayArraySetParams) Index0() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex0))
+}
+
+func (s MutableArrayArraySetParams) Index1() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+func (s MutableArrayArraySetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
 type ImmutableArrayClearParams struct {
 	proxy wasmtypes.Proxy
 }
