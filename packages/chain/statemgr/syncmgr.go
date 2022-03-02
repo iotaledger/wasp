@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -156,15 +157,15 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state hashes must be equal
-		finalStateHash := calculatedPrevState.RootCommitment()
-		finalCandidateHash := candidateAcc[len(candidateAcc)-1].getNextStateCommitment()
-		if finalStateHash != finalCandidateHash {
+		finalStateCommitment := trie.RootCommitment(calculatedPrevState.TrieAccess())
+		finalCandidateCommitment := candidateAcc[len(candidateAcc)-1].getNextStateCommitment()
+		if trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its hash does not match last candidate expected hash: %v != %v",
-				fromStateIndex, toStateIndex, finalStateHash.String(), finalCandidateHash.String())
+				fromStateIndex, toStateIndex, finalStateCommitment.String(), finalCandidateCommitment.String())
 			return nil, nil, false
 		}
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, its hash matches last candidate expected hash: %v",
-			fromStateIndex, toStateIndex, finalStateHash.String())
+			fromStateIndex, toStateIndex, finalStateCommitment.String())
 		return candidateAcc, calculatedPrevState, true
 	}
 
@@ -180,11 +181,11 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
-		candidatePrevStateHash := stateCandidateBlock.getBlock().PreviousStateCommitment()
-		calculatedPrevStateHash := calculatedPrevState.RootCommitment()
-		if candidatePrevStateHash != calculatedPrevStateHash {
+		candidatePrevStateCommitment := stateCandidateBlock.getBlock().PreviousStateCommitment(state.CommitmentModel)
+		calculatedPrevStateCommitment := trie.RootCommitment(calculatedPrevState.TrieAccess())
+		if trie.EqualCommitments(candidatePrevStateCommitment, calculatedPrevStateCommitment) {
 			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state hash does not match calculated state hash: %v <> %v",
-				fromStateIndex, toStateIndex, candidatePrevStateHash.String(), calculatedPrevStateHash.String())
+				fromStateIndex, toStateIndex, candidatePrevStateCommitment.String(), calculatedPrevStateCommitment.String())
 			return nil, nil, false
 		}
 		calculatedState, err := stateCandidateBlock.getNextState(calculatedPrevState)

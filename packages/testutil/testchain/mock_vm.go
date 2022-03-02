@@ -12,8 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
-
 	// "github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
@@ -85,7 +85,7 @@ func NextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, vs.RootCommitment())
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieAccess()))
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -97,7 +97,8 @@ func NextState(
 		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}*/
 
-	nextvs.ApplyStateUpdate(suBlockIndex, suCounter /*, suReqs*/)
+	nextvs.ApplyStateUpdate(suBlockIndex)
+	nextvs.ApplyStateUpdate(suCounter /*, suReqs*/)
 	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
 
 	consumedOutput := chainOutput.GetAliasOutput()
@@ -112,7 +113,7 @@ func NextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  nextvs.RootCommitment().Bytes(),
+				StateMetadata:  iscp.NewStateData(trie.RootCommitment(nextvs.TrieAccess())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Blocks:         consumedOutput.Blocks,

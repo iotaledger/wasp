@@ -4,12 +4,12 @@
 package statemgr
 
 import (
-	"bytes"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -61,7 +61,12 @@ func (sm *stateManager) isSynced() bool {
 		return false
 	}
 	// GetStateMetadata is supposed to return hash of state data (state commitment)
-	return bytes.Equal(sm.solidState.RootCommitment().Bytes(), sm.stateOutput.GetStateMetadata())
+	stateCommitment, err := sm.stateOutput.GetStateCommitment()
+	if err != nil {
+		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
+		return false
+	}
+	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieAccess()), stateCommitment)
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -86,7 +91,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"hash", nextState.RootCommitment(),
+		"commitment", trie.RootCommitment(nextState.TrieAccess()),
 		"output", iscp.OID(approvingOutputID),
 	)
 
@@ -163,12 +168,13 @@ func (sm *stateManager) storeSyncingData() {
 		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state data hash: %v", err)
 		return
 	}
+	solidStateCommitment := trie.RootCommitment(sm.solidState.TrieAccess())
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.RootCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment.String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
-		SyncedStateHash:       sm.solidState.RootCommitment(),
+		SyncedStateCommitment: solidStateCommitment,
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),
