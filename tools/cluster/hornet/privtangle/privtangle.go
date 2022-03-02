@@ -83,7 +83,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 
 	for i := range pt.NodeKeyPairs {
 		pt.startNode(i)
-		// time.Sleep(1 * time.Second) // TODO: Remove?
+		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
 	pt.logf("Starting... Done, all nodes started.")
 
@@ -101,7 +101,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	snapGenArgs := []string{
 		"tool", "snap-gen",
 		fmt.Sprintf("--networkID=%s", pt.NetworkID),
-		fmt.Sprintf("--mintAddress=%s", cryptolib.Ed25519AddressFromPubKey(pt.FaucetKeyPair.PublicKey).String()),
+		fmt.Sprintf("--mintAddress=%s", cryptolib.Ed25519AddressFromPubKey(pt.FaucetKeyPair.PublicKey).String()[2:]), // Dropping 0x from HEX.
 		fmt.Sprintf("--outputPath=%s", filepath.Join(pt.BaseDir, pt.SnapshotInit)),
 	}
 	snapGen := exec.CommandContext(pt.ctx, "hornet", snapGenArgs...)

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -49,35 +50,76 @@ func TestHornetStartup(t *testing.T) {
 	// myAddressOutputsCh := nodeEvt.Ed25519AddressOutputs(myAddress) // TODO:
 	// myAddressOutputsCh := nodeEvt.AddressOutputs(myAddress, iotago.PrefixTestnet)
 
-	faucetURL := fmt.Sprintf("http://localhost:%d/api/plugins/faucet/v1/enqueue", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
-	httpReq.Header.Set("Content-Type", "application/json")
-	require.NoError(t, err)
-	t.Logf("Calling faucet at %v", faucetURL)
-	res, err := http.DefaultClient.Do(httpReq)
-	require.NoError(t, err)
-	resBody, err := io.ReadAll(res.Body)
-	require.NoError(t, err)
-	t.Logf("Response, status=%v, response=%s", res.Status, resBody)
-	require.NoError(t, err)
-	require.Equal(t, 202, res.StatusCode)
+	initialOutputCount := outputCount(ctx, t, node0, myAddress)
 
-	for i := 0; i < 5; i++ {
-		time.Sleep(1 * time.Second)
-		res, err := node0.Indexer().Outputs(ctx, &nodeclient.OutputsQuery{
-			AddressBech32: myAddress.Bech32(iotago.PrefixTestnet),
-		})
+	if false {
+		faucetURL := fmt.Sprintf("http://localhost:%d/api/plugins/faucet/v1/enqueue", pt.NodePortFaucet(0))
+		httpReq, err := http.NewRequestWithContext(ctx, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
+		httpReq.Header.Set("Content-Type", "application/json")
 		require.NoError(t, err)
-		require.NotNil(t, res)
-		t.Logf("Outputs...")
-		for res.Next() {
-			outs, err := res.Outputs()
-			require.NoError(t, err)
-			for i, o := range outs {
-				t.Logf("Outputs: %v=%#v", res.Response.Items[i], o)
+		t.Logf("Calling faucet at %v", faucetURL)
+		res, err := http.DefaultClient.Do(httpReq)
+		require.NoError(t, err)
+		resBody, err := io.ReadAll(res.Body)
+		require.NoError(t, err)
+		t.Logf("Response, status=%v, response=%s", res.Status, resBody)
+		require.NoError(t, err)
+		require.Equal(t, 202, res.StatusCode)
+
+		for i := 0; ; i++ {
+			time.Sleep(100 * time.Millisecond)
+			if initialOutputCount != outputCount(ctx, t, node0, myAddress) {
+				break
 			}
 		}
-		t.Logf("Outputs... Done")
+	} else {
+		//
+		// Build a TX.
+		genesisAddr := cryptolib.Ed25519AddressFromPubKey(pt.FaucetKeyPair.PublicKey)
+		genesisOuts := outputMap(ctx, t, node0, genesisAddr)
+		var genesisOID iotago.OutputID
+		var genesisOut iotago.Output
+		for i, o := range genesisOuts {
+			genesisOID = i
+			genesisOut = o
+			break
+		}
+		require.NotNil(t, genesisOID)
+		require.NotNil(t, genesisOut)
+		amount := uint64(50000)
+		tx, err := iotagob.NewTransactionBuilder(
+			iotago.NetworkIDFromString(pt.NetworkID),
+		).AddInput(&iotagob.ToBeSignedUTXOInput{
+			Address:  genesisAddr,
+			OutputID: genesisOID,
+			Output:   genesisOut,
+		}).AddOutput(&iotago.BasicOutput{
+			Amount:     amount,
+			Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: myAddress}},
+		}).AddOutput(&iotago.BasicOutput{
+			Amount:     genesisOut.Deposit() - amount,
+			Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: genesisAddr}},
+		}).Build(
+			iotago.ZeroRentParas,
+			pt.FaucetKeyPair.AsAddressSigner(),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, tx)
+		//
+		// Build a message and post it.
+		txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
+		require.NoError(t, err)
+		_, err = node0.SubmitMessage(ctx, txMsg)
+		require.NoError(t, err)
+		//
+		// Wait for the TX to be approved.
+		for i := 0; ; i++ {
+			t.Logf("Waiting for a TX...")
+			time.Sleep(100 * time.Millisecond)
+			if initialOutputCount != outputCount(ctx, t, node0, myAddress) {
+				break
+			}
+		}
 	}
 
 	// t.Logf("Waiting for output event...")
@@ -86,6 +128,26 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Close.
-	time.Sleep(3 * time.Second)
 	pt.Stop()
+}
+
+func outputCount(ctx context.Context, t *testing.T, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) int {
+	return len(outputMap(ctx, t, node0, myAddress))
+}
+func outputMap(ctx context.Context, t *testing.T, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
+	res, err := node0.Indexer().Outputs(ctx, &nodeclient.OutputsQuery{
+		AddressBech32: myAddress.Bech32(iotago.PrefixTestnet),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, res)
+	result := make(map[iotago.OutputID]iotago.Output)
+	for res.Next() {
+		outs, err := res.Outputs()
+		require.NoError(t, err)
+		oids := res.Response.Items.MustOutputIDs()
+		for i, o := range outs {
+			result[oids[i]] = o
+		}
+	}
+	return result
 }
