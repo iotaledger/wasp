@@ -3,6 +3,7 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 
@@ -194,7 +195,7 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 }
 
 // BuildTransactionEssence builds transaction essence from tx builder data
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) (*iotago.TransactionEssence, []byte) {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
@@ -250,7 +251,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 }
 
 // outputs generates outputs for the transaction essence
-func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.Outputs {
+func (txb *AnchorTransactionBuilder) outputs(stateData *state.L1Commitment) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 	// creating the anchor output
 	aliasID := txb.anchorOutput.AliasID

@@ -152,7 +152,7 @@ type StateAnchor struct {
 	StateController      iotago.Address
 	GovernanceController iotago.Address
 	StateIndex           uint32
-	StateData            StateData
+	StateData            []byte
 	Deposit              uint64
 	NativeTokens         iotago.NativeTokens
 }

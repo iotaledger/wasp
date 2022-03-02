@@ -86,7 +86,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	stateData, err := iscp.StateDataFromBytes(task.AnchorOutput.StateMetadata)
+	stateData, err := state.L1CommitmentFromBytes(task.AnchorOutput.StateMetadata)
 	if err != nil {
 		// should never happen
 		panic(xerrors.Errorf("CreateVMContext: can't parse state data from chain input %w", err))
@@ -198,7 +198,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		return rotationAddress
 	}
 	// block info will be stored into the separate state update
-	prevStateData, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+	prevStateData, err := state.L1CommitmentFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
 		panic(err)
 	}

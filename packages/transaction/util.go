@@ -64,10 +64,6 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 		isOrigin = true
 		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0))
 	}
-	sd, err := iscp.StateDataFromBytes(anchorOutput.StateMetadata)
-	if err != nil {
-		return nil, anchorOutput, err
-	}
 	return &iscp.StateAnchor{
 		IsOrigin:             isOrigin,
 		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(*txid, 0),
@@ -75,7 +71,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 		StateController:      anchorOutput.StateController(),
 		GovernanceController: anchorOutput.GovernorAddress(),
 		StateIndex:           anchorOutput.StateIndex,
-		StateData:            sd,
+		StateData:            anchorOutput.StateMetadata,
 		Deposit:              anchorOutput.Amount,
 	}, anchorOutput, nil
 }
