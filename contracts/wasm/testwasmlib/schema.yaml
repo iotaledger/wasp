@@ -84,6 +84,7 @@ funcs:
     params:
       name: String
   
+  # Clear all the arrays of the array
   arrayOfArraysClear:
 
   mapOfArraysSet:
@@ -105,6 +106,14 @@ funcs:
   mapOfMapsSet:
     params:
       name: String
+      key: String
+      value: String
+
+  arrayOfMapsClear:
+
+  arrayOfMapsSet:
+    params:
+      index: Uint32
       key: String
       value: String
 
@@ -173,6 +182,13 @@ views:
   mapOfMapsValue:
     params:
       name: String
+      key: String
+    results:
+      value: String
+
+  arrayOfMapsValue:
+    params:
+      index: Uint32
       key: String
     results:
       value: String

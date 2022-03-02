@@ -15,6 +15,8 @@ var exportMap = wasmlib.ScExportMap{
     	FuncArrayOfArraysAppend,
     	FuncArrayOfArraysClear,
     	FuncArrayOfArraysSet,
+    	FuncArrayOfMapsClear,
+    	FuncArrayOfMapsSet,
     	FuncMapOfArraysAppend,
     	FuncMapOfArraysClear,
     	FuncMapOfArraysSet,
@@ -27,6 +29,7 @@ var exportMap = wasmlib.ScExportMap{
     	FuncTriggerEvent,
     	ViewArrayOfArraysLength,
     	ViewArrayOfArraysValue,
+    	ViewArrayOfMapsValue,
     	ViewBlockRecord,
     	ViewBlockRecords,
     	ViewGetRandom,
@@ -39,6 +42,8 @@ var exportMap = wasmlib.ScExportMap{
     	funcArrayOfArraysAppendThunk,
     	funcArrayOfArraysClearThunk,
     	funcArrayOfArraysSetThunk,
+    	funcArrayOfMapsClearThunk,
+    	funcArrayOfMapsSetThunk,
     	funcMapOfArraysAppendThunk,
     	funcMapOfArraysClearThunk,
     	funcMapOfArraysSetThunk,
@@ -53,6 +58,7 @@ var exportMap = wasmlib.ScExportMap{
 	Views: []wasmlib.ScViewContextFunction{
     	viewArrayOfArraysLengthThunk,
     	viewArrayOfArraysValueThunk,
+    	viewArrayOfMapsValueThunk,
     	viewBlockRecordThunk,
     	viewBlockRecordsThunk,
     	viewGetRandomThunk,
@@ -130,6 +136,45 @@ func funcArrayOfArraysSetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
 	funcArrayOfArraysSet(ctx, f)
 	ctx.Log("testwasmlib.funcArrayOfArraysSet ok")
+}
+
+type ArrayOfMapsClearContext struct {
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
+}
+
+func funcArrayOfMapsClearThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcArrayOfMapsClear")
+	f := &ArrayOfMapsClearContext{
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcArrayOfMapsClear(ctx, f)
+	ctx.Log("testwasmlib.funcArrayOfMapsClear ok")
+}
+
+type ArrayOfMapsSetContext struct {
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfMapsSetParams
+	State   MutableTestWasmLibState
+}
+
+func funcArrayOfMapsSetThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcArrayOfMapsSet")
+	f := &ArrayOfMapsSetContext{
+		Params: ImmutableArrayOfMapsSetParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
+	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")
+	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
+	funcArrayOfMapsSet(ctx, f)
+	ctx.Log("testwasmlib.funcArrayOfMapsSet ok")
 }
 
 type MapOfArraysAppendContext struct {
@@ -384,6 +429,33 @@ func viewArrayOfArraysValueThunk(ctx wasmlib.ScViewContext) {
 	viewArrayOfArraysValue(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewArrayOfArraysValue ok")
+}
+
+type ArrayOfMapsValueContext struct {
+	Params  ImmutableArrayOfMapsValueParams
+	Results MutableArrayOfMapsValueResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewArrayOfMapsValueThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewArrayOfMapsValue")
+	results := wasmlib.NewScDict()
+	f := &ArrayOfMapsValueContext{
+		Params: ImmutableArrayOfMapsValueParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableArrayOfMapsValueResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
+	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")
+	viewArrayOfMapsValue(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewArrayOfMapsValue ok")
 }
 
 type BlockRecordContext struct {

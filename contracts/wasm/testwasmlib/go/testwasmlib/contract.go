@@ -23,6 +23,15 @@ type ArrayOfArraysSetCall struct {
 	Params  MutableArrayOfArraysSetParams
 }
 
+type ArrayOfMapsClearCall struct {
+	Func    *wasmlib.ScFunc
+}
+
+type ArrayOfMapsSetCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfMapsSetParams
+}
+
 type MapOfArraysAppendCall struct {
 	Func    *wasmlib.ScFunc
 	Params  MutableMapOfArraysAppendParams
@@ -82,6 +91,12 @@ type ArrayOfArraysValueCall struct {
 	Results ImmutableArrayOfArraysValueResults
 }
 
+type ArrayOfMapsValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableArrayOfMapsValueParams
+	Results ImmutableArrayOfMapsValueResults
+}
+
 type BlockRecordCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableBlockRecordParams
@@ -138,6 +153,16 @@ func (sc Funcs) ArrayOfArraysClear(ctx wasmlib.ScFuncCallContext) *ArrayOfArrays
 
 func (sc Funcs) ArrayOfArraysSet(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysSetCall {
 	f := &ArrayOfArraysSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysSet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayOfMapsClear(ctx wasmlib.ScFuncCallContext) *ArrayOfMapsClearCall {
+	return &ArrayOfMapsClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfMapsClear)}
+}
+
+func (sc Funcs) ArrayOfMapsSet(ctx wasmlib.ScFuncCallContext) *ArrayOfMapsSetCall {
+	f := &ArrayOfMapsSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfMapsSet)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -206,6 +231,13 @@ func (sc Funcs) ArrayOfArraysLength(ctx wasmlib.ScViewCallContext) *ArrayOfArray
 
 func (sc Funcs) ArrayOfArraysValue(ctx wasmlib.ScViewCallContext) *ArrayOfArraysValueCall {
 	f := &ArrayOfArraysValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfArraysValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) ArrayOfMapsValue(ctx wasmlib.ScViewCallContext) *ArrayOfMapsValueCall {
+	f := &ArrayOfMapsValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfMapsValue)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

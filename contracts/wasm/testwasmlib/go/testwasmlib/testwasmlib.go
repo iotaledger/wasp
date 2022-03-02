@@ -217,3 +217,21 @@ func viewMapOfMapsValue(ctx wasmlib.ScViewContext, f *MapOfMapsValueContext) {
 	key := f.Params.Key().Value()
 	f.Results.Value().SetValue(myMap.GetString(key).Value())
 }
+
+func funcArrayOfMapsSet(ctx wasmlib.ScFuncContext, f *ArrayOfMapsSetContext) {
+	index := f.Params.Index().Value()
+	value := f.Params.Value().Value()
+	key := f.Params.Key().Value()
+	mmap := f.State.StringArrayOfMaps().GetStringMap(index)
+	mmap.GetString(key).SetValue(value)
+}
+
+func funcArrayOfMapsClear(ctx wasmlib.ScFuncContext, f *ArrayOfMapsClearContext) {
+}
+
+func viewArrayOfMapsValue(ctx wasmlib.ScViewContext, f *ArrayOfMapsValueContext) {
+	index := f.Params.Index().Value()
+	key := f.Params.Key().Value()
+	mmap := f.State.StringArrayOfMaps().GetStringMap(index)
+	f.Results.Value().SetValue(mmap.GetString(key).Value())
+}

@@ -57,6 +57,22 @@ func (s MutableArrayOfArraysValueResults) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }
 
+type ImmutableArrayOfMapsValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfMapsValueResults) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
+}
+
+type MutableArrayOfMapsValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfMapsValueResults) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
+}
+
 type ImmutableBlockRecordResults struct {
 	proxy wasmtypes.Proxy
 }

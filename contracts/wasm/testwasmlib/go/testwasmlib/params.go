@@ -65,6 +65,38 @@ func (s MutableArrayOfArraysSetParams) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
+type ImmutableArrayOfMapsSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfMapsSetParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableArrayOfMapsSetParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+func (s ImmutableArrayOfMapsSetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableArrayOfMapsSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfMapsSetParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableArrayOfMapsSetParams) Key() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
+}
+
+func (s MutableArrayOfMapsSetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
 type ImmutableMapOfArraysAppendParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -413,6 +445,30 @@ func (s MutableArrayOfArraysValueParams) Index0() wasmtypes.ScMutableUint32 {
 
 func (s MutableArrayOfArraysValueParams) Index1() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+type ImmutableArrayOfMapsValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfMapsValueParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableArrayOfMapsValueParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+type MutableArrayOfMapsValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfMapsValueParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableArrayOfMapsValueParams) Key() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
 }
 
 type ImmutableBlockRecordParams struct {

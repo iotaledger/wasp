@@ -316,7 +316,7 @@ func TestArraySet(t *testing.T) {
 	as := testwasmlib.ScFuncs.MapOfArraysSet(ctx)
 	as.Params.Name().SetValue("bands")
 	as.Params.Index().SetValue(0)
-	as.Params.Value().SetValue("ChthoniC")
+	as.Params.Value().SetValue("Collage")
 	as.Func.Post()
 	require.NoError(t, ctx.Err)
 
@@ -335,7 +335,7 @@ func TestArraySet(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	value = av.Results.Value()
 	require.True(t, value.Exists())
-	require.EqualValues(t, "ChthoniC", value.Value())
+	require.EqualValues(t, "Collage", value.Value())
 
 	av = testwasmlib.ScFuncs.MapOfArraysValue(ctx)
 	av.Params.Name().SetValue("bands")
@@ -381,158 +381,6 @@ func TestInvalidIndexInGetMapOfArraysElt(t *testing.T) {
 	av.Params.Index().SetValue(100)
 	av.Func.Call()
 	require.Equal(t, "viewcontext: panic in VM: invalid index", ctx.Err.Error())
-}
-
-func TestMapOfMapsClear(t *testing.T) {
-	// test reproduces a problem that needs fixing
-	t.SkipNow()
-
-	ctx := setupTest(t)
-
-	as := testwasmlib.ScFuncs.MapOfMapsSet(ctx)
-	as.Params.Name().SetValue("albums")
-	as.Params.Key().SetValue("Simple Minds")
-	as.Params.Value().SetValue("New Gold Dream")
-	as.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
-	as.Params.Name().SetValue("albums")
-	as.Params.Key().SetValue("Dire Straits")
-	as.Params.Value().SetValue("Calling Elvis")
-	as.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
-	as.Params.Name().SetValue("albums")
-	as.Params.Key().SetValue("ELO")
-	as.Params.Value().SetValue("Mr. Blue Sky")
-	as.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	av := testwasmlib.ScFuncs.MapOfMapsValue(ctx)
-	av.Params.Name().SetValue("albums")
-	av.Params.Key().SetValue("Dire Straits")
-	av.Func.Call()
-	require.NoError(t, ctx.Err)
-	value := av.Results.Value()
-	require.True(t, value.Exists())
-	require.EqualValues(t, "Calling Elvis", value.Value())
-
-	ac := testwasmlib.ScFuncs.MapOfMapsClear(ctx)
-	ac.Params.Name().SetValue("albums")
-	ac.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	av = testwasmlib.ScFuncs.MapOfMapsValue(ctx)
-	av.Params.Name().SetValue("albums")
-	av.Params.Key().SetValue("Dire Straits")
-	av.Func.Call()
-	require.NoError(t, ctx.Err)
-	require.EqualValues(t, "", value.Value())
-}
-
-func TestTakeAllowance(t *testing.T) {
-	ctx := setupTest(t)
-	bal := ctx.Balances()
-
-	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	f.Func.TransferIotas(1234).Post()
-	require.NoError(t, ctx.Err)
-
-	bal.Account += 1234
-	bal.Chain += ctx.GasFee
-	bal.Originator -= ctx.GasFee
-	bal.VerifyBalances(t)
-
-	g := testwasmlib.ScFuncs.TakeBalance(ctx)
-	g.Func.Post()
-	require.NoError(t, ctx.Err)
-	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
-
-	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
-	bal.VerifyBalances(t)
-
-	v := testwasmlib.ScFuncs.IotaBalance(ctx)
-	v.Func.Call()
-	require.NoError(t, ctx.Err)
-	ctx.Balances()
-	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
-
-	bal.VerifyBalances(t)
-}
-
-func TestTakeNoAllowance(t *testing.T) {
-	ctx := setupTest(t)
-	bal := ctx.Balances()
-
-	// FuncParamTypes without params does nothing to SC balance
-	// because it does not take the allowance
-	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	f.Func.TransferIotas(1234).Post()
-	require.NoError(t, ctx.Err)
-	ctx.Balances()
-
-	bal.Chain += ctx.GasFee
-	bal.Originator += 1234 - ctx.GasFee
-	bal.VerifyBalances(t)
-
-	g := testwasmlib.ScFuncs.TakeBalance(ctx)
-	g.Func.Post()
-	require.NoError(t, ctx.Err)
-	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
-
-	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
-	bal.VerifyBalances(t)
-
-	v := testwasmlib.ScFuncs.IotaBalance(ctx)
-	v.Func.Call()
-	require.NoError(t, ctx.Err)
-	ctx.Balances()
-	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
-
-	bal.VerifyBalances(t)
-}
-
-func TestRandom(t *testing.T) {
-	ctx := setupTest(t)
-
-	f := testwasmlib.ScFuncs.Random(ctx)
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	v := testwasmlib.ScFuncs.GetRandom(ctx)
-	v.Func.Call()
-	require.NoError(t, ctx.Err)
-	random := v.Results.Random().Value()
-	require.True(t, random < 1000)
-	fmt.Printf("Random value: %d\n", random)
-}
-
-func TestMultiRandom(t *testing.T) {
-	ctx := setupTest(t)
-
-	numbers := make([]uint64, 0)
-	for i := 0; i < 10; i++ {
-		f := testwasmlib.ScFuncs.Random(ctx)
-		f.Func.Post()
-		require.NoError(t, ctx.Err)
-
-		v := testwasmlib.ScFuncs.GetRandom(ctx)
-		v.Func.Call()
-		require.NoError(t, ctx.Err)
-		random := v.Results.Random().Value()
-		require.True(t, random < 1000)
-		numbers = append(numbers, random)
-	}
-
-	for _, number := range numbers {
-		fmt.Printf("Random value: %d\n", number)
-	}
 }
 
 func TestArrayOfArraysAppend(t *testing.T) {
@@ -694,4 +542,266 @@ func TestArrayOfArraysSet(t *testing.T) {
 	aav.Params.Index1().SetValue(1)
 	aav.Func.Call()
 	require.EqualValues(t, "moon", aav.Results.Value().Value())
+}
+
+func TestMapOfMapsClear(t *testing.T) {
+	// test reproduces a problem that needs fixing
+	t.SkipNow()
+
+	ctx := setupTest(t)
+
+	as := testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Simple Minds")
+	as.Params.Value().SetValue("New Gold Dream")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Dire Straits")
+	as.Params.Value().SetValue("Calling Elvis")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("ELO")
+	as.Params.Value().SetValue("Mr. Blue Sky")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av := testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.Value()
+	require.True(t, value.Exists())
+	require.EqualValues(t, "Calling Elvis", value.Value())
+
+	ac := testwasmlib.ScFuncs.MapOfMapsClear(ctx)
+	ac.Params.Name().SetValue("albums")
+	ac.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, "", value.Value())
+}
+
+func TestMapOfMapsSet(t *testing.T) {
+	ctx := setupTest(t)
+
+	as := testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Simple Minds")
+	as.Params.Value().SetValue("New Gold Dream")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Dire Straits")
+	as.Params.Value().SetValue("Calling Elvis")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("ELO")
+	as.Params.Value().SetValue("Mr. Blue Sky")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av := testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.Value()
+	require.True(t, value.Exists())
+	require.EqualValues(t, "Calling Elvis", value.Value())
+
+	av = testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Simple Minds")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.True(t, value.Exists())
+	require.EqualValues(t, "New Gold Dream", av.Results.Value().Value())
+
+	av = testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("ELO")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.True(t, value.Exists())
+	require.EqualValues(t, "Mr. Blue Sky", av.Results.Value().Value())
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Simple Minds")
+	as.Params.Value().SetValue("Life in a Day")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Simple Minds")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.True(t, value.Exists())
+	require.EqualValues(t, "Life in a Day", av.Results.Value().Value())
+}
+func TestArrayOfMapsClear(t *testing.T) {
+	ctx := setupTest(t)
+
+	as := testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Simple Minds")
+	as.Params.Value().SetValue("New Gold Dream")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Dire Straits")
+	as.Params.Value().SetValue("Calling Elvis")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("ELO")
+	as.Params.Value().SetValue("Mr. Blue Sky")
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av := testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.Value()
+	require.True(t, value.Exists())
+	require.EqualValues(t, "Calling Elvis", value.Value())
+
+	// ac := testwasmlib.ScFuncs.MapOfMapsClear(ctx)
+	// ac.Params.Name().SetValue("albums")
+	// ac.Func.Post()
+	// require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapOfMapsValue(ctx)
+	av.Params.Name().SetValue("albums")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, "", value.Value())
+}
+
+func TestTakeAllowance(t *testing.T) {
+	ctx := setupTest(t)
+	bal := ctx.Balances()
+
+	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
+	f.Func.TransferIotas(1234).Post()
+	require.NoError(t, ctx.Err)
+
+	bal.Account += 1234
+	bal.Chain += ctx.GasFee
+	bal.Originator -= ctx.GasFee
+	bal.VerifyBalances(t)
+
+	g := testwasmlib.ScFuncs.TakeBalance(ctx)
+	g.Func.Post()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
+
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
+
+	v := testwasmlib.ScFuncs.IotaBalance(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	ctx.Balances()
+	require.True(t, v.Results.Iotas().Exists())
+	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
+
+	bal.VerifyBalances(t)
+}
+
+func TestTakeNoAllowance(t *testing.T) {
+	ctx := setupTest(t)
+	bal := ctx.Balances()
+
+	// FuncParamTypes without params does nothing to SC balance
+	// because it does not take the allowance
+	f := testwasmlib.ScFuncs.ParamTypes(ctx)
+	f.Func.TransferIotas(1234).Post()
+	require.NoError(t, ctx.Err)
+	ctx.Balances()
+
+	bal.Chain += ctx.GasFee
+	bal.Originator += 1234 - ctx.GasFee
+	bal.VerifyBalances(t)
+
+	g := testwasmlib.ScFuncs.TakeBalance(ctx)
+	g.Func.Post()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
+
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
+
+	v := testwasmlib.ScFuncs.IotaBalance(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	ctx.Balances()
+	require.True(t, v.Results.Iotas().Exists())
+	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
+
+	bal.VerifyBalances(t)
+}
+
+func TestRandom(t *testing.T) {
+	ctx := setupTest(t)
+
+	f := testwasmlib.ScFuncs.Random(ctx)
+	f.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	v := testwasmlib.ScFuncs.GetRandom(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	random := v.Results.Random().Value()
+	require.True(t, random < 1000)
+	fmt.Printf("Random value: %d\n", random)
+}
+
+func TestMultiRandom(t *testing.T) {
+	ctx := setupTest(t)
+
+	numbers := make([]uint64, 0)
+	for i := 0; i < 10; i++ {
+		f := testwasmlib.ScFuncs.Random(ctx)
+		f.Func.Post()
+		require.NoError(t, ctx.Err)
+
+		v := testwasmlib.ScFuncs.GetRandom(ctx)
+		v.Func.Call()
+		require.NoError(t, ctx.Err)
+		random := v.Results.Random().Value()
+		require.True(t, random < 1000)
+		numbers = append(numbers, random)
+	}
+
+	for _, number := range numbers {
+		fmt.Printf("Random value: %d\n", number)
+	}
 }
