@@ -1,9 +1,14 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package gotemplates
 
 var resultsGo = map[string]string{
 	// *******************************
 	"results.go": `
-$#emit goHeader
+$#emit goPackage
+
+$#emit importWasmTypes
 $#each func resultsFunc
 `,
 	// *******************************
@@ -24,7 +29,7 @@ $#set TypeName $mut$FuncName$+Results
 $#each result proxyContainers
 
 type $TypeName struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 $#each result proxyMethods
 `,

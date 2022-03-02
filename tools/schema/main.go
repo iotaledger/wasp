@@ -114,13 +114,21 @@ func generateSchema(file *os.File) error {
 		s.SchemaTime = info.ModTime()
 
 		// also force regeneration when schema tool itself is newer
-		info, err = os.Stat(os.Args[0])
+		exe, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		info, err = os.Stat(exe)
 		if err != nil {
 			return err
 		}
 		if info.ModTime().After(s.SchemaTime) {
 			s.SchemaTime = info.ModTime()
 		}
+	}
+
+	if *flagClient && !*flagGo && !*flagTs {
+		return errors.New("missing language specification")
 	}
 
 	if *flagGo {

@@ -1,10 +1,13 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package tsclienttemplates
 
 var serviceTs = map[string]string{
 	// *******************************
 	"service.ts": `
-$#emit importWasmLib
-$#if core else importEvents
+$#emit importWasmClient
+$#if events importEvents
 
 $#each params constArg
 
@@ -16,16 +19,11 @@ $#each func funcStruct
 export class $PkgName$+Service extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-$#set eventHandlers events.eventHandlers
-$#if core noEventHandlers
-		super(cl, 0x$hscName, $eventHandlers);
+		super(cl, 0x$hscName);
 	}
+$#if events newEventHandler
 $#each func serviceFunction
 }
-`,
-	// *******************************
-	"noEventHandlers": `
-$#set eventHandlers new Map()
 `,
 	// *******************************
 	"constArg": `
@@ -34,6 +32,13 @@ const Arg$FldName = "$fldAlias";
 	// *******************************
 	"constRes": `
 const Res$FldName = "$fldAlias";
+`,
+	// *******************************
+	"newEventHandler": `
+
+	public newEventHandler(): events.$PkgName$+Events {
+		return new events.$PkgName$+Events();
+	}
 `,
 	// *******************************
 	"funcStruct": `
@@ -113,7 +118,11 @@ $#each result callResultGetter
 `,
 	// *******************************
 	"callResultGetter": `
-$#if map callResultGetterMap callResultGetterBasic
+$#if map callResultGetterMap callResultGetter2
+`,
+	// *******************************
+	"callResultGetter2": `
+$#if basetype callResultGetterBasic callResultGetterStruct
 `,
 	// *******************************
 	"callResultGetterMap": `
@@ -121,7 +130,7 @@ $#if map callResultGetterMap callResultGetterBasic
 	$fldName(): Map<$fldKeyLangType, $fldLangType> {
 		const res = new Map<$fldKeyLangType, $fldLangType>();
 		this.forEach((key, val) => {
-			res.set(this.to$fldMapKey(key), this.to$FldType(val));
+			res.set(this.to$FldMapKey(key), this.to$FldType(val));
 		});
 		return res;
 	}
@@ -132,6 +141,13 @@ $#if mandatory else callResultOptional
 
 	$fldName(): $fldLangType {
 		return this.to$FldType(this.get(Res$FldName));
+	}
+`,
+	// *******************************
+	"callResultGetterStruct": `
+
+	$fldName(): $FldType {
+		return $FldType.fromBytes(this.get(Res$FldName));
 	}
 `,
 	// *******************************

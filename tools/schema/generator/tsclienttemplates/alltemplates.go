@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package tsclienttemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
@@ -13,7 +16,6 @@ var Templates = []map[string]string{
 	config, // always first one
 	common,
 	eventsTs,
-	funcsTs,
 	indexTs,
 	serviceTs,
 }
@@ -103,7 +105,7 @@ import * as events from "./events"
 import * as service from "./service"
 `,
 	// *******************************
-	"importWasmLib": `
+	"importWasmClient": `
 import * as wasmclient from "wasmclient"
 `,
 }

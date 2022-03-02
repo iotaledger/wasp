@@ -7,484 +7,484 @@
 
 package testcore
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableCallOnChainParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableCallOnChainParams) HnameContract() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHnameContract))
+func (s ImmutableCallOnChainParams) HnameContract() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHnameContract))
 }
 
-func (s ImmutableCallOnChainParams) HnameEP() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHnameEP))
+func (s ImmutableCallOnChainParams) HnameEP() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHnameEP))
 }
 
-func (s ImmutableCallOnChainParams) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s ImmutableCallOnChainParams) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
 }
 
 type MutableCallOnChainParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableCallOnChainParams) HnameContract() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHnameContract))
+func (s MutableCallOnChainParams) HnameContract() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHnameContract))
 }
 
-func (s MutableCallOnChainParams) HnameEP() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHnameEP))
+func (s MutableCallOnChainParams) HnameEP() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHnameEP))
 }
 
-func (s MutableCallOnChainParams) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s MutableCallOnChainParams) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
 }
 
 type ImmutableCheckContextFromFullEPParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableCheckContextFromFullEPParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutableCheckContextFromFullEPParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s ImmutableCheckContextFromFullEPParams) Caller() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamCaller))
+func (s ImmutableCheckContextFromFullEPParams) Caller() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamCaller))
 }
 
-func (s ImmutableCheckContextFromFullEPParams) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s ImmutableCheckContextFromFullEPParams) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s ImmutableCheckContextFromFullEPParams) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamChainOwnerID))
+func (s ImmutableCheckContextFromFullEPParams) ChainOwnerID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwnerID))
 }
 
-func (s ImmutableCheckContextFromFullEPParams) ContractCreator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamContractCreator))
+func (s ImmutableCheckContextFromFullEPParams) ContractCreator() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamContractCreator))
 }
 
 type MutableCheckContextFromFullEPParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableCheckContextFromFullEPParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutableCheckContextFromFullEPParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s MutableCheckContextFromFullEPParams) Caller() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamCaller))
+func (s MutableCheckContextFromFullEPParams) Caller() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamCaller))
 }
 
-func (s MutableCheckContextFromFullEPParams) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s MutableCheckContextFromFullEPParams) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s MutableCheckContextFromFullEPParams) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamChainOwnerID))
+func (s MutableCheckContextFromFullEPParams) ChainOwnerID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwnerID))
 }
 
-func (s MutableCheckContextFromFullEPParams) ContractCreator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamContractCreator))
+func (s MutableCheckContextFromFullEPParams) ContractCreator() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamContractCreator))
 }
 
 type ImmutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableInitParams) Fail() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamFail])
+func (s ImmutableInitParams) Fail() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamFail))
 }
 
 type MutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableInitParams) Fail() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamFail])
+func (s MutableInitParams) Fail() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamFail))
 }
 
 type ImmutablePassTypesFullParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePassTypesFullParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s ImmutablePassTypesFullParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s ImmutablePassTypesFullParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutablePassTypesFullParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s ImmutablePassTypesFullParams) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s ImmutablePassTypesFullParams) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s ImmutablePassTypesFullParams) ContractID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamContractID))
+func (s ImmutablePassTypesFullParams) ContractID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamContractID))
 }
 
-func (s ImmutablePassTypesFullParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s ImmutablePassTypesFullParams) Hash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
 
-func (s ImmutablePassTypesFullParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHname))
+func (s ImmutablePassTypesFullParams) Hname() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
 }
 
-func (s ImmutablePassTypesFullParams) HnameZero() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHnameZero))
+func (s ImmutablePassTypesFullParams) HnameZero() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHnameZero))
 }
 
-func (s ImmutablePassTypesFullParams) Int64() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamInt64))
+func (s ImmutablePassTypesFullParams) Int64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamInt64))
 }
 
-func (s ImmutablePassTypesFullParams) Int64Zero() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamInt64Zero))
+func (s ImmutablePassTypesFullParams) Int64Zero() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamInt64Zero))
 }
 
-func (s ImmutablePassTypesFullParams) String() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamString))
+func (s ImmutablePassTypesFullParams) String() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamString))
 }
 
-func (s ImmutablePassTypesFullParams) StringZero() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamStringZero))
+func (s ImmutablePassTypesFullParams) StringZero() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamStringZero))
 }
 
 type MutablePassTypesFullParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutablePassTypesFullParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s MutablePassTypesFullParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s MutablePassTypesFullParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutablePassTypesFullParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s MutablePassTypesFullParams) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s MutablePassTypesFullParams) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s MutablePassTypesFullParams) ContractID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamContractID))
+func (s MutablePassTypesFullParams) ContractID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamContractID))
 }
 
-func (s MutablePassTypesFullParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s MutablePassTypesFullParams) Hash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }
 
-func (s MutablePassTypesFullParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHname))
+func (s MutablePassTypesFullParams) Hname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
 }
 
-func (s MutablePassTypesFullParams) HnameZero() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHnameZero))
+func (s MutablePassTypesFullParams) HnameZero() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHnameZero))
 }
 
-func (s MutablePassTypesFullParams) Int64() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamInt64))
+func (s MutablePassTypesFullParams) Int64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamInt64))
 }
 
-func (s MutablePassTypesFullParams) Int64Zero() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamInt64Zero))
+func (s MutablePassTypesFullParams) Int64Zero() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamInt64Zero))
 }
 
-func (s MutablePassTypesFullParams) String() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamString))
+func (s MutablePassTypesFullParams) String() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamString))
 }
 
-func (s MutablePassTypesFullParams) StringZero() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamStringZero))
+func (s MutablePassTypesFullParams) StringZero() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamStringZero))
 }
 
 type ImmutableRunRecursionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRunRecursionParams) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s ImmutableRunRecursionParams) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
 }
 
 type MutableRunRecursionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRunRecursionParams) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s MutableRunRecursionParams) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
 }
 
 type ImmutableSendToAddressParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSendToAddressParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s ImmutableSendToAddressParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
 type MutableSendToAddressParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableSendToAddressParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s MutableSendToAddressParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }
 
 type ImmutableSetIntParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSetIntParams) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s ImmutableSetIntParams) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
 }
 
-func (s ImmutableSetIntParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+func (s ImmutableSetIntParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
 type MutableSetIntParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableSetIntParams) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s MutableSetIntParams) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
 }
 
-func (s MutableSetIntParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
+func (s MutableSetIntParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
 type ImmutableSpawnParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSpawnParams) ProgHash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamProgHash))
+func (s ImmutableSpawnParams) ProgHash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamProgHash))
 }
 
 type MutableSpawnParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableSpawnParams) ProgHash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamProgHash))
+func (s MutableSpawnParams) ProgHash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamProgHash))
 }
 
 type ImmutableTestEventLogGenericDataParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestEventLogGenericDataParams) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamCounter))
+func (s ImmutableTestEventLogGenericDataParams) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamCounter))
 }
 
 type MutableTestEventLogGenericDataParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTestEventLogGenericDataParams) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamCounter))
+func (s MutableTestEventLogGenericDataParams) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamCounter))
 }
 
 type ImmutableWithdrawToChainParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableWithdrawToChainParams) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s ImmutableWithdrawToChainParams) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
 type MutableWithdrawToChainParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableWithdrawToChainParams) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s MutableWithdrawToChainParams) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
 type ImmutableCheckContextFromViewEPParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableCheckContextFromViewEPParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutableCheckContextFromViewEPParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s ImmutableCheckContextFromViewEPParams) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s ImmutableCheckContextFromViewEPParams) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s ImmutableCheckContextFromViewEPParams) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamChainOwnerID))
+func (s ImmutableCheckContextFromViewEPParams) ChainOwnerID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwnerID))
 }
 
-func (s ImmutableCheckContextFromViewEPParams) ContractCreator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamContractCreator))
+func (s ImmutableCheckContextFromViewEPParams) ContractCreator() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamContractCreator))
 }
 
 type MutableCheckContextFromViewEPParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableCheckContextFromViewEPParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutableCheckContextFromViewEPParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s MutableCheckContextFromViewEPParams) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s MutableCheckContextFromViewEPParams) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s MutableCheckContextFromViewEPParams) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamChainOwnerID))
+func (s MutableCheckContextFromViewEPParams) ChainOwnerID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwnerID))
 }
 
-func (s MutableCheckContextFromViewEPParams) ContractCreator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamContractCreator))
+func (s MutableCheckContextFromViewEPParams) ContractCreator() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamContractCreator))
 }
 
 type ImmutableFibonacciParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFibonacciParams) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s ImmutableFibonacciParams) IntValue() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
 }
 
 type MutableFibonacciParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableFibonacciParams) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamIntValue))
+func (s MutableFibonacciParams) IntValue() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
 }
 
 type ImmutableGetIntParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetIntParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+func (s ImmutableGetIntParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
 type MutableGetIntParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetIntParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
+func (s MutableGetIntParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
 type ImmutableGetStringValueParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetStringValueParams) VarName() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamVarName))
+func (s ImmutableGetStringValueParams) VarName() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamVarName))
 }
 
 type MutableGetStringValueParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetStringValueParams) VarName() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamVarName))
+func (s MutableGetStringValueParams) VarName() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamVarName))
 }
 
 type ImmutablePassTypesViewParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePassTypesViewParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s ImmutablePassTypesViewParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s ImmutablePassTypesViewParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutablePassTypesViewParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s ImmutablePassTypesViewParams) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s ImmutablePassTypesViewParams) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s ImmutablePassTypesViewParams) ContractID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamContractID))
+func (s ImmutablePassTypesViewParams) ContractID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamContractID))
 }
 
-func (s ImmutablePassTypesViewParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s ImmutablePassTypesViewParams) Hash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
 
-func (s ImmutablePassTypesViewParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHname))
+func (s ImmutablePassTypesViewParams) Hname() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
 }
 
-func (s ImmutablePassTypesViewParams) HnameZero() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHnameZero))
+func (s ImmutablePassTypesViewParams) HnameZero() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHnameZero))
 }
 
-func (s ImmutablePassTypesViewParams) Int64() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamInt64))
+func (s ImmutablePassTypesViewParams) Int64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamInt64))
 }
 
-func (s ImmutablePassTypesViewParams) Int64Zero() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamInt64Zero))
+func (s ImmutablePassTypesViewParams) Int64Zero() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamInt64Zero))
 }
 
-func (s ImmutablePassTypesViewParams) String() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamString))
+func (s ImmutablePassTypesViewParams) String() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamString))
 }
 
-func (s ImmutablePassTypesViewParams) StringZero() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamStringZero))
+func (s ImmutablePassTypesViewParams) StringZero() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamStringZero))
 }
 
 type MutablePassTypesViewParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutablePassTypesViewParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s MutablePassTypesViewParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s MutablePassTypesViewParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutablePassTypesViewParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s MutablePassTypesViewParams) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ParamChainID))
+func (s MutablePassTypesViewParams) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s MutablePassTypesViewParams) ContractID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamContractID))
+func (s MutablePassTypesViewParams) ContractID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamContractID))
 }
 
-func (s MutablePassTypesViewParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s MutablePassTypesViewParams) Hash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }
 
-func (s MutablePassTypesViewParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHname))
+func (s MutablePassTypesViewParams) Hname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
 }
 
-func (s MutablePassTypesViewParams) HnameZero() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHnameZero))
+func (s MutablePassTypesViewParams) HnameZero() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHnameZero))
 }
 
-func (s MutablePassTypesViewParams) Int64() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamInt64))
+func (s MutablePassTypesViewParams) Int64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamInt64))
 }
 
-func (s MutablePassTypesViewParams) Int64Zero() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamInt64Zero))
+func (s MutablePassTypesViewParams) Int64Zero() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamInt64Zero))
 }
 
-func (s MutablePassTypesViewParams) String() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamString))
+func (s MutablePassTypesViewParams) String() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamString))
 }
 
-func (s MutablePassTypesViewParams) StringZero() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamStringZero))
+func (s MutablePassTypesViewParams) StringZero() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamStringZero))
 }

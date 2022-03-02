@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package rstemplates
 
 var funcsRs = map[string]string{
@@ -6,8 +9,6 @@ var funcsRs = map[string]string{
 use wasmlib::*;
 
 use crate::*;
-$#if structs useStructs
-$#if typedefs useTypeDefs
 $#each func funcSignature
 `,
 	// *******************************

@@ -57,46 +57,46 @@ The testnet can be accessed via a series of endpoints that have been made availa
 
 You will need to initialize `wasp-cli` in order to create a seed that will be used to generate addresses.
 
-```
+```shell
 wasp-cli init
 ```
 
 Now we need to tell `wasp-cli` how to reach our GoShimmer node.
 
-```
+```shell
 wasp-cli set goshimmer.api https://api.goshimmer.sc.iota.org
 ```
 
 In order to deploy a smart contract you will need some funds. The wasp-cli tool makes this easy on our testnet. Run the following command to request some funds.
 
-```
+```shell
 wasp-cli request-funds
 ```
 
 We need to let _wasp-cli_ know how to reach _Wasp_ by configuring the API address.
 
-```
+```shell
 wasp-cli set wasp.0.api https://api.wasp.sc.iota.org
 ```
 
-Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the (chains)[https://wasp.sc.iota.org/chains] page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C`. 
+Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the [chains](https://wasp.sc.iota.org/chains) page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C`. 
 
 Use the ChainID to tell _wasp-cli_ which chain you want to interact with. 
 
-```
+```shell
 wasp-cli set chains.testchain jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C
 wasp-cli set chain testchain
 ```
 
 On the __testchain__ we have deployed a FairRoulette game that you can use to make sure your configuration is correct.
 
-```
+```shell
 wasp-cli --verbose chain post-request fairroulete placeBet string number int 2
 ```
 
 For simplicity, here is the full set of commands to configure _wasp-cli_.
 
-```
+```shell
 wasp-cli init
 wasp-cli set goshimmer.api https://api.goshimmer.sc.iota.org
 wasp-cli request-funds

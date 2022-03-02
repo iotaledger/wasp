@@ -5,164 +5,136 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Auction {
-    color         : wasmlib.ScColor = new wasmlib.ScColor(0);  // color of tokens for sale
-    creator       : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // issuer of start_auction transaction
-    deposit       : i64 = 0;  // deposit by auction owner to cover the SC fees
-    description   : string = "";  // auction description
-    duration      : i32 = 0;  // auction duration in minutes
-    highestBid    : i64 = 0;  // the current highest bid amount
-    highestBidder : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // the current highest bidder
-    minimumBid    : i64 = 0;  // minimum bid amount
-    numTokens     : i64 = 0;  // number of tokens for sale
-    ownerMargin   : i64 = 0;  // auction owner's margin in promilles
-    whenStarted   : i64 = 0;  // timestamp when auction started
+	color         : wasmtypes.ScColor = new wasmtypes.ScColor(0);  // color of tokens for sale
+	creator       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // issuer of start_auction transaction
+	deposit       : u64 = 0;  // deposit by auction owner to cover the SC fees
+	description   : string = "";  // auction description
+	duration      : u32 = 0;  // auction duration in minutes
+	highestBid    : u64 = 0;  // the current highest bid amount
+	highestBidder : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // the current highest bidder
+	minimumBid    : u64 = 0;  // minimum bid amount
+	numTokens     : u64 = 0;  // number of tokens for sale
+	ownerMargin   : u64 = 0;  // auction owner's margin in promilles
+	whenStarted   : u64 = 0;  // timestamp when auction started
 
-    static fromBytes(bytes: u8[]): Auction {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new Auction();
-        data.color         = decode.color();
-        data.creator       = decode.agentID();
-        data.deposit       = decode.int64();
-        data.description   = decode.string();
-        data.duration      = decode.int32();
-        data.highestBid    = decode.int64();
-        data.highestBidder = decode.agentID();
-        data.minimumBid    = decode.int64();
-        data.numTokens     = decode.int64();
-        data.ownerMargin   = decode.int64();
-        data.whenStarted   = decode.int64();
-        decode.close();
-        return data;
-    }
+	static fromBytes(buf: u8[]): Auction {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new Auction();
+		data.color         = wasmtypes.colorDecode(dec);
+		data.creator       = wasmtypes.agentIDDecode(dec);
+		data.deposit       = wasmtypes.uint64Decode(dec);
+		data.description   = wasmtypes.stringDecode(dec);
+		data.duration      = wasmtypes.uint32Decode(dec);
+		data.highestBid    = wasmtypes.uint64Decode(dec);
+		data.highestBidder = wasmtypes.agentIDDecode(dec);
+		data.minimumBid    = wasmtypes.uint64Decode(dec);
+		data.numTokens     = wasmtypes.uint64Decode(dec);
+		data.ownerMargin   = wasmtypes.uint64Decode(dec);
+		data.whenStarted   = wasmtypes.uint64Decode(dec);
+		dec.close();
+		return data;
+	}
 
-    bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    color(this.color).
-		    agentID(this.creator).
-		    int64(this.deposit).
-		    string(this.description).
-		    int32(this.duration).
-		    int64(this.highestBid).
-		    agentID(this.highestBidder).
-		    int64(this.minimumBid).
-		    int64(this.numTokens).
-		    int64(this.ownerMargin).
-		    int64(this.whenStarted).
-            data();
-    }
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.colorEncode(enc, this.color);
+		wasmtypes.agentIDEncode(enc, this.creator);
+		wasmtypes.uint64Encode(enc, this.deposit);
+		wasmtypes.stringEncode(enc, this.description);
+		wasmtypes.uint32Encode(enc, this.duration);
+		wasmtypes.uint64Encode(enc, this.highestBid);
+		wasmtypes.agentIDEncode(enc, this.highestBidder);
+		wasmtypes.uint64Encode(enc, this.minimumBid);
+		wasmtypes.uint64Encode(enc, this.numTokens);
+		wasmtypes.uint64Encode(enc, this.ownerMargin);
+		wasmtypes.uint64Encode(enc, this.whenStarted);
+		return enc.buf();
+	}
 }
 
-export class ImmutableAuction {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class ImmutableAuction extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
-
-    value(): Auction {
-        return Auction.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Auction {
+		return Auction.fromBytes(this.proxy.get());
+	}
 }
 
-export class MutableAuction {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class MutableAuction extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	delete(): void {
+		this.proxy.delete();
+	}
 
-    delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	setValue(value: Auction): void {
+		this.proxy.set(value.bytes());
+	}
 
-    setValue(value: Auction): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
-    }
-
-    value(): Auction {
-        return Auction.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Auction {
+		return Auction.fromBytes(this.proxy.get());
+	}
 }
 
 export class Bid {
-    amount    : i64 = 0;  // cumulative amount of bids from same bidder
-    index     : i32 = 0;  // index of bidder in bidder list
-    timestamp : i64 = 0;  // timestamp of most recent bid
+	amount    : u64 = 0;  // cumulative amount of bids from same bidder
+	index     : u32 = 0;  // index of bidder in bidder list
+	timestamp : u64 = 0;  // timestamp of most recent bid
 
-    static fromBytes(bytes: u8[]): Bid {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new Bid();
-        data.amount    = decode.int64();
-        data.index     = decode.int32();
-        data.timestamp = decode.int64();
-        decode.close();
-        return data;
-    }
+	static fromBytes(buf: u8[]): Bid {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new Bid();
+		data.amount    = wasmtypes.uint64Decode(dec);
+		data.index     = wasmtypes.uint32Decode(dec);
+		data.timestamp = wasmtypes.uint64Decode(dec);
+		dec.close();
+		return data;
+	}
 
-    bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    int64(this.amount).
-		    int32(this.index).
-		    int64(this.timestamp).
-            data();
-    }
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.uint64Encode(enc, this.amount);
+		wasmtypes.uint32Encode(enc, this.index);
+		wasmtypes.uint64Encode(enc, this.timestamp);
+		return enc.buf();
+	}
 }
 
-export class ImmutableBid {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class ImmutableBid extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
-
-    value(): Bid {
-        return Bid.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Bid {
+		return Bid.fromBytes(this.proxy.get());
+	}
 }
 
-export class MutableBid {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class MutableBid extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	delete(): void {
+		this.proxy.delete();
+	}
 
-    delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	setValue(value: Bid): void {
+		this.proxy.set(value.bytes());
+	}
 
-    setValue(value: Bid): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
-    }
-
-    value(): Bid {
-        return Bid.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Bid {
+		return Bid.fromBytes(this.proxy.get());
+	}
 }

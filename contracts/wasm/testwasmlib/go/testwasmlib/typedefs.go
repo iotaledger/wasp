@@ -7,60 +7,64 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableString) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfImmutableString) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableString) GetString(index int32) wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(a.objID, wasmlib.Key32(index))
+func (a ArrayOfImmutableString) GetString(index uint32) wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(a.proxy.Index(index))
 }
 
 type ImmutableStringArray = ArrayOfImmutableString
 
 type ArrayOfMutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableString) AppendString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(a.proxy.Append())
 }
 
 func (a ArrayOfMutableString) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableString) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfMutableString) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableString) GetString(index int32) wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(a.objID, wasmlib.Key32(index))
+func (a ArrayOfMutableString) GetString(index uint32) wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(a.proxy.Index(index))
 }
 
 type MutableStringArray = ArrayOfMutableString
 
 type MapStringToImmutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapStringToImmutableString) GetString(key string) wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToImmutableString) GetString(key string) wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableStringMap = MapStringToImmutableString
 
 type MapStringToMutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableString) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapStringToMutableString) GetString(key string) wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableStringMap = MapStringToMutableString

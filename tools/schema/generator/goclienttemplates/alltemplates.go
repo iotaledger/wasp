@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package goclienttemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
@@ -13,7 +16,6 @@ var Templates = []map[string]string{
 	config, // always first one
 	common,
 	eventsGo,
-	funcsGo,
 	serviceGo,
 }
 
@@ -163,6 +165,6 @@ var common = map[string]string{
 	"clientHeader": `
 package $package$+client
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 `,
 }

@@ -33,7 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/packages/vm/wasmproc"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"go.uber.org/zap/zapcore"
@@ -151,7 +151,7 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) 
 
 	processorConfig := processors.NewConfig()
 	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-		return wasmproc.GetProcessor(binary, log)
+		return wasmhost.GetProcessor(binary, log)
 	})
 	require.NoError(t, err)
 

@@ -9,29 +9,26 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetHelloWorldResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetHelloWorldResults {
     pub fn hello_world(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, RESULT_HELLO_WORLD.get_key_id())
+		ScImmutableString::new(self.proxy.root(RESULT_HELLO_WORLD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetHelloWorldResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetHelloWorldResults {
     pub fn hello_world(&self) -> ScMutableString {
-		ScMutableString::new(self.id, RESULT_HELLO_WORLD.get_key_id())
+		ScMutableString::new(self.proxy.root(RESULT_HELLO_WORLD))
 	}
 }

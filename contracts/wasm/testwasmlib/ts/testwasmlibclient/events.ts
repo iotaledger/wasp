@@ -6,18 +6,34 @@
 // Change the json schema instead
 
 import * as wasmclient from "wasmclient"
-import * as app from "./testwasmlib"
 
-export const eventHandlers: wasmclient.EventHandlers = new Map([
-	["testwasmlib.test", (msg: string[]) => app.onTestWasmLibTest(new EventTest(msg))],
+const testWasmLibHandlers = new Map<string, (evt: TestWasmLibEvents, msg: string[]) => void>([
+	["testwasmlib.test", (evt: TestWasmLibEvents, msg: string[]) => evt.test(new EventTest(msg))],
 ]);
+
+export class TestWasmLibEvents implements wasmclient.IEventHandler {
+/* eslint-disable @typescript-eslint/no-empty-function */
+	test: (evt: EventTest) => void = () => {};
+/* eslint-enable @typescript-eslint/no-empty-function */
+
+	public callHandler(topic: string, params: string[]): void {
+		const handler = testWasmLibHandlers.get(topic);
+		if (handler) {
+			handler(this, params);
+		}
+	}
+
+	public onTestWasmLibTest(handler: (evt: EventTest) => void): void {
+		this.test = handler;
+	}
+}
 
 export class EventTest extends wasmclient.Event {
 	public readonly address: wasmclient.Address;
 	public readonly name: wasmclient.String;
 	
 	public constructor(msg: string[]) {
-		super(msg)
+		super(msg);
 		this.address = this.nextAddress();
 		this.name = this.nextString();
 	}

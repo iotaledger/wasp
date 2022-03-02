@@ -7,24 +7,16 @@
 
 package timestamp
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutabletimestampState struct {
-	id int32
-}
-
-func (s ImmutabletimestampState) Timestamp() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateTimestamp))
+	proxy wasmtypes.Proxy
 }
 
 type MutabletimestampState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutabletimestampState) AsImmutable() ImmutabletimestampState {
 	return ImmutabletimestampState(s)
-}
-
-func (s MutabletimestampState) Timestamp() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateTimestamp))
 }

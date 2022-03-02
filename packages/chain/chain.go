@@ -64,6 +64,7 @@ type ChainRequests interface {
 type ChainMetrics interface {
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
+	GetConsensusPipeMetrics() ConsensusPipeMetrics
 }
 
 type Chain interface {
@@ -158,6 +159,7 @@ type Consensus interface {
 	GetStatusSnapshot() *ConsensusInfo
 	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
+	GetPipeMetrics() ConsensusPipeMetrics
 }
 
 type Mempool interface {
@@ -229,6 +231,17 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionPostedTime() time.Time
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
+	GetCurrentStateIndex() uint32
+}
+
+type ConsensusPipeMetrics interface {
+	GetEventStateTransitionMsgPipeSize() int
+	GetEventSignedResultMsgPipeSize() int
+	GetEventSignedResultAckMsgPipeSize() int
+	GetEventInclusionStateMsgPipeSize() int
+	GetEventACSMsgPipeSize() int
+	GetEventVMResultMsgPipeSize() int
+	GetEventTimerMsgPipeSize() int
 }
 
 type ReadyListRecord struct {

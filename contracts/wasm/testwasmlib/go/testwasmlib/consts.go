@@ -7,12 +7,12 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "testwasmlib"
 	ScDescription = "Exercise several aspects of WasmLib"
-	HScName       = wasmlib.ScHname(0x89703a45)
+	HScName       = wasmtypes.ScHname(0x89703a45)
 )
 
 const (
@@ -59,11 +59,10 @@ const (
 )
 
 const (
+	FuncArrayAppend  = "arrayAppend"
 	FuncArrayClear   = "arrayClear"
-	FuncArrayCreate  = "arrayCreate"
 	FuncArraySet     = "arraySet"
 	FuncMapClear     = "mapClear"
-	FuncMapCreate    = "mapCreate"
 	FuncMapSet       = "mapSet"
 	FuncParamTypes   = "paramTypes"
 	FuncRandom       = "random"
@@ -78,20 +77,19 @@ const (
 )
 
 const (
-	HFuncArrayClear   = wasmlib.ScHname(0x88021821)
-	HFuncArrayCreate  = wasmlib.ScHname(0x1ed5b23b)
-	HFuncArraySet     = wasmlib.ScHname(0x2c4150b3)
-	HFuncMapClear     = wasmlib.ScHname(0x027f215a)
-	HFuncMapCreate    = wasmlib.ScHname(0x6295d599)
-	HFuncMapSet       = wasmlib.ScHname(0xf2260404)
-	HFuncParamTypes   = wasmlib.ScHname(0x6921c4cd)
-	HFuncRandom       = wasmlib.ScHname(0xe86c97ca)
-	HFuncTriggerEvent = wasmlib.ScHname(0xd5438ac6)
-	HViewArrayLength  = wasmlib.ScHname(0x3a831021)
-	HViewArrayValue   = wasmlib.ScHname(0x662dbd81)
-	HViewBlockRecord  = wasmlib.ScHname(0xad13b2f8)
-	HViewBlockRecords = wasmlib.ScHname(0x16e249ea)
-	HViewGetRandom    = wasmlib.ScHname(0x46263045)
-	HViewIotaBalance  = wasmlib.ScHname(0x9d3920bd)
-	HViewMapValue     = wasmlib.ScHname(0x23149bef)
+	HFuncArrayAppend  = wasmtypes.ScHname(0x612f835f)
+	HFuncArrayClear   = wasmtypes.ScHname(0x88021821)
+	HFuncArraySet     = wasmtypes.ScHname(0x2c4150b3)
+	HFuncMapClear     = wasmtypes.ScHname(0x027f215a)
+	HFuncMapSet       = wasmtypes.ScHname(0xf2260404)
+	HFuncParamTypes   = wasmtypes.ScHname(0x6921c4cd)
+	HFuncRandom       = wasmtypes.ScHname(0xe86c97ca)
+	HFuncTriggerEvent = wasmtypes.ScHname(0xd5438ac6)
+	HViewArrayLength  = wasmtypes.ScHname(0x3a831021)
+	HViewArrayValue   = wasmtypes.ScHname(0x662dbd81)
+	HViewBlockRecord  = wasmtypes.ScHname(0xad13b2f8)
+	HViewBlockRecords = wasmtypes.ScHname(0x16e249ea)
+	HViewGetRandom    = wasmtypes.ScHname(0x46263045)
+	HViewIotaBalance  = wasmtypes.ScHname(0x9d3920bd)
+	HViewMapValue     = wasmtypes.ScHname(0x23149bef)
 )

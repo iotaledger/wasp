@@ -345,6 +345,7 @@ func (c *consensus) checkQuorum() {
 		// if it is not state controller rotation, sending message to state manager
 		// Otherwise state manager is not notified
 		c.writeToWAL()
+		c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
 		chainOutputID := chainOutput.ID()
 		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
 		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
@@ -679,7 +680,7 @@ func (c *consensus) resetWorkflow() {
 	c.consensusBatch = nil
 	c.contributors = nil
 	c.resultSigAck = c.resultSigAck[:0]
-	c.workflow = newWorkflowStatus(c.stateOutput != nil)
+	c.workflow = newWorkflowStatus(c.stateOutput != nil, c.workflow.stateIndex)
 	c.log.Debugf("Workflow reset")
 }
 

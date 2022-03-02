@@ -7,129 +7,122 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapHashToImmutableAgentID struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapHashToImmutableAgentID) GetAgentID(key wasmlib.ScHash) wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(m.objID, key.KeyID())
+func (m MapHashToImmutableAgentID) GetAgentID(key wasmtypes.ScHash) wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MapAgentIDToImmutableOperators struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableOperators) GetOperators(key wasmlib.ScAgentID) ImmutableOperators {
-	subID := wasmlib.GetObjectID(m.objID, key.KeyID(), wasmlib.TYPE_MAP)
-	return ImmutableOperators{objID: subID}
+func (m MapAgentIDToImmutableOperators) GetOperators(key wasmtypes.ScAgentID) ImmutableOperators {
+	return ImmutableOperators{proxy: m.proxy.Key(wasmtypes.AgentIDToBytes(key))}
 }
 
 type MapAgentIDToImmutableUint64 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableUint64) GetUint64(key wasmlib.ScAgentID) wasmlib.ScImmutableUint64 {
-	return wasmlib.NewScImmutableUint64(m.objID, key.KeyID())
+func (m MapAgentIDToImmutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MapHashToImmutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapHashToImmutableString) GetString(key wasmlib.ScHash) wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(m.objID, key.KeyID())
+func (m MapHashToImmutableString) GetString(key wasmtypes.ScHash) wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type ImmutableErc721State struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableErc721State) ApprovedAccounts() MapHashToImmutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedAccounts), wasmlib.TYPE_MAP)
-	return MapHashToImmutableAgentID{objID: mapID}
+	return MapHashToImmutableAgentID{proxy: s.proxy.Root(StateApprovedAccounts)}
 }
 
 func (s ImmutableErc721State) ApprovedOperators() MapAgentIDToImmutableOperators {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedOperators), wasmlib.TYPE_MAP)
-	return MapAgentIDToImmutableOperators{objID: mapID}
+	return MapAgentIDToImmutableOperators{proxy: s.proxy.Root(StateApprovedOperators)}
 }
 
 func (s ImmutableErc721State) Balances() MapAgentIDToImmutableUint64 {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBalances), wasmlib.TYPE_MAP)
-	return MapAgentIDToImmutableUint64{objID: mapID}
+	return MapAgentIDToImmutableUint64{proxy: s.proxy.Root(StateBalances)}
 }
 
-func (s ImmutableErc721State) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(StateName))
+func (s ImmutableErc721State) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(StateName))
 }
 
 func (s ImmutableErc721State) Owners() MapHashToImmutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateOwners), wasmlib.TYPE_MAP)
-	return MapHashToImmutableAgentID{objID: mapID}
+	return MapHashToImmutableAgentID{proxy: s.proxy.Root(StateOwners)}
 }
 
-func (s ImmutableErc721State) Symbol() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(StateSymbol))
+func (s ImmutableErc721State) Symbol() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(StateSymbol))
 }
 
 func (s ImmutableErc721State) TokenURIs() MapHashToImmutableString {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateTokenURIs), wasmlib.TYPE_MAP)
-	return MapHashToImmutableString{objID: mapID}
+	return MapHashToImmutableString{proxy: s.proxy.Root(StateTokenURIs)}
 }
 
 type MapHashToMutableAgentID struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapHashToMutableAgentID) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapHashToMutableAgentID) GetAgentID(key wasmlib.ScHash) wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(m.objID, key.KeyID())
+func (m MapHashToMutableAgentID) GetAgentID(key wasmtypes.ScHash) wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MapAgentIDToMutableOperators struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapAgentIDToMutableOperators) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableOperators) GetOperators(key wasmlib.ScAgentID) MutableOperators {
-	subID := wasmlib.GetObjectID(m.objID, key.KeyID(), wasmlib.TYPE_MAP)
-	return MutableOperators{objID: subID}
+func (m MapAgentIDToMutableOperators) GetOperators(key wasmtypes.ScAgentID) MutableOperators {
+	return MutableOperators{proxy: m.proxy.Key(wasmtypes.AgentIDToBytes(key))}
 }
 
 type MapAgentIDToMutableUint64 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapAgentIDToMutableUint64) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableUint64) GetUint64(key wasmlib.ScAgentID) wasmlib.ScMutableUint64 {
-	return wasmlib.NewScMutableUint64(m.objID, key.KeyID())
+func (m MapAgentIDToMutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MapHashToMutableString struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapHashToMutableString) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapHashToMutableString) GetString(key wasmlib.ScHash) wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(m.objID, key.KeyID())
+func (m MapHashToMutableString) GetString(key wasmtypes.ScHash) wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MutableErc721State struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableErc721State) AsImmutable() ImmutableErc721State {
@@ -137,34 +130,29 @@ func (s MutableErc721State) AsImmutable() ImmutableErc721State {
 }
 
 func (s MutableErc721State) ApprovedAccounts() MapHashToMutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedAccounts), wasmlib.TYPE_MAP)
-	return MapHashToMutableAgentID{objID: mapID}
+	return MapHashToMutableAgentID{proxy: s.proxy.Root(StateApprovedAccounts)}
 }
 
 func (s MutableErc721State) ApprovedOperators() MapAgentIDToMutableOperators {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedOperators), wasmlib.TYPE_MAP)
-	return MapAgentIDToMutableOperators{objID: mapID}
+	return MapAgentIDToMutableOperators{proxy: s.proxy.Root(StateApprovedOperators)}
 }
 
 func (s MutableErc721State) Balances() MapAgentIDToMutableUint64 {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBalances), wasmlib.TYPE_MAP)
-	return MapAgentIDToMutableUint64{objID: mapID}
+	return MapAgentIDToMutableUint64{proxy: s.proxy.Root(StateBalances)}
 }
 
-func (s MutableErc721State) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(StateName))
+func (s MutableErc721State) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(StateName))
 }
 
 func (s MutableErc721State) Owners() MapHashToMutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateOwners), wasmlib.TYPE_MAP)
-	return MapHashToMutableAgentID{objID: mapID}
+	return MapHashToMutableAgentID{proxy: s.proxy.Root(StateOwners)}
 }
 
-func (s MutableErc721State) Symbol() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(StateSymbol))
+func (s MutableErc721State) Symbol() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(StateSymbol))
 }
 
 func (s MutableErc721State) TokenURIs() MapHashToMutableString {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateTokenURIs), wasmlib.TYPE_MAP)
-	return MapHashToMutableString{objID: mapID}
+	return MapHashToMutableString{proxy: s.proxy.Root(StateTokenURIs)}
 }

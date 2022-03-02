@@ -7,55 +7,58 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableDonation struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableDonation) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfImmutableDonation) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableDonation) GetDonation(index int32) ImmutableDonation {
-	return ImmutableDonation{objID: a.objID, keyID: wasmlib.Key32(index)}
+func (a ArrayOfImmutableDonation) GetDonation(index uint32) ImmutableDonation {
+	return ImmutableDonation{proxy: a.proxy.Index(index)}
 }
 
 type ImmutableDonateWithFeedbackState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableDonateWithFeedbackState) Log() ArrayOfImmutableDonation {
-	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateLog), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfImmutableDonation{objID: arrID}
+	return ArrayOfImmutableDonation{proxy: s.proxy.Root(StateLog)}
 }
 
-func (s ImmutableDonateWithFeedbackState) MaxDonation() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateMaxDonation))
+func (s ImmutableDonateWithFeedbackState) MaxDonation() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateMaxDonation))
 }
 
-func (s ImmutableDonateWithFeedbackState) TotalDonation() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateTotalDonation))
+func (s ImmutableDonateWithFeedbackState) TotalDonation() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateTotalDonation))
 }
 
 type ArrayOfMutableDonation struct {
-	objID int32
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableDonation) AppendDonation() MutableDonation {
+	return MutableDonation{proxy: a.proxy.Append()}
 }
 
 func (a ArrayOfMutableDonation) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableDonation) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfMutableDonation) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableDonation) GetDonation(index int32) MutableDonation {
-	return MutableDonation{objID: a.objID, keyID: wasmlib.Key32(index)}
+func (a ArrayOfMutableDonation) GetDonation(index uint32) MutableDonation {
+	return MutableDonation{proxy: a.proxy.Index(index)}
 }
 
 type MutableDonateWithFeedbackState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableDonateWithFeedbackState) AsImmutable() ImmutableDonateWithFeedbackState {
@@ -63,14 +66,13 @@ func (s MutableDonateWithFeedbackState) AsImmutable() ImmutableDonateWithFeedbac
 }
 
 func (s MutableDonateWithFeedbackState) Log() ArrayOfMutableDonation {
-	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateLog), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfMutableDonation{objID: arrID}
+	return ArrayOfMutableDonation{proxy: s.proxy.Root(StateLog)}
 }
 
-func (s MutableDonateWithFeedbackState) MaxDonation() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateMaxDonation))
+func (s MutableDonateWithFeedbackState) MaxDonation() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateMaxDonation))
 }
 
-func (s MutableDonateWithFeedbackState) TotalDonation() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateTotalDonation))
+func (s MutableDonateWithFeedbackState) TotalDonation() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateTotalDonation))
 }

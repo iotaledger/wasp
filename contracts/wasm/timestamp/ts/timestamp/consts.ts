@@ -5,18 +5,16 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "timestamp";
 export const ScDescription = "Extremely simple timestamp server";
-export const HScName       = new wasmlib.ScHname(0x3988002e);
+export const HScName       = new wasmtypes.ScHname(0x3988002e);
 
 export const ResultTimestamp = "timestamp";
-
-export const StateTimestamp = "timestamp";
 
 export const FuncNow          = "now";
 export const ViewGetTimestamp = "getTimestamp";
 
-export const HFuncNow          = new wasmlib.ScHname(0xd73b7fc9);
-export const HViewGetTimestamp = new wasmlib.ScHname(0x40c6376a);
+export const HFuncNow          = new wasmtypes.ScHname(0xd73b7fc9);
+export const HViewGetTimestamp = new wasmtypes.ScHname(0x40c6376a);

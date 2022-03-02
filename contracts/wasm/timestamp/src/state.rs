@@ -9,33 +9,15 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutabletimestampState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
-impl ImmutabletimestampState {
-    pub fn timestamp(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_TIMESTAMP.get_key_id())
-	}
-}
-
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutabletimestampState {
-    pub(crate) id: i32,
-}
-
-impl MutabletimestampState {
-    pub fn as_immutable(&self) -> ImmutabletimestampState {
-		ImmutabletimestampState { id: self.id }
-	}
-
-    pub fn timestamp(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_TIMESTAMP.get_key_id())
-	}
+	pub(crate) proxy: Proxy,
 }

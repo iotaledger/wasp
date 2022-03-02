@@ -5,78 +5,64 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Donation {
-    amount    : i64 = 0;  // amount donated
-    donator   : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // who donated
-    error     : string = "";  // error to be reported to donator if anything goes wrong
-    feedback  : string = "";  // the feedback for the person donated to
-    timestamp : i64 = 0;  // when the donation took place
+	amount    : u64 = 0;  // amount donated
+	donator   : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // who donated
+	error     : string = "";  // error to be reported to donator if anything goes wrong
+	feedback  : string = "";  // the feedback for the person donated to
+	timestamp : u64 = 0;  // when the donation took place
 
-    static fromBytes(bytes: u8[]): Donation {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new Donation();
-        data.amount    = decode.int64();
-        data.donator   = decode.agentID();
-        data.error     = decode.string();
-        data.feedback  = decode.string();
-        data.timestamp = decode.int64();
-        decode.close();
-        return data;
-    }
+	static fromBytes(buf: u8[]): Donation {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new Donation();
+		data.amount    = wasmtypes.uint64Decode(dec);
+		data.donator   = wasmtypes.agentIDDecode(dec);
+		data.error     = wasmtypes.stringDecode(dec);
+		data.feedback  = wasmtypes.stringDecode(dec);
+		data.timestamp = wasmtypes.uint64Decode(dec);
+		dec.close();
+		return data;
+	}
 
-    bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    int64(this.amount).
-		    agentID(this.donator).
-		    string(this.error).
-		    string(this.feedback).
-		    int64(this.timestamp).
-            data();
-    }
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.uint64Encode(enc, this.amount);
+		wasmtypes.agentIDEncode(enc, this.donator);
+		wasmtypes.stringEncode(enc, this.error);
+		wasmtypes.stringEncode(enc, this.feedback);
+		wasmtypes.uint64Encode(enc, this.timestamp);
+		return enc.buf();
+	}
 }
 
-export class ImmutableDonation {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class ImmutableDonation extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
-
-    value(): Donation {
-        return Donation.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Donation {
+		return Donation.fromBytes(this.proxy.get());
+	}
 }
 
-export class MutableDonation {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class MutableDonation extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	delete(): void {
+		this.proxy.delete();
+	}
 
-    delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	setValue(value: Donation): void {
+		this.proxy.set(value.bytes());
+	}
 
-    setValue(value: Donation): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
-    }
-
-    value(): Donation {
-        return Donation.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Donation {
+		return Donation.fromBytes(this.proxy.get());
+	}
 }

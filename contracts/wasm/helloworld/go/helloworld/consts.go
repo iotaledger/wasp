@@ -7,12 +7,12 @@
 
 package helloworld
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "helloworld"
 	ScDescription = "The ubiquitous hello world demo"
-	HScName       = wasmlib.ScHname(0x0683223c)
+	HScName       = wasmtypes.ScHname(0x0683223c)
 )
 
 const (
@@ -25,6 +25,6 @@ const (
 )
 
 const (
-	HFuncHelloWorld    = wasmlib.ScHname(0x9d042e65)
-	HViewGetHelloWorld = wasmlib.ScHname(0x210439ce)
+	HFuncHelloWorld    = wasmtypes.ScHname(0x9d042e65)
+	HViewGetHelloWorld = wasmtypes.ScHname(0x210439ce)
 )

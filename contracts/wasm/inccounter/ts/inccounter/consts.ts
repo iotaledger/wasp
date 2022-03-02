@@ -5,18 +5,26 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "inccounter";
 export const ScDescription = "";
-export const HScName       = new wasmlib.ScHname(0xaf2438e9);
+export const HScName       = new wasmtypes.ScHname(0xaf2438e9);
 
 export const ParamCounter    = "counter";
 export const ParamDelay      = "delay";
 export const ParamDummy      = "dummy";
+export const ParamNi64       = "ni64";
+export const ParamNu64       = "nu64";
 export const ParamNumRepeats = "numRepeats";
 
+export const ResultBuf     = "buf";
 export const ResultCounter = "counter";
+export const ResultNi64    = "ni64";
+export const ResultNu64    = "nu64";
+export const ResultStr     = "str";
+export const ResultXi64    = "xi64";
+export const ResultXu64    = "xu64";
 
 export const StateCounter    = "counter";
 export const StateNumRepeats = "numRepeats";
@@ -32,21 +40,27 @@ export const FuncLocalStatePost         = "localStatePost";
 export const FuncLocalStateSandboxCall  = "localStateSandboxCall";
 export const FuncPostIncrement          = "postIncrement";
 export const FuncRepeatMany             = "repeatMany";
-export const FuncTestLeb128             = "testLeb128";
+export const FuncTestVliCodec           = "testVliCodec";
+export const FuncTestVluCodec           = "testVluCodec";
 export const FuncWhenMustIncrement      = "whenMustIncrement";
 export const ViewGetCounter             = "getCounter";
+export const ViewGetVli                 = "getVli";
+export const ViewGetVlu                 = "getVlu";
 
-export const HFuncCallIncrement          = new wasmlib.ScHname(0xeb5dcacd);
-export const HFuncCallIncrementRecurse5x = new wasmlib.ScHname(0x8749fbff);
-export const HFuncEndlessLoop            = new wasmlib.ScHname(0x365f0929);
-export const HFuncIncrement              = new wasmlib.ScHname(0xd351bd12);
-export const HFuncIncrementWithDelay     = new wasmlib.ScHname(0xa235bba7);
-export const HFuncInit                   = new wasmlib.ScHname(0x1f44d644);
-export const HFuncLocalStateInternalCall = new wasmlib.ScHname(0xecfc5d33);
-export const HFuncLocalStatePost         = new wasmlib.ScHname(0x3fd54d13);
-export const HFuncLocalStateSandboxCall  = new wasmlib.ScHname(0x7bd22c53);
-export const HFuncPostIncrement          = new wasmlib.ScHname(0x81c772f5);
-export const HFuncRepeatMany             = new wasmlib.ScHname(0x4ff450d3);
-export const HFuncTestLeb128             = new wasmlib.ScHname(0xd8364cb9);
-export const HFuncWhenMustIncrement      = new wasmlib.ScHname(0xb4c3e7a6);
-export const HViewGetCounter             = new wasmlib.ScHname(0xb423e607);
+export const HFuncCallIncrement          = new wasmtypes.ScHname(0xeb5dcacd);
+export const HFuncCallIncrementRecurse5x = new wasmtypes.ScHname(0x8749fbff);
+export const HFuncEndlessLoop            = new wasmtypes.ScHname(0x365f0929);
+export const HFuncIncrement              = new wasmtypes.ScHname(0xd351bd12);
+export const HFuncIncrementWithDelay     = new wasmtypes.ScHname(0xa235bba7);
+export const HFuncInit                   = new wasmtypes.ScHname(0x1f44d644);
+export const HFuncLocalStateInternalCall = new wasmtypes.ScHname(0xecfc5d33);
+export const HFuncLocalStatePost         = new wasmtypes.ScHname(0x3fd54d13);
+export const HFuncLocalStateSandboxCall  = new wasmtypes.ScHname(0x7bd22c53);
+export const HFuncPostIncrement          = new wasmtypes.ScHname(0x81c772f5);
+export const HFuncRepeatMany             = new wasmtypes.ScHname(0x4ff450d3);
+export const HFuncTestVliCodec           = new wasmtypes.ScHname(0xd5356012);
+export const HFuncTestVluCodec           = new wasmtypes.ScHname(0x9f7f63e6);
+export const HFuncWhenMustIncrement      = new wasmtypes.ScHname(0xb4c3e7a6);
+export const HViewGetCounter             = new wasmtypes.ScHname(0xb423e607);
+export const HViewGetVli                 = new wasmtypes.ScHname(0x0ee16f89);
+export const HViewGetVlu                 = new wasmtypes.ScHname(0x54d624e6);

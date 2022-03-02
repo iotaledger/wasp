@@ -5,72 +5,58 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Bet {
-    amount : i64 = 0; 
-    better : wasmlib.ScAgentID = new wasmlib.ScAgentID(); 
-    number : i64 = 0; 
+	amount : u64 = 0; 
+	better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
+	number : u16 = 0; 
 
-    static fromBytes(bytes: u8[]): Bet {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new Bet();
-        data.amount = decode.int64();
-        data.better = decode.agentID();
-        data.number = decode.int64();
-        decode.close();
-        return data;
-    }
+	static fromBytes(buf: u8[]): Bet {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new Bet();
+		data.amount = wasmtypes.uint64Decode(dec);
+		data.better = wasmtypes.agentIDDecode(dec);
+		data.number = wasmtypes.uint16Decode(dec);
+		dec.close();
+		return data;
+	}
 
-    bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    int64(this.amount).
-		    agentID(this.better).
-		    int64(this.number).
-            data();
-    }
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.uint64Encode(enc, this.amount);
+		wasmtypes.agentIDEncode(enc, this.better);
+		wasmtypes.uint16Encode(enc, this.number);
+		return enc.buf();
+	}
 }
 
-export class ImmutableBet {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class ImmutableBet extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
-
-    value(): Bet {
-        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Bet {
+		return Bet.fromBytes(this.proxy.get());
+	}
 }
 
-export class MutableBet {
-    objID: i32;
-    keyID: wasmlib.Key32;
+export class MutableBet extends wasmtypes.ScProxy {
 
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+	delete(): void {
+		this.proxy.delete();
+	}
 
-    delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	exists(): bool {
+		return this.proxy.exists();
+	}
 
-    exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
-    }
+	setValue(value: Bet): void {
+		this.proxy.set(value.bytes());
+	}
 
-    setValue(value: Bet): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
-    }
-
-    value(): Bet {
-        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
-    }
+	value(): Bet {
+		return Bet.fromBytes(this.proxy.get());
+	}
 }

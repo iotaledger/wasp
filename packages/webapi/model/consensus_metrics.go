@@ -25,6 +25,8 @@ type ConsensusWorkflowStatus struct {
 	TimeTransactionPosted    time.Time `swagger:"desc(Shows when transaction was last posted to L1 in current consensus iteration)"`
 	TimeTransactionSeen      time.Time `swagger:"desc(Shows when algorithm last noted that transaction hadd been seen by L1 in current consensus iteration)"`
 	TimeCompleted            time.Time `swagger:"desc(Shows when algorithm was last completed in current consensus iteration)"`
+
+	CurrentStateIndex uint32 `swagger:"desc(Shows current state index of the consensus)"`
 }
 
 func NewConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *ConsensusWorkflowStatus {
@@ -47,5 +49,29 @@ func NewConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *Consensus
 		TimeTransactionPosted:    status.GetTransactionPostedTime(),
 		TimeTransactionSeen:      status.GetTransactionSeenTime(),
 		TimeCompleted:            status.GetCompletedTime(),
+
+		CurrentStateIndex: status.GetCurrentStateIndex(),
+	}
+}
+
+type ConsensusPipeMetrics struct {
+	EventStateTransitionMsgPipeSize int
+	EventSignedResultMsgPipeSize    int
+	EventSignedResultAckMsgPipeSize int
+	EventInclusionStateMsgPipeSize  int
+	EventACSMsgPipeSize             int
+	EventVMResultMsgPipeSize        int
+	EventTimerMsgPipeSize           int
+}
+
+func NewConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {
+	return &ConsensusPipeMetrics{
+		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
+		EventSignedResultMsgPipeSize:    pipeMetrics.GetEventSignedResultMsgPipeSize(),
+		EventSignedResultAckMsgPipeSize: pipeMetrics.GetEventSignedResultAckMsgPipeSize(),
+		EventInclusionStateMsgPipeSize:  pipeMetrics.GetEventInclusionStateMsgPipeSize(),
+		EventACSMsgPipeSize:             pipeMetrics.GetEventACSMsgPipeSize(),
+		EventVMResultMsgPipeSize:        pipeMetrics.GetEventVMResultMsgPipeSize(),
+		EventTimerMsgPipeSize:           pipeMetrics.GetEventTimerMsgPipeSize(),
 	}
 }

@@ -1,31 +1,32 @@
 ---
-description:  How to run the preconfigured Docker setup. 
+description: How to run the preconfigured Docker setup.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-- ISCP
-- Smart Contracts
-- Running a node
-- docker
-- image
-- build
-- configure
-- arguments
-- GoShimmer
+  - ISCP
+  - Smart Contracts
+  - Running a node
+  - docker
+  - image
+  - build
+  - configure
+  - arguments
+  - GoShimmer
 ---
+
 # Preconfigured Development Docker setup
 
-This page describes the usage of the preconfigured developer Docker setup. 
+This page describes the usage of the preconfigured developer Docker setup.
 
 ## Introduction
 
-To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a preconfigured Wasp and GoShimmer (v0.7.7) node, that are connected with each other - ready to run out of the box.
+To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp and GoShimmer (v0.7.7) node, that are connected with each other - ready to run out of the box.
 
 ## Running the setup
 
-Checkout the project, switch to 'develop' and start with docker-compose:
+Checkout the project and start with docker-compose:
 
-```
-git clone -b develop https://github.com/iotaledger/wasp.git
+```shell
+git clone https://github.com/iotaledger/wasp.git
 cd tools/devnet
 docker-compose up
 ```
@@ -38,10 +39,10 @@ Wasp is configured to allow any connection coming from wasp-cli. This is fine fo
 
 Besides this, everything should simply work as expected. Faucet requests will be handled accordingly, you will be able to deploy and run smart contracts. All useful ports such as:
 
-* Wasp Dashboard (7000)
-* Wasp API (9090)
-* GoShimmer Dashboard (8081)
-* GoShimmer API (8080)
+- Wasp Dashboard (7000)
+- Wasp API (9090)
+- GoShimmer Dashboard (8081)
+- GoShimmer API (8080)
 
 are available to the local machine.
 
@@ -49,7 +50,7 @@ are available to the local machine.
 
 As all ports are locally available, this `wasp-cli.json` configuration is to be used:
 
-```
+```json
 {
   "goshimmer": {
     "api": "127.0.0.1:8080",

@@ -63,6 +63,10 @@ func GetChainConsensusWorkflowStatus(chainID string) string {
 	return "/adm/chain/" + chainID + "/consensus/status"
 }
 
+func GetChainConsensusPipeMetrics(chainID string) string {
+	return "/adm/chain/" + chainID + "/consensus/metrics/pipe"
+}
+
 func DKSharesPost() string {
 	return "/adm/dks"
 }

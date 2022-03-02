@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.32.0
+	github.com/bytecodealliance/wasmtime-go v0.34.0
 	github.com/ethereum/go-ethereum v1.10.10
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e
@@ -24,7 +24,7 @@ require (
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/second-state/WasmEdge-go v0.9.0 // indirect
+	github.com/second-state/WasmEdge-go v0.9.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0

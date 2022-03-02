@@ -7,97 +7,90 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapColorToImmutableAuction struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableAuction) GetAuction(key wasmlib.ScColor) ImmutableAuction {
-	return ImmutableAuction{objID: m.objID, keyID: key.KeyID()}
+func (m MapColorToImmutableAuction) GetAuction(key wasmtypes.ScColor) ImmutableAuction {
+	return ImmutableAuction{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
 type MapColorToImmutableBidderList struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableBidderList) GetBidderList(key wasmlib.ScColor) ImmutableBidderList {
-	subID := wasmlib.GetObjectID(m.objID, key.KeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_AGENT_ID)
-	return ImmutableBidderList{objID: subID}
+func (m MapColorToImmutableBidderList) GetBidderList(key wasmtypes.ScColor) ImmutableBidderList {
+	return ImmutableBidderList{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
 type MapColorToImmutableBids struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableBids) GetBids(key wasmlib.ScColor) ImmutableBids {
-	subID := wasmlib.GetObjectID(m.objID, key.KeyID(), wasmlib.TYPE_MAP)
-	return ImmutableBids{objID: subID}
+func (m MapColorToImmutableBids) GetBids(key wasmtypes.ScColor) ImmutableBids {
+	return ImmutableBids{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
 type ImmutableFairAuctionState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableFairAuctionState) Auctions() MapColorToImmutableAuction {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateAuctions), wasmlib.TYPE_MAP)
-	return MapColorToImmutableAuction{objID: mapID}
+	return MapColorToImmutableAuction{proxy: s.proxy.Root(StateAuctions)}
 }
 
 func (s ImmutableFairAuctionState) BidderList() MapColorToImmutableBidderList {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBidderList), wasmlib.TYPE_MAP)
-	return MapColorToImmutableBidderList{objID: mapID}
+	return MapColorToImmutableBidderList{proxy: s.proxy.Root(StateBidderList)}
 }
 
 func (s ImmutableFairAuctionState) Bids() MapColorToImmutableBids {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBids), wasmlib.TYPE_MAP)
-	return MapColorToImmutableBids{objID: mapID}
+	return MapColorToImmutableBids{proxy: s.proxy.Root(StateBids)}
 }
 
-func (s ImmutableFairAuctionState) OwnerMargin() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateOwnerMargin))
+func (s ImmutableFairAuctionState) OwnerMargin() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateOwnerMargin))
 }
 
 type MapColorToMutableAuction struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapColorToMutableAuction) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableAuction) GetAuction(key wasmlib.ScColor) MutableAuction {
-	return MutableAuction{objID: m.objID, keyID: key.KeyID()}
+func (m MapColorToMutableAuction) GetAuction(key wasmtypes.ScColor) MutableAuction {
+	return MutableAuction{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
 type MapColorToMutableBidderList struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapColorToMutableBidderList) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableBidderList) GetBidderList(key wasmlib.ScColor) MutableBidderList {
-	subID := wasmlib.GetObjectID(m.objID, key.KeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_AGENT_ID)
-	return MutableBidderList{objID: subID}
+func (m MapColorToMutableBidderList) GetBidderList(key wasmtypes.ScColor) MutableBidderList {
+	return MutableBidderList{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
 type MapColorToMutableBids struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapColorToMutableBids) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableBids) GetBids(key wasmlib.ScColor) MutableBids {
-	subID := wasmlib.GetObjectID(m.objID, key.KeyID(), wasmlib.TYPE_MAP)
-	return MutableBids{objID: subID}
+func (m MapColorToMutableBids) GetBids(key wasmtypes.ScColor) MutableBids {
+	return MutableBids{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
 type MutableFairAuctionState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableFairAuctionState) AsImmutable() ImmutableFairAuctionState {
@@ -105,20 +98,17 @@ func (s MutableFairAuctionState) AsImmutable() ImmutableFairAuctionState {
 }
 
 func (s MutableFairAuctionState) Auctions() MapColorToMutableAuction {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateAuctions), wasmlib.TYPE_MAP)
-	return MapColorToMutableAuction{objID: mapID}
+	return MapColorToMutableAuction{proxy: s.proxy.Root(StateAuctions)}
 }
 
 func (s MutableFairAuctionState) BidderList() MapColorToMutableBidderList {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBidderList), wasmlib.TYPE_MAP)
-	return MapColorToMutableBidderList{objID: mapID}
+	return MapColorToMutableBidderList{proxy: s.proxy.Root(StateBidderList)}
 }
 
 func (s MutableFairAuctionState) Bids() MapColorToMutableBids {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBids), wasmlib.TYPE_MAP)
-	return MapColorToMutableBids{objID: mapID}
+	return MapColorToMutableBids{proxy: s.proxy.Root(StateBids)}
 }
 
-func (s MutableFairAuctionState) OwnerMargin() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateOwnerMargin))
+func (s MutableFairAuctionState) OwnerMargin() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateOwnerMargin))
 }
