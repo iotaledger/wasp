@@ -122,7 +122,7 @@ func EqualCommitments(c1, c2 CommitmentBase) bool {
 	if c1Nil || c2Nil {
 		return false
 	}
-	return c1.Equal(c2)
+	return bytes.Equal(c1.Bytes(), c2.Bytes())
 }
 
 // ComputeCommitment computes commitment to arbitrary key/value iterator

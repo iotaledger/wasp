@@ -94,20 +94,6 @@ func (v *vectorCommitment) String() string {
 	return hex.EncodeToString(v[:])
 }
 
-func (v *vectorCommitment) Equal(another trie.CommitmentBase) bool {
-	if v == nil && another == nil {
-		return true
-	}
-	if v == nil || another == nil {
-		return false
-	}
-	a, ok := another.(*vectorCommitment)
-	if !ok {
-		return false
-	}
-	return *v == *a
-}
-
 func (v *vectorCommitment) Clone() trie.VCommitment {
 	if v == nil {
 		return nil
