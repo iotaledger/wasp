@@ -15,13 +15,13 @@ type candidateBlock struct {
 	local               bool
 	votes               int
 	approved            bool
-	nextStateCommitment trie.CommitmentBase
+	nextStateCommitment trie.VCommitment
 	nextState           state.VirtualStateAccess
 }
 
 func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualStateAccess) *candidateBlock {
 	var local bool
-	var stateCommitment trie.CommitmentBase
+	var stateCommitment trie.VCommitment
 	if nextStateIfProvided == nil {
 		local = false
 		stateCommitment = nil
@@ -62,7 +62,7 @@ func (cT *candidateBlock) isApproved() bool {
 func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 	if cT.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
-		finalL1Commitment, err := state.L1CommitmentFromAliasOutputWithID(output)
+		finalL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 		if err != nil {
 			return
 		}
@@ -83,14 +83,6 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 
 func (cT *candidateBlock) getNextStateCommitment() trie.CommitmentBase {
 	return cT.nextStateCommitment
-}
-
-func (cT *candidateBlock) getNextStateCommitmentString() string {
-	commitment := cT.getNextStateCommitment()
-	if commitment == nil {
-		return "-"
-	}
-	return commitment.String()
 }
 
 func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (state.VirtualStateAccess, error) {

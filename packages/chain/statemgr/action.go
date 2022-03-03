@@ -61,7 +61,7 @@ func (sm *stateManager) isSynced() bool {
 		return false
 	}
 	// GetStateMetadata is supposed to return hash of state data (state commitment)
-	stateL1Commitment, err := state.L1CommitmentFromAliasOutputWithID(sm.stateOutput)
+	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
 	if err != nil {
 		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
 		return false
@@ -149,8 +149,8 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 	}
 	if isBlockNew {
 		if sm.stateOutput != nil {
-			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateHash %v, approvingOutputID %v, already approved %v) is approved by current stateOutput",
-				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitmentString(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
+			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateCommitment %s, approvingOutputID %v, already approved %v) is approved by current stateOutput",
+				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitment(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
 			candidate.approveIfRightOutput(sm.stateOutput)
 		}
 		sm.log.Debugf("addBlockAndCheckStateOutput: block index %v approved %v", block.BlockIndex(), candidate.isApproved())
@@ -164,7 +164,7 @@ func (sm *stateManager) storeSyncingData() {
 		sm.log.Debugf("storeSyncingData not needed: stateOutput is nil")
 		return
 	}
-	outputStateL1Commitment, err := state.L1CommitmentFromAliasOutputWithID(sm.stateOutput)
+	outputStateL1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
 	if err != nil {
 		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state data hash: %v", err)
 		return
