@@ -3,11 +3,11 @@ package vmtxbuilder
 import (
 	"fmt"
 	"math/big"
-	"github.com/iotaledger/wasp/packages/vm"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm"
 	"golang.org/x/xerrors"
 )
 
@@ -77,6 +77,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).Set(f.in.CirculatingSupply)
 		}
 	}
+
 	return ret
 }
 
@@ -117,6 +118,13 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 			ret.SentOutTokenBalances[nt.ID] = s
 		}
 	}
+	for _, nft := range txb.nftsIncluded {
+		if nft.sentOutside {
+			ret.SentOutIotas += nft.out.Amount
+		} else {
+			ret.TotalIotasInDustDeposit += nft.out.Amount
+		}
+	}
 	return ret
 }
 
@@ -151,15 +159,16 @@ func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.N
 	return before, after
 }
 
-var DebugTxBuilder = func() bool { return true }() // trick linter
+var DebugTxBuilder = true
 
 func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
-	if DebugTxBuilder {
-		ins, outs, err := txb.Totals()
-		if err != nil {
-			fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
-			panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
-		}
+	if !DebugTxBuilder {
+		return
+	}
+	ins, outs, err := txb.Totals()
+	if err != nil {
+		fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
+		panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
 	}
 }
 

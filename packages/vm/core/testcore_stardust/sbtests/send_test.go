@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -209,21 +211,28 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	require.NoError(t, err)
 }
 
+func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner iotago.Address) (*iscp.NFT, *solo.NFTMintedInfo) {
+	nftMetadata := []byte("foobar")
+	nftInfo, err := ch.Env.MintNFTL1(issuer, owner, nftMetadata)
+	require.NoError(t, err)
+	return &iscp.NFT{
+		ID:       nftInfo.NFTID,
+		Issuer:   owner,
+		Metadata: nftMetadata,
+	}, nftInfo
+}
+
 func TestSendNFTsBack(t *testing.T) { run2(t, testSendNFTsBack) }
 func testSendNFTsBack(t *testing.T, w bool) {
+	// Send NFT and receive it back (on-ledger request)
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
-	nftMetadata := []byte("foobar")
-	nftInfo, err := ch.Env.MintNFTL1(wallet, addr, nftMetadata)
-	nft := &iscp.NFT{
-		ID:       nftInfo.NFTID,
-		Issuer:   addr,
-		Metadata: nftMetadata,
-	}
-	require.NoError(t, err)
+	nft, mintedInfo := mintDummyNFT(t, ch, wallet, addr)
+
+	println(mintedInfo) // TODO remove, just for debugging
 
 	iotasToSend := uint64(300_000)
 	iotasForGas := uint64(100_000)
@@ -234,13 +243,33 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
 		AddAssets(assetsToSend).
 		WithNFT(nft).
-		AddAllowance(iscp.NewAllowanceFromAssets(assetsToAllow, []*iotago.NFTID{&nftInfo.NFTID})).
+		AddAllowance(iscp.NewAllowanceFromAssets(assetsToAllow, []*iotago.NFTID{&nft.ID})).
 		WithMaxAffordableGasBudget()
 
-	_, err = ch.PostRequestSync(req, wallet)
+	_, err := ch.PostRequestSync(req, wallet)
+	require.NoError(t, err)
+	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
+}
+
+func TestSendNFTsBackOffledger(t *testing.T) { run2(t, testSendNFTsBackOffledger) }
+func testSendNFTsBackOffledger(t *testing.T, w bool) {
+	// Deposit an NFT, then claim it back via offleger-request
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
+
+	nft, _ := mintDummyNFT(t, ch, wallet, addr)
+
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		AddAssets(iscp.NewAssetsIotas(1_000_000)).
+		WithNFT(nft).
+		WithMaxAffordableGasBudget()
+
+	_, err := ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 
-	// deposit an NFT, then claim it back via offleger-request
-
-	// try to
+	require.False(t, ch.Env.HasL1NFT(addr, &nft.ID))
+	// require.True(t, ch.Env.HasL1NFT(ch.StateControllerAddress, &nft.ID))
+	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
 }

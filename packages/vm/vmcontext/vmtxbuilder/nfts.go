@@ -5,15 +5,16 @@ import (
 	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 type nftIncluded struct {
-	ID                 iotago.NFTID
-	dustDepositCharged bool
-	input              iotago.UTXOInput  // if in != nil
-	in                 *iotago.NFTOutput // if nil it means NFT does not exist and will be created
-	out                *iotago.NFTOutput // current balance of the token_id on the chain
-	sentOutside        bool
+	ID iotago.NFTID
+	// dustDepositCharged bool
+	input       iotago.UTXOInput  // if in != nil
+	in          *iotago.NFTOutput // if nil it means NFT does not exist and will be created
+	out         *iotago.NFTOutput // NFT output (can be used by the chain)
+	sentOutside bool
 }
 
 // 3 cases of handling NFTs in txbuilder
@@ -24,11 +25,11 @@ type nftIncluded struct {
 
 func (n *nftIncluded) clone() *nftIncluded {
 	return &nftIncluded{
-		ID:                 n.ID,
-		dustDepositCharged: n.dustDepositCharged,
-		input:              n.input,
-		in:                 cloneInternalNFTOutputOrNil(n.in),
-		out:                cloneInternalNFTOutputOrNil(n.out),
+		ID: n.ID,
+		// dustDepositCharged: n.dustDepositCharged,
+		input: n.input,
+		in:    cloneInternalNFTOutputOrNil(n.in),
+		out:   cloneInternalNFTOutputOrNil(n.out),
 	}
 }
 
@@ -50,6 +51,14 @@ func (txb *AnchorTransactionBuilder) nftsSorted() []*nftIncluded {
 	return ret
 }
 
+func (txb *AnchorTransactionBuilder) NFTOutputs() []*iotago.NFTOutput {
+	outs := make([]*iotago.NFTOutput, len(txb.nftsIncluded))
+	for i, nft := range txb.nftsSorted() {
+		outs[i] = nft.out
+	}
+	return outs
+}
+
 func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRemoved []*iotago.NFTOutput) {
 	toBeAdded = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	toBeRemoved = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
@@ -68,4 +77,62 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 		toBeAdded = append(toBeAdded, nft.out)
 	}
 	return toBeAdded, toBeRemoved
+}
+
+func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput) int64 {
+	dustDeposit := int64(txb.dustDepositAssumption.NFTOutput)
+
+	// keep the number of iotas in the output == required dust deposit
+	// take all native tokens out of the NFT output
+	txb.subDeltaIotasFromTotal(txb.dustDepositAssumption.NFTOutput)
+
+	out := o.Clone().(*iotago.NFTOutput)
+	out.Amount = uint64(dustDeposit)
+	out.NativeTokens = nil
+	out.Conditions = iotago.UnlockConditions{
+		&iotago.AddressUnlockCondition{
+			Address: txb.anchorOutput.AliasID.ToAddress(),
+		},
+	}
+
+	toInclude := &nftIncluded{
+		ID:          o.NFTID,
+		in:          nil,
+		out:         out,
+		sentOutside: false,
+	}
+
+	txb.nftsIncluded[o.NFTID] = toInclude
+	return -dustDeposit
+}
+
+func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
+	if txb.nftsIncluded[o.NFTID] != nil {
+		// NFT comes in and out in the same block
+		txb.nftsIncluded[o.NFTID].sentOutside = true
+		txb.nftsIncluded[o.NFTID].out = o
+		return 0
+	}
+
+	if txb.InputsAreFull() {
+		panic(vmexceptions.ErrInputLimitExceeded)
+	}
+	if txb.outputsAreFull() {
+		panic(vmexceptions.ErrOutputLimitExceeded)
+	}
+
+	// using NFT already owned by the chain
+	in, input := txb.loadNFTOutput(&o.NFTID)
+	toInclude := &nftIncluded{
+		ID:          o.NFTID,
+		in:          in,
+		out:         o,
+		sentOutside: false,
+	}
+
+	if input != nil {
+		toInclude.input = *input
+	}
+	txb.nftsIncluded[o.NFTID] = toInclude
+	return int64(txb.dustDepositAssumption.NFTOutput)
 }

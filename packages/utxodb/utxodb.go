@@ -448,6 +448,17 @@ func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) map[iotago.OutputID]*iotag
 	return ret
 }
 
+func (u *UtxoDB) GetAddressNFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+	outs := u.getUnspentOutputs(addr)
+	ret := make(map[iotago.OutputID]*iotago.NFTOutput)
+	for oid, out := range outs {
+		if o, ok := out.(*iotago.NFTOutput); ok {
+			ret[oid] = o
+		}
+	}
+	return ret
+}
+
 func (u *UtxoDB) getTransaction(txID iotago.TransactionID) (*iotago.Transaction, bool) {
 	tx, ok := u.transactions[txID]
 	if !ok {

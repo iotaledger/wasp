@@ -528,6 +528,10 @@ func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.O
 	return allOuts, ids
 }
 
+func (env *Solo) L1NFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+	return env.utxoDB.GetAddressNFTs(addr)
+}
+
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
 func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
 	assets := env.L1Assets(addr)
@@ -555,44 +559,6 @@ type NFTMintedInfo struct {
 	Output   iotago.Output
 	OutputID iotago.OutputID
 	NFTID    iotago.NFTID
-}
-
-// TODO remove, this is just for debugging
-func removeMe(env *Solo, issuer *cryptolib.KeyPair, nftID iotago.NFTID) {
-	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
-
-	var nftOutID iotago.OutputID
-	for _, id := range allOutIDs {
-		if _, ok := allOuts[id].(*iotago.NFTOutput); ok {
-			nftOutID = id
-			break
-		}
-	}
-
-	inputs := iotago.OutputIDs{nftOutID}
-	inputsCommitment := inputs.OrderedSet(allOuts).MustCommitment()
-
-	out := allOuts[nftOutID].Clone()
-	// HMMMMM ...........
-	// out.(*iotago.NFTOutput).Conditions = iotago.UnlockConditions{
-	// 	&iotago.AddressUnlockCondition{Address: &iotago.Ed25519Address{123}},
-	// }
-
-	out.(*iotago.NFTOutput).NFTID = nftID
-	outputs := iotago.Outputs{out}
-
-	tx2, err := transaction.CreateAndSignTx(inputs, inputsCommitment, outputs, issuer, env.L1Params().NetworkID)
-	if err != nil {
-		return
-	}
-	err = env.AddToLedger(tx2)
-	if err != nil {
-		return
-	}
-
-	allOuts, allOutIDs = env.utxoDB.GetUnspentOutputs(issuer.Address())
-
-	println("?")
 }
 
 // MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
