@@ -22,7 +22,7 @@
     "enablePlugins": []
   },
   "users": {
-    "admin": {
+    "wasp": {
       "password": "wasp",
       "claims": ["dashboard", "api", "chain.read", "chain.write"]
     }
@@ -33,7 +33,7 @@
         "durationHours": 24
       },
       "basic": {
-        "userName": "admin"
+        "userName": "wasp"
       },
       "ip": {
         "whitelist": ["127.0.0.1"]
@@ -49,13 +49,13 @@
         "durationHours": 24
       },
       "basic": {
-        "userName": "admin"
+        "userName": "wasp"
       },
       "ip": {
         "whitelist": ["127.0.0.1"]
       },
       "addRoutes": true,
-      "scheme": "ip"
+      "scheme": "basic"
     },
     "bindAddress": "0.0.0.0:7000"
   },
