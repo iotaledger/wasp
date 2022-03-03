@@ -222,11 +222,22 @@ func funcArrayOfMapsSet(ctx wasmlib.ScFuncContext, f *ArrayOfMapsSetContext) {
 	index := f.Params.Index().Value()
 	value := f.Params.Value().Value()
 	key := f.Params.Key().Value()
+	if f.State.StringArrayOfMaps().Length() <= index {
+		mmap := f.State.StringArrayOfMaps().AppendStringMap()
+		mmap.GetString(key).SetValue(value)
+		return
+	}
 	mmap := f.State.StringArrayOfMaps().GetStringMap(index)
 	mmap.GetString(key).SetValue(value)
 }
 
 func funcArrayOfMapsClear(ctx wasmlib.ScFuncContext, f *ArrayOfMapsClearContext) {
+	length := f.State.StringArrayOfArrays().Length()
+	for i := uint32(0); i < length; i++ {
+		mmap := f.State.StringArrayOfMaps().GetStringMap(i)
+		mmap.Clear()
+	}
+	f.State.StringArrayOfMaps().Clear()
 }
 
 func viewArrayOfMapsValue(ctx wasmlib.ScViewContext, f *ArrayOfMapsValueContext) {
