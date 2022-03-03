@@ -32,7 +32,7 @@ type StateTransitionMsg struct {
 	// new variable state
 	State state.VirtualStateAccess
 	// corresponding state transaction
-	StateOutput *iotago.AliasOutput
+	StateOutput *iscp.AliasOutputWithID
 	//
 	StateTimestamp time.Time
 }

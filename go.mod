@@ -13,7 +13,7 @@ require (
 	github.com/iotaledger/goshimmer v0.8.5
 	github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220211160236-b8145d4bc382
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220222135056-1fc9e672f66d
 	github.com/knadh/koanf v1.3.3
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.15.0

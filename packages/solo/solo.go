@@ -484,7 +484,7 @@ func (ch *Chain) GlobalStateSync() coreutil.ChainStateSync {
 	return ch.GlobalSync
 }
 
-func (ch *Chain) StateCandidateToStateManager(state.VirtualStateAccess, iotago.OutputID) {
+func (ch *Chain) StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput) {
 	// not used, just to implement ChainCore interface
 }
 
