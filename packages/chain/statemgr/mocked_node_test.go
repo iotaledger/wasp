@@ -38,17 +38,16 @@ func (c *MockedStateManagerMetrics) RecordBlockSize(_ uint32, _ float64) {}
 func (c *MockedStateManagerMetrics) LastSeenStateIndex(_ uint32) {}
 
 func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *MockedNode {
-	nodePubKey := env.NodePubKeys[nodeIndex]
-	nodePubKeyStr := nodePubKey.AsString()[0:10]
-	log := env.Log.Named(nodePubKeyStr)
+	nodeID := env.NodeIDs[nodeIndex]
+	log := env.Log.Named(nodeID)
 	var peeringID peering.PeeringID
 	copy(peeringID[:], env.ChainID[:iotago.AliasIDLength])
 	stateMgrDomain, err := NewDomainWithFallback(peeringID, env.NetworkProviders[nodeIndex], log)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
-		PubKey:    nodePubKey,
+		PubKey:    env.NodePubKeys[nodeIndex],
 		Env:       env,
-		NodeConn:  testchain.NewMockedNodeConnection("Node_"+nodePubKeyStr, env.Ledger, log),
+		NodeConn:  testchain.NewMockedNodeConnection("Node_"+nodeID, env.Ledger, log),
 		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
 		Log:       log,
 	}
@@ -79,7 +78,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 				txID, err := tx.ID()
 				require.NoError(env.T, err)
 				outputID := iotago.OutputIDFromTransactionIDAndIndex(*txID, uint16(index)).UTXOInput()
-				ret.Log.Debugf("Transaction %v received, alias output %v found, enqueing state message", txID, outputID)
+				ret.Log.Debugf("Transaction %v received, alias output %v found, enqueing state message", txID, outputID) // TODO: print txID normally
 				go ret.StateManager.EnqueueStateMsg(&messages.StateMsg{
 					ChainOutput: iscp.NewAliasOutputWithID(aliasOutput, outputID),
 					Timestamp:   time.Now(),

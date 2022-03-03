@@ -27,7 +27,7 @@ var chainAddress = tpkg.RandEd25519Address()
 
 func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualStateAccess) {
 	store := mapdb.NewMapDB()
-	vs, err := state.CreateOriginState(store, nil)
+	vs, err := state.CreateOriginState(store, iscp.RandomChainID())
 	require.NoError(t, err)
 	ret := state.NewOptimisticStateReader(store, glb)
 	require.NoError(t, err)

@@ -62,11 +62,23 @@ func (n *Node) Clone() *Node {
 	if n == nil {
 		return nil
 	}
+	var terminal TCommitment
+	if n.Terminal == nil {
+		terminal = nil
+	} else {
+		terminal = n.Terminal.Clone()
+	}
+	var newTerminal TCommitment
+	if n.newTerminal == nil {
+		newTerminal = nil
+	} else {
+		newTerminal = n.newTerminal.Clone()
+	}
 	ret := &Node{
 		PathFragment:     make([]byte, len(n.PathFragment)),
 		ChildCommitments: make(map[byte]VCommitment),
-		Terminal:         n.Terminal.Clone(),
-		newTerminal:      n.newTerminal.Clone(),
+		Terminal:         terminal,
+		newTerminal:      newTerminal,
 		modifiedChildren: make(map[byte]struct{}),
 	}
 	copy(ret.PathFragment, n.PathFragment)

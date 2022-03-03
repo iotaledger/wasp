@@ -5,8 +5,8 @@ package statemgr
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -15,19 +15,19 @@ type candidateBlock struct {
 	local               bool
 	votes               int
 	approved            bool
-	nextStateCommitment hashing.HashValue
+	nextStateCommitment trie.VCommitment
 	nextState           state.VirtualStateAccess
 }
 
 func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualStateAccess) *candidateBlock {
 	var local bool
-	var stateCommitment hashing.HashValue
+	var stateCommitment trie.VCommitment
 	if nextStateIfProvided == nil {
 		local = false
-		stateCommitment = hashing.NilHash
+		stateCommitment = nil
 	} else {
 		local = true
-		stateCommitment = nextStateIfProvided.RootCommitment()
+		stateCommitment = trie.RootCommitment(nextStateIfProvided.TrieAccess())
 	}
 	return &candidateBlock{
 		block:               block,
@@ -62,12 +62,13 @@ func (cT *candidateBlock) isApproved() bool {
 func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 	if cT.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
-		finalCommitment, err := output.GetStateCommitment()
+		finalL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 		if err != nil {
 			return
 		}
+		finalCommitment := finalL1Commitment.Commitment
 		if cT.isLocal() {
-			if cT.nextStateCommitment == finalCommitment {
+			if trie.EqualCommitments(cT.nextStateCommitment, finalCommitment) {
 				cT.approved = true
 				cT.block.SetApprovingOutputID(outputID)
 			}
@@ -80,7 +81,7 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 	}
 }
 
-func (cT *candidateBlock) getNextStateCommitment() hashing.HashValue {
+func (cT *candidateBlock) getNextStateCommitment() trie.CommitmentBase {
 	return cT.nextStateCommitment
 }
 

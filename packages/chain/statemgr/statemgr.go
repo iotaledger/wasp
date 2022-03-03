@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -158,8 +159,8 @@ func (sm *stateManager) initLoadState() {
 	if stateExists {
 		sm.solidState = solidState
 		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
-		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			solidState.BlockIndex(), solidState.RootCommitment().String())
+		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State commitment: %s",
+			solidState.BlockIndex(), trie.RootCommitment(solidState.TrieAccess()))
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
 		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))

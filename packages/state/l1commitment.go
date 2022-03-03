@@ -24,6 +24,14 @@ func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
 	return ret, nil
 }
 
+func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, error) {
+	l1c, err := L1CommitmentFromBytes(output.StateMetadata)
+	if err != nil {
+		return nil, err
+	}
+	return &l1c, nil
+}
+
 func (s *L1Commitment) Bytes() []byte {
 	var buf bytes.Buffer
 
