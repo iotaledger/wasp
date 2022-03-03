@@ -451,3 +451,10 @@ func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 	})
 	return ret
 }
+
+func (tr *Trie) UpdateAll(store kv.KVMustIterator) {
+	store.MustIterate("", func(k kv.Key, v []byte) bool {
+		tr.Update([]byte(k), v)
+		return true
+	})
+}
