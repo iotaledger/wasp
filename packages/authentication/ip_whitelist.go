@@ -20,18 +20,19 @@ func createIPWhiteList(config IPWhiteListAuthConfiguration) []net.IP {
 	return r
 }
 
-func protected(whitelist []net.IP) echo.MiddlewareFunc {
-	isAllowed := func(ip net.IP) bool {
-		if ip.IsLoopback() {
+func isAllowed(ip net.IP, whitelist []net.IP) bool {
+	if ip.IsLoopback() {
+		return true
+	}
+	for _, whitelistedIP := range whitelist {
+		if ip.Equal(whitelistedIP) {
 			return true
 		}
-		for _, whitelistedIP := range whitelist {
-			if ip.Equal(whitelistedIP) {
-				return true
-			}
-		}
-		return false
 	}
+	return false
+}
+
+func protected(whitelist []net.IP) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authContext := c.Get("auth").(*AuthContext)
@@ -39,13 +40,13 @@ func protected(whitelist []net.IP) echo.MiddlewareFunc {
 			parts := strings.Split(c.Request().RemoteAddr, ":")
 			if len(parts) == 2 {
 				ip := net.ParseIP(parts[0])
-				if ip != nil && isAllowed(ip) {
+				if ip != nil && isAllowed(ip, whitelist) {
 					authContext.isAuthenticated = true
 					return next(c)
 				}
 			}
 
-			log.Infof("Blocking request from %s: %s %s", c.Request().RemoteAddr, c.Request().Method, c.Request().RequestURI)
+			c.Logger().Infof("Blocking request from %s: %s %s", c.Request().RemoteAddr, c.Request().Method, c.Request().RequestURI)
 			return echo.ErrUnauthorized
 		}
 	}

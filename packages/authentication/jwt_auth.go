@@ -45,6 +45,8 @@ type WaspClaims struct {
 	ChainWrite bool `json:"chain.write"`
 }
 
+const defaultJwtDurationHours = 24
+
 func (c *WaspClaims) compare(field, expected string) bool {
 	if field == "" {
 		return false
@@ -153,20 +155,21 @@ func (j *JWTAuth) keyFunc(token *jwt.Token) (interface{}, error) {
 func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
 	t, err := jwt.ParseWithClaims(token, &WaspClaims{}, j.keyFunc)
 
-	if err == nil && t.Valid {
-		claims, ok := t.Claims.(*WaspClaims)
-
-		if !ok || !claims.VerifyAudience(j.nodeID, true) {
-			return false
-		}
-
-		if !allow(claims) {
-			return false
-		}
-
-		return true
+	if err != nil || !t.Valid {
+		return false
 	}
-	return false
+
+	claims, ok := t.Claims.(*WaspClaims)
+
+	if !ok || !claims.VerifyAudience(j.nodeID, true) {
+		return false
+	}
+
+	if !allow(claims) {
+		return false
+	}
+
+	return true
 }
 
 func initJWT(durationHours int, nodeID string, privateKey []byte, userMap map[string]*users.UserData, claimValidator ClaimValidator) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
@@ -213,7 +216,7 @@ func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, u
 
 	// If durationHours is 0, we set 24h as the default durationHours.
 	if durationHours <= 0 {
-		durationHours = 24
+		durationHours = defaultJwtDurationHours
 	}
 
 	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(durationHours, "wasp0", privateKey, userMap, claimValidator)

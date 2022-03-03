@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
@@ -45,8 +44,6 @@ type WebAPI interface {
 	Use(middleware ...echo.MiddlewareFunc)
 }
 
-var log *logger.Logger
-
 func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, claimValidator ClaimValidator) {
 	var config AuthConfiguration
 
@@ -54,7 +51,6 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 		return
 	}
 
-	log = logger.NewLogger("authentication")
 	userMap := users.All()
 
 	addAuthContext(webAPI, config)

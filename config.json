@@ -39,7 +39,7 @@
         "whitelist": ["127.0.0.1"]
       },
       "addRoutes": true,
-      "scheme": "jwt"
+      "scheme": "ip"
     },
     "bindAddress": "0.0.0.0:9090"
   },
