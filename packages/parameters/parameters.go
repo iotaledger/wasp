@@ -15,6 +15,7 @@ import (
 var all *configuration.Configuration
 
 const (
+	UserList           = "users"
 	NodeOwnerAddresses = "node.ownerAddresses"
 
 	LoggerLevel             = "logger.level"
@@ -134,6 +135,14 @@ func GetStringToString(name string) map[string]string {
 	return all.StringMap(name)
 }
 
+func GetStruct(path string, object interface{}) error {
+	return all.Unmarshal(path, object)
+}
+
+func GetStructWithConf(path string, object interface{}, uc koanf.UnmarshalConf) error {
+	return all.UnmarshalWithConf(path, object, uc)
+}
+
 func Dump() map[string]interface{} {
 	// hack to access private member Node.config
 	rf := reflect.ValueOf(all).Elem().FieldByName("config")
@@ -142,6 +151,7 @@ func Dump() map[string]interface{} {
 
 	m := map[string]interface{}{}
 	flatten(m, tree, "")
+
 	return m
 }
 
