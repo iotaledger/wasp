@@ -7,9 +7,8 @@ import (
 	"crypto/rand"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
@@ -50,14 +49,15 @@ func New(
 		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.Address.Bech32(iscp.Bech32Prefix))
 	}
 	// peerGroupID is calculated by XORing chainID and stateAddr.
-	// It allows to use same statAddr for different chains
-	peerGroupID := dkShare.Address
+	// It allows to use same stateAddr for different chains
+	var peerGroupID peering.PeeringID
+	address, err := dkShare.Address.Serialize(serializer.DeSeriModeNoValidation, nil)
 	var chainArr *iscp.ChainID
 	if chainID != nil {
 		chainArr = chainID
 	}
 	for i := range peerGroupID {
-		peerGroupID[i] ^= chainArr[i]
+		peerGroupID[i] = address[i] ^ chainArr[i]
 	}
 	var peers peering.GroupProvider
 	if peers, err = netProvider.PeerGroup(peerGroupID, dkShare.NodePubKeys); err != nil {

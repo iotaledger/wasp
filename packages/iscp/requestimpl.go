@@ -330,11 +330,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbo, ok := o.(iotago.FeatureBlockOutput)
-	if !ok {
-		panic("wrong type. Expected iotago.FeatureBlockOutput")
-	}
-	fbSet, err = fbo.FeatureBlocks().Set()
+	fbSet, err = o.FeatureBlocks().Set()
 	if err != nil {
 		return nil, err
 	}
@@ -344,11 +340,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		return nil, err
 	}
 
-	uco, ok := o.(iotago.UnlockConditionOutput)
-	if !ok {
-		panic("wrong type. Expected iotago.UnlockConditionOutput")
-	}
-	ucSet, err := uco.UnlockConditions().Set()
+	ucSet, err := o.UnlockConditions().Set()
 	if err != nil {
 		return nil, err
 	}
@@ -462,10 +454,7 @@ func (r *OnLedgerRequestData) Allowance() *Assets {
 
 func (r *OnLedgerRequestData) Assets() *Assets {
 	amount := r.output.Deposit()
-	var tokens iotago.NativeTokens
-	if output, ok := r.output.(iotago.NativeTokenOutput); ok {
-		tokens = output.NativeTokenSet()
-	}
+	tokens := r.output.NativeTokenSet()
 	return NewAssets(amount, tokens)
 }
 
@@ -562,7 +551,7 @@ func (r *OnLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
 }
 
 func (r *OnLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock := r.unlockConditions.DustDepositReturn()
+	senderBlock := r.unlockConditions.StorageDepositReturn()
 	if senderBlock == nil {
 		return 0, false
 	}
@@ -655,12 +644,16 @@ func (rid RequestID) String() string {
 
 func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
-	txid := hex.EncodeToString(oid.TransactionID[:])
+	txid := TxID(&oid.TransactionID)
 	return fmt.Sprintf("%d/%s", oid.TransactionOutputIndex, txid[:6]+"..")
 }
 
 func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("%d/%s", o.TransactionOutputIndex, hex.EncodeToString(o.TransactionID[:]))
+	return fmt.Sprintf("%d/%s", o.TransactionOutputIndex, TxID(&o.TransactionID))
+}
+
+func TxID(txID *iotago.TransactionID) string {
+	return hex.EncodeToString(txID[:])
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

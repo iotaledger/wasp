@@ -418,18 +418,16 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.Assets {
 	tokens := iotago.NativeTokenSum{}
 	for _, out := range u.getUnspentOutputs(addr) {
 		iotas += out.Deposit()
-		if out, ok := out.(iotago.NativeTokenOutput); ok {
-			tset, err := out.NativeTokenSet().Set()
-			if err != nil {
-				panic(err)
+		tset, err := out.NativeTokenSet().Set()
+		if err != nil {
+			panic(err)
+		}
+		for _, token := range tset {
+			val := tokens[token.ID]
+			if val == nil {
+				val = new(big.Int)
 			}
-			for _, token := range tset {
-				val := tokens[token.ID]
-				if val == nil {
-					val = new(big.Int)
-				}
-				tokens[token.ID] = new(big.Int).Add(val, token.Amount)
-			}
+			tokens[token.ID] = new(big.Int).Add(val, token.Amount)
 		}
 	}
 	return iscp.AssetsFromNativeTokenSum(iotas, tokens)

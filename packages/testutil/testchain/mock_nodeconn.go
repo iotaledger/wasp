@@ -17,6 +17,7 @@ type MockedNodeConn struct {
 	pullStateAllowed              bool
 	pullConfirmedOutputAllowedFun func(outputID *iotago.UTXOInput) bool
 	receiveTxAllowedFun           func(tx *iotago.Transaction) bool
+	handleTimeDataFun             chain.NodeConnectionHandleTimeDataFun
 	handleTransactionFun          chain.NodeConnectionHandleTransactionFun
 	handleOutputFun               chain.NodeConnectionHandleOutputFun
 	handleUnspentAliasOutputFun   chain.NodeConnectionHandleUnspentAliasOutputFun
@@ -99,6 +100,16 @@ func (m *MockedNodeConn) SetReceiveTxAllowed(flag bool) {
 
 func (m *MockedNodeConn) SetReceiveTxAllowedFun(fun func(tx *iotago.Transaction) bool) {
 	m.receiveTxAllowedFun = fun
+}
+
+func (m *MockedNodeConn) defaultHandleTimeDataFun(*iscp.TimeData) {}
+
+func (m *MockedNodeConn) AttachToTimeData(fun chain.NodeConnectionHandleTimeDataFun) {
+	m.handleTimeDataFun = fun
+}
+
+func (m *MockedNodeConn) DetachFromTimeData() {
+	m.handleTimeDataFun = m.defaultHandleTimeDataFun
 }
 
 func (m *MockedNodeConn) defaultHandleTransactionFun(*iotago.Transaction) {}
