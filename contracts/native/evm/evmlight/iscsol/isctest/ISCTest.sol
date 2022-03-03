@@ -3,23 +3,21 @@
 
 pragma solidity >=0.8.5;
 
-import "@iscpcontract/ISCP.sol";
+import "@isccontract/ISC.sol";
 
-ISCP constant iscp = ISCP(ISCP_CONTRACT_ADDRESS);
-
-contract ISCPTest {
-    function getChainID() public view returns (ISCPChainID) {
-		return iscp.getChainID();
+contract ISCTest {
+    function getChainID() public view returns (ISCChainID) {
+		return isc.getChainID();
     }
 
 	function triggerEvent(string memory s) public {
-		iscpTriggerEvent(s);
+		isc.triggerEvent(s);
 	}
 
 	event EntropyEvent(bytes32 entropy);
 
 	function emitEntropy() public {
-		bytes32 e = iscpEntropy();
+		bytes32 e = isc.getEntropy();
 		emit EntropyEvent(e);
 	}
 }

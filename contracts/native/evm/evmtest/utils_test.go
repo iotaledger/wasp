@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscptest"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscsol/isctest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -142,15 +143,28 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 	if req.GasBudget() == 0 {
 		gasBudget, gasFee, err := e.soloChain.EstimateGasOnLedger(req, opt.wallet, true)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(e.resolveError(err), "could not estimate gas")
 		}
 		req.WithGasBudget(gasBudget).AddAssetsIotas(gasFee)
 	}
-	return e.soloChain.PostRequestSync(req, opt.wallet)
+	ret, err := e.soloChain.PostRequestSync(req, opt.wallet)
+	return ret, errors.Wrap(e.resolveError(err), "PostRequestSync failed")
+}
+
+func (e *evmChainInstance) resolveError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if vmError, ok := err.(*iscp.UnresolvedVMError); ok {
+		resolvedErr := e.soloChain.ResolveVMError(vmError)
+		return resolvedErr.AsGoError()
+	}
+	return err
 }
 
 func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
-	return e.soloChain.CallView(e.evmFlavor.Name, funName, params...)
+	ret, err := e.soloChain.CallView(e.evmFlavor.Name, funName, params...)
+	return ret, errors.Wrap(e.resolveError(err), "CallView failed")
 }
 
 func (e *evmChainInstance) setBlockTime(t uint32) {
@@ -229,8 +243,8 @@ func (e *evmChainInstance) getOwner() *iscp.AgentID {
 	return owner
 }
 
-func (e *evmChainInstance) deployISCPTestContract(creator *ecdsa.PrivateKey) *iscpTestContractInstance {
-	return &iscpTestContractInstance{e.deployContract(creator, iscptest.ISCPTestContractABI, iscptest.ISCPTestContractBytecode)}
+func (e *evmChainInstance) deployISCTestContract(creator *ecdsa.PrivateKey) *iscpTestContractInstance {
+	return &iscpTestContractInstance{e.deployContract(creator, isctest.ISCTestContractABI, isctest.ISCTestContractBytecode)}
 }
 
 func (e *evmChainInstance) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
@@ -290,12 +304,12 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	})
 
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
-	require.NoError(e.t, err)
+	require.NoError(e.t, errors.Wrap(e.resolveError(err), "could not estimate gas"))
 	req.WithGasBudget(iscpGas).AddAssetsIotas(iscpGasFee)
 
 	// send EVM tx
 	_, err = e.soloChain.PostRequestSync(req, nil)
-	require.NoError(e.t, err)
+	require.NoError(e.t, errors.Wrap(e.resolveError(err), "PostRequestSync failed"))
 
 	return &evmContractInstance{
 		chain:   e,
