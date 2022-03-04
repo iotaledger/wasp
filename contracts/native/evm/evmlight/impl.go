@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/emulator"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscpcontract"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -53,8 +52,8 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	blockKeepAmount, err := codec.DecodeInt32(ctx.Params().MustGet(evm.FieldBlockKeepAmount), evm.BlockKeepAmountDefault)
 	a.RequireNoError(err)
 
-	// add the standard ISCP contract at arbitrary address 0x1074
-	iscpcontract.DeployOnGenesis(genesisAlloc, ctx.ChainID())
+	// add the standard ISC contract at arbitrary address 0x1074
+	deployISCContractOnGenesis(genesisAlloc, ctx.ChainID())
 
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)

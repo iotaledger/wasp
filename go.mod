@@ -48,7 +48,7 @@ require (
 
 replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
-	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220204023422-c467ab1fee84
+	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220303210631-9c0fdaace6fb
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go
 	github.com/iotaledger/goshimmer => github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497
 	github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260

@@ -29,7 +29,7 @@ type EVMEmulator struct {
 	timestamp   uint64
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
-	IEVMBackend vm.ISCPBackend
+	iscContract vm.ISCContract
 }
 
 func makeConfig(chainID int) *params.ChainConfig {
@@ -53,6 +53,10 @@ func makeConfig(chainID int) *params.ChainConfig {
 const (
 	keyStateDB      = "s"
 	keyBlockchainDB = "b"
+)
+
+var (
+	vmConfig = vm.Config{}
 )
 
 func newStateDB(store kv.KVStore) *StateDB {
@@ -87,7 +91,7 @@ func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, tim
 	}
 }
 
-func NewEVMEmulator(store kv.KVStore, timestamp uint64, backend vm.ISCPBackend) *EVMEmulator {
+func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContract) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
@@ -96,7 +100,7 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64, backend vm.ISCPBackend) 
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		IEVMBackend: backend,
+		iscContract: iscContract,
 	}
 }
 
@@ -258,23 +262,12 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasLimit uint64) (*core.ExecutionResult, uint64, error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
-	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig())
+	vmEnv := vm.NewISCEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig, e.iscContract)
 	gasPool := core.GasPool(gasLimit)
 	vmEnv.Reset(txContext, statedb)
 	result, err := core.ApplyMessage(vmEnv, &messageWithGasOverride{msg, gasLimit}, &gasPool)
 	gasUsed := gasLimit - gasPool.Gas()
 	return result, gasUsed, err
-}
-
-func (e *EVMEmulator) vmConfig() vm.Config {
-	jt := vm.NewISCPInstructionSet(e.GetIEVMBackend)
-	return vm.Config{
-		JumpTable: &jt,
-	}
-}
-
-func (e *EVMEmulator) GetIEVMBackend() vm.ISCPBackend {
-	return e.IEVMBackend
 }
 
 func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, error) {

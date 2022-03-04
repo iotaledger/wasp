@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/emulator"
@@ -33,11 +32,19 @@ func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
 }
 
 func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
-	return emulator.NewEVMEmulator(evminternal.EVMStateSubrealm(ctx.State()), timestamp(ctx), &iscpBackend{ctx})
+	return emulator.NewEVMEmulator(
+		evminternal.EVMStateSubrealm(ctx.State()),
+		timestamp(ctx),
+		&iscContract{ctx},
+	)
 }
 
 func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
-	return emulator.NewEVMEmulator(evminternal.EVMStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())), timestamp(ctx), &iscpBackendR{ctx})
+	return emulator.NewEVMEmulator(
+		evminternal.EVMStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
+		timestamp(ctx),
+		&iscContractView{ctx},
+	)
 }
 
 // timestamp returns the current timestamp in seconds since epoch
@@ -152,26 +159,3 @@ func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmula
 	}
 	return paramBlockNumber(ctx, emu, allowPrevious)
 }
-
-type iscpBackend struct {
-	ctx iscp.Sandbox
-}
-
-var _ vm.ISCPBackend = &iscpBackend{}
-
-func (i *iscpBackend) Event(s string) {
-	i.ctx.Event(s)
-}
-
-func (i *iscpBackend) Entropy() [32]byte {
-	return i.ctx.GetEntropy()
-}
-
-type iscpBackendR struct {
-	ctx iscp.SandboxView
-}
-
-var _ vm.ISCPBackend = &iscpBackendR{}
-
-func (i *iscpBackendR) Event(s string)    { panic("should not happen") }
-func (i *iscpBackendR) Entropy() [32]byte { panic("should not happen") }
