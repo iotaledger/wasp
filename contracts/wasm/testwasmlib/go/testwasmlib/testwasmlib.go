@@ -290,3 +290,50 @@ func viewMapOfArraysAddrValue(ctx wasmlib.ScViewContext, f *MapOfArraysAddrValue
 	value := array.GetAddress(index).Value()
 	f.Results.ValueAddr().SetValue(value)
 }
+
+func funcArrayOfArraysAddrAppend(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrAppendContext) {
+	index := f.Params.Index().Value()
+	valLen := f.Params.ValueAddr().Length()
+
+	var sa ArrayOfMutableAddress
+	if f.State.StringArrayOfArrays().Length() <= index {
+		sa = f.State.AddrArrayOfArrays().AppendAddressArray()
+	} else {
+		sa = f.State.AddrArrayOfArrays().GetAddressArray(index)
+	}
+
+	for i := uint32(0); i < valLen; i++ {
+		elt := f.Params.ValueAddr().GetAddress(i).Value()
+		sa.AppendAddress().SetValue(elt)
+	}
+}
+
+func viewArrayOfArraysAddrLength(ctx wasmlib.ScViewContext, f *ArrayOfArraysAddrLengthContext) {
+	length := f.State.AddrArrayOfArrays().Length()
+	f.Results.Length().SetValue(length)
+}
+
+func viewArrayOfArraysAddrValue(ctx wasmlib.ScViewContext, f *ArrayOfArraysAddrValueContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+
+	elt := f.State.AddrArrayOfArrays().GetAddressArray(index0).GetAddress(index1).Value()
+	f.Results.ValueAddr().SetValue(elt)
+}
+
+func funcArrayOfArraysAddrClear(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrClearContext) {
+	length := f.State.AddrArrayOfArrays().Length()
+	for i := uint32(0); i < length; i++ {
+		array := f.State.AddrArrayOfArrays().GetAddressArray(i)
+		array.Clear()
+	}
+	f.State.AddrArrayOfArrays().Clear()
+}
+
+func funcArrayOfArraysAddrSet(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrSetContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+	array := f.State.AddrArrayOfArrays().GetAddressArray(index0)
+	value := f.Params.ValueAddr().Value()
+	array.GetAddress(index1).SetValue(value)
+}

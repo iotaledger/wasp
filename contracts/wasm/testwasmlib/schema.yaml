@@ -83,6 +83,28 @@ funcs:
       index: Uint32
       value: String[]
 
+  arrayOfArraysAddrAppend:
+    params:
+      index: Uint32
+      valueAddr: Address[]
+
+  arrayOfArraysSet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      value: String
+
+  arrayOfArraysAddrSet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      valueAddr: Address
+
+  # Clear all the arrays of the array
+  arrayOfArraysClear:
+  # Clear all the arrays of the array
+  arrayOfArraysAddrClear:
+
   mapOfArraysClear:
     params:
       name: String
@@ -90,9 +112,6 @@ funcs:
   mapOfArraysAddrClear:
     params:
       nameAddr: Address
-
-  # Clear all the arrays of the array
-  arrayOfArraysClear:
 
   mapOfArraysSet:
     params:
@@ -105,12 +124,6 @@ funcs:
       index: Uint32
       nameAddr: Address
       valueAddr: Address
-
-  arrayOfArraysSet:
-    params:
-      index0: Uint32
-      index1: Uint32
-      value: String
 
   mapOfMapsClear:
     params:
@@ -184,6 +197,24 @@ views:
     results:
       length: Uint32
 
+  arrayOfArraysValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      value: String
+
+  arrayOfArraysAddrLength:
+    results:
+      length: Uint32
+
+  arrayOfArraysAddrValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      valueAddr: Address
+
   mapOfArraysValue:
     params:
       index: Uint32
@@ -197,13 +228,6 @@ views:
       nameAddr: Address
     results:
       valueAddr: Address
-  
-  arrayOfArraysValue:
-    params:
-      index0: Uint32
-      index1: Uint32
-    results:
-      value: String
 
   mapOfMapsValue:
     params:

@@ -283,7 +283,7 @@ func genTestAddress(ctx *wasmsolo.SoloContext, num int) []wasmtypes.ScAddress {
 	return addrs
 }
 
-func TestAddrMapOfArraysClear(t *testing.T) {
+func TestMapOfArraysAddrClear(t *testing.T) {
 	ctx := setupTest(t)
 	mapNames, mapVals := genTestAddress(ctx, 2), genTestAddress(ctx, 3)
 
@@ -443,7 +443,7 @@ func TestMapOfArraysSet(t *testing.T) {
 	require.EqualValues(t, "Dire Straits", value.Value())
 }
 
-func TestAddrMapOfArraysSet(t *testing.T) {
+func TestMapOfArraysAddrSet(t *testing.T) {
 	ctx := setupTest(t)
 	mapNames, mapVals := genTestAddress(ctx, 2), genTestAddress(ctx, 4)
 
@@ -663,6 +663,63 @@ func TestArrayOfArraysClear(t *testing.T) {
 	require.Error(t, ctx.Err)
 }
 
+func TestArrayOfArraysAddrClear(t *testing.T) {
+	ctx := setupTest(t)
+	mapVals := genTestAddress(ctx, 4)
+
+	aap := testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(0)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[0])
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[1])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aap = testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(1)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[2])
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[3])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav := testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[0], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[1], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[2], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[3], aav.Results.ValueAddr().Value())
+
+	ac := testwasmlib.ScFuncs.ArrayOfArraysAddrClear(ctx)
+	ac.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.Error(t, ctx.Err)
+}
+
 func TestArrayOfArraysSet(t *testing.T) {
 	ctx := setupTest(t)
 
@@ -720,6 +777,58 @@ func TestArrayOfArraysSet(t *testing.T) {
 	aav.Params.Index1().SetValue(1)
 	aav.Func.Call()
 	require.EqualValues(t, "moon", aav.Results.Value().Value())
+}
+
+func TestArrayOfArraysAddrSet(t *testing.T) {
+	ctx := setupTest(t)
+	mapVals := genTestAddress(ctx, 4)
+
+	aap := testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(0)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[0])
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[1])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aap = testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(1)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[2])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav := testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[0], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[1], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[2], aav.Results.ValueAddr().Value())
+
+	aas := testwasmlib.ScFuncs.ArrayOfArraysAddrSet(ctx)
+	aas.Params.Index0().SetValue(0)
+	aas.Params.Index1().SetValue(1)
+	aas.Params.ValueAddr().SetValue(mapVals[3])
+	aas.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.EqualValues(t, mapVals[3], aav.Results.ValueAddr().Value())
 }
 
 func TestMapOfMapsClear(t *testing.T) {

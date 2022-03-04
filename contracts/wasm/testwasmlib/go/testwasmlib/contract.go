@@ -9,6 +9,20 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
+type ArrayOfArraysAddrAppendCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfArraysAddrAppendParams
+}
+
+type ArrayOfArraysAddrClearCall struct {
+	Func    *wasmlib.ScFunc
+}
+
+type ArrayOfArraysAddrSetCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfArraysAddrSetParams
+}
+
 type ArrayOfArraysAppendCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableArrayOfArraysAppendParams
@@ -95,6 +109,17 @@ type TriggerEventCall struct {
 	Params MutableTriggerEventParams
 }
 
+type ArrayOfArraysAddrLengthCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableArrayOfArraysAddrLengthResults
+}
+
+type ArrayOfArraysAddrValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableArrayOfArraysAddrValueParams
+	Results ImmutableArrayOfArraysAddrValueResults
+}
+
 type ArrayOfArraysLengthCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableArrayOfArraysLengthResults
@@ -167,6 +192,22 @@ type MapOfMapsValueCall struct {
 type Funcs struct{}
 
 var ScFuncs Funcs
+
+func (sc Funcs) ArrayOfArraysAddrAppend(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAddrAppendCall {
+	f := &ArrayOfArraysAddrAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAddrAppend)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayOfArraysAddrClear(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAddrClearCall {
+	return &ArrayOfArraysAddrClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAddrClear)}
+}
+
+func (sc Funcs) ArrayOfArraysAddrSet(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAddrSetCall {
+	f := &ArrayOfArraysAddrSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAddrSet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
 
 func (sc Funcs) ArrayOfArraysAppend(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAppendCall {
 	f := &ArrayOfArraysAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAppend)}
@@ -265,6 +306,19 @@ func (sc Funcs) TakeBalance(ctx wasmlib.ScFuncCallContext) *TakeBalanceCall {
 func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {
 	f := &TriggerEventCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTriggerEvent)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayOfArraysAddrLength(ctx wasmlib.ScViewCallContext) *ArrayOfArraysAddrLengthCall {
+	f := &ArrayOfArraysAddrLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfArraysAddrLength)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) ArrayOfArraysAddrValue(ctx wasmlib.ScViewCallContext) *ArrayOfArraysAddrValueCall {
+	f := &ArrayOfArraysAddrValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfArraysAddrValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
