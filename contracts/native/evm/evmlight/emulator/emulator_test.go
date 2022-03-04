@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -75,7 +74,7 @@ func TestBlockchain(t *testing.T) {
 
 	db := dict.Dict{}
 	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, &iscpBackend{})
+	emu := NewEVMEmulator(db, 1, nil)
 
 	// some assertions
 	{
@@ -157,13 +156,13 @@ func TestBlockchainPersistence(t *testing.T) {
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
-		emu := NewEVMEmulator(db, 1, &iscpBackend{})
+		emu := NewEVMEmulator(db, 1, nil)
 		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 	}()
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(db, 2, &iscpBackend{})
+		emu := NewEVMEmulator(db, 2, nil)
 		state := emu.StateDB()
 		// check the new balances
 		require.EqualValues(t, (&big.Int{}).Sub(faucetSupply, transferAmount), state.GetBalance(faucetAddress))
@@ -256,7 +255,7 @@ func TestStorageContract(t *testing.T) {
 
 	db := dict.Dict{}
 	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, &iscpBackend{})
+	emu := NewEVMEmulator(db, 1, nil)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -330,7 +329,7 @@ func TestERC20Contract(t *testing.T) {
 
 	db := dict.Dict{}
 	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, &iscpBackend{})
+	emu := NewEVMEmulator(db, 1, nil)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
@@ -421,7 +420,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 
 	db := dict.Dict{}
 	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, &iscpBackend{})
+	emu := NewEVMEmulator(db, 1, nil)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)
@@ -509,11 +508,3 @@ func dbSize(db kv.KVStore) float64 {
 	})
 	return r
 }
-
-type iscpBackend struct{}
-
-var _ vm.ISCPBackend = &iscpBackend{}
-
-func (i *iscpBackend) Event(s string) {}
-
-func (i *iscpBackend) Entropy() [32]byte { return [32]byte{} }

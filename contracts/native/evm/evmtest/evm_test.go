@@ -321,30 +321,28 @@ func TestPrePaidFees(t *testing.T) {
 
 func TestISCPContract(t *testing.T) {
 	// deploy the evmlight contract, which starts an EVM chain and automatically
-	// deploys the iscp.sol EVM contract at address 0x1074
+	// deploys the isc.sol EVM contract at address 0x1074
 	evmChain := initEVMChain(t, evmlight.Contract)
 
-	// deploy the iscp-test.sol EVM contract
-	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
+	// deploy the isc-test.sol EVM contract
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
-	// call the getChainId() view function of iscp-test.sol which in turn:
-	//  calls the getChainId() view function of iscp.sol, which:
-	//   returns the ChainID of the underlying ISCP chain
-	chainID := iscpTest.getChainID()
+	// call the ISCTest.getChainId() view function of isc-test.sol which in turn:
+	//  calls the ISC.getChainId() view function of isc.sol at 0x1074, which:
+	//   returns the ChainID of the underlying ISC chain
+	chainID := iscTest.getChainID()
 
 	require.True(t, evmChain.soloChain.ChainID.Equals(chainID))
 }
 
 func TestISCPTriggerEvent(t *testing.T) {
 	evmChain := initEVMChain(t, evmlight.Contract)
-	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
-	// call the triggerEvent(string) function of iscp-test.sol which in turn:
-	//  calls the iscpTriggerEvent(string) function of iscp.sol, which:
-	//   executes a custom opcode, which:
-	//    gets intercepted by the evmlight contract, which:
-	//     triggers an ISCP event with the given string parameter
-	res, err := iscpTest.triggerEvent("Hi from EVM!")
+	// call ISCTest.triggerEvent(string) function of isc-test.sol which in turn:
+	//  calls the ISC.iscpTriggerEvent(string) function of isc.sol at 0x1074, which:
+	//   triggers an ISC event with the given string parameter
+	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 	ev, err := evmChain.soloChain.GetEventsForBlock(evmChain.soloChain.GetLatestBlockInfo().BlockIndex)
@@ -355,15 +353,13 @@ func TestISCPTriggerEvent(t *testing.T) {
 
 func TestISCPEntropy(t *testing.T) {
 	evmChain := initEVMChain(t, evmlight.Contract)
-	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
-	// call the emitEntropy() function of iscp-test.sol which in turn:
-	//  calls the iscpEntropy() function of iscp.sol, which:
-	//   executes a custom opcode, which:
-	//    gets intercepted by the evmlight contract, which:
-	//     returns the entropy value from the sandbox
+	// call the ISCTest.emitEntropy() function of isc-test.sol which in turn:
+	//  calls ISC.iscpEntropy() function of isc.sol at 0x1074, which:
+	//   returns the entropy value from the sandbox
 	//  emits an EVM event (aka log) with the entropy value
-	res, err := iscpTest.emitEntropy()
+	res, err := iscTest.emitEntropy()
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 	require.Len(t, res.evmReceipt.Logs, 1)
