@@ -461,13 +461,9 @@ func (r *OnLedgerRequestData) NFT() *NFT {
 	}
 
 	ret := &NFT{}
-	if out.NFTID.Empty() {
-		// NFT outputs might not have an NFTID defined yet (when initially minted, the NFTOutput will have an empty NFTID, so we need to compute it)
-		utxoInput := r.UTXOInput()
-		ret.ID = iotago.NFTIDFromOutputID(utxoInput.ID())
-	} else {
-		ret.ID = out.NFTID
-	}
+
+	utxoInput := r.UTXOInput()
+	ret.ID = util.NFTIDFromNFTOutput(out, utxoInput.ID())
 
 	for _, featureBlock := range out.ImmutableBlocks {
 		if block, ok := featureBlock.(*iotago.IssuerFeatureBlock); ok {

@@ -52,6 +52,7 @@ func NewChainOriginTransaction(
 		walletAddr,
 		aliasOutput.Amount,
 		nil,
+		nil,
 		unspentOutputs,
 		unspentOutputIDs,
 		l1Params.RentStructure(),

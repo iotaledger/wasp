@@ -33,7 +33,7 @@ func NewMintNFTTransaction(par MintNftTransactionParams) (*iotago.Transaction, e
 
 	outputs := iotago.Outputs{out}
 
-	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, par.UnspentOutputs, par.UnspentOutputIDs, par.L1Params.RentStructure())
+	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, nil, par.UnspentOutputs, par.UnspentOutputIDs, par.L1Params.RentStructure())
 	if err != nil {
 		return nil, err
 	}

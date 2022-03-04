@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -828,8 +829,7 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 
 // region NFT outputs /////////////////////////////////
 type NFTOutputRec struct {
-	DustIotas   uint64 // always dust deposit
-	NFTID       iotago.NFTID
+	Output      *iotago.NFTOutput
 	BlockIndex  uint32
 	OutputIndex uint16
 }
@@ -837,15 +837,18 @@ type NFTOutputRec struct {
 func (r *NFTOutputRec) Bytes() []byte {
 	mu := marshalutil.New()
 	mu.WriteUint32(r.BlockIndex).
-		WriteUint16(r.OutputIndex).
-		WriteUint64(r.DustIotas).
-		WriteBytes(r.NFTID[:])
+		WriteUint16(r.OutputIndex)
+	outBytes, err := r.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic("error serializing NFToutput")
+	}
+	mu.WriteBytes(outBytes)
 	return mu.Bytes()
 }
 
 func (r *NFTOutputRec) String() string {
 	return fmt.Sprintf("NFT Record: iotas: %d, ID: %s, block: %d, outIdx: %d",
-		r.DustIotas, r.NFTID.String(), r.BlockIndex, r.OutputIndex)
+		r.Output.Deposit(), r.Output.NFTID, r.BlockIndex, r.OutputIndex)
 }
 
 func NFTOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFTOutputRec, error) {
@@ -857,13 +860,9 @@ func NFTOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFTOutputRec, er
 	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	if ret.DustIotas, err = mu.ReadUint64(); err != nil {
+	ret.Output = &iotago.NFTOutput{}
+	if _, err := ret.Output.Deserialize(mu.ReadRemainingBytes(), serializer.DeSeriModeNoValidation, nil); err != nil {
 		return nil, err
-	}
-	if idBytes, err := mu.ReadBytes(iotago.NFTIDLength); err != nil {
-		return nil, err
-	} else {
-		copy(ret.NFTID[:], idBytes)
 	}
 	return ret, nil
 }
@@ -888,8 +887,7 @@ func getNFTOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 // SaveNFTOutput map tokenID -> foundryRec
 func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, blockIndex uint32, outputIndex uint16) {
 	tokenRec := NFTOutputRec{
-		DustIotas:   out.Amount,
-		NFTID:       out.NFTID,
+		Output:      out,
 		BlockIndex:  blockIndex,
 		OutputIndex: outputIndex,
 	}
@@ -906,19 +904,7 @@ func GetNFTOutput(state kv.KVStoreReader, id *iotago.NFTID, chainID *iscp.ChainI
 		return nil, 0, 0
 	}
 	tokenRec := mustNFTOutputRecFromBytes(data)
-	ret := &iotago.NFTOutput{
-		Amount: tokenRec.DustIotas,
-		NFTID:  tokenRec.NFTID,
-		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
-		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
-				Address: chainID.AsAddress(),
-			},
-		},
-	}
-	return ret, tokenRec.BlockIndex, tokenRec.OutputIndex
+	return tokenRec.Output, tokenRec.BlockIndex, tokenRec.OutputIndex
 }
 
 // endregion //////////////////////////////////////////

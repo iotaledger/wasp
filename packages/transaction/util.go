@@ -90,6 +90,7 @@ func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
+	nftsOut map[*iotago.NFTID]bool,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
@@ -100,6 +101,7 @@ func computeInputsAndRemainder(
 ) {
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
+	NFTsIn := make(map[*iotago.NFTID]bool)
 
 	var remainder *iotago.BasicOutput
 
@@ -111,6 +113,12 @@ func computeInputsAndRemainder(
 			return nil, nil, xerrors.New("computeInputsAndRemainder: outputID is not in the set ")
 		}
 		inputCount++
+		if nftInp, ok := inp.(*iotago.NFTOutput); ok {
+			nftID := util.NFTIDFromNFTOutput(nftInp, id)
+			if nftsOut[&nftID] {
+				NFTsIn[&nftID] = true
+			}
+		}
 		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
 		for _, nativeToken := range a.Tokens {
@@ -123,7 +131,7 @@ func computeInputsAndRemainder(
 		}
 		// calculate remainder. It will return  err != nil if inputs not enough.
 		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
-		if errLast == nil {
+		if errLast == nil && len(NFTsIn) == len(nftsOut) {
 			break
 		}
 	}
