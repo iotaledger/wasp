@@ -21,14 +21,6 @@ func (a ArrayOfImmutableAddressArray) GetAddressArray(index uint32) ImmutableAdd
 	return ImmutableAddressArray{proxy: a.proxy.Index(index)}
 }
 
-type MapAddressToImmutableAddressArray struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapAddressToImmutableAddressArray) GetAddressArray(key wasmtypes.ScAddress) ImmutableAddressArray {
-	return ImmutableAddressArray{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
-}
-
 type ArrayOfImmutableAddressMap struct {
 	proxy wasmtypes.Proxy
 }
@@ -39,6 +31,14 @@ func (a ArrayOfImmutableAddressMap) Length() uint32 {
 
 func (a ArrayOfImmutableAddressMap) GetAddressMap(index uint32) ImmutableAddressMap {
 	return ImmutableAddressMap{proxy: a.proxy.Index(index)}
+}
+
+type MapAddressToImmutableAddressArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToImmutableAddressArray) GetAddressArray(key wasmtypes.ScAddress) ImmutableAddressArray {
+	return ImmutableAddressArray{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
 }
 
 type MapAddressToImmutableAddressMap struct {
@@ -101,20 +101,20 @@ type ImmutableTestWasmLibState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestWasmLibState) AddressArrayArrays() ArrayOfImmutableAddressArray {
-	return ArrayOfImmutableAddressArray{proxy: s.proxy.Root(StateAddressArrayArrays)}
+func (s ImmutableTestWasmLibState) AddrArrayOfArrays() ArrayOfImmutableAddressArray {
+	return ArrayOfImmutableAddressArray{proxy: s.proxy.Root(StateAddrArrayOfArrays)}
 }
 
-func (s ImmutableTestWasmLibState) AddressArrays() MapAddressToImmutableAddressArray {
-	return MapAddressToImmutableAddressArray{proxy: s.proxy.Root(StateAddressArrays)}
+func (s ImmutableTestWasmLibState) AddrArrayOfMaps() ArrayOfImmutableAddressMap {
+	return ArrayOfImmutableAddressMap{proxy: s.proxy.Root(StateAddrArrayOfMaps)}
 }
 
-func (s ImmutableTestWasmLibState) AddressMapArrays() ArrayOfImmutableAddressMap {
-	return ArrayOfImmutableAddressMap{proxy: s.proxy.Root(StateAddressMapArrays)}
+func (s ImmutableTestWasmLibState) AddrMapOfArrays() MapAddressToImmutableAddressArray {
+	return MapAddressToImmutableAddressArray{proxy: s.proxy.Root(StateAddrMapOfArrays)}
 }
 
-func (s ImmutableTestWasmLibState) AddressMaps() MapAddressToImmutableAddressMap {
-	return MapAddressToImmutableAddressMap{proxy: s.proxy.Root(StateAddressMaps)}
+func (s ImmutableTestWasmLibState) AddrMapOfMaps() MapAddressToImmutableAddressMap {
+	return MapAddressToImmutableAddressMap{proxy: s.proxy.Root(StateAddrMapOfMaps)}
 }
 
 func (s ImmutableTestWasmLibState) LatLong() MapInt32ToImmutableLongitude {
@@ -161,18 +161,6 @@ func (a ArrayOfMutableAddressArray) GetAddressArray(index uint32) MutableAddress
 	return MutableAddressArray{proxy: a.proxy.Index(index)}
 }
 
-type MapAddressToMutableAddressArray struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapAddressToMutableAddressArray) Clear() {
-	m.proxy.ClearMap()
-}
-
-func (m MapAddressToMutableAddressArray) GetAddressArray(key wasmtypes.ScAddress) MutableAddressArray {
-	return MutableAddressArray{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
-}
-
 type ArrayOfMutableAddressMap struct {
 	proxy wasmtypes.Proxy
 }
@@ -191,6 +179,18 @@ func (a ArrayOfMutableAddressMap) Length() uint32 {
 
 func (a ArrayOfMutableAddressMap) GetAddressMap(index uint32) MutableAddressMap {
 	return MutableAddressMap{proxy: a.proxy.Index(index)}
+}
+
+type MapAddressToMutableAddressArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToMutableAddressArray) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapAddressToMutableAddressArray) GetAddressArray(key wasmtypes.ScAddress) MutableAddressArray {
+	return MutableAddressArray{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
 }
 
 type MapAddressToMutableAddressMap struct {
@@ -289,20 +289,20 @@ func (s MutableTestWasmLibState) AsImmutable() ImmutableTestWasmLibState {
 	return ImmutableTestWasmLibState(s)
 }
 
-func (s MutableTestWasmLibState) AddressArrayArrays() ArrayOfMutableAddressArray {
-	return ArrayOfMutableAddressArray{proxy: s.proxy.Root(StateAddressArrayArrays)}
+func (s MutableTestWasmLibState) AddrArrayOfArrays() ArrayOfMutableAddressArray {
+	return ArrayOfMutableAddressArray{proxy: s.proxy.Root(StateAddrArrayOfArrays)}
 }
 
-func (s MutableTestWasmLibState) AddressArrays() MapAddressToMutableAddressArray {
-	return MapAddressToMutableAddressArray{proxy: s.proxy.Root(StateAddressArrays)}
+func (s MutableTestWasmLibState) AddrArrayOfMaps() ArrayOfMutableAddressMap {
+	return ArrayOfMutableAddressMap{proxy: s.proxy.Root(StateAddrArrayOfMaps)}
 }
 
-func (s MutableTestWasmLibState) AddressMapArrays() ArrayOfMutableAddressMap {
-	return ArrayOfMutableAddressMap{proxy: s.proxy.Root(StateAddressMapArrays)}
+func (s MutableTestWasmLibState) AddrMapOfArrays() MapAddressToMutableAddressArray {
+	return MapAddressToMutableAddressArray{proxy: s.proxy.Root(StateAddrMapOfArrays)}
 }
 
-func (s MutableTestWasmLibState) AddressMaps() MapAddressToMutableAddressMap {
-	return MapAddressToMutableAddressMap{proxy: s.proxy.Root(StateAddressMaps)}
+func (s MutableTestWasmLibState) AddrMapOfMaps() MapAddressToMutableAddressMap {
+	return MapAddressToMutableAddressMap{proxy: s.proxy.Root(StateAddrMapOfMaps)}
 }
 
 func (s MutableTestWasmLibState) LatLong() MapInt32ToMutableLongitude {

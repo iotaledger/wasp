@@ -34,6 +34,7 @@ const (
 	ParamInt8        = "int8"
 	ParamKey         = "key"
 	ParamName        = "name"
+	ParamNameAddr    = "nameAddr"
 	ParamParam       = "this"
 	ParamRecordIndex = "recordIndex"
 	ParamRequestID   = "requestID"
@@ -43,22 +44,24 @@ const (
 	ParamUint64      = "uint64"
 	ParamUint8       = "uint8"
 	ParamValue       = "value"
+	ParamValueAddr   = "valueAddr"
 )
 
 const (
-	ResultCount  = "count"
-	ResultIotas  = "iotas"
-	ResultLength = "length"
-	ResultRandom = "random"
-	ResultRecord = "record"
-	ResultValue  = "value"
+	ResultCount     = "count"
+	ResultIotas     = "iotas"
+	ResultLength    = "length"
+	ResultRandom    = "random"
+	ResultRecord    = "record"
+	ResultValue     = "value"
+	ResultValueAddr = "valueAddr"
 )
 
 const (
-	StateAddressArrayArrays  = "AddressArrayArrays"
-	StateAddressArrays       = "AddressArrays"
-	StateAddressMapArrays    = "AddressMapArrays"
-	StateAddressMaps         = "AddressMaps"
+	StateAddrArrayOfArrays   = "addrArrayOfArrays"
+	StateAddrArrayOfMaps     = "addrArrayOfMaps"
+	StateAddrMapOfArrays     = "addrMapOfArrays"
+	StateAddrMapOfMaps       = "addrMapOfMaps"
 	StateLatLong             = "latLong"
 	StateRandom              = "random"
 	StateStringArrayOfArrays = "stringArrayOfArrays"
@@ -68,57 +71,67 @@ const (
 )
 
 const (
-	FuncArrayOfArraysAppend = "arrayOfArraysAppend"
-	FuncArrayOfArraysClear  = "arrayOfArraysClear"
-	FuncArrayOfArraysSet    = "arrayOfArraysSet"
-	FuncArrayOfMapsClear    = "arrayOfMapsClear"
-	FuncArrayOfMapsSet      = "arrayOfMapsSet"
-	FuncMapOfArraysAppend   = "mapOfArraysAppend"
-	FuncMapOfArraysClear    = "mapOfArraysClear"
-	FuncMapOfArraysSet      = "mapOfArraysSet"
-	FuncMapOfMapsClear      = "mapOfMapsClear"
-	FuncMapOfMapsSet        = "mapOfMapsSet"
-	FuncParamTypes          = "paramTypes"
-	FuncRandom              = "random"
-	FuncTakeAllowance       = "takeAllowance"
-	FuncTakeBalance         = "takeBalance"
-	FuncTriggerEvent        = "triggerEvent"
-	ViewArrayOfArraysLength = "arrayOfArraysLength"
-	ViewArrayOfArraysValue  = "arrayOfArraysValue"
-	ViewArrayOfMapsValue    = "arrayOfMapsValue"
-	ViewBlockRecord         = "blockRecord"
-	ViewBlockRecords        = "blockRecords"
-	ViewGetRandom           = "getRandom"
-	ViewIotaBalance         = "iotaBalance"
-	ViewMapOfArraysLength   = "mapOfArraysLength"
-	ViewMapOfArraysValue    = "mapOfArraysValue"
-	ViewMapOfMapsValue      = "mapOfMapsValue"
+	FuncArrayOfArraysAppend   = "arrayOfArraysAppend"
+	FuncArrayOfArraysClear    = "arrayOfArraysClear"
+	FuncArrayOfArraysSet      = "arrayOfArraysSet"
+	FuncArrayOfMapsClear      = "arrayOfMapsClear"
+	FuncArrayOfMapsSet        = "arrayOfMapsSet"
+	FuncMapOfArraysAddrAppend = "mapOfArraysAddrAppend"
+	FuncMapOfArraysAddrClear  = "mapOfArraysAddrClear"
+	FuncMapOfArraysAddrSet    = "mapOfArraysAddrSet"
+	FuncMapOfArraysAppend     = "mapOfArraysAppend"
+	FuncMapOfArraysClear      = "mapOfArraysClear"
+	FuncMapOfArraysSet        = "mapOfArraysSet"
+	FuncMapOfMapsClear        = "mapOfMapsClear"
+	FuncMapOfMapsSet          = "mapOfMapsSet"
+	FuncParamTypes            = "paramTypes"
+	FuncRandom                = "random"
+	FuncTakeAllowance         = "takeAllowance"
+	FuncTakeBalance           = "takeBalance"
+	FuncTriggerEvent          = "triggerEvent"
+	ViewArrayOfArraysLength   = "arrayOfArraysLength"
+	ViewArrayOfArraysValue    = "arrayOfArraysValue"
+	ViewArrayOfMapsValue      = "arrayOfMapsValue"
+	ViewBlockRecord           = "blockRecord"
+	ViewBlockRecords          = "blockRecords"
+	ViewGetRandom             = "getRandom"
+	ViewIotaBalance           = "iotaBalance"
+	ViewMapOfArraysAddrLength = "mapOfArraysAddrLength"
+	ViewMapOfArraysAddrValue  = "mapOfArraysAddrValue"
+	ViewMapOfArraysLength     = "mapOfArraysLength"
+	ViewMapOfArraysValue      = "mapOfArraysValue"
+	ViewMapOfMapsValue        = "mapOfMapsValue"
 )
 
 const (
-	HFuncArrayOfArraysAppend = wasmtypes.ScHname(0x23f3a17e)
-	HFuncArrayOfArraysClear  = wasmtypes.ScHname(0xc826f36f)
-	HFuncArrayOfArraysSet    = wasmtypes.ScHname(0x74d77052)
-	HFuncArrayOfMapsClear    = wasmtypes.ScHname(0x974adaae)
-	HFuncArrayOfMapsSet      = wasmtypes.ScHname(0x9e7baa47)
-	HFuncMapOfArraysAppend   = wasmtypes.ScHname(0x072902d4)
-	HFuncMapOfArraysClear    = wasmtypes.ScHname(0xdcdbc582)
-	HFuncMapOfArraysSet      = wasmtypes.ScHname(0xcdbf9981)
-	HFuncMapOfMapsClear      = wasmtypes.ScHname(0xd02a5431)
-	HFuncMapOfMapsSet        = wasmtypes.ScHname(0x353d577f)
-	HFuncParamTypes          = wasmtypes.ScHname(0x6921c4cd)
-	HFuncRandom              = wasmtypes.ScHname(0xe86c97ca)
-	HFuncTakeAllowance       = wasmtypes.ScHname(0x91e7bd00)
-	HFuncTakeBalance         = wasmtypes.ScHname(0x8ad1cb27)
-	HFuncTriggerEvent        = wasmtypes.ScHname(0xd5438ac6)
-	HViewArrayOfArraysLength = wasmtypes.ScHname(0x5e918d60)
-	HViewArrayOfArraysValue  = wasmtypes.ScHname(0x41d5f686)
-	HViewArrayOfMapsValue    = wasmtypes.ScHname(0x77e1ef85)
-	HViewBlockRecord         = wasmtypes.ScHname(0xad13b2f8)
-	HViewBlockRecords        = wasmtypes.ScHname(0x16e249ea)
-	HViewGetRandom           = wasmtypes.ScHname(0x46263045)
-	HViewIotaBalance         = wasmtypes.ScHname(0x9d3920bd)
-	HViewMapOfArraysLength   = wasmtypes.ScHname(0x86379ff7)
-	HViewMapOfArraysValue    = wasmtypes.ScHname(0x8dee3538)
-	HViewMapOfMapsValue      = wasmtypes.ScHname(0x476c56e4)
+	HFuncArrayOfArraysAppend   = wasmtypes.ScHname(0x23f3a17e)
+	HFuncArrayOfArraysClear    = wasmtypes.ScHname(0xc826f36f)
+	HFuncArrayOfArraysSet      = wasmtypes.ScHname(0x74d77052)
+	HFuncArrayOfMapsClear      = wasmtypes.ScHname(0x974adaae)
+	HFuncArrayOfMapsSet        = wasmtypes.ScHname(0x9e7baa47)
+	HFuncMapOfArraysAddrAppend = wasmtypes.ScHname(0x4ba0fac9)
+	HFuncMapOfArraysAddrClear  = wasmtypes.ScHname(0x0f9240f9)
+	HFuncMapOfArraysAddrSet    = wasmtypes.ScHname(0x717f354d)
+	HFuncMapOfArraysAppend     = wasmtypes.ScHname(0x072902d4)
+	HFuncMapOfArraysClear      = wasmtypes.ScHname(0xdcdbc582)
+	HFuncMapOfArraysSet        = wasmtypes.ScHname(0xcdbf9981)
+	HFuncMapOfMapsClear        = wasmtypes.ScHname(0xd02a5431)
+	HFuncMapOfMapsSet          = wasmtypes.ScHname(0x353d577f)
+	HFuncParamTypes            = wasmtypes.ScHname(0x6921c4cd)
+	HFuncRandom                = wasmtypes.ScHname(0xe86c97ca)
+	HFuncTakeAllowance         = wasmtypes.ScHname(0x91e7bd00)
+	HFuncTakeBalance           = wasmtypes.ScHname(0x8ad1cb27)
+	HFuncTriggerEvent          = wasmtypes.ScHname(0xd5438ac6)
+	HViewArrayOfArraysLength   = wasmtypes.ScHname(0x5e918d60)
+	HViewArrayOfArraysValue    = wasmtypes.ScHname(0x41d5f686)
+	HViewArrayOfMapsValue      = wasmtypes.ScHname(0x77e1ef85)
+	HViewBlockRecord           = wasmtypes.ScHname(0xad13b2f8)
+	HViewBlockRecords          = wasmtypes.ScHname(0x16e249ea)
+	HViewGetRandom             = wasmtypes.ScHname(0x46263045)
+	HViewIotaBalance           = wasmtypes.ScHname(0x9d3920bd)
+	HViewMapOfArraysAddrLength = wasmtypes.ScHname(0x3910ae79)
+	HViewMapOfArraysAddrValue  = wasmtypes.ScHname(0x81b3c951)
+	HViewMapOfArraysLength     = wasmtypes.ScHname(0x86379ff7)
+	HViewMapOfArraysValue      = wasmtypes.ScHname(0x8dee3538)
+	HViewMapOfMapsValue        = wasmtypes.ScHname(0x476c56e4)
 )

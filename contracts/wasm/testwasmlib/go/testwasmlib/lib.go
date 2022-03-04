@@ -176,6 +176,72 @@ func funcArrayOfMapsSetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcArrayOfMapsSet ok")
 }
 
+type MapOfArraysAddrAppendContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableMapOfArraysAddrAppendParams
+	State  MutableTestWasmLibState
+}
+
+func funcMapOfArraysAddrAppendThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcMapOfArraysAddrAppend")
+	f := &MapOfArraysAddrAppendContext{
+		Params: ImmutableMapOfArraysAddrAppendParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.NameAddr().Exists(), "missing mandatory nameAddr")
+	ctx.Require(f.Params.ValueAddr().Exists(), "missing mandatory valueAddr")
+	funcMapOfArraysAddrAppend(ctx, f)
+	ctx.Log("testwasmlib.funcMapOfArraysAddrAppend ok")
+}
+
+type MapOfArraysAddrClearContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableMapOfArraysAddrClearParams
+	State  MutableTestWasmLibState
+}
+
+func funcMapOfArraysAddrClearThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcMapOfArraysAddrClear")
+	f := &MapOfArraysAddrClearContext{
+		Params: ImmutableMapOfArraysAddrClearParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.NameAddr().Exists(), "missing mandatory nameAddr")
+	funcMapOfArraysAddrClear(ctx, f)
+	ctx.Log("testwasmlib.funcMapOfArraysAddrClear ok")
+}
+
+type MapOfArraysAddrSetContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableMapOfArraysAddrSetParams
+	State  MutableTestWasmLibState
+}
+
+func funcMapOfArraysAddrSetThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcMapOfArraysAddrSet")
+	f := &MapOfArraysAddrSetContext{
+		Params: ImmutableMapOfArraysAddrSetParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
+	ctx.Require(f.Params.NameAddr().Exists(), "missing mandatory nameAddr")
+	ctx.Require(f.Params.ValueAddr().Exists(), "missing mandatory valueAddr")
+	funcMapOfArraysAddrSet(ctx, f)
+	ctx.Log("testwasmlib.funcMapOfArraysAddrSet ok")
+}
+
 type MapOfArraysAppendContext struct {
 	Events TestWasmLibEvents
 	Params ImmutableMapOfArraysAppendParams
@@ -550,6 +616,59 @@ func viewIotaBalanceThunk(ctx wasmlib.ScViewContext) {
 	viewIotaBalance(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewIotaBalance ok")
+}
+
+type MapOfArraysAddrLengthContext struct {
+	Params  ImmutableMapOfArraysAddrLengthParams
+	Results MutableMapOfArraysAddrLengthResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewMapOfArraysAddrLengthThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewMapOfArraysAddrLength")
+	results := wasmlib.NewScDict()
+	f := &MapOfArraysAddrLengthContext{
+		Params: ImmutableMapOfArraysAddrLengthParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableMapOfArraysAddrLengthResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.NameAddr().Exists(), "missing mandatory nameAddr")
+	viewMapOfArraysAddrLength(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewMapOfArraysAddrLength ok")
+}
+
+type MapOfArraysAddrValueContext struct {
+	Params  ImmutableMapOfArraysAddrValueParams
+	Results MutableMapOfArraysAddrValueResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewMapOfArraysAddrValueThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewMapOfArraysAddrValue")
+	results := wasmlib.NewScDict()
+	f := &MapOfArraysAddrValueContext{
+		Params: ImmutableMapOfArraysAddrValueParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableMapOfArraysAddrValueResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
+	ctx.Require(f.Params.NameAddr().Exists(), "missing mandatory nameAddr")
+	viewMapOfArraysAddrValue(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewMapOfArraysAddrValue ok")
 }
 
 type MapOfArraysLengthContext struct {

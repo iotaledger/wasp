@@ -97,6 +97,78 @@ func (s MutableArrayOfMapsSetParams) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
+type ImmutableMapOfArraysAddrAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrAppendParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+func (s ImmutableMapOfArraysAddrAppendParams) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamValueAddr))
+}
+
+type MutableMapOfArraysAddrAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrAppendParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+func (s MutableMapOfArraysAddrAppendParams) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamValueAddr))
+}
+
+type ImmutableMapOfArraysAddrClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrClearParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type MutableMapOfArraysAddrClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrClearParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type ImmutableMapOfArraysAddrSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrSetParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableMapOfArraysAddrSetParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+func (s ImmutableMapOfArraysAddrSetParams) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamValueAddr))
+}
+
+type MutableMapOfArraysAddrSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrSetParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableMapOfArraysAddrSetParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+func (s MutableMapOfArraysAddrSetParams) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamValueAddr))
+}
+
 type ImmutableMapOfArraysAppendParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -509,6 +581,46 @@ type MutableBlockRecordsParams struct {
 
 func (s MutableBlockRecordsParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
+}
+
+type ImmutableMapOfArraysAddrLengthParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrLengthParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type MutableMapOfArraysAddrLengthParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrLengthParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type ImmutableMapOfArraysAddrValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrValueParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableMapOfArraysAddrValueParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type MutableMapOfArraysAddrValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrValueParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableMapOfArraysAddrValueParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
 }
 
 type ImmutableMapOfArraysLengthParams struct {
