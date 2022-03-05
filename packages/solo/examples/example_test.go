@@ -14,7 +14,7 @@ func TestExample1(t *testing.T) {
 	chain := env.NewChain(nil, "ex1")
 
 	chainID, chainOwner, coreContracts := chain.GetInfo()                        // calls view root::GetInfo
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts)) // 5 core contracts deployed by default
+	require.EqualValues(t, len(corecontracts.All), len(coreContracts)) // 5 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwner.String())

@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -18,13 +17,25 @@ type Config struct {
 
 	// nativeContracts is the collection of registered native contracts
 	nativeContracts map[hashing.HashValue]iscp.VMProcessor
+
+	// coreContracts is the collection of core contracts
+	coreContracts map[hashing.HashValue]iscp.VMProcessor
 }
 
-func NewConfig(nativeContracts ...*coreutil.ContractProcessor) *Config {
-	p := &Config{
+func NewConfig() *Config {
+	return &Config{
 		vmConstructors:  make(map[string]VMConstructor),
 		nativeContracts: make(map[hashing.HashValue]iscp.VMProcessor),
+		coreContracts:   make(map[hashing.HashValue]iscp.VMProcessor),
 	}
+}
+
+func (p *Config) WithCoreContracts(coreContracts map[hashing.HashValue]iscp.VMProcessor) *Config {
+	p.coreContracts = coreContracts
+	return p
+}
+
+func (p *Config) WithNativeContracts(nativeContracts ...*coreutil.ContractProcessor) *Config {
 	for _, c := range nativeContracts {
 		p.RegisterNativeContract(c)
 	}
@@ -54,7 +65,7 @@ func (p *Config) NewProcessorFromBinary(vmtype string, binaryCode []byte) (iscp.
 
 // GetNativeProcessorType returns the type of the native processor
 func (p *Config) GetNativeProcessorType(programHash hashing.HashValue) (string, bool) {
-	if _, err := core.GetProcessor(programHash); err == nil {
+	if _, ok := p.coreContracts[programHash]; ok {
 		return vmtypes.Core, true
 	}
 	if _, ok := p.GetNativeProcessor(programHash); ok {
@@ -70,5 +81,10 @@ func (p *Config) RegisterNativeContract(c *coreutil.ContractProcessor) {
 
 func (p *Config) GetNativeProcessor(programHash hashing.HashValue) (iscp.VMProcessor, bool) {
 	proc, ok := p.nativeContracts[programHash]
+	return proc, ok
+}
+
+func (p *Config) GetCoreProcessor(programHash hashing.HashValue) (iscp.VMProcessor, bool) {
+	proc, ok := p.coreContracts[programHash]
 	return proc, ok
 }

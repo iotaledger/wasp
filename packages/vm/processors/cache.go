@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"sync"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"golang.org/x/xerrors"
 )
 
 // Cache stores all initialized VMProcessor instances used by a single chain
@@ -52,9 +50,8 @@ func (cps *Cache) newProcessor(programHash hashing.HashValue, programCode []byte
 	}
 	switch vmtype {
 	case vmtypes.Core:
-		proc, err = core.GetProcessor(programHash)
-		if err != nil {
-			return err
+		if proc, ok = cps.Config.GetCoreProcessor(programHash); !ok {
+			return fmt.Errorf("can't find builtin processor with hash %s", programHash)
 		}
 
 	case vmtypes.Native:

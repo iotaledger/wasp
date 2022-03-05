@@ -41,7 +41,7 @@ func TestInitFailThenInitSuccess(t *testing.T) {
 		require.Error(t, ctx.Err)
 
 		_, _, rec := ctx.Chain.GetInfo()
-		require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+		require.EqualValues(t, len(corecontracts.All), len(rec))
 
 		init = testcore.ScFuncs.Init(nil)
 
@@ -50,7 +50,7 @@ func TestInitFailThenInitSuccess(t *testing.T) {
 		require.NoError(t, ctxRetry.Err)
 
 		_, _, rec = ctxRetry.Chain.GetInfo()
-		require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+		require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 	})
 }
 

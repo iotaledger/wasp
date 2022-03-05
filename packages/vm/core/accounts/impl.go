@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -45,7 +44,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
 	initialLoadIotas := iscp.NewAssets(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
-	CreditToAccount(ctx.State(), commonaccount.Get(ctx.ChainID()), initialLoadIotas)
+	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadIotas)
 	return nil
 }
 
@@ -163,7 +162,7 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	defer checkLedger(state, "accounts.harvest.exit")
 
 	bottomIotas := ctx.Params().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
-	commonAccount := commonaccount.Get(ctx.ChainID())
+	commonAccount := ctx.ChainID().CommonAccount()
 	toWithdraw := GetAccountAssets(state, commonAccount)
 	if toWithdraw.IsEmpty() {
 		// empty toWithdraw, nothing to withdraw. Can't be

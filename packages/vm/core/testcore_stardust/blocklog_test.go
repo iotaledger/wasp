@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBlockInfoLatest(t *testing.T) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
@@ -25,7 +25,7 @@ func TestBlockInfoLatest(t *testing.T) {
 }
 
 func TestBlockInfo(t *testing.T) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 

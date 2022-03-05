@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"golang.org/x/xerrors"
 )
@@ -922,7 +921,7 @@ func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
 	if amount == 0 {
 		return
 	}
-	commonAccount := commonaccount.Get(ctx.ChainID())
+	commonAccount := ctx.ChainID().CommonAccount()
 	dustAssets := iscp.NewAssetsIotas(amount)
 	transfer := iscp.NewAllowanceFungibleTokens(dustAssets)
 	ctx.TransferAllowedFunds(commonAccount, transfer)

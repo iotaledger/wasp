@@ -7,12 +7,12 @@
 PATHS=(\
     "packages/transaction/" \
     "packages/vm/core/testcore_stardust/..." \
+    "packages/vm/core/evm/..." \
     "packages/vm/vmcontext/..." \
     "packages/peering/..." \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/utxodb/" \
-    "contracts/native/evm/..." \
     "packages/evm/jsonrpc/jsonrpctest" \
 )
 WD=$PWD
