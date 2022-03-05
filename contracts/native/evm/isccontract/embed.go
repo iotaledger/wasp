@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package iscsol
+package isccontract
 
 import (
 	_ "embed"
@@ -14,5 +14,5 @@ import (
 //go:generate sh -c "solc --abi --overwrite ISC.sol -o ."
 var (
 	//go:embed ISC.abi
-	ISCContractABI string
+	ABI string
 )

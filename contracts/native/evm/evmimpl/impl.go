@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmlight
+package evmimpl
 
 import (
 	"math/big"
@@ -9,23 +9,26 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/emulator"
+	"github.com/iotaledger/wasp/contracts/native/evm/emulator"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-var Processor = Contract.Processor(initialize, append(
-	evminternal.ManagementHandlers,
-
+var Processor = evm.Contract.Processor(initialize,
+	evm.FuncSetNextOwner.WithHandler(setNextOwner),
+	evm.FuncClaimOwnership.WithHandler(claimOwnership),
+	evm.FuncSetGasRatio.WithHandler(setGasRatio),
+	evm.FuncGetOwner.WithHandler(getOwner),
+	evm.FuncGetGasRatio.WithHandler(getGasRatio),
+	evm.FuncSetBlockTime.WithHandler(setBlockTime),
 	evm.FuncMintBlock.WithHandler(mintBlock),
 	evm.FuncSendTransaction.WithHandler(applyTransaction),
 	evm.FuncGetBalance.WithHandler(getBalance),
 	evm.FuncCallContract.WithHandler(callContract),
-	evm.FuncEstimateGas.WithHandler(estimateGas),
 	evm.FuncGetNonce.WithHandler(getNonce),
 	evm.FuncGetReceipt.WithHandler(getReceipt),
 	evm.FuncGetCode.WithHandler(getCode),
@@ -39,7 +42,7 @@ var Processor = Contract.Processor(initialize, append(
 	evm.FuncGetTransactionCountByBlockNumber.WithHandler(getTransactionCountByBlockNumber),
 	evm.FuncGetStorage.WithHandler(getStorage),
 	evm.FuncGetLogs.WithHandler(getLogs),
-)...)
+)
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
 	a := assert.NewAssert(ctx.Log())
@@ -53,54 +56,73 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	a.RequireNoError(err)
 
 	// add the standard ISC contract at arbitrary address 0x1074
-	deployISCContractOnGenesis(genesisAlloc, ctx.ChainID())
+	deployISCContractOnGenesis(genesisAlloc)
 
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
 	emulator.Init(
-		evminternal.EVMStateSubrealm(ctx.State()),
+		evmStateSubrealm(ctx.State()),
 		chainID,
 		blockKeepAmount,
 		gasLimit,
 		timestamp(ctx),
 		genesisAlloc,
 	)
-	evminternal.InitializeManagement(ctx)
+
+	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evm.DefaultGasRatio)
+	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
+
+	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 	return nil
 }
 
 func mintBlock(ctx iscp.Sandbox) dict.Dict {
-	evminternal.ScheduleNextBlock(ctx)
+	scheduleNextBlock(ctx)
 	emu := createEmulator(ctx)
 	emu.MintBlock()
 	return nil
 }
 
 func applyTransaction(ctx iscp.Sandbox) dict.Dict {
-	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, blockTime uint32, gasBudget uint64) (uint64, error) {
-		var emu *emulator.EVMEmulator
-		if blockTime > 0 {
-			// next block will be minted when mintBlock() is called (via timelocked request)
-			emu = createEmulator(ctx)
-		} else {
-			// next block will be minted when the ISCP block is closed
-			emu = getEmulatorInBlockContext(ctx)
-		}
-		_, gasUsed, err := emu.SendTransaction(tx, gasBudget)
-		return gasUsed, err
-	}, true)
+	a := assert.NewAssert(ctx.Log())
+
+	tx := &types.Transaction{}
+	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransactionData))
+	a.RequireNoError(err)
+
+	blockTime := getBlockTime(ctx.State())
+
+	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evm.DefaultGasRatio)
+	gasBudget := evm.ISCGasBudgetToEVM(ctx.Gas().Budget(), gasRatio)
+
+	var emu *emulator.EVMEmulator
+	if blockTime > 0 {
+		// next block will be minted when mintBlock() is called (via timelocked request)
+		emu = createEmulator(ctx)
+	} else {
+		// next block will be minted when the ISC block is closed
+		emu = getEmulatorInBlockContext(ctx)
+	}
+	_, gasUsed, err := emu.SendTransaction(tx, gasBudget)
+
+	// burn gas even on error
+	ctx.Gas().Burn(gas.BurnCodeEVM1P, evm.EVMGasToISC(gasUsed, gasRatio))
+
+	ctx.RequireNoError(err)
+
+	return nil
 }
 
 func getBalance(ctx iscp.SandboxView) dict.Dict {
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	emu := createEmulatorR(ctx)
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
-	return evminternal.Result(emu.StateDB().GetBalance(addr).Bytes())
+	return result(emu.StateDB().GetBalance(addr).Bytes())
 }
 
 func getBlockNumber(ctx iscp.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
-	return evminternal.Result(new(big.Int).SetUint64(emu.BlockchainDB().GetNumber()).Bytes())
+	return result(new(big.Int).SetUint64(emu.BlockchainDB().GetNumber()).Bytes())
 }
 
 func getBlockByNumber(ctx iscp.SandboxView) dict.Dict {
@@ -138,21 +160,21 @@ func getReceipt(ctx iscp.SandboxView) dict.Dict {
 	if r == nil {
 		return nil
 	}
-	return evminternal.Result(evmtypes.EncodeReceiptFull(r))
+	return result(evmtypes.EncodeReceiptFull(r))
 }
 
 func getNonce(ctx iscp.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
-	return evminternal.Result(codec.EncodeUint64(emu.StateDB().GetNonce(addr)))
+	return result(codec.EncodeUint64(emu.StateDB().GetNonce(addr)))
 }
 
 func getCode(ctx iscp.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
-	return evminternal.Result(emu.StateDB().GetCode(addr))
+	return result(emu.StateDB().GetCode(addr))
 }
 
 func getStorage(ctx iscp.SandboxView) dict.Dict {
@@ -161,7 +183,7 @@ func getStorage(ctx iscp.SandboxView) dict.Dict {
 	key := common.BytesToHash(ctx.Params().MustGet(evm.FieldKey))
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	data := emu.StateDB().GetState(addr, key)
-	return evminternal.Result(data[:])
+	return result(data[:])
 }
 
 func getLogs(ctx iscp.SandboxView) dict.Dict {
@@ -170,7 +192,7 @@ func getLogs(ctx iscp.SandboxView) dict.Dict {
 	a.RequireNoError(err)
 	emu := createEmulatorR(ctx)
 	logs := emu.FilterLogs(q)
-	return evminternal.Result(evmtypes.EncodeLogs(logs))
+	return result(evmtypes.EncodeLogs(logs))
 }
 
 func callContract(ctx iscp.SandboxView) dict.Dict {
@@ -181,15 +203,5 @@ func callContract(ctx iscp.SandboxView) dict.Dict {
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	res, err := emu.CallContract(callMsg)
 	a.RequireNoError(err)
-	return evminternal.Result(res)
-}
-
-func estimateGas(ctx iscp.SandboxView) dict.Dict {
-	a := assert.NewAssert(ctx.Log())
-	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
-	a.RequireNoError(err)
-	emu := createEmulatorR(ctx)
-	gas, err := emu.EstimateGas(callMsg)
-	a.RequireNoError(err)
-	return evminternal.Result(codec.EncodeUint64(gas))
+	return result(res)
 }

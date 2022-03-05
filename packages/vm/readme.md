@@ -137,7 +137,7 @@ new `iscp.Processor` object from the binary data of the program.
 
 The following _VM types_ are pre-defined in the current release of the Wasp:
 * `core` represents core contracts
-* `native` represents example and other contracts (e.g. the `evmchain` contract) which conform to the native interface and are hardcoded before run
+* `native` represents example and other contracts (e.g. the `evm` contract) which conform to the native interface and are hardcoded before run
 * `wasmtime` represents Wasmtime WebAssembly interpreter and native `Rust/Wasm` environment to create smart contracts.
 
 To implement new types of interpreters, other languages or interpreters, a new _VM Type_

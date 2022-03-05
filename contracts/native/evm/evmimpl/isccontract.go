@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmlight
+package evmimpl
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscsol"
+	"github.com/iotaledger/wasp/contracts/native/evm/isccontract"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
@@ -22,9 +22,9 @@ func init() {
 	}
 }
 
-// DeployISCContractOnGenesis sets up the initial state of the ISC EVM contract
+// deployISCContractOnGenesis sets up the initial state of the ISC EVM contract
 // which will go into the EVM genesis block
-func deployISCContractOnGenesis(genesisAlloc core.GenesisAlloc, chainID *iscp.ChainID) {
+func deployISCContractOnGenesis(genesisAlloc core.GenesisAlloc) {
 	genesisAlloc[vm.ISCAddress] = core.GenesisAccount{
 		// dummy code, because some contracts check the code size before calling
 		// the contract; the code itself will never get executed
@@ -38,7 +38,7 @@ var iscABI abi.ABI
 
 func init() {
 	var err error
-	iscABI, err = abi.JSON(strings.NewReader(iscsol.ISCContractABI))
+	iscABI, err = abi.JSON(strings.NewReader(isccontract.ABI))
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +63,9 @@ type iscContract struct {
 	ctx iscp.Sandbox
 }
 
-var _ vm.ISCContract = &iscContract{}
+func newISCContract(ctx iscp.Sandbox) vm.ISCContract {
+	return &iscContract{ctx}
+}
 
 func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	remainingGas = gas
@@ -93,6 +95,10 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 type iscContractView struct {
 	ctx iscp.SandboxView
+}
+
+func newISCContractView(ctx iscp.SandboxView) vm.ISCContract {
+	return &iscContractView{ctx}
 }
 
 var _ vm.ISCContract = &iscContractView{}

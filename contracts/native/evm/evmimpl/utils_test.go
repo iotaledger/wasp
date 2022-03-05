@@ -1,10 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmtest
+package evmimpl
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -16,10 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscsol/isctest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -29,19 +27,11 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
-func withEVMFlavors(t *testing.T, f func(*testing.T, *coreutil.ContractInfo)) {
-	for _, evmFlavor := range evmflavors.All {
-		t.Run(evmFlavor.Name, func(t *testing.T) { f(t, evmFlavor) })
-	}
-}
-
 type evmChainInstance struct {
 	t            testing.TB
-	evmFlavor    *coreutil.ContractInfo
 	solo         *solo.Solo
 	soloChain    *solo.Chain
 	faucetKey    *ecdsa.PrivateKey
@@ -78,38 +68,36 @@ type iotaCallOptions struct {
 }
 
 type ethCallOptions struct {
-	iota     iotaCallOptions
-	sender   *ecdsa.PrivateKey
-	value    *big.Int
-	gasLimit *uint64
+	iota   iotaCallOptions
+	sender *ecdsa.PrivateKey
+	value  *big.Int
 }
 
-func initEVMChain(t testing.TB, evmFlavor *coreutil.ContractInfo, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
+func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustDustDeposit: true,
 		Debug:                 true,
 		PrintStackTrace:       true,
 	}).
-		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
+		WithNativeContract(Processor)
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
-	return initEVMChainWithSolo(t, evmFlavor, env)
+	return initEVMWithSolo(t, env)
 }
 
-func initEVMChainWithSolo(t testing.TB, evmFlavor *coreutil.ContractInfo, env *solo.Solo) *evmChainInstance {
+func initEVMWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	chainID := evm.DefaultChainID
 	e := &evmChainInstance{
 		t:            t,
-		evmFlavor:    evmFlavor,
 		solo:         env,
 		soloChain:    env.NewChain(nil, "ch1"),
 		faucetKey:    faucetKey,
 		faucetSupply: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9)),
 		chainID:      chainID,
 	}
-	err := e.soloChain.DeployContract(nil, evmFlavor.Name, evmFlavor.ProgramHash,
+	err := e.soloChain.DeployContract(nil, evm.Contract.Name, evm.Contract.ProgramHash,
 		evm.FieldChainID, codec.EncodeUint16(uint16(chainID)),
 		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
 			e.faucetAddress(): {Balance: e.faucetSupply},
@@ -131,7 +119,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 }
 
 func (e *evmChainInstance) buildSoloRequest(funName string, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(e.evmFlavor.Name, funName, params...)
+	return solo.NewCallParams(evm.Contract.Name, funName, params...)
 }
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
@@ -143,12 +131,15 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 	if req.GasBudget() == 0 {
 		gasBudget, gasFee, err := e.soloChain.EstimateGasOnLedger(req, opt.wallet, true)
 		if err != nil {
-			return nil, errors.Wrap(e.resolveError(err), "could not estimate gas")
+			return nil, fmt.Errorf("could not estimate gas: %w", e.resolveError(err))
 		}
 		req.WithGasBudget(gasBudget).AddAssetsIotas(gasFee)
 	}
 	ret, err := e.soloChain.PostRequestSync(req, opt.wallet)
-	return ret, errors.Wrap(e.resolveError(err), "PostRequestSync failed")
+	if err != nil {
+		return nil, fmt.Errorf("PostRequestSync failed: %w", e.resolveError(err))
+	}
+	return ret, nil
 }
 
 func (e *evmChainInstance) resolveError(err error) error {
@@ -163,8 +154,11 @@ func (e *evmChainInstance) resolveError(err error) error {
 }
 
 func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
-	ret, err := e.soloChain.CallView(e.evmFlavor.Name, funName, params...)
-	return ret, errors.Wrap(e.resolveError(err), "CallView failed")
+	ret, err := e.soloChain.CallView(evm.Contract.Name, funName, params...)
+	if err != nil {
+		return nil, fmt.Errorf("CallView failed: %w", e.resolveError(err))
+	}
+	return ret, nil
 }
 
 func (e *evmChainInstance) setBlockTime(t uint32) {
@@ -244,7 +238,7 @@ func (e *evmChainInstance) getOwner() *iscp.AgentID {
 }
 
 func (e *evmChainInstance) deployISCTestContract(creator *ecdsa.PrivateKey) *iscpTestContractInstance {
-	return &iscpTestContractInstance{e.deployContract(creator, isctest.ISCTestContractABI, isctest.ISCTestContractBytecode)}
+	return &iscpTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
 func (e *evmChainInstance) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
@@ -279,18 +273,8 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	value := big.NewInt(0)
 
-	var evmGas uint64 = 0
-	if e.evmFlavor.Name == evmchain.Contract.Name {
-		evmGas = e.estimateGas(ethereum.CallMsg{
-			From:     creatorAddress,
-			GasPrice: evm.GasPrice,
-			Value:    value,
-			Data:     data,
-		})
-	}
-
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, evmGas, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, 0, evm.GasPrice, data),
 		e.signer(),
 		e.faucetKey,
 	)
@@ -299,17 +283,17 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	req := solo.NewCallParamsFromDic(e.evmFlavor.Name, evm.FuncSendTransaction.Name, dict.Dict{
+	req := solo.NewCallParamsFromDic(evm.Contract.Name, evm.FuncSendTransaction.Name, dict.Dict{
 		evm.FieldTransactionData: txdata,
 	})
 
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
-	require.NoError(e.t, errors.Wrap(e.resolveError(err), "could not estimate gas"))
+	require.NoError(e.t, e.resolveError(err))
 	req.WithGasBudget(iscpGas).AddAssetsIotas(iscpGasFee)
 
 	// send EVM tx
 	_, err = e.soloChain.PostRequestSync(req, nil)
-	require.NoError(e.t, errors.Wrap(e.resolveError(err), "PostRequestSync failed"))
+	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{
 		chain:   e,
@@ -317,17 +301,6 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 		address: crypto.CreateAddress(creatorAddress, nonce),
 		abi:     contractABI,
 	}
-}
-
-func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
-	ret, err := e.callView(evm.FuncEstimateGas.Name, evm.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
-	if err != nil {
-		e.t.Logf("%v", err)
-		return evm.BlockGasLimitDefault - 1
-	}
-	gas, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
-	require.NoError(e.t, err)
-	return gas
 }
 
 func (e *evmContractInstance) callMsg(callMsg ethereum.CallMsg) ethereum.CallMsg {
@@ -361,19 +334,7 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 
 	nonce := e.chain.getNonce(senderAddress)
 
-	var evmGas uint64 = 0
-	if opt.gasLimit != nil {
-		evmGas = *opt.gasLimit
-	} else if e.chain.evmFlavor.Name == evmchain.Contract.Name {
-		evmGas = e.chain.estimateGas(e.callMsg(ethereum.CallMsg{
-			From:     senderAddress,
-			GasPrice: evm.GasPrice,
-			Value:    opt.value,
-			Data:     callArguments,
-		}))
-	}
-
-	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, evmGas, evm.GasPrice, callArguments)
+	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, 0, evm.GasPrice, callArguments)
 
 	tx, err := types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 	require.NoError(e.chain.t, err)

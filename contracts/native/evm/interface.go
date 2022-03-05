@@ -8,15 +8,15 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
+var Contract = coreutil.NewContract("evm", "evm smart contract")
+
 var (
-	// Ethereum blockchain
+	// EVM state
 	FuncGetBalance                          = coreutil.ViewFunc("getBalance")
 	FuncSendTransaction                     = coreutil.Func("sendTransaction")
 	FuncCallContract                        = coreutil.ViewFunc("callContract")
-	FuncEstimateGas                         = coreutil.ViewFunc("estimateGas")
 	FuncGetNonce                            = coreutil.ViewFunc("getNonce")
 	FuncGetReceipt                          = coreutil.ViewFunc("getReceipt")
 	FuncGetCode                             = coreutil.ViewFunc("getCode")
@@ -31,14 +31,14 @@ var (
 	FuncGetStorage                          = coreutil.ViewFunc("getStorage")
 	FuncGetLogs                             = coreutil.ViewFunc("getLogs")
 
-	// EVMchain SC management
+	// evm SC management
 	FuncSetNextOwner   = coreutil.Func("setNextOwner")
 	FuncClaimOwnership = coreutil.Func("claimOwnership")
 	FuncGetOwner       = coreutil.ViewFunc("getOwner")
 	FuncSetGasRatio    = coreutil.Func("setGasRatio")
 	FuncGetGasRatio    = coreutil.ViewFunc("getGasRatio")
-	FuncSetBlockTime   = coreutil.Func("setBlockTime") // only implemented by evmlight
-	FuncMintBlock      = coreutil.Func("mintBlock")    // only implemented by evmlight
+	FuncSetBlockTime   = coreutil.Func("setBlockTime")
+	FuncMintBlock      = coreutil.Func("mintBlock")
 )
 
 const (
@@ -61,11 +61,8 @@ const (
 	FieldGasRatio                = "w"
 	FieldBlockGasLimit           = "gl"
 	FieldFilterQuery             = "fq"
-
-	// evmlight only:
-
-	FieldBlockTime       = "bt" // uint32, avg block time in seconds
-	FieldBlockKeepAmount = "bk" // int32
+	FieldBlockTime               = "bt" // uint32, avg block time in seconds
+	FieldBlockKeepAmount         = "bk" // int32
 )
 
 const (
@@ -94,5 +91,3 @@ func EVMGasToISC(evmGas uint64, gasRatio util.Ratio32) uint64 {
 	// ISC gas burned = ceil(EVM gas * A / B)
 	return gasRatio.XCeil64(evmGas)
 }
-
-var ErrNotEnoughGasBudget = coreerrors.Register("not enough ISC budget (%d ISC gas units = %d EVM gas units) to cover for EVM tx gas limit (%d)")
