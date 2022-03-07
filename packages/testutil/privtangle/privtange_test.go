@@ -15,8 +15,9 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/tools/cluster/hornet/privtangle"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 // POST http://localhost:8091/api/plugins/faucet/v1/enqueue
@@ -44,34 +45,36 @@ func TestHornetStartup(t *testing.T) {
 	require.NoError(t, nodeEvt.Connect(ctx))
 	myAddressOutputsCh := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iotago.PrefixTestnet, iotagox.UnlockConditionAny)
 
-	initialOutputCount := outputCount(ctx, t, node0, myAddress)
+	initialOutputCount := mustOutputCount(ctx, pt, node0, myAddress)
 
-	if false {
-		pt.PostFaucetRequest(ctx, myAddress, iotago.PrefixTestnet)
-
-		for i := 0; ; i++ {
-			time.Sleep(100 * time.Millisecond)
-			if initialOutputCount != outputCount(ctx, t, node0, myAddress) {
-				break
-			}
-		}
-	} else {
-		msg, err := pt.PostSimpleValueTX(ctx, node0, &pt.FaucetKeyPair, myAddress, 50000)
-		require.NoError(t, err)
-		t.Logf("Posted messageID=%v", msg.MustID())
-		//
-		// Wait for the TX to be approved.
-		for i := 0; ; i++ {
-			t.Logf("Waiting for a TX...")
-			time.Sleep(100 * time.Millisecond)
-			if initialOutputCount != outputCount(ctx, t, node0, myAddress) {
-				break
-			}
+	//
+	// Check if faucet requests are working.
+	pt.PostFaucetRequest(ctx, myAddress, iotago.PrefixTestnet)
+	for i := 0; ; i++ {
+		t.Logf("Waiting for a TX...")
+		time.Sleep(100 * time.Millisecond)
+		if initialOutputCount != mustOutputCount(ctx, pt, node0, myAddress) {
+			break
 		}
 	}
-
 	t.Logf("Waiting for output event...")
 	outs := <-myAddressOutputsCh
+	t.Logf("Waiting for output event, done: %+v", outs)
+
+	//
+	// Check if the TX post works.
+	msg, err := pt.PostSimpleValueTX(ctx, node0, &pt.FaucetKeyPair, myAddress, 50000)
+	require.NoError(t, err)
+	t.Logf("Posted messageID=%v", msg.MustID())
+	for i := 0; ; i++ {
+		t.Logf("Waiting for a TX...")
+		time.Sleep(100 * time.Millisecond)
+		if initialOutputCount != mustOutputCount(ctx, pt, node0, myAddress) {
+			break
+		}
+	}
+	t.Logf("Waiting for output event...")
+	outs = <-myAddressOutputsCh
 	t.Logf("Waiting for output event, done: %+v", outs)
 
 	//
@@ -79,23 +82,14 @@ func TestHornetStartup(t *testing.T) {
 	pt.Stop()
 }
 
-func outputCount(ctx context.Context, t *testing.T, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) int {
-	return len(outputMap(ctx, t, node0, myAddress))
+func mustOutputCount(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) int {
+	return len(mustOutputMap(ctx, pt, node0, myAddress))
 }
-func outputMap(ctx context.Context, t *testing.T, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
-	res, err := node0.Indexer().Outputs(ctx, &nodeclient.OutputsQuery{
-		AddressBech32: myAddress.Bech32(iotago.PrefixTestnet),
-	})
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	result := make(map[iotago.OutputID]iotago.Output)
-	for res.Next() {
-		outs, err := res.Outputs()
-		require.NoError(t, err)
-		oids := res.Response.Items.MustOutputIDs()
-		for i, o := range outs {
-			result[oids[i]] = o
-		}
+
+func mustOutputMap(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
+	outs, err := pt.OutputMap(ctx, node0, myAddress)
+	if err != nil {
+		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))
 	}
-	return result
+	return outs
 }
