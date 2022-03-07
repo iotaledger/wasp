@@ -321,7 +321,10 @@ func debitNFTFromAccount(account *collections.Map, id *iotago.NFTID) bool {
 	return err == nil
 }
 
-// TODO we need MoveFungibleTokens and MoveNFTs as separate functions, without use of the allowance
+// TODO Allowance type should not be used for manipulation the L2 ledger. Semantics of allowance has different purpose
+//  Instead:
+//  - one function for moving fungible tokens
+//  - one function for moving assets
 
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) bool {
