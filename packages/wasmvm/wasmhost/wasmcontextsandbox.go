@@ -188,7 +188,7 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	assets := s.cvt.IscpAssets(scAssets)
 	// TODO check, probably not right
-	transfer := iscp.NewAllowanceFromAssets(assets, nil)
+	transfer := iscp.NewAllowanceFungibleTokens(assets)
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
 	results := s.callUnlocked(contract, function, params, transfer)
 	return results.Bytes()
@@ -299,7 +299,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 			EntryPoint:     function,
 			Params:         params,
 			// TODO check , probably not right
-			Allowance: iscp.NewAllowanceFromAssets(allow, nil),
+			Allowance: iscp.NewAllowanceFungibleTokens(allow),
 			GasBudget: 1_000_000,
 		},
 	}
@@ -367,7 +367,7 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
-		transfer := iscp.NewAllowanceFromAssets(assets, nil) // TODO check, this is not right
+		transfer := iscp.NewAllowanceFungibleTokens(assets) // TODO check, this is not right
 		if req.Create {
 			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, transfer)
 		} else {

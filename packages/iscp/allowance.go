@@ -9,7 +9,7 @@ import (
 
 type Allowance struct {
 	Assets *Assets
-	NFTs   []*iotago.NFTID
+	NFTs   []*iotago.NFTID // TODO ???? []iotago.NFTID
 }
 
 func NewEmptyAllowance() *Allowance {
@@ -30,10 +30,9 @@ func NewAllowanceIotas(iotas uint64) *Allowance {
 	return NewAllowance(iotas, nil, nil)
 }
 
-func NewAllowanceFromAssets(assets *Assets, NFTs []*iotago.NFTID) *Allowance {
+func NewAllowanceFungibleTokens(ftokens *Assets) *Allowance {
 	return &Allowance{
-		Assets: assets,
-		NFTs:   NFTs,
+		Assets: ftokens,
 	}
 }
 
@@ -62,15 +61,20 @@ func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
 		nftSet[*id] = false
 	}
 
-	a.NFTs = make([]*iotago.NFTID, 0)
+	tmp := a.NFTs[:0] // reuse the array
 	for id, keep := range nftSet {
+		cp := id // otherwise, taking pointer of loop parameter is a bug
 		if keep {
-			a.NFTs = append(a.NFTs, &id)
+			tmp = append(tmp, &cp)
 		}
 	}
+	a.NFTs = tmp
 
 	return true
 }
+
+// TODO optimize serialization: In the NFT request allowance of the containing request requires 1 bit of information, no need for 20 bytes of NFTid
+//  That requires taking into account the request context
 
 func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	a.Assets.WriteToMarshalUtil(mu)
@@ -125,8 +129,19 @@ func (a *Allowance) Add(b *Allowance) *Allowance {
 	return a
 }
 
+func (a *Allowance) AddIotas(amount uint64) *Allowance {
+	a.Assets.Iotas += amount
+	return a
+}
+
 func (a *Allowance) AddNativeTokens(tokenID iotago.NativeTokenID, amount interface{}) *Allowance {
 	a.Assets.AddNativeTokens(tokenID, amount)
+	return a
+}
+
+func (a *Allowance) AddNFTs(nfts ...*iotago.NFTID) *Allowance {
+	a.NFTs = make([]*iotago.NFTID, len(nfts))
+	copy(a.NFTs, nfts)
 	return a
 }
 

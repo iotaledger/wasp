@@ -76,6 +76,7 @@ func AccountExists(state kv.KVStoreReader, agentID *iscp.AgentID) bool {
 	return getAccountR(state, agentID).MustLen() > 0
 }
 
+// TODO getNFTState -> getNFTDirectory ???
 func getNFTState(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixNFTData)
 }
@@ -286,6 +287,8 @@ func creditNFTToAccount(account *collections.Map, id *iotago.NFTID) {
 	account.MustSetAt(id[:], codec.EncodeBool(true))
 }
 
+// TODO : do we need NFTs in 'total assets' account? NFT directory contain exactly the same info
+
 // DebitNFTFromAccount removes an NFT from an account. if that account doesn't own the nft, it panics
 func DebitNFTFromAccount(state kv.KVStore, agentID *iscp.AgentID, id *iotago.NFTID) {
 	if id == nil {
@@ -317,6 +320,11 @@ func debitNFTFromAccount(account *collections.Map, id *iotago.NFTID) bool {
 	err = account.DelAt(id[:])
 	return err == nil
 }
+
+// TODO Allowance type should not be used for manipulation the L2 ledger. Semantics of allowance has different purpose
+//  Instead:
+//  - one function for moving fungible tokens
+//  - one function for moving assets
 
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) bool {
@@ -926,7 +934,7 @@ func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
 	}
 	commonAccount := commonaccount.Get(ctx.ChainID())
 	dustAssets := iscp.NewAssetsIotas(amount)
-	transfer := iscp.NewAllowanceFromAssets(dustAssets, nil)
+	transfer := iscp.NewAllowanceFungibleTokens(dustAssets)
 	ctx.TransferAllowedFunds(commonAccount, transfer)
 	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
 }

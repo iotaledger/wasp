@@ -108,9 +108,8 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	isCallerAContract := caller.Hname() != 0
 
 	if isCallerAContract {
-		allowance := iscp.NewAllowanceFromAssets(
-			iscp.NewAssetsIotas(fundsToWithdraw.Iotas-ConstDepositFeeTmp),
-			nil,
+		allowance := iscp.NewAllowanceFungibleTokens(
+			iscp.NewAssetsIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
 		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
@@ -161,7 +160,7 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	if toWithdraw.Iotas > bottomIotas {
 		toWithdraw.Iotas -= bottomIotas
 	}
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), iscp.NewAllowanceFromAssets(toWithdraw, nil))
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), iscp.NewAllowanceFungibleTokens(toWithdraw))
 	return nil
 }
 

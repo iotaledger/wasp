@@ -322,7 +322,7 @@ func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, tar
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
 			AddAssets(sumAssets).
-			AddAllowance(iscp.NewAllowanceFromAssets(toSend, nil)).
+			AddAllowance(iscp.NewAllowanceFungibleTokens(toSend)).
 			WithGasBudget(math.MaxUint64),
 		user,
 	)
