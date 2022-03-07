@@ -297,6 +297,54 @@ func (s MutableMapOfArraysSetParams) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
+type ImmutableMapOfMapsAddrClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsAddrClearParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type MutableMapOfMapsAddrClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsAddrClearParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type ImmutableMapOfMapsAddrSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsAddrSetParams) KeyAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamKeyAddr))
+}
+
+func (s ImmutableMapOfMapsAddrSetParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+func (s ImmutableMapOfMapsAddrSetParams) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamValueAddr))
+}
+
+type MutableMapOfMapsAddrSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsAddrSetParams) KeyAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamKeyAddr))
+}
+
+func (s MutableMapOfMapsAddrSetParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+func (s MutableMapOfMapsAddrSetParams) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamValueAddr))
+}
+
 type ImmutableMapOfMapsClearParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -741,6 +789,30 @@ func (s MutableMapOfArraysValueParams) Index() wasmtypes.ScMutableUint32 {
 
 func (s MutableMapOfArraysValueParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableMapOfMapsAddrValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsAddrValueParams) KeyAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamKeyAddr))
+}
+
+func (s ImmutableMapOfMapsAddrValueParams) NameAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamNameAddr))
+}
+
+type MutableMapOfMapsAddrValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsAddrValueParams) KeyAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamKeyAddr))
+}
+
+func (s MutableMapOfMapsAddrValueParams) NameAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamNameAddr))
 }
 
 type ImmutableMapOfMapsValueParams struct {

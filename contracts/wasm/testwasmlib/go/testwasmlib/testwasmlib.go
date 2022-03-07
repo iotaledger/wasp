@@ -337,3 +337,24 @@ func funcArrayOfArraysAddrSet(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrSet
 	value := f.Params.ValueAddr().Value()
 	array.GetAddress(index1).SetValue(value)
 }
+
+func funcMapOfMapsAddrClear(ctx wasmlib.ScFuncContext, f *MapOfMapsAddrClearContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddrMapOfMaps().GetAddressMap(name)
+	myMap.Clear()
+}
+
+func funcMapOfMapsAddrSet(ctx wasmlib.ScFuncContext, f *MapOfMapsAddrSetContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddrMapOfMaps().GetAddressMap(name)
+	key := f.Params.KeyAddr().Value()
+	value := f.Params.ValueAddr().Value()
+	myMap.GetAddress(key).SetValue(value)
+}
+
+func viewMapOfMapsAddrValue(ctx wasmlib.ScViewContext, f *MapOfMapsAddrValueContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddrMapOfMaps().GetAddressMap(name)
+	key := f.Params.KeyAddr().Value()
+	f.Results.ValueAddr().SetValue(myMap.GetAddress(key).Value())
+}

@@ -233,6 +233,22 @@ func (s MutableMapOfArraysValueResults) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }
 
+type ImmutableMapOfMapsAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsAddrValueResults) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
+type MutableMapOfMapsAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsAddrValueResults) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
 type ImmutableMapOfMapsValueResults struct {
 	proxy wasmtypes.Proxy
 }

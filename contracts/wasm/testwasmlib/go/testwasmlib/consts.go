@@ -33,6 +33,7 @@ const (
 	ParamInt64       = "int64"
 	ParamInt8        = "int8"
 	ParamKey         = "key"
+	ParamKeyAddr     = "keyAddr"
 	ParamName        = "name"
 	ParamNameAddr    = "nameAddr"
 	ParamParam       = "this"
@@ -85,6 +86,8 @@ const (
 	FuncMapOfArraysAppend       = "mapOfArraysAppend"
 	FuncMapOfArraysClear        = "mapOfArraysClear"
 	FuncMapOfArraysSet          = "mapOfArraysSet"
+	FuncMapOfMapsAddrClear      = "mapOfMapsAddrClear"
+	FuncMapOfMapsAddrSet        = "mapOfMapsAddrSet"
 	FuncMapOfMapsClear          = "mapOfMapsClear"
 	FuncMapOfMapsSet            = "mapOfMapsSet"
 	FuncParamTypes              = "paramTypes"
@@ -105,6 +108,7 @@ const (
 	ViewMapOfArraysAddrValue    = "mapOfArraysAddrValue"
 	ViewMapOfArraysLength       = "mapOfArraysLength"
 	ViewMapOfArraysValue        = "mapOfArraysValue"
+	ViewMapOfMapsAddrValue      = "mapOfMapsAddrValue"
 	ViewMapOfMapsValue          = "mapOfMapsValue"
 )
 
@@ -123,6 +127,8 @@ const (
 	HFuncMapOfArraysAppend       = wasmtypes.ScHname(0x072902d4)
 	HFuncMapOfArraysClear        = wasmtypes.ScHname(0xdcdbc582)
 	HFuncMapOfArraysSet          = wasmtypes.ScHname(0xcdbf9981)
+	HFuncMapOfMapsAddrClear      = wasmtypes.ScHname(0x9cf5dec9)
+	HFuncMapOfMapsAddrSet        = wasmtypes.ScHname(0x39fa7efb)
 	HFuncMapOfMapsClear          = wasmtypes.ScHname(0xd02a5431)
 	HFuncMapOfMapsSet            = wasmtypes.ScHname(0x353d577f)
 	HFuncParamTypes              = wasmtypes.ScHname(0x6921c4cd)
@@ -143,5 +149,6 @@ const (
 	HViewMapOfArraysAddrValue    = wasmtypes.ScHname(0x81b3c951)
 	HViewMapOfArraysLength       = wasmtypes.ScHname(0x86379ff7)
 	HViewMapOfArraysValue        = wasmtypes.ScHname(0x8dee3538)
+	HViewMapOfMapsAddrValue      = wasmtypes.ScHname(0xf9538970)
 	HViewMapOfMapsValue          = wasmtypes.ScHname(0x476c56e4)
 )

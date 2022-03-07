@@ -78,6 +78,46 @@ funcs:
       nameAddr: Address
       valueAddr: Address
 
+  mapOfArraysClear:
+    params:
+      name: String
+
+  mapOfArraysAddrClear:
+    params:
+      nameAddr: Address
+
+  mapOfArraysSet:
+    params:
+      index: Uint32
+      name: String
+      value: String
+
+  mapOfArraysAddrSet:
+    params:
+      index: Uint32
+      nameAddr: Address
+      valueAddr: Address
+
+  mapOfMapsClear:
+    params:
+      name: String
+
+  mapOfMapsAddrClear:
+    params:
+      nameAddr: Address
+
+  mapOfMapsSet:
+    params:
+      name: String
+      key: String
+      value: String
+
+  mapOfMapsAddrSet:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+      valueAddr: Address
+
   arrayOfArraysAppend:
     params:
       index: Uint32
@@ -104,36 +144,6 @@ funcs:
   arrayOfArraysClear:
   # Clear all the arrays of the array
   arrayOfArraysAddrClear:
-
-  mapOfArraysClear:
-    params:
-      name: String
-  
-  mapOfArraysAddrClear:
-    params:
-      nameAddr: Address
-
-  mapOfArraysSet:
-    params:
-      index: Uint32
-      name: String
-      value: String
-
-  mapOfArraysAddrSet:
-    params:
-      index: Uint32
-      nameAddr: Address
-      valueAddr: Address
-
-  mapOfMapsClear:
-    params:
-      name: String
-
-  mapOfMapsSet:
-    params:
-      name: String
-      key: String
-      value: String
 
   arrayOfMapsClear:
 
@@ -193,6 +203,34 @@ views:
     results:
       length: Uint32
 
+  mapOfArraysValue:
+    params:
+      index: Uint32
+      name: String
+    results:
+      value: String
+
+  mapOfArraysAddrValue:
+    params:
+      index: Uint32
+      nameAddr: Address
+    results:
+      valueAddr: Address
+
+  mapOfMapsValue:
+    params:
+      name: String
+      key: String
+    results:
+      value: String
+  
+  mapOfMapsAddrValue:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+    results:
+      valueAddr: Address
+
   arrayOfArraysLength:
     results:
       length: Uint32
@@ -214,27 +252,6 @@ views:
       index1: Uint32
     results:
       valueAddr: Address
-
-  mapOfArraysValue:
-    params:
-      index: Uint32
-      name: String
-    results:
-      value: String
-
-  mapOfArraysAddrValue:
-    params:
-      index: Uint32
-      nameAddr: Address
-    results:
-      valueAddr: Address
-
-  mapOfMapsValue:
-    params:
-      name: String
-      key: String
-    results:
-      value: String
 
   arrayOfMapsValue:
     params:
