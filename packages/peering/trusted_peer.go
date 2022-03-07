@@ -12,13 +12,14 @@ package peering
 
 import (
 	"bytes"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 // TrustedPeer carries a peer information we use to trust it.
 type TrustedPeer struct {
-	PubKey cryptolib.PublicKey
+	PubKey *cryptolib.PublicKey
 	NetID  string
 }
 
@@ -30,7 +31,7 @@ func TrustedPeerFromBytes(buf []byte) (*TrustedPeer, error) {
 	if keyBytes, err = util.ReadBytes16(r); err != nil {
 		return nil, err
 	}
-	tp.PubKey, err = cryptolib.PublicKeyFromBytes(keyBytes)
+	tp.PubKey, err = cryptolib.NewPublicKeyFromBytes(keyBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func TrustedPeerFromBytes(buf []byte) (*TrustedPeer, error) {
 
 func (tp *TrustedPeer) Bytes() ([]byte, error) {
 	var buf bytes.Buffer
-	if err := util.WriteBytes16(&buf, tp.PubKey); err != nil {
+	if err := util.WriteBytes16(&buf, tp.PubKey.AsBytes()); err != nil {
 		return nil, err
 	}
 	if err := util.WriteString16(&buf, tp.NetID); err != nil {
@@ -52,5 +53,5 @@ func (tp *TrustedPeer) Bytes() ([]byte, error) {
 }
 
 func (tp *TrustedPeer) PubKeyBytes() ([]byte, error) {
-	return tp.PubKey, nil
+	return tp.PubKey.AsBytes(), nil
 }

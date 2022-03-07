@@ -5,10 +5,9 @@ use wasmlib::*;
 
 use crate::*;
 
-pub fn func_now(ctx: &ScFuncContext, f: &NowContext) {
-    f.state.timestamp().set_value(ctx.timestamp());
+pub fn func_now(_ctx: &ScFuncContext, _f: &NowContext) {
 }
 
-pub fn view_get_timestamp(_ctx: &ScViewContext, f: &GetTimestampContext) {
-    f.results.timestamp().set_value(f.state.timestamp().value());
+pub fn view_get_timestamp(ctx: &ScViewContext, f: &GetTimestampContext) {
+    f.results.timestamp().set_value(ctx.timestamp());
 }

@@ -10,19 +10,19 @@ import (
 
 const (
 	FnAccountID           = int32(-1)
-	FnBalance             = int32(-2)
-	FnBalances            = int32(-3)
-	FnBlockContext        = int32(-4)
-	FnCall                = int32(-5)
-	FnCaller              = int32(-6)
-	FnChainID             = int32(-7)
-	FnChainOwnerID        = int32(-8)
-	FnContract            = int32(-9)
-	FnContractCreator     = int32(-10)
-	FnDeployContract      = int32(-11)
-	FnEntropy             = int32(-12)
-	FnEvent               = int32(-13)
-	FnIncomingTransfer    = int32(-14)
+	FnAllowance           = int32(-2)
+	FnBalance             = int32(-3)
+	FnBalances            = int32(-4)
+	FnBlockContext        = int32(-5)
+	FnCall                = int32(-6)
+	FnCaller              = int32(-7)
+	FnChainID             = int32(-8)
+	FnChainOwnerID        = int32(-9)
+	FnContract            = int32(-10)
+	FnContractCreator     = int32(-11)
+	FnDeployContract      = int32(-12)
+	FnEntropy             = int32(-13)
+	FnEvent               = int32(-14)
 	FnLog                 = int32(-15)
 	FnMinted              = int32(-16)
 	FnPanic               = int32(-17)
@@ -45,6 +45,7 @@ const (
 	FnUtilsHashBlake2b    = int32(-34)
 	FnUtilsHashName       = int32(-35)
 	FnUtilsHashSha3       = int32(-36)
+	FnTransferAllowed     = int32(-37)
 )
 
 type ScSandbox struct{}
@@ -83,9 +84,6 @@ func (s ScSandbox) Balances() ScBalances {
 
 // calls a smart contract function
 func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
-	if params == nil {
-		params = NewScDict()
-	}
 	req := &wasmrequests.CallRequest{
 		Contract: hContract,
 		Function: hFunction,
@@ -143,9 +141,6 @@ func (s ScSandbox) Require(cond bool, msg string) {
 }
 
 func (s ScSandbox) Results(results *ScDict) {
-	if results == nil {
-		results = NewScDict()
-	}
 	Sandbox(FnResults, results.Bytes())
 }
 
@@ -177,6 +172,12 @@ type ScSandboxFunc struct {
 	ScSandbox
 }
 
+// access the allowance assets
+func (s ScSandboxFunc) Allowance() ScBalances {
+	buf := Sandbox(FnAllowance, nil)
+	return NewScAssetsFromBytes(buf).Balances()
+}
+
 //func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
 //	panic("implement me")
 //}
@@ -193,9 +194,6 @@ func (s ScSandboxFunc) Caller() wasmtypes.ScAgentID {
 
 // deploys a smart contract
 func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, description string, initParams *ScDict) {
-	if initParams == nil {
-		initParams = NewScDict()
-	}
 	req := &wasmrequests.DeployRequest{
 		ProgHash:    programHash,
 		Name:        name,
@@ -215,12 +213,6 @@ func (s ScSandboxFunc) Event(msg string) {
 	Sandbox(FnEvent, []byte(msg))
 }
 
-// access the incoming balances for all assets
-func (s ScSandboxFunc) IncomingTransfer() ScBalances {
-	buf := Sandbox(FnIncomingTransfer, nil)
-	return NewScAssetsFromBytes(buf).Balances()
-}
-
 // retrieve the assets that were minted in this transaction
 func (s ScSandboxFunc) Minted() ScBalances {
 	return NewScAssetsFromBytes(Sandbox(FnMinted, nil)).Balances()
@@ -228,12 +220,6 @@ func (s ScSandboxFunc) Minted() ScBalances {
 
 // (delayed) posts a smart contract function request
 func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers, delay uint32) {
-	if params == nil {
-		params = NewScDict()
-	}
-	if len(transfer) == 0 {
-		s.Panic("missing transfer")
-	}
 	req := &wasmrequests.PostRequest{
 		ChainID:  chainID,
 		Contract: hContract,
@@ -285,15 +271,10 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
 }
 
-// transfer assetss to the specified Tangle ledger address
+// transfer assets to the specified Tangle ledger address
 func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 	// we need some assets to send
-	assets := uint64(0)
-	for _, amount := range transfer {
-		assets += amount
-	}
-	if assets == 0 {
-		// only try to send when non-zero assets
+	if transfer.IsEmpty() {
 		return
 	}
 
@@ -307,3 +288,18 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 //func (s ScSandboxFunc) StateAnchor() interface{} {
 //	panic("implement me")
 //}
+
+// transfer assets to the specified Tangle ledger address
+func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer ScTransfers, create bool) {
+	// we need some assets to send
+	if transfer.IsEmpty() {
+		return
+	}
+
+	req := wasmrequests.TransferRequest{
+		AgentID:  agentID,
+		Create:   create,
+		Transfer: ScAssets(transfer).Bytes(),
+	}
+	Sandbox(FnTransferAllowed, req.Bytes())
+}

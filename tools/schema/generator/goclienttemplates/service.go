@@ -124,6 +124,7 @@ type $FuncName$+Results struct {
 }
 $#each result callResultGetter
 `,
+	//TODO array and map abstraction on key/value results
 	// *******************************
 	"callResultGetter": `
 $#if map callResultGetterMap callResultGetter2

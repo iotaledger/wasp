@@ -38,16 +38,16 @@ const (
 )
 
 type PrivTangle struct {
-	CooKeyPair1   cryptolib.KeyPair
-	CooKeyPair2   cryptolib.KeyPair
-	FaucetKeyPair cryptolib.KeyPair
+	CooKeyPair1   *cryptolib.KeyPair
+	CooKeyPair2   *cryptolib.KeyPair
+	FaucetKeyPair *cryptolib.KeyPair
 	NetworkID     string
 	SnapshotInit  string
 	ConfigFile    string
 	BaseDir       string
 	BasePort      int
 	NodeCount     int
-	NodeKeyPairs  []cryptolib.KeyPair
+	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
 	NodeStdouts   []io.ReadCloser
 	NodeStderrs   []io.ReadCloser
@@ -66,7 +66,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		BaseDir:       baseDir,
 		BasePort:      basePort,
 		NodeCount:     nodeCount,
-		NodeKeyPairs:  make([]cryptolib.KeyPair, nodeCount),
+		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		NodeStdouts:   make([]io.ReadCloser, nodeCount),
 		NodeStderrs:   make([]io.ReadCloser, nodeCount),
@@ -104,7 +104,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	snapGenArgs := []string{
 		"tool", "snap-gen",
 		fmt.Sprintf("--networkID=%s", pt.NetworkID),
-		fmt.Sprintf("--mintAddress=%s", cryptolib.Ed25519AddressFromPubKey(pt.FaucetKeyPair.PublicKey).String()[2:]), // Dropping 0x from HEX.
+		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsEd25519Address().String()[2:]), // Dropping 0x from HEX.
 		fmt.Sprintf("--outputPath=%s", filepath.Join(pt.BaseDir, pt.SnapshotInit)),
 	}
 	snapGen := exec.CommandContext(pt.ctx, "hornet", snapGenArgs...)
@@ -119,8 +119,13 @@ func (pt *PrivTangle) startNode(i int) {
 	if i == 0 {
 		plugins = "Coordinator,MQTT,Debug,Prometheus,Faucet,Indexer"
 		env = append(env,
-			fmt.Sprintf("COO_PRV_KEYS=%s,%s", hex.EncodeToString(pt.CooKeyPair1.PrivateKey), hex.EncodeToString(pt.CooKeyPair2.PrivateKey)),
-			fmt.Sprintf("FAUCET_PRV_KEY=%s", hex.EncodeToString(pt.FaucetKeyPair.PrivateKey)),
+			fmt.Sprintf("COO_PRV_KEYS=%s,%s",
+				hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
+				hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
+			),
+			fmt.Sprintf("FAUCET_PRV_KEY=%s",
+				hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
+			),
 		)
 	}
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
@@ -171,7 +176,7 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
-		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].PrivateKey)),
+		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
 	if i == 0 {
@@ -285,11 +290,12 @@ func (pt *PrivTangle) waitAllHealthy() {
 }
 
 func (pt *PrivTangle) NodeMultiAddr(i int) string {
-	stdPrivKey, _, err := crypto.KeyPairFromStdKey(&pt.NodeKeyPairs[i].PrivateKey)
+	stdPrivKey := pt.NodeKeyPairs[i].GetPrivateKey().AsStdKey()
+	lppPrivKey, _, err := crypto.KeyPairFromStdKey(&stdPrivKey)
 	if err != nil {
 		panic(xerrors.Errorf("Unable to convert privKey to the standard priv key."))
 	}
-	tmpNode, err := libp2p.New(context.Background(), libp2p.Identity(stdPrivKey))
+	tmpNode, err := libp2p.New(context.Background(), libp2p.Identity(lppPrivKey))
 	if err != nil {
 		panic(xerrors.Errorf("Unable to create temporary p2p node: %v", err))
 	}
@@ -368,7 +374,7 @@ func (pt *PrivTangle) PostFaucetRequest(ctx context.Context, recipientAddr iotag
 	if err != nil {
 		return xerrors.Errorf("faucet status=%v, unable to read response body: %w", res.Status, err)
 	}
-	return xerrors.Errorf("faucet call failed, response status=%v, body=%v", res.Status, resBody)
+	return xerrors.Errorf("faucet call failed, responPrivateKeyse status=%v, body=%v", res.Status, resBody)
 }
 
 // PostSimpleValueTX submits a simple value transfer TX.
@@ -382,7 +388,7 @@ func (pt *PrivTangle) PostSimpleValueTX(
 ) (*iotago.Message, error) {
 	//
 	// Build a TX.
-	senderAddr := cryptolib.Ed25519AddressFromPubKey(sender.PublicKey)
+	senderAddr := sender.GetPublicKey().AsEd25519Address()
 	senderOuts, err := pt.OutputMap(ctx, nc, senderAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get address outputs: %w", err)

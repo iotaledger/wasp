@@ -64,7 +64,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
 	}
 	if f.Params.Color().Exists() {
-		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
+		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
 		ctx.Require(f.Params.Color().Value() == color, "mismatch: Color")
 	}
 	if f.Params.Hash().Exists() {
@@ -109,6 +109,16 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 
 func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 	f.State.Random().SetValue(ctx.Random(1000))
+}
+
+//nolint:unparam
+func funcTakeAllowance(ctx wasmlib.ScFuncContext, f *TakeAllowanceContext) {
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransfersFromBalances(ctx.Allowance()), false)
+	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Balance(wasmtypes.IOTA))))
+}
+
+func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
+	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmtypes.IOTA))
 }
 
 func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {

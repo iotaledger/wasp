@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -110,7 +111,7 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 // Requires at least 2 x gasFeeEstimate to be on sender's L2 account
 func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if user == nil {
-		user = &ch.OriginatorPrivateKey
+		user = ch.OriginatorPrivateKey
 	}
 
 	blobAsADict := parseParams(params)
@@ -328,13 +329,28 @@ func (ch *Chain) CommonAccount() *iscp.AgentID {
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetLatestBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
 
 	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo
+}
+
+func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
+	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
+		errors.ParamErrorCode, code.Bytes(),
+	)
+
+	if err != nil {
+		return "", err
+	}
+	resultDecoder := kvdecoder.New(ret, ch.Log())
+	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
+
+	require.NoError(ch.Env.T, err)
+	return messageFormat, nil
 }
 
 // GetBlockInfo return BlockInfo for the particular block index in the chain
@@ -344,7 +360,7 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
 
 	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
@@ -357,7 +373,7 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncIsRequestProcessed.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	bin, err := resultDecoder.GetBytes(blocklog.ParamRequestProcessed)
 	require.NoError(ch.Env.T, err)
 	return bin != nil
@@ -368,12 +384,13 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log)
+	resultDecoder := kvdecoder.New(ret, ch.Log())
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
 		return nil, false
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
+
 	require.NoError(ch.Env.T, err)
 	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
@@ -412,7 +429,7 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestIDsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
-		ch.Log.Warnf("GetRequestIDsForBlock: %v", err)
+		ch.Log().Warnf("GetRequestIDsForBlock: %v", err)
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
@@ -456,7 +473,7 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncControlAddresses.Name)
 	require.NoError(ch.Env.T, err)
-	par := kvdecoder.New(res, ch.Log)
+	par := kvdecoder.New(res, ch.Log())
 	ret := &blocklog.ControlAddresses{
 		StateAddress:     par.MustGetAddress(blocklog.ParamStateControllerAddress),
 		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),
@@ -503,7 +520,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair cryptolib.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).AddAssetsIotas(1)
@@ -515,8 +532,8 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 	return result.Error
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) *vm.RequestResult {
-	tx, _, err := ch.RequestFromParamsToLedger(req, &keyPair)
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
@@ -539,9 +556,9 @@ func getAddr(addrOrKeypair interface{}) iotago.Address {
 	case iotago.Address:
 		return a
 	case *cryptolib.KeyPair:
-		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+		return a.GetPublicKey().AsEd25519Address()
 	case cryptolib.KeyPair:
-		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+		return a.GetPublicKey().AsEd25519Address()
 	}
 	panic(xerrors.Errorf("getAddr: wrong type %T", addrOrKeypair))
 }

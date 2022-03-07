@@ -25,7 +25,7 @@ const (
 )
 
 func Init(conf *configuration.Configuration) *node.Plugin {
-	plugin := node.NewPlugin(PluginName, node.Enabled)
+	plugin := node.NewPlugin(PluginName, nil, node.Enabled)
 
 	plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
 		if skipConfigAvailable, err := fetch(conf, false); err != nil {

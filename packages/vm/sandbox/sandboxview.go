@@ -4,111 +4,31 @@
 package sandbox
 
 import (
-	"math/big"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type sandboxView struct {
-	vmctx  *vmcontext.VMContext
-	assert *assert.Assert
+	SandboxBase
 }
 
-func (s *sandboxView) Assets() *iscp.Assets {
-	panic("implement me")
-}
-
-func (s *sandboxView) Timestamp() int64 {
-	panic("implement me")
-}
-
-var _ iscp.SandboxView = &sandboxView{}
-
-func init() {
-	vmcontext.NewSandboxView = func(vmctx *vmcontext.VMContext) iscp.SandboxView {
-		return &sandboxView{
-			vmctx:  vmctx,
-			assert: assert.NewAssert(vmctx),
-		}
-	}
-}
-
-func (s *sandboxView) AccountID() *iscp.AgentID {
-	return s.vmctx.AccountID()
-}
-
-func (s *sandboxView) BalanceIotas() uint64 {
-	panic("implement me")
-}
-
-func (s *sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
-	panic("implement me")
-}
-
-func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
-	return s.vmctx.Call(contractHname, entryPoint, params, nil)
-}
-
-func (s *sandboxView) ChainID() *iscp.ChainID {
-	return s.vmctx.ChainID()
-}
-
-func (s *sandboxView) ChainOwnerID() *iscp.AgentID {
-	return s.vmctx.ChainOwnerID()
-}
-
-func (s *sandboxView) Contract() iscp.Hname {
-	return s.vmctx.CurrentContractHname()
-}
-
-func (s *sandboxView) ContractCreator() *iscp.AgentID {
-	return s.vmctx.ContractCreator()
-}
-
-func (s *sandboxView) GetTimestamp() int64 {
-	return s.vmctx.Timestamp()
-}
-
-func (s *sandboxView) Log() iscp.LogInterface {
-	return s.vmctx
-}
-
-func (s *sandboxView) Params() dict.Dict {
-	return s.vmctx.Params()
+func NewSandboxView(ctx execution.WaspContext) iscp.SandboxView {
+	ret := &sandboxView{}
+	ret.Ctx = ctx
+	return ret
 }
 
 func (s *sandboxView) State() kv.KVStoreReader {
-	return s.vmctx.State()
+	return s.Ctx.StateReader()
 }
 
-func (s *sandboxView) Utils() iscp.Utils {
-	return NewUtils(s.Gas())
-}
-
-func (s *sandboxView) Gas() iscp.Gas {
-	return s
-}
-
-func (s *sandboxView) Burn(burnCode gas.BurnCode, par ...uint64) {
-	s.vmctx.GasBurn(burnCode, par...)
-}
-
-func (s *sandboxView) Budget() uint64 {
-	return s.vmctx.GasBudgetLeft()
-}
-
-// helper methods
-
-func (s *sandboxView) Requiref(cond bool, format string, args ...interface{}) {
-	s.assert.Requiref(cond, format, args...)
-}
-
-func (s *sandboxView) RequireNoError(err error, str ...string) {
-	s.assert.RequireNoError(err, str...)
+func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
+	s.Ctx.GasBurn(gas.BurnCodeCallContract)
+	if params == nil {
+		params = make(dict.Dict)
+	}
+	return s.Ctx.Call(contractHname, entryPoint, params, nil)
 }

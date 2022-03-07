@@ -10,10 +10,9 @@ import (
 
 func CallView(ch chain.ChainCore, contractHname, viewHname iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var ret dict.Dict
-	err := optimism.RetryOnStateInvalidated(func() error {
-		vctx := viewcontext.NewFromChain(ch)
-		var err error
-		ret, err = vctx.CallView(contractHname, viewHname, params)
+	err := optimism.RetryOnStateInvalidated(func() (err error) {
+		vctx := viewcontext.New(ch)
+		ret, err = vctx.CallViewExternal(contractHname, viewHname, params)
 		return err
 	})
 

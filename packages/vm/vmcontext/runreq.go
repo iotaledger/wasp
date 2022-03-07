@@ -14,13 +14,15 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
@@ -28,7 +30,7 @@ import (
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
 	// prepare context for the request
 	vmctx.req = req
-	vmctx.numPostedOutputs = 0
+	vmctx.NumPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
@@ -60,13 +62,14 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 			vmctx.prepareGasBudget()
 			// run the contract program
 			receipt, callRet, callErr := vmctx.callTheContract()
+			vmctx.mustCheckTransactionSize()
 			result = &vm.RequestResult{
 				Request: req,
 				Receipt: receipt,
 				Return:  callRet,
 				Error:   callErr,
 			}
-		}, exceptions.All...,
+		}, vmexceptions.AllProtocolLimits...,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -87,21 +90,34 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
-	dustAdjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
-	// update the state, the account ledger
-	// NOTE: sender account will be CommonAccount if sender address is not available
-	// It means any random sends to the chain end up in the common account
-	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
+	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req)
+	if dustAdjustment > 0 {
+		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
+	}
 
-	// adjust the common account with the dust consumed or returned by internal UTXOs
-	// If common account does not contain enough funds for internal dust, it panics with
-	// vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit and the request will be skipped
-	vmctx.adjustL2IotasIfNeeded(dustAdjustmentOfTheCommonAccount)
+	// if sender is specified, all assets goes to sender's account
+	// Otherwise it all goes to the common account and panics is logged in the SC call
+	account := vmctx.req.SenderAccount()
+	if account == nil {
+		account = commonaccount.Get(vmctx.ChainID())
+	}
+	vmctx.creditToAccount(account, vmctx.req.Assets())
+
+	// adjust the sender's account with the dust consumed or returned by internal UTXOs
+	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
+	// it will panic with exceptions.ErrNotEnoughFundsForInternalDustDeposit
+	// TNT outputs will use dust deposit from the caller
+	// TODO remove attack vector when iotas for dust deposit is not enough and the request keeps being skipped
+	vmctx.adjustL2IotasIfNeeded(dustAdjustment, account)
+
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
 
 func (vmctx *VMContext) prepareGasBudget() {
+	if vmctx.req.SenderAccount() == nil {
+		return
+	}
 	if vmctx.isInitChainRequest() {
 		return
 	}
@@ -151,40 +167,48 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 		return nil
 	}
 	// re-panic-ing if error it not user nor VM plugin fault.
-	if exceptions.IsProtocolLimitException(r) {
+	if vmexceptions.IsSkipRequestException(r) {
 		panic(r)
 	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
+	case *iscp.VMError:
+		return r.(*iscp.VMError)
+	case iscp.VMError:
+		e := r.(iscp.VMError)
+		return &e
 	case *kv.DBError:
 		panic(err)
 	case string:
-		r = errors.New(err)
+		return coreerrors.ErrUntypedError.Create(err)
 	case error:
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
 		}
+
+		return coreerrors.ErrUntypedError.Create(err.Error())
 	}
-	return xerrors.Errorf("%v", r)
+	return nil
 }
 
 // callFromRequest is the call itself. Assumes sc exists
 func (vmctx *VMContext) callFromRequest() dict.Dict {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
-	// calling only non view entry points. Calling the view will trigger error and fallback
-	entryPoint := vmctx.req.CallTarget().EntryPoint
-	targetContract := vmctx.targetContract()
-	if targetContract == nil {
-		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
+	if vmctx.req.SenderAccount() == nil {
+		// if sender unknown, follow panic path
+		panic(vm.ErrSenderUnknown)
 	}
-	return vmctx.callByProgramHash(
-		targetContract.Hname(),
+	// TODO check if the comment below holds true
+	// calling only non view entry points. Calling the view will trigger error and fallback
+	contract := vmctx.req.CallTarget().Contract
+	entryPoint := vmctx.req.CallTarget().EntryPoint
+
+	return vmctx.callProgram(
+		contract,
 		entryPoint,
 		vmctx.req.Params(),
 		vmctx.req.Allowance(),
-		targetContract.ProgramHash,
 	)
 }
 
@@ -263,8 +287,9 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 func (vmctx *VMContext) chargeGasFee() {
 	// disable gas burn
 	vmctx.gasBurnEnable(false)
-	if vmctx.req.SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
+	if vmctx.req.SenderAccount() == nil {
+		// no charging if sender is unknown
+		return
 	}
 	if vmctx.isInitChainRequest() {
 		// do not charge gas fees if init request
@@ -308,14 +333,20 @@ func (vmctx *VMContext) chargeGasFee() {
 	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
 }
 
-func (vmctx *VMContext) targetContract() *root.ContractRecord {
-	// find target contract
-	targetContract := vmctx.req.CallTarget().Contract
-	ret := vmctx.findContractByHname(targetContract)
+func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
-		vmctx.Warnf("contract not found: %s", targetContract)
+		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
+		panic(xerrors.Errorf("%v: contract = %s", vm.ErrTargetContractNotFound, contractHname))
 	}
 	return ret
+}
+
+func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
+		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
+	}
+	return vmctx.GetContractRecord(contractHname)
 }
 
 // loadChainConfig only makes sense if chain is already deployed
@@ -330,6 +361,18 @@ func (vmctx *VMContext) loadChainConfig() {
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
+	if vmctx.req == nil {
+		return false
+	}
 	target := vmctx.req.CallTarget()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
+}
+
+// mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
+func (vmctx *VMContext) mustCheckTransactionSize() {
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(&iscp.StateData{})
+	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
+	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
+		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
+	}
 }

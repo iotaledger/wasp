@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/profiling"
 	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
@@ -41,6 +42,7 @@ func main() {
 		nodeconn.Init(),
 		processors.Init(),
 		wasmtimevm.Init(),
+		wal.Init(),
 		chains.Init(),
 		metrics.Init(),
 		webapi.Init(),

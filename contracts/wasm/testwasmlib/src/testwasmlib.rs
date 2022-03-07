@@ -58,7 +58,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.chain_id().value() == ctx.chain_id(), "mismatch: ChainID");
     }
     if f.params.color().exists() {
-        let color = color_from_bytes("RedGreenBlueYellowCyanBlackWhite".as_bytes());
+        let color = color_from_bytes("RedGreenBlueYellowCyanBlackWhitePurple".as_bytes());
         ctx.require(f.params.color().value() == color, "mismatch: Color");
     }
     if f.params.hash().exists() {
@@ -103,6 +103,14 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
 
 pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
     f.state.random().set_value(ctx.random(1000));
+}
+
+pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
+    ctx.transfer_allowed(&ctx.account_id(), &ScTransfers::from_balances(ctx.allowance()), false);
+}
+
+pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
+    f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
 }
 
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {

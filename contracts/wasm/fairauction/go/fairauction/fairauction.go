@@ -60,7 +60,7 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 }
 
 func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
-	bidAmount := ctx.Incoming().Balance(wasmtypes.IOTA)
+	bidAmount := ctx.Allowance().Balance(wasmtypes.IOTA)
 	ctx.Require(bidAmount > 0, "Missing bid amount")
 
 	color := f.Params.Color().Value()
@@ -115,7 +115,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	if color == wasmtypes.IOTA || color == wasmtypes.MINT {
 		ctx.Panic("Reserved auction token color")
 	}
-	numTokens := ctx.Incoming().Balance(color)
+	numTokens := ctx.Allowance().Balance(color)
 	if numTokens == 0 {
 		ctx.Panic("Missing auction tokens")
 	}
@@ -153,7 +153,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	if margin == 0 {
 		margin = 1
 	}
-	deposit := ctx.Incoming().Balance(wasmtypes.IOTA)
+	deposit := ctx.Allowance().Balance(wasmtypes.IOTA)
 	if deposit < margin {
 		ctx.Panic("Insufficient deposit")
 	}
@@ -180,7 +180,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 
 	fa := ScFuncs.FinalizeAuction(ctx)
 	fa.Params.Color().SetValue(auction.Color)
-	fa.Func.Delay(duration * 60).TransferIotas(1).Post()
+	fa.Func.Delay(duration * 60).Post()
 }
 
 func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {

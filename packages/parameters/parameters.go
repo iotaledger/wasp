@@ -56,6 +56,9 @@ const (
 
 	MetricsBindAddress = "metrics.bindAddress"
 	MetricsEnabled     = "metrics.enabled"
+
+	WALEnabled   = "wal.enabled"
+	WALDirectory = "wal.directory"
 )
 
 func Init() *configuration.Configuration {
@@ -104,6 +107,9 @@ func Init() *configuration.Configuration {
 
 	flag.String(MetricsBindAddress, "127.0.0.1:2112", "prometheus metrics http server address")
 	flag.Bool(MetricsEnabled, false, "disable and enable prometheus metrics")
+
+	flag.Bool(WALEnabled, true, "enabled wal")
+	flag.String(WALDirectory, "wal", "path to logs folder")
 
 	return all
 }

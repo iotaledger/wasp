@@ -99,6 +99,15 @@ impl ScTransfers {
         ScTransfers::transfer(&ScColor::IOTA, amount)
     }
 
+    pub fn is_empty(&self) -> bool {
+        for (_key, val) in self.assets.iter() {
+            if *val != 0 {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn transfer(color: &ScColor, amount: u64) -> ScTransfers {
         let mut transfers = ScTransfers { assets: BTreeMap::new() };
         transfers.set(color, amount);

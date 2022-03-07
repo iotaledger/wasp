@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/util"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
 )
 
@@ -38,6 +38,13 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 
 func NewAssetsIotas(amount uint64) *Assets {
 	return &Assets{Iotas: amount}
+}
+
+func NewAssetsForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *Assets {
+	if p.GasFeeTokenID == nil {
+		return NewAssetsIotas(feeAmount)
+	}
+	return NewEmptyAssets().AddNativeTokens(*p.GasFeeTokenID, feeAmount)
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {
@@ -74,14 +81,14 @@ func AssetsFromNativeTokenSum(iotas uint64, tokens iotago.NativeTokenSum) *Asset
 
 func AssetsFromOutput(o iotago.Output) *Assets {
 	switch o := o.(type) {
-	case *iotago.ExtendedOutput:
-		return AssetsFromExtendedOutput(o)
+	case *iotago.BasicOutput:
+		return AssetsFromBasicOutput(o)
 	default:
 		panic(fmt.Sprintf("AssetsFromOutput not implemented for %T", o))
 	}
 }
 
-func AssetsFromExtendedOutput(o *iotago.ExtendedOutput) *Assets {
+func AssetsFromBasicOutput(o *iotago.BasicOutput) *Assets {
 	ret := &Assets{
 		Iotas: o.Amount,
 	}

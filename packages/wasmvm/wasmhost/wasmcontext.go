@@ -1,9 +1,12 @@
 package wasmhost
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -19,6 +22,8 @@ type ISandbox interface {
 type WasmContext struct {
 	funcName  string
 	funcTable *WasmFuncTable
+	gasBudget uint64
+	gasBurned uint64
 	id        int32
 	proc      *WasmProcessor
 	results   dict.Dict
@@ -87,8 +92,15 @@ func (wc *WasmContext) callFunction() error {
 
 	saveID := wc.proc.currentContextID
 	wc.proc.currentContextID = wc.id
+	wc.gasBudget = wc.GasBudget()
+	wc.proc.vm.GasBudget(wc.gasBudget * wc.proc.gasFactor())
 	err := wc.proc.RunScFunction(wc.funcName)
+	if err == nil {
+		wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
+	}
+	wc.gasBurned = wc.gasBudget - wc.GasBudget()
 	wc.proc.currentContextID = saveID
+	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
 
@@ -111,6 +123,25 @@ func (wc *WasmContext) ExportName(index int32, name string) {
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {
 	return wc.funcTable.FunctionFromCode(code)
+}
+
+// GasBudget is a callback from the VM that asks for the remaining gas budget of the
+// Wasp sandbox. The VM will update the gas budget for the Wasm code with this value
+// just before returning to the Wasm code.
+func (wc *WasmContext) GasBudget() uint64 {
+	if wc.wcSandbox != nil {
+		return wc.wcSandbox.common.Gas().Budget()
+	}
+	return 0
+}
+
+// GasBurned is a callback from the VM that sets the remaining gas budget.
+// It will update the gas budget for the Wasp sandbox with the amount of gas
+// burned by the Wasm code thus far just before calling sandbox.
+func (wc *WasmContext) GasBurned(burned uint64) {
+	if wc.wcSandbox != nil {
+		wc.wcSandbox.common.Gas().Burn(gas.BurnCodeWasm1P, burned)
+	}
 }
 
 func (wc *WasmContext) IsView() bool {

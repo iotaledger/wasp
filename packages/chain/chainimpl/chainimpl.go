@@ -7,16 +7,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -26,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/txstream"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -38,53 +36,54 @@ import (
 const maxMsgBuffer = 1000
 
 var (
-	_ chain.Chain         = &chainObj{}
-	_ chain.ChainCore     = &chainObj{}
-	_ chain.ChainEntry    = &chainObj{}
-	_ chain.ChainRequests = &chainObj{}
-	_ chain.ChainMetrics         = &chainObj{}
-	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
+	_ chain.Chain                     = &chainObj{}
+	_ chain.ChainCore                 = &chainObj{}
+	_ chain.ChainEntry                = &chainObj{}
+	_ chain.ChainRequests             = &chainObj{}
+	_ chain.ChainMetrics              = &chainObj{}
+	_ map[cryptolib.PublicKeyKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
-	committee                        atomic.Value
-	mempool                          chain.Mempool
-	mempoolLastCleanedIndex          uint32
-	dismissed                        atomic.Bool
-	dismissOnce                      sync.Once
-	chainID                          *iscp.ChainID
-	chainStateSync                   coreutil.ChainStateSync
-	stateReader                      state.OptimisticStateReader
-	procset                          *processors.Cache
-	stateMgr                         chain.StateManager
-	consensus                        chain.Consensus
-	log                              *logger.Logger
+	committee                          atomic.Value
+	mempool                            chain.Mempool
+	mempoolLastCleanedIndex            uint32
+	dismissed                          atomic.Bool
+	dismissOnce                        sync.Once
+	chainID                            *iscp.ChainID
+	chainStateSync                     coreutil.ChainStateSync
+	stateReader                        state.OptimisticStateReader
+	procset                            *processors.Cache
+	stateMgr                           chain.StateManager
+	consensus                          chain.Consensus
+	log                                *logger.Logger
 	nodeConn                           chain.ChainNodeConnection
-	db                               kvstore.KVStore
-	netProvider                      peering.NetworkProvider
-	dksProvider                      registry.DKShareRegistryProvider
+	db                                 kvstore.KVStore
+	netProvider                        peering.NetworkProvider
+	dksProvider                        registry.DKShareRegistryProvider
 	blobProvider                       registry.BlobCache
-	committeeRegistry                registry.CommitteeRegistryProvider
-	eventRequestProcessed            *events.Event
-	eventChainTransition             *events.Event
+	committeeRegistry                  registry.CommitteeRegistryProvider
+	eventRequestProcessed              *events.Event
+	eventChainTransition               *events.Event
 	eventChainTransitionClosure        *events.Closure
 	receiveChainPeerMessagesAttachID   interface{}
 	detachFromCommitteePeerMessagesFun func()
-	chainPeers                       peering.PeerDomainProvider
+	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
-	offLedgerReqsAcksMutex           sync.RWMutex
-	offLedgerReqsAcks                  map[iscp.RequestID][]*ed25519.PublicKey
-	offledgerBroadcastUpToNPeers     int
-	offledgerBroadcastInterval       time.Duration
-	pullMissingRequestsFromCommittee bool
-	chainMetrics                     metrics.ChainMetrics
-	dismissChainMsgPipe              pipe.Pipe
-	stateMsgPipe                     pipe.Pipe
-	offLedgerRequestPeerMsgPipe      pipe.Pipe
-	requestAckPeerMsgPipe            pipe.Pipe
-	missingRequestIDsPeerMsgPipe     pipe.Pipe
-	missingRequestPeerMsgPipe        pipe.Pipe
-	timerTickMsgPipe                 pipe.Pipe
+	offLedgerReqsAcksMutex             sync.RWMutex
+	offLedgerReqsAcks                  map[iscp.RequestID][]*cryptolib.PublicKey
+	offledgerBroadcastUpToNPeers       int
+	offledgerBroadcastInterval         time.Duration
+	pullMissingRequestsFromCommittee   bool
+	chainMetrics                       metrics.ChainMetrics
+	dismissChainMsgPipe                pipe.Pipe
+	stateMsgPipe                       pipe.Pipe
+	offLedgerRequestPeerMsgPipe        pipe.Pipe
+	requestAckPeerMsgPipe              pipe.Pipe
+	missingRequestIDsPeerMsgPipe       pipe.Pipe
+	missingRequestPeerMsgPipe          pipe.Pipe
+	timerTickMsgPipe                   pipe.Pipe
+	wal                                chain.WAL
 }
 
 type committeeStruct struct {
@@ -106,6 +105,7 @@ func NewChain(
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
+	wal chain.WAL,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
@@ -116,13 +116,13 @@ func NewChain(
 		procset:           processors.MustNew(processorConfig),
 		chainID:           chainID,
 		log:               chainLog,
-		nodeConn:       nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
+		nodeConn:          nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
-		blobProvider:   blobProvider,
+		blobProvider:      blobProvider,
 		committeeRegistry: committeeRegistry,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
@@ -131,7 +131,7 @@ func NewChain(
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		candidateNodes:                   make([]*governance.AccessNodeInfo, 0),
-		offLedgerReqsAcks:                make(map[iscp.RequestID][]*ed25519.PublicKey),
+		offLedgerReqsAcks:                make(map[iscp.RequestID][]*cryptolib.PublicKey),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
@@ -143,11 +143,12 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
+		wal:                              wal,
 	}
 	ret.committee.Store(&committeeStruct{})
 
 	var err error
-	chainPeerNodes := []*ed25519.PublicKey{netProvider.Self().PubKey()}
+	chainPeerNodes := []*cryptolib.PublicKey{netProvider.Self().PubKey()}
 	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), chainPeerNodes)
 	if err != nil {
 		log.Errorf("NewChain: unable to create chainPeers domain: %v", err)
@@ -158,7 +159,8 @@ func NewChain(
 		log.Errorf("NewChain: unable to create stateMgr.fallbackPeers domain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics)
+
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal)
 	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
@@ -274,6 +276,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 		c.mempoolLastCleanedIndex = stateIndex
 		c.updateChainNodes(stateIndex)
+		c.chainMetrics.CurrentStateIndex(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
@@ -290,10 +293,10 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	c.log.Debugf("updateChainNodes, stateIndex=%v", stateIndex)
-	govAccessNodes := make([]ed25519.PublicKey, 0)
+	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		res, err := viewcontext.NewFromChain(c).CallView(
+		res, err := viewcontext.New(c).CallView(
 			governance.Contract.Hname(),
 			governance.FuncGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),
@@ -309,24 +312,24 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	//
 	// Collect the new set of access nodes in the communication domain.
 	// They include the committee nodes as well as the explicitly set access nodes.
-	newMembers := make(map[ed25519.PublicKey]bool)
-	newMembers[*c.netProvider.Self().PubKey()] = true
+	newMembers := make(map[cryptolib.PublicKeyKey]bool)
+	newMembers[c.netProvider.Self().PubKey().AsKey()] = true
 	cmt := c.getCommittee()
 	if cmt != nil {
 		for _, cm := range cmt.DKShare().NodePubKeys {
-			newMembers[*cm] = true
+			newMembers[cm.AsKey()] = true
 		}
 	}
 	for _, newAccessNode := range govAccessNodes {
-		newMembers[newAccessNode] = true
+		newMembers[newAccessNode.AsKey()] = true
 	}
 
 	//
 	// Pass it to the underlying domain to make a graceful update.
-	newMemberList := make([]*ed25519.PublicKey, 0)
+	newMemberList := make([]*cryptolib.PublicKey, 0)
 	for pubKey := range newMembers {
 		pubKeyCopy := pubKey
-		newMemberList = append(newMemberList, &pubKeyCopy)
+		newMemberList = append(newMemberList, pubKeyCopy)
 	}
 	c.chainPeers.UpdatePeers(newMemberList)
 	c.stateMgr.SetChainPeers(newMemberList)

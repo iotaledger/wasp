@@ -20,8 +20,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// POST http://localhost:8091/api/plugins/faucet/v1/enqueue
-// {"address":"atoi1qpszqzadsym6wpppd6z037dvlejmjuke7s24hm95s9fg9vpua7vluehe53e"}
 func TestHornetStartup(t *testing.T) {
 	ctx := context.Background()
 	tempDir := filepath.Join(os.TempDir(), "wasp-hornet-private_tangle")
@@ -39,7 +37,7 @@ func TestHornetStartup(t *testing.T) {
 	//
 	// Try call the faucet.
 	myKeyPair := cryptolib.NewKeyPair()
-	myAddress := cryptolib.Ed25519AddressFromPubKey(myKeyPair.PublicKey)
+	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
 	nodeEvt := iotagox.NewNodeEventAPIClient(fmt.Sprintf("ws://localhost:%d/mqtt", pt.NodePortRestAPI(0)))
 	require.NoError(t, nodeEvt.Connect(ctx))
@@ -63,7 +61,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	msg, err := pt.PostSimpleValueTX(ctx, node0, &pt.FaucetKeyPair, myAddress, 50000)
+	msg, err := pt.PostSimpleValueTX(ctx, node0, pt.FaucetKeyPair, myAddress, 50000)
 	require.NoError(t, err)
 	t.Logf("Posted messageID=%v", msg.MustID())
 	for i := 0; ; i++ {

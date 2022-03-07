@@ -1,6 +1,7 @@
 package chains
 
 import (
+	"context"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/processors"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/wal"
 )
 
 const PluginName = "Chains"
@@ -30,7 +32,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -47,19 +49,19 @@ func run(_ *node.Plugin) {
 		peering.DefaultNetworkProvider(),
 		database.GetOrCreateKVStore,
 	)
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
 		if parameters.GetBool(parameters.MetricsEnabled) {
 			allMetrics = metrics.AllMetrics()
 		}
 		allChains.SetNodeConn(nodeconnimpl.NewNodeConnection(nodeconn.NodeConnection(), allMetrics.GetNodeConnectionMetrics(), log))
-		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics); err != nil {
+		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics, wal.GetWAL()); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return
 		}
 
 		initialized.SetReady()
 
-		<-shutdownSignal
+		<-ctx.Done()
 
 		log.Info("dismissing chains...")
 		go func() {

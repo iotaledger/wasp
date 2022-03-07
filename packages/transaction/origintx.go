@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -14,19 +15,19 @@ import (
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	keyPair cryptolib.KeyPair,
+	keyPair *cryptolib.KeyPair,
 	stateControllerAddress iotago.Address,
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
-	rentStructure *iotago.RentStructure,
+	unspentOutputs iotago.OutputSet,
+	unspentOutputIDs iotago.OutputIDs,
+	l1Params *parameters.L1,
 ) (*iotago.Transaction, *iscp.ChainID, error) {
-	if len(allUnspentOutputs) != len(allInputs) {
+	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	walletAddr := keyPair.GetPublicKey().AsEd25519Address()
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
@@ -42,18 +43,18 @@ func NewChainOriginTransaction(
 		},
 	}
 	{
-		aliasDustDeposit := NewDepositEstimate(rentStructure).AnchorOutput
+		aliasDustDeposit := NewDepositEstimate(l1Params.RentStructure()).AnchorOutput
 		if aliasOutput.Amount < aliasDustDeposit {
 			aliasOutput.Amount = aliasDustDeposit
 		}
 	}
-	inputs, remainderOutput, err := computeInputsAndRemainder(
+	txInputs, remainderOutput, err := computeInputsAndRemainder(
 		walletAddr,
 		aliasOutput.Amount,
 		nil,
-		allUnspentOutputs,
-		allInputs,
-		rentStructure,
+		unspentOutputs,
+		unspentOutputIDs,
+		l1Params.RentStructure(),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -63,16 +64,20 @@ func NewChainOriginTransaction(
 		outputs = append(outputs, remainderOutput)
 	}
 	essence := &iotago.TransactionEssence{
-		Inputs:  inputs,
-		Outputs: outputs,
+		NetworkID: l1Params.NetworkID,
+		Inputs:    txInputs.UTXOInputs(),
+		Outputs:   outputs,
 	}
-	sigs, err := essence.Sign(iotago.NewAddressKeysForEd25519Address(walletAddr, keyPair.PrivateKey))
+	sigs, err := essence.Sign(
+		txInputs.OrderedSet(unspentOutputs).MustCommitment(),
+		keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr),
+	)
 	if err != nil {
 		return nil, nil, err
 	}
 	tx := &iotago.Transaction{
 		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(txInputs), sigs[0]),
 	}
 	txid, err := tx.ID()
 	if err != nil {
@@ -88,18 +93,18 @@ func NewChainOriginTransaction(
 // The request contains the minimum data needed to bootstrap the chain.
 // The signer must be the same that created the origin transaction.
 func NewRootInitRequestTransaction(
-	keyPair cryptolib.KeyPair,
+	keyPair *cryptolib.KeyPair,
 	chainID *iscp.ChainID,
 	description string,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
-	rentStructure *iotago.RentStructure,
+	unspentOutputs iotago.OutputSet,
+	unspentOutputIDs iotago.OutputIDs,
+	l1Params *parameters.L1,
 ) (*iotago.Transaction, error) {
 	//
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
-		UnspentOutputs:   allUnspentOutputs,
-		UnspentOutputIDs: allInputs,
+		UnspentOutputs:   unspentOutputs,
+		UnspentOutputIDs: unspentOutputIDs,
 		Requests: []*iscp.RequestParameters{{
 			TargetAddress: chainID.AsAddress(),
 			Metadata: &iscp.SendMetadata{
@@ -107,12 +112,12 @@ func NewRootInitRequestTransaction(
 				EntryPoint:     iscp.EntryPointInit,
 				GasBudget:      0, // TODO. Probably we need minimum fixed budget for core contract calls. 0 for init call
 				Params: dict.Dict{
-					root.ParamDustDepositAssumptionsBin: NewDepositEstimate(rentStructure).Bytes(),
+					root.ParamDustDepositAssumptionsBin: NewDepositEstimate(l1Params.RentStructure()).Bytes(),
 					governance.ParamDescription:         codec.EncodeString(description),
 				},
 			},
 		}},
-		RentStructure: rentStructure,
+		L1: l1Params,
 	})
 	if err != nil {
 		return nil, err

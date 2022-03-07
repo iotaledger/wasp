@@ -101,7 +101,7 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
 
 pub fn func_send_to_address(ctx: &ScFuncContext, f: &SendToAddressContext) {
     let balances = ScTransfers::from_balances(ctx.balances());
-    ctx.transfer_to_address(&f.params.address().value(), balances);
+    ctx.send(&f.params.address().value(), &balances);
 }
 
 pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
@@ -196,7 +196,7 @@ pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
 pub fn view_get_int(ctx: &ScViewContext, f: &GetIntContext) {
     let name = f.params.name().value();
     let value = f.state.ints().get_int64(&name);
-    ctx.require(value.exists(), "param 'value' not found");
+    ctx.require(value.exists(), &("param '".to_string() + &name + "' not found"));
     f.results.values().get_int64(&name).set_value(value.value());
 }
 

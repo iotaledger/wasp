@@ -277,3 +277,67 @@ impl MutableSendRequest {
         SendRequest::from_bytes(&self.proxy.get())
     }
 }
+
+#[derive(Clone)]
+pub struct TransferRequest {
+    pub agent_id : ScAgentID, 
+    pub create   : bool, 
+    pub transfer : Vec<u8>, 
+}
+
+impl TransferRequest {
+    pub fn from_bytes(bytes: &[u8]) -> TransferRequest {
+        let mut dec = WasmDecoder::new(bytes);
+        TransferRequest {
+            agent_id : agent_id_decode(&mut dec),
+            create   : bool_decode(&mut dec),
+            transfer : bytes_decode(&mut dec),
+        }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut enc = WasmEncoder::new();
+		agent_id_encode(&mut enc, &self.agent_id);
+		bool_encode(&mut enc, self.create);
+		bytes_encode(&mut enc, &self.transfer);
+        enc.buf()
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableTransferRequest {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableTransferRequest {
+    pub fn exists(&self) -> bool {
+        self.proxy.exists()
+    }
+
+    pub fn value(&self) -> TransferRequest {
+        TransferRequest::from_bytes(&self.proxy.get())
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableTransferRequest {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableTransferRequest {
+    pub fn delete(&self) {
+        self.proxy.delete();
+    }
+
+    pub fn exists(&self) -> bool {
+        self.proxy.exists()
+    }
+
+    pub fn set_value(&self, value: &TransferRequest) {
+        self.proxy.set(&value.to_bytes());
+    }
+
+    pub fn value(&self) -> TransferRequest {
+        TransferRequest::from_bytes(&self.proxy.get())
+    }
+}

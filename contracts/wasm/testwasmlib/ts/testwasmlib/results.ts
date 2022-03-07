@@ -8,6 +8,18 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
+export class ImmutableTakeBalanceResults extends wasmtypes.ScProxy {
+	iotas(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultIotas));
+	}
+}
+
+export class MutableTakeBalanceResults extends wasmtypes.ScProxy {
+	iotas(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultIotas));
+	}
+}
+
 export class ImmutableArrayLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));

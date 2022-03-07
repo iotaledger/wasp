@@ -16,10 +16,9 @@ import (
 // Two step process allow/change is in order to avoid mistakes
 func delegateChainOwnership(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
-	ctx.RequireCallerIsChainOwner("governance.delegateChainOwnership: not authorized")
+	ctx.RequireCallerIsChainOwner()
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	newOwnerID := params.MustGetAgentID(governance.ParamChainOwner)
+	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
 	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
 	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil

@@ -7,27 +7,26 @@ require (
 	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
-	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.32.0
-	github.com/ethereum/go-ethereum v1.10.16
-	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
+	github.com/bytecodealliance/wasmtime-go v0.34.0
+	github.com/ethereum/go-ethereum v1.10.15
+	github.com/iotaledger/goshimmer v0.8.5
+	github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220302152530-3d39187c5129
-	github.com/knadh/koanf v1.2.1
+	github.com/knadh/koanf v1.3.3
 	github.com/labstack/echo/v4 v4.2.1
-	github.com/libp2p/go-libp2p v0.14.4
-	github.com/libp2p/go-libp2p-core v0.8.5
+	github.com/libp2p/go-libp2p v0.15.0
+	github.com/libp2p/go-libp2p-core v0.9.0
 	github.com/libp2p/go-libp2p-quic-transport v0.12.0
 	github.com/libp2p/go-libp2p-tls v0.2.0
-	github.com/libp2p/go-tcp-transport v0.2.4
+	github.com/libp2p/go-tcp-transport v0.2.8
 	github.com/mr-tron/base58 v1.2.0
-	github.com/multiformats/go-multiaddr v0.3.3
-	github.com/multiformats/go-multihash v0.0.15 // indirect
+	github.com/multiformats/go-multiaddr v0.4.1
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.10.0
-	github.com/second-state/WasmEdge-go v0.9.0-rc3
+	github.com/prometheus/client_golang v1.11.0
+	github.com/second-state/WasmEdge-go v0.9.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
@@ -36,11 +35,10 @@ require (
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.9.0
-	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	go.uber.org/zap v1.19.1
+	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
+	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
+	golang.org/x/sys v0.0.0-20211213223007-03aa0b5f6827 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/genproto v0.0.0-20220302033224-9aa15565e42a // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -49,8 +47,9 @@ require (
 
 replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
-	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220204023422-c467ab1fee84
+	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220305060401-18f9e3da0f84
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go
+	github.com/iotaledger/goshimmer => github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497
 	github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260
 	go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
 )

@@ -24,8 +24,8 @@ func (c *Client) CheckRequestResult(reqID iscp.RequestID) error {
 	if err != nil {
 		return xerrors.Errorf("Could not decode receipt for request: %w", err)
 	}
-	if req.Error() != nil {
-		return xerrors.Errorf("The request was rejected: %v", req.Error())
+	if req.Error != nil {
+		return xerrors.Errorf("The request was rejected: %v", req.Error)
 	}
 	return nil
 }

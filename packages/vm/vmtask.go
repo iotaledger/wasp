@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -25,8 +26,8 @@ type VMTask struct {
 	ACSSessionID       uint64
 	Processors         *processors.Cache
 	AnchorOutput       *iotago.AliasOutput
-	AnchorOutputID     iotago.UTXOInput
-	RentStructure      *iotago.RentStructure
+	AnchorOutputID     iotago.OutputID
+	L1Params           *parameters.L1
 	SolidStateBaseline coreutil.StateBaseline
 	Requests           []iscp.Request
 	TimeAssumption     iscp.TimeData
@@ -50,6 +51,8 @@ type VMTask struct {
 	// TransactionEssence is the transaction essence for the next block,
 	// or nil if the task does not produce a normal block
 	ResultTransactionEssence *iotago.TransactionEssence
+	// ResultInputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
+	ResultInputsCommitment []byte
 	// Results contains one result for each non-skipped request
 	Results []*RequestResult
 	// If not nil, VMError is a fatal error that prevented the execution of the task

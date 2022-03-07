@@ -9,7 +9,6 @@
 //    VarAccessNodeCandidates:  map[pubKey] => AccessNodeInfo    // A set of Access Node Info.
 //    VarAccessNodes:           map[pubKey] => byte[0]           // A set of nodes.
 //    VarValidatorNodes:        pubKey[]                         // An ordered list of nodes.
-//
 package governanceimpl
 
 import (

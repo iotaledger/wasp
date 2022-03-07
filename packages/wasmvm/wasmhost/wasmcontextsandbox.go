@@ -19,6 +19,7 @@ import (
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
 	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
 	(*WasmContextSandbox).fnBlockContext,
@@ -31,7 +32,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEvent,
-	(*WasmContextSandbox).fnIncomingTransfer,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
 	(*WasmContextSandbox).fnPanic,
@@ -54,6 +54,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnUtilsHashBlake2b,
 	(*WasmContextSandbox).fnUtilsHashName,
 	(*WasmContextSandbox).fnUtilsHashSha3,
+	(*WasmContextSandbox).fnTransferAllowed,
 }
 
 // '$' prefix indicates a string param
@@ -63,6 +64,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 var sandboxFuncNames = []string{
 	"nil",
 	"FnAccountID",
+	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
 	"FnBlockContext",
@@ -75,7 +77,6 @@ var sandboxFuncNames = []string{
 	"#FnDeployContract",
 	"FnEntropy",
 	"$FnEvent",
-	"FnIncomingTransfer",
 	"$FnLog",
 	"FnMinted",
 	"$FnPanic",
@@ -98,6 +99,7 @@ var sandboxFuncNames = []string{
 	"#FnUtilsHashBlake2b",
 	"$FnUtilsHashName",
 	"#FnUtilsHashSha3",
+	"#FnTransferAllowed",
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
@@ -149,7 +151,12 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
 func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
-	return s.common.AccountID().Bytes()
+	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
+}
+
+func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
+	assets := s.ctx.AllowanceAvailable()
+	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -179,7 +186,7 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	assets := s.cvt.IscpAssets(scAssets)
-	s.Tracef("CALL hContract %s, hFunction %s", contract.String(), function.String())
+	s.Tracef("CALL %s.%s", contract.String(), function.String())
 	results := s.callUnlocked(contract, function, params, assets)
 	return results.Bytes()
 }
@@ -195,23 +202,23 @@ func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params 
 }
 
 func (s *WasmContextSandbox) fnCaller(args []byte) []byte {
-	return s.ctx.Caller().Bytes()
+	return s.cvt.ScAgentID(s.ctx.Caller()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnChainID(args []byte) []byte {
-	return s.common.ChainID().Bytes()
+	return s.cvt.ScChainID(s.common.ChainID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnChainOwnerID(args []byte) []byte {
-	return s.common.ChainOwnerID().Bytes()
+	return s.cvt.ScAgentID(s.common.ChainOwnerID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnContract(args []byte) []byte {
-	return s.common.Contract().Bytes()
+	return s.cvt.ScHname(s.common.Contract()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
-	return s.common.ContractCreator().Bytes()
+	return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
@@ -233,17 +240,12 @@ func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name,
 }
 
 func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
-	return s.ctx.GetEntropy().Bytes()
+	return s.cvt.ScHash(s.ctx.GetEntropy()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 	s.ctx.Event(string(args))
 	return nil
-}
-
-func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
-	panic("fixme")
-	//return s.ctx.IncomingTransfer().Bytes()
 }
 
 func (s *WasmContextSandbox) fnLog(args []byte) []byte {
@@ -252,17 +254,17 @@ func (s *WasmContextSandbox) fnLog(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
-	panic("fixme")
-	//return s.ctx.Minted().Bytes()
+	panic("fixme: wc.fnMinted")
+	// return s.ctx.Minted().Bytes()
 }
 
 func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
-	s.common.Log().Panicf("WASM panic: %s", string(args))
+	s.common.Log().Panicf("WASM: panic in VM: %s", string(args))
 	return nil
 }
 
 func (s *WasmContextSandbox) fnParams(args []byte) []byte {
-	return s.common.Params().Bytes()
+	return s.common.Params().Dict.Bytes()
 }
 
 func (s *WasmContextSandbox) fnPost(args []byte) []byte {
@@ -272,50 +274,48 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
+
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) == 0 {
-		s.Panicf("transfer is required for post")
-	}
-	assets := s.cvt.IscpAssets(scAssets)
-
-	s.Tracef("POST hContract %s, hFunction %s, chain ", contract.String(), function.String(), chainID.String())
-	metadata := &iscp.SendMetadata{
-		TargetContract: contract,
-		EntryPoint:     function,
-		Params:         params,
-		GasBudget:      1000_000,
-	}
-	if req.Delay == 0 {
-		s.ctx.Send(iscp.RequestParameters{
-			AdjustToMinimumDustDeposit: true,
-			TargetAddress:              s.ctx.Caller().Address(),
-			Assets:                     assets,
-			Metadata:                   metadata,
-		})
-		return nil
+	allow := s.cvt.IscpAssets(scAssets)
+	assets := allow
+	// Force a minimum transfer of 1000 iotas for dust and some gas
+	// excess can always be reclaimed from the chain account by the user
+	// This also removes the silly requirement to transfer 1 iota
+	if assets.Iotas < 1000 {
+		assets = assets.Clone()
+		assets.Iotas = 1000
 	}
 
-	timeLock := time.Unix(0, s.ctx.Timestamp())
-	timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
-	s.ctx.Send(iscp.RequestParameters{
+	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
+	sendReq := iscp.RequestParameters{
 		AdjustToMinimumDustDeposit: true,
-		TargetAddress:              s.ctx.Caller().Address(),
+		TargetAddress:              chainID.AsAddress(),
 		Assets:                     assets,
-		Metadata:                   metadata,
-		Options: iscp.SendOptions{
-			Timelock: &iscp.TimeData{Time: timeLock},
+		Metadata: &iscp.SendMetadata{
+			TargetContract: contract,
+			EntryPoint:     function,
+			Params:         params,
+			Allowance:      allow,
+			GasBudget:      1_000_000,
 		},
-	})
+	}
+	if req.Delay != 0 {
+		timeLock := time.Unix(0, s.ctx.Timestamp())
+		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
+		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
+	}
+
+	s.ctx.Send(sendReq)
 	return nil
 }
 
 func (s *WasmContextSandbox) fnRequest(args []byte) []byte {
-	panic("fixme")
-	//return s.ctx.Request().Bytes()
+	panic("fixme: wc.fnRequest")
+	// return s.ctx.Request().Bytes()
 }
 
 func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
-	return s.ctx.Request().ID().Bytes()
+	return s.cvt.ScRequestID(s.ctx.Request().ID()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnResults(args []byte) []byte {
@@ -353,6 +353,22 @@ func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 	s.common.Log().Debugf(string(args))
+	return nil
+}
+
+// transfer tokens to address
+func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
+	req := wasmrequests.NewTransferRequestFromBytes(args)
+	agentID := s.cvt.IscpAgentID(&req.AgentID)
+	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	if len(scAssets) != 0 {
+		assets := s.cvt.IscpAssets(scAssets)
+		if req.Create {
+			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, assets)
+		} else {
+			s.ctx.TransferAllowedFunds(agentID, assets)
+		}
+	}
 	return nil
 }
 
@@ -414,13 +430,13 @@ func (s WasmContextSandbox) fnUtilsEd25519Valid(args []byte) []byte {
 }
 
 func (s WasmContextSandbox) fnUtilsHashBlake2b(args []byte) []byte {
-	return s.common.Utils().Hashing().Blake2b(args).Bytes()
+	return s.cvt.ScHash(s.common.Utils().Hashing().Blake2b(args)).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsHashName(args []byte) []byte {
-	return codec.EncodeHname(s.common.Utils().Hashing().Hname(string(args)))
+	return s.cvt.ScHname(s.common.Utils().Hashing().Hname(string(args))).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsHashSha3(args []byte) []byte {
-	return s.common.Utils().Hashing().Sha3(args).Bytes()
+	return s.cvt.ScHash(s.common.Utils().Hashing().Sha3(args)).Bytes()
 }

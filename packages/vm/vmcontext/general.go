@@ -7,19 +7,18 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-
 	var ret iscp.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		// origin
-		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID.ID()))
+		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
 	} else {
 		ret = iscp.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
 	}
@@ -27,14 +26,10 @@ func (vmctx *VMContext) ChainID() *iscp.ChainID {
 }
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-
 	return vmctx.chainOwnerID
 }
 
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-
 	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
 	if rec == nil {
 		panic("can't find current contract")
@@ -43,13 +38,11 @@ func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) Params() dict.Dict {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-	return vmctx.getCallContext().params
+func (vmctx *VMContext) Params() *iscp.Params {
+	return &vmctx.getCallContext().params
 }
 
 func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
@@ -57,29 +50,22 @@ func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) Caller() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnCodeGetCallerData)
 	return vmctx.getCallContext().caller
 }
 
 func (vmctx *VMContext) Timestamp() int64 {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.virtualState.Timestamp().UnixNano()
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-
 	return vmctx.entropy
 }
 
 func (vmctx *VMContext) Request() iscp.Calldata {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.req
 }
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-
 	hname := vmctx.CurrentContractHname()
 	if commonaccount.IsCoreHname(hname) {
 		return commonaccount.Get(vmctx.ChainID())
@@ -88,7 +74,6 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
-	vmctx.GasBurn(gas.BurnCodeGetAllowance)
 	allowance := vmctx.getCallContext().allowanceAvailable
 	if allowance == nil {
 		return iscp.NewEmptyAssets()
@@ -138,8 +123,6 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
 func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, assets ...*iscp.Assets) *iscp.Assets {
-	vmctx.GasBurn(gas.BurnCodeTransferAllowance)
-
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = commonaccount.Get(vmctx.ChainID())
@@ -147,7 +130,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 		// check if target exists, if it is not forced
 		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
 		if !forceOpenAccount && !vmctx.targetAccountExists(target) {
-			panic(ErrTransferTargetAccountDoesNotExists)
+			panic(vm.ErrTransferTargetAccountDoesNotExists)
 		}
 	}
 
@@ -168,8 +151,6 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
-	vmctx.GasBurn(gas.BurnCodeGetContext)
-
 	sd, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
 		panic(err)
@@ -191,7 +172,7 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		StateController:      vmctx.task.AnchorOutput.StateController(),
 		GovernanceController: vmctx.task.AnchorOutput.GovernorAddress(),
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
-		OutputID:             vmctx.task.AnchorOutputID.ID(),
+		OutputID:             vmctx.task.AnchorOutputID,
 		StateData:            sd,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
 		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
@@ -209,6 +190,18 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	par.Set(root.ParamName, codec.EncodeString(name))
 	par.Set(root.ParamDescription, codec.EncodeString(description))
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
+}
 
-	vmctx.GasBurn(gas.BurnCodeDeployContract)
+func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
+	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
+
+	params := dict.New()
+	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
+
+	result := vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	errorCode := codec.MustDecodeVMErrorCode(result.MustGet(errors.ParamErrorCode))
+
+	vmctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
+
+	return iscp.NewVMErrorTemplate(errorCode, messageFormat)
 }

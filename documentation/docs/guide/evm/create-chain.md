@@ -30,7 +30,7 @@ If you don't have an IOTA Smart Contracts chain, you should create one. To do so
 
 In order to deploy the EVM chain contract, you need to have some IOTA locked on your newly created chain to fund that action. To do this, run:
 
-```bash
+```shell
 wasp-cli chain deposit IOTA:10000
 ```
 
@@ -47,7 +47,7 @@ The most intuitive way to do this is by using [Metamask](https://metamask.io). I
 
 Once you have this, you are ready to deploy the EVM chain with the following command:
 
-```bash
+```shell
 wasp-cli chain evm deploy -a mychain --alloc 0x63c00c65BE86463491167eE26958a5A599BEbD2c:1000000000000000000000000
 ```
 * The `-a` parameter indicates the name of the chain that you want to deploy your EVM chain on top of. `mychain` in this case.
@@ -63,7 +63,7 @@ In order to communicate with the EVM contract, you will need to run an additiona
 
 To run this server, run the following command: 
 
-```bash
+```shell
 wasp-cli chain evm jsonrpc --chainid 1074
 ```
 
@@ -79,3 +79,7 @@ Re-using an existing Chain ID is not recommended, and can be a security risk. Fo
 
 The current implementation uses the wasp-cli's saves the account to pay for any fees in IOTA while using the JSON-RPC interface.  This is of course not ideal in a normal usage scenario. Upcoming releases  will address this in a more user-friendly way.
 :::
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/JbUGX-9BTSo" title="EVM Chain Setup" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

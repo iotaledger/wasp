@@ -22,6 +22,7 @@ import (
 var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	nil,
 	(*SoloSandbox).fnAccountID,
+	(*SoloSandbox).fnAllowance,
 	(*SoloSandbox).fnBalance,
 	(*SoloSandbox).fnBalances,
 	(*SoloSandbox).fnBlockContext,
@@ -34,7 +35,6 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnDeployContract,
 	(*SoloSandbox).fnEntropy,
 	(*SoloSandbox).fnEvent,
-	(*SoloSandbox).fnIncomingTransfer,
 	(*SoloSandbox).fnLog,
 	(*SoloSandbox).fnMinted,
 	(*SoloSandbox).fnPanic,
@@ -57,6 +57,7 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnUtilsHashBlake2b,
 	(*SoloSandbox).fnUtilsHashName,
 	(*SoloSandbox).fnUtilsHashSha3,
+	(*SoloSandbox).fnTransferAllowed,
 }
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
@@ -79,8 +80,10 @@ func (s *SoloSandbox) Budget() uint64 {
 	panic("implement me")
 }
 
-var _ wasmhost.ISandbox = new(SoloSandbox)
-var _ iscp.Gas = new(SoloSandbox)
+var (
+	_ wasmhost.ISandbox = new(SoloSandbox)
+	_ iscp.Gas          = new(SoloSandbox)
+)
 
 func NewSoloSandbox(ctx *SoloContext) *SoloSandbox {
 	s := &SoloSandbox{ctx: ctx}
@@ -96,7 +99,7 @@ func (s *SoloSandbox) Call(funcNr int32, params []byte) []byte {
 			return
 		}
 		if s.ctx.Err != nil {
-			s.ctx.Chain.Log.Infof("stacked error: %s", s.ctx.Err.Error())
+			s.ctx.Chain.Log().Infof("stacked error: %s", s.ctx.Err.Error())
 		}
 		switch errType := r.(type) {
 		case error:
@@ -106,7 +109,7 @@ func (s *SoloSandbox) Call(funcNr int32, params []byte) []byte {
 		default:
 			s.ctx.Err = xerrors.Errorf("RunScFunction: %v", errType)
 		}
-		s.ctx.Chain.Log.Infof("stolor error:: %s", s.ctx.Err.Error())
+		s.ctx.Chain.Log().Infof("stolor error:: %s", s.ctx.Err.Error())
 	}()
 	return sandboxFunctions[-funcNr](s, params)
 }
@@ -118,16 +121,22 @@ func (s *SoloSandbox) checkErr(err error) {
 }
 
 func (s *SoloSandbox) Panicf(format string, args ...interface{}) {
-	s.ctx.Chain.Log.Panicf(format, args...)
+	s.ctx.Chain.Log().Panicf(format, args...)
 }
 
 func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
-	s.ctx.Chain.Log.Debugf(format, args...)
+	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
 func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.Assets) []byte {
+	allow := assets
+	if assets.Iotas < 1000 {
+		assets = allow.Clone()
+		assets.Iotas = 1000
+	}
 	req := solo.NewCallParamsFromDic(contract, function, params)
 	req.AddAssets(assets)
+	req.WithAllowance(allow)
 	req.WithMaxAffordableGasBudget()
 	ctx := s.ctx
 	//TODO mint!
@@ -150,6 +159,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, asse
 		}
 	}
 	_ = wasmhost.Connect(ctx.wc)
+	ctx.UpdateGasFees()
 	if ctx.Err != nil {
 		return nil
 	}
@@ -160,6 +170,12 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, asse
 
 func (s *SoloSandbox) fnAccountID(args []byte) []byte {
 	return s.ctx.AccountID().Bytes()
+}
+
+func (s *SoloSandbox) fnAllowance(args []byte) []byte {
+	//// zero incoming balance
+	assets := new(iscp.Assets)
+	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *SoloSandbox) fnBalance(args []byte) []byte {
@@ -179,30 +195,31 @@ func (s *SoloSandbox) fnBlockContext(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
+	ctx := s.ctx
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract := s.cvt.IscpHname(req.Contract)
-	if contract != iscp.Hn(s.ctx.scName) {
-		s.Panicf("unknown contract: %s vs. %s", contract.String(), s.ctx.scName)
+	if contract != iscp.Hn(ctx.scName) {
+		s.Panicf("unknown contract: %s vs. %s", contract.String(), ctx.scName)
 	}
 	function := s.cvt.IscpHname(req.Function)
-	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
+	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
-	s.Tracef("CALL %s.%s", s.ctx.scName, funcName)
+	s.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
-		return s.postSync(s.ctx.scName, funcName, params, assets)
+		return s.postSync(ctx.scName, funcName, params, assets)
 	}
 
-	_ = wasmhost.Connect(s.ctx.wasmHostOld)
-	res, err := s.ctx.Chain.CallView(s.ctx.scName, funcName, params)
-	_ = wasmhost.Connect(s.ctx.wc)
-	s.ctx.Err = err
-	if err != nil {
+	_ = wasmhost.Connect(ctx.wasmHostOld)
+	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
+	_ = wasmhost.Connect(ctx.wc)
+	ctx.Err = err
+	if ctx.Err != nil {
 		return nil
 	}
 	return res.Bytes()
@@ -233,7 +250,7 @@ func (s *SoloSandbox) fnDeployContract(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnEntropy(args []byte) []byte {
-	return s.ctx.Chain.ChainID.Bytes()[1:]
+	return s.ctx.Chain.ChainID.Bytes()
 }
 
 func (s *SoloSandbox) fnEvent(args []byte) []byte {
@@ -241,14 +258,8 @@ func (s *SoloSandbox) fnEvent(args []byte) []byte {
 	return nil
 }
 
-func (s *SoloSandbox) fnIncomingTransfer(args []byte) []byte {
-	//// zero incoming balance
-	assets := new(iscp.Assets)
-	return s.cvt.ScBalances(assets).Bytes()
-}
-
 func (s *SoloSandbox) fnLog(args []byte) []byte {
-	s.ctx.Chain.Log.Infof(string(args))
+	s.ctx.Chain.Log().Infof(string(args))
 	return nil
 }
 
@@ -257,7 +268,7 @@ func (s *SoloSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnPanic(args []byte) []byte {
-	s.ctx.Chain.Log.Panicf("SOLO panic: %s", string(args))
+	s.ctx.Chain.Log().Panicf("SOLO panic: %s", string(args))
 	return nil
 }
 
@@ -279,13 +290,10 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
-	s.Tracef("POST c'%s' f'%s'", s.ctx.scName, funcName)
+	s.Tracef("POST %s.%s", s.ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) == 0 && !s.ctx.offLedger {
-		s.Panicf("transfer is required for post")
-	}
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}
@@ -305,7 +313,7 @@ func (s *SoloSandbox) fnResults(args []byte) []byte {
 	panic("implement me")
 }
 
-// transfer tokens to address
+// transfer tokens to L1 address
 func (s *SoloSandbox) fnSend(args []byte) []byte {
 	panic("implement me")
 }
@@ -319,6 +327,11 @@ func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnTrace(args []byte) []byte {
-	s.ctx.Chain.Log.Debugf(string(args))
+	s.ctx.Chain.Log().Debugf(string(args))
 	return nil
+}
+
+// transfer allowed tokens to L2 agent
+func (s *SoloSandbox) fnTransferAllowed(args []byte) []byte {
+	panic("implement me")
 }

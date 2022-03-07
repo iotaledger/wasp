@@ -55,7 +55,7 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
 }
 
 export function funcPlaceBid(ctx: wasmlib.ScFuncContext, f: sc.PlaceBidContext): void {
-    let bidAmount = ctx.incoming().balance(wasmtypes.IOTA);
+    let bidAmount = ctx.allowance().balance(wasmtypes.IOTA);
     ctx.require(bidAmount > 0, "Missing bid amount");
 
     let color = f.params.color().value();
@@ -109,7 +109,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     if (color == wasmtypes.IOTA || color == wasmtypes.MINT) {
         ctx.panic("Reserved auction token color");
     }
-    let numTokens = ctx.incoming().balance(color);
+    let numTokens = ctx.allowance().balance(color);
     if (numTokens == 0) {
         ctx.panic("Missing auction tokens");
     }
@@ -146,7 +146,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     if (margin == 0) {
         margin = 1;
     }
-    let deposit = ctx.incoming().balance(wasmtypes.IOTA);
+    let deposit = ctx.allowance().balance(wasmtypes.IOTA);
     if (deposit < margin) {
         ctx.panic("Insufficient deposit");
     }
@@ -200,10 +200,10 @@ export function viewGetInfo(ctx: wasmlib.ScViewContext, f: sc.GetInfoContext): v
 function transferTokens(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, color: wasmlib.ScColor, amount: i64): void {
     if (agent.isAddress()) {
         // send back to original Tangle address
-        ctx.transferToAddress(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
+        ctx.send(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.transferToAddress(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
+    ctx.send(agent.address(), wasmlib.ScTransfers.transfer(color, amount));
 }

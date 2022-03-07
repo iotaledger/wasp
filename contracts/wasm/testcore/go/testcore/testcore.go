@@ -109,7 +109,7 @@ func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
 
 func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
 	transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
-	ctx.TransferToAddress(f.Params.Address().Value(), transfer)
+	ctx.Send(f.Params.Address().Value(), transfer)
 }
 
 func funcSetInt(ctx wasmlib.ScFuncContext, f *SetIntContext) {
@@ -153,7 +153,7 @@ func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, f *TestPanicFullEPContext) {
 }
 
 func funcWithdrawToChain(ctx wasmlib.ScFuncContext, f *WithdrawToChainContext) {
-	coreaccounts.ScFuncs.Withdraw(ctx).Func.TransferIotas(1).PostToChain(f.Params.ChainID().Value())
+	coreaccounts.ScFuncs.Withdraw(ctx).Func.PostToChain(f.Params.ChainID().Value())
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {
@@ -189,7 +189,7 @@ func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
 func viewGetInt(ctx wasmlib.ScViewContext, f *GetIntContext) {
 	name := f.Params.Name().Value()
 	value := f.State.Ints().GetInt64(name)
-	ctx.Require(value.Exists(), "param 'value' not found")
+	ctx.Require(value.Exists(), "param '"+name+"' not found")
 	f.Results.Values().GetInt64(name).SetValue(value.Value())
 }
 

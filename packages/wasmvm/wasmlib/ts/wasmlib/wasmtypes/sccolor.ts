@@ -8,7 +8,7 @@ import {bytesCompare} from "./scbytes";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export const ScColorLength = 32;
+export const ScColorLength = 38;
 
 export class ScColor {
     id: u8[] = zeroes(ScColorLength);

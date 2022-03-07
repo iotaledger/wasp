@@ -23,8 +23,7 @@ const (
 	// FirstUserMsgCode is the first committee message type.
 	// All the equal and larger msg types are committee messages.
 	// those with smaller are reserved by the package for heartbeat and handshake messages
-	FirstUserMsgCode = byte(0x10)
-
+	FirstUserMsgCode                = byte(0x10)
 	PeerMessageReceiverStateManager = byte(iota)
 	PeerMessageReceiverConsensus
 	PeerMessageReceiverCommonSubset
@@ -52,9 +51,9 @@ type NetworkProvider interface {
 // struct, that implements the NetworkProvider. These implementations should interact,
 // e.g. when we distrust some peer, all the connections to it should be cut immediately.
 type TrustedNetworkManager interface {
-	IsTrustedPeer(pubKey cryptolib.PublicKey) error
-	TrustPeer(pubKey cryptolib.PublicKey, netID string) (*TrustedPeer, error)
-	DistrustPeer(pubKey cryptolib.PublicKey) (*TrustedPeer, error)
+	IsTrustedPeer(pubKey *cryptolib.PublicKey) error
+	TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey *cryptolib.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
 }
 
@@ -101,7 +100,6 @@ type PeerDomainProvider interface {
 
 // PeerSender represents an interface to some remote peer.
 type PeerSender interface {
-
 	// NetID identifies the peer.
 	NetID() string
 

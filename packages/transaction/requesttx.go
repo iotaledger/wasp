@@ -6,15 +6,16 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair                cryptolib.KeyPair
-	UnspentOutputs               []iotago.Output
-	UnspentOutputIDs             []*iotago.UTXOInput
+	SenderKeyPair                *cryptolib.KeyPair
+	UnspentOutputs               iotago.OutputSet
+	UnspentOutputIDs             iotago.OutputIDs
 	Requests                     []*iscp.RequestParameters
-	RentStructure                *iotago.RentStructure
+	L1                           *parameters.L1
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
@@ -27,17 +28,17 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 
-	senderAddress := cryptolib.Ed25519AddressFromPubKey(par.SenderKeyPair.PublicKey)
+	senderAddress := par.SenderKeyPair.GetPublicKey().AsEd25519Address()
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
 		assets := req.Assets
 		if assets == nil {
-			// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeExtendedOutput
+			// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
 			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
-		out := MakeExtendedOutput(
+		out := MakeBasicOutput(
 			req.TargetAddress,
 			senderAddress,
 			assets,
@@ -50,12 +51,12 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				GasBudget:      req.Metadata.GasBudget,
 			},
 			req.Options,
-			par.RentStructure,
+			par.L1.RentStructure(),
 			par.DisableAutoAdjustDustDeposit,
 		)
-		requiredDustDeposit := out.VByteCost(par.RentStructure, nil)
+		requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
 		if out.Deposit() < requiredDustDeposit {
-			xerrors.Errorf("%v: available %d < required %d iotas",
+			return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
 		}
 		outputs = append(outputs, out)
@@ -69,7 +70,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			sumTokensOut[nt.ID] = s
 		}
 	}
-	inputs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())
 	if err != nil {
 		return nil, err
 	}
@@ -77,16 +78,20 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		outputs = append(outputs, remainder)
 	}
 	essence := &iotago.TransactionEssence{
-		Inputs:  inputs,
-		Outputs: outputs,
+		NetworkID: par.L1.NetworkID,
+		Inputs:    inputIDs.UTXOInputs(),
+		Outputs:   outputs,
 	}
-	sigs, err := essence.Sign(iotago.NewAddressKeysForEd25519Address(senderAddress, par.SenderKeyPair.PrivateKey))
+	sigs, err := essence.Sign(
+		inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment(),
+		par.SenderKeyPair.GetPrivateKey().AddressKeysForEd25519Address(senderAddress),
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &iotago.Transaction{
 		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputIDs), sigs[0]),
 	}, nil
 }

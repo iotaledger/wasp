@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
@@ -150,7 +151,7 @@ func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptol
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
 		WithTransfer(r.allowance).
 		WithGasBudget(r.gasBudget)
-	ret.Sign(*keyPair)
+	ret.Sign(keyPair)
 	return ret
 }
 
@@ -187,19 +188,19 @@ func toMap(params []interface{}) map[string]interface{} {
 
 func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, error) {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
-	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
+	L1Iotas := ch.Env.L1Iotas(keyPair.GetPublicKey().AsEd25519Address())
 	if L1Iotas == 0 {
 		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
-	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
-	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
+	addr := keyPair.GetPublicKey().AsEd25519Address()
+	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
 
 	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
-		SenderKeyPair:    *keyPair,
+		SenderKeyPair:    keyPair,
 		UnspentOutputs:   allOuts,
-		UnspentOutputIDs: ids,
+		UnspentOutputIDs: allOutIDs,
 		Requests: []*iscp.RequestParameters{{
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets:        req.assets,
@@ -212,7 +213,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			},
 			Options: iscp.SendOptions{},
 		}},
-		RentStructure:                ch.Env.utxoDB.RentStructure(),
+		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
 	if err != nil {
@@ -289,7 +290,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
@@ -302,10 +303,13 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+
 	if err != nil {
 		return tx, res, err
 	}
-	return tx, res, receipt.Error()
+
+	return tx, res, receipt.Error.AsGoError()
+
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -319,9 +323,9 @@ func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
 
 func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
-	agentID := iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0)
+	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address(), 0)
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
@@ -360,6 +364,9 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 	results := ch.runRequestsSync(reqs, "post")
+	if len(results) == 0 {
+		return nil, nil, nil, xerrors.New("request has been skipped")
+	}
 	res := results[0]
 	return tx, res.Receipt, res.Return, res.Error
 }
@@ -373,11 +380,14 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
+
 	if err != nil {
 		return 0, 0, err
 	}
+
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -389,22 +399,20 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 		req.WithGasBudget(math.MaxUint64)
 	}
 	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+		keyPair = ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
-// callViewFull calls the view entry point of the smart contract
-// with params wrapped into the CallParams object. The allowance part, fs any, is ignored
-//nolint:unused
-func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
-	ch.runVMMutex.Lock()
-	defer ch.runVMMutex.Unlock()
-
-	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
-	return vctx.CallView(req.target, req.entryPoint, req.params)
+func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
+	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+		return ch.CallView(contractName, funcName, params)
+	})
+	require.NoError(ch.Env.T, err)
+	return resolved
 }
 
 // CallView calls the view entry point of the smart contract.
@@ -412,16 +420,16 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	ch.Log.Debugf("callView: %s::%s", scName, funName)
+	ch.Log().Debugf("callView: %s::%s", scName, funName)
 
 	p := parseParams(params)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
+	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
-	return vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), p)
+	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
@@ -438,7 +446,7 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 			return true
 		}
 		if time.Now().After(deadline) {
-			ch.Log.Errorf("WaitUntil failed waiting max %v", maxw)
+			ch.Log().Errorf("WaitUntil failed waiting max %v", maxw)
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)

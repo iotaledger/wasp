@@ -7,14 +7,16 @@ import (
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
+var Contract = coreutil.NewContract("evm", "evm smart contract")
+
 var (
-	// Ethereum blockchain
+	// EVM state
 	FuncGetBalance                          = coreutil.ViewFunc("getBalance")
 	FuncSendTransaction                     = coreutil.Func("sendTransaction")
 	FuncCallContract                        = coreutil.ViewFunc("callContract")
-	FuncEstimateGas                         = coreutil.ViewFunc("estimateGas")
 	FuncGetNonce                            = coreutil.ViewFunc("getNonce")
 	FuncGetReceipt                          = coreutil.ViewFunc("getReceipt")
 	FuncGetCode                             = coreutil.ViewFunc("getCode")
@@ -29,14 +31,14 @@ var (
 	FuncGetStorage                          = coreutil.ViewFunc("getStorage")
 	FuncGetLogs                             = coreutil.ViewFunc("getLogs")
 
-	// EVMchain SC management
+	// evm SC management
 	FuncSetNextOwner   = coreutil.Func("setNextOwner")
 	FuncClaimOwnership = coreutil.Func("claimOwnership")
 	FuncGetOwner       = coreutil.ViewFunc("getOwner")
-	FuncSetGasPerIota  = coreutil.Func("setGasPerIota")
-	FuncGetGasPerIota  = coreutil.ViewFunc("getGasPerIota")
-	FuncSetBlockTime   = coreutil.Func("setBlockTime") // only implemented by evmlight
-	FuncMintBlock      = coreutil.Func("mintBlock")    // only implemented by evmlight
+	FuncSetGasRatio    = coreutil.Func("setGasRatio")
+	FuncGetGasRatio    = coreutil.ViewFunc("getGasRatio")
+	FuncSetBlockTime   = coreutil.Func("setBlockTime")
+	FuncMintBlock      = coreutil.Func("mintBlock")
 )
 
 const (
@@ -56,26 +58,36 @@ const (
 	FieldBlockHash               = "bh"
 	FieldCallMsg                 = "c"
 	FieldNextEVMOwner            = "n"
-	FieldGasPerIota              = "w"
-	FieldGasFee                  = "f"
-	FieldGasUsed                 = "gu"
-	FieldGasLimit                = "gl"
+	FieldGasRatio                = "w"
+	FieldBlockGasLimit           = "gl"
 	FieldFilterQuery             = "fq"
-
-	// evmlight only:
-
-	FieldBlockTime       = "bt" // uint32, avg block time in seconds
-	FieldBlockKeepAmount = "bk" // int32
+	FieldBlockTime               = "bt" // uint32, avg block time in seconds
+	FieldBlockKeepAmount         = "bk" // int32
 )
 
 const (
 	DefaultChainID = 1074 // IOTA -- get it?
 
-	DefaultGasPerIota uint64 = 1000
-	GasLimitDefault          = uint64(15000000)
+	BlockGasLimitDefault = uint64(15000000)
 
 	BlockKeepAll           = -1
 	BlockKeepAmountDefault = BlockKeepAll
 )
 
-var GasPrice = big.NewInt(0)
+var (
+	// Gas is charged in iotas, not ETH
+	GasPrice = big.NewInt(0)
+
+	// <ISC gas> = <EVM Gas> * <A> / <B>
+	DefaultGasRatio = util.Ratio32{A: 1, B: 1}
+)
+
+func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio util.Ratio32) uint64 {
+	// EVM gas budget = floor(ISC gas budget * B / A)
+	return gasRatio.YFloor64(iscGasBudget)
+}
+
+func EVMGasToISC(evmGas uint64, gasRatio util.Ratio32) uint64 {
+	// ISC gas burned = ceil(EVM gas * A / B)
+	return gasRatio.XCeil64(evmGas)
+}

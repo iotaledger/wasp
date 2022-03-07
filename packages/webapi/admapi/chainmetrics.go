@@ -75,12 +75,12 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 
 	adm.GET(routes.GetChainsNodeConnectionMetrics(), cms.handleGetChainsNodeConnMetrics).
 		SetSummary("Get cummulative chains node connection metrics").
-		AddResponse(http.StatusOK, "Chains Metrics", example, nil)
+		AddResponse(http.StatusOK, "Cummulative chains metrics", example, nil)
 
 	adm.GET(routes.GetChainNodeConnectionMetrics(":chainID"), cms.handleGetChainNodeConnMetrics).
 		SetSummary("Get chain node connection metrics for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (base58)").
-		AddResponse(http.StatusOK, "Chain Metrics", chainExample, nil)
+		AddResponse(http.StatusOK, "Chain metrics", chainExample, nil)
 }
 
 func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
@@ -103,12 +103,15 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 		TimeTransactionPosted:    time.Time{},
 		TimeTransactionSeen:      time.Time{},
 		TimeCompleted:            time.Time{},
+
+		CurrentStateIndex: 0,
 	}
 
 	adm.GET(routes.GetChainConsensusWorkflowStatus(":chainID"), cms.handleGetChainConsensusWorkflowStatus).
 		SetSummary("Get chain state statistics for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (base58)").
-		AddResponse(http.StatusOK, "Chain Stats", example, nil)
+		AddResponse(http.StatusOK, "Chain consensus stats", example, nil).
+		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
 }
 
 type chainMetricsService struct {
@@ -123,7 +126,7 @@ func (cssT *chainMetricsService) handleGetChainsNodeConnMetrics(c echo.Context) 
 }
 
 func (cssT *chainMetricsService) handleGetChainNodeConnMetrics(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -143,13 +146,16 @@ func (cssT *chainMetricsService) handleGetChainConsensusWorkflowStatus(c echo.Co
 		return err
 	}
 	status := theChain.GetConsensusWorkflowStatus()
+	if status == nil {
+		return c.NoContent(http.StatusNotFound)
+	}
 	statusModel := model.NewConsensusWorkflowStatus(status)
 
 	return c.JSON(http.StatusOK, statusModel)
 }
 
 func (cssT *chainMetricsService) getChain(c echo.Context) (chain.Chain, error) {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, httperrors.BadRequest(err.Error())
 	}

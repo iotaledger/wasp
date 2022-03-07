@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"go.uber.org/zap"
 )
 
 // takeAction triggers actions whenever relevant
@@ -229,7 +230,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Calldata) *vm.VMTask {
 		Requests:           reqs,
 		Timestamp:          c.consensusBatch.Timestamp,
 		VirtualStateAccess: c.currentState.Copy(),
-		Log:                c.log,
+		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 	}
 	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
 		// TODO: OnFinish was dropped; move this block to the goroutine that calls vmRunner.Run()
@@ -344,6 +345,8 @@ func (c *consensus) checkQuorum() {
 	if !chainOutput.GetIsGovernanceUpdated() {
 		// if it is not state controller rotation, sending message to state manager
 		// Otherwise state manager is not notified
+		c.writeToWAL()
+		c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
 		chainOutputID := chainOutput.ID()
 		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
 		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
@@ -365,6 +368,16 @@ func (c *consensus) checkQuorum() {
 	}
 	c.workflow.setTransactionFinalized()
 	c.pullInclusionStateDeadline = time.Now()
+}
+
+func (c *consensus) writeToWAL() {
+	block, err := c.resultState.ExtractBlock()
+	if err == nil {
+		err = c.wal.Write(block.Bytes())
+		if err != nil {
+			c.log.Debugf("Error writing block to wal: %v", err)
+		}
+	}
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
@@ -669,7 +682,7 @@ func (c *consensus) resetWorkflow() {
 	c.consensusBatch = nil
 	c.contributors = nil
 	c.resultSigAck = c.resultSigAck[:0]
-	c.workflow = newWorkflowStatus(c.stateOutput != nil)
+	c.workflow = newWorkflowStatus(c.stateOutput != nil, c.workflow.stateIndex)
 	c.log.Debugf("Workflow reset")
 }
 

@@ -1,9 +1,9 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 func (vmctx *VMContext) gasBurnEnable(enable bool) {
@@ -25,12 +25,11 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	vmctx.gasBurnedTotal += g
 
 	if vmctx.gasBurnedTotal+g > gas.MaxGasPerBlock {
-		panic(exceptions.ErrBlockGasLimitExceeded)
+		panic(vmexceptions.ErrBlockGasLimitExceeded)
 	}
 
 	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
-		panic(xerrors.Errorf("%v: burned (budget) = %d (%d)",
-			ErrGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
+		panic(vm.ErrGasBudgetDetail.Create(vm.ErrGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
 	}
 }
 

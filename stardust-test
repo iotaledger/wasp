@@ -1,0 +1,29 @@
+#!/bin/bash -l
+
+# use: stardust-test [arguments for `go test`]
+#
+# example: stardust-test -failfast
+
+PATHS=(\
+    "packages/transaction/" \
+    "packages/vm/core/testcore_stardust/" \
+    "packages/vm/core/testcore_stardust/sbtests/" \
+    "packages/vm/vmcontext/" \
+    "packages/peering/" \
+    "packages/peering/domain/" \
+    "packages/peering/group/" \
+    "packages/peering/lpp/" \
+    "packages/chain/mempool/" \
+    "packages/chain/statemgr/" \
+    "packages/utxodb/" \
+    "contracts/native/evm/..." \
+    "packages/evm/jsonrpc/jsonrpctest" \
+)
+WD=$PWD
+
+for ((i=0; i<${#PATHS[@]}; i++))
+do
+    go test "${WD}/${PATHS[i]}" $* || { echo "Tests in ${PATHS[i]} failed" ; exit 1; }
+done
+
+echo "All tests passed"

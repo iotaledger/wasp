@@ -3,20 +3,22 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
 // tokenOutputLoader externally supplied function which loads stored output from the state
 // Should return nil if does not exist
-type tokenOutputLoader func(*iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput)
+type tokenOutputLoader func(*iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput)
 
 // foundryLoader externally supplied function which returns foundry output and id by its serial number
 // Should return nil if foundry does not exist
@@ -28,7 +30,7 @@ type AnchorTransactionBuilder struct {
 	// anchorOutput output of the chain
 	anchorOutput *iotago.AliasOutput
 	// anchorOutputID is the ID of the anchor output
-	anchorOutputID *iotago.UTXOInput
+	anchorOutputID iotago.OutputID
 	// already consumed outputs, specified by entire Request. It is needed for checking validity
 	consumed []iscp.Request
 	// iotas which are on-chain. It does not include dust deposits on anchor and on internal outputs
@@ -45,8 +47,8 @@ type AnchorTransactionBuilder struct {
 	invokedFoundries map[uint32]*foundryInvoked
 	// requests posted by smart contracts
 	postedOutputs []iotago.Output
-	// structure to calculate dynamic byte costs
-	rentStructure *iotago.RentStructure
+	// parameters coming from the L1 node
+	l1Params *parameters.L1
 }
 
 // nativeTokenBalance represents on-chain account of the specific native token
@@ -54,8 +56,8 @@ type nativeTokenBalance struct {
 	tokenID            iotago.NativeTokenID
 	input              iotago.UTXOInput // if in != nil
 	dustDepositCharged bool
-	in                 *iotago.ExtendedOutput // if nil it means output does not exist, this is new account for the token_id
-	out                *iotago.ExtendedOutput // current balance of the token_id on the chain
+	in                 *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
+	out                *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
 type foundryInvoked struct {
@@ -68,11 +70,11 @@ type foundryInvoked struct {
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(
 	anchorOutput *iotago.AliasOutput,
-	anchorOutputID *iotago.UTXOInput,
+	anchorOutputID iotago.OutputID,
 	tokenBalanceLoader tokenOutputLoader,
 	foundryLoader foundryLoader,
 	dustDepositAssumptions transaction.DustDepositAssumption,
-	rentStructure *iotago.RentStructure,
+	l1Params *parameters.L1,
 ) *AnchorTransactionBuilder {
 	if anchorOutput.Amount < dustDepositAssumptions.AnchorOutput {
 		panic("internal inconsistency")
@@ -88,7 +90,7 @@ func NewAnchorTransactionBuilder(
 		balanceNativeTokens:    make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:          make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:       make(map[uint32]*foundryInvoked),
-		rentStructure:          rentStructure,
+		l1Params:               l1Params,
 	}
 }
 
@@ -105,7 +107,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		balanceNativeTokens:    make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:          make([]iotago.Output, 0, cap(txb.postedOutputs)),
 		invokedFoundries:       make(map[uint32]*foundryInvoked),
-		rentStructure:          txb.rentStructure,
+		l1Params:               txb.l1Params,
 	}
 
 	ret.consumed = append(ret.consumed, txb.consumed...)
@@ -137,14 +139,14 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 		txb.MustBalanced("txbuilder.Consume IN")
 	}
 	if inp.IsOffLedger() {
-		panic(xerrors.New("txbuilder.Consume: must be UTXO"))
+		panic("txbuilder.Consume: must be UTXO")
 	}
 	if txb.InputsAreFull() {
-		panic(exceptions.ErrInputLimitExceeded)
+		panic(vmexceptions.ErrInputLimitExceeded)
 	}
-	if txb.numNativeTokensExceeded() {
-		panic(exceptions.ErrNumberOfNativeTokensLimitExceeded)
-	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+
 	txb.consumed = append(txb.consumed, inp)
 
 	// first we add all iotas arrived with the output to anchor balance
@@ -164,13 +166,12 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 // Return adjustment needed for the L2 ledger (adjustment on iotas related to dust protection)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
-		panic(exceptions.ErrOutputLimitExceeded)
-	}
-	if txb.numNativeTokensExceeded() {
-		panic(exceptions.ErrNumberOfNativeTokensLimitExceeded)
+		panic(vmexceptions.ErrOutputLimitExceeded)
 	}
 
-	requiredDustDeposit := o.VByteCost(txb.rentStructure, nil)
+	defer txb.mustCheckTotalNativeTokensExceeded()
+
+	requiredDustDeposit := o.VByteCost(txb.l1Params.RentStructure(), nil)
 	if o.Deposit() < requiredDustDeposit {
 		panic(xerrors.Errorf("%v: available %d < required %d iotas",
 			transaction.ErrNotEnoughIotasForDustDeposit, o.Deposit(), requiredDustDeposit))
@@ -187,35 +188,65 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	return iotaAdjustmentL2
 }
 
-// inputs generate a deterministic list of inputs for the transaction essence
+// InputsAreFull returns if transaction cannot hold more inputs
+func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
+	return txb.numInputs() >= iotago.MaxInputsCount
+}
+
+// BuildTransactionEssence builds transaction essence from tx builder data
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) (*iotago.TransactionEssence, []byte) {
+	txb.MustBalanced("BuildTransactionEssence IN")
+	inputs, inputIDs := txb.inputs()
+	essence := &iotago.TransactionEssence{
+		NetworkID: txb.l1Params.NetworkID,
+		Inputs:    inputIDs.UTXOInputs(),
+		Outputs:   txb.outputs(stateData),
+		Payload:   nil,
+	}
+	return essence, inputIDs.OrderedSet(inputs).MustCommitment()
+}
+
+// inputIDs generates a deterministic list of inputs for the transaction essence
 // - index 0 is always alias output
-// - then goes consumed external ExtendedOutput UTXOs, the requests, in the order of processing
+// - then goes consumed external BasicOutput UTXOs, the requests, in the order of processing
 // - then goes inputs of native token UTXOs, sorted by token id
 // - then goes inputs of foundries sorted by serial number
-func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
-	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
+func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputIDs) {
+	ids := make(iotago.OutputIDs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
+	inputs := make(iotago.OutputSet, 0)
+
 	// alias output
-	ret = append(ret, txb.anchorOutputID)
+	ids = append(ids, txb.anchorOutputID)
+	inputs[txb.anchorOutputID] = txb.anchorOutput
+
 	// consumed on-ledger requests
 	for i := range txb.consumed {
-		ret = append(ret, txb.consumed[i].ID().OutputID())
+		id := txb.consumed[i].ID().OutputID()
+		ids = append(ids, id)
+		inputs[id] = txb.consumed[i].AsOnLedger().Output()
 	}
+
 	// internal native token outputs
 	for _, nt := range txb.nativeTokenOutputsSorted() {
 		if nt.requiresInput() {
-			ret = append(ret, &nt.input)
+			id := nt.input.ID()
+			ids = append(ids, id)
+			inputs[id] = nt.in
 		}
 	}
+
 	// foundries
 	for _, f := range txb.foundriesSorted() {
 		if f.requiresInput() {
-			ret = append(ret, &f.input)
+			id := f.input.ID()
+			ids = append(ids, id)
+			inputs[id] = f.in
 		}
 	}
-	if len(ret) != txb.numInputs() {
+	if len(ids) != txb.numInputs() {
 		panic("AnchorTransactionBuilder.inputs: internal inconsistency")
 	}
-	return ret
+	return inputs, ids
 }
 
 // outputs generates outputs for the transaction essence
@@ -224,7 +255,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	// creating the anchor output
 	aliasID := txb.anchorOutput.AliasID
 	if aliasID.Empty() {
-		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID.ID())
+		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID)
 	}
 	anchorOutput := &iotago.AliasOutput{
 		Amount:         txb.totalIotasInL2Accounts + txb.dustDepositAssumption.AnchorOutput,
@@ -277,13 +308,8 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 	return ret
 }
 
-// InputsAreFull returns if transaction cannot hold more inputs
-func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
-	return txb.numInputs() >= iotago.MaxInputsCount
-}
-
-// NumOutputs in the transaction
-func (txb *AnchorTransactionBuilder) NumOutputs() int {
+// numOutputs in the transaction
+func (txb *AnchorTransactionBuilder) numOutputs() int {
 	ret := 1 // for chain output
 	for _, v := range txb.balanceNativeTokens {
 		if v.producesOutput() {
@@ -301,20 +327,19 @@ func (txb *AnchorTransactionBuilder) NumOutputs() int {
 
 // outputsAreFull return if transaction cannot bear more outputs
 func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
-	return txb.NumOutputs() >= iotago.MaxOutputsCount
+	return txb.numOutputs() >= iotago.MaxOutputsCount
 }
 
-func (txb *AnchorTransactionBuilder) numNativeTokensExceeded() bool {
+func (txb *AnchorTransactionBuilder) mustCheckTotalNativeTokensExceeded() {
 	num := 0
 	for _, nt := range txb.balanceNativeTokens {
 		if nt.requiresInput() || nt.producesOutput() {
 			num++
 		}
 		if num > iotago.MaxNativeTokensCount {
-			return true
+			panic(vmexceptions.ErrTotalNativeTokensLimitExceeded)
 		}
 	}
-	return false
 }
 
 // addDeltaIotasToTotal increases number of on-chain main account iotas by delta
@@ -325,7 +350,7 @@ func (txb *AnchorTransactionBuilder) addDeltaIotasToTotal(delta uint64) {
 	// safe arithmetics
 	n := txb.totalIotasInL2Accounts + delta
 	if n+txb.dustDepositAssumption.AnchorOutput < txb.totalIotasInL2Accounts {
-		panic(xerrors.Errorf("addDeltaIotasToTotal: %w", ErrOverflow))
+		panic(xerrors.Errorf("addDeltaIotasToTotal: %w", vm.ErrOverflow))
 	}
 	txb.totalIotasInL2Accounts = n
 }
@@ -337,7 +362,7 @@ func (txb *AnchorTransactionBuilder) subDeltaIotasFromTotal(delta uint64) {
 	}
 	// safe arithmetics
 	if delta > txb.totalIotasInL2Accounts {
-		panic(ErrNotEnoughIotaBalance)
+		panic(vm.ErrNotEnoughIotaBalance)
 	}
 	txb.totalIotasInL2Accounts -= delta
 }
@@ -351,19 +376,17 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 	}
 	in, input := txb.loadTokenOutput(id) // output will be nil if no such token id accounted yet
 	if in != nil && txb.InputsAreFull() {
-		panic(exceptions.ErrInputLimitExceeded)
+		panic(vmexceptions.ErrInputLimitExceeded)
 	}
 	if in != nil && txb.outputsAreFull() {
-		panic(exceptions.ErrOutputLimitExceeded)
+		panic(vmexceptions.ErrOutputLimitExceeded)
 	}
-	if txb.numNativeTokensExceeded() {
-		panic(exceptions.ErrNumberOfNativeTokensLimitExceeded)
-	}
-	var out *iotago.ExtendedOutput
+
+	var out *iotago.BasicOutput
 	if in == nil {
 		out = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
 	} else {
-		out = cloneInternalExtendedOutputOrNil(in)
+		out = cloneInternalBasicOutputOrNil(in)
 	}
 	b := &nativeTokenBalance{
 		tokenID:            out.NativeTokens[0].ID,
@@ -390,10 +413,10 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
 		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
-			id, delta, ErrNotEnoughNativeAssetBalance))
+			id, delta, vm.ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", ErrOverflow))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", vm.ErrOverflow))
 	}
 	nt.setOutValue(tmp)
 	switch {
@@ -410,7 +433,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
 		nt.dustDepositCharged = true
 		if txb.dustDepositAssumption.NativeTokenOutput > txb.totalIotasInL2Accounts {
-			panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+			panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		}
 		txb.subDeltaIotasFromTotal(txb.dustDepositAssumption.NativeTokenOutput)
 		return -int64(txb.dustDepositAssumption.NativeTokenOutput)
@@ -428,7 +451,7 @@ func stringNativeTokenID(id *iotago.NativeTokenID) string {
 
 func (txb *AnchorTransactionBuilder) String() string {
 	ret := ""
-	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID))
+	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID.UTXOInput()))
 	ret += fmt.Sprintf("in IOTA balance: %d\n", txb.anchorOutput.Amount)
 	ret += fmt.Sprintf("current IOTA balance: %d\n", txb.totalIotasInL2Accounts)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))
@@ -448,13 +471,4 @@ func (txb *AnchorTransactionBuilder) String() string {
 	ret += fmt.Sprintf("added outputs (%d):\n", len(txb.postedOutputs))
 	ret += ">>>>>> TODO. Not finished....."
 	return ret
-}
-
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
-	txb.MustBalanced("BuildTransactionEssence IN")
-	return &iotago.TransactionEssence{
-		Inputs:  txb.inputs(),
-		Outputs: txb.outputs(stateData),
-		Payload: nil,
-	}
 }

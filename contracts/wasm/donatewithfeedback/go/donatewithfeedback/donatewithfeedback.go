@@ -9,8 +9,11 @@ import (
 )
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
+	amount := ctx.Allowance().Balance(wasmtypes.IOTA)
+	transfer := wasmlib.NewScTransferIotas(amount)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	donation := &Donation{
-		Amount:    ctx.IncomingTransfer().Balance(wasmtypes.IOTA),
+		Amount:    amount,
 		Donator:   ctx.Caller(),
 		Error:     "",
 		Feedback:  f.Params.Feedback().Value(),
@@ -18,10 +21,6 @@ func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 	}
 	if donation.Amount == 0 || donation.Feedback == "" {
 		donation.Error = "error: empty feedback or donated amount = 0"
-		if donation.Amount > 0 {
-			ctx.Send(donation.Donator.Address(), wasmlib.NewScTransferIotas(donation.Amount))
-			donation.Amount = 0
-		}
 	}
 	log := f.State.Log()
 	log.AppendDonation().SetValue(donation)

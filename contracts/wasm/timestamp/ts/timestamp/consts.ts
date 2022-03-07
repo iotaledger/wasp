@@ -13,8 +13,6 @@ export const HScName       = new wasmtypes.ScHname(0x3988002e);
 
 export const ResultTimestamp = "timestamp";
 
-export const StateTimestamp = "timestamp";
-
 export const FuncNow          = "now";
 export const ViewGetTimestamp = "getTimestamp";
 

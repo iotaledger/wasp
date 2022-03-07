@@ -89,19 +89,26 @@ func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
+	unspentOutputs iotago.OutputSet,
+	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
-) (iotago.Inputs, *iotago.ExtendedOutput, error) {
+) (
+	iotago.OutputIDs,
+	*iotago.BasicOutput,
+	error,
+) {
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 
-	var remainder *iotago.ExtendedOutput
-	var inputs iotago.Inputs
+	var remainder *iotago.BasicOutput
 
 	var errLast error
 	var inputCount int
-	for _, inp := range allUnspentOutputs {
+	for _, id := range unspentOutputIDs {
+		inp, ok := unspentOutputs[id]
+		if !ok {
+			return nil, nil, xerrors.New("computeInputsAndRemainder: outputID is not in the set ")
+		}
 		inputCount++
 		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
@@ -122,9 +129,9 @@ func computeInputsAndRemainder(
 	if errLast != nil {
 		return nil, nil, errLast
 	}
-	inputs = make(iotago.Inputs, inputCount)
+	inputs := make(iotago.OutputIDs, inputCount)
 	for j := range inputs {
-		inputs[j] = allInputs[j]
+		inputs[j] = unspentOutputIDs[j]
 	}
 	return inputs, remainder, nil
 }
@@ -135,7 +142,7 @@ func computeInputsAndRemainder(
 // - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
 // Returns (nil, error) if inputs are not enough (taking into account dust deposit requirements)
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
-func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) (*iotago.ExtendedOutput, error) {
+func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) (*iotago.BasicOutput, error) {
 	if inIotas < outIotas {
 		return nil, ErrNotEnoughIotas
 	}
@@ -186,7 +193,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 		// no need for remainder
 		return nil, nil
 	}
-	ret := &iotago.ExtendedOutput{
+	ret := &iotago.BasicOutput{
 		Amount:       remIotas,
 		NativeTokens: iotago.NativeTokens{},
 		Conditions: iotago.UnlockConditions{
@@ -228,6 +235,13 @@ func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) io
 		ret[i] = &iotago.AliasUnlockBlock{Reference: 0}
 	}
 	return ret
+}
+
+func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signature) *iotago.Transaction {
+	return &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sig),
+	}
 }
 
 func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {

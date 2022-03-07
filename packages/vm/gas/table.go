@@ -3,8 +3,9 @@ package gas
 import "golang.org/x/xerrors"
 
 const (
-	MaxGasPerBlock = uint64(100_000_000)
-	MaxGasPerCall  = MaxGasPerBlock / 20 // one call cannot be more than 5% of maximum block
+	MaxGasPerBlock         = uint64(100_000_000)
+	MaxGasPerCall          = MaxGasPerBlock / 20 // one call cannot be more than 5% of maximum block
+	MaxGasExternalViewCall = MaxGasPerCall
 )
 
 const (
@@ -37,6 +38,8 @@ const (
 
 	BurnCodeWasm1P
 	BurnCodeMinimumGasPerRequest1P
+
+	BurnCodeEVM1P
 )
 
 // burnTable contains all possible burn codes with their burn value computing functions
@@ -66,6 +69,7 @@ var burnTable = BurnTable{
 	BurnCodeUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
 	BurnCodeUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
 	BurnCodeMinimumGasPerRequest1P:     {"minimum gas per request", minBurn(10000)}, // TODO maybe make it configurable (gov contract?)
+	BurnCodeEVM1P:                      {"evm", linear(1)},
 }
 
 const (

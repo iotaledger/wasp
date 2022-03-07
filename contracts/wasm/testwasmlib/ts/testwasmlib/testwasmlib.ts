@@ -59,7 +59,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.chainID().value().equals(ctx.chainID()), "mismatch: ChainID");
     }
     if (f.params.color().exists()) {
-        const color = wasmlib.colorFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhite"));
+        const color = wasmlib.colorFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhitePurple"));
         ctx.require(f.params.color().value().equals(color), "mismatch: Color");
     }
     if (f.params.hash().exists()) {
@@ -104,6 +104,14 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
 
 export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): void {
     f.state.random().setValue(ctx.random(1000));
+}
+
+export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanceContext): void {
+    ctx.transferAllowed(ctx.accountID(), wasmlib.ScTransfers.fromBalances(ctx.allowance()), false);
+}
+
+export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceContext): void {
+    f.results.iotas().setValue(ctx.balances().balance(wasmtypes.IOTA));
 }
 
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {

@@ -8,7 +8,7 @@ import (
 func DecodeAgentID(b []byte, def ...*iscp.AgentID) (*iscp.AgentID, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return nil, xerrors.Errorf("cannot decode nil bytes")
+			return nil, xerrors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

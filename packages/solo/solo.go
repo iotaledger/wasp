@@ -12,20 +12,23 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -70,7 +73,7 @@ type Chain struct {
 
 	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	StateControllerKeyPair cryptolib.KeyPair
+	StateControllerKeyPair *cryptolib.KeyPair
 	StateControllerAddress iotago.Address
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
@@ -78,7 +81,7 @@ type Chain struct {
 
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
 	// It is a default key pair in many of Solo calls which require private key.
-	OriginatorPrivateKey cryptolib.KeyPair
+	OriginatorPrivateKey *cryptolib.KeyPair
 	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
 	OriginatorAgentID *iscp.AgentID
@@ -93,7 +96,7 @@ type Chain struct {
 	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
 	// Log is the named logger of the chain
-	Log *logger.Logger
+	log *logger.Logger
 	// global processor cache
 	proc *processors.Cache
 	// related to asynchronous backlog processing
@@ -104,12 +107,14 @@ type Chain struct {
 	lastReceipt *blocklog.RequestReceipt
 }
 
+var _ chain.ChainCore = &Chain{}
+
 type InitOptions struct {
 	AutoAdjustDustDeposit bool
 	Debug                 bool
 	PrintStackTrace       bool
 	Seed                  cryptolib.Seed
-	RentStructure         *iotago.RentStructure
+	L1Params              *parameters.L1
 	Log                   *logger.Logger
 }
 
@@ -118,7 +123,7 @@ func defaultInitOptions() *InitOptions {
 		Debug:                 false,
 		PrintStackTrace:       false,
 		Seed:                  cryptolib.Seed{},
-		RentStructure:         testdeserparams.RentStructure(),
+		L1Params:              parameters.L1ForTesting(),
 		AutoAdjustDustDeposit: false, // is OFF by default
 	}
 }
@@ -140,11 +145,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if !opt.Debug {
 		opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
 	}
-	if opt.RentStructure == nil {
-		opt.RentStructure = testdeserparams.RentStructure()
+	if opt.L1Params == nil {
+		opt.L1Params = parameters.L1ForTesting()
 	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
+	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithL1Params(opt.L1Params)
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
@@ -169,6 +174,10 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}))
 
 	return ret
+}
+
+func (env *Solo) L1Params() *parameters.L1 {
+	return env.utxoDB.L1Params()
 }
 
 func (env *Solo) SyncLog() {
@@ -200,7 +209,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
-// nolint:funlen
+//nolint:funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
@@ -208,13 +217,12 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	var originatorAddr iotago.Address
 	if chainOriginator == nil {
-		origKeyPair := cryptolib.NewKeyPair()
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(origKeyPair.PublicKey)
-		chainOriginator = &origKeyPair
+		chainOriginator = cryptolib.NewKeyPair()
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(chainOriginator.PublicKey)
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
@@ -222,15 +230,15 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		feeTarget = validatorFeeTarget[0]
 	}
 
-	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
+	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
-		*chainOriginator,
+		chainOriginator,
 		stateAddr,
 		stateAddr,
 		initIotas, // will be adjusted to min dust deposit
 		outs,
-		ids,
-		env.utxoDB.RentStructure(),
+		outIDs,
+		env.utxoDB.L1Params(),
 	)
 	require.NoError(env.T, err)
 
@@ -264,7 +272,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		ChainID:                chainID,
 		StateControllerKeyPair: stateController,
 		StateControllerAddress: stateAddr,
-		OriginatorPrivateKey:   *chainOriginator,
+		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     feeTarget,
@@ -272,20 +280,20 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
 		proc:                   processors.MustNew(env.processorConfig),
-		Log:                    chainlog,
+		log:                    chainlog,
 	}
 	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	outs, ids = env.utxoDB.GetUnspentOutputs(originatorAddr)
+	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
 		chainID,
 		"'solo' testing chain",
 		outs,
 		ids,
-		env.utxoDB.RentStructure(),
+		env.utxoDB.L1Params(),
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
@@ -308,7 +316,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	}
 	ret.logRequestLastBlock()
 
-	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
+	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
 	return ret, originTx, initTx
 }
 
@@ -382,12 +390,13 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
-	outs, ids := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
+func (ch *Chain) GetAnchorOutput() *iscp.AliasOutputWithID {
+	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
-	require.EqualValues(ch.Env.T, 1, len(ids))
-
-	return outs[0], ids[0]
+	for id, out := range outs {
+		return iscp.NewAliasOutputWithID(out, id.UTXOInput())
+	}
+	panic("unreachable")
 }
 
 // collateBatch selects requests which are not time locked
@@ -441,7 +450,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 		results := ch.runRequestsNolock(batch, "batchLoop")
 		for _, res := range results {
 			if res.Error != nil {
-				ch.Log.Errorf("runRequestsSync: %v", res.Error)
+				ch.log.Errorf("runRequestsSync: %v", res.Error)
 			}
 		}
 		return true
@@ -453,6 +462,70 @@ func (ch *Chain) collateAndRunBatch() bool {
 func (ch *Chain) BacklogLen() int {
 	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
+}
+
+func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GetChainNodes() []peering.PeerStatusProvider {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GlobalStateSync() coreutil.ChainStateSync {
+	return ch.GlobalSync
+}
+
+func (ch *Chain) StateCandidateToStateManager(state.VirtualStateAccess, iotago.OutputID) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) GetStateReader() state.OptimisticStateReader {
+	return ch.StateReader
+}
+
+func (ch *Chain) ID() *iscp.ChainID {
+	return ch.ChainID
+}
+
+func (ch *Chain) Log() *logger.Logger {
+	return ch.log
+}
+
+func (ch *Chain) Processors() *processors.Cache {
+	return ch.proc
+}
+
+func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
+	return ch.State.Copy()
+}
+
+func (ch *Chain) EnqueueDismissChain(reason string) {
+	// not used, just to implement ChainCore interface
+}
+
+// ---------------------------------------------
+
+func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+	allOuts, _ := env.utxoDB.GetUnspentOutputs(addr)
+	ids := make(iotago.OutputIDs, len(allOuts))
+	i := 0
+	for id := range allOuts {
+		ids[i] = id
+		i++
+	}
+	return allOuts, ids
 }
 
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger

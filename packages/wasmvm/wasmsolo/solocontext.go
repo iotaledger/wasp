@@ -28,45 +28,62 @@ const ( // TODO set back to false
 )
 
 var (
-	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
-	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
-	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
-	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
+	// GoWasm / RsWasm / TsWasm are used to specify the Wasm language mode,
+	// By default, SoloContext will try to run the Go SC code directly (no Wasm)
+	// The 3 flags can be used to cause Wasm code to be loaded and run instead.
+	// They are checked in sequence and the first one set determines the Wasm language used.
+	GoWasm = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
+	RsWasm = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
+	TsWasm = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
+
+	// UseWasmEdge flag is kept here in case we decide to use WasmEdge again. Some tests
+	// refer to this flag, so we keep it here instead of having to comment out a bunch
+	// of code. To actually enable WasmEdge you need to uncomment the relevant lines in
+	// NewSoloContextForChain(), and remove the go:build directives from wasmedge.go, so
+	// that the linker can actually pull in the WasmEdge runtime.
+	UseWasmEdge = flag.Bool("wasmedge", false, "use WasmEdge instead of WasmTime")
+)
+
+const (
+	L2FundsContract   = 1_000_000
+	L2FundsCreator    = 2_000_000
+	L2FundsOriginator = 3_000_000
+
+	WasmDustDeposit = 1000
 )
 
 type SoloContext struct {
 	Chain       *solo.Chain
 	Convertor   wasmhost.WasmConvertor
 	creator     *SoloAgent
+	Dust        uint64
 	Err         error
+	Gas         uint64
+	GasFee      uint64
 	Hprog       hashing.HashValue
-	keyPair     *cryptolib.KeyPair
 	isRequest   bool
+	IsWasm      bool
+	keyPair     *cryptolib.KeyPair
 	mint        uint64
 	offLedger   bool
 	scName      string
 	Tx          *iotago.Transaction
-	wc          *wasmhost.WasmContext
 	wasmHostOld wasmlib.ScHost
+	wc          *wasmhost.WasmContext
 }
 
 var (
-	//_ iscp.Gas                  = &SoloContext{}
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
 
-func (ctx *SoloContext) Burn(i int64) {
-	// ignore gas for now
-}
-
-func (ctx *SoloContext) Budget() int64 {
-	// ignore gas for now
-	return 0
-}
-
-func (ctx *SoloContext) SetBudget(i int64) {
-	// ignore gas for now
+func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
+	for _, a := range s {
+		if a.Equals(e) {
+			return true
+		}
+	}
+	return false
 }
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
@@ -95,29 +112,34 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 
+	ctx.Balances()
+
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
-	ctx.upload(keyPair)
+	ctx.uploadWasm(keyPair)
 	if ctx.Err != nil {
 		return ctx
 	}
+
+	ctx.Balances()
 
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
-	if *GoDebug {
+	if !ctx.IsWasm {
 		wasmhost.GoWasmVM = func() wasmhost.WasmVM {
 			return wasmhost.NewWasmGoVM(ctx.scName, onLoad)
 		}
 	}
-	//if *GoWasmEdge && wasmproc.GoWasmVM == nil {
+	//if ctx.IsWasm && *UseWasmEdge && wasmproc.GoWasmVM == nil {
 	//	wasmproc.GoWasmVM = wasmhost.NewWasmEdgeVM
 	//}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
-	if *GoDebug {
+	if !ctx.IsWasm {
 		// just in case deploy failed we don't want to leave this around
 		wasmhost.GoWasmVM = nil
 	}
@@ -125,6 +147,16 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
+	ctx.Balances()
+
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+
+	ctx.Balances()
+
+	if ctx.Err != nil {
+		return ctx
+	}
 	return ctx.init(onLoad)
 }
 
@@ -145,6 +177,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
@@ -155,11 +188,17 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 		return ctx
 	}
 
+	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+	if ctx.Err != nil {
+		return ctx
+	}
+
 	return ctx.init(onLoad)
 }
 
 func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
-	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator}
+	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, Dust: WasmDustDeposit}
 	if chain == nil {
 		ctx.Chain = StartChain(t, "chain1")
 	}
@@ -185,7 +224,9 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 			AutoAdjustDustDeposit: true,
 		})
 	}
-	return soloEnv.NewChain(nil, chainName)
+	chain := soloEnv.NewChain(nil, chainName)
+	chain.MustDepositIotasToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
+	return chain
 }
 
 // Account returns a SoloAgent for the smart contract associated with ctx
@@ -204,7 +245,7 @@ func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
-	//TODO is milestones 1 a good value?
+	// TODO is milestones 1 a good value?
 	ctx.Chain.Env.AdvanceClockBy(step, 1)
 }
 
@@ -215,13 +256,36 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 	account := iscp.NewAgentID(agent.address, agent.hname)
 	switch len(color) {
 	case 0:
-		return ctx.Chain.L2Iotas(account)
+		iotas := ctx.Chain.L2Iotas(account)
+		return iotas
 	case 1:
+		if color[0] == wasmtypes.IOTA {
+			iotas := ctx.Chain.L2Iotas(account)
+			return iotas
+		}
 		token := ctx.Convertor.IscpColor(&color[0])
-		return ctx.Chain.L2NativeTokens(account, token).Uint64()
+		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
+		return tokens
 	default:
 		require.Fail(ctx.Chain.Env.T, "too many color arguments")
 		return 0
+	}
+}
+
+// Balances prints all known accounts, both L2 and L1.
+// It uses the L2 ledger to enumerate the known accounts.
+// Any newly created SoloAgents can be specified as extra accounts
+func (ctx *SoloContext) Balances(agents ...*SoloAgent) *SoloBalances {
+	return NewSoloBalances(ctx, agents...)
+}
+
+// ChainAccount returns a SoloAgent for the chain associated with ctx
+func (ctx *SoloContext) ChainAccount() *SoloAgent {
+	return &SoloAgent{
+		Env:     ctx.Chain.Env,
+		Pair:    nil,
+		address: ctx.Chain.ChainID.AsAddress(),
+		hname:   0,
 	}
 }
 
@@ -255,6 +319,26 @@ func (ctx *SoloContext) EnqueueRequest() {
 	ctx.isRequest = true
 }
 
+func (ctx *SoloContext) existFile(path, ext string) string {
+	fileName := ctx.scName + ext
+
+	// first check for new file in path
+	pathName := path + fileName
+	exists, _ := util.ExistsFilePath(pathName)
+	if exists {
+		return pathName
+	}
+
+	// check for file in current folder
+	exists, _ = util.ExistsFilePath(fileName)
+	if exists {
+		return fileName
+	}
+
+	// file not found
+	return ""
+}
+
 func (ctx *SoloContext) Host() wasmlib.ScHost {
 	return nil
 }
@@ -280,7 +364,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 
 // Minted returns the color and amount of newly minted tokens
 func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
-	panic("fixme")
+	panic("fixme: soloContext.Minted")
 	//t := ctx.Chain.Env.T
 	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
@@ -298,7 +382,9 @@ func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
 
 // NewSoloAgent creates a new SoloAgent with solo.Saldo tokens in its address
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
-	return NewSoloAgent(ctx.Chain.Env)
+	agent := NewSoloAgent(ctx.Chain.Env)
+	ctx.Chain.MustDepositIotasToL2(10_000_000, agent.Pair)
+	return agent
 }
 
 // OffLedger tells SoloContext to Post() the next request off-ledger
@@ -311,7 +397,7 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
 	c := ctx.Chain
-	return &SoloAgent{Env: c.Env, Pair: &c.OriginatorPrivateKey, address: c.OriginatorAddress}
+	return &SoloAgent{Env: c.Env, Pair: c.OriginatorPrivateKey, address: c.OriginatorAddress}
 }
 
 // Sign is used to force a different agent for signing a Post() request
@@ -334,60 +420,30 @@ func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
 	return wasmlib.NewScTransfers()
 }
 
-// TODO can we make upload work through an off-ledger request instead?
-// that way we can get rid of all the extra token code when checking balances
-
-func (ctx *SoloContext) upload(keyPair *cryptolib.KeyPair) {
-	if *GoDebug {
+func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
+	wasmFile := ""
+	if *GoWasm {
+		// find Go Wasm file
+		wasmFile = ctx.existFile("../go/pkg/", "_go.wasm")
+	} else if *RsWasm {
+		// find Rust Wasm file
+		wasmFile = ctx.existFile("../pkg/", "_bg.wasm")
+	} else if *TsWasm {
+		// find TypeScript Wasm file
+		wasmFile = ctx.existFile("../ts/pkg/", "_ts.wasm")
+	} else {
+		// none of the Wasm modes selected, use WasmGoVM to run Go SC code directly
 		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
 		return
 	}
 
-	// start with file in test folder
-	wasmFile := ctx.scName + "_bg.wasm"
-
-	// try (newer?) Rust Wasm file first
-	rsFile := "../pkg/" + wasmFile
-	exists, _ := util.ExistsFilePath(rsFile)
-	if exists {
-		wasmFile = rsFile
-	} else {
-		rsFile := wasmFile
-		exists, _ = util.ExistsFilePath(rsFile)
-		wasmFile = rsFile
+	if wasmFile == "" {
+		panic("cannot find Wasm file for: " + ctx.scName)
 	}
 
-	// try Go Wasm file?
-	if !exists || *GoWasm {
-		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath(goFile)
-		if exists {
-			wasmFile = goFile
-		} else {
-			goFile = ctx.scName + "_go.wasm"
-			exists, _ = util.ExistsFilePath(goFile)
-			if exists {
-				wasmFile = goFile
-			}
-		}
-	}
-
-	// try TypeScript Wasm file?
-	if !exists || *TsWasm {
-		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath(tsFile)
-		if exists {
-			wasmFile = tsFile
-		} else {
-			tsFile = ctx.scName + "_ts.wasm"
-			exists, _ = util.ExistsFilePath(tsFile)
-			if exists {
-				wasmFile = tsFile
-			}
-		}
-	}
-
+	// upload the Wasm code into the core blob contract
 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)
+	ctx.IsWasm = true
 }
 
 // WaitForPendingRequests waits for expectedRequests pending requests to be processed.
@@ -406,4 +462,10 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
 	_ = wasmhost.Connect(ctx.wc)
 	return result
+}
+
+func (ctx *SoloContext) UpdateGasFees() {
+	receipt := ctx.Chain.LastReceipt()
+	ctx.Gas = receipt.GasBurned
+	ctx.GasFee = receipt.GasFeeCharged
 }

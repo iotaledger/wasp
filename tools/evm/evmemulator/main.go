@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/packages/evm/evmflavors"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -32,15 +32,15 @@ func main() {
 		Args:  cobra.NoArgs,
 		Run:   start,
 		Use:   "evmemulator",
-		Short: "evmemulator runs an instance of the evmchain/evmlight contract with Solo as backend",
-		Long: fmt.Sprintf(`evmemulator runs an instance of the evmchain/evmlight contract with Solo as backend.
+		Short: "evmemulator runs an instance of the evm contract with Solo as backend",
+		Long: fmt.Sprintf(`evmemulator runs an instance of the evm contract with Solo as backend.
 
 evmemulator does the following:
 
-- Starts a Solo environment (a framework for running local ISCP chains in-memory)
-- Deploys an ISCP chain
-- Deploys the evmchain/evmlight ISCP contract (which runs an Ethereum chain on top of the ISCP chain)
-- Starts a JSON-RPC server with the deployed ISCP contract as backend
+- Starts a Solo environment (a framework for running local ISC chains in-memory)
+- Deploys an ISC chain
+- Deploys the evm ISC contract (which runs an Ethereum chain on top of the ISC chain)
+- Starts a JSON-RPC server with the deployed ISC contract as backend
 
 You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use it for testing Ethereum contracts running on ISCP.
 
@@ -68,30 +68,26 @@ By default the server has no unlocked accounts. To send transactions, either:
 }
 
 func start(cmd *cobra.Command, args []string) {
-	blockTime := deployParams.BlockTime()
-	blockKeepAmount := deployParams.BlockKeepAmount()
-	evmFlavor := deployParams.EVMFlavor()
-
-	env := solo.New(solo.NewTestContext("evmemulator"), log.DebugFlag, log.DebugFlag).
-		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
+	env := solo.New(solo.NewTestContext("evmemulator"), &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag}).
+		WithNativeContract(evmimpl.Processor)
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, deployParams.Name(), evmFlavor.ProgramHash,
+	err := chain.DeployContract(chainOwner, deployParams.Name, evm.Contract.ProgramHash,
 		evm.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
 		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
-		evm.FieldGasPerIota, deployParams.GasPerIOTA,
-		evm.FieldGasLimit, deployParams.GasLimit,
-		evm.FieldBlockKeepAmount, blockKeepAmount,
+		evm.FieldGasRatio, deployParams.GasRatio,
+		evm.FieldBlockGasLimit, deployParams.BlockGasLimit,
+		evm.FieldBlockKeepAmount, deployParams.BlockKeepAmount,
 	)
 	log.Check(err)
 
-	if blockTime > 0 {
+	if deployParams.BlockTime > 0 {
 		_, err := chain.PostRequestSync(
-			solo.NewCallParams(deployParams.Name(), evm.FuncSetBlockTime.Name,
-				evm.FieldBlockTime, blockTime,
+			solo.NewCallParams(deployParams.Name, evm.FuncSetBlockTime.Name,
+				evm.FieldBlockTime, deployParams.BlockTime,
 			).AddAssetsIotas(1),
 			chain.OriginatorPrivateKey,
 		)
@@ -100,7 +96,7 @@ func start(cmd *cobra.Command, args []string) {
 			const step = 1 * time.Second
 			for {
 				time.Sleep(step)
-				env.AdvanceClockBy(step)
+				env.AdvanceClockBy(step, 1)
 			}
 		}()
 	}
@@ -108,5 +104,5 @@ func start(cmd *cobra.Command, args []string) {
 	signer, _ := env.NewKeyPairWithFunds()
 
 	backend := jsonrpc.NewSoloBackend(env, chain, signer)
-	jsonRPCServer.ServeJSONRPC(backend, deployParams.ChainID, deployParams.Name())
+	jsonRPCServer.ServeJSONRPC(backend, deployParams.ChainID, deployParams.Name)
 }

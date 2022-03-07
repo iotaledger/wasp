@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -15,19 +16,18 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"golang.org/x/xerrors"
 )
 
 var (
-	ErrNotEnoughFunds               = xerrors.New("not enough funds")
-	ErrNotEnoughIotas               = xerrors.New("not enough iotas")
-	ErrNotEnoughIotasForDustDeposit = xerrors.New("not enough iotas for dust deposit")
-	ErrNotEnoughNativeTokens        = xerrors.New("not enough native tokens")
-	ErrNotEnoughAllowance           = xerrors.New("not enough allowance")
-	ErrBadAmount                    = xerrors.New("bad native asset amount")
-	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
-	ErrFoundryNotFound              = xerrors.New("foundry not found")
-	ErrOverflow                     = xerrors.New("overflow in token arithmetics")
+	ErrNotEnoughFunds               = coreerrors.Register("not enough funds").Create()
+	ErrNotEnoughIotasForDustDeposit = coreerrors.Register("not enough iotas for dust deposit").Create()
+	ErrNotEnoughAllowance           = coreerrors.Register("not enough allowance").Create()
+	ErrBadAmount                    = coreerrors.Register("bad native asset amount").Create()
+	ErrRepeatingFoundrySerialNumber = coreerrors.Register("repeating serial number of the foundry").Create()
+	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()
+	ErrOverflow                     = coreerrors.Register("overflow in token arithmetics").Create()
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -260,12 +260,12 @@ func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.Agen
 	}
 }
 
-func AdjustAccountIotas(state kv.KVStore, agentID *iscp.AgentID, adjustment int64) {
+func AdjustAccountIotas(state kv.KVStore, account *iscp.AgentID, adjustment int64) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(state, agentID, iscp.NewAssets(uint64(adjustment), nil))
+		CreditToAccount(state, account, iscp.NewAssets(uint64(adjustment), nil))
 	case adjustment < 0:
-		DebitFromAccount(state, agentID, iscp.NewAssets(uint64(-adjustment), nil))
+		DebitFromAccount(state, account, iscp.NewAssets(uint64(-adjustment), nil))
 	}
 }
 
@@ -509,7 +509,7 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		CirculatingSupply: rec.CirculatingSupply,
 		MaximumSupply:     rec.MaximumSupply,
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
 		},
 		Blocks: nil,
 	}
@@ -616,7 +616,7 @@ func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap 
 }
 
 // SaveNativeTokenOutput map tokenID -> foundryRec
-func SaveNativeTokenOutput(state kv.KVStore, out *iotago.ExtendedOutput, blockIndex uint32, outputIndex uint16) {
+func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex uint32, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
 		DustIotas:   out.Amount,
 		Amount:      out.NativeTokens[0].Amount,
@@ -630,13 +630,13 @@ func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *iscp.ChainID) (*iotago.ExtendedOutput, uint32, uint16) {
+func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *iscp.ChainID) (*iotago.BasicOutput, uint32, uint16) {
 	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
 	if data == nil {
 		return nil, 0, 0
 	}
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
-	ret := &iotago.ExtendedOutput{
+	ret := &iotago.BasicOutput{
 		Amount: tokenRec.DustIotas,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     *tokenID,
@@ -663,4 +663,16 @@ func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumpti
 		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
 	}
 	return ret
+}
+
+// debitIotasFromAllowance is used for adjustment of L2 when part of iotas are taken for dust deposit
+// It takes iotas from allowance to the common account and then removes them from the L2 ledger
+func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
+	if amount == 0 {
+		return
+	}
+	commonAccount := commonaccount.Get(ctx.ChainID())
+	dustAssets := iscp.NewAssetsIotas(amount)
+	ctx.TransferAllowedFunds(commonAccount, dustAssets)
+	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
 }

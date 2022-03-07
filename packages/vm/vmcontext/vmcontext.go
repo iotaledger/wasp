@@ -8,22 +8,18 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
-)
-
-var (
-	NewSandbox     func(vmctx *VMContext) iscp.Sandbox
-	NewSandboxView func(vmctx *VMContext) iscp.SandboxView
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -38,7 +34,7 @@ type VMContext struct {
 	finalStateTimestamp  time.Time
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
-	blockOutputCount     uint8
+	dustAssumptions      *transaction.DustDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
@@ -47,12 +43,11 @@ type VMContext struct {
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.Request
-	numPostedOutputs   int // how many outputs has been posted in the request
+	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue
-	contractRecord     *root.ContractRecord
 	callStack          []*callContext
 	// --- gas related
 	// max tokens cane be charged for gas fee
@@ -69,10 +64,12 @@ type VMContext struct {
 	gasBurnLog *gas.BurnLog
 }
 
+var _ execution.WaspContext = &VMContext{}
+
 type callContext struct {
 	caller             *iscp.AgentID // calling agent
 	contract           iscp.Hname    // called contract
-	params             dict.Dict     // params passed
+	params             iscp.Params   // params passed
 	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
@@ -122,34 +119,33 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
-	var dustAssumptions *transaction.DustDepositAssumption
 
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
 
 		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
-			dustAssumptions = accounts.GetDustAssumptions(s)
+			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewDepositEstimate(task.RentStructure)
-		if currentDustDepositValues.AnchorOutput > dustAssumptions.AnchorOutput ||
-			currentDustDepositValues.NativeTokenOutput > dustAssumptions.NativeTokenOutput {
-			panic(ErrInconsistentDustAssumptions)
+		currentDustDepositValues := transaction.NewDepositEstimate(task.L1Params.RentStructure())
+		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
+			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
+			panic(vm.ErrInconsistentDustAssumptions)
 		}
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
+			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
 		})
 
 		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
+		ret.dustAssumptions = transaction.NewDepositEstimate(task.L1Params.RentStructure())
 	}
 
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
 		return ret.loadNativeTokenOutput(id)
 	}
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
@@ -157,11 +153,11 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
-		&task.AnchorOutputID,
+		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
-		*dustAssumptions,
-		task.RentStructure,
+		*ret.dustAssumptions,
+		task.L1Params,
 	)
 
 	return ret
@@ -297,4 +293,15 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 	if vmctx.gasFeeChargedTotal != sumGasFeeCharged {
 		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
 	}
+}
+
+func (vmctx *VMContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
+		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
+	})
+	return vmtype, binary, err
+}
+
+func (vmctx *VMContext) Processors() *processors.Cache {
+	return vmctx.task.Processors
 }

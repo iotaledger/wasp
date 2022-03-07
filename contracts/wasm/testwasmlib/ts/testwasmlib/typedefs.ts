@@ -8,6 +8,30 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
+export class MapInt32ToImmutableLocation extends wasmtypes.ScProxy {
+
+	getLocation(key: i32): sc.ImmutableLocation {
+		return new sc.ImmutableLocation(this.proxy.key(wasmtypes.int32ToBytes(key)));
+	}
+}
+
+export class ImmutableLongitude extends MapInt32ToImmutableLocation {
+}
+
+export class MapInt32ToMutableLocation extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
+	}
+
+	getLocation(key: i32): sc.MutableLocation {
+		return new sc.MutableLocation(this.proxy.key(wasmtypes.int32ToBytes(key)));
+	}
+}
+
+export class MutableLongitude extends MapInt32ToMutableLocation {
+}
+
 export class ArrayOfImmutableString extends wasmtypes.ScProxy {
 
 	length(): u32 {

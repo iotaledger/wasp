@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var seed = ed25519.NewSeed([]byte("long long seed for determinism...............1"))
+var seed = cryptolib.NewSeedFromBytes([]byte("long long seed for determinism...............1"))
 
 func TestTutorial1(t *testing.T) {
 	env := solo.New(t, false, false, seed)
@@ -55,7 +55,7 @@ func TestTutorial3(t *testing.T) {
 	// call the contract to extract value of the 'paramString' and check
 	res, err := chain.CallView("example1", "getString")
 	require.NoError(t, err)
-	par := kvdecoder.New(res, chain.Log)
+	par := kvdecoder.New(res, chain.Log())
 	returnedString := par.MustGetString("paramString")
 	require.EqualValues(t, "Hello, world!", returnedString)
 }

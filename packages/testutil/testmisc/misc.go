@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,6 +15,11 @@ func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 		assert.Fail(t, "error expected, found nil")
 		t.FailNow()
 		return
+	}
+	if target, ok := target.(iscp.VMErrorBase); ok {
+		if iscp.VMErrorIs(err, target) {
+			return
+		}
 	}
 	var targ string
 	switch target := target.(type) {

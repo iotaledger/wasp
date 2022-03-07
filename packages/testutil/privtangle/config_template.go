@@ -275,7 +275,7 @@ var configFileContentTemplate = `
 
 func (pt *PrivTangle) configFileContent() string {
 	return fmt.Sprintf(configFileContentTemplate,
-		hex.EncodeToString(pt.CooKeyPair1.PublicKey),
-		hex.EncodeToString(pt.CooKeyPair2.PublicKey),
+		hex.EncodeToString(pt.CooKeyPair1.GetPublicKey().AsBytes()),
+		hex.EncodeToString(pt.CooKeyPair2.GetPublicKey().AsBytes()),
 	)
 }

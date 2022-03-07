@@ -10,16 +10,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func verifyReceipts(t *testing.T, w bool, ctx *wasmsolo.SoloContext, requests, panics int) {
-	recStr := ctx.Chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
-	str := strings.Join(recStr, "\n")
-	t.Logf("\n%s", str)
-	extra := 0
-	if w {
-		extra = 1
+func verifyErrorInReceipts(t *testing.T, ctx *wasmsolo.SoloContext, msg string) {
+	receipts := ctx.Chain.GetRequestReceiptsForBlockRange(0, 0)
+	errorCount := 0
+	for _, a := range receipts {
+		receiptError := ctx.Chain.ResolveVMError(a.Error)
+		if receiptError != nil {
+			errorCount++
+			if msg != "" {
+				require.Contains(t, receiptError.Error(), msg)
+			}
+		}
 	}
-	require.EqualValues(t, requests+extra, strings.Count(str, "OnLedger::"))
-	require.EqualValues(t, panics, strings.Count(str, "panic in VM"))
+	expectedCount := 0
+	if msg != "" {
+		expectedCount = 1
+	}
+	require.EqualValues(t, expectedCount, errorCount)
+
+	if wasmsolo.SoloDebug {
+		recStr := ctx.Chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
+		str := strings.Join(recStr, "\n")
+		t.Logf("\n%s", str)
+	}
 }
 
 func TestPanicFull(t *testing.T) {
@@ -27,11 +40,11 @@ func TestPanicFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgFullPanic)
 
-		verifyReceipts(t, w, ctx, 3, 1)
+		verifyErrorInReceipts(t, ctx, sbtestsc.MsgFullPanic)
 	})
 }
 
@@ -44,7 +57,7 @@ func TestPanicViewCall(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
-		verifyReceipts(t, w, ctx, 2, 0)
+		verifyErrorInReceipts(t, ctx, "")
 	})
 }
 
@@ -53,11 +66,11 @@ func TestCallPanicFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicFullEP(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgFullPanic)
 
-		verifyReceipts(t, w, ctx, 3, 1)
+		verifyErrorInReceipts(t, ctx, sbtestsc.MsgFullPanic)
 	})
 }
 
@@ -66,11 +79,11 @@ func TestCallPanicViewFromFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicViewEPFromFull(ctx)
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
-		verifyReceipts(t, w, ctx, 3, 1)
+		verifyErrorInReceipts(t, ctx, sbtestsc.MsgViewPanic)
 	})
 }
 
@@ -83,6 +96,6 @@ func TestCallPanicViewFromView(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), sbtestsc.MsgViewPanic)
 
-		verifyReceipts(t, w, ctx, 2, 0)
+		verifyErrorInReceipts(t, ctx, "")
 	})
 }

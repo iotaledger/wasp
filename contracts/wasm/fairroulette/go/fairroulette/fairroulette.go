@@ -56,13 +56,13 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Require that the number is a valid number to bet on, otherwise panic out.
 	ctx.Require(number >= 1 && number <= MaxNumber, "invalid number")
 
-	// Create ScBalances proxy to the incoming balances for this request.
+	// Create ScBalances proxy to the allowance balances for this request.
 	// Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
 	// in a simpler to use interface.
-	incoming := ctx.Incoming()
+	allowance := ctx.Allowance()
 
-	// Retrieve the amount of plain iota tokens that are part of the incoming balance.
-	amount := incoming.Balance(wasmtypes.IOTA)
+	// Retrieve the amount of plain iota tokens that are part of the allowance balance.
+	amount := allowance.Balance(wasmtypes.IOTA)
 
 	// Require that there are actually some plain iotas there
 	ctx.Require(amount > 0, "empty bet")
@@ -114,7 +114,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 			// amount of seconds. This will lock in the playing period, during which more bets can
 			// be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather
 			// all bets up to that moment as the ones to consider for determining the winner.
-			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).TransferIotas(1).Post()
+			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).Post()
 		}
 	}
 }
@@ -212,7 +212,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// of the winner. The transfer_to_address() method receives the address value and
 			// the proxy to the new transfers map on the host, and will call the corresponding
 			// host sandbox function with these values.
-			ctx.TransferToAddress(bet.Better.Address(), transfers)
+			ctx.Send(bet.Better.Address(), transfers)
 		}
 
 		// Announce who got sent what as event.
@@ -227,7 +227,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		transfers := wasmlib.NewScTransferIotas(remainder)
 
 		// Send the remainder to the contract creator.
-		ctx.TransferToAddress(ctx.ContractCreator().Address(), transfers)
+		ctx.Send(ctx.ContractCreator().Address(), transfers)
 	}
 
 	// Set round status to 0, send out event to notify that the round has ended

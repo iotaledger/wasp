@@ -11,7 +11,6 @@
 // step by step what is happening in the code. We also unnecessarily annotate
 // all 'var' statements with their assignment type to improve understanding.
 
-//nolint:revive
 package dividend
 
 import (
@@ -133,17 +132,15 @@ func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
 // Anyone can send iota tokens to this function and they will automatically be
 // divided over the member list. Note that this function does not deal with
 // fractions. It simply truncates the calculated amount to the nearest lower
-// integer and keeps any remaining iotas in its own account. They will be added
-// to any next round of tokens received prior to calculation of the new
-// dividend amounts.
+// integer and keeps any remaining iotas in the sender account.
 func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	// Create an ScBalances map proxy to the account balances for this
 	// smart contract. Note that ScBalances wraps an ScImmutableMap of
 	// token color/amount combinations in a simpler to use interface.
-	var balances wasmlib.ScBalances = ctx.Balances()
+	var allowance wasmlib.ScBalances = ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	var amount uint64 = balances.Balance(wasmtypes.IOTA)
+	amount := allowance.Balance(wasmtypes.IOTA)
 
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
@@ -183,7 +180,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 			// member address. The transfer_to_address() method receives the address
 			// value and the proxy to the new transfers map on the host, and will
 			// call the corresponding host sandbox function with these values.
-			ctx.Send(address, transfers)
+			ctx.TransferAllowed(address.AsAgentID(), transfers, true)
 		}
 	}
 }

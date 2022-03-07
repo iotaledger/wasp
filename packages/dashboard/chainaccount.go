@@ -22,7 +22,7 @@ func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainAccount(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}

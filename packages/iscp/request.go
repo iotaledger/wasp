@@ -51,7 +51,7 @@ type NFT struct {
 type Calldata interface {
 	ID() RequestID
 	Params() dict.Dict
-	SenderAccount() *AgentID // returns CommonAccount if sender address is not available
+	SenderAccount() *AgentID // returns nil if sender address is not available
 	SenderAddress() iotago.Address
 	CallTarget() CallTarget
 	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
@@ -99,8 +99,8 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 
 	ret := make(map[ChainID][]Request)
 	for i, out := range tx.Essence.Outputs {
-		if _, ok := out.(*iotago.ExtendedOutput); !ok {
-			// only ExtendedOutputs are interpreted right now TODO nfts and other
+		if _, ok := out.(*iotago.BasicOutput); !ok {
+			// only BasicOutputs are interpreted right now TODO nfts and other
 			continue
 		}
 		// wrap output into the iscp.Request

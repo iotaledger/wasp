@@ -56,10 +56,10 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     // Create ScBalances proxy to the incoming balances for this request.
     // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
     // in a simpler to use interface.
-    let incoming: wasmlib.ScBalances = ctx.incoming();
+    let allowance: wasmlib.ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = incoming.balance(wasmtypes.IOTA);
+    let amount: u64 = allowance.balance(wasmtypes.IOTA);
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");
@@ -212,7 +212,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
             // of the winner. The transferToAddress() method receives the address value and
             // the proxy to the new transfers map on the host, and will call the corresponding
             // host sandbox function with these values.
-            ctx.transferToAddress(bet.better.address(), transfers);
+            ctx.send(bet.better.address(), transfers);
         }
 
         // Announce who got sent what as event.
@@ -227,7 +227,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
         let transfers: wasmlib.ScTransfers = wasmlib.ScTransfers.iotas(remainder);
 
         // Send the remainder to the contract creator.
-        ctx.transferToAddress(ctx.contractCreator().address(), transfers);
+        ctx.send(ctx.contractCreator().address(), transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended

@@ -28,7 +28,7 @@ func (c *WaspClient) CallView(chainID *iscp.ChainID, hContract iscp.Hname, funct
 	var res dict.Dict
 	var err error
 	for {
-		err = c.do(http.MethodPost, routes.CallView(chainID.Hex(), hContract.String(), functionName), arguments, &res)
+		err = c.do(http.MethodPost, routes.CallView(chainID.String(), hContract.String(), functionName), arguments, &res)
 		switch {
 		case err == nil:
 			return res, err

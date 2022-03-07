@@ -4,11 +4,9 @@
 package test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +15,7 @@ func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(agent.ScAddress())
 	member.Params.Factor().SetValue(factor)
-	member.Func.TransferIotas(1).Post()
+	member.Func.Post()
 }
 
 func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
@@ -51,9 +49,9 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Factor().SetValue(100)
-	member.Func.TransferIotas(1).Post()
+	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory address"))
+	require.Contains(t, ctx.Err.Error(), "missing mandatory address")
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
@@ -62,96 +60,121 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 	member1 := ctx.NewSoloAgent()
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(member1.ScAddress())
-	member.Func.TransferIotas(1).Post()
+	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory factor"))
+	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")
 }
 
 func TestDivide1Member(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
 	member1 := ctx.NewSoloAgent()
-	dividendMember(ctx, member1, 100)
+	bal := ctx.Balances(member1)
+
+	dividendMember(ctx, member1, 1000)
 	require.NoError(t, ctx.Err)
 
-	require.EqualValues(t, 1, ctx.Balance(ctx.Account()))
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 99)
+	dividendDivide(ctx, 1001)
 	require.NoError(t, ctx.Err)
 
-	// 99 from divide() + 1 from the member() call
-	require.EqualValues(t, solo.Saldo+100, member1.Balance())
-	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	bal.Chain += ctx.GasFee
+	bal.Originator -= ctx.GasFee
+	bal.Add(member1, 1001)
+	bal.VerifyBalances(t)
 }
 
 func TestDivide2Members(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
 	member1 := ctx.NewSoloAgent()
-	dividendMember(ctx, member1, 25)
+	bal := ctx.Balances(member1)
+
+	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
+
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent()
-	dividendMember(ctx, member2, 75)
+	bal = ctx.Balances(member1, member2)
+
+	dividendMember(ctx, member2, 750)
 	require.NoError(t, ctx.Err)
 
-	require.EqualValues(t, 2, ctx.Balance(ctx.Account()))
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 98)
+	dividendDivide(ctx, 1999)
 	require.NoError(t, ctx.Err)
 
-	// 98 from divide() + 2 from the member() calls
-	require.EqualValues(t, solo.Saldo+25, member1.Balance())
-	require.EqualValues(t, solo.Saldo+75, member2.Balance())
-	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	remain := uint64(1999) - 1999*250/1000 - 1999*750/1000
+	bal.Chain += ctx.GasFee
+	bal.Originator += remain - ctx.GasFee
+	bal.Add(member1, 1999*250/1000)
+	bal.Add(member2, 1999*750/1000)
+	bal.VerifyBalances(t)
 }
 
 func TestDivide3Members(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
 	member1 := ctx.NewSoloAgent()
-	dividendMember(ctx, member1, 25)
+	bal := ctx.Balances(member1)
+
+	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
+
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent()
-	dividendMember(ctx, member2, 50)
+	bal = ctx.Balances(member1, member2)
+
+	dividendMember(ctx, member2, 500)
 	require.NoError(t, ctx.Err)
+
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
 	member3 := ctx.NewSoloAgent()
-	dividendMember(ctx, member3, 75)
+	bal = ctx.Balances(member1, member2, member3)
+
+	dividendMember(ctx, member3, 750)
 	require.NoError(t, ctx.Err)
 
-	require.EqualValues(t, 3, ctx.Balance(ctx.Account()))
+	bal.Chain += ctx.GasFee
+	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 97)
+	dividendDivide(ctx, 1999)
 	require.NoError(t, ctx.Err)
 
-	// 97 from divide() + 3 from the member() calls
-	require.EqualValues(t, solo.Saldo+16, member1.Balance())
-	require.EqualValues(t, solo.Saldo+33, member2.Balance())
-	require.EqualValues(t, solo.Saldo+50, member3.Balance())
-	// 1 remaining due to fractions
-	require.EqualValues(t, 1, ctx.Balance(ctx.Account()))
+	remain := uint64(1999) - 1999*250/1500 - 1999*500/1500 - 1999*750/1500
+	bal.Chain += ctx.GasFee
+	bal.Originator += remain - ctx.GasFee
+	bal.Add(member1, 1999*250/1500)
+	bal.Add(member2, 1999*500/1500)
+	bal.Add(member3, 1999*750/1500)
+	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 100)
+	dividendDivide(ctx, 1234)
 	require.NoError(t, ctx.Err)
 
-	// 100 from divide() + 1 remaining
-	require.EqualValues(t, solo.Saldo+16+16, member1.Balance())
-	require.EqualValues(t, solo.Saldo+33+33, member2.Balance())
-	require.EqualValues(t, solo.Saldo+50+50, member3.Balance())
-	// now we have 2 remaining due to fractions
-	require.EqualValues(t, 2, ctx.Balance(ctx.Account()))
-
-	dividendDivide(ctx, 100)
-	require.NoError(t, ctx.Err)
-
-	// 100 from divide() + 2 remaining
-	require.EqualValues(t, solo.Saldo+16+16+17, member1.Balance())
-	require.EqualValues(t, solo.Saldo+33+33+34, member2.Balance())
-	require.EqualValues(t, solo.Saldo+50+50+51, member3.Balance())
-	// managed to give every one an exact integer amount, so no remainder
-	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	remain = uint64(1234) - 1234*250/1500 - 1234*500/1500 - 1234*750/1500
+	bal.Chain += ctx.GasFee
+	bal.Originator += remain - ctx.GasFee
+	bal.Add(member1, 1234*250/1500)
+	bal.Add(member2, 1234*500/1500)
+	bal.Add(member3, 1234*750/1500)
+	bal.VerifyBalances(t)
 }
 
 func TestGetFactor(t *testing.T) {
@@ -168,8 +191,6 @@ func TestGetFactor(t *testing.T) {
 	member3 := ctx.NewSoloAgent()
 	dividendMember(ctx, member3, 75)
 	require.NoError(t, ctx.Err)
-
-	require.EqualValues(t, 3, ctx.Balance(ctx.Account()))
 
 	value := dividendGetFactor(ctx, member3)
 	require.NoError(t, ctx.Err)

@@ -8,6 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func Encode(v interface{}) []byte {
@@ -58,8 +59,14 @@ func Encode(v interface{}) []byte {
 		return EncodeRequestID(*vt)
 	case iscp.Hname:
 		return vt.Bytes()
+	case iscp.VMErrorCode:
+		return vt.Bytes()
 	case time.Time:
 		return EncodeTime(vt)
+	case util.Ratio32:
+		return EncodeRatio32(vt)
+	case *util.Ratio32:
+		return EncodeRatio32(*vt)
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))
 	}
