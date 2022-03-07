@@ -103,7 +103,7 @@ func (c *chainNodeConnImplementation) PullState() {
 }
 
 func (c *chainNodeConnImplementation) PullTransactionInclusionState(txID iotago.TransactionID) {
-	txIDStr := hex.EncodeToString(txID[:])
+	txIDStr := iscp.TxID(txID)
 	c.log.Debugf("ChainNodeConnImplementation::PullTransactionInclusionState(txID=%v)...", txIDStr)
 	c.metrics.GetOutPullTransactionInclusionState().CountLastMessage(txID)
 	c.nodeConn.PullTransactionInclusionState(c.chainID.AsAddress(), txID)
@@ -111,7 +111,7 @@ func (c *chainNodeConnImplementation) PullTransactionInclusionState(txID iotago.
 }
 
 func (c *chainNodeConnImplementation) PullConfirmedOutput(outputID *iotago.OutputID) {
-	outputIDStr := hex.EncodeToString(outputID[:])
+	outputIDStr := iscp.OID(outputID)
 	c.log.Debugf("ChainNodeConnImplementation::PullConfirmedOutput(outputID=%v)...", outputIDStr)
 	c.metrics.GetOutPullConfirmedOutput().CountLastMessage(outputID)
 	c.nodeConn.PullConfirmedOutput(c.chainID.AsAddress(), outputID)
@@ -123,7 +123,7 @@ func (c *chainNodeConnImplementation) PostTransaction(tx *iotago.Transaction) {
 	if err != nil {
 		panic(err)
 	}
-	txIDStr := hex.EncodeToString(txID[:])
+	txIDStr := iscp.TxID(txID)
 	c.log.Debugf("ChainNodeConnImplementation::PostTransaction(txID=%s)...", txIDStr)
 	c.metrics.GetOutPostTransaction().CountLastMessage(tx)
 	c.nodeConn.PostTransaction(tx)

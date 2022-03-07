@@ -19,10 +19,10 @@ import (
 
 type BatchProposal struct {
 	ValidatorIndex          uint16
-	StateOutputID           iotago.OutputID
+	StateOutputID           *iotago.UTXOInput
 	RequestIDs              []iscp.RequestID
 	RequestHashes           [][32]byte
-	Timestamp               time.Time
+	TimeData                iscp.TimeData
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
 	FeeDestination          *iscp.AgentID
@@ -30,7 +30,7 @@ type BatchProposal struct {
 }
 
 type consensusBatchParams struct {
-	timestamp       time.Time // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
+	timeData        iscp.TimeData // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
 	feeDestination  *iscp.AgentID
@@ -50,8 +50,7 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	panic("TODO implement equivalent of IDFromMarshalUtil for iota.go")
-	ret.StateOutputID, err = iotago.OutputIDFromMarshalUtil(mu)
+	ret.StateOutputID, err = iscp.UTXOInputFromMarshalUtil(mu)
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -67,7 +66,11 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.Timestamp, err = mu.ReadTime()
+	ret.TimeData.MilestoneIndex, err = mu.ReadUint32()
+	if err != nil {
+		return nil, xerrors.Errorf(errFmt, err)
+	}
+	ret.TimeData.Time, err = mu.ReadTime()
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -101,12 +104,14 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 
 func (b *BatchProposal) Bytes() []byte {
 	mu := marshalutil.New()
+	stateOutputID := b.StateOutputID.ID()
 	mu.WriteUint16(b.ValidatorIndex).
-		Write(b.StateOutputID).
+		WriteBytes(stateOutputID[:]).
 		Write(b.AccessManaPledge).
 		Write(b.ConsensusManaPledge).
 		Write(b.FeeDestination).
-		WriteTime(b.Timestamp).
+		WriteUint32(b.TimeData.MilestoneIndex).
+		WriteTime(b.TimeData.Time).
 		WriteUint16(uint16(len(b.RequestIDs))).
 		WriteByte(byte(len(b.SigShareOfStateOutputID))).
 		WriteBytes(b.SigShareOfStateOutputID)
@@ -121,21 +126,22 @@ func (b *BatchProposal) Bytes() []byte {
 // the requests in the BatchProposal and the previous transaction. The timestamp is consistent,
 // if it is not bellow the timestamps of all the on-ledger requests and the previous transaction in the chain.
 // This implement the "fixing" part described in IscpBatchTimestamp.tla.
-func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Calldata, stateTimestamp time.Time) error {
-	maxReqTime := time.Time{}
+func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, stateTimestamp time.Time) error {
+	//maxReqTime := time.Time{}
 	for i := range b.RequestIDs {
-		if requests[i].Hash() != b.RequestHashes[i] {
+		if hashing.HashData(requests[i].Bytes()) != b.RequestHashes[i] {
 			return xerrors.New("inconsistent requests in EnsureTimestampConsistent")
 		}
-		if maxReqTime.Before(requests[i].Timestamp()) {
+		//TODO
+		/*if maxReqTime.Before(requests[i].Timestamp()) {
 			maxReqTime = requests[i].Timestamp()
-		}
+		}*/
 	}
-	if b.Timestamp.Before(maxReqTime) {
+	/*if b.Timestamp.Before(maxReqTime) {
 		b.Timestamp = maxReqTime
-	}
-	if b.Timestamp.Before(stateTimestamp) {
-		b.Timestamp = stateTimestamp
+	}*/
+	if b.TimeData.Time.Before(stateTimestamp) {
+		b.TimeData.Time = stateTimestamp
 	}
 	return nil
 }
@@ -151,7 +157,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 
 	ts := make([]time.Time, len(props))
 	for i := range ts {
-		ts[i] = props[i].Timestamp
+		ts[i] = props[i].TimeData.Time
 	}
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
@@ -166,15 +172,16 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	}
 	// verify signatures calculate entropy
 	sigSharesToAggregate := make([][]byte, len(props))
+	oid := c.stateOutput.OutputID()
 	for i, prop := range props {
-		err := c.committee.DKShare().VerifySigShare(c.stateOutput.ID().Bytes(), prop.SigShareOfStateOutputID)
+		err := c.committee.DKShare().VerifySigShare(oid[:], prop.SigShareOfStateOutputID)
 		if err != nil {
 			return nil, xerrors.Errorf("INVALID SIGNATURE in ACS from peer #%d: %v", prop.ValidatorIndex, err)
 		}
 		sigSharesToAggregate[i] = prop.SigShareOfStateOutputID
 	}
 	// aggregate signatures for use as unpredictable entropy
-	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.stateOutput.ID().Bytes())
+	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, oid[:])
 	if err != nil {
 		return nil, xerrors.Errorf("recovering signature from ACS: %v", err)
 	}
@@ -182,7 +189,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	// selects pseudo-random based on seed, the calculated timestamp
 	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
 	return &consensusBatchParams{
-		timestamp:       retTS,
+		timeData:        iscp.TimeData{Time: retTS},
 		accessPledge:    props[selectedIndex].AccessManaPledge,
 		consensusPledge: props[selectedIndex].ConsensusManaPledge,
 		feeDestination:  props[selectedIndex].FeeDestination,

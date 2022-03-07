@@ -28,7 +28,7 @@ func TestCommitteeBasic(t *testing.T) {
 
 	c, _, err := New(dks0, nil, net0, log)
 	require.NoError(t, err)
-	require.True(t, c.Address().Equals(stateAddr))
+	require.True(t, c.Address().Equal(stateAddr))
 	require.EqualValues(t, 4, c.Size())
 	require.EqualValues(t, 3, c.Quorum())
 
