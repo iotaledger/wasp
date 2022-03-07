@@ -133,6 +133,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	tx := iscp.RequestParameters{
 		TargetAddress: ctx.Caller().Address(),
 		Assets:        fundsToWithdraw,
+		NFT:           nft,
 	}
 	ctx.Send(tx)
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())

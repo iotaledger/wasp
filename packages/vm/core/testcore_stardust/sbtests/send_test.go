@@ -230,9 +230,7 @@ func testSendNFTsBack(t *testing.T, w bool) {
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
-	nft, mintedInfo := mintDummyNFT(t, ch, wallet, addr)
-
-	println(mintedInfo) // TODO remove, just for debugging
+	nft, _ := mintDummyNFT(t, ch, wallet, addr)
 
 	iotasToSend := uint64(300_000)
 	iotasForGas := uint64(100_000)
@@ -251,8 +249,8 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
 }
 
-func TestSendNFTsBackOffledger(t *testing.T) { run2(t, testSendNFTsBackOffledger) }
-func testSendNFTsBackOffledger(t *testing.T, w bool) {
+func TestNFTOffledgerWithdraw(t *testing.T) { run2(t, testNFTOffledgerWithdraw) }
+func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	// Deposit an NFT, then claim it back via offleger-request
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
@@ -270,6 +268,15 @@ func testSendNFTsBackOffledger(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	require.False(t, ch.Env.HasL1NFT(addr, &nft.ID))
-	// require.True(t, ch.Env.HasL1NFT(ch.StateControllerAddress, &nft.ID))
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
+
+	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+		WithAllowance(iscp.NewAllowance(10_000, nil, []*iotago.NFTID{&nft.ID})).
+		WithMaxAffordableGasBudget()
+
+	_, err = ch.PostRequestOffLedger(wdReq, wallet)
+	require.NoError(t, err)
+
+	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
+	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
 }

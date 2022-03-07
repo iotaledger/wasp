@@ -250,7 +250,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// nfts
 	for _, nft := range txb.nftsSorted() {
-		if nft.in != nil {
+		if nft.input != nil {
 			id := nft.input.ID()
 			ids = append(ids, id)
 			inputs[id] = nft.in
@@ -258,7 +258,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 	}
 
 	if len(ids) != txb.numInputs() {
-		panic("AnchorTransactionBuilder.inputs: internal inconsistency")
+		panic(fmt.Sprintf("AnchorTransactionBuilder.inputs: internal inconsistency. expected: %d actual:%d", len(ids), txb.numInputs()))
 	}
 	return inputs, ids
 }
@@ -321,6 +321,11 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 	}
 	for _, f := range txb.invokedFoundries {
 		if f.requiresInput() {
+			ret++
+		}
+	}
+	for _, nft := range txb.nftsIncluded {
+		if nft.input != nil {
 			ret++
 		}
 	}

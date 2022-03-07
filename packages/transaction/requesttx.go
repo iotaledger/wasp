@@ -27,7 +27,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	outputs := iotago.Outputs{}
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
-	// sumNFTsOut := make([]*iotago.NFTID, 0)
+	sumNFTsOut := make(map[*iotago.NFTID]bool)
 
 	senderAddress := par.SenderKeyPair.Address()
 
@@ -71,8 +71,12 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			s.Add(s, nt.Amount)
 			sumTokensOut[nt.ID] = s
 		}
+		if req.NFT != nil {
+			sumNFTsOut[&req.NFT.ID] = true
+		}
 	}
-	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())
+
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())
 	if err != nil {
 		return nil, err
 	}

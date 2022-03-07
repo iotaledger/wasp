@@ -589,7 +589,6 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 	for id, out := range outSet {
 		// we know that the tx will only produce 1 NFT output
 		if _, ok := out.(*iotago.NFTOutput); ok {
-			// removeMe(env, issuer, iotago.NFTIDFromOutputID(id))
 			return &NFTMintedInfo{
 				OutputID: id,
 				Output:   out,
