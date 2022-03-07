@@ -25,7 +25,7 @@ type foundryLoader func(uint32) (*iotago.FoundryOutput, *iotago.UTXOInput)
 
 // NFTOutputLoader externally supplied function which returns the stored NFT output from the state
 // Should return nil if NFT is not accounted for
-type NFTOutputLoader func(id *iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput)
+type NFTOutputLoader func(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput)
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction

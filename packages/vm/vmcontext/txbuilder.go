@@ -65,7 +65,7 @@ func (vmctx *VMContext) getUTXOInput(blockIndex uint32, outputIndex uint16) (ret
 	return
 }
 
-func (vmctx *VMContext) loadNFT(id *iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
 	var retOut *iotago.NFTOutput
 	var retInp *iotago.UTXOInput
 	var blockIndex uint32

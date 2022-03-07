@@ -128,7 +128,7 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 		}
 
 		// using NFT already owned by the chain
-		in, input := txb.loadNFTOutput(&o.NFTID)
+		in, input := txb.loadNFTOutput(o.NFTID)
 		toInclude := &nftIncluded{
 			ID:          o.NFTID,
 			in:          in,

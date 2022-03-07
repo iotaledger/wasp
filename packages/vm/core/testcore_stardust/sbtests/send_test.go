@@ -241,7 +241,7 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
 		AddAssets(assetsToSend).
 		WithNFT(nft).
-		AddAllowance(iscp.NewAllowanceFungibleTokens(assetsToAllow).AddNFTs(&nft.ID)).
+		AddAllowance(iscp.NewAllowanceFungibleTokens(assetsToAllow).AddNFTs(nft.ID)).
 		WithMaxAffordableGasBudget()
 
 	_, err := ch.PostRequestSync(req, wallet)
@@ -271,7 +271,7 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
 
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAllowance(iscp.NewAllowance(10_000, nil, []*iotago.NFTID{&nft.ID})).
+		WithAllowance(iscp.NewAllowance(10_000, nil, []iotago.NFTID{nft.ID})).
 		WithMaxAffordableGasBudget()
 
 	_, err = ch.PostRequestOffLedger(wdReq, wallet)

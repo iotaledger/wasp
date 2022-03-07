@@ -151,7 +151,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
 		return ret.loadFoundry(serNum)
 	}
-	nftLoader := func(id *iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+	nftLoader := func(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
 		return ret.loadNFT(id)
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
@@ -285,7 +285,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			outputIndex++
 		}
 		for _, out := range NFTOutputsToBeRemoved {
-			accounts.DeleteNFTOutput(s, &out.NFTID)
+			accounts.DeleteNFTOutput(s, out.NFTID)
 		}
 	})
 }

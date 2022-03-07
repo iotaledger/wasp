@@ -82,7 +82,7 @@ func viewNFTData(ctx iscp.SandboxView) dict.Dict {
 	if len(nftIDBytes) != iotago.NFTIDLength {
 		panic(ErrInvalidNFTID)
 	}
-	nftID := &iotago.NFTID{}
+	nftID := iotago.NFTID{}
 	copy(nftID[:], nftIDBytes)
 	data := GetNFTData(ctx.State(), nftID)
 	return dict.Dict{

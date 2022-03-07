@@ -9,17 +9,17 @@ import (
 
 type Allowance struct {
 	Assets *Assets
-	NFTs   []*iotago.NFTID // TODO ???? []iotago.NFTID
+	NFTs   []iotago.NFTID
 }
 
 func NewEmptyAllowance() *Allowance {
 	return &Allowance{
 		Assets: NewEmptyAssets(),
-		NFTs:   make([]*iotago.NFTID, 0),
+		NFTs:   make([]iotago.NFTID, 0),
 	}
 }
 
-func NewAllowance(iotas uint64, tokens iotago.NativeTokens, NFTs []*iotago.NFTID) *Allowance {
+func NewAllowance(iotas uint64, tokens iotago.NativeTokens, NFTs []iotago.NFTID) *Allowance {
 	return &Allowance{
 		Assets: NewAssets(iotas, tokens),
 		NFTs:   NFTs,
@@ -40,10 +40,10 @@ func (a *Allowance) Clone() *Allowance {
 	if a == nil {
 		return nil
 	}
-	nfts := make([]*iotago.NFTID, len(a.NFTs))
+	nfts := make([]iotago.NFTID, len(a.NFTs))
 	for i, nft := range a.NFTs {
-		id := *nft
-		nfts[i] = &id
+		id := nft
+		nfts[i] = id
 	}
 	return &Allowance{
 		Assets: a.Assets.Clone(),
@@ -55,17 +55,17 @@ func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
 	a.Assets.SpendFromBudget(toSpend.Assets)
 	nftSet := a.NFTSet()
 	for _, id := range toSpend.NFTs {
-		if !nftSet[*id] {
+		if !nftSet[id] {
 			return false
 		}
-		nftSet[*id] = false
+		nftSet[id] = false
 	}
 
 	tmp := a.NFTs[:0] // reuse the array
 	for id, keep := range nftSet {
 		cp := id // otherwise, taking pointer of loop parameter is a bug
 		if keep {
-			tmp = append(tmp, &cp)
+			tmp = append(tmp, cp)
 		}
 	}
 	a.NFTs = tmp
@@ -93,7 +93,7 @@ func AllowanceFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Allowance, error) {
 	if err != nil {
 		return nil, err
 	}
-	nfts := make([]*iotago.NFTID, nNFTs)
+	nfts := make([]iotago.NFTID, nNFTs)
 	for i := 0; i < int(nNFTs); i++ {
 		b, err := mu.ReadBytes(iotago.NFTIDLength)
 		if err != nil {
@@ -101,7 +101,7 @@ func AllowanceFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Allowance, error) {
 		}
 		var id iotago.NFTID
 		copy(id[:], b)
-		nfts[i] = &id
+		nfts[i] = id
 	}
 
 	a := &Allowance{
@@ -114,7 +114,7 @@ func AllowanceFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Allowance, error) {
 func (a *Allowance) NFTSet() map[iotago.NFTID]bool {
 	ret := map[iotago.NFTID]bool{}
 	for _, nft := range a.NFTs {
-		ret[*nft] = true
+		ret[nft] = true
 	}
 	return ret
 }
@@ -139,8 +139,8 @@ func (a *Allowance) AddNativeTokens(tokenID iotago.NativeTokenID, amount interfa
 	return a
 }
 
-func (a *Allowance) AddNFTs(nfts ...*iotago.NFTID) *Allowance {
-	a.NFTs = make([]*iotago.NFTID, len(nfts))
+func (a *Allowance) AddNFTs(nfts ...iotago.NFTID) *Allowance {
+	a.NFTs = make([]iotago.NFTID, len(nfts))
 	copy(a.NFTs, nfts)
 	return a
 }

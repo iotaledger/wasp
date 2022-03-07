@@ -42,13 +42,13 @@ func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.A
 
 // debitNFTFromAccount removes a NFT from account.
 // should be called only when posting request
-func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID *iotago.NFTID) {
+func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitNFTFromAccount(s, agentID, nftID)
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []*iotago.NFTID) {
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, fungibleTokens, nfts)
 	})

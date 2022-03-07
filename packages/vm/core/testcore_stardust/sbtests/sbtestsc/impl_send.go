@@ -107,7 +107,7 @@ func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
 			AdjustToMinimumDustDeposit: true,
 			Metadata:                   &iscp.SendMetadata{},
 			Options:                    iscp.SendOptions{},
-			NFTID:                      nftID,
+			NFTID:                      &nftID,
 		})
 	}
 	return nil

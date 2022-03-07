@@ -14,7 +14,7 @@ func (vmctx *VMContext) FillNFTData(par iscp.RequestParameters) iscp.RequestPara
 	}
 	var nft *iscp.NFT
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		nft = accounts.GetNFTData(s, par.NFTID)
+		nft = accounts.GetNFTData(s, *par.NFTID)
 	})
 	par.NFT = nft
 	return par
@@ -51,6 +51,8 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
 	vmctx.debitFromAccount(vmctx.AccountID(), assets)
-	vmctx.debitNFTFromAccount(vmctx.AccountID(), par.NFTID)
+	if par.NFTID != nil {
+		vmctx.debitNFTFromAccount(vmctx.AccountID(), *par.NFTID)
+	}
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
 }
