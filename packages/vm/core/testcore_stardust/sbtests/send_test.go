@@ -241,7 +241,7 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
 		AddAssets(assetsToSend).
 		WithNFT(nft).
-		AddAllowance(iscp.NewAllowanceFromAssets(assetsToAllow, []*iotago.NFTID{&nft.ID})).
+		AddAllowance(iscp.NewAllowanceFungibleTokens(assetsToAllow).AddNFTs(&nft.ID)).
 		WithMaxAffordableGasBudget()
 
 	_, err := ch.PostRequestSync(req, wallet)

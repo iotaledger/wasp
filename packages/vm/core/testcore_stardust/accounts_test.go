@@ -656,7 +656,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		toWithdraw := v.ch.L2Assets(v.userAgentID).AddIotas(200)
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		v.req.AddAllowance(iscp.NewAllowanceFromAssets(toWithdraw, nil))
+		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(toWithdraw))
 		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
@@ -665,7 +665,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(iscp.NewAllowanceFromAssets(allSenderAssets, nil))
+		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
@@ -683,7 +683,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
 
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(iscp.NewAllowanceFromAssets(allSenderAssets, nil))
+		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
@@ -707,7 +707,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(iscp.NewAllowanceFromAssets(allSenderAssets, nil))
+		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
@@ -729,7 +729,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(iscp.NewAllowanceFromAssets(allSenderAssets, nil))
+		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
@@ -747,7 +747,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(iscp.NewAllowanceFromAssets(allSenderAssets, nil))
+		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)

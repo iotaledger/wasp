@@ -36,7 +36,7 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
 			assets := iscp.NewEmptyAssets().AddNativeTokens(token.ID, 1)
-			transfer := iscp.NewAllowanceFromAssets(assets, nil)
+			transfer := iscp.NewAllowanceFungibleTokens(assets)
 			rem := ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
 			fmt.Printf("%s\n", rem)
 			ctx.Send(

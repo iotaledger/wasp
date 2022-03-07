@@ -20,9 +20,9 @@ import (
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Assets) {
+func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, ftokens *iscp.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditToAccount(s, agentID, assets)
+		accounts.CreditToAccount(s, agentID, ftokens)
 	})
 }
 
@@ -51,6 +51,9 @@ func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID *iotago
 func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, transfer)
+
+		// TODO move separately fungible tokens and NFTs.
+		//  'Allowance' type should not be used in account manipulation functions of the 'accounts'
 	})
 }
 

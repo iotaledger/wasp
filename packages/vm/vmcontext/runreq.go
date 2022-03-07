@@ -330,8 +330,8 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 	sender := vmctx.req.SenderAccount()
 
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, iscp.NewAllowanceFromAssets(transferToValidator, nil))
-	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), iscp.NewAllowanceFromAssets(transferToOwner, nil))
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, iscp.NewAllowanceFungibleTokens(transferToValidator))
+	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), iscp.NewAllowanceFungibleTokens(transferToOwner))
 }
 
 func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
