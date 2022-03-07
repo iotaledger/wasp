@@ -252,19 +252,18 @@ func CreditNFTToAccount(state kv.KVStore, agentID *iscp.AgentID, nft *iscp.NFT) 
 	checkLedger(state, "CreditNFTToAccount IN")
 	defer checkLedger(state, "CreditNFTToAccount OUT")
 
-	saveNFTData(state, nft, agentID)
+	saveNFTData(state, nft)
 	creditNFTToAccount(account, &nft.ID)
-	creditNFTToAccount(getTotalL2AssetsAccount(state), &nft.ID)
 	touchAccount(state, account)
 }
 
-func saveNFTData(state kv.KVStore, nft *iscp.NFT, owner *iscp.AgentID) {
+func saveNFTData(state kv.KVStore, nft *iscp.NFT) {
 	nftMap := getNFTState(state)
 	if nftMap.MustHasAt(nft.ID[:]) {
 		panic("saveNFTData: inconsistency - NFT data already exists")
 	}
 	// TODO (maybe) - for optimization we could avoid saving the NFTID twice (in key an value)
-	nftMap.SetAt(nft.ID[:], nft.Bytes())
+	nftMap.MustSetAt(nft.ID[:], nft.Bytes())
 }
 
 func deleteNFTData(state kv.KVStore, id *iotago.NFTID) {
@@ -288,8 +287,6 @@ func creditNFTToAccount(account *collections.Map, id *iotago.NFTID) {
 	account.MustSetAt(id[:], codec.EncodeBool(true))
 }
 
-// TODO : do we need NFTs in 'total assets' account? NFT directory contain exactly the same info
-
 // DebitNFTFromAccount removes an NFT from an account. if that account doesn't own the nft, it panics
 func DebitNFTFromAccount(state kv.KVStore, agentID *iscp.AgentID, id *iotago.NFTID) {
 	if id == nil {
@@ -303,12 +300,8 @@ func DebitNFTFromAccount(state kv.KVStore, agentID *iscp.AgentID, id *iotago.NFT
 	if !debitNFTFromAccount(account, id) {
 		panic(xerrors.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
 	}
-	if !debitNFTFromAccount(getTotalL2AssetsAccount(state), id) {
-		panic("debitNFTFromAccount: inconsistent ledger state")
-	}
 
 	deleteNFTData(state, id)
-
 	touchAccount(state, account)
 }
 
@@ -501,13 +494,13 @@ func getAccountNFTs(account *collections.ImmutableMap) []iotago.NFTID {
 
 func GetTotalL2NFTs(state kv.KVStoreReader) map[iotago.NFTID]bool {
 	ret := make(map[iotago.NFTID]bool)
-	NFTs := getAccountNFTs(getTotalL2AssetsAccountR(state))
-	for _, nft := range NFTs {
-		if ret[nft] {
-			panic(fmt.Sprintf("inconsistency: NFT %s is owned by more than 1 account", nft.String()))
-		}
-		ret[nft] = true
-	}
+	nftMap := getNFTStateR(state)
+	nftMap.MustIterateKeys(func(key []byte) bool {
+		id := iotago.NFTID{}
+		copy(id[:], key)
+		ret[id] = true
+		return true
+	})
 	return ret
 }
 
