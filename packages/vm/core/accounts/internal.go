@@ -29,6 +29,7 @@ var (
 	ErrRepeatingFoundrySerialNumber = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()
 	ErrOverflow                     = coreerrors.Register("overflow in token arithmetics").Create()
+	ErrInvalidNFTID                 = coreerrors.Register("invalid NFT ID").Create()
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -321,13 +322,8 @@ func debitNFTFromAccount(account *collections.Map, id *iotago.NFTID) bool {
 	return err == nil
 }
 
-// TODO Allowance type should not be used for manipulation the L2 ledger. Semantics of allowance has different purpose
-//  Instead:
-//  - one function for moving fungible tokens
-//  - one function for moving assets
-
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []*iotago.NFTID) bool {
 	checkLedger(state, "MoveBetweenAccounts.IN")
 	defer checkLedger(state, "MoveBetweenAccounts.OUT")
 
@@ -338,17 +334,17 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	// total assets doesn't change
 	fromAccount := getAccount(state, fromAgentID)
 	toAccount := getAccount(state, toAgentID)
-	if !debitFromAccount(fromAccount, transfer.Assets) {
+	if !debitFromAccount(fromAccount, fungibleTokens) {
 		return false
 	}
-	creditToAccount(toAccount, transfer.Assets)
+	creditToAccount(toAccount, fungibleTokens)
 
 	defer func() {
 		touchAccount(state, fromAccount)
 		touchAccount(state, toAccount)
 	}()
 
-	for _, nft := range transfer.NFTs {
+	for _, nft := range nfts {
 		if !debitNFTFromAccount(fromAccount, nft) {
 			return false
 		}
@@ -358,9 +354,9 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	return true
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) {
-	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, transfer) {
-		panic(xerrors.Errorf(" agentID: %s. %v. assets: %s", fromAgentID, ErrNotEnoughFunds, transfer))
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []*iotago.NFTID) {
+	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, fungibleTokens, nfts) {
+		panic(xerrors.Errorf(" agentID: %s. %v. fungibleTokens: %s, nfts: %s", fromAgentID, ErrNotEnoughFunds, fungibleTokens, nfts))
 	}
 }
 

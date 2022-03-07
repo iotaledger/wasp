@@ -48,12 +48,9 @@ func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID *iotago
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Allowance) {
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []*iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, transfer)
-
-		// TODO move separately fungible tokens and NFTs.
-		//  'Allowance' type should not be used in account manipulation functions of the 'accounts'
+		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, fungibleTokens, nfts)
 	})
 }
 

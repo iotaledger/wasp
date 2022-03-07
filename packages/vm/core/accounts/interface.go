@@ -8,19 +8,24 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
 
 var (
+	// Views
 	FuncViewBalance              = coreutil.ViewFunc("balance")
 	FuncViewTotalAssets          = coreutil.ViewFunc("totalAssets")
 	FuncViewAccounts             = coreutil.ViewFunc("accounts")
-	FuncDeposit                  = coreutil.Func("deposit")
-	FuncTransferAllowanceTo      = coreutil.Func("transferAllowanceTo")
-	FuncWithdraw                 = coreutil.Func("withdraw")
-	FuncHarvest                  = coreutil.Func("harvest")
 	FuncGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
 	FuncGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDs")
-	FuncFoundryCreateNew         = coreutil.Func("foundryCreateNew")
-	FuncFoundryDestroy           = coreutil.Func("foundryDestroy")
-	FuncFoundryOutput            = coreutil.ViewFunc("foundryOutput")
-	FuncFoundryModifySupply      = coreutil.Func("foundryModifySupply")
+	FuncViewAccountNFTs          = coreutil.ViewFunc("accountNFTs")
+	FuncViewNFTData              = coreutil.ViewFunc("nftData")
+
+	// Funcs
+	FuncDeposit             = coreutil.Func("deposit")
+	FuncTransferAllowanceTo = coreutil.Func("transferAllowanceTo")
+	FuncWithdraw            = coreutil.Func("withdraw")
+	FuncHarvest             = coreutil.Func("harvest")
+	FuncFoundryCreateNew    = coreutil.Func("foundryCreateNew")
+	FuncFoundryDestroy      = coreutil.Func("foundryDestroy")
+	FuncFoundryOutput       = coreutil.ViewFunc("foundryOutput")
+	FuncFoundryModifySupply = coreutil.Func("foundryModifySupply")
 	// TODO implement grant/claim protocol of moving ownership of the foundry
 	//  Including ownership of the foundry by the common account/chain owner
 )
@@ -62,6 +67,9 @@ const (
 	ParamDestroyTokens             = "y"
 	ParamDustDepositAssumptionsBin = "u"
 	ParamForceOpenAccount          = "c"
+	ParamNFTIDs                    = "i"
+	ParamNFTID                     = "z"
+	ParamNFTData                   = "e"
 )
 
 var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")

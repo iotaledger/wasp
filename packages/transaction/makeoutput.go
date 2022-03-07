@@ -18,6 +18,7 @@ func OutputFromPostData(
 		// if metadata is not specified, target is nil. It corresponds to sending funds to the plain L1 address
 		metadata = &iscp.SendMetadata{}
 	}
+
 	ret := MakeOutput(
 		par.TargetAddress,
 		senderAddress,

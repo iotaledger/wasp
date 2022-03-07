@@ -145,7 +145,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 
 	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MoveBetweenAccounts(s, caller, target, toMove)
+		accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs)
 	})
 	return vmctx.AllowanceAvailable()
 }
