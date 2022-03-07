@@ -78,7 +78,7 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 
 func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
-	o := MakeOutput(
+	o := MakeBasicOutput(
 		&addr,
 		&addr,
 		&iscp.Assets{
@@ -88,7 +88,6 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 				Amount: abi.MaxUint256,
 			}},
 		},
-		nil,
 		nil,
 		iscp.SendOptions{},
 		rent,
@@ -98,7 +97,7 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 
 func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
-	o := MakeOutput(
+	basicOut := MakeBasicOutput(
 		&addr,
 		&addr,
 		&iscp.Assets{
@@ -109,13 +108,14 @@ func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			}},
 		},
 		nil,
-		&iscp.NFT{
-			ID:       iotago.NFTID{0},
-			Issuer:   tpkg.RandEd25519Address(),
-			Metadata: make([]byte, iotago.MaxMetadataLength),
-		},
 		iscp.SendOptions{},
 		rent,
 	)
-	return o.VByteCost(rent, nil)
+	out := NftOutputFromBasicOutput(basicOut, &iscp.NFT{
+		ID:       iotago.NFTID{0},
+		Issuer:   tpkg.RandEd25519Address(),
+		Metadata: make([]byte, iotago.MaxMetadataLength),
+	})
+
+	return out.VByteCost(rent, nil)
 }

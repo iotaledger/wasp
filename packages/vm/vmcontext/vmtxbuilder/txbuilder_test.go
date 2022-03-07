@@ -35,17 +35,16 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
 	}
-	out := transaction.MakeOutput(
+	out := transaction.MakeBasicOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
-		nil,
 		nil,
 		iscp.SendOptions{},
 		testdeserparams.RentStructure(),
 	)
 	if len(addIotasToDustMinimum) > 0 {
-		out.(*iotago.BasicOutput).Amount += addIotasToDustMinimum[0]
+		out.Amount += addIotasToDustMinimum[0]
 	}
 	reqData, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
 	require.NoError(t, err)
@@ -65,7 +64,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			},
 		},
 	}
-	exout := transaction.OutputFromPostData(
+	exout := transaction.BasicOutputFromPostData(
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
 		iscp.RequestParameters{
@@ -640,12 +639,11 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
 		assets := iscp.NewEmptyAssets()
-		out := transaction.MakeOutput(
+		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			nil,
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
@@ -653,12 +651,11 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
-		out := transaction.MakeOutput(
+		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			nil,
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
@@ -759,12 +756,11 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()
-		out := transaction.MakeOutput(
+		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			nil,
 			iscp.SendOptions{},
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
@@ -773,12 +769,12 @@ func TestSerDe(t *testing.T) {
 		outBack := &iotago.BasicOutput{}
 		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
-		condSet := out.(*iotago.BasicOutput).Conditions.MustSet()
+		condSet := out.Conditions.MustSet()
 		condSetBack := outBack.Conditions.MustSet()
 		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
 		require.EqualValues(t, out.Deposit(), outBack.Amount)
 		require.EqualValues(t, 0, len(outBack.NativeTokens))
-		require.True(t, outBack.Blocks.Equal(out.(*iotago.BasicOutput).Blocks))
+		require.True(t, outBack.Blocks.Equal(out.Blocks))
 	})
 	t.Run("serde FoundryOutput", func(t *testing.T) {
 		out := &iotago.FoundryOutput{

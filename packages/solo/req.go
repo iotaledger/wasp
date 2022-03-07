@@ -219,7 +219,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		SenderKeyPair:    keyPair,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
-		Requests: []*iscp.RequestParameters{{
+		Request: &iscp.RequestParameters{
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets:        req.assets,
 			Metadata: &iscp.SendMetadata{
@@ -229,9 +229,9 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
-			NFT:     req.nft,
 			Options: iscp.SendOptions{},
-		}},
+		},
+		NFT:                          req.nft,
 		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})

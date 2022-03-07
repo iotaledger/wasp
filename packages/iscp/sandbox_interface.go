@@ -102,8 +102,10 @@ type Sandbox interface {
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
 	// If it is a random target, funds may be inaccessible (less safe)
 	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
-	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
+	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
+	// Send sends an on-ledger request as an NFTOutput
+	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
 	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
@@ -136,10 +138,6 @@ type RequestParameters struct {
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters
 	Options SendOptions
-	// NFTID (optional)
-	NFTID *iotago.NFTID
-	// when sending a request via smartcontract (ctx.Send) the NFT data will be automatically filled if NFTID is present
-	NFT *NFT
 }
 
 type Gas interface {

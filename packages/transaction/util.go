@@ -90,7 +90,7 @@ func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
-	nftsOut map[*iotago.NFTID]bool,
+	nftsOut map[iotago.NFTID]bool,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
@@ -101,7 +101,7 @@ func computeInputsAndRemainder(
 ) {
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
-	NFTsIn := make(map[*iotago.NFTID]bool)
+	NFTsIn := make(map[iotago.NFTID]bool)
 
 	var remainder *iotago.BasicOutput
 
@@ -115,8 +115,8 @@ func computeInputsAndRemainder(
 		inputCount++
 		if nftInp, ok := inp.(*iotago.NFTOutput); ok {
 			nftID := util.NFTIDFromNFTOutput(nftInp, id)
-			if nftsOut[&nftID] {
-				NFTsIn[&nftID] = true
+			if nftsOut[nftID] {
+				NFTsIn[nftID] = true
 			}
 		}
 		a := AssetsFromOutput(inp)

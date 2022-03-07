@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// nolint:typecheck
 package vmcontext
 
 import (
@@ -78,6 +79,11 @@ func (s *contractSandbox) Request() iscp.Calldata {
 func (s *contractSandbox) Send(par iscp.RequestParameters) {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
 	s.Ctx.(*VMContext).Send(par)
+}
+
+func (s *contractSandbox) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFTID) {
+	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
+	s.Ctx.(*VMContext).SendAsNFT(par, nftID)
 }
 
 func (s *contractSandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {

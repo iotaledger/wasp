@@ -80,12 +80,11 @@ func AssetsFromNativeTokenSum(iotas uint64, tokens iotago.NativeTokenSum) *Asset
 }
 
 func AssetsFromOutput(o iotago.Output) *Assets {
-	switch o := o.(type) {
-	case *iotago.BasicOutput:
-		return AssetsFromBasicOutput(o)
-	default:
-		panic(fmt.Sprintf("AssetsFromOutput not implemented for %T", o))
+	ret := &Assets{
+		Iotas:  o.Deposit(),
+		Tokens: o.NativeTokenSet().Clone(),
 	}
+	return ret
 }
 
 func AssetsFromBasicOutput(o *iotago.BasicOutput) *Assets {

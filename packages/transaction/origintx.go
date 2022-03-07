@@ -106,7 +106,7 @@ func NewRootInitRequestTransaction(
 		SenderKeyPair:    keyPair,
 		UnspentOutputs:   unspentOutputs,
 		UnspentOutputIDs: unspentOutputIDs,
-		Requests: []*iscp.RequestParameters{{
+		Request: &iscp.RequestParameters{
 			TargetAddress: chainID.AsAddress(),
 			Metadata: &iscp.SendMetadata{
 				TargetContract: root.Contract.Hname(),
@@ -117,7 +117,7 @@ func NewRootInitRequestTransaction(
 					governance.ParamDescription:         codec.EncodeString(description),
 				},
 			},
-		}},
+		},
 		L1: l1Params,
 	})
 	if err != nil {

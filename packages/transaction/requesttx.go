@@ -14,7 +14,8 @@ type NewRequestTransactionParams struct {
 	SenderKeyPair                *cryptolib.KeyPair
 	UnspentOutputs               iotago.OutputSet
 	UnspentOutputIDs             iotago.OutputIDs
-	Requests                     []*iscp.RequestParameters
+	Request                      *iscp.RequestParameters
+	NFT                          *iscp.NFT
 	L1                           *parameters.L1
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
@@ -27,53 +28,57 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	outputs := iotago.Outputs{}
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
-	sumNFTsOut := make(map[*iotago.NFTID]bool)
+	sumNFTsOut := make(map[iotago.NFTID]bool)
 
 	senderAddress := par.SenderKeyPair.Address()
 
+	req := par.Request
+
 	// create outputs, sum totals needed
-	for _, req := range par.Requests {
-		assets := req.Assets
-		if assets == nil {
-			// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
-			assets = &iscp.Assets{}
+	assets := req.Assets
+	if assets == nil {
+		// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
+		assets = &iscp.Assets{}
+	}
+	var out iotago.Output
+	// will adjust to minimum dust deposit
+	out = MakeBasicOutput(
+		req.TargetAddress,
+		senderAddress,
+		assets,
+		&iscp.RequestMetadata{
+			SenderContract: 0,
+			TargetContract: req.Metadata.TargetContract,
+			EntryPoint:     req.Metadata.EntryPoint,
+			Params:         req.Metadata.Params,
+			Allowance:      req.Metadata.Allowance,
+			GasBudget:      req.Metadata.GasBudget,
+		},
+		req.Options,
+		par.L1.RentStructure(),
+		par.DisableAutoAdjustDustDeposit,
+	)
+	if par.NFT != nil {
+		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
+	}
+
+	requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
+	if out.Deposit() < requiredDustDeposit {
+		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
+			ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
+	}
+	outputs = append(outputs, out)
+	sumIotasOut += out.Deposit()
+	for _, nt := range out.NativeTokenSet() {
+		s, ok := sumTokensOut[nt.ID]
+		if !ok {
+			s = new(big.Int)
 		}
-		// will adjust to minimum dust deposit
-		out := MakeOutput(
-			req.TargetAddress,
-			senderAddress,
-			assets,
-			&iscp.RequestMetadata{
-				SenderContract: 0,
-				TargetContract: req.Metadata.TargetContract,
-				EntryPoint:     req.Metadata.EntryPoint,
-				Params:         req.Metadata.Params,
-				Allowance:      req.Metadata.Allowance,
-				GasBudget:      req.Metadata.GasBudget,
-			},
-			req.NFT,
-			req.Options,
-			par.L1.RentStructure(),
-			par.DisableAutoAdjustDustDeposit,
-		)
-		requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
-		if out.Deposit() < requiredDustDeposit {
-			return nil, xerrors.Errorf("%v: available %d < required %d iotas",
-				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
-		}
-		outputs = append(outputs, out)
-		sumIotasOut += out.Deposit()
-		for _, nt := range out.NativeTokenSet() {
-			s, ok := sumTokensOut[nt.ID]
-			if !ok {
-				s = new(big.Int)
-			}
-			s.Add(s, nt.Amount)
-			sumTokensOut[nt.ID] = s
-		}
-		if req.NFT != nil {
-			sumNFTsOut[&req.NFT.ID] = true
-		}
+		s.Add(s, nt.Amount)
+		sumTokensOut[nt.ID] = s
+	}
+	if par.NFT != nil {
+		sumNFTsOut[par.NFT.ID] = true
 	}
 
 	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())

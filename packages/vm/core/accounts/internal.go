@@ -30,6 +30,7 @@ var (
 	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()
 	ErrOverflow                     = coreerrors.Register("overflow in token arithmetics").Create()
 	ErrInvalidNFTID                 = coreerrors.Register("invalid NFT ID").Create()
+	ErrTooManyNFTsInAllowance       = coreerrors.Register("expected at most 1 NFT in allowance").Create()
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
