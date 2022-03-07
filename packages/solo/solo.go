@@ -566,7 +566,7 @@ type NFTMintedInfo struct {
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
-	tx, err := transaction.NewMintNFTTransaction(transaction.MintNftTransactionParams{
+	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
 		IssuerKeyPair:     issuer,
 		Target:            target,
 		UnspentOutputs:    allOuts,

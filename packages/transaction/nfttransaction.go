@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
-type MintNftTransactionParams struct {
+type MintNFTTransactionParams struct {
 	IssuerKeyPair     *cryptolib.KeyPair
 	Target            iotago.Address
 	UnspentOutputs    iotago.OutputSet
@@ -15,7 +15,7 @@ type MintNftTransactionParams struct {
 	ImmutableMetadata []byte
 }
 
-func NewMintNFTTransaction(par MintNftTransactionParams) (*iotago.Transaction, error) {
+func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, error) {
 	issuerAddress := par.IssuerKeyPair.Address()
 
 	out := &iotago.NFTOutput{

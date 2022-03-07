@@ -526,7 +526,7 @@ func calcL2TotalNFTs(state kv.KVStoreReader) map[iotago.NFTID]bool {
 	return ret
 }
 
-func NFTmapEqual(a, b map[iotago.NFTID]bool) bool {
+func NFTMapEqual(a, b map[iotago.NFTID]bool) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -548,7 +548,7 @@ func checkLedger(state kv.KVStore, checkpoint string) {
 
 	totalAccNFTs := GetTotalL2NFTs(state)
 	calculatedNFTs := calcL2TotalNFTs(state)
-	if !NFTmapEqual(totalAccNFTs, calculatedNFTs) {
+	if !NFTMapEqual(totalAccNFTs, calculatedNFTs) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n NFTs don't match\n", checkpoint))
 	}
 }
