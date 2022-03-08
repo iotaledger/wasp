@@ -109,9 +109,11 @@ type (
 type NodeConnection interface {
 	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output))
 	UnregisterChain(chainAddr iotago.Address)
+	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
+	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler func(iotago.TransactionID, string)) (*events.Closure, error)
+	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
 	AttachMilestones(handler func(*iotagox.MilestonePointer)) *events.Closure
 	DetachMilestones(attachID *events.Closure)
-	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
 	Close()
 
 	// Subscribe(addr iotago.Address)

@@ -103,26 +103,28 @@ func (nc *nodeConn) AttachTxInclusionEvents() {
 	// TODO: ...
 }
 
-// AttachOnLedgerRequestReceived implements chain.NodeConnection.
-// func (nc *nodeConn) AttachUnspentOutputReceived(chainAddr iotago.Address, handler func(*iotago.Output)) (*events.Closure, error) {
-// 	nc.chainsLock.RLock()
-// 	ncc, ok := nc.chains[chainAddr.Key()]
-// 	nc.chainsLock.RUnlock()
-// 	if !ok {
-// 		return nil, xerrors.Errorf("chain %v is not registered in NodeConn", chainAddr.String())
-// 	}
-// 	return ncc.AttachUnspentOutputReceived(handler)
-// }
+func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler func(iotago.TransactionID, string)) (*events.Closure, error) {
+	nc.chainsLock.RLock()
+	ncc, ok := nc.chains[chainAddr.Key()]
+	nc.chainsLock.RUnlock()
+	if !ok {
+		return nil, xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
+	}
+	closure := events.NewClosure(handler)
+	ncc.inclusionStates.Attach(closure)
+	return closure, nil
+}
 
-// AttachAliasOutputReceived implements chain.NodeConnection.
-// func (nc *nodeConn) AttachAliasOutputReceived() {
-// 	// TODO: ...
-// }
-
-// AttachOnLedgerRequestReceived implements chain.NodeConnection.
-// func (nc *nodeConn) AttachOnLedgerRequestReceived() {
-// 	// TODO: ...
-// }
+func (nc *nodeConn) DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error {
+	nc.chainsLock.RLock()
+	ncc, ok := nc.chains[chainAddr.Key()]
+	nc.chainsLock.RUnlock()
+	if !ok {
+		return xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
+	}
+	ncc.inclusionStates.Detach(closure)
+	return nil
+}
 
 // AttachMilestones implements chain.NodeConnection.
 func (nc *nodeConn) AttachMilestones(handler func(*iotagox.MilestonePointer)) *events.Closure {

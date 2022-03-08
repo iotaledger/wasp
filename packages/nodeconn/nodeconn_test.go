@@ -79,6 +79,14 @@ func TestNodeConn(t *testing.T) {
 	t.Logf("Waiting for outputs posted via tangle... Done, have %v=%v", oid.ToHex(), chainOuts[oid])
 
 	// Post a TX via the NodeConn (e.g. alias output).
+	tiseCh := make(chan bool)
+	tise, err := nc.AttachTxInclusionStateEvents(chainAddr, func(txID iotago.TransactionID, inclusionState string) {
+		t.Logf("TX Inclusion state changed, txID=%v, state=%v", txID, inclusionState)
+		if inclusionState == "included" {
+			tiseCh <- true
+		}
+	})
+	require.NoError(t, err)
 	tx, err := pt.MakeSimpleValueTX(ctx, pt.NodeClient(0), chainKeys, chainAddr, 50000)
 	require.NoError(t, err)
 	err = nc.PublishTransaction(chainAddr, uint32(0), tx)
@@ -86,7 +94,11 @@ func TestNodeConn(t *testing.T) {
 	t.Logf("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh
 	t.Logf("Waiting for outputs posted via nodeConn... Done, have %v=%v", oid.ToHex(), chainOuts[oid])
+	t.Logf("Waiting for TX incusion event...")
+	<-tiseCh
+	t.Logf("Waiting for TX incusion event... Done")
 
+	nc.DetachTxInclusionStateEvents(chainAddr, tise)
 	nc.UnregisterChain(chainAddr)
 
 	//

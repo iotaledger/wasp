@@ -6,6 +6,7 @@ package nodeconn
 import (
 	"time"
 
+	"github.com/iotaledger/hive.go/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -16,18 +17,23 @@ import (
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
-	nc            *nodeConn
-	chainAddr     iotago.Address
-	msgs          map[hashing.HashValue]*ncTransaction
-	outputHandler func(iotago.OutputID, *iotago.Output)
+	nc              *nodeConn
+	chainAddr       iotago.Address
+	msgs            map[hashing.HashValue]*ncTransaction
+	outputHandler   func(iotago.OutputID, *iotago.Output)
+	inclusionStates *events.Event
 }
 
 func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output)) *ncChain {
+	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
+		handler.(func(iotago.TransactionID, string))(params[0].(iotago.TransactionID), params[1].(string))
+	})
 	ncc := ncChain{
-		nc:            nc,
-		chainAddr:     chainAddr,
-		msgs:          make(map[hashing.HashValue]*ncTransaction),
-		outputHandler: outputHandler,
+		nc:              nc,
+		chainAddr:       chainAddr,
+		msgs:            make(map[hashing.HashValue]*ncTransaction),
+		outputHandler:   outputHandler,
+		inclusionStates: inclusionStates,
 	}
 	go ncc.run()
 	return &ncc
@@ -42,6 +48,10 @@ func (ncc *ncChain) Close() {
 }
 
 func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+	txID, err := tx.ID()
+	if err != nil {
+		return xerrors.Errorf("failed to get a tx ID: %w", err)
+	}
 	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
 	if err != nil {
 		return xerrors.Errorf("failed to build a tx message: %w", err)
@@ -50,11 +60,23 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 	if err != nil {
 		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
-	txID, err := txMsg.ID()
+	txMsgID, err := txMsg.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to extract a tx message ID: %w", err)
 	}
-	ncc.nc.log.Infof("Posted TX Message: messageID=%v", txID)
+	ncc.nc.log.Infof("Posted TX Message: messageID=%v", txMsgID)
+
+	//
+	// TODO: Move it to `nc_transaction.go`
+	msgMetaChanges := ncc.nc.nodeEvents.MessageMetadataChange(*txMsgID)
+	go func() {
+		for msgMetaChange := range msgMetaChanges {
+			if msgMetaChange.LedgerInclusionState != nil {
+				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
+			}
+		}
+	}()
+
 	return nil
 }
 
