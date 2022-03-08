@@ -32,7 +32,7 @@ func TestDeployInc(t *testing.T) {
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }
@@ -118,7 +118,7 @@ func TestSpawn(t *testing.T) {
 	res, err := chain.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
 	require.NoError(t, err)
 	creg := collections.NewMapReadOnly(res, root.StateVarContractRegistry)
-	require.True(t, int(creg.MustLen()) == len(core.AllCoreContractsByHash)+2)
+	require.True(t, int(creg.MustLen()) == len(corecontracts.All)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {

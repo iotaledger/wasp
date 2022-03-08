@@ -48,3 +48,7 @@ func (k *KeyPair) GetPrivateKey() *PrivateKey {
 func (k *KeyPair) GetPublicKey() *PublicKey {
 	return k.publicKey
 }
+
+func (k *KeyPair) Address() *iotago.Ed25519Address {
+	return k.GetPublicKey().AsEd25519Address()
+}

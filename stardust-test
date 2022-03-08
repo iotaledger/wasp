@@ -6,19 +6,13 @@
 
 PATHS=(\
     "packages/transaction/" \
-    "packages/vm/core/testcore_stardust/" \
-    "packages/vm/core/testcore_stardust/sbtests/" \
-    "packages/vm/vmcontext/" \
-    "packages/peering/" \
-    "packages/peering/domain/" \
-    "packages/peering/group/" \
-    "packages/peering/lpp/" \
+    "packages/vm/core/testcore_stardust/..." \
+    "packages/vm/core/evm/..." \
+    "packages/vm/vmcontext/..." \
+    "packages/peering/..." \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/utxodb/" \
-    "contracts/native/evm/evmchain/emulator/" \
-    "contracts/native/evm/evmlight/emulator/" \
-    "contracts/native/evm/evmtest/" \
     "packages/evm/jsonrpc/jsonrpctest" \
 )
 WD=$PWD

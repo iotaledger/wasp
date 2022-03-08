@@ -20,9 +20,15 @@ import (
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Assets) {
+func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, ftokens *iscp.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditToAccount(s, agentID, assets)
+		accounts.CreditToAccount(s, agentID, ftokens)
+	})
+}
+
+func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, nft *iscp.NFT) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.CreditNFTToAccount(s, agentID, nft)
 	})
 }
 
@@ -34,9 +40,17 @@ func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.A
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) {
+// debitNFTFromAccount removes a NFT from account.
+// should be called only when posting request
+func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, transfer)
+		accounts.DebitNFTFromAccount(s, agentID, nftID)
+	})
+}
+
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []iotago.NFTID) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, fungibleTokens, nfts)
 	})
 }
 

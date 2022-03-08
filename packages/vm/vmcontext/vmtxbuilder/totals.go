@@ -2,12 +2,12 @@ package vmtxbuilder
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm"
 	"golang.org/x/xerrors"
 )
 
@@ -77,6 +77,12 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).Set(f.in.CirculatingSupply)
 		}
 	}
+	for _, nft := range txb.nftsIncluded {
+		if nft.input != nil {
+			ret.TotalIotasInDustDeposit += nft.in.Amount
+		}
+	}
+
 	return ret
 }
 
@@ -117,6 +123,11 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 			ret.SentOutTokenBalances[nt.ID] = s
 		}
 	}
+	for _, nft := range txb.nftsIncluded {
+		if !nft.sentOutside {
+			ret.TotalIotasInDustDeposit += nft.out.Amount
+		}
+	}
 	return ret
 }
 
@@ -151,15 +162,16 @@ func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.N
 	return before, after
 }
 
-var DebugTxBuilder = func() bool { return true }() // trick linter
+var DebugTxBuilder = true
 
 func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
-	if DebugTxBuilder {
-		ins, outs, err := txb.Totals()
-		if err != nil {
-			fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
-			panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
-		}
+	if !DebugTxBuilder {
+		return
+	}
+	ins, outs, err := txb.Totals()
+	if err != nil {
+		fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
+		panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
 	}
 }
 
@@ -189,10 +201,10 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 	tIn := t.TotalIotasInL2Accounts + t.TotalIotasInDustDeposit
 	tOut := another.TotalIotasInL2Accounts + another.TotalIotasInDustDeposit + another.SentOutIotas
 	if tIn != tOut {
-		msgIn := fmt.Sprintf("in.TotalIotasInL2Accounts: %d\n+ in.TotalIotasInDustDeposit: %d",
-			t.TotalIotasInL2Accounts, t.TotalIotasInDustDeposit)
-		msgOut := fmt.Sprintf("out.TotalIotasInL2Accounts: %d\n+ out.TotalIotasInDustDeposit: %d\n+ out.SentOutIotas: %d",
-			another.TotalIotasInL2Accounts, another.TotalIotasInDustDeposit, another.SentOutIotas)
+		msgIn := fmt.Sprintf("in.TotalIotasInL2Accounts: %d\n+ in.TotalIotasInDustDeposit: %d\n (%d)",
+			t.TotalIotasInL2Accounts, t.TotalIotasInDustDeposit, tIn)
+		msgOut := fmt.Sprintf("out.TotalIotasInL2Accounts: %d\n+ out.TotalIotasInDustDeposit: %d\n+ out.SentOutIotas: %d\n (%d)",
+			another.TotalIotasInL2Accounts, another.TotalIotasInDustDeposit, another.SentOutIotas, tOut)
 		return xerrors.Errorf("%v:\n %s\n    !=\n%s", vm.ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
 	}
 	tokenIDs := make(map[iotago.NativeTokenID]bool)

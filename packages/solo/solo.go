@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -28,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -157,7 +159,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
 		vmRunner:                     runvm.NewVMRunner(),
-		processorConfig:              processors.NewConfig(),
+		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
@@ -193,7 +195,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 // NewChain deploys new chain instance.
 //
 // If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
-// If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
+// ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
 //  - empty virtual state is initialized
@@ -203,14 +205,14 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, validatorFeeTarget...)
+func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initParams ...dict.Dict) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initParams...)
 	return ret
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initParams ...dict.Dict) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
@@ -225,10 +227,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
-	feeTarget := originatorAgentID
-	if len(validatorFeeTarget) > 0 {
-		feeTarget = validatorFeeTarget[0]
-	}
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
@@ -275,7 +273,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
-		ValidatorFeeTarget:     feeTarget,
+		ValidatorFeeTarget:     originatorAgentID,
 		State:                  vs,
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
@@ -294,6 +292,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		outs,
 		ids,
 		env.utxoDB.L1Params(),
+		initParams...,
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
@@ -528,6 +527,10 @@ func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.O
 	return allOuts, ids
 }
 
+func (env *Solo) L1NFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+	return env.utxoDB.GetAddressNFTs(addr)
+}
+
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
 func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
 	assets := env.L1Assets(addr)
@@ -549,4 +552,49 @@ func (env *Solo) L1Ledger() *utxodb.UtxoDB {
 
 func (env *Solo) RentStructure() *iotago.RentStructure {
 	return env.utxoDB.RentStructure()
+}
+
+type NFTMintedInfo struct {
+	Output   iotago.Output
+	OutputID iotago.OutputID
+	NFTID    iotago.NFTID
+}
+
+// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
+// Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*NFTMintedInfo, error) {
+	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
+
+	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
+		IssuerKeyPair:     issuer,
+		Target:            target,
+		UnspentOutputs:    allOuts,
+		UnspentOutputIDs:  allOutIDs,
+		L1Params:          env.L1Params(),
+		ImmutableMetadata: immutableMetadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = env.AddToLedger(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	outSet, err := tx.OutputsSet()
+	if err != nil {
+		return nil, err
+	}
+	for id, out := range outSet {
+		// we know that the tx will only produce 1 NFT output
+		if _, ok := out.(*iotago.NFTOutput); ok {
+			return &NFTMintedInfo{
+				OutputID: id,
+				Output:   out,
+				NFTID:    iotago.NFTIDFromOutputID(id),
+			}, nil
+		}
+	}
+
+	return nil, xerrors.Errorf("NFT output not found in resulting tx")
 }

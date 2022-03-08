@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/crc32"
 	"math"
@@ -60,8 +61,8 @@ func VMErrorCodeFromMarshalUtil(mu *marshalutil.MarshalUtil) (code VMErrorCode, 
 	return
 }
 
-// vmErrorCode is the common interface of UnresolvedVMError and VMError
-type vmErrorCode interface {
+// VMErrorBase is the common interface of UnresolvedVMError and VMError
+type VMErrorBase interface {
 	error
 	Code() VMErrorCode
 }
@@ -71,7 +72,7 @@ type VMErrorTemplate struct {
 	messageFormat string
 }
 
-var _ vmErrorCode = &VMErrorTemplate{}
+var _ VMErrorBase = &VMErrorTemplate{}
 
 func NewVMErrorTemplate(code VMErrorCode, messageFormat string) *VMErrorTemplate {
 	return &VMErrorTemplate{code: code, messageFormat: messageFormat}
@@ -140,7 +141,7 @@ type UnresolvedVMError struct {
 	hash   uint32
 }
 
-var _ vmErrorCode = &UnresolvedVMError{}
+var _ VMErrorBase = &UnresolvedVMError{}
 
 func (e *UnresolvedVMError) Error() string {
 	return fmt.Sprintf("UnresolvedVMError(code: %s, hash: %x)", e.code, e.hash)
@@ -179,7 +180,7 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 }
 
 func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
-	bytes, err := json.Marshal(e.Params())
+	bytes, err := json.Marshal(e.params)
 	if err != nil {
 		panic(err)
 	}
@@ -209,7 +210,7 @@ type VMError struct {
 	params   []interface{}
 }
 
-var _ vmErrorCode = &VMError{}
+var _ VMErrorBase = &VMError{}
 
 func (e *VMError) Code() VMErrorCode {
 	return e.template.code
@@ -224,7 +225,7 @@ func (e *VMError) Params() []interface{} {
 }
 
 func (e *VMError) Error() string {
-	return fmt.Sprintf(e.MessageFormat(), e.Params()...)
+	return fmt.Sprintf(e.MessageFormat(), e.params...)
 }
 
 func (e *VMError) Hash() uint32 {
@@ -237,7 +238,7 @@ func (e *VMError) Hash() uint32 {
 }
 
 func (e *VMError) serializeParams(mu *marshalutil.MarshalUtil) {
-	bytes, err := json.Marshal(e.Params())
+	bytes, err := json.Marshal(e.params)
 
 	if err != nil {
 		panic(err)
@@ -266,7 +267,7 @@ func (e *VMError) AsGoError() error {
 func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 	return &UnresolvedVMError{
 		code:   e.template.code,
-		params: e.Params(),
+		params: e.params,
 		hash:   e.Hash(),
 	}
 }
@@ -303,19 +304,18 @@ func GetErrorIDFromMessageFormat(messageFormat string) uint16 {
 	return errorId
 }
 
-// VMErrorIs returns true if both objects are vmErrorCode and their VMErrorCode match
-func VMErrorIs(error1 interface{}, error2 interface{}) bool {
-	if error1, ok := error1.(vmErrorCode); ok {
-		if error2, ok := error2.(vmErrorCode); ok {
-			return error1.Code() == error2.Code()
-		}
+// VMErrorIs returns true if the error includes a VMErrorCode in its chain that matches the given code
+func VMErrorIs(err error, expected VMErrorBase) bool {
+	var vmError VMErrorBase
+	if errors.As(err, &vmError) {
+		return vmError.Code() == expected.Code()
 	}
 	return false
 }
 
-// VMErrorMustBe tests VMError, VMErrorTemplate and UnresolvedVMError types against each other by their unique ids and panics if it fails
-func VMErrorMustBe(error1 interface{}, error2 interface{}) {
-	if !VMErrorIs(error1, error2) {
-		panic(fmt.Sprintf("%v does not match %v", error1, error2))
+// VMErrorMustBe panics unless the error includes a VMErrorCode in its chain that matches the given code
+func VMErrorMustBe(err error, expected VMErrorBase) {
+	if !VMErrorIs(err, expected) {
+		panic(fmt.Sprintf("%v does not match %v", err, expected))
 	}
 }

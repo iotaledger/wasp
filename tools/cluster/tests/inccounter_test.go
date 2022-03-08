@@ -41,7 +41,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
+		require.EqualValues(e.t, len(corecontracts.All)+1, len(contractRegistry))
 
 		cr := contractRegistry[incHname]
 		require.EqualValues(e.t, e.programHash, cr.ProgramHash)

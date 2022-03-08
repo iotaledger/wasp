@@ -8,9 +8,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
@@ -44,7 +44,7 @@ func TestGetInfo(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(contracts))
+	require.EqualValues(t, len(corecontracts.All), len(contracts))
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
@@ -73,7 +73,7 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, ch.ChainID, chainID)
 	require.EqualValues(t, ch.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
@@ -114,7 +114,7 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, ch.ChainID, chainID)
 	require.EqualValues(t, ch.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)

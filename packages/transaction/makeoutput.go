@@ -3,7 +3,6 @@ package transaction
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"golang.org/x/xerrors"
 )
 
 // BasicOutputFromPostData creates extended output object from parameters.
@@ -19,6 +18,7 @@ func BasicOutputFromPostData(
 		// if metadata is not specified, target is nil. It corresponds to sending funds to the plain L1 address
 		metadata = &iscp.SendMetadata{}
 	}
+
 	ret := MakeBasicOutput(
 		par.TargetAddress,
 		senderAddress,
@@ -38,7 +38,7 @@ func BasicOutputFromPostData(
 	return ret
 }
 
-// MakeBasicOutput creates new BasicOutput from input parameters.
+// MakeBasicOutput creates new output from input parameters.
 // Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
 // If auto adjustment to dust is disabled and not enough iotas, returns an error
 func MakeBasicOutput(
@@ -53,7 +53,7 @@ func MakeBasicOutput(
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
-	ret := &iotago.BasicOutput{
+	out := &iotago.BasicOutput{
 		Amount:       assets.Iotas,
 		NativeTokens: assets.Tokens,
 		Conditions: iotago.UnlockConditions{
@@ -61,12 +61,12 @@ func MakeBasicOutput(
 		},
 	}
 	if senderAddress != nil {
-		ret.Blocks = append(ret.Blocks, &iotago.SenderFeatureBlock{
+		out.Blocks = append(out.Blocks, &iotago.SenderFeatureBlock{
 			Address: senderAddress,
 		})
 	}
 	if metadata != nil {
-		ret.Blocks = append(ret.Blocks, &iotago.MetadataFeatureBlock{
+		out.Blocks = append(out.Blocks, &iotago.MetadataFeatureBlock{
 			Data: metadata.Bytes(),
 		})
 	}
@@ -77,7 +77,7 @@ func MakeBasicOutput(
 		if !options.Timelock.Time.IsZero() {
 			cond.UnixTime = uint32(options.Timelock.Time.Unix())
 		}
-		ret.Conditions = append(ret.Conditions, cond)
+		out.Conditions = append(out.Conditions, cond)
 	}
 	if options.Expiration != nil {
 		cond := &iotago.ExpirationUnlockCondition{
@@ -87,29 +87,61 @@ func MakeBasicOutput(
 		if !options.Expiration.Time.IsZero() {
 			cond.UnixTime = uint32(options.Expiration.Time.Unix())
 		}
-		ret.Conditions = append(ret.Conditions, cond)
+		out.Conditions = append(out.Conditions, cond)
 	}
 
 	// Adjust to minimum dust deposit, if needed
 	if len(disableAutoAdjustDustDeposit) > 0 && disableAutoAdjustDustDeposit[0] {
-		return ret
+		return out
 	}
-	requiredDustDeposit := ret.VByteCost(rentStructure, nil)
-	if ret.Amount < requiredDustDeposit {
+
+	requiredDustDeposit := out.VByteCost(rentStructure, nil)
+	if out.Deposit() < requiredDustDeposit {
 		// adjust the amount to the minimum required
-		ret.Amount = requiredDustDeposit
+		out.Amount = requiredDustDeposit
 	}
-	return ret
+
+	return out
+}
+
+func NFTOutputFromPostData(
+	senderAddress iotago.Address,
+	senderContract iscp.Hname,
+	par iscp.RequestParameters,
+	rentStructure *iotago.RentStructure,
+	nft *iscp.NFT,
+) *iotago.NFTOutput {
+	basicOutput := BasicOutputFromPostData(senderAddress, senderContract, par, rentStructure)
+	out := NftOutputFromBasicOutput(basicOutput, nft)
+
+	if !par.AdjustToMinimumDustDeposit {
+		return out
+	}
+	requiredDustDeposit := out.VByteCost(rentStructure, nil)
+	if out.Deposit() < requiredDustDeposit {
+		// adjust the amount to the minimum required
+		out.Amount = requiredDustDeposit
+	}
+	return out
+}
+
+func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTOutput {
+	return &iotago.NFTOutput{
+		Amount:       o.Amount,
+		NativeTokens: o.NativeTokens,
+		Blocks:       o.Blocks,
+		Conditions:   o.Conditions,
+		NFTID:        nft.ID,
+		ImmutableBlocks: iotago.FeatureBlocks{
+			&iotago.IssuerFeatureBlock{Address: nft.Issuer},
+			&iotago.MetadataFeatureBlock{Data: nft.Metadata},
+		},
+	}
 }
 
 func AssetsFromOutput(o iotago.Output) *iscp.Assets {
-	switch o := o.(type) {
-	case *iotago.BasicOutput:
-		return &iscp.Assets{
-			Iotas:  o.Amount,
-			Tokens: o.NativeTokens,
-		}
-	default:
-		panic(xerrors.Errorf("AssetsFromBasicOutput: not supported output type: %T", o))
+	return &iscp.Assets{
+		Iotas:  o.Deposit(),
+		Tokens: o.NativeTokenSet(),
 	}
 }

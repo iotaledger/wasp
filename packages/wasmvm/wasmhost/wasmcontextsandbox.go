@@ -155,8 +155,9 @@ func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
-	assets := s.ctx.AllowanceAvailable()
-	return s.cvt.ScBalances(assets).Bytes()
+	allowance := s.ctx.AllowanceAvailable()
+	// TODO check, allowance.Assets is wrong
+	return s.cvt.ScBalances(allowance.Assets).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
@@ -186,12 +187,14 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	assets := s.cvt.IscpAssets(scAssets)
+	// TODO check, probably not right
+	transfer := iscp.NewAllowanceFungibleTokens(assets)
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
-	results := s.callUnlocked(contract, function, params, assets)
+	results := s.callUnlocked(contract, function, params, transfer)
 	return results.Bytes()
 }
 
-func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Assets) dict.Dict {
+func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
@@ -295,8 +298,9 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 			TargetContract: contract,
 			EntryPoint:     function,
 			Params:         params,
-			Allowance:      allow,
-			GasBudget:      1_000_000,
+			// TODO check , probably not right
+			Allowance: iscp.NewAllowanceFungibleTokens(allow),
+			GasBudget: 1_000_000,
 		},
 	}
 	if req.Delay != 0 {
@@ -363,10 +367,11 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
 	if len(scAssets) != 0 {
 		assets := s.cvt.IscpAssets(scAssets)
+		transfer := iscp.NewAllowanceFungibleTokens(assets) // TODO check, this is not right
 		if req.Create {
-			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, assets)
+			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, transfer)
 		} else {
-			s.ctx.TransferAllowedFunds(agentID, assets)
+			s.ctx.TransferAllowedFunds(agentID, transfer)
 		}
 	}
 	return nil

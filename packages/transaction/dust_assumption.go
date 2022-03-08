@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
@@ -14,6 +15,7 @@ import (
 type DustDepositAssumption struct {
 	AnchorOutput      uint64
 	NativeTokenOutput uint64
+	NFTOutput         uint64
 }
 
 func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error) {
@@ -26,6 +28,9 @@ func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error)
 	if ret.NativeTokenOutput, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
+	if ret.NFTOutput, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -33,6 +38,7 @@ func (d *DustDepositAssumption) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint64(d.AnchorOutput).
 		WriteUint64(d.NativeTokenOutput).
+		WriteUint64(d.NFTOutput).
 		Bytes()
 }
 
@@ -45,6 +51,7 @@ func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
 	return &DustDepositAssumption{
 		AnchorOutput:      aliasOutputDustDeposit(rent),
 		NativeTokenOutput: nativeTokenOutputDustDeposit(rent),
+		NFTOutput:         nftOutputDustDeposit(rent),
 	}
 }
 
@@ -86,4 +93,29 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		rent,
 	)
 	return o.VByteCost(rent, nil)
+}
+
+func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
+	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
+	basicOut := MakeBasicOutput(
+		&addr,
+		&addr,
+		&iscp.Assets{
+			Iotas: 1,
+			Tokens: iotago.NativeTokens{&iotago.NativeToken{
+				ID:     iotago.NativeTokenID{},
+				Amount: abi.MaxUint256,
+			}},
+		},
+		nil,
+		iscp.SendOptions{},
+		rent,
+	)
+	out := NftOutputFromBasicOutput(basicOut, &iscp.NFT{
+		ID:       iotago.NFTID{0},
+		Issuer:   tpkg.RandEd25519Address(),
+		Metadata: make([]byte, iotago.MaxMetadataLength),
+	})
+
+	return out.VByteCost(rent, nil)
 }

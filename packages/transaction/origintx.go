@@ -52,6 +52,7 @@ func NewChainOriginTransaction(
 		walletAddr,
 		aliasOutput.Amount,
 		nil,
+		nil,
 		unspentOutputs,
 		unspentOutputIDs,
 		l1Params.RentStructure(),
@@ -99,24 +100,28 @@ func NewRootInitRequestTransaction(
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
 	l1Params *parameters.L1,
+	initParams ...dict.Dict,
 ) (*iotago.Transaction, error) {
-	//
+	params := dict.Dict{
+		root.ParamDustDepositAssumptionsBin: NewDepositEstimate(l1Params.RentStructure()).Bytes(),
+		governance.ParamDescription:         codec.EncodeString(description),
+	}
+	for _, p := range initParams {
+		params.Extend(p)
+	}
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
 		UnspentOutputs:   unspentOutputs,
 		UnspentOutputIDs: unspentOutputIDs,
-		Requests: []*iscp.RequestParameters{{
+		Request: &iscp.RequestParameters{
 			TargetAddress: chainID.AsAddress(),
 			Metadata: &iscp.SendMetadata{
 				TargetContract: root.Contract.Hname(),
 				EntryPoint:     iscp.EntryPointInit,
 				GasBudget:      0, // TODO. Probably we need minimum fixed budget for core contract calls. 0 for init call
-				Params: dict.Dict{
-					root.ParamDustDepositAssumptionsBin: NewDepositEstimate(l1Params.RentStructure()).Bytes(),
-					governance.ParamDescription:         codec.EncodeString(description),
-				},
+				Params:         params,
 			},
-		}},
+		},
 		L1: l1Params,
 	})
 	if err != nil {

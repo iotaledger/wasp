@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -99,9 +98,10 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common account and panics is logged in the SC call
 	account := vmctx.req.SenderAccount()
 	if account == nil {
-		account = commonaccount.Get(vmctx.ChainID())
+		account = vmctx.ChainID().CommonAccount()
 	}
 	vmctx.creditToAccount(account, vmctx.req.Assets())
+	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the dust consumed or returned by internal UTXOs
 	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
@@ -250,10 +250,10 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the allowed from the sender to the target
 		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.Iotas {
+			if tokensGuaranteed < allowed.Assets.Iotas {
 				tokensGuaranteed = 0
 			} else {
-				tokensGuaranteed -= allowed.Iotas
+				tokensGuaranteed -= allowed.Assets.Iotas
 			}
 		}
 		return tokensGuaranteed
@@ -265,7 +265,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
+			if transferTokens := iscp.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
 				if tokensAvailableBig.Cmp(transferTokens) < 0 {
 					tokensAvailableBig.SetUint64(0)
 				} else {
@@ -329,8 +329,8 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 	sender := vmctx.req.SenderAccount()
 
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator, nil)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner, nil)
 }
 
 func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {

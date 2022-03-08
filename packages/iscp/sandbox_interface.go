@@ -27,6 +27,8 @@ type SandboxBase interface {
 	ChainOwnerID() *AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
+	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
+	ContractAgentID() *AgentID
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
 	// Timestamp returns the UnixNano timestamp of the current state
@@ -78,7 +80,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
+	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
@@ -92,18 +94,20 @@ type Sandbox interface {
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take
 	// from the caller with TransferAllowedFunds. Nil means no allowance left (zero budget)
 	// AllowanceAvailable MUTATES with each call to TransferAllowedFunds
-	AllowanceAvailable() *Assets
+	AllowanceAvailable() *Allowance
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
 	// TransferAllowedFunds fails if target does not exist
-	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
+	TransferAllowedFunds(target *AgentID, transfer ...*Allowance) *Allowance
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
 	// If it is a random target, funds may be inaccessible (less safe)
-	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
-	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
+	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
+	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
+	// Send sends an on-ledger request as an NFTOutput
+	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
 	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
@@ -172,7 +176,7 @@ type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
 	Params         dict.Dict
-	Allowance      *Assets
+	Allowance      *Allowance
 	GasBudget      uint64
 }
 
