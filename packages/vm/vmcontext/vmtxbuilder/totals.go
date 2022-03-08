@@ -140,7 +140,7 @@ func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionT
 	return totalsIN, totalsOUT, err
 }
 
-// TotalIotasInOutputs returns a) total iotas owned by SCs and b) total iotas locked as dust deposit
+// TotalIotasInOutputs returns (a) total iotas owned by SCs and (b) total iotas locked as dust deposit
 func (txb *AnchorTransactionBuilder) TotalIotasInOutputs() (uint64, uint64) {
 	totals := txb.sumOutputs()
 	return totals.TotalIotasInL2Accounts, totals.TotalIotasInDustDeposit
