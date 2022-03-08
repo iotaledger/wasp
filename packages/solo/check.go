@@ -4,6 +4,8 @@
 package solo
 
 import (
+	"bytes"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
@@ -83,4 +85,18 @@ func (env *Solo) AssertL1Iotas(addr iotago.Address, expected uint64) {
 
 func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected interface{}) {
 	require.True(env.T, env.L1NativeTokens(addr, tokenID).Cmp(util.ToBigInt(expected)) == 0)
+}
+
+func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {
+	accountNFTs := env.L1NFTs(addr)
+	for outputID, nftOutput := range accountNFTs {
+		nftID := nftOutput.NFTID
+		if nftID.Empty() {
+			nftID = iotago.NFTIDFromOutputID(outputID)
+		}
+		if bytes.Equal(nftID[:], id[:]) {
+			return true
+		}
+	}
+	return false
 }

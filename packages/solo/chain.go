@@ -342,7 +342,6 @@ func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
 	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, code.Bytes(),
 	)
-
 	if err != nil {
 		return "", err
 	}

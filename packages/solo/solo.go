@@ -528,6 +528,10 @@ func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.O
 	return allOuts, ids
 }
 
+func (env *Solo) L1NFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+	return env.utxoDB.GetAddressNFTs(addr)
+}
+
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
 func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
 	assets := env.L1Assets(addr)
@@ -549,4 +553,49 @@ func (env *Solo) L1Ledger() *utxodb.UtxoDB {
 
 func (env *Solo) RentStructure() *iotago.RentStructure {
 	return env.utxoDB.RentStructure()
+}
+
+type NFTMintedInfo struct {
+	Output   iotago.Output
+	OutputID iotago.OutputID
+	NFTID    iotago.NFTID
+}
+
+// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
+// Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*NFTMintedInfo, error) {
+	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
+
+	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
+		IssuerKeyPair:     issuer,
+		Target:            target,
+		UnspentOutputs:    allOuts,
+		UnspentOutputIDs:  allOutIDs,
+		L1Params:          env.L1Params(),
+		ImmutableMetadata: immutableMetadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = env.AddToLedger(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	outSet, err := tx.OutputsSet()
+	if err != nil {
+		return nil, err
+	}
+	for id, out := range outSet {
+		// we know that the tx will only produce 1 NFT output
+		if _, ok := out.(*iotago.NFTOutput); ok {
+			return &NFTMintedInfo{
+				OutputID: id,
+				Output:   out,
+				NFTID:    iotago.NFTIDFromOutputID(id),
+			}, nil
+		}
+	}
+
+	return nil, xerrors.Errorf("NFT output not found in resulting tx")
 }

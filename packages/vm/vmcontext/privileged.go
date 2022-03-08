@@ -2,8 +2,8 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
+	"github.com/iotaledger/wasp/packages/vm"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"

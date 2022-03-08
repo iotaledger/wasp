@@ -55,7 +55,7 @@ type OffLedgerRequestData struct {
 	sender     *iotago.Ed25519Address
 	signature  []byte
 	nonce      uint64
-	allowance  *Assets
+	allowance  *Allowance
 	gasBudget  uint64
 }
 
@@ -203,7 +203,7 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	}
 	r.allowance = nil
 	if transferNotNil {
-		if r.allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+		if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}
@@ -226,8 +226,12 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
+func (r *OffLedgerRequestData) NFT() *NFT {
+	return nil
+}
+
 // Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
-func (r *OffLedgerRequestData) Allowance() *Assets {
+func (r *OffLedgerRequestData) Allowance() *Allowance {
 	return r.allowance
 }
 
@@ -236,7 +240,7 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestData {
+func (r *OffLedgerRequestData) WithTransfer(transfer *Allowance) *OffLedgerRequestData {
 	r.allowance = transfer.Clone()
 	return r
 }
@@ -330,11 +334,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbo, ok := o.(iotago.FeatureBlockOutput)
-	if !ok {
-		panic("wrong type. Expected iotago.FeatureBlockOutput")
-	}
-	fbSet, err = fbo.FeatureBlocks().Set()
+	fbSet, err = o.FeatureBlocks().Set()
 	if err != nil {
 		return nil, err
 	}
@@ -344,11 +344,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		return nil, err
 	}
 
-	uco, ok := o.(iotago.UnlockConditionOutput)
-	if !ok {
-		panic("wrong type. Expected iotago.UnlockConditionOutput")
-	}
-	ucSet, err := uco.UnlockConditions().Set()
+	ucSet, err := o.UnlockConditions().Set()
 	if err != nil {
 		return nil, err
 	}
@@ -449,6 +445,8 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 		return out.Ident()
 	case *iotago.FoundryOutput:
 		return out.Ident()
+	case *iotago.NFTOutput:
+		return out.Ident()
 	case *iotago.AliasOutput:
 		return out.AliasID.ToAddress()
 	default:
@@ -456,16 +454,37 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	}
 }
 
-func (r *OnLedgerRequestData) Allowance() *Assets {
+func (r *OnLedgerRequestData) NFT() *NFT {
+	out, ok := r.output.(*iotago.NFTOutput)
+	if !ok {
+		return nil
+	}
+
+	ret := &NFT{}
+
+	utxoInput := r.UTXOInput()
+	ret.ID = util.NFTIDFromNFTOutput(out, utxoInput.ID())
+
+	for _, featureBlock := range out.ImmutableBlocks {
+		if block, ok := featureBlock.(*iotago.IssuerFeatureBlock); ok {
+			ret.Issuer = block.Address
+		}
+		if block, ok := featureBlock.(*iotago.MetadataFeatureBlock); ok {
+			ret.Metadata = block.Data
+		}
+	}
+
+	return ret
+}
+
+func (r *OnLedgerRequestData) Allowance() *Allowance {
 	return r.requestMetadata.Allowance
 }
 
 func (r *OnLedgerRequestData) Assets() *Assets {
 	amount := r.output.Deposit()
 	var tokens iotago.NativeTokens
-	if output, ok := r.output.(iotago.NativeTokenOutput); ok {
-		tokens = output.NativeTokenSet()
-	}
+	tokens = r.output.NativeTokenSet()
 	return NewAssets(amount, tokens)
 }
 
@@ -562,7 +581,7 @@ func (r *OnLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
 }
 
 func (r *OnLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock := r.unlockConditions.DustDepositReturn()
+	senderBlock := r.unlockConditions.StorageDepositReturn()
 	if senderBlock == nil {
 		return 0, false
 	}
@@ -684,7 +703,7 @@ type RequestMetadata struct {
 	// request arguments
 	Params dict.Dict
 	// Allowance intended to the target contract to take. Nil means zero allowance
-	Allowance *Assets
+	Allowance *Allowance
 	// gas budget
 	GasBudget uint64
 }
@@ -744,7 +763,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 	if allowanceNotEmpty {
-		if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+		if p.Allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}

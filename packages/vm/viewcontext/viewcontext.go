@@ -106,7 +106,7 @@ func (ctx *ViewContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *io
 		tokenID)
 }
 
-func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Assets) dict.Dict {
+func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Allowance) dict.Dict {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return ctx.callView(targetContract, epCode, params)
 }

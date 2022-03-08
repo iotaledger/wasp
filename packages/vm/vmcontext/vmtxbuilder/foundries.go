@@ -1,12 +1,12 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
@@ -175,6 +175,13 @@ func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[ui
 		ret[sn] = txb.invokedFoundries[sn].out
 	}
 	return ret
+}
+
+type foundryInvoked struct {
+	serialNumber uint32
+	input        iotago.UTXOInput      // if in != nil
+	in           *iotago.FoundryOutput // nil if created
+	out          *iotago.FoundryOutput // nil if destroyed
 }
 
 func (f *foundryInvoked) clone() *foundryInvoked {

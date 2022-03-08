@@ -12,14 +12,11 @@ func TestChainID(t *testing.T) {
 	chidStr := chid.String()
 	t.Logf("chidStr = %s", chidStr)
 
-	chidHex := chid.Hex()
-	t.Logf("chidHex = %s", chidHex)
-
 	chidback, err := ChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	chidback, err = ChainIDFromString(chidHex)
+	chidback, err = ChainIDFromString(chidStr)
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 }
