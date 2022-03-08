@@ -24,7 +24,7 @@
   "users": {
     "wasp": {
       "password": "wasp",
-      "claims": ["dashboard", "api", "chain.read", "chain.write"]
+      "claims": ["dashboard", "api"]
     }
   },
   "webapi": {
