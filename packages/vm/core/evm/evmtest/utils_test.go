@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmimpl
+package evmtest
 
 import (
 	"crypto/ecdsa"
@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -27,6 +26,8 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
@@ -78,8 +79,7 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmC
 		AutoAdjustDustDeposit: true,
 		Debug:                 true,
 		PrintStackTrace:       true,
-	}).
-		WithNativeContract(Processor)
+	})
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
@@ -88,23 +88,21 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmC
 
 func initEVMWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 	chainID := evm.DefaultChainID
-	e := &evmChainInstance{
-		t:            t,
-		solo:         env,
-		soloChain:    env.NewChain(nil, "ch1"),
+	return &evmChainInstance{
+		t:    t,
+		solo: env,
+		soloChain: env.NewChain(nil, "ch1", dict.Dict{
+			root.ParamEVM(evm.FieldChainID): codec.EncodeUint16(uint16(chainID)),
+			root.ParamEVM(evm.FieldGenesisAlloc): evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
+				crypto.PubkeyToAddress(faucetKey.PublicKey): {Balance: faucetSupply},
+			}),
+		}),
 		faucetKey:    faucetKey,
-		faucetSupply: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9)),
+		faucetSupply: faucetSupply,
 		chainID:      chainID,
 	}
-	err := e.soloChain.DeployContract(nil, evm.Contract.Name, evm.Contract.ProgramHash,
-		evm.FieldChainID, codec.EncodeUint16(uint16(chainID)),
-		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
-			e.faucetAddress(): {Balance: e.faucetSupply},
-		}),
-	)
-	require.NoError(e.t, err)
-	return e
 }
 
 func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCallOptions {
@@ -199,16 +197,6 @@ func (e *evmChainInstance) setGasRatio(newGasRatio util.Ratio32, opts ...iotaCal
 	return err
 }
 
-func (e *evmChainInstance) claimOwnership(opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, evm.FuncClaimOwnership.Name)
-	return err
-}
-
-func (e *evmChainInstance) setNextOwner(nextOwner *iscp.AgentID, opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, nextOwner)
-	return err
-}
-
 func (e *evmChainInstance) faucetAddress() common.Address {
 	return crypto.PubkeyToAddress(e.faucetKey.PublicKey)
 }
@@ -227,14 +215,6 @@ func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 	nonce, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
 	return nonce
-}
-
-func (e *evmChainInstance) getOwner() *iscp.AgentID {
-	ret, err := e.callView(evm.FuncGetOwner.Name)
-	require.NoError(e.t, err)
-	owner, err := codec.DecodeAgentID(ret.MustGet(evm.FieldResult))
-	require.NoError(e.t, err)
-	return owner
 }
 
 func (e *evmChainInstance) deployISCTestContract(creator *ecdsa.PrivateKey) *iscpTestContractInstance {

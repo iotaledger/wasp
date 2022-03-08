@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"golang.org/x/xerrors"
 )
@@ -29,6 +30,7 @@ type CreateChainParams struct {
 	Description       string
 	Textout           io.Writer
 	Prefix            string
+	InitParams        dict.Dict
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
@@ -62,7 +64,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 		originatorAddr.Bech32(iscp.Bech32Prefix), stateControllerAddr.Bech32(iscp.Bech32Prefix), par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	chainID, initRequestTx, err := CreateChainOrigin(par.Layer1Client, par.OriginatorKeyPair, stateControllerAddr, par.Description)
+	chainID, initRequestTx, err := CreateChainOrigin(par.Layer1Client, par.OriginatorKeyPair, stateControllerAddr, par.Description, par.InitParams)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
@@ -100,7 +102,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 }
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string) (*iscp.ChainID, *iotago.Transaction, error) {
+func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string, initParams dict.Dict) (*iscp.ChainID, *iotago.Transaction, error) {
 	panic("TODO implement")
 	// originatorAddr := originator.GetPublicKey().AsEd25519Address()
 	// // ----------- request owner address' outputs from the ledger
@@ -140,6 +142,7 @@ func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, 
 	// 	dscr,
 	// 	time.Now(),
 	// 	allOuts...,
+	//  initParams...,
 	// )
 	// if err != nil {
 	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)

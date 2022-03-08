@@ -22,7 +22,7 @@ func TestTutorial1(t *testing.T) {
 	// calls view root::GetChainInfo
 	chainID, chainOwnerID, coreContracts := chain.GetInfo()
 	// assert all core contracts deployed (default)
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts))
+	require.EqualValues(t, len(corecontracts.All), len(coreContracts))
 
 	t.Logf("chain ID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwnerID.String())

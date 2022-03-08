@@ -10,20 +10,21 @@ import (
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
 
 var (
-	deployParams  evmcli.DeployParams
+	evmParams     evmcli.DeployParams
 	jsonRPCServer evmcli.JSONRPCServer
 )
 
@@ -60,7 +61,7 @@ By default the server has no unlocked accounts. To send transactions, either:
 
 	log.Init(cmd)
 
-	deployParams.InitFlags(cmd)
+	evmParams.InitFlags(cmd)
 	jsonRPCServer.InitFlags(cmd)
 
 	err := cmd.Execute()
@@ -68,26 +69,23 @@ By default the server has no unlocked accounts. To send transactions, either:
 }
 
 func start(cmd *cobra.Command, args []string) {
-	env := solo.New(solo.NewTestContext("evmemulator"), &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag}).
-		WithNativeContract(evmimpl.Processor)
+	env := solo.New(solo.NewTestContext("evmemulator"), &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
-	chain := env.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, deployParams.Name, evm.Contract.ProgramHash,
-		evm.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
-		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
+	chain := env.NewChain(chainOwner, "iscpchain", dict.Dict{
+		root.ParamEVM(evm.FieldChainID): codec.EncodeUint16(uint16(evmParams.ChainID)),
+		root.ParamEVM(evm.FieldGenesisAlloc): evmtypes.EncodeGenesisAlloc(evmParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
-		evm.FieldGasRatio, deployParams.GasRatio,
-		evm.FieldBlockGasLimit, deployParams.BlockGasLimit,
-		evm.FieldBlockKeepAmount, deployParams.BlockKeepAmount,
-	)
-	log.Check(err)
+		root.ParamEVM(evm.FieldGasRatio):        evmParams.GasRatio.Bytes(),
+		root.ParamEVM(evm.FieldBlockGasLimit):   codec.EncodeUint64(evmParams.BlockGasLimit),
+		root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
+	})
 
-	if deployParams.BlockTime > 0 {
+	if evmParams.BlockTime > 0 {
 		_, err := chain.PostRequestSync(
-			solo.NewCallParams(deployParams.Name, evm.FuncSetBlockTime.Name,
-				evm.FieldBlockTime, deployParams.BlockTime,
+			solo.NewCallParams(evm.Contract.Name, evm.FuncSetBlockTime.Name,
+				evm.FieldBlockTime, evmParams.BlockTime,
 			).AddAssetsIotas(1),
 			chain.OriginatorPrivateKey,
 		)
@@ -104,5 +102,5 @@ func start(cmd *cobra.Command, args []string) {
 	signer, _ := env.NewKeyPairWithFunds()
 
 	backend := jsonrpc.NewSoloBackend(env, chain, signer)
-	jsonRPCServer.ServeJSONRPC(backend, deployParams.ChainID, deployParams.Name)
+	jsonRPCServer.ServeJSONRPC(backend, evmParams.ChainID)
 }

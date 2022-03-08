@@ -27,6 +27,8 @@ type SandboxBase interface {
 	ChainOwnerID() *AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
+	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
+	ContractAgentID() *AgentID
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
 	// Timestamp returns the UnixNano timestamp of the current state

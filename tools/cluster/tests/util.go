@@ -48,7 +48,7 @@ func (e *chainEnv) checkCoreContracts() {
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		require.NoError(e.t, err)
-		for _, rec := range core.AllCoreContractsByHash {
+		for _, rec := range corecontracts.All {
 			cr := contractRegistry[rec.Contract.Hname()]
 			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Contract.Name, rec.Contract.Hname())
 
@@ -60,7 +60,7 @@ func (e *chainEnv) checkCoreContracts() {
 }
 
 func (e *chainEnv) checkRootsOutside() {
-	for _, rec := range core.AllCoreContractsByHash {
+	for _, rec := range corecontracts.All {
 		recBack, err := e.findContract(rec.Contract.Name)
 		require.NoError(e.t, err)
 		require.NotNil(e.t, recBack)

@@ -1,6 +1,3 @@
-//go:build !noevm
-// +build !noevm
-
 package tests
 
 import (

@@ -32,13 +32,10 @@ var (
 	FuncGetLogs                             = coreutil.ViewFunc("getLogs")
 
 	// evm SC management
-	FuncSetNextOwner   = coreutil.Func("setNextOwner")
-	FuncClaimOwnership = coreutil.Func("claimOwnership")
-	FuncGetOwner       = coreutil.ViewFunc("getOwner")
-	FuncSetGasRatio    = coreutil.Func("setGasRatio")
-	FuncGetGasRatio    = coreutil.ViewFunc("getGasRatio")
-	FuncSetBlockTime   = coreutil.Func("setBlockTime")
-	FuncMintBlock      = coreutil.Func("mintBlock")
+	FuncSetGasRatio  = coreutil.Func("setGasRatio")
+	FuncGetGasRatio  = coreutil.ViewFunc("getGasRatio")
+	FuncSetBlockTime = coreutil.Func("setBlockTime")
+	FuncMintBlock    = coreutil.Func("mintBlock")
 )
 
 const (
@@ -57,7 +54,6 @@ const (
 	FieldBlockNumber             = "bn"
 	FieldBlockHash               = "bh"
 	FieldCallMsg                 = "c"
-	FieldNextEVMOwner            = "n"
 	FieldGasRatio                = "w"
 	FieldBlockGasLimit           = "gl"
 	FieldFilterQuery             = "fq"
