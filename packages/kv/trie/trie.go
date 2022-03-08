@@ -13,48 +13,20 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Trie is an updatable trie implemented on top of the key/value store. It is virtualized and optimized by cashing of the
+// Trie is an updatable trie implemented on top of the key/value store. It is virtualized and optimized by caching of the
 // trie update operation and keeping consistent trie in the cache
 type Trie struct {
-	access    accessTrie
+	// persisted trie
+	nodeStore nodeStore
+	// cached part of the trie
 	nodeCache map[kv.Key]*Node
-	deleted   map[kv.Key]struct{}
-}
-
-type ProofGeneric struct {
-	Key    []byte
-	Path   [][]byte
-	Ending ProofEndingCode
-}
-
-type ProofGenericElement struct {
-	Key []byte
-}
-
-type ProofEndingCode byte
-
-const (
-	EndingTerminal = iota
-	EndingSplit
-	EndingExtend
-)
-
-func (e ProofEndingCode) String() string {
-	switch e {
-	case EndingTerminal:
-		return "EndingTerminal"
-	case EndingSplit:
-		return "EndingSplit"
-	case EndingExtend:
-		return "EndingExtend"
-	default:
-		panic("wrong ending code")
-	}
+	// cached deleted nodes
+	deleted map[kv.Key]struct{}
 }
 
 func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 	ret := &Trie{
-		access:    *NewTrieAccess(store, model),
+		nodeStore: *NewTrieAccess(store, model),
 		nodeCache: make(map[kv.Key]*Node),
 		deleted:   make(map[kv.Key]struct{}),
 	}
@@ -63,7 +35,7 @@ func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 
 func (tr *Trie) Clone() *Trie {
 	ret := &Trie{
-		access:    tr.access,
+		nodeStore: tr.nodeStore,
 		nodeCache: make(map[kv.Key]*Node),
 		deleted:   make(map[kv.Key]struct{}),
 	}
@@ -76,16 +48,19 @@ func (tr *Trie) Clone() *Trie {
 	return ret
 }
 
+// Trie implements NodeStore interface. It caches all nodeStore for optimization purposes: multiple updates of trie do not require DB nodeStore
+var _ NodeStore = &Trie{}
+
 // GetNode takes node from the cache of fetches it from kv store
 func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
-	if tr.isDeleted(key) {
+	if _, isDeleted := tr.deleted[key]; isDeleted {
 		return nil, false
 	}
 	node, ok := tr.nodeCache[key]
 	if ok {
 		return node, true
 	}
-	node, ok = tr.access.GetNode(key)
+	node, ok = tr.nodeStore.GetNode(key)
 	if !ok {
 		return nil, false
 	}
@@ -94,7 +69,7 @@ func (tr *Trie) GetNode(key kv.Key) (*Node, bool) {
 }
 
 func (tr *Trie) Model() CommitmentModel {
-	return tr.access.model
+	return tr.nodeStore.model
 }
 
 func (tr *Trie) mustGetNode(key kv.Key) *Node {
@@ -103,25 +78,25 @@ func (tr *Trie) mustGetNode(key kv.Key) *Node {
 	return ret
 }
 
-func (tr *Trie) isDeleted(key kv.Key) bool {
-	_, ret := tr.deleted[key]
-	return ret
-}
-
+// removeKey marks key deleted
 func (tr *Trie) removeKey(key kv.Key) {
 	delete(tr.nodeCache, key)
 	tr.deleted[key] = struct{}{}
 }
 
+// unDelete removes deletion mark, if any
 func (tr *Trie) unDelete(key kv.Key) {
 	delete(tr.deleted, key)
 }
 
+// CommitToNode calculates node commitment
 func (tr *Trie) CommitToNode(n *Node) VCommitment {
-	return tr.access.model.CommitToNode(n)
+	return tr.nodeStore.model.CommitToNode(n)
 }
 
-func (tr *Trie) ApplyMutations(store kv.KVWriter) {
+// PersistMutations persists the cache to the key/value store
+// Does not clear cache
+func (tr *Trie) PersistMutations(store kv.KVWriter) {
 	for k, v := range tr.nodeCache {
 		store.Set(k, v.Bytes())
 	}
@@ -132,12 +107,14 @@ func (tr *Trie) ApplyMutations(store kv.KVWriter) {
 	}
 }
 
+// ClearCache clears the node cache
 func (tr *Trie) ClearCache() {
 	tr.nodeCache = make(map[kv.Key]*Node)
 	tr.deleted = make(map[kv.Key]struct{})
 }
 
-// newTerminalNode assumes Key does not exist in the Trie
+// newTerminalNode creates new node in the trie with specified pathFragment and terminal commitment.
+// Assumes 'key' does not exist in the Trie
 func (tr *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitment) *Node {
 	tr.unDelete(kv.Key(key))
 	ret := NewNode(pathFragment)
@@ -148,6 +125,8 @@ func (tr *Trie) newTerminalNode(key, pathFragment []byte, newTerminal TCommitmen
 	return ret
 }
 
+// newNodeCopy creates a new node by copying existing node (including cached part), assigning new path fragment and storing under new key
+// Assumes noew with 'key' does not exist
 func (tr *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 	tr.unDelete(kv.Key(key))
 	ret := *copyFrom
@@ -156,12 +135,15 @@ func (tr *Trie) newNodeCopy(key, pathFragment []byte, copyFrom *Node) *Node {
 	return &ret
 }
 
-// Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodes
-// Doesn't delete cached nodes
+// Commit calculates a new root commitment value from the cache and commits all mutations in the cached nodeStore
+// It is a re-calculation of the trie. Node caches are updated accordingly.
+// Doesn't delete cached nodeStore
 func (tr *Trie) Commit() {
 	tr.UpdateNodeCommitment("")
 }
 
+// UpdateNodeCommitment re-calculates node commitment and, recursively, its children
+// Child modification marks in 'modifiedChildren' are updated
 func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 	n, ok := tr.GetNode(key)
 	if !ok {
@@ -174,7 +156,7 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 		c := tr.UpdateNodeCommitment(childKey)
 		if c != nil {
 			if n.ChildCommitments[childIndex] == nil {
-				n.ChildCommitments[childIndex] = tr.access.model.NewVectorCommitment()
+				n.ChildCommitments[childIndex] = tr.nodeStore.model.NewVectorCommitment()
 			}
 			n.ChildCommitments[childIndex].Update(c)
 		} else {
@@ -185,19 +167,19 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 	if len(n.modifiedChildren) > 0 {
 		n.modifiedChildren = make(map[byte]struct{})
 	}
-	ret := tr.access.model.CommitToNode(n)
+	ret := tr.nodeStore.model.CommitToNode(n)
 	return ret
 }
 
-// Update updates Trie with the key/value.
-// value == nil means deletion
+// Update updates Trie with the key/value. Reorganizes and re-calculates trie, keeps cache consistent
 func (tr *Trie) Update(key []byte, value []byte) {
-	c := tr.access.model.CommitToData(value)
+	c := tr.nodeStore.model.CommitToData(value)
 	if c == nil {
+		// nil value means deletion
 		tr.Delete(key)
 		return
 	}
-
+	// find path in the trie corresponding to the key
 	proof, lastCommonPrefix, ending := proofPath(tr, key)
 	if len(proof) == 0 {
 		tr.newTerminalNode(nil, key, c)
@@ -255,7 +237,7 @@ func (tr *Trie) Update(key []byte, value []byte) {
 	tr.markModifiedCommitmentsBackToRoot(proof)
 }
 
-// Delete deletes Key/value from the Trie
+// Delete deletes Key/value from the Trie, reorganizes the trie
 func (tr *Trie) Delete(key []byte) {
 	proof, _, ending := proofPath(tr, key)
 	if len(proof) == 0 || ending != EndingTerminal {
@@ -294,6 +276,8 @@ func (tr *Trie) Delete(key []byte) {
 	}
 }
 
+// mergeNode merges nodes when it is possible, i.e. first node does not contain terminal commitment and has only one
+// child commitment. In this case pathFragments can be merged in one resulting node
 func (tr *Trie) mergeNode(key []byte, n *Node, childIndex byte) {
 	nextKey := n.ChildKey(kv.Key(key), childIndex)
 	nextNode := tr.mustGetNode(nextKey)
@@ -306,6 +290,7 @@ func (tr *Trie) mergeNode(key []byte, n *Node, childIndex byte) {
 	tr.removeKey(nextKey)
 }
 
+// markModifiedCommitmentsBackToRoot updates 'modifiedChildren' marks along tha path from the updated node to the root
 func (tr *Trie) markModifiedCommitmentsBackToRoot(proof [][]byte) {
 	for i := len(proof) - 1; i > 0; i-- {
 		k := proof[i]
@@ -349,6 +334,7 @@ const (
 	nodeReorgNOP
 )
 
+// checkReorg check what has to be done with the node after deletion: either nothing, node must be removed or merged
 func (tr *Trie) checkReorg(key kv.Key, n *Node) (reorgStatus, byte) {
 	if n.CommitsToTerminal() {
 		return nodeReorgNOP, 0
@@ -375,12 +361,7 @@ func (tr *Trie) checkReorg(key kv.Key, n *Node) (reorgStatus, byte) {
 	return nodeReorgNOP, 0
 }
 
-func (tr *Trie) mustCheckNode(key kv.Key) {
-	n := tr.mustGetNode(key)
-	status, _ := tr.checkReorg(key, n)
-	assert(status == nodeReorgNOP, "status == nodeReorgNOP")
-}
-
+// UpdateStr updates key/value pair in the trie
 func (tr *Trie) UpdateStr(key interface{}, value interface{}) {
 	var k, v []byte
 	if key != nil {
@@ -406,6 +387,7 @@ func (tr *Trie) UpdateStr(key interface{}, value interface{}) {
 	tr.Update(k, v)
 }
 
+// DeleteStr removes node from trie
 func (tr *Trie) DeleteStr(key interface{}) {
 	var k []byte
 	if key != nil {
@@ -422,7 +404,7 @@ func (tr *Trie) DeleteStr(key interface{}) {
 }
 
 func (tr *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
-	ret := tr.access.model.NewVectorCommitment()
+	ret := tr.nodeStore.model.NewVectorCommitment()
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
@@ -430,6 +412,8 @@ func (tr *Trie) VectorCommitmentFromBytes(data []byte) (VCommitment, error) {
 }
 
 // Reconcile returns a list of keys in the store which cannot be proven in the trie
+// Trie is consistent if empty slice is returned
+// May be an expensive operation
 func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 	ret := make([]kv.Key, 0)
 	store.MustIterate("", func(k kv.Key, v []byte) bool {
@@ -440,7 +424,7 @@ func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 			if !ok {
 				ret = append(ret, k)
 			} else {
-				if !EqualCommitments(tr.access.model.CommitToData(v), n.Terminal) {
+				if !EqualCommitments(tr.nodeStore.model.CommitToData(v), n.Terminal) {
 					ret = append(ret, k)
 				}
 			}
@@ -452,6 +436,8 @@ func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 	return ret
 }
 
+// UpdateAll mass-updates trie from the key/value store.
+// To be used to build trie for arbitrary key/value data sets
 func (tr *Trie) UpdateAll(store kv.KVMustIterator) {
 	store.MustIterate("", func(k kv.Key, v []byte) bool {
 		tr.Update([]byte(k), v)

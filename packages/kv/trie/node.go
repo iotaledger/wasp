@@ -32,7 +32,7 @@ type Node struct {
 	Terminal         TCommitment
 	// non-persistent, used for caching
 	newTerminal      TCommitment
-	modifiedChildren map[uint8]struct{} // to be updated child commitments
+	modifiedChildren map[byte]struct{} // to be updated child commitments
 }
 
 const (
@@ -43,15 +43,14 @@ const (
 func NewNode(pathFragment []byte) *Node {
 	return &Node{
 		PathFragment:     pathFragment,
-		ChildCommitments: make(map[uint8]VCommitment),
-		Terminal:         nil,
-		modifiedChildren: make(map[uint8]struct{}),
+		ChildCommitments: make(map[byte]VCommitment),
+		modifiedChildren: make(map[byte]struct{}),
 	}
 }
 
-func NodeFromBytes(setup CommitmentModel, data []byte) (*Node, error) {
+func NodeFromBytes(model CommitmentModel, data []byte) (*Node, error) {
 	ret := NewNode(nil)
-	if err := ret.Read(bytes.NewReader(data), setup); err != nil {
+	if err := ret.Read(bytes.NewReader(data), model); err != nil {
 		return nil, err
 	}
 	ret.newTerminal = ret.Terminal
@@ -102,6 +101,8 @@ func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {
 	buf.WriteByte(childIndex)
 	return kv.Key(buf.Bytes())
 }
+
+// Read/Write implements optimized serialization of the trie node
 
 func (n *Node) Write(w io.Writer) error {
 	if err := util.WriteBytes16(w, n.PathFragment); err != nil {

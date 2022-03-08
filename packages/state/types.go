@@ -14,7 +14,7 @@ import (
 type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
-	TrieAccess() trie.Access
+	TrieAccess() trie.NodeStore
 	PreviousStateCommitment() trie.VCommitment
 	Commit()
 	ReconcileTrie() []kv.Key
@@ -34,7 +34,7 @@ type OptimisticStateReader interface {
 	Timestamp() (time.Time, error)
 	KVStoreReader() kv.KVStoreReader
 	SetBaseline()
-	TrieAccess() trie.Access
+	TrieAccess() trie.NodeStore
 }
 
 // Update is a set of mutations

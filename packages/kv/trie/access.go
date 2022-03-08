@@ -17,25 +17,29 @@ type CommitmentModel interface {
 	CommitToData([]byte) TCommitment
 }
 
-// Access is an interface for read only access to the trie
-type Access interface {
+// NodeStore is an interface to nodeStore to the trie as a set of nodeStore represented as key/value pairs
+// Two implementations:
+// - nodeStore is a direct, non-cached nodeStore to key/value storage
+// - Trie implement a cached nodeStore
+type NodeStore interface {
 	GetNode(key kv.Key) (*Node, bool)
 	Model() CommitmentModel
 }
 
-func NewTrieAccess(store kv.KVMustReader, model CommitmentModel) *accessTrie {
-	return &accessTrie{
+func NewTrieAccess(store kv.KVMustReader, model CommitmentModel) *nodeStore {
+	return &nodeStore{
 		model: model,
 		store: store,
 	}
 }
 
-type accessTrie struct {
+// nodeStore direct nodeStore to trie
+type nodeStore struct {
 	model CommitmentModel
 	store kv.KVMustReader
 }
 
-func (tr *accessTrie) GetNode(key kv.Key) (*Node, bool) {
+func (tr *nodeStore) GetNode(key kv.Key) (*Node, bool) {
 	nodeBin := tr.store.MustGet(key)
 	if nodeBin == nil {
 		return nil, false
@@ -45,70 +49,16 @@ func (tr *accessTrie) GetNode(key kv.Key) (*Node, bool) {
 	return node, true
 }
 
-func (tr *accessTrie) Model() CommitmentModel {
+func (tr *nodeStore) Model() CommitmentModel {
 	return tr.model
 }
 
-func RootCommitment(tr Access) VCommitment {
+func RootCommitment(tr NodeStore) VCommitment {
 	n, ok := tr.GetNode("")
 	if !ok {
 		return nil
 	}
 	return tr.Model().CommitToNode(n)
-}
-
-// GetProofGeneric returns generic proof path. Contains references trie node cache.
-// Should be immediately converted into the specific proof model independent of the trie
-// Normally only called by the model
-func GetProofGeneric(tr Access, key []byte) *ProofGeneric {
-	if len(key) == 0 {
-		key = []byte{}
-	}
-	p, _, ending := proofPath(tr, key)
-	return &ProofGeneric{
-		Key:    key,
-		Path:   p,
-		Ending: ending,
-	}
-}
-
-// returns
-// - path of keys which leads to 'path'
-// - common prefix between the last key and the fragment
-func proofPath(trieAccess Access, path []byte) ([][]byte, []byte, ProofEndingCode) {
-	node, ok := trieAccess.GetNode("")
-	if !ok {
-		return nil, nil, 0
-	}
-
-	proof := make([][]byte, 0)
-	var key []byte
-
-	for {
-		// it means we continue the branch of commitment
-		proof = append(proof, key)
-		assert(len(key) <= len(path), "len(key) <= len(path)")
-		if bytes.Equal(path[len(key):], node.PathFragment) {
-			return proof, nil, EndingTerminal
-		}
-		prefix := commonPrefix(path[len(key):], node.PathFragment)
-
-		if len(prefix) < len(node.PathFragment) {
-			return proof, prefix, EndingSplit
-		}
-		assert(len(prefix) == len(node.PathFragment), "len(prefix)==len(node.PathFragment)")
-		childIndexPosition := len(key) + len(prefix)
-		assert(childIndexPosition < len(path), "childIndexPosition<len(path)")
-
-		childKey := node.ChildKey(kv.Key(key), path[childIndexPosition])
-
-		node, ok = trieAccess.GetNode(childKey)
-		if !ok {
-			// if there are no commitment to the child at the position, it means trie must be extended at this point
-			return proof, prefix, EndingExtend
-		}
-		key = []byte(childKey)
-	}
 }
 
 func EqualCommitments(c1, c2 CommitmentBase) bool {

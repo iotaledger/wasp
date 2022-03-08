@@ -55,7 +55,7 @@ func (s *mustOptimisticVirtualStateAccess) Commit() {
 	s.state.Commit()
 }
 
-func (s *mustOptimisticVirtualStateAccess) TrieAccess() trie.Access {
+func (s *mustOptimisticVirtualStateAccess) TrieAccess() trie.NodeStore {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 

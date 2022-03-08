@@ -526,7 +526,7 @@ func TestTrieRnd(t *testing.T) {
 		t.Logf("root2 = %s", c2)
 		require.True(t, trie.EqualCommitments(c1, c2))
 
-		tr2.ApplyMutations(store2)
+		tr2.PersistMutations(store2)
 		trieSize := len(store2.Bytes())
 		t.Logf("key entries = %d", len(data))
 		t.Logf("Trie entries = %d", len(store2))
@@ -1038,7 +1038,7 @@ func TestGenTrie(t *testing.T) {
 		tr := trie.New(Model, storeTrie)
 		tr.UpdateAll(store)
 		tr.Commit()
-		tr.ApplyMutations(store)
+		tr.PersistMutations(store)
 		t.Logf("trie len = %d", len(store))
 		n, err = kv.DumpToFile(store, filename+".trie")
 		require.NoError(t, err)

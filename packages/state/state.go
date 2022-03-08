@@ -192,7 +192,7 @@ func (vs *virtualStateAccess) Commit() {
 }
 
 // StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) TrieAccess() trie.Access {
+func (vs *virtualStateAccess) TrieAccess() trie.NodeStore {
 	return vs.trie
 }
 
