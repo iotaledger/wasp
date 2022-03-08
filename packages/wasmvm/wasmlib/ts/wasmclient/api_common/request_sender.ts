@@ -25,7 +25,7 @@ export async function sendRequestExt<T, U extends IResponse | null>(
     try {
         if(!path.startsWith("/"))
             path = "/" + path;        
-        const url = `${apiUrl}/${path}`;
+        const url = `${apiUrl}${path}`;
         fetchResponse = await fetch(url, {
             method: verb,
             headers,
