@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -106,23 +107,29 @@ type (
 )
 
 type NodeConnection interface {
-	Subscribe(addr iotago.Address)
-	Unsubscribe(addr iotago.Address)
-	AttachToTimeData(*iotago.AliasAddress, NodeConnectionHandleTimeDataFun)
-	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
-	// AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
-	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
-	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-	PullState(addr *iotago.AliasAddress)
-	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
-	PostTransaction(tx *iotago.Transaction)
-	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	DetachFromTransactionReceived(*iotago.AliasAddress)
-	DetachFromInclusionStateReceived(*iotago.AliasAddress)
-	DetachFromOutputReceived(*iotago.AliasAddress)
-	DetachFromUnspentAliasOutputReceived(*iotago.AliasAddress)
+	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output))
+	UnregisterChain(chainAddr iotago.Address)
+	AttachMilestones(handler func(*iotagox.MilestonePointer)) *events.Closure
+	DetachMilestones(attachID *events.Closure)
+	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
 	Close()
+
+	// Subscribe(addr iotago.Address)
+	// Unsubscribe(addr iotago.Address)
+	// AttachToTimeData(*iotago.AliasAddress, NodeConnectionHandleTimeDataFun)
+	// AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
+	// // AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
+	// AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
+	// AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
+	// PullState(addr *iotago.AliasAddress)
+	// PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
+	// PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
+	// PostTransaction(tx *iotago.Transaction)
+	// GetMetrics() nodeconnmetrics.NodeConnectionMetrics
+	// DetachFromTransactionReceived(*iotago.AliasAddress)
+	// DetachFromInclusionStateReceived(*iotago.AliasAddress)
+	// DetachFromOutputReceived(*iotago.AliasAddress)
+	// DetachFromUnspentAliasOutputReceived(*iotago.AliasAddress)
 }
 
 type ChainNodeConnection interface {

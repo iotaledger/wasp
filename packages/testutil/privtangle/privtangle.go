@@ -386,8 +386,30 @@ func (pt *PrivTangle) PostSimpleValueTX(
 	recipientAddr iotago.Address,
 	amount uint64,
 ) (*iotago.Message, error) {
+	tx, err := pt.MakeSimpleValueTX(ctx, nc, sender, recipientAddr, amount)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to build a tx: %w", err)
+	}
 	//
-	// Build a TX.
+	// Build a message and post it.
+	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
+	}
+	txMsg, err = nc.SubmitMessage(ctx, txMsg)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
+	}
+	return txMsg, nil
+}
+
+func (pt *PrivTangle) MakeSimpleValueTX(
+	ctx context.Context,
+	nc *nodeclient.Client,
+	sender *cryptolib.KeyPair,
+	recipientAddr iotago.Address,
+	amount uint64,
+) (*iotago.Transaction, error) {
 	senderAddr := sender.GetPublicKey().AsEd25519Address()
 	senderOuts, err := pt.OutputMap(ctx, nc, senderAddr)
 	if err != nil {
@@ -430,17 +452,7 @@ func (pt *PrivTangle) PostSimpleValueTX(
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
-	//
-	// Build a message and post it.
-	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = nc.SubmitMessage(ctx, txMsg)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
-	}
-	return txMsg, nil
+	return tx, nil
 }
 
 func (pt *PrivTangle) OutputMap(ctx context.Context, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) (map[iotago.OutputID]iotago.Output, error) {
