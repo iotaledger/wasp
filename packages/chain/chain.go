@@ -182,11 +182,11 @@ type WAL interface {
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
-	SyncedStateCommitment trie.CommitmentBase
+	SyncedStateCommitment trie.VCommitment
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
 	StateOutputID         *iotago.UTXOInput
-	StateOutputCommitment trie.CommitmentBase
+	StateOutputCommitment trie.VCommitment
 	StateOutputTimestamp  time.Time
 }
 

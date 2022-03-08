@@ -26,7 +26,7 @@ type Trie struct {
 
 func New(model CommitmentModel, store kv.KVMustReader) *Trie {
 	ret := &Trie{
-		nodeStore: *NewTrieAccess(store, model),
+		nodeStore: *NewNodeStore(store, model),
 		nodeCache: make(map[kv.Key]*Node),
 		deleted:   make(map[kv.Key]struct{}),
 	}

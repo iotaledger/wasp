@@ -81,7 +81,7 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 	}
 }
 
-func (cT *candidateBlock) getNextStateCommitment() trie.CommitmentBase {
+func (cT *candidateBlock) getNextStateCommitment() trie.VCommitment {
 	return cT.nextStateCommitment
 }
 

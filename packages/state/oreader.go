@@ -25,7 +25,7 @@ func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *
 	return &OptimisticStateReaderImpl{
 		db:          db,
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
-		trie:        trie.NewTrieAccess(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
+		trie:        trie.NewNodeStore(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
 	}
 }
 

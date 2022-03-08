@@ -26,7 +26,7 @@ type NodeStore interface {
 	Model() CommitmentModel
 }
 
-func NewTrieAccess(store kv.KVMustReader, model CommitmentModel) *nodeStore {
+func NewNodeStore(store kv.KVMustReader, model CommitmentModel) *nodeStore {
 	return &nodeStore{
 		model: model,
 		store: store,
