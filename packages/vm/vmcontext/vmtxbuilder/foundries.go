@@ -178,6 +178,13 @@ func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[ui
 	return ret
 }
 
+type foundryInvoked struct {
+	serialNumber uint32
+	input        iotago.UTXOInput      // if in != nil
+	in           *iotago.FoundryOutput // nil if created
+	out          *iotago.FoundryOutput // nil if destroyed
+}
+
 func (f *foundryInvoked) clone() *foundryInvoked {
 	return &foundryInvoked{
 		in:  cloneFoundryOutput(f.in),

@@ -100,7 +100,7 @@ func test2Chains(t *testing.T, w bool) {
 		sbtestsc.ParamGasBudgetToSend, estimatedWdGas,
 		sbtestsc.ParamIotasToWithdrawal, iotasToWithdrawalFromChain1).
 		AddAssetsIotas(iotasToSend).
-		WithAllowance(iscp.NewAssetsIotas(reqAllowance)).
+		WithAllowance(iscp.NewAllowanceIotas(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = chain2.PostRequestSync(req, userWallet)

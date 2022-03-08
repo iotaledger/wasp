@@ -3,7 +3,6 @@ package accounts
 import (
 	"math"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -15,19 +14,23 @@ import (
 )
 
 var Processor = Contract.Processor(initialize,
+	// views
+	FuncGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
+	FuncViewBalance.WithHandler(viewBalance),
+	FuncViewTotalAssets.WithHandler(viewTotalAssets),
+	FuncViewAccounts.WithHandler(viewAccounts),
+	FuncViewAccountNFTs.WithHandler(viewAccountNFTs),
+	FuncViewNFTData.WithHandler(viewNFTData),
+	// funcs
 	FuncDeposit.WithHandler(deposit),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
 	FuncGetAccountNonce.WithHandler(getAccountNonce),
-	FuncGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
 	FuncFoundryOutput.WithHandler(foundryOutput),
-	FuncViewBalance.WithHandler(viewBalance),
-	FuncViewTotalAssets.WithHandler(viewTotalAssets),
-	FuncViewAccounts.WithHandler(viewAccounts),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
@@ -93,7 +96,15 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	}
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
-	fundsToWithdraw := ctx.AllowanceAvailable()
+	allowance := ctx.AllowanceAvailable()
+	fundsToWithdraw := allowance.Assets
+	var nftID *iotago.NFTID
+	if len(allowance.NFTs) > 0 {
+		if len(allowance.NFTs) > 1 {
+			panic(ErrTooManyNFTsInAllowance)
+		}
+		nftID = &allowance.NFTs[0]
+	}
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
@@ -103,6 +114,9 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	isCallerAContract := caller.Hname() != 0
 
 	if isCallerAContract {
+		allowance := iscp.NewAllowanceFungibleTokens(
+			iscp.NewAssetsIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
 			TargetAddress: ctx.Caller().Address(),
@@ -110,13 +124,17 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 			Metadata: &iscp.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
-				Allowance:      iscp.NewAssetsIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+				Allowance:      allowance,
 				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(caller)},
 				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
 			},
 		}
 
-		ctx.Send(tx)
+		if nftID != nil {
+			ctx.SendAsNFT(tx, *nftID)
+		} else {
+			ctx.Send(tx)
+		}
 		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 		return nil
 	}
@@ -124,7 +142,11 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 		TargetAddress: ctx.Caller().Address(),
 		Assets:        fundsToWithdraw,
 	}
-	ctx.Send(tx)
+	if nftID != nil {
+		ctx.SendAsNFT(tx, *nftID)
+	} else {
+		ctx.Send(tx)
+	}
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 	return nil
 }
@@ -150,48 +172,8 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	if toWithdraw.Iotas > bottomIotas {
 		toWithdraw.Iotas -= bottomIotas
 	}
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
 	return nil
-}
-
-// viewBalance returns colored balances of the account belonging to the AgentID
-// Params:
-// - ParamAgentID
-func viewBalance(ctx iscp.SandboxView) dict.Dict {
-	ctx.Log().Debugf("accounts.viewBalance")
-	aid, err := ctx.Params().GetAgentID(ParamAgentID)
-	ctx.RequireNoError(err)
-	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
-}
-
-// viewTotalAssets returns total colored balances controlled by the chain
-func viewTotalAssets(ctx iscp.SandboxView) dict.Dict {
-	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State()))
-}
-
-// viewAccounts returns list of all accounts as keys of the ImmutableCodec
-func viewAccounts(ctx iscp.SandboxView) dict.Dict {
-	return getAccountsIntern(ctx.State())
-}
-
-func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
-	account := ctx.Params().MustGetAgentID(ParamAgentID)
-	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
-	ret := dict.New()
-	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
-	return ret
-}
-
-// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
-func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
-	mapping := getNativeTokenOutputMapR(ctx.State())
-	ret := dict.New()
-	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), []byte{0xFF})
-		return true
-	})
-	return ret
 }
 
 // Params:
@@ -281,18 +263,4 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewAssetsIotas(uint64(dustAdjustment)))
 	}
 	return nil
-}
-
-// foundryOutput takes serial number and returns corresponding foundry output in serialized form
-func foundryOutput(ctx iscp.SandboxView) dict.Dict {
-	ctx.Log().Debugf("accounts.foundryOutput")
-
-	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
-	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-	ctx.RequireNoError(err, "internal: error while serializing foundry output")
-	ret := dict.New()
-	ret.Set(ParamFoundryOutputBin, outBin)
-	return ret
 }

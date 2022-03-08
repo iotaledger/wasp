@@ -54,6 +54,7 @@ var Processor = Contract.Processor(initialize,
 	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
+	FuncSendNFTsBack.WithHandler(sendNFTsBack),
 )
 
 var (
@@ -106,6 +107,7 @@ var (
 	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
 	FuncInfiniteLoop           = coreutil.Func("infiniteLoop")
 	FuncInfiniteLoopView       = coreutil.ViewFunc("infiniteLoopView")
+	FuncSendNFTsBack           = coreutil.Func("sendNFTsBack")
 )
 
 const (

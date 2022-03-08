@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -126,7 +127,7 @@ func TestCreditDebit4(t *testing.T) {
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := iscp.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewAssetsIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
 
@@ -140,8 +141,8 @@ func TestCreditDebit4(t *testing.T) {
 	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	transfer = iscp.NewAssets(20, nil)
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer)
+	transfer = iscp.NewAssetsIotas(20)
+	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	require.True(t, ok)
 	total = checkLedgerT(t, state, "cp2")
 
@@ -168,7 +169,7 @@ func TestCreditDebit5(t *testing.T) {
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := iscp.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewAssetsIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
 
@@ -182,8 +183,8 @@ func TestCreditDebit5(t *testing.T) {
 	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	transfer = iscp.NewAssets(50, nil)
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer)
+	transfer = iscp.NewAssetsIotas(50)
+	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	require.False(t, ok)
 	total = checkLedgerT(t, state, "cp2")
 
@@ -207,14 +208,14 @@ func TestCreditDebit6(t *testing.T) {
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := iscp.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewAssetsIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	checkLedgerT(t, state, "cp1")
 
 	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer)
+	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	require.True(t, ok)
 	total = checkLedgerT(t, state, "cp2")
 
@@ -254,7 +255,7 @@ func TestMoveAll(t *testing.T) {
 	agentID1 := iscp.NewRandomAgentID()
 	agentID2 := iscp.NewRandomAgentID()
 
-	transfer := iscp.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewAssetsIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
 	accs := getAccountsIntern(state)
@@ -262,7 +263,7 @@ func TestMoveAll(t *testing.T) {
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
-	MoveBetweenAccounts(state, agentID1, agentID2, transfer)
+	MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
 	accs = getAccountsIntern(state)
 	require.EqualValues(t, 1, len(accs))
@@ -295,6 +296,53 @@ func TestDebitAll(t *testing.T) {
 	require.True(t, assets.IsEmpty())
 }
 
+func TestTransferNFTs(t *testing.T) {
+	state := dict.New()
+	total := checkLedgerT(t, state, "cp0")
+
+	require.True(t, total.Equals(iscp.NewEmptyAssets()))
+
+	agentID1 := iscp.NewRandomAgentID()
+	NFT1 := &iscp.NFT{
+		ID:       iotago.NFTID{123},
+		Issuer:   tpkg.RandEd25519Address(),
+		Metadata: []byte("foobar"),
+	}
+	CreditNFTToAccount(state, agentID1, NFT1)
+	// nft is credited
+	user1NFTs := getAccountNFTs(getAccountR(state, agentID1))
+	require.Len(t, user1NFTs, 1)
+	require.Equal(t, user1NFTs[0], NFT1.ID)
+
+	// nft data is saved
+	nftData := GetNFTData(state, &NFT1.ID)
+	require.Equal(t, nftData.ID, NFT1.ID)
+	require.Equal(t, nftData.Issuer, NFT1.Issuer)
+	require.Equal(t, nftData.Metadata, NFT1.Metadata)
+
+	agentID2 := iscp.NewRandomAgentID()
+
+	// cannot move an NFT that is not owned
+	ok := MoveBetweenAccounts(state, agentID1, agentID2, nil, []*iotago.NFTID{{111}})
+	require.False(t, ok)
+
+	// moves successfully when the NFT is owned
+	ok = MoveBetweenAccounts(state, agentID1, agentID2, nil, []*iotago.NFTID{&NFT1.ID})
+	require.True(t, ok)
+
+	user1NFTs = getAccountNFTs(getAccountR(state, agentID1))
+	require.Len(t, user1NFTs, 0)
+	user2NFTs := getAccountNFTs(getAccountR(state, agentID2))
+	require.Len(t, user2NFTs, 1)
+	require.Equal(t, user2NFTs[0], NFT1.ID)
+
+	// remove the NFT from the chain
+	DebitNFTFromAccount(state, agentID2, &NFT1.ID)
+	require.Panics(t, func() {
+		GetNFTData(state, &NFT1.ID)
+	})
+}
+
 func TestFoundryOutputRec(t *testing.T) {
 	o := foundryOutputRec{
 		Amount:            300,
@@ -316,4 +364,25 @@ func TestFoundryOutputRec(t *testing.T) {
 	require.True(t, o.CirculatingSupply.Cmp(o1.CirculatingSupply) == 0)
 	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
 	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)
+}
+
+func TestCreditDebitNFT1(t *testing.T) {
+	state := dict.New()
+
+	agentID1 := iscp.KnownAgentID(1, 2)
+	nft := iscp.NFT{
+		ID:       iotago.NFTID{123},
+		Issuer:   tpkg.RandEd25519Address(),
+		Metadata: []byte("foobar"),
+	}
+	CreditNFTToAccount(state, agentID1, &nft)
+
+	accNFTs := GetAccountNFTs(state, agentID1)
+	require.Len(t, accNFTs, 1)
+	require.Equal(t, accNFTs[0], nft.ID)
+
+	DebitNFTFromAccount(state, agentID1, &nft.ID)
+
+	accNFTs = GetAccountNFTs(state, agentID1)
+	require.Len(t, accNFTs, 0)
 }

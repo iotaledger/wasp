@@ -18,12 +18,16 @@ import (
 
 var errorMessageToTest = "Test error message %v"
 
-var errorContractName = "ErrorContract"
-var errorContract = coreutil.NewContract(errorContractName, "error contract")
+var (
+	errorContractName = "ErrorContract"
+	errorContract     = coreutil.NewContract(errorContractName, "error contract")
+)
 
-var funcRegisterErrors = coreutil.Func("register_errors")
-var funcThrowErrorWithoutArgs = coreutil.Func("throw_error_without_args")
-var funcThrowErrorWithArgs = coreutil.Func("throw_error_with_args")
+var (
+	funcRegisterErrors        = coreutil.Func("register_errors")
+	funcThrowErrorWithoutArgs = coreutil.Func("throw_error_without_args")
+	funcThrowErrorWithArgs    = coreutil.Func("throw_error_with_args")
+)
 
 var testError *iscp.VMErrorTemplate
 

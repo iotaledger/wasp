@@ -126,6 +126,7 @@ func TestTxBuilderBasic(t *testing.T) {
 			return nil, nil
 		},
 			nil,
+			nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -152,6 +153,7 @@ func TestTxBuilderBasic(t *testing.T) {
 			return nil, nil
 		},
 			nil,
+			nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -162,7 +164,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
-			anchor, anchorID, balanceLoader, nil,
+			anchor, anchorID, balanceLoader, nil, nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -189,7 +191,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("4", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -267,7 +269,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var numTokenIDs int
 
 	initTest := func() {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -305,7 +307,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.EqualValues(t, int(expectedDust), sumOUT.TotalIotasInDustDeposit)
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -633,7 +635,7 @@ func TestDustDeposit(t *testing.T) {
 		TargetContract: 0,
 		EntryPoint:     0,
 		Params:         dict.New(),
-		Allowance:      iscp.NewEmptyAssets(),
+		Allowance:      iscp.NewEmptyAllowance(),
 		GasBudget:      0,
 	}
 	t.Run("calc dust assumptions", func(t *testing.T) {
@@ -655,7 +657,7 @@ func TestDustDeposit(t *testing.T) {
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
-		require.Equal(t, out.Amount, out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
+		require.Equal(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
@@ -667,7 +669,7 @@ func TestDustDeposit(t *testing.T) {
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
-		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
+		require.GreaterOrEqual(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
 	})
 }
 
@@ -706,7 +708,7 @@ func TestFoundries(t *testing.T) {
 	var numTokenIDs int
 
 	initTest := func() {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			parameters.L1ForTesting(),
 		)
@@ -760,7 +762,7 @@ func TestSerDe(t *testing.T) {
 			TargetContract: 0,
 			EntryPoint:     0,
 			Params:         dict.New(),
-			Allowance:      iscp.NewEmptyAssets(),
+			Allowance:      iscp.NewEmptyAllowance(),
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()
@@ -780,7 +782,7 @@ func TestSerDe(t *testing.T) {
 		condSet := out.Conditions.MustSet()
 		condSetBack := outBack.Conditions.MustSet()
 		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
-		require.EqualValues(t, out.Amount, outBack.Amount)
+		require.EqualValues(t, out.Deposit(), outBack.Amount)
 		require.EqualValues(t, 0, len(outBack.NativeTokens))
 		require.True(t, outBack.Blocks.Equal(out.Blocks))
 	})
