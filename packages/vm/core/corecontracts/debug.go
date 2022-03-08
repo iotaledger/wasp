@@ -1,11 +1,9 @@
-package core
+package corecontracts
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
@@ -16,16 +14,16 @@ func init() {
 // for debugging
 func PrintWellKnownHnames() {
 	fmt.Printf("--------------- well known hnames ------------------\n")
-	hashes := make([]hashing.HashValue, 0)
-	for _, rec := range AllCoreContractsByHash {
-		hashes = append(hashes, rec.Contract.ProgramHash)
+	hnames := make([]iscp.Hname, 0)
+	for h := range All {
+		hnames = append(hnames, h)
 	}
-	sort.Slice(hashes, func(i, j int) bool {
-		return bytes.Compare(hashes[i][:], hashes[j][:]) < 0
+	sort.Slice(hnames, func(i, j int) bool {
+		return hnames[i] < hnames[j]
 	})
-	for _, h := range hashes {
-		rec := AllCoreContractsByHash[h]
-		fmt.Printf("    %10d, %10s: '%s'\n", rec.Contract.Hname(), rec.Contract.Hname(), rec.Contract.Name)
+	for _, h := range hnames {
+		rec := All[h]
+		fmt.Printf("    %10d, %10s: '%s'\n", rec.Hname(), rec.Hname(), rec.Name)
 	}
 	fmt.Printf("    %10d, %10s: '%s'\n", iscp.EntryPointInit, iscp.EntryPointInit, iscp.FuncInit)
 	fmt.Printf("    %10d, %10s: '%s'\n", iscp.Hn("testcore"), iscp.Hn("testcore"), "testcore")

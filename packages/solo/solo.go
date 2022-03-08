@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -29,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -158,7 +160,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
 		vmRunner:                     runvm.NewVMRunner(),
-		processorConfig:              processors.NewConfig(),
+		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
@@ -194,7 +196,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 // NewChain deploys new chain instance.
 //
 // If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
-// If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
+// ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
 //  - empty virtual state is initialized
@@ -204,14 +206,14 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, validatorFeeTarget...)
+func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initParams ...dict.Dict) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initParams...)
 	return ret
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initParams ...dict.Dict) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
@@ -226,10 +228,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
-	feeTarget := originatorAgentID
-	if len(validatorFeeTarget) > 0 {
-		feeTarget = validatorFeeTarget[0]
-	}
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
@@ -276,7 +274,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
-		ValidatorFeeTarget:     feeTarget,
+		ValidatorFeeTarget:     originatorAgentID,
 		State:                  vs,
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
@@ -295,6 +293,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		outs,
 		ids,
 		env.utxoDB.L1Params(),
+		initParams...,
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)

@@ -29,7 +29,7 @@ func storeBlob(ctx iscp.Sandbox) dict.Dict {
 
 	directory := GetDirectory(state)
 	ctx.Requiref(!directory.MustHasAt(blobHash[:]),
-		"blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
+		"blob.storeBlob.fail: blob with hash %s already exists", blobHash.String())
 
 	// get a record by blob hash
 	blbValues := GetBlobValues(state, blobHash)

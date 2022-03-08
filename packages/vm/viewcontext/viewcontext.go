@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
@@ -73,8 +73,8 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 
 func (ctx *ViewContext) AccountID() *iscp.AgentID {
 	hname := ctx.CurrentContractHname()
-	if commonaccount.IsCoreHname(hname) {
-		return commonaccount.Get(ctx.ChainID())
+	if corecontracts.IsCoreHname(hname) {
+		return ctx.ChainID().CommonAccount()
 	}
 	return iscp.NewAgentID(ctx.ChainID().AsAddress(), hname)
 }

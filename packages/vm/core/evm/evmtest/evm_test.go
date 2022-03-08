@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmimpl
+package evmtest
 
 import (
 	"bytes"
@@ -10,16 +10,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
 
@@ -107,68 +105,6 @@ func TestGasCharged(t *testing.T) {
 	require.Greater(t, res.evmReceipt.GasUsed, uint64(0))
 	require.Greater(t, res.iscpReceipt.GasBurned, uint64(0))
 	require.Greater(t, res.iscpReceipt.GasFeeCharged, uint64(0))
-}
-
-func TestOwner(t *testing.T) {
-	evmChain := initEVM(t)
-
-	// the default owner is correct
-	owner := evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
-
-	// only the owner can call the setOwner endpoint
-	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-	user1AgentID := iscp.NewAgentID(user1Address, 0)
-	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evm.Contract.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-			AddAssetsIotas(100000).
-			WithMaxAffordableGasBudget(),
-		user1Wallet,
-	)
-	require.Error(t, err)
-
-	// ensure owner didn't change after a failed call
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
-
-	// current owner is able to set a new "next owner"
-	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evm.Contract.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-			AddAssetsIotas(100000).
-			WithMaxAffordableGasBudget(),
-		evmChain.soloChain.OriginatorPrivateKey,
-	)
-	require.NoError(t, err)
-
-	// check that the owner didn't change yet (new owner needs to claim ownership)
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
-
-	// check no other user can claim ownership
-	user2Wallet, _ := evmChain.solo.NewKeyPairWithFunds()
-
-	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evm.Contract.Name, evm.FuncClaimOwnership.Name).
-			AddAssetsIotas(100000).
-			WithMaxAffordableGasBudget(),
-		user2Wallet,
-	)
-	require.Error(t, err)
-
-	// owner still the same
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
-
-	// claim ownership successfully
-	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evm.Contract.Name, evm.FuncClaimOwnership.Name).
-			AddAssetsIotas(100000).
-			WithMaxAffordableGasBudget(),
-		user1Wallet,
-	)
-	require.NoError(t, err)
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(user1AgentID))
 }
 
 func TestGasRatio(t *testing.T) {
@@ -392,49 +328,4 @@ func TestBlockTime(t *testing.T) {
 	require.EqualValues(t, 2, evmChain.getBlockNumber())
 	block = evmChain.getBlockByNumber(2)
 	require.EqualValues(t, 0, len(block.Transactions()))
-}
-
-var (
-	evmChainMgmtContract = coreutil.NewContract("EVMChainManagement", "EVM chain management")
-
-	mgmtFuncClaimOwnership = coreutil.Func("claimOwnership")
-)
-
-func TestRequestGasFees(t *testing.T) {
-	// TODO this SC could adjust gasPerIota based on some conditions
-
-	evmChainMgmtProcessor := evmChainMgmtContract.Processor(nil,
-		mgmtFuncClaimOwnership.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
-			ctx.Call(evm.Contract.Hname(), evm.FuncClaimOwnership.Hname(), nil, nil)
-			return nil
-		}),
-	)
-
-	evmChain := initEVM(t, evmChainMgmtProcessor)
-	soloChain := evmChain.soloChain
-
-	err := soloChain.DeployContract(nil, evmChainMgmtContract.Name, evmChainMgmtContract.ProgramHash)
-	require.NoError(t, err)
-
-	// deploy solidity `storage` contract (just to produce some fees to be claimed)
-	evmChain.deployStorageContract(evmChain.faucetKey, 42)
-
-	// change owner to evnchainmanagement SC
-	managerAgentID := iscp.NewAgentID(soloChain.ChainID.AsAddress(), iscp.Hn(evmChainMgmtContract.Name))
-	_, err = soloChain.PostRequestSync(
-		solo.NewCallParams(evm.Contract.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, managerAgentID).
-			AddAssetsIotas(1000).
-			WithMaxAffordableGasBudget(),
-		soloChain.OriginatorPrivateKey,
-	)
-	require.NoError(t, err)
-
-	// claim ownership
-	_, err = soloChain.PostRequestSync(
-		solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).
-			AddAssetsIotas(1000).
-			WithMaxAffordableGasBudget(),
-		soloChain.OriginatorPrivateKey,
-	)
-	require.NoError(t, err)
 }

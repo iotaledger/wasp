@@ -1,20 +1,10 @@
-//go:build !noevm
-// +build !noevm
-
 package chain
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -30,51 +20,13 @@ func init() {
 		}
 		chainCmd.AddCommand(evmCmd)
 
-		initEVMDeploy(evmCmd)
 		initJSONRPCCommand(evmCmd)
 	})
-}
-
-func initEVMDeploy(evmCmd *cobra.Command) {
-	var deployParams evmcli.DeployParams
-	evmDeployCmd := &cobra.Command{
-		Use:   "deploy",
-		Short: "Deploy the evm contract (i.e. create a new EVM chain)",
-		Run: func(cmd *cobra.Command, args []string) {
-			deployContract(deployParams.Name, deployParams.Description, evm.Contract.ProgramHash, dict.Dict{
-				evm.FieldChainID:         codec.EncodeUint16(uint16(deployParams.ChainID)),
-				evm.FieldGenesisAlloc:    evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
-				evm.FieldBlockGasLimit:   codec.EncodeUint64(deployParams.BlockGasLimit),
-				evm.FieldBlockKeepAmount: codec.EncodeInt32(deployParams.BlockKeepAmount),
-				evm.FieldGasRatio:        codec.EncodeRatio32(deployParams.GasRatio),
-			})
-			log.Printf("contract `%s` successfully deployed.\n", deployParams.Name)
-
-			if deployParams.BlockTime > 0 {
-				log.Printf("Setting block time to %ds...\n", deployParams.BlockTime)
-				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					return SCClient(iscp.Hn(deployParams.Name)).PostRequest(
-						evm.FuncSetBlockTime.Name,
-						chainclient.PostRequestParams{
-							Transfer: iscp.NewAssets(1, nil),
-							Args: dict.Dict{
-								evm.FieldBlockTime: codec.EncodeUint32(deployParams.BlockTime),
-							},
-						},
-					)
-				})
-			}
-		},
-	}
-	evmCmd.AddCommand(evmDeployCmd)
-
-	deployParams.InitFlags(evmDeployCmd)
 }
 
 func initJSONRPCCommand(evmCmd *cobra.Command) {
 	var jsonRPCServer evmcli.JSONRPCServer
 	var chainID int
-	var contractName string
 
 	jsonRPCCmd := &cobra.Command{
 		Args:  cobra.NoArgs,
@@ -88,12 +40,11 @@ By default the server has no unlocked accounts. To send transactions, either:
 - configure an unlocked account with --account, and use eth_sendTransaction`,
 		Run: func(cmd *cobra.Command, args []string) {
 			backend := jsonrpc.NewWaspClientBackend(Client())
-			jsonRPCServer.ServeJSONRPC(backend, chainID, contractName)
+			jsonRPCServer.ServeJSONRPC(backend, chainID)
 		},
 	}
 
 	jsonRPCServer.InitFlags(jsonRPCCmd)
-	jsonRPCCmd.Flags().IntVarP(&chainID, "chainid", "", evm.DefaultChainID, "ChainID (used for signing transactions)")
-	jsonRPCCmd.Flags().StringVarP(&contractName, "name", "", evm.Contract.Name, "evm contract name")
+	jsonRPCCmd.Flags().IntVarP(&chainID, "evm-chainid", "", evm.DefaultChainID, "ChainID (used for signing transactions)")
 	evmCmd.AddCommand(jsonRPCCmd)
 }

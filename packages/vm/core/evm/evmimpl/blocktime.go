@@ -7,17 +7,17 @@ import (
 	"math"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 func setBlockTime(ctx iscp.Sandbox) dict.Dict {
-	requireOwner(ctx)
+	ctx.RequireCallerIsChainOwner()
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
@@ -40,7 +40,7 @@ func getBlockTime(state kv.KVStoreReader) uint32 {
 }
 
 func scheduleNextBlock(ctx iscp.Sandbox) {
-	requireOwner(ctx, true)
+	ctx.RequireCallerAnyOf([]*iscp.AgentID{ctx.ChainOwnerID(), ctx.ContractAgentID()})
 
 	blockTime := getBlockTime(ctx.State())
 	if blockTime == 0 {

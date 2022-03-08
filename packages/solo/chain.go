@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -323,7 +322,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() *iscp.AgentID {
-	return commonaccount.Get(ch.ChainID)
+	return ch.ChainID.CommonAccount()
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain

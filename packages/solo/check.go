@@ -9,9 +9,9 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -31,12 +31,12 @@ func (ch *Chain) CheckChain() {
 	_, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	for _, rec := range core.AllCoreContractsByHash {
-		recFromState, err := ch.FindContract(rec.Contract.Name)
+	for _, c := range corecontracts.All {
+		recFromState, err := ch.FindContract(c.Name)
 		require.NoError(ch.Env.T, err)
-		require.EqualValues(ch.Env.T, rec.Contract.Name, recFromState.Name)
-		require.EqualValues(ch.Env.T, rec.Contract.Description, recFromState.Description)
-		require.EqualValues(ch.Env.T, rec.Contract.ProgramHash, recFromState.ProgramHash)
+		require.EqualValues(ch.Env.T, c.Name, recFromState.Name)
+		require.EqualValues(ch.Env.T, c.Description, recFromState.Description)
+		require.EqualValues(ch.Env.T, c.ProgramHash, recFromState.ProgramHash)
 		require.True(ch.Env.T, recFromState.Creator.IsNil())
 	}
 	ch.CheckAccountLedger()

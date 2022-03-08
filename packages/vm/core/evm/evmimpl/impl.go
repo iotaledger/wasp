@@ -7,22 +7,19 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/emulator"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 var Processor = evm.Contract.Processor(initialize,
-	evm.FuncSetNextOwner.WithHandler(setNextOwner),
-	evm.FuncClaimOwnership.WithHandler(claimOwnership),
 	evm.FuncSetGasRatio.WithHandler(setGasRatio),
-	evm.FuncGetOwner.WithHandler(getOwner),
 	evm.FuncGetGasRatio.WithHandler(getGasRatio),
 	evm.FuncSetBlockTime.WithHandler(setBlockTime),
 	evm.FuncMintBlock.WithHandler(mintBlock),
@@ -45,21 +42,24 @@ var Processor = evm.Contract.Processor(initialize,
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
-	a := assert.NewAssert(ctx.Log())
-	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
-	a.RequireNoError(err)
+	genesisAlloc := core.GenesisAlloc{}
+	var err error
+	if ctx.Params().MustHas(evm.FieldGenesisAlloc) {
+		genesisAlloc, err = evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
+		ctx.RequireNoError(err)
+	}
 
 	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldBlockGasLimit), evm.BlockGasLimitDefault)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 
 	blockKeepAmount, err := codec.DecodeInt32(ctx.Params().MustGet(evm.FieldBlockKeepAmount), evm.BlockKeepAmountDefault)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 
 	// add the standard ISC contract at arbitrary address 0x1074
 	deployISCContractOnGenesis(genesisAlloc)
 
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	emulator.Init(
 		evmStateSubrealm(ctx.State()),
 		chainID,
@@ -72,7 +72,6 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evm.DefaultGasRatio)
 	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
 
-	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 	return nil
 }
 
@@ -84,11 +83,9 @@ func mintBlock(ctx iscp.Sandbox) dict.Dict {
 }
 
 func applyTransaction(ctx iscp.Sandbox) dict.Dict {
-	a := assert.NewAssert(ctx.Log())
-
 	tx := &types.Transaction{}
 	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransactionData))
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 
 	blockTime := getBlockTime(ctx.State())
 
@@ -187,21 +184,19 @@ func getStorage(ctx iscp.SandboxView) dict.Dict {
 }
 
 func getLogs(ctx iscp.SandboxView) dict.Dict {
-	a := assert.NewAssert(ctx.Log())
 	q, err := evmtypes.DecodeFilterQuery(ctx.Params().MustGet(evm.FieldFilterQuery))
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
 	logs := emu.FilterLogs(q)
 	return result(evmtypes.EncodeLogs(logs))
 }
 
 func callContract(ctx iscp.SandboxView) dict.Dict {
-	a := assert.NewAssert(ctx.Log())
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	res, err := emu.CallContract(callMsg)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	return result(res)
 }

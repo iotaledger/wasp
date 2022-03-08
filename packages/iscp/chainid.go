@@ -100,3 +100,7 @@ func (chid *ChainID) AsAliasAddress() *iotago.AliasAddress {
 	ret := iotago.AliasAddress(*chid)
 	return &ret
 }
+
+func (chid *ChainID) CommonAccount() *AgentID {
+	return NewAgentID(chid.AsAddress(), 0)
+}

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -27,6 +27,10 @@ func (vmctx *VMContext) ChainID() *iscp.ChainID {
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
 	return vmctx.chainOwnerID
+}
+
+func (vmctx *VMContext) ContractAgentID() *iscp.AgentID {
+	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
 
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
@@ -67,8 +71,8 @@ func (vmctx *VMContext) Request() iscp.Calldata {
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	hname := vmctx.CurrentContractHname()
-	if commonaccount.IsCoreHname(hname) {
-		return commonaccount.Get(vmctx.ChainID())
+	if corecontracts.IsCoreHname(hname) {
+		return vmctx.ChainID().CommonAccount()
 	}
 	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
@@ -89,13 +93,13 @@ func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
 }
 
 func (vmctx *VMContext) isCoreAccount(agentID *iscp.AgentID) bool {
-	return vmctx.isOnChainAccount(agentID) && commonaccount.IsCoreHname(agentID.Hname())
+	return vmctx.isOnChainAccount(agentID) && corecontracts.IsCoreHname(agentID.Hname())
 }
 
 // targetAccountExists check if there's an account with non-zero balance,
 // or it is an existing smart contract
 func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
-	if agentID.Equals(commonaccount.Get(vmctx.ChainID())) {
+	if agentID.Equals(vmctx.ChainID().CommonAccount()) {
 		return true
 	}
 	accountExists := false
@@ -125,7 +129,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
 func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
-		target = commonaccount.Get(vmctx.ChainID())
+		target = vmctx.ChainID().CommonAccount()
 	} else {
 		// check if target exists, if it is not forced
 		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
