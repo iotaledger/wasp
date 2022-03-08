@@ -16,12 +16,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	// "github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/peering"
+	//"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	//	"github.com/iotaledger/wasp/packages/transaction"
@@ -116,7 +117,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		acs...,
 	)
 	require.NoError(env.T, err)
-	cmtPeerGroup.Attach(peering.PeerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
+	/*cmtPeerGroup.Attach(peering.PeerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
 		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderPubKey.AsString(), peerMsg.MsgType)
 		switch peerMsg.MsgType {
 		case peerMsgTypeSignedResult:
@@ -140,7 +141,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 				SenderIndex:        peerMsg.SenderIndex,
 			})
 		}
-	})
+	})*/
 
 	ret.StateOutput = env.InitStateOutput
 	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
@@ -152,25 +153,46 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	ret.Consensus = cons
 
 	ret.ChainCore.OnStateCandidate(func(newState state.VirtualStateAccess, approvingOutputID *iotago.UTXOInput) {
-		panic("TODO: implement me")
-		/*go func() {
-			ret.mutex.Lock()
-			defer ret.mutex.Unlock()
-			ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
-				newState.StateCommitment(), iscp.OID(approvingOutputID))
+		nsCommitment := trie.RootCommitment(newState.TrieAccess())
+		ret.Log.Debugf("State manager mock: received state candidate: index %v, commitment %v, approving output ID %v",
+			newState.BlockIndex(), nsCommitment, iscp.OID(approvingOutputID))
 
-			if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
-				ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
-				return
+		if ret.SolidState != nil && ret.SolidState.BlockIndex() >= newState.BlockIndex() {
+			ret.Log.Debugf("State manager mock: state candidate is not newer than current state index %v", ret.SolidState.BlockIndex())
+			return
+		}
+
+		ret.SolidState = newState
+
+		go func() {
+			var output *iotago.AliasOutput
+			for output = env.Ledger.PullConfirmedOutput(approvingOutputID); output == nil; output = env.Ledger.PullConfirmedOutput(approvingOutputID) {
+				ret.Log.Debugf("State manager mock: transaction index %v has not been published yet", ret.SolidState.BlockIndex())
+				time.Sleep(50)
 			}
-			err := newState.Commit()
+
+			ret.Log.Debugf("State manager mock: approving output %v reveived", iscp.OID(approvingOutputID))
+			aoCommitment, err := state.L1CommitmentFromAliasOutput(output)
 			require.NoError(env.T, err)
+			require.True(env.T, trie.EqualCommitments(nsCommitment, aoCommitment.Commitment))
 
-			ret.SolidState = newState
-			ret.Log.Debugf("committed new state for index %d", newState.BlockIndex())
+			ret.StateOutput = iscp.NewAliasOutputWithID(output, approvingOutputID)
+			ret.Log.Debugf("State manager mock: new state %v approved, commitment %v", ret.SolidState.BlockIndex(), nsCommitment)
 
-			ret.checkStateApproval()
-		}()*/
+			reqIDsForLastState := make([]iscp.RequestID, 0)
+			prefix := kv.Key(util.Uint32To4Bytes(ret.SolidState.BlockIndex()))
+			err = ret.SolidState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
+				reqid, err := iscp.RequestIDFromBytes(value)
+				require.NoError(ret.Env.T, err)
+				reqIDsForLastState = append(reqIDsForLastState, reqid)
+				return true
+			})
+			require.NoError(ret.Env.T, err)
+			ret.Mempool.RemoveRequests(reqIDsForLastState...)
+
+			ret.Log.Debugf("State manager mock: old requests removed: %v", reqIDsForLastState)
+			ret.Consensus.EnqueueStateTransitionMsg(ret.SolidState, ret.StateOutput, time.Now())
+		}()
 	})
 	return ret
 }
@@ -183,9 +205,9 @@ func (n *mockedNode) checkStateApproval() {
 		return
 	}
 	//stateHash, err := hashing.HashValueFromBytes(n.StateOutput.GetStateData())
-	stateHash, err := n.StateOutput.GetStateCommitment()
+	stateHash, err := state.L1CommitmentFromAliasOutput(n.StateOutput.GetAliasOutput())
 	require.NoError(n.Env.T, err)
-	require.EqualValues(n.Env.T, stateHash, n.SolidState.StateCommitment())
+	require.True(n.Env.T, trie.EqualCommitments(stateHash.Commitment, trie.RootCommitment(n.SolidState.TrieAccess())))
 
 	reqIDsForLastState := make([]iscp.RequestID, 0)
 	prefix := kv.Key(util.Uint32To4Bytes(n.SolidState.BlockIndex()))

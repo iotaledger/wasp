@@ -94,7 +94,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 
 	output := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
-		StateMetadata: state.OriginStateHash().Bytes(),
+		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: ret.StateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: ret.StateAddress},

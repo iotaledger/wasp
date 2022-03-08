@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -143,8 +144,8 @@ func (c *consensus) runVMIfNeeded() {
 				c.log.Errorf("runVM result: VM task failed: %v", vmTask.VMError)
 				return
 			}
-			c.log.Debugf("runVM result: responding by state index: %d state hash: %s",
-				vmTask.VirtualStateAccess.BlockIndex(), vmTask.VirtualStateAccess.StateCommitment())
+			c.log.Debugf("runVM result: responding by state index: %d state commitment: %s",
+				vmTask.VirtualStateAccess.BlockIndex(), trie.RootCommitment(vmTask.VirtualStateAccess.TrieAccess()))
 			c.EnqueueVMResultMsg(&messages.VMResultMsg{
 				Task: vmTask,
 			})
@@ -334,14 +335,14 @@ func (c *consensus) checkQuorum() {
 	c.finalTx = tx
 
 	//if !chainOutput.GetIsGovernanceUpdated() {
-		// if it is not state controller rotation, sending message to state manager
-		// Otherwise state manager is not notified
-		c.writeToWAL()
-		c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
-		chainOutputID := chainOutput.ID()
-		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
-		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
-			c.resultState.BlockIndex(), iscp.OID(chainOutputID))
+	// if it is not state controller rotation, sending message to state manager
+	// Otherwise state manager is not notified
+	c.writeToWAL()
+	c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
+	chainOutputID := chainOutput.ID()
+	c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
+	c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
+		c.resultState.BlockIndex(), iscp.OID(chainOutputID))
 	//}
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
@@ -690,8 +691,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	/*if c.stateOutput.GetIsGovernanceUpdated() {
 		r = " (rotate) "
 	}*/
-	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.RootCommitment().String())
+	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), trie.RootCommitment(msg.State.TrieAccess()))
 	c.resetWorkflow()
 	return true
 }

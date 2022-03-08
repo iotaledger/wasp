@@ -66,7 +66,7 @@ func (m *MockedNodeConn) PullConfirmedOutput(outputID *iotago.UTXOInput) {
 	m.log.Debugf("Pull confirmed output %v", iscp.OID(outputID))
 	if m.pullConfirmedOutputAllowedFun(outputID) {
 		m.log.Debugf("Pull confirmed output %v allowed", iscp.OID(outputID))
-		output := m.ledger.pullConfirmedOutput(outputID)
+		output := m.ledger.PullConfirmedOutput(outputID)
 		if output != nil {
 			m.log.Debugf("Pull confirmed output %v successful", iscp.OID(outputID))
 			go m.handleOutputFun(output, outputID)
