@@ -34,6 +34,7 @@ type CallParams struct {
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
+	sender     iotago.Address
 }
 
 func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
@@ -164,6 +165,11 @@ func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 	return r
 }
 
+func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
+	r.sender = sender
+	return r
+}
+
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
@@ -208,15 +214,21 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	L1Iotas := ch.Env.L1Iotas(keyPair.GetPublicKey().AsEd25519Address())
+	L1Iotas := ch.Env.L1Iotas(keyPair.Address())
 	if L1Iotas == 0 {
 		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
-	addr := keyPair.GetPublicKey().AsEd25519Address()
+	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
+
+	sender := req.sender
+	if sender == nil {
+		sender = keyPair.Address()
+	}
 
 	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
+		SenderAddress:    sender,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Request: &iscp.RequestParameters{
@@ -325,7 +337,6 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	if err != nil {
 		return tx, res, err
 	}
-
 	return tx, res, receipt.Error.AsGoError()
 }
 
