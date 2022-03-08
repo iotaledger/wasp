@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	//	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto"
+	//"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -89,7 +89,8 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	for i := range nodeIdentities {
 		ret.NodePubKeys[i] = nodeIdentities[i].GetPublicKey()
 	}
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())
+	//ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())	// TODO: return to norma DKS usage after refactor
+	ret.StateAddress, ret.DKSRegistries = SetupDkg(ret, quorum, nodeIdentities)
 	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	output := &iotago.AliasOutput{
