@@ -87,7 +87,7 @@ type Committee interface {
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16
-	DKShare() *tcrypto.DKShare
+	DKShare() tcrypto.DKShare
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
