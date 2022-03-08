@@ -139,6 +139,35 @@ This will take significantly less time than [running all tests](#run-all-tests).
 You can configure your node/s using the [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
 configuration file. If you plan to run several nodes in the same host, you will need to adjust the port configuration.
 
+### Authentication
+
+By default, Wasp accepts any API request coming from `127.0.0.1`. The Dashboard uses basic auth to limit access.
+
+Both authentication methods allow any form of request and have therefore 'root' permissions.
+
+#### JWT
+
+A new authentication scheme `JWT` was introduced but should be treated as **experimental**.
+
+With this addition, the configuration was slightly modified and a new plugin `users` was introduced.
+
+Both, the basic authentication and the JWT authentication pull their valid users from the users plugin from now on.
+
+Furthermore, the API and the Dashboard are now capable to use one of the three authentication schemes independently. 
+
+Users are currently stored inside the configuration (under `users`) and the passwords are saved as clear text (for now!).
+
+The default configuration contains one user "wasp" with both API and Dashboard permissions. 
+
+While the basic authentication only validates username and password, the JWT authentication validates permissions additionally.
+
+To enable the JWT authentication change `webapi.auth.scheme` and/or `dashboard.auth.scheme` to `jwt`. 
+
+If you have enabled JWT for the webapi, you need to call `wasp-cli login` from now on before doing any requests. 
+
+One login has a duration of exactly 24 hours by default. This can be changed inside the configuration at (webapi/dashboard)`.auth.jwt.durationHours` 
+
+
 ### Peering
 
 Wasp nodes connect to other Wasp peers to form committees. There is exactly one
