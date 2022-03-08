@@ -31,6 +31,11 @@ cd tools/devnet
 docker-compose up
 ```
 
+:::note
+All Wasp ports will bind to 127.0.0.1 by default. 
+If you want to expose the ports to the outside world, run `HOST=0.0.0.0 docker-compose up`.
+:::
+
 Docker will build a lightly modified GoShimmer (v0.7.7) image and a Wasp image based on the contents of the checked out develop branch. If you do modifications inside the branch, docker-compose will include them into the Wasp image too.
 
 ## Usage
