@@ -4,7 +4,6 @@
 package emulator
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -29,7 +28,7 @@ type EVMEmulator struct {
 	timestamp   uint64
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
-	iscContract vm.ISCContract
+	vmConfig    vm.Config
 }
 
 func makeConfig(chainID int) *params.ChainConfig {
@@ -53,10 +52,6 @@ func makeConfig(chainID int) *params.ChainConfig {
 const (
 	keyStateDB      = "s"
 	keyBlockchainDB = "b"
-)
-
-var (
-	vmConfig = vm.Config{}
 )
 
 func newStateDB(store kv.KVStore) *StateDB {
@@ -100,7 +95,7 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContra
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		iscContract: iscContract,
+		vmConfig:    vm.Config{ISCContract: iscContract},
 	}
 }
 
@@ -165,72 +160,6 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
 	return res.Return(), res.Err
 }
 
-// EstimateGas executes the requested code against the current state and
-// returns the used amount of gas, discarding state changes
-func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
-	// Determine the lowest and highest possible gas limits to binary search in between
-	var (
-		lo  uint64 = params.TxGas - 1
-		hi  uint64
-		max uint64
-	)
-	if call.Gas >= params.TxGas {
-		hi = call.Gas
-	} else {
-		hi = e.GasLimit()
-	}
-	max = hi
-
-	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
-		call.Gas = gas
-		res, err := e.callContract(call)
-		if err != nil {
-			if errors.Is(err, core.ErrIntrinsicGas) {
-				return true, nil, nil // Special case, raise gas limit
-			}
-			return true, nil, xerrors.Errorf("Bail out: %w", err)
-		}
-		return res.Failed(), res, nil //nolint:gocritic
-	}
-
-	// Execute the binary search and hone in on an executable gas limit
-	for lo+1 < hi {
-		mid := (hi + lo) / 2
-		failed, _, err := executable(mid)
-		// If the error is not nil(consensus error), it means the provided message
-		// call or transaction will never be accepted no matter how much gas it is
-		// assigned. Return the error directly, don't struggle any more
-		if err != nil {
-			return 0, xerrors.Errorf("executable(mid): %w", err)
-		}
-		if failed {
-			lo = mid
-		} else {
-			hi = mid
-		}
-	}
-
-	// Reject the transaction as invalid if it still fails at the highest allowance
-	if hi == max {
-		failed, result, err := executable(hi)
-		if err != nil {
-			return 0, xerrors.Errorf("executable(hi): %w", err)
-		}
-		if failed {
-			if result != nil && !errors.Is(result.Err, vm.ErrOutOfGas) {
-				if result.Err == vm.ErrExecutionReverted {
-					return 0, xerrors.Errorf("(estimateGas) %v", newRevertError(result))
-				}
-				return 0, xerrors.Errorf("(estimateGas) %w", result.Err)
-			}
-			// Otherwise, the specified gas cap is too low
-			return 0, xerrors.Errorf("gas required exceeds allowance (%d)", max)
-		}
-	}
-	return hi, nil
-}
-
 func (e *EVMEmulator) ChainContext() core.ChainContext {
 	return &chainContext{
 		engine: ethash.NewFaker(),
@@ -262,7 +191,7 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasLimit uint64) (*core.ExecutionResult, uint64, error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
-	vmEnv := vm.NewISCEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig, e.iscContract)
+	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
 	gasPool := core.GasPool(gasLimit)
 	vmEnv.Reset(txContext, statedb)
 	result, err := core.ApplyMessage(vmEnv, &messageWithGasOverride{msg, gasLimit}, &gasPool)

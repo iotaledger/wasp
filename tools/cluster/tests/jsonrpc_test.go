@@ -13,22 +13,14 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
-
-func withEVMFlavors(t *testing.T, f func(*testing.T, *coreutil.ContractInfo)) {
-	for _, evmFlavor := range evmflavors.All {
-		t.Run(evmFlavor.Name, func(t *testing.T) { f(t, evmFlavor) })
-	}
-}
 
 type clusterTestEnv struct {
 	jsonrpctest.Env
@@ -36,7 +28,7 @@ type clusterTestEnv struct {
 	chain   *cluster.Chain
 }
 
-func newClusterTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *clusterTestEnv {
+func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
 	clu := newCluster(t)
@@ -47,9 +39,9 @@ func newClusterTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *clusterT
 	chainID := evm.DefaultChainID
 
 	_, err = chain.DeployContract(
-		evmFlavor.Name,
-		evmFlavor.ProgramHash.String(),
-		"EVM chain on top of ISCP",
+		evm.Contract.Name,
+		evm.Contract.ProgramHash.String(),
+		"EVM chain on top of ISC",
 		map[string]interface{}{
 			evm.FieldChainID: codec.EncodeUint16(uint16(chainID)),
 			evm.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
@@ -63,7 +55,7 @@ func newClusterTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *clusterT
 	require.NoError(t, err)
 
 	backend := jsonrpc.NewWaspClientBackend(chain.Client(signer))
-	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmFlavor.Name)
+	evmChain := jsonrpc.NewEVMChain(backend, chainID, evm.Contract.Name)
 
 	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
 
@@ -88,19 +80,13 @@ func newClusterTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *clusterT
 }
 
 func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		newClusterTestEnv(t, evmFlavor).TestRPCGetLogs()
-	})
+	newClusterTestEnv(t).TestRPCGetLogs()
 }
 
 func TestEVMJsonRPCClusterGasLimit(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		newClusterTestEnv(t, evmFlavor).TestRPCGasLimit()
-	})
+	newClusterTestEnv(t).TestRPCGasLimit()
 }
 
 func TestEVMJsonRPCClusterInvalidNonce(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		newClusterTestEnv(t, evmFlavor).TestRPCInvalidNonce()
-	})
+	newClusterTestEnv(t).TestRPCInvalidNonce()
 }

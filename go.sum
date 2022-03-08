@@ -271,6 +271,8 @@ github.com/dessaya/go-ethereum v1.10.10-0.20220204023422-c467ab1fee84 h1:wyM+uTS
 github.com/dessaya/go-ethereum v1.10.10-0.20220204023422-c467ab1fee84/go.mod h1:W3yfrFyL9C1pHcwY5hmRHVDaorTiQxhYBkKyu5mEDHw=
 github.com/dessaya/go-ethereum v1.10.10-0.20220303210631-9c0fdaace6fb h1:ZCP7xMjw8tCVa7vNYAt5sPHygNaZhLYWLNKTYvMP8vw=
 github.com/dessaya/go-ethereum v1.10.10-0.20220303210631-9c0fdaace6fb/go.mod h1:Anj6cxczl+AHy63o4X9O8yWNHuN5wMpfb8MAnHkWn7Y=
+github.com/dessaya/go-ethereum v1.10.10-0.20220305060401-18f9e3da0f84 h1:g91mZHKGpneSTrWInkpG3GErNRVN4d3GFgwHO2U0QTo=
+github.com/dessaya/go-ethereum v1.10.10-0.20220305060401-18f9e3da0f84/go.mod h1:Anj6cxczl+AHy63o4X9O8yWNHuN5wMpfb8MAnHkWn7Y=
 github.com/dgraph-io/badger v1.5.4/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
 github.com/dgraph-io/badger v1.5.5-0.20190226225317-8115aed38f8f/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
 github.com/dgraph-io/badger v1.6.0-rc1/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=

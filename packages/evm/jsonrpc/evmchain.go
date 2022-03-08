@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -286,13 +287,8 @@ func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumberOrHash rpc.Blo
 }
 
 func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncEstimateGas.Name, dict.Dict{
-		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
-	})
-	if err != nil {
-		return 0, err
-	}
-	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
+	// tx gasLimit is ignored by the evm emulator, ISC gas must be estimated instead by other means
+	return params.TxGas, nil
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {

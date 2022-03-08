@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmlight
+package evmimpl
 
 import (
 	"math/big"
@@ -10,8 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/emulator"
+	"github.com/iotaledger/wasp/contracts/native/evm/emulator"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -21,8 +20,8 @@ import (
 )
 
 // getEmulatorInBlockContext creates a new emulator instance if this is the first call to applyTransaction
-// in the ISCP block; otherwise it returns the previously created instance. The purpose is to
-// create a single Ethereum block for each ISCP block.
+// in the ISC block; otherwise it returns the previously created instance. The purpose is to
+// create a single Ethereum block for each ISC block.
 func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
 	bctx := ctx.Privileged().BlockContext(
 		func(ctx iscp.Sandbox) interface{} { return createEmulator(ctx) },
@@ -33,17 +32,17 @@ func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
 
 func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
-		evminternal.EVMStateSubrealm(ctx.State()),
+		evmStateSubrealm(ctx.State()),
 		timestamp(ctx),
-		&iscContract{ctx},
+		newISCContract(ctx),
 	)
 }
 
 func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
-		evminternal.EVMStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
+		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
 		timestamp(ctx),
-		&iscContractView{ctx},
+		newISCContractView(ctx),
 	)
 }
 
@@ -53,11 +52,18 @@ func timestamp(ctx iscp.SandboxBase) uint64 {
 	return uint64(tsNano / time.Second)
 }
 
+func result(value []byte) dict.Dict {
+	if value == nil {
+		return nil
+	}
+	return dict.Dict{evm.FieldResult: value}
+}
+
 func blockResult(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
 	if block == nil {
 		return nil
 	}
-	return evminternal.Result(evmtypes.EncodeBlock(block))
+	return result(evmtypes.EncodeBlock(block))
 }
 
 func txResult(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
@@ -84,7 +90,7 @@ func txCountResult(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
 	if block.NumberU64() != 0 {
 		n = 1
 	}
-	return evminternal.Result(codec.EncodeUint64(n))
+	return result(codec.EncodeUint64(n))
 }
 
 func blockByNumber(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Block) {

@@ -24,13 +24,11 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
 	T         *testing.T
-	EVMFlavor *coreutil.ContractInfo
 	Server    *rpc.Server
 	Client    *ethclient.Client
 	RawClient *rpc.Client

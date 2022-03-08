@@ -16,9 +16,7 @@ PATHS=(\
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/utxodb/" \
-    "contracts/native/evm/evmchain/emulator/" \
-    "contracts/native/evm/evmlight/emulator/" \
-    "contracts/native/evm/evmtest/" \
+    "contracts/native/evm/..." \
     "packages/evm/jsonrpc/jsonrpctest" \
 )
 WD=$PWD

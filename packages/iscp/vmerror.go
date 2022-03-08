@@ -180,7 +180,7 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 }
 
 func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
-	bytes, err := json.Marshal(e.Params())
+	bytes, err := json.Marshal(e.params)
 	if err != nil {
 		panic(err)
 	}
@@ -225,7 +225,7 @@ func (e *VMError) Params() []interface{} {
 }
 
 func (e *VMError) Error() string {
-	return fmt.Sprintf(e.MessageFormat(), e.Params()...)
+	return fmt.Sprintf(e.MessageFormat(), e.params...)
 }
 
 func (e *VMError) Hash() uint32 {
@@ -238,7 +238,7 @@ func (e *VMError) Hash() uint32 {
 }
 
 func (e *VMError) serializeParams(mu *marshalutil.MarshalUtil) {
-	bytes, err := json.Marshal(e.Params())
+	bytes, err := json.Marshal(e.params)
 
 	if err != nil {
 		panic(err)
@@ -267,7 +267,7 @@ func (e *VMError) AsGoError() error {
 func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 	return &UnresolvedVMError{
 		code:   e.template.code,
-		params: e.Params(),
+		params: e.params,
 		hash:   e.Hash(),
 	}
 }

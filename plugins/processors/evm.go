@@ -3,16 +3,11 @@
 
 package processors
 
-import (
-	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
-)
+import "github.com/iotaledger/wasp/contracts/native/evm/evmimpl"
 
 func init() {
 	nativeContracts = append(
 		nativeContracts,
-
-		evmchain.Processor,
-		evmlight.Processor,
+		evmimpl.Processor,
 	)
 }
