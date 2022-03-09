@@ -31,7 +31,7 @@ func NewMockedLedger(originOutput *iotago.AliasOutput, log *logger.Logger) *Mock
 	return ret
 }
 
-func (m *MockedLedger) pullState() *iscp.AliasOutputWithID {
+func (m *MockedLedger) PullState() *iscp.AliasOutputWithID {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	m.log.Debugf("Pulling state")

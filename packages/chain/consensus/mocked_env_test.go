@@ -6,7 +6,7 @@ package consensus
 import (
 	"fmt"
 	"io"
-	//	"math/rand"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -17,10 +17,11 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
+	//"github.com/iotaledger/wasp/packages/registry"
 	//	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
-	//"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -41,7 +42,7 @@ type MockedEnv struct {
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
-	DKSRegistries     []registry.DKShareRegistryProvider
+	DKShares          []tcrypto.DKShare
 	ChainID           *iscp.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *iscp.AliasOutputWithID
@@ -90,7 +91,21 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 		ret.NodePubKeys[i] = nodeIdentities[i].GetPublicKey()
 	}
 	//ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())	// TODO: return to norma DKS usage after refactor
-	ret.StateAddress, ret.DKSRegistries = SetupDkg(ret, quorum, nodeIdentities)
+	ret.ChainID = iscp.RandomChainID()
+	/*addr := make([]byte, iotago.AliasAddressBytesLength)
+	rand.Read(addr)
+	var aliasAddr iotago.AliasAddress
+	copy(aliasAddr[:], addr)
+	ret.StateAddress = &aliasAddr*/
+	ret.StateAddress = ret.ChainID.AsAddress()
+	pubKeys := make([]*cryptolib.PublicKey, len(nodeIdentities))
+	for i := range nodeIdentities {
+		pubKeys[i] = nodeIdentities[i].GetPublicKey()
+	}
+	ret.DKShares = make([]tcrypto.DKShare, len(nodeIdentities))
+	for i := range ret.DKShares {
+		ret.DKShares[i] = NewMockedDKShare(ret, ret.StateAddress, uint16(i), quorum, pubKeys)
+	}
 	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	output := &iotago.AliasOutput{
@@ -107,7 +122,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 		},
 	}
 	ret.Ledger = testchain.NewMockedLedger(output, log)
-	//ret.InitStateOutput = ret.Ledger.PullState()
+	ret.InitStateOutput = ret.Ledger.PullState()
 
 	/*ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -132,7 +147,6 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	require.NoError(t, err)
 
 	ret.ChainID = iscp.ChainIDFromAliasID(ret.InitStateOutput.GetAliasAddress())*/
-	ret.ChainID = iscp.RandomChainID()
 
 	return ret
 }
@@ -237,21 +251,22 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
-	panic("TODO: implement me")
-	/*reqs := make([]*request.OffLedger, n)
+	reqs := make([]*iscp.OffLedgerRequestData, n)
 	for i := 0; i < n; i++ {
-		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).
-			NewRequestOffLedger(iscp.RandomChainID(), env.OriginatorKeyPair)
+		d := dict.New()
+		ii := uint16(i)
+		d.Set("c", []byte{byte(ii % 256), byte(ii / 256)})
+		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64())
 	}
 	rnd := len(randomize) > 0 && randomize[0]
 	for _, n := range env.Nodes {
-		for _, req := range reqs {
-			go func(node *mockedNode, r *request.OffLedger) {
+		for _, r := range reqs {
+			go func(node *mockedNode, req *iscp.OffLedgerRequestData) {
 				if rnd {
 					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 				}
-				node.Mempool.ReceiveRequest(r)
-			}(n, req)
+				node.Mempool.ReceiveRequest(req)
+			}(n, r)
 		}
-	}*/
+	}
 }

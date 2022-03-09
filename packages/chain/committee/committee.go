@@ -52,11 +52,14 @@ func New(
 	// It allows to use same stateAddr for different chains
 	var peerGroupID peering.PeeringID
 	address, err := dkShare.GetAddress().Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: cannot serialize address: %v", err)
+	}
 	var chainArr *iscp.ChainID
 	if chainID != nil {
 		chainArr = chainID
 	}
-	for i := range peerGroupID {
+	for i := range chainArr {
 		peerGroupID[i] = address[i] ^ chainArr[i]
 	}
 	var peers peering.GroupProvider

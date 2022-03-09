@@ -62,6 +62,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 	}
 	if c.timeData == nil {
 		c.log.Debugf("proposeBatch not needed: time data hasn't been received yet")
+		return
 	}
 	reqs := c.mempool.ReadyNow(*c.timeData)
 	if len(reqs) == 0 {
@@ -496,7 +497,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	contributorSet := make(map[uint16]struct{})
 	// validate ACS. Dismiss ACS if inconsistent. Should not happen
 	for _, prop := range acs {
-		if prop.StateOutputID != c.stateOutput.ID() {
+		if !prop.StateOutputID.Equals(c.stateOutput.ID()) {
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, generated stateOutputID: %v ",
 				iscp.OID(c.stateOutput.ID()), iscp.OID(prop.StateOutputID))
 			c.resetWorkflow()
@@ -510,10 +511,11 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		}
 		contributors = append(contributors, prop.ValidatorIndex)
 		if _, already := contributorSet[prop.ValidatorIndex]; already {
-			c.log.Errorf("receiveACS: duplicate contributors in ACS")
+			c.log.Errorf("receiveACS: duplicate contributor %v in ACS", prop.ValidatorIndex)
 			c.resetWorkflow()
 			return
 		}
+		c.log.Debugf("receiveACS: contributor %v of ACS included", prop.ValidatorIndex)
 		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
 
@@ -789,7 +791,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 			iscp.OID(msg.ChainInputID))
 		return
 	}
-	if msg.ChainInputID != c.stateOutput.ID() {
+	if !msg.ChainInputID.Equals(c.stateOutput.ID()) {
 		c.log.Warnf("receiveSignedResult: wrong chain input ID: expected %v, received %v",
 			iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
 		return

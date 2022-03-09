@@ -20,7 +20,7 @@ func TestConsensusEnvMockedACS(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		err := env.WaitStateIndex(4, 0)
 		require.NoError(t, err)
 	})
@@ -28,29 +28,29 @@ func TestConsensusEnvMockedACS(t *testing.T) {
 		env := consensus.NewMockedEnv(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		err := env.WaitTimerTick(43)
 		require.NoError(t, err)
 	})
 }
 
 func TestConsensusPostRequestMockedACS(t *testing.T) {
-	t.Run("post 1 mocked ACS", func(t *testing.T) {
+	t.Run("post 1 request mocked ACS", func(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1)
 		err := env.WaitMempool(1, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
-	t.Run("post 1 randomize mocked ACS", func(t *testing.T) {
+	t.Run("post 1 request randomize mocked ACS", func(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1, true)
 		err := env.WaitMempool(1, 3, 5*time.Second)
 		require.NoError(t, err)
@@ -60,17 +60,17 @@ func TestConsensusPostRequestMockedACS(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10)
 		err := env.WaitMempool(10, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
-	t.Run("post 10 requests post randomized mocked ACS", func(t *testing.T) {
+	t.Run("post 10 requests randomized mocked ACS", func(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10, true)
 		err := env.WaitMempool(10, 3, 5*time.Second)
 		require.NoError(t, err)
@@ -80,7 +80,7 @@ func TestConsensusPostRequestMockedACS(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(100)
 		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(100, 3, 5*time.Second)
@@ -91,7 +91,7 @@ func TestConsensusPostRequestMockedACS(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(100, true)
 		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(100, 3, 5*time.Second)
@@ -106,24 +106,24 @@ func TestConsensusMoreNodesMockedACS(t *testing.T) {
 	const numNodes = 22
 	const quorum = (numNodes*2)/3 + 1
 
-	t.Run("post 1 mocked ACS", func(t *testing.T) {
+	t.Run("post 1 request mocked ACS", func(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, numNodes, quorum, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1)
 		err := env.WaitMempool(1, quorum, 15*time.Second)
 		require.NoError(t, err)
 	})
-	t.Run("post 1 randomize mocked ACS", func(t *testing.T) {
+	t.Run("post 1 request randomize mocked ACS", func(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, numNodes, quorum, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1, true)
 		time.Sleep(500 * time.Millisecond)
 		err := env.WaitStateIndex(quorum, 1)
@@ -135,7 +135,7 @@ func TestConsensusMoreNodesMockedACS(t *testing.T) {
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10)
 		err := env.WaitMempool(10, quorum, 15*time.Second)
 		require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestConsensusMoreNodesMockedACS(t *testing.T) {
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10, true)
 		err := env.WaitMempool(10, quorum, 15*time.Second)
 		require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestConsensusEnv(t *testing.T) {
 		env := consensus.NewMockedEnv(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		err := env.WaitStateIndex(4, 0)
 		require.NoError(t, err)
 	})
@@ -168,29 +168,29 @@ func TestConsensusEnv(t *testing.T) {
 		env := consensus.NewMockedEnv(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		err := env.WaitTimerTick(43)
 		require.NoError(t, err)
 	})
 }
 
 func TestConsensusPostRequest(t *testing.T) {
-	t.Run("post 1", func(t *testing.T) {
+	t.Run("post 1 request", func(t *testing.T) {
 		env := consensus.NewMockedEnv(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1)
 		err := env.WaitMempool(1, 3, waitMempoolTimeout)
 		require.NoError(t, err)
 	})
-	t.Run("post 1 randomize", func(t *testing.T) {
+	t.Run("post 1 request randomize", func(t *testing.T) {
 		env := consensus.NewMockedEnv(t, 4, 3, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1, true)
 		err := env.WaitMempool(1, 3, waitMempoolTimeout)
 		require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10)
 		err := env.WaitMempool(10, 3, waitMempoolTimeout)
 		require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10, true)
 		err := env.WaitMempool(10, 3, waitMempoolTimeout)
 		require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(100)
 		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(100, 3, waitMempoolTimeout)
@@ -231,7 +231,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(100, true)
 		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(100, 3, waitMempoolTimeout)
@@ -246,24 +246,24 @@ func TestConsensusMoreNodes(t *testing.T) {
 	const numNodes = 22
 	const quorum = (numNodes*2)/3 + 1
 
-	t.Run("post 1", func(t *testing.T) {
+	t.Run("post 1 request", func(t *testing.T) {
 		env := consensus.NewMockedEnv(t, numNodes, quorum, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1)
 		err := env.WaitMempool(1, quorum, waitMempoolTimeout)
 		require.NoError(t, err)
 	})
-	t.Run("post 1 randomize", func(t *testing.T) {
+	t.Run("post 1 request randomize", func(t *testing.T) {
 		env := consensus.NewMockedEnv(t, numNodes, quorum, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(1, true)
 		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(1, quorum, waitMempoolTimeout)
@@ -275,7 +275,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10)
 		err := env.WaitMempool(10, quorum, waitMempoolTimeout)
 		require.NoError(t, err)
@@ -286,7 +286,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		defer env.Log.Sync()
 
 		env.StartTimers()
-		env.SetInitialConsensusState()
+		//env.SetInitialConsensusState()
 		env.PostDummyRequests(10, true)
 		err := env.WaitMempool(10, quorum, waitMempoolTimeout)
 		require.NoError(t, err)
@@ -308,7 +308,7 @@ func TestCruelWorld(t *testing.T) {
 		WithRepeatingChannel(nil, 25).
 		WithDelayingChannel(nil, 0*time.Millisecond, 200*time.Millisecond)
 	env.StartTimers()
-	env.SetInitialConsensusState()
+	//env.SetInitialConsensusState()
 
 	randFromIntervalFun := func(from int, till int) time.Duration {
 		return time.Duration(from + rand.Intn(till-from))

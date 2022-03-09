@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	//"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -37,10 +37,8 @@ type mockedNode struct {
 	Env         *MockedEnv
 	NodeConn    *testchain.MockedNodeConn  // GoShimmer mock
 	ChainCore   *testchain.MockedChainCore // Chain mock
-	stateSync   coreutil.ChainStateSync    // Chain mock
 	Mempool     mempool.Mempool            // Consensus needs
 	Consensus   chain.Consensus            // Consensus needs
-	store       kvstore.KVStore            // State manager mock
 	SolidState  state.VirtualStateAccess   // State manager mock
 	StateOutput *iscp.AliasOutputWithID    // State manager mock
 	Log         *logger.Logger
@@ -105,12 +103,12 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	dkShare, err := env.DKSRegistries[nodeIndex].LoadDKShare(env.StateAddress)
+	/*dkShare, err := env.DKShares[nodeIndex].LoadDKShare(env.StateAddress)
 	if err != nil {
 		panic(err)
-	}
+	}*/
 	cmt, cmtPeerGroup, err := committee.New(
-		dkShare,
+		env.DKShares[nodeIndex],
 		env.ChainID,
 		env.NetworkProviders[nodeIndex],
 		log,
@@ -144,13 +142,15 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	})*/
 
 	ret.StateOutput = env.InitStateOutput
-	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
-	ret.stateSync.SetSolidIndex(0)
+	ret.SolidState, err = state.CreateOriginState(store, env.ChainID)
 	require.NoError(env.T, err)
 
 	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, ret.NodeConn, true, metrics.DefaultChainMetrics(), wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
+
+	stateSync.SetSolidIndex(0)
+	ret.Consensus.EnqueueStateTransitionMsg(ret.SolidState, ret.StateOutput, time.Now())
 
 	ret.ChainCore.OnStateCandidate(func(newState state.VirtualStateAccess, approvingOutputID *iotago.UTXOInput) {
 		nsCommitment := trie.RootCommitment(newState.TrieAccess())
@@ -168,7 +168,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 			var output *iotago.AliasOutput
 			for output = env.Ledger.PullConfirmedOutput(approvingOutputID); output == nil; output = env.Ledger.PullConfirmedOutput(approvingOutputID) {
 				ret.Log.Debugf("State manager mock: transaction index %v has not been published yet", ret.SolidState.BlockIndex())
-				time.Sleep(50)
+				time.Sleep(50 * time.Millisecond)
 			}
 
 			ret.Log.Debugf("State manager mock: approving output %v reveived", iscp.OID(approvingOutputID))
@@ -191,6 +191,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 			ret.Mempool.RemoveRequests(reqIDsForLastState...)
 
 			ret.Log.Debugf("State manager mock: old requests removed: %v", reqIDsForLastState)
+			stateSync.SetSolidIndex(ret.SolidState.BlockIndex())
 			ret.Consensus.EnqueueStateTransitionMsg(ret.SolidState, ret.StateOutput, time.Now())
 		}()
 	})

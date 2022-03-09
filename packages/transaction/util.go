@@ -265,5 +265,5 @@ func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.Ali
 			}
 		}
 	}
-	return nil, fmt.Errorf("cannot find alias output for addres %v in transaction", aliasAddr.String())
+	return nil, fmt.Errorf("cannot find alias output for address %v in transaction", aliasAddr.String())
 }
