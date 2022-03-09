@@ -10,11 +10,11 @@ import (
 )
 
 func (vmctx *VMContext) getNFTData(nftID iotago.NFTID) *iscp.NFT {
-	var nft *iscp.NFT
+	var nft iscp.NFT
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		nft = accounts.GetNFTData(s, nftID)
 	})
-	return nft
+	return &nft
 }
 
 func (vmctx *VMContext) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFTID) {

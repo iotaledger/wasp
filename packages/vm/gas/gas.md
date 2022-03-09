@@ -3,16 +3,18 @@
 Current gas costs are still experimental and will change.
 
 | Instruction                | Cost      | Description                                                          |
-| -------------------------- |-----------|----------------------------------------------------------------------|
+| -------------------------- | --------- | -------------------------------------------------------------------- |
 | CallTargetNotFound         | 10        | gas burned when a call target doesn't exist                          |
 | GetContext                 | 10        | get context data                                                     |
 | GetCallerData              | 10        | get caller data                                                      |
 | GetStateAnchorInfo         | 10        | get state anchor data                                                |
 | GetBalance                 | 20        | get balance of account on the chain                                  |
+| BurnCodeGetNFTData         | 10        | get data about the NFT (issuer/metadata)                             |
 | CallContract               | 10        | call a target (another SC in the same chain)                         |
 | EmitEventFixed             | 10        | emit event                                                           |
 | GetAllowance               | 10        | get allowance                                                        |
 | TransferAllowance          | 10        | transfer allowance                                                   |
+| BurnCodeEstimateDustCost   | 5         | estimate the dust cost of a L1 request to be sent                    |
 | SendL1Request              | 200*N     | send a L1 transaction (N = number of issued txs in the current call) |
 | DeployContract             | 10        | deploy a contract                                                    |
 | Storage                    | 1*B       | storage (B = number of bytes)                                        |
