@@ -77,6 +77,20 @@ func (ch *Chain) L2Iotas(agentID *iscp.AgentID) uint64 {
 	return ch.L2Assets(agentID).Iotas
 }
 
+func (ch *Chain) L2NFTs(agentID *iscp.AgentID) []iotago.NFTID {
+	ret := make([]iotago.NFTID, 0)
+	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
+	require.NoError(ch.Env.T, err)
+	nftIDsBin, err := res.Get(accounts.ParamNFTIDs)
+	require.NoError(ch.Env.T, err)
+	for i := 0; i < len(nftIDsBin); i += iotago.NFTIDLength {
+		nftID := iotago.NFTID{}
+		copy(nftID[:], nftIDsBin[i:i+iotago.NFTIDLength])
+		ret = append(ret, nftID)
+	}
+	return ret
+}
+
 func (ch *Chain) L2NativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	return ch.L2Assets(agentID).AmountNativeToken(tokenID)
 }

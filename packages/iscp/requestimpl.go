@@ -344,6 +344,10 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		return nil, err
 	}
 
+	if reqMetadata != nil {
+		reqMetadata.Allowance.fillEmptyNFTIDs(o, id)
+	}
+
 	ucSet, err := o.UnlockConditions().Set()
 	if err != nil {
 		return nil, err

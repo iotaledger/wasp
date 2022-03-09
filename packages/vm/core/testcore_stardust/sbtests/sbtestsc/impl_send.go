@@ -112,6 +112,12 @@ func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
+// just claims everything from allowance and does nothing with it
+func claimAllowance(ctx iscp.Sandbox) dict.Dict {
+	ctx.TransferAllowedFunds(ctx.AccountID())
+	return nil
+}
+
 func sendLargeRequest(ctx iscp.Sandbox) dict.Dict {
 	req := iscp.RequestParameters{
 		TargetAddress: tpkg.RandEd25519Address(),
