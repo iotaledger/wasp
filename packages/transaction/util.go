@@ -102,19 +102,32 @@ func computeInputsAndRemainder(
 	var remainder *iotago.BasicOutput
 
 	var errLast error
-	var inputCount int
+
+	var inputIDs iotago.OutputIDs
+
 	for _, id := range unspentOutputIDs {
 		inp, ok := unspentOutputs[id]
 		if !ok {
 			return nil, nil, xerrors.New("computeInputsAndRemainder: outputID is not in the set ")
 		}
-		inputCount++
 		if nftInp, ok := inp.(*iotago.NFTOutput); ok {
 			nftID := util.NFTIDFromNFTOutput(nftInp, id)
 			if nftsOut[nftID] {
 				NFTsIn[nftID] = true
+			} else {
+				// this is an UTXO that holds an NFT that is not relevant for this tx, should be skipped
+				continue
 			}
 		}
+		if _, ok := inp.(*iotago.AliasOutput); ok {
+			// this is an UTXO that holds an alias that is not relevant for this tx, should be skipped
+			continue
+		}
+		if _, ok := inp.(*iotago.FoundryOutput); ok {
+			// this is an UTXO that holds an foundry that is not relevant for this tx, should be skipped
+			continue
+		}
+		inputIDs = append(inputIDs, id)
 		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
 		for _, nativeToken := range a.Tokens {
@@ -134,11 +147,10 @@ func computeInputsAndRemainder(
 	if errLast != nil {
 		return nil, nil, errLast
 	}
-	inputs := make(iotago.OutputIDs, inputCount)
-	for j := range inputs {
-		inputs[j] = unspentOutputIDs[j]
+	for j := range inputIDs {
+		inputIDs[j] = unspentOutputIDs[j]
 	}
-	return inputs, remainder, nil
+	return inputIDs, remainder, nil
 }
 
 // computeRemainderOutput calculates remainders for iotas and native tokens, returns skeleton remainder output

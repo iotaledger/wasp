@@ -113,8 +113,19 @@ func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
 }
 
 // just claims everything from allowance and does nothing with it
+// tests the "getData" sandbox call for every NFT sent in allowance
 func claimAllowance(ctx iscp.Sandbox) dict.Dict {
+	initialNFTset := ctx.OwnedNFTs()
+	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
+	ctx.Requiref(len(ctx.OwnedNFTs())-len(initialNFTset) == len(allowance.NFTs), "must get all NFTs from allowance")
+	for _, id := range allowance.NFTs {
+		nftData := ctx.GetNFTData(id)
+		ctx.Requiref(!nftData.ID.Empty(), "must have NFTID")
+		ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
+		ctx.Requiref(nftData.Issuer != nil, "must have issuer")
+	}
+
 	return nil
 }
 

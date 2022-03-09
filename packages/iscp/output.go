@@ -5,6 +5,7 @@ package iscp
 
 import (
 	"bytes"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 

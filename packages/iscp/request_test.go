@@ -2,9 +2,12 @@ package iscp
 
 import (
 	"bytes"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"math/big"
 	"testing"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"

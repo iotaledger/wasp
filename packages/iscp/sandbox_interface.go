@@ -39,6 +39,8 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
+	// GetNFTInfo returns information about a NFTID (issuer and metadata)
+	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
 }
 
 type Params struct {
@@ -64,6 +66,8 @@ type Balance interface {
 	BalanceNativeToken(id *iotago.NativeTokenID) *big.Int
 	// BalanceFungibleTokens returns all fungible tokens: iotas and native tokens
 	BalanceFungibleTokens() *FungibleTokens
+	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
+	OwnedNFTs() []iotago.NFTID
 }
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -112,6 +116,8 @@ type Sandbox interface {
 	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
+	// MintNFT mints an NFT
+	// MintNFT(metadata []byte) // TODO returns a temporary ID
 
 	// Privileged is a sub-interface of the sandbox which should not be called by VM plugins
 	Privileged() Privileged

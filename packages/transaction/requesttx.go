@@ -139,6 +139,7 @@ func updateOutputsWhenSendingOnBehalfOf(
 		}
 	}
 	for outID, out := range par.UnspentOutputs {
+		// find the output that matches the "send as" address
 		if !outputMatchesSendAsAddress(out, outID, par.SenderAddress) {
 			continue
 		}

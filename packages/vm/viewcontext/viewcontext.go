@@ -87,6 +87,14 @@ func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
+func (ctx *ViewContext) GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID {
+	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+}
+
+func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) iscp.NFT {
+	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
+}
+
 func (ctx *ViewContext) Timestamp() int64 {
 	t, err := ctx.stateReader.Timestamp()
 	if err != nil {

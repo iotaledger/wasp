@@ -35,4 +35,6 @@ type WaspContext interface {
 	Params() *iscp.Params
 	StateReader() kv.KVStoreReader
 	GasBudgetLeft() uint64
+	GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID
+	GetNFTData(nftID iotago.NFTID) iscp.NFT
 }
