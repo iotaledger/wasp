@@ -239,7 +239,6 @@ func (e *VMError) Hash() uint32 {
 
 func (e *VMError) serializeParams(mu *marshalutil.MarshalUtil) {
 	bytes, err := json.Marshal(e.params)
-
 	if err != nil {
 		panic(err)
 	}
@@ -296,7 +295,6 @@ func GetErrorIDFromMessageFormat(messageFormat string) uint16 {
 	mu := marshalutil.New(messageFormatHash)
 
 	errorId, err := mu.ReadUint16()
-
 	if err != nil {
 		panic(err)
 	}

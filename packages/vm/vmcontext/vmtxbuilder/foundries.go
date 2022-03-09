@@ -1,12 +1,13 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
@@ -43,7 +44,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		}}
 	}
 	f.Amount = f.VByteCost(txb.l1Params.RentStructure(), nil)
-	err := util.CatchPanicReturnError(func() {
+	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)
 	if err != nil {

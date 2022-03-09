@@ -236,7 +236,7 @@ func (n *Node) GenerateDistributedKey(
 	}
 	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, sharedPublic)
 	//
-	// Commit the keys to persistent storage.
+	// CommitToNode the keys to persistent storage.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())

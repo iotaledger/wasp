@@ -42,7 +42,7 @@ func (s *SandboxBase) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
 	return s.Ctx.GetNativeTokenBalance(s.AccountID(), id)
 }
 
-func (s *SandboxBase) Assets() *iscp.Assets {
+func (s *SandboxBase) BalanceFungibleTokens() *iscp.FungibleTokens {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAssets(s.AccountID())
 }

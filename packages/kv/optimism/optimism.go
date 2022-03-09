@@ -38,6 +38,10 @@ func (o *OptimisticKVStoreReader) SetBaseline() {
 	o.baseline.Set()
 }
 
+func (o *OptimisticKVStoreReader) Baseline() coreutil.StateBaseline {
+	return o.baseline
+}
+
 // IsStateValid check the validity of the baseline
 func (o *OptimisticKVStoreReader) IsStateValid() bool {
 	return o.baseline.IsValid()

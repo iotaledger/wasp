@@ -12,8 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
-
 	// "github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
@@ -45,7 +45,7 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	/*reqstr := strings.Join(iscp.ShortRequestIDs(iscp.TakeRequestIDs(task.Requests...)), ",")
 
 	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",
-		task.VirtualStateAccess.StateCommitment(), iscp.OID(&task.AnchorOutputID), reqstr)
+		task.VirtualStateAccess.RootCommitment(), iscp.OID(&task.AnchorOutputID), reqstr)
 
 	calldata := make([]iscp.Calldata, len(task.Requests))
 	for i := range calldata {
@@ -85,7 +85,7 @@ func NextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieAccess()))
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -97,7 +97,9 @@ func NextState(
 		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}*/
 
-	nextvs.ApplyStateUpdates(suBlockIndex, suCounter /*, suReqs*/)
+	nextvs.ApplyStateUpdate(suBlockIndex)
+	nextvs.ApplyStateUpdate(suCounter /*, suReqs*/)
+	nextvs.Commit()
 	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
 
 	consumedOutput := chainOutput.GetAliasOutput()
@@ -112,7 +114,7 @@ func NextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  nextvs.StateCommitment().Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieAccess())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Blocks:         consumedOutput.Blocks,

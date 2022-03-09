@@ -3,6 +3,8 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
 
@@ -10,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"golang.org/x/xerrors"
 )
@@ -47,19 +48,8 @@ func BlockFromBytes(data []byte) (Block, error) {
 	return ret, nil
 }
 
-// block with empty state update and nil state hash
-func newOriginBlock() Block {
-	ret, err := newBlock(NewStateUpdateWithBlocklogValues(0, time.Time{}, hashing.NilHash).Mutations())
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
 func (b *blockImpl) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = b.Write(&buf)
-	return buf.Bytes()
+	return util.MustBytes(b)
 }
 
 func (b *blockImpl) String() string {
@@ -89,8 +79,8 @@ func (b *blockImpl) Timestamp() time.Time {
 }
 
 // PreviousStateHash of the last state update
-func (b *blockImpl) PreviousStateHash() hashing.HashValue {
-	ph, err := findPrevStateHashMutation(b.stateUpdate)
+func (b *blockImpl) PreviousStateCommitment(model trie.CommitmentModel) trie.VCommitment {
+	ph, err := findPrevStateCommitmentMutation(b.stateUpdate, model)
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +91,6 @@ func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
 	b.stateOutputID = oid
 }
 
-// hash of all data except state transaction hash
 func (b *blockImpl) EssenceBytes() []byte {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
@@ -125,6 +114,9 @@ func (b *blockImpl) writeEssence(w io.Writer) error {
 }
 
 func (b *blockImpl) writeOutputID(w io.Writer) error {
+	if err := util.WriteBoolByte(w, b.stateOutputID != nil); err != nil {
+		return err
+	}
 	if b.stateOutputID == nil {
 		return nil
 	}
@@ -156,8 +148,17 @@ func (b *blockImpl) readEssence(r io.Reader) error {
 }
 
 func (b *blockImpl) readOutputID(r io.Reader) error {
+	var oidPresent bool
+	if err := util.ReadBoolByte(r, &oidPresent); err != nil {
+		return err
+	}
+	if !oidPresent {
+		return nil
+	}
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
+	if _, err := buf.ReadFrom(r); err != nil {
+		return err
+	}
 	b.stateOutputID = &iotago.UTXOInput{}
 	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
 	return err

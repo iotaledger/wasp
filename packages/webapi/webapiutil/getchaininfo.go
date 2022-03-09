@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.Assets, error) {
+func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.FungibleTokens, error) {
 	params := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})
@@ -15,5 +15,5 @@ func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.Assets, err
 	if err != nil {
 		return nil, err
 	}
-	return iscp.AssetsFromDict(ret)
+	return iscp.FungibleTokensFromDict(ret)
 }

@@ -75,7 +75,7 @@ func deployCmd() *cobra.Command {
 					return SCClient(evm.Contract.Hname()).PostRequest(
 						evm.FuncSetBlockTime.Name,
 						chainclient.PostRequestParams{
-							Transfer: iscp.NewAssets(1, nil),
+							Transfer: iscp.NewFungibleTokens(1, nil),
 							Args: dict.Dict{
 								evm.FieldBlockTime: codec.EncodeUint32(evmParams.BlockTime),
 							},

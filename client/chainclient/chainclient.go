@@ -36,7 +36,7 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer *iscp.Assets
+	Transfer *iscp.FungibleTokens
 	Args     dict.Dict
 	Nonce    uint64
 }
@@ -87,7 +87,7 @@ func (c *Client) PostOffLedgerRequest(
 
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
-		Transfer: iscp.NewAssets(n, nil),
+		Transfer: iscp.NewFungibleTokens(n, nil),
 	})
 }
 
@@ -98,7 +98,7 @@ func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	}
 }
 
-func (par *PostRequestParams) WithTransfer(transfer *iscp.Assets) *PostRequestParams {
+func (par *PostRequestParams) WithTransfer(transfer *iscp.FungibleTokens) *PostRequestParams {
 	par.Transfer = transfer
 	return par
 }

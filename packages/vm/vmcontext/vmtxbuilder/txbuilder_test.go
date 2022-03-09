@@ -1,6 +1,8 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -15,10 +17,18 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"github.com/stretchr/testify/require"
 )
+
+func randStateData() *state.L1Commitment {
+	h := hashing.RandomHash(nil)
+	sd, err := state.L1CommitmentFromBytes(h[:])
+	if err != nil {
+		panic(err)
+	}
+	return &sd
+}
 
 func rndAliasID() (ret iotago.AliasID) {
 	a := tpkg.RandAliasAddress()
@@ -28,9 +38,9 @@ func rndAliasID() (ret iotago.AliasID) {
 
 // return deposit in iotas
 func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, addIotasToDustMinimum ...uint64) uint64 {
-	var assets *iscp.Assets
+	var assets *iscp.FungibleTokens
 	if amountNative > 0 {
-		assets = &iscp.Assets{
+		assets = &iscp.FungibleTokens{
 			Iotas:  0,
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
@@ -55,7 +65,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 }
 
 func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.NativeTokenID) uint64 {
-	assets := &iscp.Assets{
+	assets := &iscp.FungibleTokens{
 		Iotas: 0,
 		Tokens: iotago.NativeTokens{
 			&iotago.NativeToken{
@@ -69,7 +79,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 		iscp.Hn("test"),
 		iscp.RequestParameters{
 			TargetAddress:              tpkg.RandEd25519Address(),
-			Assets:                     assets,
+			FungibleTokens:             assets,
 			Metadata:                   &iscp.SendMetadata{},
 			Options:                    iscp.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
@@ -130,7 +140,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 		require.EqualValues(t, 1, len(essence.Inputs))
 		require.EqualValues(t, 1, len(essence.Outputs))
 
@@ -174,7 +184,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, expectedIotas, int(totalsOut.TotalIotasInL2Accounts))
 		require.EqualValues(t, 0, len(totalsOut.NativeTokenBalances))
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -202,7 +212,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 1, len(totalsOut.NativeTokenBalances))
 		require.True(t, totalsOut.NativeTokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -351,7 +361,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -365,7 +375,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -378,7 +388,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		runConsume(runTimes, testAmount)
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -392,7 +402,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -404,14 +414,14 @@ func TestTxBuilderConsistency(t *testing.T) {
 		numTokenIDs = 4
 
 		initTest()
-		err := util.CatchPanicReturnError(func() {
+		err := panicutil.CatchPanicReturnError(func() {
 			runConsume(runTimes, testAmount)
 		}, vmexceptions.ErrInputLimitExceeded)
 		require.Error(t, err, vmexceptions.ErrInputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -427,7 +437,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
 
-		err = util.CatchPanicReturnError(func() {
+		err = panicutil.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, 1)
 		}, vmexceptions.ErrOutputLimitExceeded)
 
@@ -435,7 +445,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -451,7 +461,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
 
-		err = util.CatchPanicReturnError(func() {
+		err = panicutil.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, 1)
 		}, vmexceptions.ErrOutputLimitExceeded)
 
@@ -459,7 +469,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -487,7 +497,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -543,7 +553,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, afterTokens[nativeTokenIDs[0]].Cmp(new(big.Int).SetInt64(10)) == 0)
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -573,7 +583,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 		require.EqualValues(t, 2, len(essence.Inputs))
 		require.EqualValues(t, 2, len(essence.Outputs))
 
@@ -609,7 +619,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 		require.EqualValues(t, 6, len(essence.Inputs))
 		require.EqualValues(t, 6, len(essence.Outputs))
 
@@ -650,7 +660,7 @@ func TestDustDeposit(t *testing.T) {
 		require.Equal(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
-		assets := iscp.NewAssets(10000, nil)
+		assets := iscp.NewFungibleTokens(10000, nil)
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
@@ -726,19 +736,19 @@ func TestFoundries(t *testing.T) {
 	t.Run("create foundry ok", func(t *testing.T) {
 		initTest()
 		createNFoundries(3)
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("create foundry not enough", func(t *testing.T) {
 		initTest()
-		err := util.CatchPanicReturnError(func() {
+		err := panicutil.CatchPanicReturnError(func() {
 			createNFoundries(5)
 		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 
-		essence, _ := txb.BuildTransactionEssence(&iscp.StateData{})
+		essence, _ := txb.BuildTransactionEssence(randStateData())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))

@@ -22,7 +22,7 @@ type WaspContext interface {
 
 	// needed for sandbox
 	iscp.LogInterface
-	GetAssets(agentID *iscp.AgentID) *iscp.Assets
+	GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens
 	Timestamp() int64
 	AccountID() *iscp.AgentID
 	GetIotaBalance(agentID *iscp.AgentID) uint64

@@ -48,7 +48,7 @@ func (vmctx *VMContext) sendOutput(o iotago.Output) {
 	}
 	vmctx.NumPostedOutputs++
 
-	assets := iscp.AssetsFromOutput(o)
+	assets := iscp.FungibleTokensFromOutput(o)
 
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough iotas for dust because

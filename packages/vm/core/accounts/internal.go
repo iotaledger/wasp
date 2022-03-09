@@ -125,7 +125,7 @@ type tokenBalanceMutation struct {
 }
 
 // loadAccountMutations traverses the assets of interest in the account and collects values for further processing
-func loadAccountMutations(account *collections.Map, assets *iscp.Assets) (uint64, uint64, map[iotago.NativeTokenID]tokenBalanceMutation) {
+func loadAccountMutations(account *collections.Map, assets *iscp.FungibleTokens) (uint64, uint64, map[iotago.NativeTokenID]tokenBalanceMutation) {
 	if assets == nil {
 		return 0, 0, nil
 	}
@@ -154,7 +154,7 @@ func loadAccountMutations(account *collections.Map, assets *iscp.Assets) (uint64
 }
 
 // CreditToAccount brings new funds to the on chain ledger
-func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
+func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.FungibleTokens) {
 	if assets == nil || (assets.Iotas == 0 && len(assets.Tokens) == 0) {
 		return
 	}
@@ -169,7 +169,7 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 }
 
 // creditToAccount adds assets to the internal account map
-func creditToAccount(account *collections.Map, assets *iscp.Assets) {
+func creditToAccount(account *collections.Map, assets *iscp.FungibleTokens) {
 	iotasBalance, iotasAdd, tokenMutations := loadAccountMutations(account, assets)
 	// safe arithmetics
 	if iotasAdd > iotago.TokenSupply || iotasBalance > iotago.TokenSupply-iotasAdd {
@@ -195,7 +195,7 @@ func creditToAccount(account *collections.Map, assets *iscp.Assets) {
 }
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
-func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
+func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.FungibleTokens) {
 	if assets.IsEmpty() {
 		return
 	}
@@ -214,7 +214,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 }
 
 // debitFromAccount debits assets from the internal accounts map
-func debitFromAccount(account *collections.Map, assets *iscp.Assets) bool {
+func debitFromAccount(account *collections.Map, assets *iscp.FungibleTokens) bool {
 	iotasBalance, iotasSub, tokenMutations := loadAccountMutations(account, assets)
 	// check if enough
 	if iotasBalance < iotasSub {
@@ -320,7 +320,7 @@ func debitNFTFromAccount(account *collections.Map, id iotago.NFTID) bool {
 }
 
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []iotago.NFTID) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) bool {
 	checkLedger(state, "MoveBetweenAccounts.IN")
 	defer checkLedger(state, "MoveBetweenAccounts.OUT")
 
@@ -351,7 +351,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	return true
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []iotago.NFTID) {
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, fungibleTokens, nfts) {
 		panic(xerrors.Errorf(" agentID: %s. %v. fungibleTokens: %s, nfts: %s", fromAgentID, ErrNotEnoughFunds, fungibleTokens, nfts))
 	}
@@ -360,9 +360,9 @@ func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.Agen
 func AdjustAccountIotas(state kv.KVStore, account *iscp.AgentID, adjustment int64) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(state, account, iscp.NewAssets(uint64(adjustment), nil))
+		CreditToAccount(state, account, iscp.NewFungibleTokens(uint64(adjustment), nil))
 	case adjustment < 0:
-		DebitFromAccount(state, account, iscp.NewAssets(uint64(-adjustment), nil))
+		DebitFromAccount(state, account, iscp.NewFungibleTokens(uint64(-adjustment), nil))
 	}
 }
 
@@ -396,7 +396,7 @@ func getNativeTokenBalance(account *collections.ImmutableMap, tokenID *iotago.Na
 }
 
 // GetAssets returns all assets owned by agentID. Returns nil if account does not exist
-func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
+func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.FungibleTokens {
 	acc := getAccountR(state, agentID)
 	ret := iscp.NewEmptyAssets()
 	acc.MustIterate(func(k []byte, v []byte) bool {
@@ -424,7 +424,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	return ret
 }
 
-func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
+func getAccountAssets(account *collections.ImmutableMap) *iscp.FungibleTokens {
 	ret := iscp.NewEmptyAssets()
 	account.MustIterate(func(idBytes []byte, val []byte) bool {
 		if len(idBytes) == 0 {
@@ -445,7 +445,7 @@ func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
 }
 
 // GetAccountAssets returns all assets belonging to the agentID on the state
-func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
+func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.FungibleTokens {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
 		return iscp.NewEmptyAssets()
@@ -453,12 +453,12 @@ func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Asset
 	return getAccountAssets(account)
 }
 
-func GetTotalL2Assets(state kv.KVStoreReader) *iscp.Assets {
+func GetTotalL2Assets(state kv.KVStoreReader) *iscp.FungibleTokens {
 	return getAccountAssets(getTotalL2AssetsAccountR(state))
 }
 
 // calcL2TotalAssets traverses the ledger and sums up all assets
-func calcL2TotalAssets(state kv.KVStoreReader) *iscp.Assets {
+func calcL2TotalAssets(state kv.KVStoreReader) *iscp.FungibleTokens {
 	ret := iscp.NewEmptyAssets()
 
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
@@ -926,7 +926,7 @@ func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
 		return
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
-	dustAssets := iscp.NewAssetsIotas(amount)
+	dustAssets := iscp.NewTokensIotas(amount)
 	transfer := iscp.NewAllowanceFungibleTokens(dustAssets)
 	ctx.TransferAllowedFunds(commonAccount, transfer)
 	DebitFromAccount(ctx.State(), commonAccount, dustAssets)

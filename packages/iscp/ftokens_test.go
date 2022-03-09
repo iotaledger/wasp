@@ -31,9 +31,9 @@ func TestMarshalling(t *testing.T) {
 		},
 	}
 
-	assets := NewAssets(1, tokens)
+	assets := NewFungibleTokens(1, tokens)
 	bytes := assets.Bytes()
-	assets2, err := AssetsFromMarshalUtil(marshalutil.New(bytes))
+	assets2, err := FungibleTokensFromMarshalUtil(marshalutil.New(bytes))
 	require.NoError(t, err)
 	require.Equal(t, assets.Iotas, assets2.Iotas)
 	require.Equal(t, len(assets.Tokens), len(assets2.Tokens))
@@ -43,93 +43,93 @@ func TestMarshalling(t *testing.T) {
 }
 
 func TestAssets_SpendBudget(t *testing.T) {
-	var toSpend *Assets
-	var budget *Assets
-	require.True(t, budget.SpendFromBudget(toSpend))
+	var toSpend *FungibleTokens
+	var budget *FungibleTokens
+	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.IsEmpty())
 	require.True(t, budget.IsEmpty())
 
-	budget = &Assets{Iotas: 1}
-	require.True(t, budget.SpendFromBudget(toSpend))
-	require.False(t, toSpend.SpendFromBudget(budget))
+	budget = &FungibleTokens{Iotas: 1}
+	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
+	require.False(t, toSpend.SpendFromFungibleTokenBudget(budget))
 
-	budget = &Assets{Iotas: 10}
-	require.True(t, budget.SpendFromBudget(budget))
+	budget = &FungibleTokens{Iotas: 10}
+	require.True(t, budget.SpendFromFungibleTokenBudget(budget))
 	require.True(t, budget.IsEmpty())
 
-	budget = &Assets{Iotas: 2}
-	toSpend = &Assets{Iotas: 1}
-	require.True(t, budget.SpendFromBudget(toSpend))
-	require.True(t, budget.Equals(&Assets{1, nil}))
+	budget = &FungibleTokens{Iotas: 2}
+	toSpend = &FungibleTokens{Iotas: 1}
+	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
+	require.True(t, budget.Equals(&FungibleTokens{1, nil}))
 
-	budget = &Assets{Iotas: 1}
-	toSpend = &Assets{Iotas: 2}
-	require.False(t, budget.SpendFromBudget(toSpend))
-	require.True(t, budget.Equals(&Assets{1, nil}))
+	budget = &FungibleTokens{Iotas: 1}
+	toSpend = &FungibleTokens{Iotas: 2}
+	require.False(t, budget.SpendFromFungibleTokenBudget(toSpend))
+	require.True(t, budget.Equals(&FungibleTokens{1, nil}))
 
 	tokenID1 := tpkg.RandNativeToken().ID
 	tokenID2 := tpkg.RandNativeToken().ID
 
-	budget = &Assets{
+	budget = &FungibleTokens{
 		Iotas: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	toSpend = budget.Clone()
-	require.True(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.IsEmpty())
 
-	budget = &Assets{
+	budget = &FungibleTokens{
 		Iotas: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	cloneBudget := budget.Clone()
-	toSpend = &Assets{
+	toSpend = &FungibleTokens{
 		Iotas: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(10)},
 		},
 	}
-	require.False(t, budget.SpendFromBudget(toSpend))
+	require.False(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.Equals(cloneBudget))
 
-	budget = &Assets{
+	budget = &FungibleTokens{
 		Iotas: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
-	toSpend = &Assets{
+	toSpend = &FungibleTokens{
 		Iotas: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
-	expected := &Assets{
+	expected := &FungibleTokens{
 		Iotas: 0,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
-	require.True(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.Equals(expected))
 
-	budget = &Assets{
+	budget = &FungibleTokens{
 		Iotas: 10,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
-	toSpend = &Assets{
+	toSpend = &FungibleTokens{
 		Iotas: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 
-	require.False(t, budget.SpendFromBudget(toSpend))
+	require.False(t, budget.SpendFromFungibleTokenBudget(toSpend))
 }

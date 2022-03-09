@@ -78,7 +78,7 @@ func TestWithdrawEverything(t *testing.T) {
 
 	// construct request with low allowance (just sufficient for dust balance), so its possible to estimate the gas fees
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAssets(iscp.NewAssetsIotas(l2balance)).AddAllowance(iscp.NewAllowanceIotas(5200))
+		WithAssets(iscp.NewTokensIotas(l2balance)).AddAllowance(iscp.NewAllowanceIotas(5200))
 
 	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender, true)
 	require.NoError(t, err)
