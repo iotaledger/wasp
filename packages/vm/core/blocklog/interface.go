@@ -480,5 +480,5 @@ func (ca *ControlAddresses) String() string {
 // endregion /////////////////////////////////////////////////////////////
 
 func BlockInfoKey(index uint32) []byte {
-	return collections.Array32ElemKey(prefixBlockRegistry, index)
+	return []byte(collections.Array32ElemKey(prefixBlockRegistry, index))
 }

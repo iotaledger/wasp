@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-// Key since map cannot have []byte as key, to avoid unnecessary conversions
+// Key represents a key in the KVStore, to avoid unnecessary conversions
 // between string and []byte, we use string as key data type, but it does
 // not necessarily have to be a valid UTF-8 string.
 type Key string
