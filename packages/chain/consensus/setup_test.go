@@ -258,13 +258,13 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			ret.mutex.Lock()
 			defer ret.mutex.Unlock()
 			ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
-				newState.StateCommitment(), iscp.OID(approvingOutputID))
+				newState.RootCommitment(), iscp.OID(approvingOutputID))
 
 			if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
 				ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
 				return
 			}
-			err := newState.Commit()
+			err := newState.Save()
 			require.NoError(env.T, err)
 
 			ret.SolidState = newState
@@ -302,7 +302,7 @@ func (n *mockedNode) checkStateApproval() {
 	}
 	stateHash, err := hashing.HashValueFromBytes(n.StateOutput.GetStateData())
 	require.NoError(n.Env.T, err)
-	require.EqualValues(n.Env.T, stateHash, n.SolidState.StateCommitment())
+	require.EqualValues(n.Env.T, stateHash, n.SolidState.RootCommitment())
 
 	reqIDsForLastState := make([]iscp.RequestID, 0)
 	prefix := kv.Key(util.Uint32To4Bytes(n.SolidState.BlockIndex()))

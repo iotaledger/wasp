@@ -298,7 +298,7 @@ func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAdd
 		lastOrd = uint64(p.Ord)
 	}
 	if settledSum > 0 {
-		tokens := iscp.NewAssets(settledSum, nil)
+		tokens := iscp.NewFungibleTokens(settledSum, nil)
 		ctx.Send(targetAddr, tokens, nil)
 	}
 	payerInfo := collections.NewMap(ctx.State(), string(iscp.BytesFromAddress(payerAddr)))

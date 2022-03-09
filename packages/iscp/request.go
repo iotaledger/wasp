@@ -1,5 +1,3 @@
-// Wrapping interfaces for the request
-// see also https://hackmd.io/@Evaldas/r1-L2UcDF and https://hackmd.io/@Evaldas/ryFK3Qr8Y and
 package iscp
 
 import (
@@ -49,10 +47,10 @@ type Calldata interface {
 	SenderAccount() *AgentID // returns nil if sender address is not available
 	SenderAddress() iotago.Address
 	CallTarget() CallTarget
-	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
-	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
-	NFT() *NFT
-	Allowance() *Allowance // transfer of assets to the smart contract. Debited from sender account
+	TargetAddress() iotago.Address   // TODO implement properly. Target depends on time assumptions and UTXO type
+	FungibleTokens() *FungibleTokens // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	NFT() *NFT                       // Not nil if the request is an NFT request
+	Allowance() *Allowance           // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() uint64
 }
 

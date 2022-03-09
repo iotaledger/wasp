@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -53,7 +54,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 
 	// catches protocol exception error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	err = util.CatchPanicReturnError(
+	err = panicutil.CatchPanicReturnError(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
@@ -75,7 +76,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
@@ -100,7 +101,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	if account == nil {
 		account = vmctx.ChainID().CommonAccount()
 	}
-	vmctx.creditToAccount(account, vmctx.req.Assets())
+	vmctx.creditToAccount(account, vmctx.req.FungibleTokens())
 	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the dust consumed or returned by internal UTXOs
@@ -314,8 +315,8 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &iscp.Assets{}
-	transferToOwner := &iscp.Assets{}
+	transferToValidator := &iscp.FungibleTokens{}
+	transferToOwner := &iscp.FungibleTokens{}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		transferToValidator.Tokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
@@ -370,7 +371,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *VMContext) mustCheckTransactionSize() {
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(&iscp.StateData{})
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)

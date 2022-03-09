@@ -62,7 +62,7 @@ func assetIDFromString(s string) []byte {
 	return ret
 }
 
-func parseAssets(args []string) *iscp.Assets {
+func parseAssets(args []string) *iscp.FungibleTokens {
 	assets := iscp.NewEmptyAssets()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
@@ -76,7 +76,7 @@ func parseAssets(args []string) *iscp.Assets {
 			log.Fatalf("error parsing token amount")
 		}
 
-		if bytes.Equal(assetIDBytes, iscp.IotaAssetID) {
+		if bytes.Equal(assetIDBytes, iscp.IotaTokenID) {
 			assets.AddIotas(amount.Uint64())
 			continue
 		}

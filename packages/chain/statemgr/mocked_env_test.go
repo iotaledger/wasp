@@ -27,6 +27,7 @@ type MockedEnv struct {
 	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
 	StateKeyPair      *cryptolib.KeyPair
+	NodeIDs           []string
 	NodePubKeys       []*cryptolib.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
@@ -54,7 +55,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
-		StateMetadata: state.OriginStateHash().Bytes(),
+		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: addr},
 			&iotago.GovernorAddressUnlockCondition{Address: addr},
@@ -71,6 +72,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
 	nodeIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	ret.NodeIDs = nodeIDs
 	ret.NodePubKeys = testpeers.PublicKeys(nodeIdentities)
 	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 

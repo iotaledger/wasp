@@ -60,7 +60,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	})
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
-		a := out.Assets()
+		a := out.FungibleTokens()
 		ret.TotalIotasInL2Accounts += a.Iotas
 		for _, nt := range a.Tokens {
 			s, ok := ret.NativeTokenBalances[nt.ID]
@@ -140,7 +140,7 @@ func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionT
 	return totalsIN, totalsOUT, err
 }
 
-// TotalIotasInOutputs returns a) total iotas owned by SCs and b) total iotas locked as dust deposit
+// TotalIotasInOutputs returns (a) total iotas owned by SCs and (b) total iotas locked as dust deposit
 func (txb *AnchorTransactionBuilder) TotalIotasInOutputs() (uint64, uint64) {
 	totals := txb.sumOutputs()
 	return totals.TotalIotasInL2Accounts, totals.TotalIotasInDustDeposit
@@ -175,7 +175,7 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	}
 }
 
-func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.Assets, checkpoint string) {
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.FungibleTokens, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
 		panic(xerrors.Errorf("%v: %v", vm.ErrFatalTxBuilderNotBalanced, err))

@@ -13,10 +13,6 @@ func DeSerializationParametersForTesting() *iotago.DeSerializationParameters {
 	return testdeserparams.DeSerializationParameters() // TODO
 }
 
-func RentStructureForTesting() *iotago.RentStructure {
-	return testdeserparams.RentStructure() // TODO
-}
-
 // L1 describes parameters coming from the L1 node
 type L1 struct {
 	NetworkID                 uint64

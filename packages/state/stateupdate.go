@@ -3,11 +3,11 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"io"
 	"math"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -16,7 +16,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// stateUpdateImpl implement StateUpdate interface
+// stateUpdateImpl implement Update interface
 type stateUpdateImpl struct {
 	mutations *buffered.Mutations
 }
@@ -32,13 +32,13 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
 	return ret
 }
 
-func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) StateUpdate {
+func NewStateUpdateWithBlockLogValues(blockIndex uint32, timestamp time.Time, prevStateCommitment trie.VCommitment) Update {
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
 	ret.setBlockIndexMutation(blockIndex)
 	ret.setTimestampMutation(timestamp)
-	ret.setPrevStateHashMutation(prevStateHash)
+	ret.setPrevStateCommitmentMutation(prevStateCommitment)
 	return ret
 }
 
@@ -54,9 +54,9 @@ func (su *stateUpdateImpl) Mutations() *buffered.Mutations {
 	return su.mutations
 }
 
-// StateUpdate
+// Update
 
-func (su *stateUpdateImpl) Clone() StateUpdate {
+func (su *stateUpdateImpl) Clone() Update {
 	return su.clone()
 }
 
@@ -99,14 +99,14 @@ func (su *stateUpdateImpl) timestampMutation() (time.Time, bool, error) {
 	return ret, true, nil
 }
 
-func (su *stateUpdateImpl) previousStateHashMutation() (hashing.HashValue, bool, error) {
-	hashBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevStateHash))
+func (su *stateUpdateImpl) previousStateHashMutation(model trie.CommitmentModel) (trie.VCommitment, bool, error) {
+	data, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
 	if !ok {
-		return hashing.NilHash, false, nil
+		return nil, false, nil
 	}
-	ret, err := codec.DecodeHashValue(hashBin)
+	ret, err := model.VectorCommitmentFromBytes(data)
 	if err != nil {
-		return hashing.NilHash, false, err
+		return nil, false, err
 	}
 	return ret, true, nil
 }
@@ -136,14 +136,7 @@ func (su *stateUpdateImpl) String() string {
 	} else if ok {
 		bi = fmt.Sprintf("%d", idx)
 	}
-	ph := none
-	h, ok, err := su.previousStateHashMutation()
-	if err != nil {
-		ph = fmt.Sprintf("(%v)", err)
-	} else if ok {
-		ph = h.Base58()
-	}
-	return fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s prevStateHash: %s muts: [%+v]", ts, bi, ph, su.mutations)
+	return fmt.Sprintf("Update:: ts: %s, blockIndex: %s muts: [%+v]", ts, bi, su.mutations)
 }
 
 // findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
@@ -171,15 +164,15 @@ func findTimestampMutation(stateUpdate *stateUpdateImpl) (time.Time, error) {
 	return ts, nil
 }
 
-// findPrevStateHashMutation goes backward and searches for the 'set' mutation of the previous state hash
+// findPrevStateCommitmentMutation goes backward and searches for the 'set' mutation of the previous state hash
 // Return NilHash if not found
-func findPrevStateHashMutation(stateUpdate *stateUpdateImpl) (hashing.HashValue, error) {
-	h, exists, err := stateUpdate.previousStateHashMutation()
+func findPrevStateCommitmentMutation(stateUpdate *stateUpdateImpl, model trie.CommitmentModel) (trie.VCommitment, error) {
+	h, exists, err := stateUpdate.previousStateHashMutation(model)
 	if err != nil {
-		return hashing.NilHash, err
+		return nil, err
 	}
 	if !exists {
-		return hashing.NilHash, nil
+		return nil, nil
 	}
 	return h, nil
 }
@@ -192,6 +185,6 @@ func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint64To8Bytes(uint64(blockIndex)))
 }
 
-func (su *stateUpdateImpl) setPrevStateHashMutation(prevStateHash hashing.HashValue) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateHash), prevStateHash.Bytes())
+func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VCommitment) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateCommitment), prevStateCommitment.Bytes())
 }

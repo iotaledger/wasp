@@ -51,7 +51,7 @@ func LocateFile(fileName string, relativePath ...string) string {
 	return path
 }
 
-// Exists returns whether the given file or directory exists.
+// ExistsFilePath returns whether the given file or directory exists.
 func ExistsFilePath(filePath string) (bool, error) {
 	_, err := os.Stat(filePath)
 	if err == nil {

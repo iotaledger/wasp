@@ -4,6 +4,10 @@
 package solo
 
 import (
+	"bytes"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
+	"github.com/iotaledger/wasp/packages/state"
 	"math"
 	"time"
 
@@ -28,7 +32,7 @@ type CallParams struct {
 	target     iscp.Hname
 	epName     string
 	entryPoint iscp.Hname
-	assets     *iscp.Assets // ignored off-ledger
+	assets     *iscp.FungibleTokens // ignored off-ledger
 	nft        *iscp.NFT
 	allowance  *iscp.Allowance
 	gasBudget  uint64
@@ -85,7 +89,7 @@ func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken)
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
-	r.allowance.Assets.Add(&iscp.Assets{
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 	return r
@@ -95,7 +99,7 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
-	r.allowance.Assets.Add(&iscp.Assets{
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
@@ -104,7 +108,7 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 	return r
 }
 
-func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+func (r *CallParams) WithAssets(assets *iscp.FungibleTokens) *CallParams {
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
@@ -112,7 +116,7 @@ func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
+func (r *CallParams) AddAssets(assets *iscp.FungibleTokens) *CallParams {
 	if r.assets == nil {
 		r.assets = assets.Clone()
 	} else {
@@ -122,17 +126,17 @@ func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
-	return r.AddAssets(iscp.NewAssets(amount, nil))
+	return r.AddAssets(iscp.NewFungibleTokens(amount, nil))
 }
 
 func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+	return r.AddAssets(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 }
 
 func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+	return r.AddAssets(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *tokenID,
 			Amount: util.ToBigInt(amount),
@@ -232,8 +236,8 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Request: &iscp.RequestParameters{
-			TargetAddress: ch.ChainID.AsAddress(),
-			Assets:        req.assets,
+			TargetAddress:  ch.ChainID.AsAddress(),
+			FungibleTokens: req.assets,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
@@ -457,6 +461,45 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
+}
+
+// GetMerkleProofRaw returns Merkle proof of the key in the state
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
+	ch.Log().Debugf("GetMerkleProof")
+
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	ret, err := vmctx.GetMerkleProof(key)
+	require.NoError(ch.Env.T, err)
+	return ret
+}
+
+// GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Mekle model is used
+func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Proof {
+	var buf bytes.Buffer
+	buf.Write(scHname.Bytes())
+	buf.Write(key)
+	return ch.GetMerkleProofRaw(buf.Bytes())
+}
+
+// GetStateCommitment returns state commitment taken from the anchor output
+func (ch *Chain) GetStateCommitment() trie.VCommitment {
+	anchorOutput := ch.GetAnchorOutput()
+	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
+	require.NoError(ch.Env.T, err)
+	return ret.Commitment
+}
+
+// GetRootCommitment calculates root commitment from state
+func (ch *Chain) GetRootCommitment() trie.VCommitment {
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	ret, err := vmctx.GetRootCommitment()
+	require.NoError(ch.Env.T, err)
+	return ret
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
