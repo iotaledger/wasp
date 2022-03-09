@@ -38,9 +38,9 @@ func rndAliasID() (ret iotago.AliasID) {
 
 // return deposit in iotas
 func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, addIotasToDustMinimum ...uint64) uint64 {
-	var assets *iscp.Assets
+	var assets *iscp.FungibleTokens
 	if amountNative > 0 {
-		assets = &iscp.Assets{
+		assets = &iscp.FungibleTokens{
 			Iotas:  0,
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
@@ -65,7 +65,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 }
 
 func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.NativeTokenID) uint64 {
-	assets := &iscp.Assets{
+	assets := &iscp.FungibleTokens{
 		Iotas: 0,
 		Tokens: iotago.NativeTokens{
 			&iotago.NativeToken{
@@ -79,7 +79,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 		iscp.Hn("test"),
 		iscp.RequestParameters{
 			TargetAddress:              tpkg.RandEd25519Address(),
-			Assets:                     assets,
+			FungibleTokens:             assets,
 			Metadata:                   &iscp.SendMetadata{},
 			Options:                    iscp.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
@@ -660,7 +660,7 @@ func TestDustDeposit(t *testing.T) {
 		require.Equal(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
-		assets := iscp.NewAssets(10000, nil)
+		assets := iscp.NewFungibleTokens(10000, nil)
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},

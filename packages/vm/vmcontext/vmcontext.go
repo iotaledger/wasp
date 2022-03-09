@@ -296,7 +296,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		return
 	}
-	var totalL2Assets *iscp.Assets
+	var totalL2Assets *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})

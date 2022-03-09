@@ -18,8 +18,8 @@ func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(200, nil, nil))
 		ctx.Send(
 			iscp.RequestParameters{
-				TargetAddress: ctx.Caller().Address(),
-				Assets:        iscp.NewAssetsIotas(200),
+				TargetAddress:  ctx.Caller().Address(),
+				FungibleTokens: iscp.NewTokensIotas(200),
 			},
 		)
 	}
@@ -42,7 +42,7 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 			ctx.Send(
 				iscp.RequestParameters{
 					TargetAddress:              ctx.Caller().Address(),
-					Assets:                     assets,
+					FungibleTokens:             assets,
 					AdjustToMinimumDustDeposit: true,
 				},
 			)
@@ -69,8 +69,8 @@ func pingAllowanceBack(ctx iscp.Sandbox) dict.Dict {
 	// send the funds to the caller L1 address on-ledger
 	ctx.Send(
 		iscp.RequestParameters{
-			TargetAddress: ctx.Caller().Address(),
-			Assets:        toSend,
+			TargetAddress:  ctx.Caller().Address(),
+			FungibleTokens: toSend,
 		},
 	)
 	return nil
@@ -103,7 +103,7 @@ func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
 	for _, nftID := range allowance.NFTs {
 		ctx.SendAsNFT(iscp.RequestParameters{
 			TargetAddress:              ctx.Caller().Address(),
-			Assets:                     &iscp.Assets{},
+			FungibleTokens:             &iscp.FungibleTokens{},
 			AdjustToMinimumDustDeposit: true,
 			Metadata:                   &iscp.SendMetadata{},
 			Options:                    iscp.SendOptions{},
@@ -121,7 +121,7 @@ func sendLargeRequest(ctx iscp.Sandbox) dict.Dict {
 			Params:         dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
 		},
 		AdjustToMinimumDustDeposit: true,
-		Assets:                     ctx.AllowanceAvailable().Assets,
+		FungibleTokens:             ctx.AllowanceAvailable().Assets,
 	}
 	dust := ctx.EstimateRequiredDustDeposit(req)
 	provided := ctx.AllowanceAvailable().Assets.Iotas
@@ -129,7 +129,7 @@ func sendLargeRequest(ctx iscp.Sandbox) dict.Dict {
 		panic("not enough funds for dust")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowanceIotas(dust))
-	req.Assets.Iotas = dust
+	req.FungibleTokens.Iotas = dust
 	ctx.Send(req)
 	return nil
 }

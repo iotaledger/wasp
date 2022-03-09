@@ -65,6 +65,7 @@ func EqualCommitments(c1, c2 CommitmentBase) bool {
 	if c1 == c2 {
 		return true
 	}
+	// TODO better suggestion ? The problem: type(nil) != nil
 	c1Nil := c1 == nil || (reflect.ValueOf(c1).Kind() == reflect.Ptr && reflect.ValueOf(c1).IsNil())
 	c2Nil := c2 == nil || (reflect.ValueOf(c2).Kind() == reflect.Ptr && reflect.ValueOf(c2).IsNil())
 	if c1Nil && c2Nil {

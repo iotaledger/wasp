@@ -14,8 +14,7 @@ func TestSerialize(t *testing.T) {
 		Issuer:   tpkg.RandEd25519Address(),
 		Metadata: []byte("foobar"),
 	}
-	nftBytes, err := nft.Bytes()
-	require.NoError(t, err)
+	nftBytes := nft.Bytes()
 	deserialized, err := NFTFromBytes(nftBytes)
 	require.NoError(t, err)
 	require.Equal(t, nft.ID, deserialized.ID)

@@ -83,7 +83,7 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
+func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
@@ -196,7 +196,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 
 func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieAccess())
+		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {
@@ -208,7 +208,7 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err 
 // GetRootCommitment calculates root commitment from state. It must be equal to the RootCommitment from the anchor
 func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = trie.RootCommitment(ctx.stateReader.TrieAccess())
+		ret = trie.RootCommitment(ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {

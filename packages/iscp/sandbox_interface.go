@@ -62,8 +62,8 @@ type Balance interface {
 	BalanceIotas() uint64
 	// BalanceNativeToken returns number of native token or nil if it is empty
 	BalanceNativeToken(id *iotago.NativeTokenID) *big.Int
-	// Assets returns all assets: iotas and native tokens
-	Assets() *Assets
+	// BalanceFungibleTokens returns all fungible tokens: iotas and native tokens
+	BalanceFungibleTokens() *FungibleTokens
 }
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -106,7 +106,7 @@ type Sandbox interface {
 	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
-	// Send sends an on-ledger request as an NFTOutput
+	// SendAsNFT sends an on-ledger request as an NFTOutput
 	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
 	EstimateRequiredDustDeposit(r RequestParameters) uint64
@@ -130,11 +130,11 @@ type Privileged interface {
 type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
-	// Assets attached to the output, always taken from the caller's account.
+	// FungibleTokens attached to the output, always taken from the caller's account.
 	// It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
-	Assets *Assets
-	// AdjustToMinimumDustDeposit if true iotas in assets will be added to meet minimum dust deposit requirements
+	FungibleTokens *FungibleTokens
+	// AdjustToMinimumDustDeposit if true iotas in attached fungible tokens will be added to meet minimum dust deposit requirements
 	AdjustToMinimumDustDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata

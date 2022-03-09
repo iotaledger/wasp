@@ -80,7 +80,7 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	o := MakeBasicOutput(
 		&addr,
 		&addr,
-		&iscp.Assets{
+		&iscp.FungibleTokens{
 			Iotas: 1,
 			Tokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
@@ -99,7 +99,7 @@ func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	basicOut := MakeBasicOutput(
 		&addr,
 		&addr,
-		&iscp.Assets{
+		&iscp.FungibleTokens{
 			Iotas: 1,
 			Tokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},

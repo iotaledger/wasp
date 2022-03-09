@@ -175,7 +175,7 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	}
 }
 
-func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.Assets, checkpoint string) {
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.FungibleTokens, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
 		panic(xerrors.Errorf("%v: %v", vm.ErrFatalTxBuilderNotBalanced, err))

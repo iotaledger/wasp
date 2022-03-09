@@ -32,7 +32,7 @@ type CallParams struct {
 	target     iscp.Hname
 	epName     string
 	entryPoint iscp.Hname
-	assets     *iscp.Assets // ignored off-ledger
+	assets     *iscp.FungibleTokens // ignored off-ledger
 	nft        *iscp.NFT
 	allowance  *iscp.Allowance
 	gasBudget  uint64
@@ -88,7 +88,7 @@ func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken)
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
-	r.allowance.Assets.Add(&iscp.Assets{
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 	return r
@@ -98,7 +98,7 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
-	r.allowance.Assets.Add(&iscp.Assets{
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
@@ -107,7 +107,7 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 	return r
 }
 
-func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+func (r *CallParams) WithAssets(assets *iscp.FungibleTokens) *CallParams {
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
@@ -115,7 +115,7 @@ func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
+func (r *CallParams) AddAssets(assets *iscp.FungibleTokens) *CallParams {
 	if r.assets == nil {
 		r.assets = assets.Clone()
 	} else {
@@ -125,17 +125,17 @@ func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
-	return r.AddAssets(iscp.NewAssets(amount, nil))
+	return r.AddAssets(iscp.NewFungibleTokens(amount, nil))
 }
 
 func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+	return r.AddAssets(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 }
 
 func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+	return r.AddAssets(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *tokenID,
 			Amount: util.ToBigInt(amount),
@@ -224,8 +224,8 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Request: &iscp.RequestParameters{
-			TargetAddress: ch.ChainID.AsAddress(),
-			Assets:        req.assets,
+			TargetAddress:  ch.ChainID.AsAddress(),
+			FungibleTokens: req.assets,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,

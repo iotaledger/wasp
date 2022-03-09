@@ -43,7 +43,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
 
 	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
-	initialLoadIotas := iscp.NewAssets(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
+	initialLoadIotas := iscp.NewFungibleTokens(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
 	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadIotas)
 	return nil
 }
@@ -114,12 +114,12 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 
 	if isCallerAContract {
 		allowance := iscp.NewAllowanceFungibleTokens(
-			iscp.NewAssetsIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+			iscp.NewTokensIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
 		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
-			TargetAddress: ctx.Caller().Address(),
-			Assets:        fundsToWithdraw,
+			TargetAddress:  ctx.Caller().Address(),
+			FungibleTokens: fundsToWithdraw,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
@@ -138,8 +138,8 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 		return nil
 	}
 	tx := iscp.RequestParameters{
-		TargetAddress: ctx.Caller().Address(),
-		Assets:        fundsToWithdraw,
+		TargetAddress:  ctx.Caller().Address(),
+		FungibleTokens: fundsToWithdraw,
 	}
 	if nftID != nil {
 		ctx.SendAsNFT(tx, *nftID)
@@ -216,7 +216,7 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
 	// the dust deposit goes to the caller's account
-	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.FungibleTokens{
 		Iotas: dustDepositReleased,
 	})
 	return nil
@@ -259,7 +259,7 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 		debitIotasFromAllowance(ctx, uint64(-dustAdjustment))
 	case dustAdjustment > 0:
 		// dust deposit is returned to the caller account
-		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewAssetsIotas(uint64(dustAdjustment)))
+		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewTokensIotas(uint64(dustAdjustment)))
 	}
 	return nil
 }

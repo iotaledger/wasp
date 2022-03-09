@@ -166,7 +166,7 @@ func testPingIotas1(t *testing.T, w bool) {
 	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
 	require.NoError(t, err)
 	req.
-		WithAssets(iscp.NewAssetsIotas(expectedBack + gasFee)).
+		WithAssets(iscp.NewTokensIotas(expectedBack + gasFee)).
 		WithGasBudget(gas)
 
 	_, err = ch.PostRequestSync(req, user)
@@ -234,8 +234,8 @@ func testSendNFTsBack(t *testing.T, w bool) {
 
 	iotasToSend := uint64(300_000)
 	iotasForGas := uint64(100_000)
-	assetsToSend := iscp.NewAssetsIotas(iotasToSend)
-	assetsToAllow := iscp.NewAssetsIotas(iotasToSend - iotasForGas)
+	assetsToSend := iscp.NewTokensIotas(iotasToSend)
+	assetsToAllow := iscp.NewTokensIotas(iotasToSend - iotasForGas)
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
@@ -260,7 +260,7 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	nft, _ := mintDummyNFT(t, ch, wallet, addr)
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddAssets(iscp.NewAssetsIotas(1_000_000)).
+		AddAssets(iscp.NewTokensIotas(1_000_000)).
 		WithNFT(nft).
 		WithMaxAffordableGasBudget()
 

@@ -103,6 +103,7 @@ func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {
 }
 
 // Read/Write implements optimized serialization of the trie node
+// TODO comment how optimized serialization works
 
 func (n *Node) Write(w io.Writer) error {
 	if err := util.WriteBytes16(w, n.PathFragment); err != nil {

@@ -50,7 +50,7 @@ type Calldata interface {
 	SenderAddress() iotago.Address
 	CallTarget() CallTarget
 	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
-	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	Assets() *FungibleTokens       // attached assets for the UTXO request, nil for off-ledger. All goes to sender
 	NFT() *NFT
 	Allowance() *Allowance // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() uint64

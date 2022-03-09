@@ -73,7 +73,7 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 	return feePolicy, nil
 }
 
-func (e *EVMChain) L2Balance() (*iscp.Assets, error) {
+func (e *EVMChain) L2Balance() (*iscp.FungibleTokens, error) {
 	agentID := iscp.NewAgentID(e.backend.Signer().GetPublicKey().AsEd25519Address(), 0)
 	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
@@ -81,7 +81,7 @@ func (e *EVMChain) L2Balance() (*iscp.Assets, error) {
 	if err != nil {
 		return nil, err
 	}
-	return iscp.AssetsFromDict(ret)
+	return iscp.FungibleTokensFromDict(ret)
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
@@ -102,7 +102,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	if !bal.SpendFromBudget(sendTxFee) {
+	if !bal.SpendFromFungibleTokenBudget(sendTxFee) {
 		// not enough L2 balance to cover the fees; make a deposit first
 
 		// We want to deposit sendTxFee, but that also has a gas fee... so much for being feeless...

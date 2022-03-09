@@ -10,9 +10,9 @@ import (
 )
 
 type ChainBackend interface {
-	EstimateGasOnLedger(scName string, funName string, transfer *iscp.Assets, args dict.Dict) (uint64, *iscp.Assets, error)
-	PostOnLedgerRequest(scName string, funName string, transfer *iscp.Assets, args dict.Dict, gasBudget uint64) error
-	EstimateGasOffLedger(scName string, funName string, args dict.Dict) (uint64, *iscp.Assets, error)
+	EstimateGasOnLedger(scName string, funName string, transfer *iscp.FungibleTokens, args dict.Dict) (uint64, *iscp.FungibleTokens, error)
+	PostOnLedgerRequest(scName string, funName string, transfer *iscp.FungibleTokens, args dict.Dict, gasBudget uint64) error
+	EstimateGasOffLedger(scName string, funName string, args dict.Dict) (uint64, *iscp.FungibleTokens, error)
 	PostOffLedgerRequest(scName string, funName string, args dict.Dict, gasBudget uint64) error
 	CallView(scName string, funName string, args dict.Dict) (dict.Dict, error)
 	Signer() *cryptolib.KeyPair

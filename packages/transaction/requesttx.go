@@ -35,10 +35,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	req := par.Request
 
 	// create outputs, sum totals needed
-	assets := req.Assets
+	assets := req.FungibleTokens
 	if assets == nil {
 		// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
-		assets = &iscp.Assets{}
+		assets = &iscp.FungibleTokens{}
 	}
 	var out iotago.Output
 	// will adjust to minimum dust deposit

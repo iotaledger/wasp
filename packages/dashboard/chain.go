@@ -119,12 +119,12 @@ func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (*iscp.Assets, error) {
+func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (*iscp.FungibleTokens, error) {
 	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
 	}
-	return iscp.AssetsFromDict(bal)
+	return iscp.FungibleTokensFromDict(bal)
 }
 
 func (d *Dashboard) fetchBlobs(chainID *iscp.ChainID) (map[hashing.HashValue]uint32, error) {
@@ -149,7 +149,7 @@ type ChainTemplateParams struct {
 	LatestBlock *LatestBlock
 	RootInfo    RootInfo
 	Accounts    []*iscp.AgentID
-	TotalAssets *iscp.Assets
+	TotalAssets *iscp.FungibleTokens
 	Blobs       map[hashing.HashValue]uint32
 	Committee   *chain.CommitteeInfo
 }

@@ -165,7 +165,7 @@ func DumpToFile(r KVStoreReader, fname string) (int, error) {
 	defer file.Close()
 
 	var bytesTotal int
-	_ = r.Iterate("", func(k Key, v []byte) bool {
+	err = r.Iterate("", func(k Key, v []byte) bool {
 		n, errw := writeKV(file, []byte(k), v)
 		if errw != nil {
 			err = errw

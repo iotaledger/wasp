@@ -34,7 +34,7 @@ type OptimisticStateReader interface {
 	Timestamp() (time.Time, error)
 	KVStoreReader() kv.KVStoreReader
 	SetBaseline()
-	TrieAccess() trie.NodeStore
+	TrieNodeStore() trie.NodeStore
 }
 
 // Update is a set of mutations

@@ -221,8 +221,8 @@ func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 	r.signature, _ = key.GetPrivateKey().Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }
 
-// Assets is attached assets to the UTXO. Nil for off-ledger
-func (r *OffLedgerRequestData) Assets() *Assets {
+// FungibleTokens is attached assets to the UTXO. Nil for off-ledger
+func (r *OffLedgerRequestData) Assets() *FungibleTokens {
 	return nil
 }
 
@@ -481,11 +481,11 @@ func (r *OnLedgerRequestData) Allowance() *Allowance {
 	return r.requestMetadata.Allowance
 }
 
-func (r *OnLedgerRequestData) Assets() *Assets {
+func (r *OnLedgerRequestData) Assets() *FungibleTokens {
 	amount := r.output.Deposit()
 	var tokens iotago.NativeTokens
 	tokens = r.output.NativeTokenSet()
-	return NewAssets(amount, tokens)
+	return NewFungibleTokens(amount, tokens)
 }
 
 func (r *OnLedgerRequestData) GasBudget() uint64 {

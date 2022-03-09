@@ -28,11 +28,11 @@ func (w *WaspClientBackend) Signer() *cryptolib.KeyPair {
 	return w.ChainClient.KeyPair
 }
 
-func (w *WaspClientBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp.Assets, args dict.Dict) (uint64, *iscp.Assets, error) {
+func (w *WaspClientBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp.FungibleTokens, args dict.Dict) (uint64, *iscp.FungibleTokens, error) {
 	panic("TODO implement")
 }
 
-func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict, gasBugdet uint64) error {
+func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.FungibleTokens, args dict.Dict, gasBugdet uint64) error {
 	panic("TODO implement")
 	// tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 	// 	Allowance: transfer,
@@ -51,7 +51,7 @@ func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer
 	// panic("should not reach here")
 }
 
-func (w *WaspClientBackend) EstimateGasOffLedger(scName, funName string, args dict.Dict) (uint64, *iscp.Assets, error) {
+func (w *WaspClientBackend) EstimateGasOffLedger(scName, funName string, args dict.Dict) (uint64, *iscp.FungibleTokens, error) {
 	panic("TODO implement")
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 type Allowance struct {
-	Assets *Assets
+	Assets *FungibleTokens
 	NFTs   []iotago.NFTID
 }
 
@@ -21,7 +21,7 @@ func NewEmptyAllowance() *Allowance {
 
 func NewAllowance(iotas uint64, tokens iotago.NativeTokens, NFTs []iotago.NFTID) *Allowance {
 	return &Allowance{
-		Assets: NewAssets(iotas, tokens),
+		Assets: NewFungibleTokens(iotas, tokens),
 		NFTs:   NFTs,
 	}
 }
@@ -30,7 +30,7 @@ func NewAllowanceIotas(iotas uint64) *Allowance {
 	return NewAllowance(iotas, nil, nil)
 }
 
-func NewAllowanceFungibleTokens(ftokens *Assets) *Allowance {
+func NewAllowanceFungibleTokens(ftokens *FungibleTokens) *Allowance {
 	return &Allowance{
 		Assets: ftokens,
 	}
@@ -52,7 +52,7 @@ func (a *Allowance) Clone() *Allowance {
 }
 
 func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
-	a.Assets.SpendFromBudget(toSpend.Assets)
+	a.Assets.SpendFromFungibleTokenBudget(toSpend.Assets)
 	nftSet := a.NFTSet()
 	for _, id := range toSpend.NFTs {
 		if !nftSet[id] {
@@ -85,7 +85,7 @@ func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 }
 
 func AllowanceFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Allowance, error) {
-	assets, err := AssetsFromMarshalUtil(mu)
+	assets, err := FungibleTokensFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}

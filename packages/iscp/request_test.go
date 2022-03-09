@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"bytes"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"math/big"
 	"testing"
 
@@ -30,7 +31,7 @@ func TestSerializeRequestData(t *testing.T) {
 	})
 
 	t.Run("on ledger", func(t *testing.T) {
-		sender, _ := iotago.ParseEd25519AddressFromHexString("0152fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649")
+		sender := tpkg.RandEd25519Address()
 		requestMetadata := &RequestMetadata{
 			SenderContract: Hn("sender_contract"),
 			TargetContract: Hn("target_contract"),

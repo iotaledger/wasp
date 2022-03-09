@@ -315,8 +315,8 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &iscp.Assets{}
-	transferToOwner := &iscp.Assets{}
+	transferToValidator := &iscp.FungibleTokens{}
+	transferToOwner := &iscp.FungibleTokens{}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		transferToValidator.Tokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},

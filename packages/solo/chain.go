@@ -542,8 +542,8 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.Ke
 
 type L1L2AddressAssets struct {
 	Address  iotago.Address
-	AssetsL1 *iscp.Assets
-	AssetsL2 *iscp.Assets
+	AssetsL1 *iscp.FungibleTokens
+	AssetsL2 *iscp.FungibleTokens
 }
 
 func (a *L1L2AddressAssets) String() string {

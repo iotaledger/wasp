@@ -53,6 +53,6 @@ func (r *OptimisticStateReaderImpl) SetBaseline() {
 	r.stateReader.SetBaseline()
 }
 
-func (r *OptimisticStateReaderImpl) TrieAccess() trie.NodeStore {
+func (r *OptimisticStateReaderImpl) TrieNodeStore() trie.NodeStore {
 	return r.trie
 }

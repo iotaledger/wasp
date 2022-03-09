@@ -38,7 +38,7 @@ func TestOriginHashes(t *testing.T) {
 		chainID := testmisc.RandChainID()
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
-		require.True(t, trie.RootCommitment(vs.TrieAccess()).Equal(OriginStateCommitment()))
+		require.True(t, trie.EqualCommitments(trie.RootCommitment(vs.TrieAccess()), OriginStateCommitment()))
 		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieAccess()))
 	})
 }
@@ -353,7 +353,7 @@ func TestRnd(t *testing.T) {
 					t.Logf("============== reconcile failed: %v", diff)
 				}
 
-				require.True(t, c1.Equal(c2))
+				require.True(t, trie.EqualCommitments(c1, c2))
 			}
 		}
 		vs.Commit()
@@ -435,7 +435,7 @@ func TestStateBasic(t *testing.T) {
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
 	h1 := trie.RootCommitment(vs1.TrieAccess())
-	require.True(t, OriginStateCommitment().Equal(h1))
+	require.True(t, trie.EqualCommitments(OriginStateCommitment(), h1))
 
 	vs2 := vs1.Copy()
 	h2 := trie.RootCommitment(vs2.TrieAccess())
@@ -476,7 +476,7 @@ func TestStateReader(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, ok)
 
-		c2 := trie.RootCommitment(st.TrieAccess())
+		c2 := trie.RootCommitment(st.TrieNodeStore())
 		require.True(t, trie.EqualCommitments(c1, c2))
 	})
 }
@@ -493,7 +493,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
 	h1 := trie.RootCommitment(vsOpt.TrieAccess())
-	require.True(t, OriginStateCommitment().Equal(h1))
+	require.True(t, trie.EqualCommitments(OriginStateCommitment(), h1))
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()

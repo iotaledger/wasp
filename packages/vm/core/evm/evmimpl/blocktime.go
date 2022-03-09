@@ -49,7 +49,7 @@ func scheduleNextBlock(ctx iscp.Sandbox) {
 
 	ctx.Send(iscp.RequestParameters{
 		TargetAddress:              ctx.ChainID().AsAddress(),
-		Assets:                     iscp.NewAssets(1, nil),
+		FungibleTokens:             iscp.NewFungibleTokens(1, nil),
 		AdjustToMinimumDustDeposit: true,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Contract(),

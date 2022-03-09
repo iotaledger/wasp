@@ -410,7 +410,7 @@ func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
 }
 
 // GetAddressBalances returns the total amount of iotas and tokens owned by the address
-func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.Assets {
+func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -430,7 +430,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.Assets {
 			tokens[token.ID] = new(big.Int).Add(val, token.Amount)
 		}
 	}
-	return iscp.AssetsFromNativeTokenSum(iotas, tokens)
+	return iscp.FungibleTokensFromNativeTokenSum(iotas, tokens)
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address
