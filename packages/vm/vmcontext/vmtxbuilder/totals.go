@@ -60,7 +60,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	})
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
-		a := out.Assets()
+		a := out.FungibleTokens()
 		ret.TotalIotasInL2Accounts += a.Iotas
 		for _, nt := range a.Tokens {
 			s, ok := ret.NativeTokenBalances[nt.ID]

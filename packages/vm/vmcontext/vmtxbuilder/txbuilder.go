@@ -151,7 +151,7 @@ func (txb *AnchorTransactionBuilder) Consume(req iscp.Request) int64 {
 	txb.addDeltaIotasToTotal(req.AsOnLedger().Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
-	for _, nt := range req.Assets().Tokens {
+	for _, nt := range req.FungibleTokens().Tokens {
 		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	if req.NFT() != nil {

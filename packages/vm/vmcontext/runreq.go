@@ -101,7 +101,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	if account == nil {
 		account = vmctx.ChainID().CommonAccount()
 	}
-	vmctx.creditToAccount(account, vmctx.req.Assets())
+	vmctx.creditToAccount(account, vmctx.req.FungibleTokens())
 	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the dust consumed or returned by internal UTXOs

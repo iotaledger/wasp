@@ -222,7 +222,7 @@ func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 }
 
 // FungibleTokens is attached assets to the UTXO. Nil for off-ledger
-func (r *OffLedgerRequestData) Assets() *FungibleTokens {
+func (r *OffLedgerRequestData) FungibleTokens() *FungibleTokens {
 	return nil
 }
 
@@ -481,7 +481,7 @@ func (r *OnLedgerRequestData) Allowance() *Allowance {
 	return r.requestMetadata.Allowance
 }
 
-func (r *OnLedgerRequestData) Assets() *FungibleTokens {
+func (r *OnLedgerRequestData) FungibleTokens() *FungibleTokens {
 	amount := r.output.Deposit()
 	var tokens iotago.NativeTokens
 	tokens = r.output.NativeTokenSet()

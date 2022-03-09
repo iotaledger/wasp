@@ -103,7 +103,25 @@ func (n *Node) ChildKey(nodeKey kv.Key, childIndex byte) kv.Key {
 }
 
 // Read/Write implements optimized serialization of the trie node
-// TODO comment how optimized serialization works
+// The serialization of the node takes advantage of the fact that most of the nodes has just few children
+// the 'smallFlags' (1 byte) contains information:
+// - does node contain terminal commitment
+// - does node contain at least one child
+// By the semantics of the trie, 'smallFlags' cannot be 0
+// 'childrenFlags' (32 bytes array or 256 bits) are only present if node contains at least one child commitment
+// In this case:
+// if node has a child commitment at the position of i, 0 <= p <= 255, it has a bit in the byte array
+// at the index i/8. The bit position in the byte is i % 8
+
+type cflags [32]byte
+
+func (fl *cflags) setFlag(i byte) {
+	fl[i/8] |= 0x1 << (i % 8)
+}
+
+func (fl *cflags) hasFlag(i byte) bool {
+	return fl[i/8]&(0x1<<(i%8)) != 0
+}
 
 func (n *Node) Write(w io.Writer) error {
 	if err := util.WriteBytes16(w, n.PathFragment); err != nil {
@@ -114,10 +132,10 @@ func (n *Node) Write(w io.Writer) error {
 	if n.Terminal != nil {
 		smallFlags = hasTerminalValueFlag
 	}
-	// compress children flags 32 bytes (if any)
-	var flags [32]byte
+	// compress children childrenFlags 32 bytes (if any)
+	var childrenFlags cflags
 	for i := range n.ChildCommitments {
-		flags[i/8] |= 0x1 << (i % 8)
+		childrenFlags.setFlag(i)
 		smallFlags |= hasChildrenFlag
 	}
 	if err := util.WriteByte(w, smallFlags); err != nil {
@@ -131,7 +149,7 @@ func (n *Node) Write(w io.Writer) error {
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		if _, err := w.Write(flags[:]); err != nil {
+		if _, err := w.Write(childrenFlags[:]); err != nil {
 			return err
 		}
 		for i := 0; i < 256; i++ {
@@ -165,13 +183,13 @@ func (n *Node) Read(r io.Reader, setup CommitmentModel) error {
 		n.Terminal = nil
 	}
 	if smallFlags&hasChildrenFlag != 0 {
-		var flags [32]byte
+		var flags cflags
 		if _, err := r.Read(flags[:]); err != nil {
 			return err
 		}
 		for i := 0; i < 256; i++ {
 			ib := uint8(i)
-			if flags[i/8]&(0x1<<(i%8)) != 0 {
+			if flags.hasFlag(byte(i)) {
 				n.ChildCommitments[ib] = setup.NewVectorCommitment()
 				if err := n.ChildCommitments[ib].Read(r); err != nil {
 					return err
