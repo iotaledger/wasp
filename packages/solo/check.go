@@ -110,3 +110,7 @@ func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {
 	}
 	return false
 }
+
+func (env *Solo) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+	return env.utxoDB.GetUnspentOutputs(addr)
+}

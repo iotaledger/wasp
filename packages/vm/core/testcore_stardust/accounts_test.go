@@ -1033,7 +1033,7 @@ func TestNFTAccount(t *testing.T) {
 		AddAllowanceIotas(iotasToWithdrawal).
 		WithMaxAffordableGasBudget()
 
-	// NFT owner on L1 can't move L2 funds owned by the NFT unless the request is sent in behalf of the NFT (NFTID is specified as "Sender")
+		// NFT owner on L1 can't move L2 funds owned by the NFT unless the request is sent in behalf of the NFT (NFTID is specified as "Sender")
 	_, err = ch.PostRequestSync(wdReq, ownerWallet)
 	require.Error(t, err)
 
