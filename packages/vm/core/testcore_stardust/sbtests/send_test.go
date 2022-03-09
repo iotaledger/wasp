@@ -280,3 +280,42 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
 	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
 }
+
+func TestNFTMintToChain(t *testing.T) { run2(t, testNFTMintToChain) }
+func testNFTMintToChain(t *testing.T, w bool) {
+	// Mints an NFT as a request
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
+
+	nftToBeMinted := &iscp.NFT{
+		ID:       iotago.NFTID{},
+		Issuer:   addr,
+		Metadata: []byte("foobar"),
+	}
+
+	iotasToSend := uint64(300_000)
+	iotasForGas := uint64(100_000)
+	assetsToSend := iscp.NewAssetsIotas(iotasToSend)
+	assetsToAllow := iscp.NewAssetsIotas(iotasToSend - iotasForGas)
+
+	// receive an NFT back that is sent in the same request
+	req := solo.NewCallParams(ScName, sbtestsc.FuncClaimAllowance.Name).
+		AddAssets(assetsToSend).
+		WithNFT(nftToBeMinted).
+		AddAllowance(iscp.NewAllowanceFungibleTokens(assetsToAllow).AddNFTs(iotago.NFTID{})). // empty NFTID
+		WithMaxAffordableGasBudget()
+
+	_, err := ch.PostRequestSync(req, wallet)
+	require.NoError(t, err)
+	// find out the NFTID
+	receipt := ch.LastReceipt()
+	nftID := iotago.NFTIDFromOutputID(receipt.Request.ID().OutputID())
+
+	// - Chain owns the NFT on L1
+	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nftID))
+	// - The target contract owns the NFT on L2
+	contractAgentID := iscp.NewAgentID(ch.ChainID.AsAddress(), sbtestsc.Contract.Hname())
+	require.True(t, ch.HasL2NFT(contractAgentID, &nftID))
+}

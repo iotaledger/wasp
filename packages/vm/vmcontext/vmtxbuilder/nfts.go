@@ -80,7 +80,7 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 	return toBeAdded, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput) int64 {
+func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput iotago.UTXOInput) int64 {
 	dustDeposit := int64(txb.dustDepositAssumption.NFTOutput)
 
 	// keep the number of iotas in the output == required dust deposit
@@ -102,8 +102,13 @@ func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput) int64 {
 		},
 	}
 
+	if out.NFTID.Empty() {
+		// nft was just minted to the chain
+		out.NFTID = iotago.NFTIDFromOutputID(utxoInput.ID())
+	}
+
 	toInclude := &nftIncluded{
-		ID:          o.NFTID,
+		ID:          out.NFTID,
 		in:          nil,
 		out:         out,
 		sentOutside: false,
