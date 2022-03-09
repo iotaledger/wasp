@@ -189,7 +189,7 @@ func (n *Node) Read(r io.Reader, setup CommitmentModel) error {
 		}
 		for i := 0; i < 256; i++ {
 			ib := uint8(i)
-			if flags.hasFlag(byte(i)) {
+			if flags.hasFlag(ib) {
 				n.ChildCommitments[ib] = setup.NewVectorCommitment()
 				if err := n.ChildCommitments[ib].Read(r); err != nil {
 					return err
