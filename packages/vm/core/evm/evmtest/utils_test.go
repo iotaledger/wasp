@@ -385,6 +385,10 @@ func (i *iscpTestContractInstance) triggerEvent(s string) (res callFnResult, err
 	return i.callFn(nil, "triggerEvent", s)
 }
 
+func (i *iscpTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res callFnResult, err error) {
+	return i.callFn(opts, "triggerEventFail", s)
+}
+
 func (i *iscpTestContractInstance) emitEntropy() (res callFnResult, err error) {
 	return i.callFn(nil, "emitEntropy")
 }

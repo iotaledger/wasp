@@ -258,6 +258,22 @@ func TestISCTriggerEvent(t *testing.T) {
 	require.Contains(t, ev[0], "Hi from EVM!")
 }
 
+func TestISCTriggerEventThenFail(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	// test that triggerEvent() followed by revert() does not actually trigger the event
+	_, err := iscTest.triggerEventFail("Hi from EVM!", ethCallOptions{iota: iotaCallOptions{
+		before: func(req *solo.CallParams) {
+			req.AddAssetsIotas(10000).WithMaxAffordableGasBudget()
+		},
+	}})
+	require.Error(t, err)
+	ev, err := evmChain.soloChain.GetEventsForBlock(evmChain.soloChain.GetLatestBlockInfo().BlockIndex)
+	require.NoError(t, err)
+	require.Len(t, ev, 0)
+}
+
 func TestISCEntropy(t *testing.T) {
 	evmChain := initEVM(t)
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
