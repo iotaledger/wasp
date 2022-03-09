@@ -42,8 +42,9 @@ func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID
 	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
-func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Assets {
-	iscpAssets := iscp.NewEmptyAssets()
+func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Allowance {
+	iscpAllowance := iscp.NewEmptyAllowance()
+	iscpAssets := iscpAllowance.Assets
 	for color, amount := range assets {
 		if color == wasmtypes.IOTA {
 			iscpAssets.Iotas = amount
@@ -55,7 +56,7 @@ func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Assets {
 		token.Amount.SetUint64(amount)
 		iscpAssets.Tokens = append(iscpAssets.Tokens, token)
 	}
-	return iscpAssets
+	return iscpAllowance
 }
 
 func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {
