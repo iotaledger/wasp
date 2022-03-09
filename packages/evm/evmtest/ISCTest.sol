@@ -14,6 +14,11 @@ contract ISCTest {
 		isc.triggerEvent(s);
 	}
 
+	function triggerEventFail(string memory s) public {
+		isc.triggerEvent(s);
+		revert();
+	}
+
 	event EntropyEvent(bytes32 entropy);
 
 	function emitEntropy() public {
