@@ -380,7 +380,7 @@ func TestInvalidIndexInGetMapOfArraysElt(t *testing.T) {
 	av.Params.Name().SetValue("bands")
 	av.Params.Index().SetValue(100)
 	av.Func.Call()
-	require.Equal(t, "viewcontext: panic in VM: invalid index", ctx.Err.Error())
+	require.Contains(t, ctx.Err.Error(), "invalid index")
 }
 
 func TestArrayOfArraysAppend(t *testing.T) {
@@ -657,6 +657,7 @@ func TestMapOfMapsSet(t *testing.T) {
 	require.True(t, value.Exists())
 	require.EqualValues(t, "Life in a Day", av.Results.Value().Value())
 }
+
 func TestArrayOfMapsClear(t *testing.T) {
 	ctx := setupTest(t)
 

@@ -28,7 +28,6 @@ typedefs:
   AgentIDArray: AgentID[]
   ChainIDArray: ChainID[]
   ColorArray: Color[]
-  # ContractIDArray: ContractID[] // FIXME not able to use ContractID
   HashArray: Hash[]
   HnameArray: Hname[]
   RequestIDArray: RequestID[]
@@ -42,7 +41,6 @@ typedefs:
   AgentIDMap: map[AgentID]AgentID
   ChainIDMap: map[ChainID]ChainID
   ColorMap: map[Color]Color
-  # ContractIDMap: map[ContractID]ContractID # FIXME not able to use ContractID
   HashMap: map[Hash]Hash
   HnameMap: map[Hname]Hname
   RequestIDMap: map[RequestID]RequestID

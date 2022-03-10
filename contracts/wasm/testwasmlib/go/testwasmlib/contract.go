@@ -10,64 +10,64 @@ package testwasmlib
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ArrayOfArraysAppendCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfArraysAppendParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfArraysAppendParams
 }
 
 type ArrayOfArraysClearCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ArrayOfArraysSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfArraysSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfArraysSetParams
 }
 
 type ArrayOfMapsClearCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ArrayOfMapsSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfMapsSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfMapsSetParams
 }
 
 type MapOfArraysAppendCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableMapOfArraysAppendParams
+	Func   *wasmlib.ScFunc
+	Params MutableMapOfArraysAppendParams
 }
 
 type MapOfArraysClearCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableMapOfArraysClearParams
+	Func   *wasmlib.ScFunc
+	Params MutableMapOfArraysClearParams
 }
 
 type MapOfArraysSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableMapOfArraysSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableMapOfArraysSetParams
 }
 
 type MapOfMapsClearCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableMapOfMapsClearParams
+	Func   *wasmlib.ScFunc
+	Params MutableMapOfMapsClearParams
 }
 
 type MapOfMapsSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableMapOfMapsSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableMapOfMapsSetParams
 }
 
 type ParamTypesCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableParamTypesParams
+	Func   *wasmlib.ScFunc
+	Params MutableParamTypesParams
 }
 
 type RandomCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TakeAllowanceCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TakeBalanceCall struct {
@@ -76,8 +76,8 @@ type TakeBalanceCall struct {
 }
 
 type TriggerEventCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableTriggerEventParams
+	Func   *wasmlib.ScFunc
+	Params MutableTriggerEventParams
 }
 
 type ArrayOfArraysLengthCall struct {

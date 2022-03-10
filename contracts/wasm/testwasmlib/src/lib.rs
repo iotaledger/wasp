@@ -32,30 +32,43 @@ mod testwasmlib;
 
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
-    	FUNC_ARRAY_APPEND,
-    	FUNC_ARRAY_CLEAR,
-    	FUNC_ARRAY_SET,
-    	FUNC_MAP_CLEAR,
-    	FUNC_MAP_SET,
+    	FUNC_ARRAY_OF_ARRAYS_APPEND,
+    	FUNC_ARRAY_OF_ARRAYS_CLEAR,
+    	FUNC_ARRAY_OF_ARRAYS_SET,
+    	FUNC_ARRAY_OF_MAPS_CLEAR,
+    	FUNC_ARRAY_OF_MAPS_SET,
+    	FUNC_MAP_OF_ARRAYS_APPEND,
+    	FUNC_MAP_OF_ARRAYS_CLEAR,
+    	FUNC_MAP_OF_ARRAYS_SET,
+    	FUNC_MAP_OF_MAPS_CLEAR,
+    	FUNC_MAP_OF_MAPS_SET,
     	FUNC_PARAM_TYPES,
     	FUNC_RANDOM,
     	FUNC_TAKE_ALLOWANCE,
     	FUNC_TAKE_BALANCE,
     	FUNC_TRIGGER_EVENT,
-    	VIEW_ARRAY_LENGTH,
-    	VIEW_ARRAY_VALUE,
+    	VIEW_ARRAY_OF_ARRAYS_LENGTH,
+    	VIEW_ARRAY_OF_ARRAYS_VALUE,
+    	VIEW_ARRAY_OF_MAPS_VALUE,
     	VIEW_BLOCK_RECORD,
     	VIEW_BLOCK_RECORDS,
     	VIEW_GET_RANDOM,
     	VIEW_IOTA_BALANCE,
-    	VIEW_MAP_VALUE,
+    	VIEW_MAP_OF_ARRAYS_LENGTH,
+    	VIEW_MAP_OF_ARRAYS_VALUE,
+    	VIEW_MAP_OF_MAPS_VALUE,
 	],
     funcs: &[
-    	func_array_append_thunk,
-    	func_array_clear_thunk,
-    	func_array_set_thunk,
-    	func_map_clear_thunk,
-    	func_map_set_thunk,
+    	func_array_of_arrays_append_thunk,
+    	func_array_of_arrays_clear_thunk,
+    	func_array_of_arrays_set_thunk,
+    	func_array_of_maps_clear_thunk,
+    	func_array_of_maps_set_thunk,
+    	func_map_of_arrays_append_thunk,
+    	func_map_of_arrays_clear_thunk,
+    	func_map_of_arrays_set_thunk,
+    	func_map_of_maps_clear_thunk,
+    	func_map_of_maps_set_thunk,
     	func_param_types_thunk,
     	func_random_thunk,
     	func_take_allowance_thunk,
@@ -63,13 +76,16 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	func_trigger_event_thunk,
 	],
     views: &[
-    	view_array_length_thunk,
-    	view_array_value_thunk,
+    	view_array_of_arrays_length_thunk,
+    	view_array_of_arrays_value_thunk,
+    	view_array_of_maps_value_thunk,
     	view_block_record_thunk,
     	view_block_records_thunk,
     	view_get_random_thunk,
     	view_iota_balance_thunk,
-    	view_map_value_thunk,
+    	view_map_of_arrays_length_thunk,
+    	view_map_of_arrays_value_thunk,
+    	view_map_of_maps_value_thunk,
 	],
 };
 
@@ -83,99 +99,187 @@ fn on_load() {
     ScExports::export(&EXPORT_MAP);
 }
 
-pub struct ArrayAppendContext {
+pub struct ArrayOfArraysAppendContext {
 	events:  TestWasmLibEvents,
-	params: ImmutableArrayAppendParams,
+	params: ImmutableArrayOfArraysAppendParams,
 	state: MutableTestWasmLibState,
 }
 
-fn func_array_append_thunk(ctx: &ScFuncContext) {
-	ctx.log("testwasmlib.funcArrayAppend");
-	let f = ArrayAppendContext {
+fn func_array_of_arrays_append_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcArrayOfArraysAppend");
+	let f = ArrayOfArraysAppendContext {
 		events:  TestWasmLibEvents {},
-		params: ImmutableArrayAppendParams { proxy: params_proxy() },
+		params: ImmutableArrayOfArraysAppendParams { proxy: params_proxy() },
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.index().exists(), "missing mandatory index");
+	func_array_of_arrays_append(ctx, &f);
+	ctx.log("testwasmlib.funcArrayOfArraysAppend ok");
+}
+
+pub struct ArrayOfArraysClearContext {
+	events:  TestWasmLibEvents,
+	state: MutableTestWasmLibState,
+}
+
+fn func_array_of_arrays_clear_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcArrayOfArraysClear");
+	let f = ArrayOfArraysClearContext {
+		events:  TestWasmLibEvents {},
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	func_array_of_arrays_clear(ctx, &f);
+	ctx.log("testwasmlib.funcArrayOfArraysClear ok");
+}
+
+pub struct ArrayOfArraysSetContext {
+	events:  TestWasmLibEvents,
+	params: ImmutableArrayOfArraysSetParams,
+	state: MutableTestWasmLibState,
+}
+
+fn func_array_of_arrays_set_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcArrayOfArraysSet");
+	let f = ArrayOfArraysSetContext {
+		events:  TestWasmLibEvents {},
+		params: ImmutableArrayOfArraysSetParams { proxy: params_proxy() },
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.index0().exists(), "missing mandatory index0");
+	ctx.require(f.params.index1().exists(), "missing mandatory index1");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	func_array_of_arrays_set(ctx, &f);
+	ctx.log("testwasmlib.funcArrayOfArraysSet ok");
+}
+
+pub struct ArrayOfMapsClearContext {
+	events:  TestWasmLibEvents,
+	state: MutableTestWasmLibState,
+}
+
+fn func_array_of_maps_clear_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcArrayOfMapsClear");
+	let f = ArrayOfMapsClearContext {
+		events:  TestWasmLibEvents {},
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	func_array_of_maps_clear(ctx, &f);
+	ctx.log("testwasmlib.funcArrayOfMapsClear ok");
+}
+
+pub struct ArrayOfMapsSetContext {
+	events:  TestWasmLibEvents,
+	params: ImmutableArrayOfMapsSetParams,
+	state: MutableTestWasmLibState,
+}
+
+fn func_array_of_maps_set_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcArrayOfMapsSet");
+	let f = ArrayOfMapsSetContext {
+		events:  TestWasmLibEvents {},
+		params: ImmutableArrayOfMapsSetParams { proxy: params_proxy() },
+		state: MutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.index().exists(), "missing mandatory index");
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	func_array_of_maps_set(ctx, &f);
+	ctx.log("testwasmlib.funcArrayOfMapsSet ok");
+}
+
+pub struct MapOfArraysAppendContext {
+	events:  TestWasmLibEvents,
+	params: ImmutableMapOfArraysAppendParams,
+	state: MutableTestWasmLibState,
+}
+
+fn func_map_of_arrays_append_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapOfArraysAppend");
+	let f = MapOfArraysAppendContext {
+		events:  TestWasmLibEvents {},
+		params: ImmutableMapOfArraysAppendParams { proxy: params_proxy() },
 		state: MutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.value().exists(), "missing mandatory value");
-	func_array_append(ctx, &f);
-	ctx.log("testwasmlib.funcArrayAppend ok");
+	func_map_of_arrays_append(ctx, &f);
+	ctx.log("testwasmlib.funcMapOfArraysAppend ok");
 }
 
-pub struct ArrayClearContext {
+pub struct MapOfArraysClearContext {
 	events:  TestWasmLibEvents,
-	params: ImmutableArrayClearParams,
+	params: ImmutableMapOfArraysClearParams,
 	state: MutableTestWasmLibState,
 }
 
-fn func_array_clear_thunk(ctx: &ScFuncContext) {
-	ctx.log("testwasmlib.funcArrayClear");
-	let f = ArrayClearContext {
+fn func_map_of_arrays_clear_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapOfArraysClear");
+	let f = MapOfArraysClearContext {
 		events:  TestWasmLibEvents {},
-		params: ImmutableArrayClearParams { proxy: params_proxy() },
+		params: ImmutableMapOfArraysClearParams { proxy: params_proxy() },
 		state: MutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.name().exists(), "missing mandatory name");
-	func_array_clear(ctx, &f);
-	ctx.log("testwasmlib.funcArrayClear ok");
+	func_map_of_arrays_clear(ctx, &f);
+	ctx.log("testwasmlib.funcMapOfArraysClear ok");
 }
 
-pub struct ArraySetContext {
+pub struct MapOfArraysSetContext {
 	events:  TestWasmLibEvents,
-	params: ImmutableArraySetParams,
+	params: ImmutableMapOfArraysSetParams,
 	state: MutableTestWasmLibState,
 }
 
-fn func_array_set_thunk(ctx: &ScFuncContext) {
-	ctx.log("testwasmlib.funcArraySet");
-	let f = ArraySetContext {
+fn func_map_of_arrays_set_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapOfArraysSet");
+	let f = MapOfArraysSetContext {
 		events:  TestWasmLibEvents {},
-		params: ImmutableArraySetParams { proxy: params_proxy() },
+		params: ImmutableMapOfArraysSetParams { proxy: params_proxy() },
 		state: MutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.index().exists(), "missing mandatory index");
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.value().exists(), "missing mandatory value");
-	func_array_set(ctx, &f);
-	ctx.log("testwasmlib.funcArraySet ok");
+	func_map_of_arrays_set(ctx, &f);
+	ctx.log("testwasmlib.funcMapOfArraysSet ok");
 }
 
-pub struct MapClearContext {
+pub struct MapOfMapsClearContext {
 	events:  TestWasmLibEvents,
-	params: ImmutableMapClearParams,
+	params: ImmutableMapOfMapsClearParams,
 	state: MutableTestWasmLibState,
 }
 
-fn func_map_clear_thunk(ctx: &ScFuncContext) {
-	ctx.log("testwasmlib.funcMapClear");
-	let f = MapClearContext {
+fn func_map_of_maps_clear_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapOfMapsClear");
+	let f = MapOfMapsClearContext {
 		events:  TestWasmLibEvents {},
-		params: ImmutableMapClearParams { proxy: params_proxy() },
+		params: ImmutableMapOfMapsClearParams { proxy: params_proxy() },
 		state: MutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.name().exists(), "missing mandatory name");
-	func_map_clear(ctx, &f);
-	ctx.log("testwasmlib.funcMapClear ok");
+	func_map_of_maps_clear(ctx, &f);
+	ctx.log("testwasmlib.funcMapOfMapsClear ok");
 }
 
-pub struct MapSetContext {
+pub struct MapOfMapsSetContext {
 	events:  TestWasmLibEvents,
-	params: ImmutableMapSetParams,
+	params: ImmutableMapOfMapsSetParams,
 	state: MutableTestWasmLibState,
 }
 
-fn func_map_set_thunk(ctx: &ScFuncContext) {
-	ctx.log("testwasmlib.funcMapSet");
-	let f = MapSetContext {
+fn func_map_of_maps_set_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapOfMapsSet");
+	let f = MapOfMapsSetContext {
 		events:  TestWasmLibEvents {},
-		params: ImmutableMapSetParams { proxy: params_proxy() },
+		params: ImmutableMapOfMapsSetParams { proxy: params_proxy() },
 		state: MutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.key().exists(), "missing mandatory key");
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.value().exists(), "missing mandatory value");
-	func_map_set(ctx, &f);
-	ctx.log("testwasmlib.funcMapSet ok");
+	func_map_of_maps_set(ctx, &f);
+	ctx.log("testwasmlib.funcMapOfMapsSet ok");
 }
 
 pub struct ParamTypesContext {
@@ -262,43 +366,60 @@ fn func_trigger_event_thunk(ctx: &ScFuncContext) {
 	ctx.log("testwasmlib.funcTriggerEvent ok");
 }
 
-pub struct ArrayLengthContext {
-	params: ImmutableArrayLengthParams,
-	results: MutableArrayLengthResults,
+pub struct ArrayOfArraysLengthContext {
+	results: MutableArrayOfArraysLengthResults,
 	state: ImmutableTestWasmLibState,
 }
 
-fn view_array_length_thunk(ctx: &ScViewContext) {
-	ctx.log("testwasmlib.viewArrayLength");
-	let f = ArrayLengthContext {
-		params: ImmutableArrayLengthParams { proxy: params_proxy() },
-		results: MutableArrayLengthResults { proxy: results_proxy() },
+fn view_array_of_arrays_length_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewArrayOfArraysLength");
+	let f = ArrayOfArraysLengthContext {
+		results: MutableArrayOfArraysLengthResults { proxy: results_proxy() },
 		state: ImmutableTestWasmLibState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.name().exists(), "missing mandatory name");
-	view_array_length(ctx, &f);
+	view_array_of_arrays_length(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("testwasmlib.viewArrayLength ok");
+	ctx.log("testwasmlib.viewArrayOfArraysLength ok");
 }
 
-pub struct ArrayValueContext {
-	params: ImmutableArrayValueParams,
-	results: MutableArrayValueResults,
+pub struct ArrayOfArraysValueContext {
+	params: ImmutableArrayOfArraysValueParams,
+	results: MutableArrayOfArraysValueResults,
 	state: ImmutableTestWasmLibState,
 }
 
-fn view_array_value_thunk(ctx: &ScViewContext) {
-	ctx.log("testwasmlib.viewArrayValue");
-	let f = ArrayValueContext {
-		params: ImmutableArrayValueParams { proxy: params_proxy() },
-		results: MutableArrayValueResults { proxy: results_proxy() },
+fn view_array_of_arrays_value_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewArrayOfArraysValue");
+	let f = ArrayOfArraysValueContext {
+		params: ImmutableArrayOfArraysValueParams { proxy: params_proxy() },
+		results: MutableArrayOfArraysValueResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.index0().exists(), "missing mandatory index0");
+	ctx.require(f.params.index1().exists(), "missing mandatory index1");
+	view_array_of_arrays_value(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewArrayOfArraysValue ok");
+}
+
+pub struct ArrayOfMapsValueContext {
+	params: ImmutableArrayOfMapsValueParams,
+	results: MutableArrayOfMapsValueResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_array_of_maps_value_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewArrayOfMapsValue");
+	let f = ArrayOfMapsValueContext {
+		params: ImmutableArrayOfMapsValueParams { proxy: params_proxy() },
+		results: MutableArrayOfMapsValueResults { proxy: results_proxy() },
 		state: ImmutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.index().exists(), "missing mandatory index");
-	ctx.require(f.params.name().exists(), "missing mandatory name");
-	view_array_value(ctx, &f);
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	view_array_of_maps_value(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("testwasmlib.viewArrayValue ok");
+	ctx.log("testwasmlib.viewArrayOfMapsValue ok");
 }
 
 pub struct BlockRecordContext {
@@ -372,22 +493,61 @@ fn view_iota_balance_thunk(ctx: &ScViewContext) {
 	ctx.log("testwasmlib.viewIotaBalance ok");
 }
 
-pub struct MapValueContext {
-	params: ImmutableMapValueParams,
-	results: MutableMapValueResults,
+pub struct MapOfArraysLengthContext {
+	params: ImmutableMapOfArraysLengthParams,
+	results: MutableMapOfArraysLengthResults,
 	state: ImmutableTestWasmLibState,
 }
 
-fn view_map_value_thunk(ctx: &ScViewContext) {
-	ctx.log("testwasmlib.viewMapValue");
-	let f = MapValueContext {
-		params: ImmutableMapValueParams { proxy: params_proxy() },
-		results: MutableMapValueResults { proxy: results_proxy() },
+fn view_map_of_arrays_length_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewMapOfArraysLength");
+	let f = MapOfArraysLengthContext {
+		params: ImmutableMapOfArraysLengthParams { proxy: params_proxy() },
+		results: MutableMapOfArraysLengthResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	view_map_of_arrays_length(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewMapOfArraysLength ok");
+}
+
+pub struct MapOfArraysValueContext {
+	params: ImmutableMapOfArraysValueParams,
+	results: MutableMapOfArraysValueResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_map_of_arrays_value_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewMapOfArraysValue");
+	let f = MapOfArraysValueContext {
+		params: ImmutableMapOfArraysValueParams { proxy: params_proxy() },
+		results: MutableMapOfArraysValueResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.index().exists(), "missing mandatory index");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	view_map_of_arrays_value(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewMapOfArraysValue ok");
+}
+
+pub struct MapOfMapsValueContext {
+	params: ImmutableMapOfMapsValueParams,
+	results: MutableMapOfMapsValueResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_map_of_maps_value_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewMapOfMapsValue");
+	let f = MapOfMapsValueContext {
+		params: ImmutableMapOfMapsValueParams { proxy: params_proxy() },
+		results: MutableMapOfMapsValueResults { proxy: results_proxy() },
 		state: ImmutableTestWasmLibState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.key().exists(), "missing mandatory key");
 	ctx.require(f.params.name().exists(), "missing mandatory name");
-	view_map_value(ctx, &f);
+	view_map_of_maps_value(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("testwasmlib.viewMapValue ok");
+	ctx.log("testwasmlib.viewMapOfMapsValue ok");
 }
