@@ -15,6 +15,7 @@ PATHS=(\
     "packages/peering/lpp/" \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
+    "packages/chain/consensus/" \
     "packages/utxodb/" \
     "contracts/native/evm/evmchain/emulator/" \
     "contracts/native/evm/evmlight/emulator/" \
