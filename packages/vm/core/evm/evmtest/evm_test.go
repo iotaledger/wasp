@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 	"github.com/stretchr/testify/require"
 )
 
@@ -240,6 +241,78 @@ func TestISCContract(t *testing.T) {
 	chainID := iscTest.getChainID()
 
 	require.True(t, evmChain.soloChain.ChainID.Equals(chainID))
+}
+
+func TestISCChainOwnerID(t *testing.T) {
+	evmChain := initEVM(t)
+
+	ret := new(isccontract.ISCAgentID)
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getChainOwnerID", nil, &ret)
+
+	chainOwnerID := evmChain.soloChain.OriginatorAgentID
+	require.True(t, chainOwnerID.Equals(ret.MustUnwrap()))
+}
+
+func TestISCTimestamp(t *testing.T) {
+	evmChain := initEVM(t)
+
+	var ret int64
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getTimestampUnixNano", nil, &ret)
+
+	require.EqualValues(t, evmChain.soloChain.GetLatestBlockInfo().Timestamp.UnixNano(), ret)
+}
+
+func TestISCLogPanic(t *testing.T) {
+	evmChain := initEVM(t)
+
+	_, err := evmChain.ISCContract(evmChain.faucetKey).callFn(
+		[]ethCallOptions{{iota: iotaCallOptions{
+			before: func(req *solo.CallParams) {
+				req.AddIotas(10000).WithMaxAffordableGasBudget()
+			},
+		}}},
+		"logPanic",
+		"Hi from EVM!",
+	)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Hi from EVM!")
+}
+
+func TestISCNFTData(t *testing.T) {
+	evmChain := initEVM(t)
+
+	// mint an NFT and send it to the chain
+	issuerWallet, issuerAddress := evmChain.solo.NewKeyPairWithFunds()
+	metadata := []byte("foobar")
+	nftInfo, err := evmChain.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	require.NoError(t, err)
+	_, err = evmChain.soloChain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			AddIotas(100000).
+			WithNFT(&iscp.NFT{
+				ID:       nftInfo.NFTID,
+				Issuer:   issuerAddress,
+				Metadata: metadata,
+			}).
+			WithMaxAffordableGasBudget().
+			WithSender(nftInfo.NFTID.ToAddress()),
+		issuerWallet,
+	)
+	require.NoError(t, err)
+
+	// call getNFTData from EVM
+	ret := new(isccontract.ISCNFT)
+	evmChain.ISCContract(evmChain.faucetKey).callView(
+		nil,
+		"getNFTData",
+		[]interface{}{isccontract.WrapISCNFTID(nftInfo.NFTID)},
+		&ret,
+	)
+
+	require.EqualValues(t, nftInfo.NFTID, ret.MustUnwrap().ID)
+	require.True(t, issuerAddress.Equal(ret.MustUnwrap().Issuer))
+	require.EqualValues(t, metadata, ret.MustUnwrap().Metadata)
 }
 
 func TestISCTriggerEvent(t *testing.T) {

@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -27,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -41,13 +43,17 @@ type evmChainInstance struct {
 }
 
 type evmContractInstance struct {
-	chain   *evmChainInstance
-	creator *ecdsa.PrivateKey
-	address common.Address
-	abi     abi.ABI
+	chain         *evmChainInstance
+	defaultSender *ecdsa.PrivateKey
+	address       common.Address
+	abi           abi.ABI
 }
 
-type iscpTestContractInstance struct {
+type iscContractInstance struct {
+	*evmContractInstance
+}
+
+type iscTestContractInstance struct {
 	*evmContractInstance
 }
 
@@ -217,8 +223,21 @@ func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-func (e *evmChainInstance) deployISCTestContract(creator *ecdsa.PrivateKey) *iscpTestContractInstance {
-	return &iscpTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
+func (e *evmChainInstance) ISCContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	iscABI, err := abi.JSON(strings.NewReader(isccontract.ABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       vm.ISCAddress,
+			abi:           iscABI,
+		},
+	}
+}
+
+func (e *evmChainInstance) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
+	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
 func (e *evmChainInstance) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
@@ -276,10 +295,10 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{
-		chain:   e,
-		creator: creator,
-		address: crypto.CreateAddress(creatorAddress, nonce),
-		abi:     contractABI,
+		chain:         e,
+		defaultSender: creator,
+		address:       crypto.CreateAddress(creatorAddress, nonce),
+		abi:           contractABI,
 	}
 }
 
@@ -294,7 +313,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 		opt = opts[0]
 	}
 	if opt.sender == nil {
-		opt.sender = e.creator
+		opt.sender = e.defaultSender
 	}
 	if opt.iota.wallet == nil {
 		opt.iota.wallet = e.chain.soloChain.OriginatorPrivateKey
@@ -373,23 +392,21 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 	}
 }
 
-func (i *iscpTestContractInstance) getChainID() *iscp.ChainID {
-	var v [iscp.ChainIDLength]byte
+func (i *iscTestContractInstance) getChainID() *iscp.ChainID {
+	var v isccontract.ISCChainID
 	i.callView(nil, "getChainID", nil, &v)
-	chainID, err := iscp.ChainIDFromBytes(v[:])
-	require.NoError(i.chain.t, err)
-	return chainID
+	return v.MustUnwrap()
 }
 
-func (i *iscpTestContractInstance) triggerEvent(s string) (res callFnResult, err error) {
+func (i *iscTestContractInstance) triggerEvent(s string) (res callFnResult, err error) {
 	return i.callFn(nil, "triggerEvent", s)
 }
 
-func (i *iscpTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res callFnResult, err error) {
+func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res callFnResult, err error) {
 	return i.callFn(opts, "triggerEventFail", s)
 }
 
-func (i *iscpTestContractInstance) emitEntropy() (res callFnResult, err error) {
+func (i *iscTestContractInstance) emitEntropy() (res callFnResult, err error) {
 	return i.callFn(nil, "emitEntropy")
 }
 

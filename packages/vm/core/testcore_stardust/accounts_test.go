@@ -1025,7 +1025,7 @@ func TestNFTAccount(t *testing.T) {
 		ownerAddress,
 		ownerBalance+nftInfo.Output.Deposit()-iotasToSend,
 	)
-	ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID)
+	require.True(t, ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID))
 
 	// withdraw to the NFT on L1
 	iotasToWithdrawal := uint64(1000)
