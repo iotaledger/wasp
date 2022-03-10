@@ -1010,7 +1010,7 @@ func TestNFTAccount(t *testing.T) {
 	// deposit funds on behalf of the NFT
 	iotasToSend := uint64(100_000)
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddAssets(iscp.NewAssetsIotas(iotasToSend)).
+		AddAssets(iscp.NewTokensIotas(iotasToSend)).
 		WithMaxAffordableGasBudget().
 		WithSender(nftAddress)
 

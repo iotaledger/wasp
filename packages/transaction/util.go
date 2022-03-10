@@ -147,9 +147,6 @@ func computeInputsAndRemainder(
 	if errLast != nil {
 		return nil, nil, errLast
 	}
-	for j := range inputIDs {
-		inputIDs[j] = unspentOutputIDs[j]
-	}
 	return inputIDs, remainder, nil
 }
 

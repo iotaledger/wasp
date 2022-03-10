@@ -297,8 +297,8 @@ func testNFTMintToChain(t *testing.T, w bool) {
 
 	iotasToSend := uint64(300_000)
 	iotasForGas := uint64(100_000)
-	assetsToSend := iscp.NewAssetsIotas(iotasToSend)
-	assetsToAllow := iscp.NewAssetsIotas(iotasToSend - iotasForGas)
+	assetsToSend := iscp.NewTokensIotas(iotasToSend)
+	assetsToAllow := iscp.NewTokensIotas(iotasToSend - iotasForGas)
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncClaimAllowance.Name).
