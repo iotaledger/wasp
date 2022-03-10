@@ -417,6 +417,11 @@ module.exports = {
                             label: 'ERC20',
                             id: 'guide/evm/examples/ERC20',
                         },
+                        {
+                            type: 'doc',
+                            label: 'ERC721',
+                            id: 'guide/evm/examples/ERC721',
+                        },
                     ]
                 },
             ]
