@@ -228,6 +228,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		AnchorOutput:       c.stateOutput.GetAliasOutput(),
+		AnchorOutputID:     c.stateOutput.OutputID(),
 		SolidStateBaseline: stateBaseline,
 		Entropy:            c.consensusEntropy,
 		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
@@ -261,8 +262,8 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 		c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
-		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
-			msg.EssenceHash.String(), iscp.OID(msg.ChainInputID))
+		c.log.Debugf("broadcastSignedResult: broadcasted (except to %v): essence hash: %s, chain input %s",
+			c.resultSigAck, msg.EssenceHash.String(), iscp.OID(msg.ChainInputID))
 	} else {
 		c.log.Debugf("broadcastSignedResult not needed: delayed till %v", c.delaySendingSignedResult)
 	}
@@ -780,20 +781,20 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
-			c.log.Errorf("receiveSignedResult: conflicting signed result from peer #%d", msg.SenderIndex)
+			c.log.Errorf("receiveSignedResult: conflicting signed result from peer %d", msg.SenderIndex)
 		} else {
-			c.log.Debugf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
+			c.log.Debugf("receiveSignedResult: duplicated signed result from peer %d", msg.SenderIndex)
 		}
 		return
 	}
 	if c.stateOutput == nil {
-		c.log.Warnf("receiveSignedResult: chain input ID %v received, but state output is nil",
-			iscp.OID(msg.ChainInputID))
+		c.log.Warnf("receiveSignedResult: chain input ID %v received from peer %d, but state output is nil",
+			msg.SenderIndex, iscp.OID(msg.ChainInputID))
 		return
 	}
 	if !msg.ChainInputID.Equals(c.stateOutput.ID()) {
-		c.log.Warnf("receiveSignedResult: wrong chain input ID: expected %v, received %v",
-			iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
+		c.log.Warnf("receiveSignedResult: wrong chain input ID from peer %d: expected %v, received %v",
+			msg.SenderIndex, iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
 		return
 	}
 	idx, err := msg.SigShare.Index()
@@ -801,7 +802,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 		uint16(idx) >= c.committee.Size() ||
 		uint16(idx) == c.committee.OwnPeerIndex() ||
 		uint16(idx) != msg.SenderIndex {
-		c.log.Errorf("receiveSignedResult: wrong sig share from peer #%d", msg.SenderIndex)
+		c.log.Errorf("receiveSignedResult: wrong sig share from peer %d", msg.SenderIndex)
 	} else {
 		c.resultSignatures[msg.SenderIndex] = msg
 		c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
@@ -825,7 +826,7 @@ func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {
 			msg.SenderIndex, msg.EssenceHash.String(), own.EssenceHash.String())
 		return
 	}
-	if msg.ChainInputID != own.ChainInputID {
+	if !msg.ChainInputID.Equals(own.ChainInputID) {
 		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because chain input id in ack %v is different than own chain input id %v",
 			msg.SenderIndex, iscp.OID(msg.ChainInputID), iscp.OID(own.ChainInputID))
 		return

@@ -161,7 +161,7 @@ func (env *MockedEnv) nodeCount() int {
 	return len(env.NodeIDs)
 }
 
-func (env *MockedEnv) SetInitialConsensusState() {
+/*func (env *MockedEnv) SetInitialConsensusState() {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
@@ -172,7 +172,7 @@ func (env *MockedEnv) SetInitialConsensusState() {
 			}
 		}(node)
 	}
-}
+}*/
 
 func (env *MockedEnv) StartTimers() {
 	for _, n := range env.Nodes {
