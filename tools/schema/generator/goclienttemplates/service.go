@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package goclienttemplates
 
 var serviceGo = map[string]string{
@@ -124,7 +127,7 @@ type $FuncName$+Results struct {
 }
 $#each result callResultGetter
 `,
-	//TODO array and map abstraction on key/value results
+	// TODO array and map abstraction on key/value results
 	// *******************************
 	"callResultGetter": `
 $#if map callResultGetterMap callResultGetter2

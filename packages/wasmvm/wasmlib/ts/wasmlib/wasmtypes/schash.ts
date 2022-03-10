@@ -2,19 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
+import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScHashLength = 32;
 
 export class ScHash {
-    id: u8[] = zeroes(ScHashLength);
+    id: u8[] = wasmtypes.zeroes(ScHashLength);
 
     public equals(other: ScHash): bool {
-        return bytesCompare(this.id, other.id) == 0;
+        return wasmtypes.bytesCompare(this.id, other.id) == 0;
     }
 
     // convert to byte array representation
@@ -30,11 +28,11 @@ export class ScHash {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function hashDecode(dec: WasmDecoder): ScHash {
+export function hashDecode(dec: wasmtypes.WasmDecoder): ScHash {
     return hashFromBytesUnchecked(dec.fixedBytes(ScHashLength));
 }
 
-export function hashEncode(enc: WasmEncoder, value: ScHash): void {
+export function hashEncode(enc: wasmtypes.WasmEncoder, value: ScHash): void {
     enc.fixedBytes(value.toBytes(), ScHashLength);
 }
 
@@ -54,7 +52,7 @@ export function hashToBytes(value: ScHash): u8[] {
 
 export function hashToString(value: ScHash): string {
     // TODO standardize human readable string
-    return base58Encode(value.id);
+    return wasmtypes.base58Encode(value.id);
 }
 
 function hashFromBytesUnchecked(buf: u8[]): ScHash {
@@ -66,9 +64,9 @@ function hashFromBytesUnchecked(buf: u8[]): ScHash {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableHash {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

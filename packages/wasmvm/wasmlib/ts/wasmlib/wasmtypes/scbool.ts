@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import * as wasmtypes from "./index";
 
 export const ScBoolLength = 1;
 export const ScBoolFalse = 0x00
@@ -11,11 +10,11 @@ export const ScBoolTrue = 0xff
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function boolDecode(dec: WasmDecoder): bool {
+export function boolDecode(dec: wasmtypes.WasmDecoder): bool {
     return dec.byte() != ScBoolFalse;
 }
 
-export function boolEncode(enc: WasmEncoder, value: bool): void {
+export function boolEncode(enc: wasmtypes.WasmEncoder, value: bool): void {
     enc.byte((value ? ScBoolTrue : ScBoolFalse) as u8);
 }
 
@@ -46,9 +45,9 @@ export function boolToString(value: bool): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableBool {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 
