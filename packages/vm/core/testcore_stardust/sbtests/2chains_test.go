@@ -61,7 +61,7 @@ func test2Chains(t *testing.T, w bool) {
 		accounts.ParamAgentID, contractAgentID,
 		accounts.ParamForceOpenAccount, true,
 	).
-		AddAssetsIotas(iotasToSend).
+		AddIotas(iotasToSend).
 		AddAllowanceIotas(iotasCreditedToSc2OnChain1).
 		WithGasBudget(math.MaxUint64)
 
@@ -91,7 +91,7 @@ func test2Chains(t *testing.T, w bool) {
 		solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncWithdraw.Name,
 		).
-			AddAssetsIotas(reqAllowance).
+			AddIotas(reqAllowance).
 			AddAllowanceIotas(iotasToWithdrawalFromChain1),
 		userWallet, true)
 
@@ -99,7 +99,7 @@ func test2Chains(t *testing.T, w bool) {
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamGasBudgetToSend, estimatedWdGas,
 		sbtestsc.ParamIotasToWithdrawal, iotasToWithdrawalFromChain1).
-		AddAssetsIotas(iotasToSend).
+		AddIotas(iotasToSend).
 		WithAllowance(iscp.NewAllowanceIotas(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 

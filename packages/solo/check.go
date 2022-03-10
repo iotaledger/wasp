@@ -43,7 +43,7 @@ func (ch *Chain) CheckChain() {
 }
 
 // CheckAccountLedger check integrity of the on-chain ledger.
-// Sum of all accounts must be equal to total assets
+// Sum of all accounts must be equal to total ftokens
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.L2TotalAssets()
 	accs := ch.L2Accounts()

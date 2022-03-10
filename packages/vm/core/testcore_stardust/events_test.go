@@ -66,7 +66,7 @@ func TestManyEvents(t *testing.T) {
 
 	// post a request that issues too many events (nEvents)
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddAssetsIotas(1),
+		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddIotas(1),
 		nil,
 	)
 	require.Error(t, err) // error expected (too many events)

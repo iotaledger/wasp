@@ -83,21 +83,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -119,21 +119,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(9), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(9), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 9)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10), user)
 //		require.Error(t, err)
 //		require.Contains(t, err.Error(), "not enough fees")
 //
@@ -156,21 +156,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(11), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(11), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 11)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -192,21 +192,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10+42)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -228,21 +228,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10+41), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10+41), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10+41)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -264,21 +264,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10+43), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10+43), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10+43)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -301,14 +301,14 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
+//		_, err := chain.PostRequestSync(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 42)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -331,14 +331,14 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(41), user)
+//		_, err := chain.PostRequestSync(req.AddIotas(41), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 41)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -361,14 +361,14 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(43), user)
+//		_, err := chain.PostRequestSync(req.AddIotas(43), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 43)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())

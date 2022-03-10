@@ -66,7 +66,7 @@ func (ch *Chain) L2LedgerString() string {
 	return ret
 }
 
-// L2Assets return all assets contained in the on-chain account controlled by the 'agentID'
+// L2Assets return all ftokens contained in the on-chain account controlled by the 'agentID'
 func (ch *Chain) L2Assets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
@@ -107,7 +107,7 @@ func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big
 	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
-// L2TotalAssets return total sum of assets contained in the on-chain accounts
+// L2TotalAssets return total sum of ftokens contained in the on-chain accounts
 func (ch *Chain) L2TotalAssets() *iscp.FungibleTokens {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
@@ -168,7 +168,7 @@ type foundryParams struct {
 	maxSupply *big.Int
 }
 
-// CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and assets for the call
+// CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and ftokens for the call
 const (
 	DestroyTokensGasBudgetIotas   = 100_000
 	SendToL2AccountGasBudgetIotas = 100_000
@@ -291,14 +291,14 @@ func (ch *Chain) DestroyTokensOnL2(foundryOrTokenID, amount interface{}, user *c
 	return err
 }
 
-// DestroyTokensOnL1 sends tokens as assets and destroys in the same transaction
+// DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
 func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(tokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
-	).WithGasBudget(DestroyTokensGasBudgetIotas).AddAssetsIotas(1000)
-	req.AddAssetsNativeTokens(tokenID, amount)
+	).WithGasBudget(DestroyTokensGasBudgetIotas).AddIotas(1000)
+	req.AddNativeTokens(tokenID, amount)
 	req.AddAllowanceNativeTokens(tokenID, amount)
 	if user == nil {
 		user = ch.OriginatorPrivateKey
@@ -307,18 +307,18 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 	return err
 }
 
-// DepositAssetsToL2 deposits assets on user's on-chain account
+// DepositAssetsToL2 deposits ftokens on user's on-chain account
 func (ch *Chain) DepositAssetsToL2(assets *iscp.FungibleTokens, user *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			WithAssets(assets).
+			WithFungibleTokens(assets).
 			WithGasBudget(math.MaxUint64),
 		user,
 	)
 	return err
 }
 
-// DepositIotasToL2 deposits assets on user's on-chain account
+// DepositIotasToL2 deposits ftokens on user's on-chain account
 func (ch *Chain) DepositIotasToL2(amount uint64, user *cryptolib.KeyPair) error {
 	return ch.DepositAssetsToL2(iscp.NewFungibleTokens(amount, nil), user)
 }
@@ -328,14 +328,14 @@ func (ch *Chain) MustDepositIotasToL2(amount uint64, user *cryptolib.KeyPair) {
 	require.NoError(ch.Env.T, err)
 }
 
-// SendFromL1ToL2Account sends assets from L1 address to the target account on L2
+// SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
 func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.FungibleTokens, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddIotas(feeIotas)
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-			AddAssets(sumAssets).
+			AddFungibleTokens(sumAssets).
 			AddAllowance(iscp.NewAllowanceFungibleTokens(toSend)).
 			WithGasBudget(math.MaxUint64),
 		user,
@@ -347,12 +347,12 @@ func (ch *Chain) SendFromL1ToL2AccountIotas(iotasFee, iotasSend uint64, target *
 	return ch.SendFromL1ToL2Account(iotasFee, iscp.NewTokensIotas(iotasSend), target, user)
 }
 
-// SendFromL2ToL2Account moves assets on L2 from user's account to the target
+// SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
 func (ch *Chain) SendFromL2ToL2Account(transfer *iscp.Allowance, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, target)
 
-	req.AddAssetsIotas(SendToL2AccountGasBudgetIotas).
+	req.AddIotas(SendToL2AccountGasBudgetIotas).
 		AddAllowance(transfer).
 		WithGasBudget(SendToL2AccountGasBudgetIotas)
 	_, err := ch.PostRequestSync(req, user)

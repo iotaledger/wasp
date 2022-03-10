@@ -32,7 +32,7 @@ type CallParams struct {
 	target     iscp.Hname
 	epName     string
 	entryPoint iscp.Hname
-	assets     *iscp.FungibleTokens // ignored off-ledger
+	ftokens    *iscp.FungibleTokens // ignored off-ledger
 	nft        *iscp.NFT
 	allowance  *iscp.Allowance
 	gasBudget  uint64
@@ -61,7 +61,7 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 //  - 'funName' is a name of the target entry point (the function) of he smart contract program
 //  - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
-// With the WithTransfers the CallParams structure may be complemented with attached assets
+// With the WithTransfers the CallParams structure may be complemented with attached ftokens
 // sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
@@ -108,35 +108,35 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 	return r
 }
 
-func (r *CallParams) WithAssets(assets *iscp.FungibleTokens) *CallParams {
+func (r *CallParams) WithFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
 	}
-	r.assets = assets.Clone()
+	r.ftokens = assets.Clone()
 	return r
 }
 
-func (r *CallParams) AddAssets(assets *iscp.FungibleTokens) *CallParams {
-	if r.assets == nil {
-		r.assets = assets.Clone()
+func (r *CallParams) AddFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
+	if r.ftokens == nil {
+		r.ftokens = assets.Clone()
 	} else {
-		r.assets.Add(assets)
+		r.ftokens.Add(assets)
 	}
 	return r
 }
 
-func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
-	return r.AddAssets(iscp.NewFungibleTokens(amount, nil))
+func (r *CallParams) AddIotas(amount uint64) *CallParams {
+	return r.AddFungibleTokens(iscp.NewFungibleTokens(amount, nil))
 }
 
-func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAssets(&iscp.FungibleTokens{
+func (r *CallParams) AddNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
+	return r.AddFungibleTokens(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 }
 
-func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAssets(&iscp.FungibleTokens{
+func (r *CallParams) AddNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
+	return r.AddFungibleTokens(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *tokenID,
 			Amount: util.ToBigInt(amount),
@@ -237,7 +237,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		UnspentOutputIDs: allOutIDs,
 		Request: &iscp.RequestParameters{
 			TargetAddress:  ch.ChainID.AsAddress(),
-			FungibleTokens: req.assets,
+			FungibleTokens: req.ftokens,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
@@ -362,16 +362,16 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
 		available = ch.L2Iotas(agentID)
-		if req.assets != nil {
-			available += req.assets.Iotas
+		if req.ftokens != nil {
+			available += req.ftokens.Iotas
 		}
 		if req.allowance != nil {
 			available -= req.allowance.Assets.Iotas
 		}
 	} else {
 		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
-		if req.assets != nil {
-			n.Add(n, req.assets.AmountNativeToken(policy.GasFeeTokenID))
+		if req.ftokens != nil {
+			n.Add(n, req.ftokens.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if req.allowance != nil {
 			n.Sub(n, req.allowance.Assets.AmountNativeToken(policy.GasFeeTokenID))

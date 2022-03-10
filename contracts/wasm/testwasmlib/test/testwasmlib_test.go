@@ -167,7 +167,7 @@ func TestInvalidTypeParams(t *testing.T) {
 				invalidParam := fmt.Sprintf("invalid %s%s", strings.ToUpper(param[:1]), param[1:])
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 					param, value,
-				).AddAssetsIotas(1).WithMaxAffordableGasBudget()
+				).AddIotas(1).WithMaxAffordableGasBudget()
 				_, err := ctx.Chain.PostRequestSync(req, nil)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), invalidParam)

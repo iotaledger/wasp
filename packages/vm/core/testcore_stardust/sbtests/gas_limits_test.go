@@ -20,7 +20,7 @@ func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.
 	gasBudget := gas.MaxGasPerCall + 5000000
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncInfiniteLoop.Name).
-		AddAssetsIotas(iotasToSend).
+		AddIotas(iotasToSend).
 		WithGasBudget(gasBudget)
 	return req, wallet
 }

@@ -542,7 +542,7 @@ func (env *Solo) L1Iotas(addr iotago.Address) uint64 {
 	return env.utxoDB.GetAddressBalances(addr).Iotas
 }
 
-// L1Assets returns all assets of the address contained in the UTXODB ledger
+// L1Assets returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1Assets(addr iotago.Address) *iscp.FungibleTokens {
 	return env.utxoDB.GetAddressBalances(addr)
 }

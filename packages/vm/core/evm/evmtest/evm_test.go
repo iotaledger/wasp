@@ -157,7 +157,7 @@ func TestGasLimit(t *testing.T) {
 	_, err = storage.store(124, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet2,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas).AddAssetsIotas(fee * 9 / 10)
+			req.WithGasBudget(gas).AddIotas(fee * 9 / 10)
 		},
 	}})
 	require.Error(t, err)
@@ -168,7 +168,7 @@ func TestGasLimit(t *testing.T) {
 	_, err = storage.store(125, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet3,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas / 2).AddAssetsIotas(fee)
+			req.WithGasBudget(gas / 2).AddIotas(fee)
 		},
 	}})
 	require.Error(t, err)
@@ -189,7 +189,7 @@ func TestLoop(t *testing.T) {
 			iota: iotaCallOptions{
 				wallet: iotaWallet,
 				before: func(req *solo.CallParams) {
-					req.WithGasBudget(iscGasBudget).AddAssetsIotas(iotasSent)
+					req.WithGasBudget(iscGasBudget).AddIotas(iotasSent)
 				},
 			},
 		})
@@ -265,7 +265,7 @@ func TestISCTriggerEventThenFail(t *testing.T) {
 	// test that triggerEvent() followed by revert() does not actually trigger the event
 	_, err := iscTest.triggerEventFail("Hi from EVM!", ethCallOptions{iota: iotaCallOptions{
 		before: func(req *solo.CallParams) {
-			req.AddAssetsIotas(10000).WithMaxAffordableGasBudget()
+			req.AddIotas(10000).WithMaxAffordableGasBudget()
 		},
 	}})
 	require.Error(t, err)
@@ -299,7 +299,7 @@ func TestBlockTime(t *testing.T) {
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 			accounts.ParamAgentID, iscp.NewAgentID(evmChain.soloChain.ChainID.AsAddress(), evm.Contract.Hname()),
 		).
-			AddAssetsIotas(200000).
+			AddIotas(200000).
 			AddAllowanceIotas(100000).
 			WithMaxAffordableGasBudget(),
 		nil,

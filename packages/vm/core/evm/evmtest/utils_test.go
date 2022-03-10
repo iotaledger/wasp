@@ -131,7 +131,7 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 		if err != nil {
 			return nil, fmt.Errorf("could not estimate gas: %w", e.resolveError(err))
 		}
-		req.WithGasBudget(gasBudget).AddAssetsIotas(gasFee)
+		req.WithGasBudget(gasBudget).AddIotas(gasFee)
 	}
 	ret, err := e.soloChain.PostRequestSync(req, opt.wallet)
 	if err != nil {
@@ -269,7 +269,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(e.t, e.resolveError(err))
-	req.WithGasBudget(iscpGas).AddAssetsIotas(iscpGasFee)
+	req.WithGasBudget(iscpGas).AddIotas(iscpGasFee)
 
 	// send EVM tx
 	_, err = e.soloChain.PostRequestSync(req, nil)
