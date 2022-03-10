@@ -580,7 +580,7 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	// return nil
 }
 
-func (clu *Cluster) VerifyAddressBalances(addr iotago.Address, totalExpected uint64, expect *iscp.Assets, comment ...string) bool {
+func (clu *Cluster) VerifyAddressBalances(addr iotago.Address, totalExpected uint64, expect *iscp.FungibleTokens, comment ...string) bool {
 	panic("TODO implement")
 	// allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
 	// if err != nil {
@@ -609,7 +609,7 @@ func (clu *Cluster) VerifyAddressBalances(addr iotago.Address, totalExpected uin
 	// return assertionOk
 }
 
-func dumpAssets(actual, expect *iscp.Assets) (string, bool) {
+func dumpAssets(actual, expect *iscp.FungibleTokens) (string, bool) {
 	panic("TODO implement") // this will probably be simple - just call assets.String()
 	// assertionOk := true
 	// lst := make([]colored.Color, 0, len(expect))

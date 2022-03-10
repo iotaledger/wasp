@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 
 	//"github.com/iotaledger/wasp/packages/transaction"
@@ -47,7 +48,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(c.t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieAccess()))
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -59,10 +60,11 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}*/
 
-	nextvs.ApplyStateUpdates(suBlockIndex, suCounter /*, suReqs*/)
+	nextvs.ApplyStateUpdate(suBlockIndex)
+	nextvs.ApplyStateUpdate(suCounter /*, suReqs*/)
 	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
-	//nextStateHash := nextvs.StateCommitment()
+	//nextStateHash := nextvs.RootCommitment()
 
 	consumedOutput := chainOutput.GetAliasOutput()
 	/*var aliasID iotago.AliasID
@@ -86,7 +88,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutp
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  nextvs.StateCommitment().Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieAccess())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Blocks:         consumedOutput.Blocks,

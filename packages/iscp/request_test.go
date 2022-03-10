@@ -5,6 +5,10 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -30,7 +34,7 @@ func TestSerializeRequestData(t *testing.T) {
 	})
 
 	t.Run("on ledger", func(t *testing.T) {
-		sender, _ := iotago.ParseEd25519AddressFromHexString("0152fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649")
+		sender := tpkg.RandEd25519Address()
 		requestMetadata := &RequestMetadata{
 			SenderContract: Hn("sender_contract"),
 			TargetContract: Hn("target_contract"),

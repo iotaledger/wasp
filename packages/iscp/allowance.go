@@ -5,10 +5,11 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type Allowance struct {
-	Assets *Assets
+	Assets *FungibleTokens
 	NFTs   []iotago.NFTID
 }
 
@@ -21,7 +22,7 @@ func NewEmptyAllowance() *Allowance {
 
 func NewAllowance(iotas uint64, tokens iotago.NativeTokens, NFTs []iotago.NFTID) *Allowance {
 	return &Allowance{
-		Assets: NewAssets(iotas, tokens),
+		Assets: NewFungibleTokens(iotas, tokens),
 		NFTs:   NFTs,
 	}
 }
@@ -30,7 +31,7 @@ func NewAllowanceIotas(iotas uint64) *Allowance {
 	return NewAllowance(iotas, nil, nil)
 }
 
-func NewAllowanceFungibleTokens(ftokens *Assets) *Allowance {
+func NewAllowanceFungibleTokens(ftokens *FungibleTokens) *Allowance {
 	return &Allowance{
 		Assets: ftokens,
 	}
@@ -52,7 +53,7 @@ func (a *Allowance) Clone() *Allowance {
 }
 
 func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
-	a.Assets.SpendFromBudget(toSpend.Assets)
+	a.Assets.SpendFromFungibleTokenBudget(toSpend.Assets)
 	nftSet := a.NFTSet()
 	for _, id := range toSpend.NFTs {
 		if !nftSet[id] {
@@ -73,9 +74,6 @@ func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
 	return true
 }
 
-// TODO optimize serialization: In the NFT request allowance of the containing request requires 1 bit of information, no need for 20 bytes of NFTid
-//  That requires taking into account the request context
-
 func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	a.Assets.WriteToMarshalUtil(mu)
 	mu.WriteUint16(uint16(len(a.NFTs)))
@@ -85,7 +83,7 @@ func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 }
 
 func AllowanceFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Allowance, error) {
-	assets, err := AssetsFromMarshalUtil(mu)
+	assets, err := FungibleTokensFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
@@ -151,4 +149,21 @@ func (a *Allowance) String() string {
 		ret += fmt.Sprintf("\n NFTID: %s", nftid.String())
 	}
 	return ret
+}
+
+func (a *Allowance) fillEmptyNFTIDs(o iotago.Output, utxoInput *iotago.UTXOInput) *Allowance {
+	if a == nil {
+		return nil
+	}
+	nftOut, ok := o.(*iotago.NFTOutput)
+	if !ok {
+		return a
+	}
+	// see if there is an empty NFTID in allowance (this can happpen if the NTF is minted as a request to the chain)
+	for i, nft := range a.NFTs {
+		if nft.Empty() {
+			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOut, utxoInput.ID())
+		}
+	}
+	return a
 }

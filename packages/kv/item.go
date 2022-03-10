@@ -1,5 +1,9 @@
 package kv
 
+import (
+	"fmt"
+)
+
 type Item struct {
 	Key   Key
 	Value []byte
@@ -17,4 +21,8 @@ func (items Items) Less(i, j int) bool {
 
 func (items Items) Swap(i, j int) {
 	items[i], items[j] = items[j], items[i]
+}
+
+func (it *Item) Format(format string) string {
+	return fmt.Sprintf(format, it.Key, it.Value)
 }

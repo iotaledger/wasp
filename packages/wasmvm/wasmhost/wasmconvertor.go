@@ -102,7 +102,7 @@ func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {
 	return wasmtypes.NewScAgentID(cvt.ScAddress(agentID.Address()), cvt.ScHname(agentID.Hname()))
 }
 
-func (cvt WasmConvertor) ScBalances(assets *iscp.Assets) wasmlib.ScAssets {
+func (cvt WasmConvertor) ScBalances(assets *iscp.FungibleTokens) wasmlib.ScAssets {
 	scAssets := make(wasmlib.ScAssets)
 	if assets.Iotas != 0 {
 		scAssets[wasmtypes.IOTA] = assets.Iotas

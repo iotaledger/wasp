@@ -155,10 +155,6 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
-	sd, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
-	if err != nil {
-		panic(err)
-	}
 	var nilAliasID iotago.AliasID
 	blockset, err := vmctx.task.AnchorOutput.FeatureBlocks().Set()
 	if err != nil {
@@ -177,7 +173,7 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		GovernanceController: vmctx.task.AnchorOutput.GovernorAddress(),
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
 		OutputID:             vmctx.task.AnchorOutputID,
-		StateData:            sd,
+		StateData:            vmctx.task.AnchorOutput.StateMetadata,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
 		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
 	}

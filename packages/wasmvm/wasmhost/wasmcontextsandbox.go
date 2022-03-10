@@ -156,7 +156,7 @@ func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
 	allowance := s.ctx.AllowanceAvailable()
-	// TODO check, allowance.Assets is wrong
+	// TODO check, allowance.FungibleTokens is wrong
 	return s.cvt.ScBalances(allowance.Assets).Bytes()
 }
 
@@ -170,7 +170,7 @@ func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnBalances(args []byte) []byte {
-	assets := s.common.Assets()
+	assets := s.common.BalanceFungibleTokens()
 	balances := s.cvt.ScBalances(assets)
 	return balances.Bytes()
 }
@@ -294,7 +294,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	sendReq := iscp.RequestParameters{
 		AdjustToMinimumDustDeposit: true,
 		TargetAddress:              chainID.AsAddress(),
-		Assets:                     assets.Assets,
+		FungibleTokens:             assets.Assets,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: contract,
 			EntryPoint:     function,
@@ -342,7 +342,7 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 		s.ctx.Send(iscp.RequestParameters{
 			AdjustToMinimumDustDeposit: true,
 			TargetAddress:              address,
-			Assets:                     allowance.Assets,
+			FungibleTokens:             allowance.Assets,
 		})
 	}
 	return nil

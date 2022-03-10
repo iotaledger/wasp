@@ -2,88 +2,101 @@ package state
 
 import (
 	"errors"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
-// Commit saves updates collected in the virtual state to DB together with the provided blocks in one transaction
+type mustKVStoreBatch struct {
+	prefix byte
+	batch  kvstore.BatchedMutations
+}
+
+func newKVStoreBatch(prefix byte, batch kvstore.BatchedMutations) *mustKVStoreBatch {
+	return &mustKVStoreBatch{
+		prefix: prefix,
+		batch:  batch,
+	}
+}
+
+func (k *mustKVStoreBatch) Set(key kv.Key, value []byte) {
+	if err := k.batch.Set(dbkeys.MakeKey(k.prefix, []byte(key)), value); err != nil {
+		panic(err)
+	}
+}
+
+func (k *mustKVStoreBatch) Del(key kv.Key) {
+	if err := k.batch.Delete(dbkeys.MakeKey(k.prefix, []byte(key))); err != nil {
+		panic(err)
+	}
+}
+
+// Save saves updates collected in the virtual state to DB together with the provided blocks in one transaction
 // Mutations must be non-empty otherwise it is NOP
-// It the log of updates is not taken into account
-func (vs *virtualStateAccess) Commit(blocks ...Block) error {
+func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
 		return nil
 	}
+	vs.Commit()
+
 	batch := vs.db.Batched()
 
-	stateCommitment := vs.StateCommitment()
-	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), stateCommitment.Bytes()); err != nil {
-		return err
-	}
-
+	vs.trie.PersistMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
+	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
 	for _, blk := range blocks {
 		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
 			return err
 		}
 	}
-
-	// store mutations
-	for k, v := range vs.kvs.Mutations().Sets {
-		if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateVariable, []byte(k)), v); err != nil {
-			return err
-		}
-	}
-	for k := range vs.kvs.Mutations().Dels {
-		if err := batch.Delete(dbkeys.MakeKey(dbkeys.ObjectTypeStateVariable, []byte(k))); err != nil {
-			return err
-		}
-	}
-
 	if err := batch.Commit(); err != nil {
 		return err
 	}
 
-	// call flush explicitly, because batched.Commit doesn't actually write the changes to disk.
+	// call flush explicitly, because batched.Commit doesn't actually write the changes to disk
 	if err := vs.db.Flush(); err != nil {
 		return err
 	}
 
+	vs.trie.ClearCache()
 	vs.kvs.ClearMutations()
 	vs.kvs.Mutations().ResetModified()
-	vs.appliedBlockHashes = vs.appliedBlockHashes[:0]
-	vs.committedHash = stateCommitment
 	return nil
 }
 
-// CreateOriginState creates zero state which is the minimal consistent state.
-// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, error) {
-	originState, originBlock := newZeroVirtualState(store, chainID)
-	if err := originState.Commit(originBlock); err != nil {
-		return nil, err
-	}
-	return originState, nil
-}
-
-// LoadSolidState establishes VirtualStateAccess interface with the solid state in DB. Checks consistency of DB
+// LoadSolidState establishes VirtualStateAccess interface with the solid state in DB.
+// Checks root commitment to chainID
 func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, bool, error) {
-	stateHash, exists, err := loadStateHashFromDb(store)
-	if err != nil {
-		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)
-	}
-	if !exists {
+	// check the existence of terminalCommitment at key ''. chainID is expected
+	v, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeState))
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
+		// state does not exist
 		return nil, false, nil
 	}
-	vs := newVirtualState(store, chainID)
-	vs.committedHash = stateHash
+	if err != nil {
+		return nil, false, xerrors.Errorf("LoadSolidState: %v", err)
+	}
+	chID, err := iscp.ChainIDFromBytes(v)
+	if err != nil {
+		return nil, false, xerrors.Errorf("LoadSolidState: %v", err)
+	}
+	if !chID.Equals(chainID) {
+		return nil, false, xerrors.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
+	}
+	ret := newVirtualState(store)
 
-	vs.kvs.Mutations().ResetModified()
-	return vs, true, nil
+	// explicit use of merkle trie model. Asserting that the chainID is committed by the root at the key ''
+	merkleProof := CommitmentModel.Proof(nil, ret.trie)
+	if err = merkleProof.Validate(trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
+		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
+	}
+	ret.kvs.Mutations().ResetModified()
+	return ret, true, nil
 }
 
 // LoadBlockBytes loads block bytes of the specified block index from DB

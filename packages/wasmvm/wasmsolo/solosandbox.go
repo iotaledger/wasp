@@ -179,7 +179,7 @@ func (s *SoloSandbox) fnAccountID(args []byte) []byte {
 
 func (s *SoloSandbox) fnAllowance(args []byte) []byte {
 	//// zero incoming balance
-	assets := new(iscp.Assets)
+	assets := new(iscp.FungibleTokens)
 	return s.cvt.ScBalances(assets).Bytes()
 }
 

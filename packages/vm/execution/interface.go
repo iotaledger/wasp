@@ -22,7 +22,7 @@ type WaspContext interface {
 
 	// needed for sandbox
 	iscp.LogInterface
-	GetAssets(agentID *iscp.AgentID) *iscp.Assets
+	GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens
 	Timestamp() int64
 	AccountID() *iscp.AgentID
 	GetIotaBalance(agentID *iscp.AgentID) uint64
@@ -35,4 +35,6 @@ type WaspContext interface {
 	Params() *iscp.Params
 	StateReader() kv.KVStoreReader
 	GasBudgetLeft() uint64
+	GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID
+	GetNFTData(nftID iotago.NFTID) iscp.NFT
 }

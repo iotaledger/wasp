@@ -78,7 +78,7 @@ func TestWithdrawEverything(t *testing.T) {
 
 	// construct request with low allowance (just sufficient for dust balance), so its possible to estimate the gas fees
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAssets(iscp.NewAssetsIotas(l2balance)).AddAllowance(iscp.NewAllowanceIotas(5200))
+		WithAssets(iscp.NewTokensIotas(l2balance)).AddAllowance(iscp.NewAllowanceIotas(5200))
 
 	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender, true)
 	require.NoError(t, err)
@@ -993,4 +993,54 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 		ExtParas:   nil,
 		WorkingSet: nil,
 	}, inputs))
+}
+
+func TestNFTAccount(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
+	ownerWallet, ownerAddress := ch.Env.NewKeyPairWithFunds()
+	ownerBalance := ch.Env.L1Iotas(ownerAddress)
+
+	nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
+	require.NoError(t, err)
+	nftAddress := nftInfo.NFTID.ToAddress()
+
+	// deposit funds on behalf of the NFT
+	iotasToSend := uint64(100_000)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		AddAssets(iscp.NewAssetsIotas(iotasToSend)).
+		WithMaxAffordableGasBudget().
+		WithSender(nftAddress)
+
+	_, err = ch.PostRequestSync(req, ownerWallet)
+	require.NoError(t, err)
+	rec := ch.LastReceipt()
+
+	nftAgentID := iscp.NewAgentID(nftAddress, 0)
+	ch.AssertL2Iotas(nftAgentID, iotasToSend-rec.GasFeeCharged)
+	ch.Env.AssertL1Iotas(nftAddress, 0)
+	ch.Env.AssertL1Iotas(
+		ownerAddress,
+		ownerBalance+nftInfo.Output.Deposit()-iotasToSend,
+	)
+	ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID)
+
+	// withdraw to the NFT on L1
+	iotasToWithdrawal := uint64(1000)
+	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+		AddAllowanceIotas(iotasToWithdrawal).
+		WithMaxAffordableGasBudget()
+
+		// NFT owner on L1 can't move L2 funds owned by the NFT unless the request is sent in behalf of the NFT (NFTID is specified as "Sender")
+	_, err = ch.PostRequestSync(wdReq, ownerWallet)
+	require.Error(t, err)
+
+	// NFT owner can withdraw funds owned by the NFT on the chain
+	_, err = ch.PostRequestSync(wdReq.WithSender(nftAddress), ownerWallet)
+	require.NoError(t, err)
+	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+
+	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
 }

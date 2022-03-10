@@ -3,9 +3,9 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
-	"math/big"
-
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -151,11 +151,11 @@ func (txb *AnchorTransactionBuilder) Consume(req iscp.Request) int64 {
 	txb.addDeltaIotasToTotal(req.AsOnLedger().Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
-	for _, nt := range req.Assets().Tokens {
+	for _, nt := range req.FungibleTokens().Tokens {
 		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	if req.NFT() != nil {
-		deltaIotasDustDepositAdjustment += txb.consumeNFT(req.AsOnLedger().Output().(*iotago.NFTOutput))
+		deltaIotasDustDepositAdjustment += txb.consumeNFT(req.AsOnLedger().Output().(*iotago.NFTOutput), req.AsOnLedger().UTXOInput())
 	}
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume OUT")
@@ -198,7 +198,7 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 }
 
 // BuildTransactionEssence builds transaction essence from tx builder data
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) (*iotago.TransactionEssence, []byte) {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
@@ -264,7 +264,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 }
 
 // outputs generates outputs for the transaction essence
-func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.Outputs {
+func (txb *AnchorTransactionBuilder) outputs(stateData *state.L1Commitment) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 	// creating the anchor output
 	aliasID := txb.anchorOutput.AliasID

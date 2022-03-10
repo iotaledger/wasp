@@ -27,7 +27,7 @@ var chainAddress = tpkg.RandEd25519Address()
 
 func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualStateAccess) {
 	store := mapdb.NewMapDB()
-	vs, err := state.CreateOriginState(store, nil)
+	vs, err := state.CreateOriginState(store, iscp.RandomChainID())
 	require.NoError(t, err)
 	ret := state.NewOptimisticStateReader(store, glb)
 	require.NoError(t, err)
@@ -41,8 +41,8 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestP
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {
 		requestParams := iscp.RequestParameters{
-			TargetAddress: chainAddress,
-			Assets:        nil,
+			TargetAddress:  chainAddress,
+			FungibleTokens: nil,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: iscp.Hn("dummyTargetContract"),
 				EntryPoint:     iscp.Hn("dummyEP"),
@@ -230,7 +230,7 @@ func TestProcessedRequest(t *testing.T) {
 	err := blocklog.SaveRequestReceipt(blocklogPartition, rec, [6]byte{})
 	require.NoError(t, err)
 	blocklogPartition.Set(coreutil.StateVarBlockIndex, util.Uint64To8Bytes(1))
-	err = vs.Commit()
+	err = vs.Save()
 	require.NoError(t, err)
 
 	pool.ReceiveRequests(requests[0])

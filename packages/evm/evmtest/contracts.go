@@ -45,7 +45,7 @@ var (
 	LoopContractBytecode    = common.FromHex(strings.TrimSpace(loopContractBytecodeHex))
 )
 
-//go:generate sh -c "solc --abi --bin --overwrite @isccontract=`realpath ../../contracts/native/evm/isccontract` ISCTest.sol -o . && rm ISC.*"
+//go:generate sh -c "solc --abi --bin --overwrite @isccontract=`realpath ../../vm/core/evm/isccontract` ISCTest.sol -o . && rm ISC.*"
 var (
 	//go:embed ISCTest.abi
 	ISCTestContractABI string

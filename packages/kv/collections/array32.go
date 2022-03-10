@@ -35,11 +35,11 @@ func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray3
 
 const array32ElemKeyCode = byte('#')
 
-func array32SizeKey(name string) kv.Key {
+func Array32SizeKey(name string) kv.Key {
 	return kv.Key(name)
 }
 
-func array32ElemKey(name string, idx uint32) kv.Key {
+func Array32ElemKey(name string, idx uint32) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
 	buf.WriteByte(array32ElemKeyCode)
@@ -53,7 +53,7 @@ func Array32RangeKeys(name string, length, from, to uint32) []kv.Key {
 	keys := make([]kv.Key, 0)
 	if to >= from {
 		for i := from; i < to && i < length; i++ {
-			keys = append(keys, array32ElemKey(name, i))
+			keys = append(keys, kv.Key(Array32ElemKey(name, i)))
 		}
 	}
 	return keys
@@ -89,11 +89,11 @@ func (a *Array32) Immutable() *ImmutableArray32 {
 }
 
 func (a *ImmutableArray32) getSizeKey() kv.Key {
-	return array32SizeKey(a.name)
+	return Array32SizeKey(a.name)
 }
 
 func (a *ImmutableArray32) getArray32ElemKey(idx uint32) kv.Key {
-	return array32ElemKey(a.name, idx)
+	return Array32ElemKey(a.name, idx)
 }
 
 func (a *Array32) setSize(n uint32) {

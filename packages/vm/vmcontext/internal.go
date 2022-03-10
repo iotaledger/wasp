@@ -1,13 +1,13 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -20,7 +20,7 @@ import (
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, ftokens *iscp.Assets) {
+func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, ftokens *iscp.FungibleTokens) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditToAccount(s, agentID, ftokens)
 	})
@@ -34,7 +34,7 @@ func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, nft *iscp.NFT)
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.Assets) {
+func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.FungibleTokens) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitFromAccount(s, agentID, transfer)
 	})
@@ -48,14 +48,14 @@ func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID iotago.
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.Assets, nfts []iotago.NFTID) {
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, fungibleTokens, nfts)
 	})
 }
 
-func (vmctx *VMContext) totalL2Assets() *iscp.Assets {
-	var ret *iscp.Assets
+func (vmctx *VMContext) totalL2Assets() *iscp.FungibleTokens {
+	var ret *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetTotalL2Assets(s)
 	})
@@ -101,13 +101,27 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID
 	return ret
 }
 
-func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
-	var ret *iscp.Assets
+func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
+	var ret *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetAssets(s, agentID)
 		if ret == nil {
-			ret = &iscp.Assets{}
+			ret = &iscp.FungibleTokens{}
 		}
+	})
+	return ret
+}
+
+func (vmctx *VMContext) GetAccountNFTs(agentID *iscp.AgentID) (ret []iotago.NFTID) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		ret = accounts.GetAccountNFTs(s, agentID)
+	})
+	return ret
+}
+
+func (vmctx *VMContext) GetNFTData(nftID iotago.NFTID) (ret iscp.NFT) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		ret = accounts.GetNFTData(s, nftID)
 	})
 	return ret
 }
@@ -209,7 +223,7 @@ func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account *iscp.Ag
 	if adjustment == 0 {
 		return
 	}
-	err := util.CatchPanicReturnError(func() {
+	err := panicutil.CatchPanicReturnError(func() {
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 			accounts.AdjustAccountIotas(s, account, adjustment)
 		})

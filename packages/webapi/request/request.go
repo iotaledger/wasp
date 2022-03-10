@@ -22,7 +22,7 @@ import (
 )
 
 type (
-	getAccountAssetsFn        func(ch chain.Chain, agentID *iscp.AgentID) (*iscp.Assets, error)
+	getAccountAssetsFn        func(ch chain.Chain, agentID *iscp.AgentID) (*iscp.FungibleTokens, error)
 	hasRequestBeenProcessedFn func(ch chain.Chain, reqID iscp.RequestID) (bool, error)
 )
 

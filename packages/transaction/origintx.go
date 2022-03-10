@@ -31,7 +31,7 @@ func NewChainOriginTransaction(
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
-		StateMetadata: state.OriginStateHash().Bytes(),
+		StateMetadata: state.OriginL1Commitment().Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
@@ -111,6 +111,7 @@ func NewRootInitRequestTransaction(
 	}
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
+		SenderAddress:    keyPair.Address(),
 		UnspentOutputs:   unspentOutputs,
 		UnspentOutputIDs: unspentOutputIDs,
 		Request: &iscp.RequestParameters{

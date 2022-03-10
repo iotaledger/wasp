@@ -240,7 +240,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Calldata) *vm.VMTask {
 			return
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.StateCommitment())
+			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.RootCommitment())
 		c.EnqueueVMResultMsg(&messages.VMResultMsg{
 			Task: task,
 		})
@@ -666,7 +666,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		r = " (rotate) "
 	}
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.StateCommitment().String())
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.RootCommitment().String())
 	c.resetWorkflow()
 	return true
 }

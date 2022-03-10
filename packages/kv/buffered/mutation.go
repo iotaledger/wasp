@@ -2,6 +2,7 @@ package buffered
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sort"
 
@@ -52,6 +53,15 @@ func (ms *Mutations) Write(w io.Writer) error {
 		}
 	}
 	return nil
+}
+
+func (ms *Mutations) Apply(kvw kv.KVWriter) {
+	for k, v := range ms.Sets {
+		kvw.Set(k, v)
+	}
+	for k := range ms.Dels {
+		kvw.Del(k)
+	}
 }
 
 //nolint:gocritic
@@ -167,4 +177,15 @@ func (ms *Mutations) IsModified() bool {
 
 func (ms *Mutations) ResetModified() {
 	ms.modified = false
+}
+
+func (ms *Mutations) Dump() string {
+	ret := "\n"
+	for _, it := range ms.SetsSorted() {
+		ret += it.Format("    SET %-32s : %s\n")
+	}
+	for _, d := range ms.DelsSorted() {
+		ret += fmt.Sprintf("    DEL %-32s\n", d)
+	}
+	return ret
 }

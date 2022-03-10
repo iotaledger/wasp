@@ -26,15 +26,15 @@ func (s *SoloBackend) Signer() *cryptolib.KeyPair {
 	return s.pvtKey
 }
 
-func (s *SoloBackend) gasFeeAssets(gas, feeAmount uint64, err error) (uint64, *iscp.Assets, error) {
+func (s *SoloBackend) gasFeeAssets(gas, feeAmount uint64, err error) (uint64, *iscp.FungibleTokens, error) {
 	if err != nil {
 		return 0, nil, err
 	}
 	gp := s.Chain.GetGasFeePolicy()
-	return gas, iscp.NewAssetsForGasFee(gp, feeAmount), nil
+	return gas, iscp.NewFungibleTokensForGasFee(gp, feeAmount), nil
 }
 
-func (s *SoloBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp.Assets, args dict.Dict) (uint64, *iscp.Assets, error) {
+func (s *SoloBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp.FungibleTokens, args dict.Dict) (uint64, *iscp.FungibleTokens, error) {
 	return s.gasFeeAssets(s.Chain.EstimateGasOnLedger(
 		solo.NewCallParamsFromDic(scName, funName, args).WithAssets(transfer),
 		s.pvtKey,
@@ -42,7 +42,7 @@ func (s *SoloBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp
 	))
 }
 
-func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict, gasBudget uint64) error {
+func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.FungibleTokens, args dict.Dict, gasBudget uint64) error {
 	_, err := s.Chain.PostRequestSync(
 		solo.NewCallParamsFromDic(scName, funName, args).WithAssets(transfer).WithGasBudget(gasBudget),
 		s.pvtKey,
@@ -50,7 +50,7 @@ func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp
 	return err
 }
 
-func (s *SoloBackend) EstimateGasOffLedger(scName, funName string, args dict.Dict) (uint64, *iscp.Assets, error) {
+func (s *SoloBackend) EstimateGasOffLedger(scName, funName string, args dict.Dict) (uint64, *iscp.FungibleTokens, error) {
 	return s.gasFeeAssets(s.Chain.EstimateGasOffLedger(
 		solo.NewCallParamsFromDic(scName, funName, args),
 		s.pvtKey,

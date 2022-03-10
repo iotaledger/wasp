@@ -17,7 +17,19 @@ The `wasp-cli chain evm jsonrpc` command to start a JSON-RPC server. This will
 allow you to connect any standard Ethereum tool, like Metamask.
 
 Note: Existing EVM tools that expect a 'real' Ethereum blockchain might not
-be compatible with the current implementation of `evm`. YMMV.
+be compatible with the current implementation of `evm`. Some examples:
+
+- Ethereum blocks are kept only to provide compatibility, but they do not
+  actually form a 'real' blockchain, and the EVM state is not actually stored
+  in a Merkle tree (since the ISC layer already takes care of all of this, it
+  would be inefficient to do that at the EVM layer as well). As a consequence,
+  some attributes of the blocks will show dummy values (e.g. `stateRoot`,
+  `nonce`, etc).
+
+- If a transaction is reverted, in Ethereum a receipt is generated with
+  `status = failed`. In ISC, the corresponding ISC request will
+  also be reverted, generating no Ethereum receipt (the ISC receipt will
+  still be generated).
 
 ## Complete example using `wasp-cluster`
 
