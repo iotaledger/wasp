@@ -294,11 +294,13 @@ func TestCruelWorld(t *testing.T) {
 		for {
 			time.Sleep(randFromIntervalFun(1000, 3000) * time.Millisecond)
 			mutex.Lock()
-			// nodeName := env.Nodes[rand.Intn(numNodes)].NodeID
-			// env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodeName)
-			// env.Log.Debugf("Connection to node %v lost", nodeName)
-			// disconnectedNodes = append(disconnectedNodes, nodeName)
-			mutex.Unlock() // nolint:gocritic,staticcheck
+			nodeIndex := rand.Intn(numNodes)
+			nodeName := env.Nodes[nodeIndex].NodeID
+			nodePubKey := env.Nodes[nodeIndex].NodePubKey
+			env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodePubKey)
+			env.Log.Debugf("Connection to node %v %v lost", nodeName, nodePubKey.AsString())
+			disconnectedNodes = append(disconnectedNodes, nodeName)
+			mutex.Unlock()
 		}
 	}()
 
@@ -307,11 +309,12 @@ func TestCruelWorld(t *testing.T) {
 			time.Sleep(randFromIntervalFun(500, 2000) * time.Millisecond)
 			mutex.Lock()
 			if len(disconnectedNodes) > 0 {
-				env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0])
+				require.True(t, env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0]))
 				env.Log.Debugf("Connection to node %v restored", disconnectedNodes[0])
 				disconnectedNodes[0] = ""
 				disconnectedNodes = disconnectedNodes[1:]
 			}
+			mutex.Unlock()
 		}
 	}()
 

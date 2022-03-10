@@ -79,6 +79,11 @@ func (mdksT *mockedDKShare) VerifySigShare(data []byte, sigshare tbls.SigShare) 
 	return nil
 }
 
+func (mdksT *mockedDKShare) VerifyMasterSignature(data, signature []byte) error {
+	mdksT.Log.Debugf("DKShare mock: verifying master signature - always success")
+	return nil
+}
+
 func (*mockedDKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var signature bls.Signature
 	for i := range signature {
@@ -101,5 +106,4 @@ func (*mockedDKShare) GetPublicShares() []kyber.Point   { panic("TODO") }
 func (*mockedDKShare) SetPublicShares(ps []kyber.Point) { panic("TODO") }
 func (*mockedDKShare) GetPrivateShare() kyber.Scalar    { panic("TODO") }
 
-func (*mockedDKShare) Bytes() []byte                                      { panic("TODO") }
-func (*mockedDKShare) VerifyMasterSignature(data, signature []byte) error { panic("TODO") }
+func (*mockedDKShare) Bytes() []byte { panic("TODO") }
