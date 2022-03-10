@@ -8,13 +8,11 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"go.dedis.ch/kyber/v3/share"
-	"go.dedis.ch/kyber/v3/util/key"
-	//"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	//"github.com/iotaledger/wasp/packages/testutil"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/tbls"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 var publicKey = bls.PrivateKeyFromRandomness().PublicKey()
@@ -105,25 +103,3 @@ func (*mockedDKShare) GetPrivateShare() kyber.Scalar    { panic("TODO") }
 
 func (*mockedDKShare) Bytes() []byte                                      { panic("TODO") }
 func (*mockedDKShare) VerifyMasterSignature(data, signature []byte) error { panic("TODO") }
-
-/*func SetupDkg(env *MockedEnv, threshold uint16, identities []*cryptolib.KeyPair) (iotago.Address, []registry.DKShareRegistryProvider) {
-	result := make([]registry.DKShareRegistryProvider, len(identities))
-	pubKeys := make([]*cryptolib.PublicKey, len(identities))
-	for i := range identities {
-		pubKeys[i] = identities[i].GetPublicKey()
-	}
-	var address iotago.Address
-	for i := range result {
-		result[i] = testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
-		dks := NewMockedDKShare(env, threshold, pubKeys)
-		if i == 0 {
-			address = dks.GetAddress()
-		}
-		err := result[i].SaveDKShare(dks)
-		if err != nil {
-			env.Log.Debugf("Unable to save new DKShare: %v", err)
-		}
-	}
-	return address, result
-}
-*/

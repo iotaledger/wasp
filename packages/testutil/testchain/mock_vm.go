@@ -1,7 +1,6 @@
 package testchain
 
 import (
-	// "strings"
 	"testing"
 	"time"
 
@@ -15,34 +14,30 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	// "github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
 )
 
 type MockedVMRunner struct {
-	stateTransition *MockedStateTransition
-	nextState       state.VirtualStateAccess
-	tx              *iotago.TransactionEssence
-	log             *logger.Logger
-	t               *testing.T
+	log *logger.Logger
+	t   *testing.T
 }
+
+var _ vm.VMRunner = &MockedVMRunner{}
 
 func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 	ret := &MockedVMRunner{
-		stateTransition: NewMockedStateTransition(t, nil),
-		log:             log,
-		t:               t,
+		log: log.Named("vm"),
+		t:   t,
 	}
-	ret.stateTransition.OnVMResult(func(vs state.VirtualStateAccess, tx *iotago.TransactionEssence) {
-		ret.nextState = vs
-		ret.tx = tx
-	})
+	ret.log.Debugf("Mocked VM runner created")
 	return ret
 }
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) {
+	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
+		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieAccess()), iscp.OID(task.AnchorOutputID.UTXOInput()))
 	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption.Time, task.Requests...)
 	task.VirtualStateAccess = nextvs
 	task.RotationAddress = nil
@@ -61,6 +56,7 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 		}
 	}
 	task.VMError = nil
+	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", nextvs.BlockIndex(), trie.RootCommitment(nextvs.TrieAccess()))
 }
 
 func nextState(
@@ -68,7 +64,7 @@ func nextState(
 	vs state.VirtualStateAccess,
 	consumedOutput *iotago.AliasOutput,
 	consumedOutputID iotago.OutputID,
-	ts time.Time,
+	_ time.Time,
 	reqs ...iscp.Request,
 ) (state.VirtualStateAccess, *iotago.TransactionEssence, []byte) {
 	nextvs := vs.Copy()
@@ -130,7 +126,6 @@ func NextState(
 	vs state.VirtualStateAccess,
 	chainOutput *iscp.AliasOutputWithID,
 	ts time.Time,
-	/*reqs ...iscp.Calldata,*/
 ) (state.VirtualStateAccess, *iotago.Transaction, *iotago.UTXOInput) {
 	if chainKey != nil {
 		require.True(t, chainOutput.GetStateAddress().Equal(chainKey.GetPublicKey().AsEd25519Address()))

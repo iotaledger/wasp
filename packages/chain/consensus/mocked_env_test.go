@@ -5,9 +5,7 @@ package consensus
 
 import (
 	"fmt"
-	"io"
 	"math/rand"
-	"sync"
 	"testing"
 	"time"
 
@@ -16,10 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/peering"
-	//"github.com/iotaledger/wasp/packages/registry"
-	//	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -30,24 +26,20 @@ import (
 )
 
 type MockedEnv struct {
-	T                 *testing.T
-	Quorum            uint16
-	Log               *logger.Logger
-	Ledger            *testchain.MockedLedger
-	StateAddress      iotago.Address
-	OriginatorKeyPair *cryptolib.KeyPair
-	OriginatorAddress iotago.Address
-	NodeIDs           []string
-	NodePubKeys       []*cryptolib.PublicKey
-	NetworkProviders  []peering.NetworkProvider
-	NetworkBehaviour  *testutil.PeeringNetDynamic
-	NetworkCloser     io.Closer
-	DKShares          []tcrypto.DKShare
-	ChainID           *iscp.ChainID
-	MockedACS         chain.AsynchronousCommonSubsetRunner
-	InitStateOutput   *iscp.AliasOutputWithID
-	mutex             sync.Mutex
-	Nodes             []*mockedNode
+	T                *testing.T
+	Quorum           uint16
+	Log              *logger.Logger
+	Ledger           *testchain.MockedLedger
+	StateAddress     iotago.Address
+	Nodes            []*mockedNode
+	NodeIDs          []string
+	NodePubKeys      []*cryptolib.PublicKey
+	NetworkProviders []peering.NetworkProvider
+	NetworkBehaviour *testutil.PeeringNetDynamic
+	DKShares         []tcrypto.DKShare
+	ChainID          *iscp.ChainID
+	MockedACS        chain.AsynchronousCommonSubsetRunner
+	InitStateOutput  *iscp.AliasOutputWithID
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) *MockedEnv {
@@ -90,13 +82,8 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	for i := range nodeIdentities {
 		ret.NodePubKeys[i] = nodeIdentities[i].GetPublicKey()
 	}
-	//ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())	// TODO: return to norma DKS usage after refactor
+	// ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())	// TODO: return to normal DKS usage after refactor
 	ret.ChainID = iscp.RandomChainID()
-	/*addr := make([]byte, iotago.AliasAddressBytesLength)
-	rand.Read(addr)
-	var aliasAddr iotago.AliasAddress
-	copy(aliasAddr[:], addr)
-	ret.StateAddress = &aliasAddr*/
 	ret.StateAddress = ret.ChainID.AsAddress()
 	pubKeys := make([]*cryptolib.PublicKey, len(nodeIdentities))
 	for i := range nodeIdentities {
@@ -106,7 +93,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	for i := range ret.DKShares {
 		ret.DKShares[i] = NewMockedDKShare(ret, ret.StateAddress, uint16(i), quorum, pubKeys)
 	}
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	output := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
@@ -124,30 +111,6 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	ret.Ledger = testchain.NewMockedLedger(output, log)
 	ret.InitStateOutput = ret.Ledger.PullState()
 
-	/*ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
-	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
-	require.NoError(t, err)
-
-	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
-	require.True(t, len(outputs) == 1)
-
-	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
-
-	txBuilder := utxoutil.NewBuilder(outputs...)
-	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())
-	require.NoError(t, err)
-	err = txBuilder.AddRemainderOutputIfNeeded(ret.OriginatorAddress, nil)
-	require.NoError(t, err)
-	originTx, err := txBuilder.BuildWithED25519(ret.OriginatorKeyPair)
-	require.NoError(t, err)
-	err = ret.Ledger.AddTransaction(originTx)
-	require.NoError(t, err)
-
-	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
-	require.NoError(t, err)
-
-	ret.ChainID = iscp.ChainIDFromAliasID(ret.InitStateOutput.GetAliasAddress())*/
-
 	return ret
 }
 
@@ -158,21 +121,8 @@ func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
 }
 
 func (env *MockedEnv) nodeCount() int {
-	return len(env.NodeIDs)
+	return len(env.Nodes)
 }
-
-/*func (env *MockedEnv) SetInitialConsensusState() {
-	env.mutex.Lock()
-	defer env.mutex.Unlock()
-
-	for _, node := range env.Nodes {
-		go func(n *mockedNode) {
-			if n.SolidState != nil && n.SolidState.BlockIndex() == 0 {
-				n.EventStateTransition()
-			}
-		}(node)
-	}
-}*/
 
 func (env *MockedEnv) StartTimers() {
 	for _, n := range env.Nodes {

@@ -635,15 +635,6 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.
 	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// check consistency ---------------- end
 
-	/*blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
-	for i := range c.resultTxEssence.Inputs() {
-		if i == indexChainInput {
-			blocks[i] = sigUnlockBlock
-		} else {
-			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
-		}
-	}
-	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)*/
 	signature := &iotago.Ed25519Signature{
 		PublicKey: hashing.HashData(signatureWithPK.PublicKey.Bytes()),
 		Signature: signatureWithPK.Signature,
