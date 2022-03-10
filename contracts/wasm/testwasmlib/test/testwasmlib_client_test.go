@@ -15,13 +15,13 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
-	myChainID = "dCzCyHxMvtogk5yCsZkTYKnEotR1kaBtRkDtK1Ddxjqi"
+	myChainID = "mpbE84pT8uDZwNYisKRWKmfamfMUeeL7q94rJqzzhuWv"
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
 func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 	// for now skip client tests
-	// t.SkipNow()
+	t.SkipNow()
 
 	require.True(t, wasmclient.SeedIsValid(mySeed))
 	require.True(t, wasmclient.ChainIsValid(myChainID))
@@ -127,7 +127,7 @@ func TestClientAccountBalance(t *testing.T) {
 	// note: this calls core accounts contract instead of testwasmlib
 
 	// for now skip client tests
-	// t.SkipNow()
+	t.SkipNow()
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultServiceClient()

@@ -15,6 +15,10 @@ export class ScHname {
         this.id = wasmtypes.uint32ToBytes(id);
     }
 
+    static fromName(name: string): ScHname {
+        return hnameFromBytes(sandbox(FnUtilsHashName, stringToBytes(name)));
+    }
+
     public equals(other: ScHname): bool {
         return wasmtypes.bytesCompare(this.id, other.id) == 0;
     }

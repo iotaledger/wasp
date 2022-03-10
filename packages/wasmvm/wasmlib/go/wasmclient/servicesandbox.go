@@ -1,6 +1,7 @@
 package wasmclient
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -44,8 +45,8 @@ func (s *Service) StateSet(key, value []byte) {
 
 func (s *Service) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	contract := uint32(req.Contract)
-	if contract != uint32(s.scHname) {
+	hContract := iscp.Hname(req.Contract)
+	if hContract != s.scHname {
 		s.Err = errors.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
@@ -56,7 +57,8 @@ func (s *Service) fnCall(args []byte) []byte {
 	}
 	reqArgs := requestargs.New()
 	reqArgs.AddEncodeSimpleMany(params)
-	res, err := s.waspClient.CallView(s.chainID, s.scHname, "0x"+req.Function.String(), params)
+	hFunction := iscp.Hname(req.Function)
+	res, err := s.waspClient.CallViewByHname(s.chainID, hContract, hFunction, params)
 	if err != nil {
 		s.Err = err
 		return nil

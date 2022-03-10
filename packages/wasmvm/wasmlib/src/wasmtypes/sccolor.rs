@@ -18,10 +18,6 @@ impl ScColor {
     pub const IOTA: ScColor = ScColor { id: [0x00; SC_COLOR_LENGTH] };
     pub const MINT: ScColor = ScColor { id: [0xff; SC_COLOR_LENGTH] };
 
-    pub fn new(buf: &[u8]) -> ScColor {
-        color_from_bytes(buf)
-    }
-
     pub fn to_bytes(&self) -> Vec<u8> {
         color_to_bytes(self)
     }
@@ -34,7 +30,8 @@ impl ScColor {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn color_decode(dec: &mut WasmDecoder) -> ScColor {
-    color_from_bytes_unchecked(&dec.fixed_bytes(SC_COLOR_LENGTH))
+    let buf = dec.fixed_bytes(SC_COLOR_LENGTH);
+    ScColor { id: buf.try_into().expect("WTF?") }
 }
 
 pub fn color_encode(enc: &mut WasmEncoder, value: &ScColor) {
@@ -58,10 +55,6 @@ pub fn color_to_bytes(value: &ScColor) -> Vec<u8> {
 pub fn color_to_string(value: &ScColor) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)
-}
-
-fn color_from_bytes_unchecked(buf: &[u8]) -> ScColor {
-    ScColor { id: buf.try_into().expect("invalid Color length") }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

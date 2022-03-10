@@ -31,7 +31,7 @@ var loginCmd = &cobra.Command{
 			username = scanner.Text()
 
 			log.Printf("Password: ")
-			passwordBytes, err := term.ReadPassword(syscall.Stdin)
+			passwordBytes, err := term.ReadPassword(syscall.STD_INPUT_HANDLE)
 			if err != nil {
 				panic(err)
 			}

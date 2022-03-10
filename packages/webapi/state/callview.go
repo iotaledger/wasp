@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -32,19 +31,35 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	s := &callViewService{allChains}
 
-	server.POST(routes.CallView(":chainID", ":contractHname", ":fname"), s.handleCallView).
-		SetSummary("Call a view function on a contract").
+	server.POST(routes.CallViewByName(":chainID", ":contractHname", ":fname"), s.handleCallViewByName).
+		SetSummary("Call a view function on a contract by name").
 		AddParamPath("", "chainID", "ChainID (base58-encoded)").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil)
 
-	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), s.handleCallView).
-		SetSummary("Call a view function on a contract").
+	server.GET(routes.CallViewByName(":chainID", ":contractHname", ":fname"), s.handleCallViewByName).
+		SetSummary("Call a view function on a contract by name").
 		AddParamPath("", "chainID", "ChainID (base58-encoded)").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
+		AddParamBody(dictExample, "params", "Parameters", false).
+		AddResponse(http.StatusOK, "Result", dictExample, nil)
+
+	server.POST(routes.CallViewByHname(":chainID", ":contractHname", ":functionHname"), s.handleCallViewByHname).
+		SetSummary("Call a view function on a contract by Hname").
+		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "contractHname", "Contract Hname").
+		AddParamPath("getInfo", "functionHname", "Function Hname").
+		AddParamBody(dictExample, "params", "Parameters", false).
+		AddResponse(http.StatusOK, "Result", dictExample, nil)
+
+	server.GET(routes.CallViewByHname(":chainID", ":contractHname", ":functionHname"), s.handleCallViewByHname).
+		SetSummary("Call a view function on a contract by Hname").
+		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "contractHname", "Contract Hname").
+		AddParamPath("getInfo", "functionHname", "Function Hname").
 		AddParamBody(dictExample, "params", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil)
 
@@ -55,7 +70,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 }
 
-func (s *callViewService) handleCallView(c echo.Context) error {
+func (s *callViewService) handleCallView(c echo.Context, functionHname iscp.Hname) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
@@ -63,17 +78,6 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 	contractHname, err := iscp.HnameFromString(c.Param("contractHname"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractHname")))
-	}
-
-	fname := c.Param("fname")
-	var functionHname iscp.Hname
-	if strings.HasPrefix(fname, "0x") {
-		functionHname, err = iscp.HnameFromString(fname[2:])
-		if err != nil {
-			return httperrors.BadRequest(fmt.Sprintf("Invalid function ID: %+v", c.Param("fname")))
-		}
-	} else {
-		functionHname = iscp.Hn(fname)
 	}
 
 	var params dict.Dict
@@ -92,6 +96,19 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, ret)
+}
+
+func (s *callViewService) handleCallViewByName(c echo.Context) error {
+	fname := c.Param("fname")
+	return s.handleCallView(c, iscp.Hn(fname))
+}
+
+func (s *callViewService) handleCallViewByHname(c echo.Context) error {
+	functionHname, err := iscp.HnameFromString(c.Param("functionHname"))
+	if err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("Invalid function ID: %+v", c.Param("functionHname")))
+	}
+	return s.handleCallView(c, functionHname)
 }
 
 func (s *callViewService) handleStateGet(c echo.Context) error {

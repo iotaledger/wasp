@@ -15,10 +15,6 @@ pub struct ScChainID {
 }
 
 impl ScChainID {
-    pub fn new(buf: &[u8]) -> ScChainID {
-        chain_id_from_bytes(buf)
-    }
-
     pub fn address(&self) -> ScAddress {
         address_from_bytes(&self.id)
     }

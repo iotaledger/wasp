@@ -25,6 +25,9 @@ func seedToAddress(mySeed string, index uint64) wasmtypes.ScAddress {
 }
 
 func setupClientV2(t *testing.T) *testwasmlibclient.TestWasmLibService {
+	// for now skip client tests
+	t.SkipNow()
+
 	require.True(t, wasmclient.SeedIsValid(mySeed))
 	require.True(t, wasmclient.ChainIsValid(myChainID))
 
@@ -133,7 +136,7 @@ func TestClientV2AccountBalance(t *testing.T) {
 	// note: this calls core accounts contract instead of testwasmlib
 
 	// for now skip client tests
-	// t.SkipNow()
+	t.SkipNow()
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultServiceClient()

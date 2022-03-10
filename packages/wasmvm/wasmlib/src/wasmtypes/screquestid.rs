@@ -15,10 +15,6 @@ pub struct ScRequestID {
 }
 
 impl ScRequestID {
-    pub fn new(buf: &[u8]) -> ScRequestID {
-        request_id_from_bytes(buf)
-    }
-
     pub fn to_bytes(&self) -> Vec<u8> {
         request_id_to_bytes(self)
     }

@@ -19,10 +19,6 @@ pub struct ScAddress {
 }
 
 impl ScAddress {
-    pub fn new(buf: &[u8]) -> ScAddress {
-        address_from_bytes(buf)
-    }
-
     pub fn as_agent_id(&self) -> ScAgentID {
         ScAgentID::new(self, ScHname(0))
     }
