@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
@@ -30,6 +31,7 @@ type VirtualStateAccess interface {
 }
 
 type OptimisticStateReader interface {
+	ChainID() (*iscp.ChainID, error)
 	BlockIndex() (uint32, error)
 	Timestamp() (time.Time, error)
 	KVStoreReader() kv.KVStoreReader

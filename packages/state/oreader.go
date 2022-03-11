@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -27,6 +28,14 @@ func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
 		trie:        trie.NewNodeStore(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
 	}
+}
+
+func (r *OptimisticStateReaderImpl) ChainID() (*iscp.ChainID, error) {
+	chidBin, err := r.stateReader.Get("")
+	if err != nil {
+		return nil, err
+	}
+	return iscp.ChainIDFromBytes(chidBin)
 }
 
 func (r *OptimisticStateReaderImpl) BlockIndex() (uint32, error) {
