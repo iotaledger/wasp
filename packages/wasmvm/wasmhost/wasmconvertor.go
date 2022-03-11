@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmhost
 
 import (
@@ -39,8 +42,9 @@ func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID
 	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
-func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Assets {
-	iscpAssets := iscp.NewEmptyAssets()
+func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Allowance {
+	iscpAllowance := iscp.NewEmptyAllowance()
+	iscpAssets := iscpAllowance.Assets
 	for color, amount := range assets {
 		if color == wasmtypes.IOTA {
 			iscpAssets.Iotas = amount
@@ -52,7 +56,7 @@ func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Assets {
 		token.Amount.SetUint64(amount)
 		iscpAssets.Tokens = append(iscpAssets.Tokens, token)
 	}
-	return iscpAssets
+	return iscpAllowance
 }
 
 func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {
@@ -98,7 +102,7 @@ func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {
 	return wasmtypes.NewScAgentID(cvt.ScAddress(agentID.Address()), cvt.ScHname(agentID.Hname()))
 }
 
-func (cvt WasmConvertor) ScBalances(assets *iscp.Assets) wasmlib.ScAssets {
+func (cvt WasmConvertor) ScBalances(assets *iscp.FungibleTokens) wasmlib.ScAssets {
 	scAssets := make(wasmlib.ScAssets)
 	if assets.Iotas != 0 {
 		scAssets[wasmtypes.IOTA] = assets.Iotas

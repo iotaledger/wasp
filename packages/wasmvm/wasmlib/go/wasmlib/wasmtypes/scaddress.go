@@ -6,9 +6,9 @@ package wasmtypes
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
-	ScAddressAlias   = 8
-	ScAddressEd25519 = 0
-	ScAddressNFT     = 16
+	ScAddressAlias   byte = 8
+	ScAddressEd25519 byte = 0
+	ScAddressNFT     byte = 16
 
 	ScLengthAlias   = 21
 	ScLengthEd25519 = 33

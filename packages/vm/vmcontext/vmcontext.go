@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -46,7 +47,7 @@ type VMContext struct {
 	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
-	currentStateUpdate state.StateUpdate
+	currentStateUpdate state.Update
 	entropy            hashing.HashValue
 	callStack          []*callContext
 	// --- gas related
@@ -67,10 +68,10 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             *iscp.AgentID // calling agent
-	contract           iscp.Hname    // called contract
-	params             iscp.Params   // params passed
-	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             *iscp.AgentID   // calling agent
+	contract           iscp.Hname      // called contract
+	params             iscp.Params     // params passed
+	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 type blockContext struct {
@@ -85,7 +86,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	stateData, err := iscp.StateDataFromBytes(task.AnchorOutput.StateMetadata)
+	stateData, err := state.L1CommitmentFromBytes(task.AnchorOutput.StateMetadata)
 	if err != nil {
 		// should never happen
 		panic(xerrors.Errorf("CreateVMContext: can't parse state data from chain input %w", err))
@@ -96,14 +97,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	stateHashFromState := optimisticStateAccess.StateCommitment()
+	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieAccess())
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if stateData.Commitment != stateHashFromState || blockIndex != task.AnchorOutput.StateIndex {
+	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
-	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
+	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
+	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	ret := &VMContext{
@@ -135,10 +136,10 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID())
+			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), stateData.Commitment)
 		})
 
-		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
+		ret.virtualState.ApplyStateUpdate(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
@@ -151,11 +152,15 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
 		return ret.loadFoundry(serNum)
 	}
+	nftLoader := func(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+		return ret.loadNFT(id)
+	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
+		nftLoader,
 		*ret.dustAssumptions,
 		task.L1Params,
 	)
@@ -165,16 +170,17 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, trie.VCommitment, time.Time, iotago.Address) {
 	vmctx.gasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
 	vmctx.saveInternalUTXOs()
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.virtualState.Commit()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
-	stateCommitment := vmctx.virtualState.StateCommitment()
+	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieAccess())
 	timestamp := vmctx.virtualState.Timestamp()
 
 	return blockIndex, stateCommitment, timestamp, rotationAddr
@@ -196,25 +202,25 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		return rotationAddress
 	}
 	// block info will be stored into the separate state update
-	prevStateData, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+	prevStateData, err := state.L1CommitmentFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
 		panic(err)
 	}
 	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:             vmctx.virtualState.BlockIndex(),
-		Timestamp:              vmctx.virtualState.Timestamp(),
-		TotalRequests:          numRequests,
-		NumSuccessfulRequests:  numSuccess,
-		NumOffLedgerRequests:   numOffLedger,
-		PreviousStateHash:      prevStateData.Commitment,
-		AnchorTransactionID:    iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TotalIotasInL2Accounts: totalIotasInContracts,
-		TotalDustDeposit:       totalDustOnChain,
-		GasBurned:              vmctx.gasBurnedTotal,
-		GasFeeCharged:          vmctx.gasFeeChargedTotal,
+		BlockIndex:              vmctx.virtualState.BlockIndex(),
+		Timestamp:               vmctx.virtualState.Timestamp(),
+		TotalRequests:           numRequests,
+		NumSuccessfulRequests:   numSuccess,
+		NumOffLedgerRequests:    numOffLedger,
+		PreviousStateCommitment: prevStateData.Commitment,
+		AnchorTransactionID:     iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TotalIotasInL2Accounts:  totalIotasInContracts,
+		TotalDustDeposit:        totalDustOnChain,
+		GasBurned:               vmctx.gasBurnedTotal,
+		GasFeeCharged:           vmctx.gasFeeChargedTotal,
 	}
-	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
+	if !trie.EqualCommitments(vmctx.virtualState.PreviousStateCommitment(), blockInfo.PreviousStateCommitment) {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
 
@@ -236,15 +242,22 @@ func (vmctx *VMContext) closeBlockContexts() {
 		b := vmctx.blockContext[hname]
 		b.onClose(b.obj)
 	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 }
 
+// saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
+// Anchor Transaction outputs order must be:
+// 1. NativeTokens
+// 2. Foundries
+// 3. NFTs
 func (vmctx *VMContext) saveInternalUTXOs() {
 	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
 	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
 	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
 	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
+
+	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated()
 
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)
@@ -258,6 +271,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		for _, id := range nativeTokensToBeRemoved {
 			accounts.DeleteNativeTokenOutput(s, &id)
 		}
+
 		// update foundry UTXOs
 		for _, out := range foundrySNToBeUpdated {
 			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
@@ -266,6 +280,15 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		for _, sn := range foundriesToBeRemoved {
 			accounts.DeleteFoundryOutput(s, sn)
 		}
+
+		// update NFT Outputs
+		for _, out := range NFTOutputsToBeAdded {
+			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, out := range NFTOutputsToBeRemoved {
+			accounts.DeleteNFTOutput(s, out.NFTID)
+		}
 	})
 }
 
@@ -273,7 +296,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		return
 	}
-	var totalL2Assets *iscp.Assets
+	var totalL2Assets *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})

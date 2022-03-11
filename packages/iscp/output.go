@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 type AliasOutputWithID struct {
@@ -42,14 +41,6 @@ func (aowiT *AliasOutputWithID) GetStateIndex() uint32 {
 
 func (aowiT *AliasOutputWithID) GetStateMetadata() []byte {
 	return aowiT.output.StateMetadata
-}
-
-func (aowiT *AliasOutputWithID) GetStateCommitment() (hashing.HashValue, error) {
-	sd, err := StateDataFromBytes(aowiT.output.StateMetadata)
-	if err != nil {
-		return hashing.NilHash, err
-	}
-	return sd.Commitment, nil
 }
 
 func (aowiT *AliasOutputWithID) GetStateAddress() iotago.Address {

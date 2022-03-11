@@ -1,6 +1,7 @@
 package inccounter
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"testing"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +32,7 @@ func TestDeployInc(t *testing.T) {
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }
@@ -55,7 +55,7 @@ func TestIncDefaultParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name).AddAssetsIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name).AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
@@ -70,7 +70,7 @@ func TestIncParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).AddAssetsIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
@@ -86,7 +86,7 @@ func TestIncWith1Post(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s.Name).AddAssetsIotas(1)
+	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s.Name).AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -111,14 +111,14 @@ func TestSpawn(t *testing.T) {
 	req := solo.NewCallParams(incName, FuncSpawn.Name,
 		VarName, nameNew,
 		VarDescription, dscrNew,
-	).AddAssetsIotas(1)
+	).AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	res, err := chain.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
 	require.NoError(t, err)
 	creg := collections.NewMapReadOnly(res, root.StateVarContractRegistry)
-	require.True(t, int(creg.MustLen()) == len(core.AllCoreContractsByHash)+2)
+	require.True(t, int(creg.MustLen()) == len(corecontracts.All)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
@@ -133,7 +133,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
 	for i := 0; i < b.N; i++ {
-		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddAssetsIotas(1)
+		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddIotas(1)
 	}
 
 	return chain, reqs

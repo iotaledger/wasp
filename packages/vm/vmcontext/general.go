@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -27,6 +27,10 @@ func (vmctx *VMContext) ChainID() *iscp.ChainID {
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
 	return vmctx.chainOwnerID
+}
+
+func (vmctx *VMContext) ContractAgentID() *iscp.AgentID {
+	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
 
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
@@ -67,16 +71,16 @@ func (vmctx *VMContext) Request() iscp.Calldata {
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	hname := vmctx.CurrentContractHname()
-	if commonaccount.IsCoreHname(hname) {
-		return commonaccount.Get(vmctx.ChainID())
+	if corecontracts.IsCoreHname(hname) {
+		return vmctx.ChainID().CommonAccount()
 	}
 	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
 
-func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
+func (vmctx *VMContext) AllowanceAvailable() *iscp.Allowance {
 	allowance := vmctx.getCallContext().allowanceAvailable
 	if allowance == nil {
-		return iscp.NewEmptyAssets()
+		return iscp.NewEmptyAllowance()
 	}
 	return allowance.Clone()
 }
@@ -89,13 +93,13 @@ func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
 }
 
 func (vmctx *VMContext) isCoreAccount(agentID *iscp.AgentID) bool {
-	return vmctx.isOnChainAccount(agentID) && commonaccount.IsCoreHname(agentID.Hname())
+	return vmctx.isOnChainAccount(agentID) && corecontracts.IsCoreHname(agentID.Hname())
 }
 
 // targetAccountExists check if there's an account with non-zero balance,
 // or it is an existing smart contract
 func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
-	if agentID.Equals(commonaccount.Get(vmctx.ChainID())) {
+	if agentID.Equals(vmctx.ChainID().CommonAccount()) {
 		return true
 	}
 	accountExists := false
@@ -115,17 +119,17 @@ func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
 	return accountExists
 }
 
-func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
+func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
 	if !vmctx.getCallContext().allowanceAvailable.SpendFromBudget(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, assets ...*iscp.Assets) *iscp.Assets {
+func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
-		target = commonaccount.Get(vmctx.ChainID())
+		target = vmctx.ChainID().CommonAccount()
 	} else {
 		// check if target exists, if it is not forced
 		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
@@ -134,27 +138,23 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 		}
 	}
 
-	var assetsToMove *iscp.Assets
-	if len(assets) == 0 {
-		assetsToMove = vmctx.AllowanceAvailable()
+	var toMove *iscp.Allowance
+	if len(transfer) == 0 {
+		toMove = vmctx.AllowanceAvailable()
 	} else {
-		assetsToMove = assets[0]
+		toMove = transfer[0]
 	}
 
-	vmctx.spendAllowedBudget(assetsToMove) // panics if not enough
+	vmctx.spendAllowedBudget(toMove) // panics if not enough
 
 	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MoveBetweenAccounts(s, caller, target, assetsToMove)
+		accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs)
 	})
 	return vmctx.AllowanceAvailable()
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
-	sd, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
-	if err != nil {
-		panic(err)
-	}
 	var nilAliasID iotago.AliasID
 	blockset, err := vmctx.task.AnchorOutput.FeatureBlocks().Set()
 	if err != nil {
@@ -173,7 +173,7 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		GovernanceController: vmctx.task.AnchorOutput.GovernorAddress(),
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
 		OutputID:             vmctx.task.AnchorOutputID,
-		StateData:            sd,
+		StateData:            vmctx.task.AnchorOutput.StateMetadata,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
 		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
 	}

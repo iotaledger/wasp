@@ -63,20 +63,20 @@ func TestDeployGrant(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
 	_, _, contracts = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+2, len(contracts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
@@ -88,18 +88,18 @@ func TestRevokeDeploy(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 
 	req = solo.NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).AddAssetsIotas(1)
+	).AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -107,7 +107,7 @@ func TestRevokeDeploy(t *testing.T) {
 	require.Error(t, err)
 
 	_, _, contracts = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 }
 
 func TestDeployGrantFail(t *testing.T) {
@@ -119,7 +119,7 @@ func TestDeployGrantFail(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), user1)
+	_, err := chain.PostRequestSync(req.AddIotas(1), user1)
 	require.Error(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -140,7 +140,7 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
 		root.ParamDeployPermissionsEnabled, codec.EncodeBool(false),
 	)
-	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err = chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	// deploy should now succeed
@@ -151,7 +151,7 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 	req = solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
 		root.ParamDeployPermissionsEnabled, codec.EncodeBool(true),
 	)
-	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err = chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	// deployment should fail after "open deployment" is disabled

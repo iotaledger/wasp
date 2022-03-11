@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"github.com/iotaledger/wasp/packages/vm"
 	"strings"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -452,7 +452,7 @@ func TestDeployNativeContract(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
-		AddAssetsIotas(100_000).
+		AddIotas(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -513,7 +513,7 @@ func TestMessageSize(t *testing.T) {
 			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
 				sbtestsc.ParamSize, uint32(reqSize),
 			).
-				AddAssetsIotas(dust).
+				AddIotas(dust).
 				AddAllowanceIotas(dust).
 				WithMaxAffordableGasBudget(),
 			nil,

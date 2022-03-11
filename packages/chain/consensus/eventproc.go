@@ -94,7 +94,7 @@ func (c *consensus) handleVMResultMsg(msg *messages.VMResultMsg) {
 		}
 	}
 	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
-		msg.Task.VirtualStateAccess.BlockIndex(), msg.Task.VirtualStateAccess.StateCommitment(), essenceString)
+		msg.Task.VirtualStateAccess.BlockIndex(), msg.Task.VirtualStateAccess.RootCommitment(), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }

@@ -2,11 +2,11 @@ package accounts
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"golang.org/x/xerrors"
 )
 
@@ -28,6 +28,9 @@ var (
 	ErrRepeatingFoundrySerialNumber = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()
 	ErrOverflow                     = coreerrors.Register("overflow in token arithmetics").Create()
+	ErrInvalidNFTID                 = coreerrors.Register("invalid NFT ID").Create()
+	ErrTooManyNFTsInAllowance       = coreerrors.Register("expected at most 1 NFT in allowance").Create()
+	ErrNFTIDNotFound                = coreerrors.Register("NFTID not found: %s")
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -75,6 +78,15 @@ func AccountExists(state kv.KVStoreReader, agentID *iscp.AgentID) bool {
 	return getAccountR(state, agentID).MustLen() > 0
 }
 
+// TODO getNFTState -> getNFTDirectory ???
+func getNFTState(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixNFTData)
+}
+
+func getNFTStateR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixNFTData)
+}
+
 // GetMaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests
 func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 	nonce, err := codec.DecodeUint64(state.MustGet(nonceKey(address)), 0)
@@ -113,7 +125,7 @@ type tokenBalanceMutation struct {
 }
 
 // loadAccountMutations traverses the assets of interest in the account and collects values for further processing
-func loadAccountMutations(account *collections.Map, assets *iscp.Assets) (uint64, uint64, map[iotago.NativeTokenID]tokenBalanceMutation) {
+func loadAccountMutations(account *collections.Map, assets *iscp.FungibleTokens) (uint64, uint64, map[iotago.NativeTokenID]tokenBalanceMutation) {
 	if assets == nil {
 		return 0, 0, nil
 	}
@@ -125,9 +137,8 @@ func loadAccountMutations(account *collections.Map, assets *iscp.Assets) (uint64
 	}
 
 	tokenMutations := make(map[iotago.NativeTokenID]tokenBalanceMutation)
-	zero := big.NewInt(0)
 	for _, nt := range assets.Tokens {
-		if nt.Amount.Cmp(zero) < 0 {
+		if nt.Amount.Cmp(util.Big0) < 0 {
 			panic(ErrBadAmount)
 		}
 		bal := big.NewInt(0)
@@ -143,7 +154,7 @@ func loadAccountMutations(account *collections.Map, assets *iscp.Assets) (uint64
 }
 
 // CreditToAccount brings new funds to the on chain ledger
-func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
+func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.FungibleTokens) {
 	if assets == nil || (assets.Iotas == 0 && len(assets.Tokens) == 0) {
 		return
 	}
@@ -158,7 +169,7 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 }
 
 // creditToAccount adds assets to the internal account map
-func creditToAccount(account *collections.Map, assets *iscp.Assets) {
+func creditToAccount(account *collections.Map, assets *iscp.FungibleTokens) {
 	iotasBalance, iotasAdd, tokenMutations := loadAccountMutations(account, assets)
 	// safe arithmetics
 	if iotasAdd > iotago.TokenSupply || iotasBalance > iotago.TokenSupply-iotasAdd {
@@ -184,7 +195,7 @@ func creditToAccount(account *collections.Map, assets *iscp.Assets) {
 }
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
-func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
+func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.FungibleTokens) {
 	if assets.IsEmpty() {
 		return
 	}
@@ -203,7 +214,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 }
 
 // debitFromAccount debits assets from the internal accounts map
-func debitFromAccount(account *collections.Map, assets *iscp.Assets) bool {
+func debitFromAccount(account *collections.Map, assets *iscp.FungibleTokens) bool {
 	iotasBalance, iotasSub, tokenMutations := loadAccountMutations(account, assets)
 	// check if enough
 	if iotasBalance < iotasSub {
@@ -232,8 +243,84 @@ func debitFromAccount(account *collections.Map, assets *iscp.Assets) bool {
 	return true
 }
 
+// CreditNFTToAccount credits an NFT to the on chain ledger
+func CreditNFTToAccount(state kv.KVStore, agentID *iscp.AgentID, nft *iscp.NFT) {
+	if nft == nil {
+		return
+	}
+	account := getAccount(state, agentID)
+
+	checkLedger(state, "CreditNFTToAccount IN")
+	defer checkLedger(state, "CreditNFTToAccount OUT")
+
+	saveNFTData(state, nft)
+	creditNFTToAccount(account, nft.ID)
+	touchAccount(state, account)
+}
+
+func saveNFTData(state kv.KVStore, nft *iscp.NFT) {
+	nftMap := getNFTState(state)
+	if nftMap.MustHasAt(nft.ID[:]) {
+		panic("saveNFTData: inconsistency - NFT data already exists")
+	}
+	// TODO (maybe) - for optimization we could avoid saving the NFTID twice (in key an value)
+	nftMap.MustSetAt(nft.ID[:], nft.Bytes())
+}
+
+func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
+	nftMap := getNFTState(state)
+	if !nftMap.MustHasAt(id[:]) {
+		panic("deleteNFTData: inconsistency - NFT data doesn't exists")
+	}
+	nftMap.MustDelAt(id[:])
+}
+
+func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) iscp.NFT {
+	nftMap := getNFTStateR(state)
+	nft, err := iscp.NFTFromBytes(nftMap.MustGetAt(id[:]))
+	if err != nil {
+		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
+	}
+	if nft == nil {
+		panic(ErrNFTIDNotFound.Create(id))
+	}
+	return *nft
+}
+
+func creditNFTToAccount(account *collections.Map, id iotago.NFTID) {
+	account.MustSetAt(id[:], codec.EncodeBool(true))
+}
+
+// DebitNFTFromAccount removes an NFT from an account. if that account doesn't own the nft, it panics
+func DebitNFTFromAccount(state kv.KVStore, agentID *iscp.AgentID, id iotago.NFTID) {
+	if id.Empty() {
+		return
+	}
+	account := getAccount(state, agentID)
+
+	checkLedger(state, "DebitNFTFromAccount IN")
+	defer checkLedger(state, "DebitNFTFromAccount OUT")
+
+	if !debitNFTFromAccount(account, id) {
+		panic(xerrors.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
+	}
+
+	deleteNFTData(state, id)
+	touchAccount(state, account)
+}
+
+// DebitNFTFromAccount removes an NFT from the internal map of an account
+func debitNFTFromAccount(account *collections.Map, id iotago.NFTID) bool {
+	bytes, err := account.GetAt(id[:])
+	if err != nil || len(bytes) == 0 {
+		return false
+	}
+	err = account.DelAt(id[:])
+	return err == nil
+}
+
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) bool {
 	checkLedger(state, "MoveBetweenAccounts.IN")
 	defer checkLedger(state, "MoveBetweenAccounts.OUT")
 
@@ -244,28 +331,38 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	// total assets doesn't change
 	fromAccount := getAccount(state, fromAgentID)
 	toAccount := getAccount(state, toAgentID)
-	if !debitFromAccount(fromAccount, transfer) {
+	if !debitFromAccount(fromAccount, fungibleTokens) {
 		return false
 	}
-	creditToAccount(toAccount, transfer)
+	creditToAccount(toAccount, fungibleTokens)
 
-	touchAccount(state, fromAccount)
-	touchAccount(state, toAccount)
+	defer func() {
+		touchAccount(state, fromAccount)
+		touchAccount(state, toAccount)
+	}()
+
+	for _, nft := range nfts {
+		if !debitNFTFromAccount(fromAccount, nft) {
+			return false
+		}
+		creditNFTToAccount(toAccount, nft)
+	}
+
 	return true
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, assets *iscp.Assets) {
-	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %v. assets: %s", fromAgentID, ErrNotEnoughFunds, assets))
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) {
+	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, fungibleTokens, nfts) {
+		panic(xerrors.Errorf(" agentID: %s. %v. fungibleTokens: %s, nfts: %s", fromAgentID, ErrNotEnoughFunds, fungibleTokens, nfts))
 	}
 }
 
 func AdjustAccountIotas(state kv.KVStore, account *iscp.AgentID, adjustment int64) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(state, account, iscp.NewAssets(uint64(adjustment), nil))
+		CreditToAccount(state, account, iscp.NewFungibleTokens(uint64(adjustment), nil))
 	case adjustment < 0:
-		DebitFromAccount(state, account, iscp.NewAssets(uint64(-adjustment), nil))
+		DebitFromAccount(state, account, iscp.NewFungibleTokens(uint64(-adjustment), nil))
 	}
 }
 
@@ -299,7 +396,7 @@ func getNativeTokenBalance(account *collections.ImmutableMap, tokenID *iotago.Na
 }
 
 // GetAssets returns all assets owned by agentID. Returns nil if account does not exist
-func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
+func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.FungibleTokens {
 	acc := getAccountR(state, agentID)
 	ret := iscp.NewEmptyAssets()
 	acc.MustIterate(func(k []byte, v []byte) bool {
@@ -327,12 +424,15 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	return ret
 }
 
-func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
+func getAccountAssets(account *collections.ImmutableMap) *iscp.FungibleTokens {
 	ret := iscp.NewEmptyAssets()
 	account.MustIterate(func(idBytes []byte, val []byte) bool {
 		if len(idBytes) == 0 {
 			ret.Iotas = util.MustUint64From8Bytes(val)
 			return true
+		}
+		if len(idBytes) != iotago.NativeTokenIDLength {
+			return true // NFT or some other asset that is not a native token
 		}
 		token := iotago.NativeToken{
 			ID:     iscp.MustNativeTokenIDFromBytes(idBytes),
@@ -345,7 +445,7 @@ func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
 }
 
 // GetAccountAssets returns all assets belonging to the agentID on the state
-func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
+func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.FungibleTokens {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
 		return iscp.NewEmptyAssets()
@@ -353,12 +453,12 @@ func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Asset
 	return getAccountAssets(account)
 }
 
-func GetTotalL2Assets(state kv.KVStoreReader) *iscp.Assets {
+func GetTotalL2Assets(state kv.KVStoreReader) *iscp.FungibleTokens {
 	return getAccountAssets(getTotalL2AssetsAccountR(state))
 }
 
 // calcL2TotalAssets traverses the ledger and sums up all assets
-func calcL2TotalAssets(state kv.KVStoreReader) *iscp.Assets {
+func calcL2TotalAssets(state kv.KVStoreReader) *iscp.FungibleTokens {
 	ret := iscp.NewEmptyAssets()
 
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
@@ -373,12 +473,84 @@ func calcL2TotalAssets(state kv.KVStoreReader) *iscp.Assets {
 	return ret
 }
 
+// GetAccountNFTs returns all NFTs belonging to the agentID on the state
+func GetAccountNFTs(state kv.KVStoreReader, agentID *iscp.AgentID) []iotago.NFTID {
+	account := getAccountR(state, agentID)
+	if account.MustLen() == 0 {
+		return nil
+	}
+	return getAccountNFTs(account)
+}
+
+func getAccountNFTs(account *collections.ImmutableMap) []iotago.NFTID {
+	ret := []iotago.NFTID{}
+	account.MustIterate(func(idBytes []byte, val []byte) bool {
+		if len(idBytes) != iotago.NFTIDLength {
+			return true // Native token or some other asset that is not an NFT
+		}
+		id := iotago.NFTID{}
+		copy(id[:], idBytes)
+		ret = append(ret, id)
+		return true
+	})
+	return ret
+}
+
+func GetTotalL2NFTs(state kv.KVStoreReader) map[iotago.NFTID]bool {
+	ret := make(map[iotago.NFTID]bool)
+	nftMap := getNFTStateR(state)
+	nftMap.MustIterateKeys(func(key []byte) bool {
+		id := iotago.NFTID{}
+		copy(id[:], key)
+		ret[id] = true
+		return true
+	})
+	return ret
+}
+
+func calcL2TotalNFTs(state kv.KVStoreReader) map[iotago.NFTID]bool {
+	ret := make(map[iotago.NFTID]bool)
+	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
+		agentID, err := iscp.AgentIDFromBytes(key)
+		if err != nil {
+			panic(xerrors.Errorf("calcL2TotalAssets: %w", err))
+		}
+		accNFTs := getAccountNFTs(getAccountR(state, agentID))
+		for _, nft := range accNFTs {
+			if ret[nft] {
+				panic(fmt.Sprintf("inconsistency: NFT %s is owned by more than 1 account", nft.String()))
+			}
+			ret[nft] = true
+		}
+		return true
+	})
+	return ret
+}
+
+func NFTMapEqual(a, b map[iotago.NFTID]bool) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for NFTId := range a {
+		if !b[NFTId] {
+			return false
+		}
+	}
+	return true
+}
+
 func checkLedger(state kv.KVStore, checkpoint string) {
 	a := GetTotalL2Assets(state)
 	c := calcL2TotalAssets(state)
 	if !a.Equals(c) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n total assets: %s\ncalc total: %s\n",
 			checkpoint, a.String(), c.String()))
+	}
+
+	totalAccNFTs := GetTotalL2NFTs(state)
+	calculatedNFTs := calcL2TotalNFTs(state)
+	if !NFTMapEqual(totalAccNFTs, calculatedNFTs) {
+		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n NFTs don't match\n", checkpoint))
 	}
 }
 
@@ -656,6 +828,88 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 
 // endregion //////////////////////////////////////////
 
+// region NFT outputs /////////////////////////////////
+type NFTOutputRec struct {
+	Output      *iotago.NFTOutput
+	BlockIndex  uint32
+	OutputIndex uint16
+}
+
+func (r *NFTOutputRec) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteUint32(r.BlockIndex).
+		WriteUint16(r.OutputIndex)
+	outBytes, err := r.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic("error serializing NFToutput")
+	}
+	mu.WriteBytes(outBytes)
+	return mu.Bytes()
+}
+
+func (r *NFTOutputRec) String() string {
+	return fmt.Sprintf("NFT Record: iotas: %d, ID: %s, block: %d, outIdx: %d",
+		r.Output.Deposit(), r.Output.NFTID, r.BlockIndex, r.OutputIndex)
+}
+
+func NFTOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFTOutputRec, error) {
+	ret := &NFTOutputRec{}
+	var err error
+	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	ret.Output = &iotago.NFTOutput{}
+	if _, err := ret.Output.Deserialize(mu.ReadRemainingBytes(), serializer.DeSeriModeNoValidation, nil); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
+	ret, err := NFTOutputRecFromMarshalUtil(marshalutil.New(data))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// getAccountsMap is a map which contains all foundries owned by the chain
+func getNFTOutputMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixNFTOutputRecords)
+}
+
+func getNFTOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixNFTOutputRecords)
+}
+
+// SaveNFTOutput map tokenID -> foundryRec
+func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, blockIndex uint32, outputIndex uint16) {
+	tokenRec := NFTOutputRec{
+		Output:      out,
+		BlockIndex:  blockIndex,
+		OutputIndex: outputIndex,
+	}
+	getNFTOutputMap(state).MustSetAt(out.NFTID[:], tokenRec.Bytes())
+}
+
+func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
+	getNFTOutputMap(state).MustDelAt(id[:])
+}
+
+func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID *iscp.ChainID) (*iotago.NFTOutput, uint32, uint16) {
+	data := getNFTOutputMapR(state).MustGetAt(id[:])
+	if data == nil {
+		return nil, 0, 0
+	}
+	tokenRec := mustNFTOutputRecFromBytes(data)
+	return tokenRec.Output, tokenRec.BlockIndex, tokenRec.OutputIndex
+}
+
+// endregion //////////////////////////////////////////
+
 func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumption {
 	bin := state.MustGet(kv.Key(stateVarMinimumDustDepositAssumptionsBin))
 	ret, err := transaction.DustDepositAssumptionFromBytes(bin)
@@ -671,8 +925,9 @@ func debitIotasFromAllowance(ctx iscp.Sandbox, amount uint64) {
 	if amount == 0 {
 		return
 	}
-	commonAccount := commonaccount.Get(ctx.ChainID())
-	dustAssets := iscp.NewAssetsIotas(amount)
-	ctx.TransferAllowedFunds(commonAccount, dustAssets)
+	commonAccount := ctx.ChainID().CommonAccount()
+	dustAssets := iscp.NewTokensIotas(amount)
+	transfer := iscp.NewAllowanceFungibleTokens(dustAssets)
+	ctx.TransferAllowedFunds(commonAccount, transfer)
 	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
 }

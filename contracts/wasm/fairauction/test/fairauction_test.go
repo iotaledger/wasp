@@ -100,7 +100,6 @@ func TestFaNoBids(t *testing.T) {
 
 func TestFaOneBidTooLow(t *testing.T) {
 	ctx := startAuction(t)
-	chain := ctx.Chain
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
@@ -109,7 +108,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 	require.Error(t, ctx.Err)
 
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61*time.Minute, 1)
+	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
@@ -123,7 +122,6 @@ func TestFaOneBidTooLow(t *testing.T) {
 
 func TestFaOneBid(t *testing.T) {
 	ctx := startAuction(t)
-	chain := ctx.Chain
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
@@ -132,7 +130,7 @@ func TestFaOneBid(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61*time.Minute, 1)
+	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)

@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -20,7 +21,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(ctx *node.Plugin) {
@@ -33,7 +34,7 @@ func configure(ctx *node.Plugin) {
 			c.Contract.Name, c.Contract.ProgramHash.String(), c.Contract.Description,
 		)
 	}
-	Config = processors.NewConfig(nativeContracts...)
+	Config = coreprocessors.Config().WithNativeContracts(nativeContracts...)
 }
 
 func run(_ *node.Plugin) {

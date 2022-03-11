@@ -13,9 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -194,11 +194,11 @@ type WAL interface {
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
-	SyncedStateHash       hashing.HashValue
+	SyncedStateCommitment trie.VCommitment
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
 	StateOutputID         *iotago.UTXOInput
-	StateOutputCommitment hashing.HashValue
+	StateOutputCommitment trie.VCommitment
 	StateOutputTimestamp  time.Time
 }
 

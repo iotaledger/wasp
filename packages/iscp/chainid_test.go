@@ -12,8 +12,8 @@ func TestChainID(t *testing.T) {
 	chidStr := chid.String()
 	t.Logf("chidStr = %s", chidStr)
 
-	chidHex := chid.Hex()
-	t.Logf("chidHex = %s", chidHex)
+	chidHex := chid.String()
+	t.Logf("childString = %s", chidHex)
 
 	chidback, err := ChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)

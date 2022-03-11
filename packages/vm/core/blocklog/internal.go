@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -24,14 +24,15 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	return ret
 }
 
-// SetAnchorTransactionIDOfLatestBlock is called before producing the next block to save anchor tx id of the previous one
-func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId iotago.TransactionID) {
+// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id of the previous one
+func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxId iotago.TransactionID, stateCommitment trie.VCommitment) {
 	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
 	blockInfo, _ := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
 
-	blockInfo.AnchorTransactionID = transactionId
+	blockInfo.AnchorTransactionID = anchorTxId
+	blockInfo.StateCommitment = stateCommitment
 
 	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }
@@ -318,6 +319,10 @@ func mustGetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) *BlockInfo 
 	return ret
 }
 
+func RequestReceiptKey(rkey RequestLookupKey) []byte {
+	return collections.MapElemKey(prefixRequestReceipts, rkey.Bytes())
+}
+
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
 	lookupKey := NewRequestLookupKey(blockIndex, requestIndex)
 	lookupTable := collections.NewMapReadOnly(partition, prefixRequestReceipts)
@@ -336,15 +341,14 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 	if lookupKeyListBin == nil {
 		return nil, 0, 0, false
 	}
-	a := assert.NewAssert(ctx.Log())
 	lookupKeyList, err := RequestLookupKeyListFromBytes(lookupKeyListBin)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	for i := range lookupKeyList {
 		recBin, found := getRequestRecordDataByRef(ctx.State(), lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
-		a.Requiref(found, "inconsistency: request log record wasn't found by exact reference")
+		ctx.Requiref(found, "inconsistency: request log record wasn't found by exact reference")
 		rec, err := RequestReceiptFromBytes(recBin)
 
-		a.RequireNoError(err)
+		ctx.RequireNoError(err)
 		if rec.Request.ID() == reqID {
 			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
 		}

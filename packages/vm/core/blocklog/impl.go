@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"github.com/iotaledger/wasp/packages/state"
 	"math"
 	"time"
 
@@ -25,10 +26,11 @@ var Processor = Contract.Processor(initialize,
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
-		Timestamp:             time.Unix(0, ctx.Timestamp()),
-		TotalRequests:         1,
-		NumSuccessfulRequests: 1,
-		NumOffLedgerRequests:  0,
+		Timestamp:               time.Unix(0, ctx.Timestamp()),
+		TotalRequests:           1,
+		NumSuccessfulRequests:   1,
+		NumOffLedgerRequests:    0,
+		PreviousStateCommitment: state.OriginStateCommitment(),
 	})
 	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())

@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +23,7 @@ import (
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustDustDeposit: true,
@@ -61,7 +61,7 @@ func test2Chains(t *testing.T, w bool) {
 		accounts.ParamAgentID, contractAgentID,
 		accounts.ParamForceOpenAccount, true,
 	).
-		AddAssetsIotas(iotasToSend).
+		AddIotas(iotasToSend).
 		AddAllowanceIotas(iotasCreditedToSc2OnChain1).
 		WithGasBudget(math.MaxUint64)
 
@@ -91,7 +91,7 @@ func test2Chains(t *testing.T, w bool) {
 		solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncWithdraw.Name,
 		).
-			AddAssetsIotas(reqAllowance).
+			AddIotas(reqAllowance).
 			AddAllowanceIotas(iotasToWithdrawalFromChain1),
 		userWallet, true)
 
@@ -99,8 +99,8 @@ func test2Chains(t *testing.T, w bool) {
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamGasBudgetToSend, estimatedWdGas,
 		sbtestsc.ParamIotasToWithdrawal, iotasToWithdrawalFromChain1).
-		AddAssetsIotas(iotasToSend).
-		WithAllowance(iscp.NewAssetsIotas(reqAllowance)).
+		AddIotas(iotasToSend).
+		WithAllowance(iscp.NewAllowanceIotas(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = chain2.PostRequestSync(req, userWallet)

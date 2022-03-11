@@ -108,12 +108,13 @@ func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
 		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
 	)
 	sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex())
-	stateHash, err := msg.ChainOutput.GetStateCommitment()
+	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(msg.ChainOutput.GetAliasOutput())
 	if err != nil {
-		sm.log.Errorf("EventStateMsg ignored: failed to parse state hash: %v", err)
+		sm.log.Errorf("EventStateMsg ignored: failed to parse state commitment: %v", err)
 		return
 	}
-	sm.log.Debugf("EventStateMsg state hash is %v", stateHash.String())
+	stateCommitment := stateL1Commitment.Commitment
+	sm.log.Debugf("EventStateMsg state commitment is %s", stateCommitment)
 	if sm.stateOutputReceived(msg.ChainOutput, msg.Timestamp) {
 		sm.takeAction()
 	}

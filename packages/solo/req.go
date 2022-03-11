@@ -4,6 +4,10 @@
 package solo
 
 import (
+	"bytes"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
+	"github.com/iotaledger/wasp/packages/state"
 	"math"
 	"time"
 
@@ -28,11 +32,13 @@ type CallParams struct {
 	target     iscp.Hname
 	epName     string
 	entryPoint iscp.Hname
-	assets     *iscp.Assets // ignored off-ledger
-	allowance  *iscp.Assets
+	ftokens    *iscp.FungibleTokens // ignored off-ledger
+	nft        *iscp.NFT
+	allowance  *iscp.Allowance
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
+	sender     iotago.Address
 }
 
 func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
@@ -55,18 +61,18 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 //  - 'funName' is a name of the target entry point (the function) of he smart contract program
 //  - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
-// With the WithTransfers the CallParams structure may be complemented with attached assets
+// With the WithTransfers the CallParams structure may be complemented with attached ftokens
 // sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-func (r *CallParams) WithAllowance(allowance *iscp.Assets) *CallParams {
+func (r *CallParams) WithAllowance(allowance *iscp.Allowance) *CallParams {
 	r.allowance = allowance.Clone()
 	return r
 }
 
-func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
+func (r *CallParams) AddAllowance(allowance *iscp.Allowance) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
 	} else {
@@ -76,55 +82,72 @@ func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceIotas(amount uint64) *CallParams {
-	return r.AddAllowance(iscp.NewAssets(amount, nil))
+	return r.AddAllowance(iscp.NewAllowance(amount, nil, nil))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAllowance(&iscp.Assets{
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
+	return r
 }
 
 func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAllowance(&iscp.Assets{
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
-}
-
-func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
-	r.assets = assets.Clone()
 	return r
 }
 
-func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
-	if r.assets == nil {
-		r.assets = assets.Clone()
+func (r *CallParams) WithFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.ftokens = assets.Clone()
+	return r
+}
+
+func (r *CallParams) AddFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
+	if r.ftokens == nil {
+		r.ftokens = assets.Clone()
 	} else {
-		r.assets.Add(assets)
+		r.ftokens.Add(assets)
 	}
 	return r
 }
 
-func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
-	return r.AddAssets(iscp.NewAssets(amount, nil))
+func (r *CallParams) AddIotas(amount uint64) *CallParams {
+	return r.AddFungibleTokens(iscp.NewFungibleTokens(amount, nil))
 }
 
-func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+func (r *CallParams) AddNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
+	return r.AddFungibleTokens(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 }
 
-func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+func (r *CallParams) AddNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
+	return r.AddFungibleTokens(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *tokenID,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+}
+
+// Adds an nft to be sent (only appliable when the call is made via on-ledger request)
+func (r *CallParams) WithNFT(nft *iscp.NFT) *CallParams {
+	r.nft = nft
+	return r
 }
 
 func (r *CallParams) GasBudget() uint64 {
@@ -143,6 +166,11 @@ func (r *CallParams) WithMaxAffordableGasBudget() *CallParams {
 
 func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 	r.nonce = nonce
+	return r
+}
+
+func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
+	r.sender = sender
 	return r
 }
 
@@ -190,20 +218,26 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	L1Iotas := ch.Env.L1Iotas(keyPair.GetPublicKey().AsEd25519Address())
+	L1Iotas := ch.Env.L1Iotas(keyPair.Address())
 	if L1Iotas == 0 {
 		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
-	addr := keyPair.GetPublicKey().AsEd25519Address()
+	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
+
+	sender := req.sender
+	if sender == nil {
+		sender = keyPair.Address()
+	}
 
 	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
+		SenderAddress:    sender,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
-		Requests: []*iscp.RequestParameters{{
-			TargetAddress: ch.ChainID.AsAddress(),
-			Assets:        req.assets,
+		Request: &iscp.RequestParameters{
+			TargetAddress:  ch.ChainID.AsAddress(),
+			FungibleTokens: req.ftokens,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
@@ -212,7 +246,8 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				GasBudget:      req.gasBudget,
 			},
 			Options: iscp.SendOptions{},
-		}},
+		},
+		NFT:                          req.nft,
 		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
@@ -303,13 +338,10 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
-
 	if err != nil {
 		return tx, res, err
 	}
-
 	return tx, res, receipt.Error.AsGoError()
-
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -330,19 +362,19 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
 		available = ch.L2Iotas(agentID)
-		if req.assets != nil {
-			available += req.assets.Iotas
+		if req.ftokens != nil {
+			available += req.ftokens.Iotas
 		}
 		if req.allowance != nil {
-			available -= req.allowance.Iotas
+			available -= req.allowance.Assets.Iotas
 		}
 	} else {
 		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
-		if req.assets != nil {
-			n.Add(n, req.assets.AmountNativeToken(policy.GasFeeTokenID))
+		if req.ftokens != nil {
+			n.Add(n, req.ftokens.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if req.allowance != nil {
-			n.Sub(n, req.allowance.AmountNativeToken(policy.GasFeeTokenID))
+			n.Sub(n, req.allowance.Assets.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if n.IsUint64() {
 			available = n.Uint64()
@@ -380,7 +412,6 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
-
 	if err != nil {
 		return 0, 0, err
 	}
@@ -430,6 +461,45 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
+}
+
+// GetMerkleProofRaw returns Merkle proof of the key in the state
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
+	ch.Log().Debugf("GetMerkleProof")
+
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	ret, err := vmctx.GetMerkleProof(key)
+	require.NoError(ch.Env.T, err)
+	return ret
+}
+
+// GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Mekle model is used
+func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Proof {
+	var buf bytes.Buffer
+	buf.Write(scHname.Bytes())
+	buf.Write(key)
+	return ch.GetMerkleProofRaw(buf.Bytes())
+}
+
+// GetStateCommitment returns state commitment taken from the anchor output
+func (ch *Chain) GetStateCommitment() trie.VCommitment {
+	anchorOutput := ch.GetAnchorOutput()
+	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
+	require.NoError(ch.Env.T, err)
+	return ret.Commitment
+}
+
+// GetRootCommitment calculates root commitment from state
+func (ch *Chain) GetRootCommitment() trie.VCommitment {
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	ret, err := vmctx.GetRootCommitment()
+	require.NoError(ch.Env.T, err)
+	return ret
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true

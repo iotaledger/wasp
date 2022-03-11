@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +28,7 @@ func setupErc20(t *testing.T) *wasmsolo.SoloContext {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 
 	totalSupply := erc20.ScFuncs.TotalSupply(ctx)
 	totalSupply.Func.Call()

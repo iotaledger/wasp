@@ -31,7 +31,7 @@ func init() {
 }
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
-	// core.PrintWellKnownHnames()
+	// corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:                 DEBUG,
 		AutoAdjustDustDeposit: true,
@@ -52,7 +52,7 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Add
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(userAddr, 0)).WithGasBudget(100_000)
-	_, err = ch.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err = ch.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 	return user, userAddr, iscp.NewAgentID(userAddr, 0)
 }

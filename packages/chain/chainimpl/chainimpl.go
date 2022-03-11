@@ -242,7 +242,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String(), c.mempoolLastCleanedIndex)
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.RootCommitment().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
 		chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasAddress())
@@ -279,7 +279,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		c.chainMetrics.CurrentStateIndex(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.RootCommitment().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
@@ -288,7 +288,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	} else {
 		c.consensus.EnqueueStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
-	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
+	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.RootCommitment().String())
 }
 
 func (c *chainObj) updateChainNodes(stateIndex uint32) {

@@ -15,16 +15,16 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 	iotasToWithdrawal := params.MustGetUint64(ParamIotasToWithdrawal)
 	gasBudget := params.MustGetUint64(ParamGasBudgetToSend)
 
-	availableIotas := ctx.AllowanceAvailable().Iotas
+	availableIotas := ctx.AllowanceAvailable().Assets.Iotas
 
 	request := iscp.RequestParameters{
-		TargetAddress: targetChain.AsAddress(),
-		Assets:        iscp.NewAssetsIotas(availableIotas),
+		TargetAddress:  targetChain.AsAddress(),
+		FungibleTokens: iscp.NewTokensIotas(availableIotas),
 		Metadata: &iscp.SendMetadata{
 			TargetContract: accounts.Contract.Hname(),
 			EntryPoint:     accounts.FuncWithdraw.Hname(),
 			GasBudget:      gasBudget,
-			Allowance:      iscp.NewAssetsIotas(iotasToWithdrawal),
+			Allowance:      iscp.NewAllowanceIotas(iotasToWithdrawal),
 		},
 	}
 	requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)

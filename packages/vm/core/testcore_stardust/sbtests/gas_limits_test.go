@@ -20,7 +20,7 @@ func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.
 	gasBudget := gas.MaxGasPerCall + 5000000
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncInfiniteLoop.Name).
-		AddAssetsIotas(iotasToSend).
+		AddIotas(iotasToSend).
 		WithGasBudget(gasBudget)
 	return req, wallet
 }
@@ -61,7 +61,6 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 		reqs[i] = iscpReq
 	}
 
-	// ch.Env.AddRequestsToChainMempool(ch, reqs)
 	ch.Env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
 	ch.WaitUntilMempoolIsEmpty()
 

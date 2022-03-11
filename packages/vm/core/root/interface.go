@@ -2,6 +2,7 @@ package root
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -29,6 +30,11 @@ const (
 	ParamDeployPermissionsEnabled  = "de"
 	ParamDustDepositAssumptionsBin = "db"
 )
+
+// ParamEVM allows to pass init parameters to the EVM core contract, by decorating
+// them with a prefix. For example:
+//  ParamEVM(evm.FieldBlockKeepAmount)
+func ParamEVM(k kv.Key) kv.Key { return "evm" + k }
 
 // function names
 var (

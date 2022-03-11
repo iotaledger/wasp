@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -54,7 +54,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 
 	// catches protocol exception error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	err = util.CatchPanicReturnError(
+	err = panicutil.CatchPanicReturnError(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
@@ -76,7 +76,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
@@ -99,9 +99,10 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common account and panics is logged in the SC call
 	account := vmctx.req.SenderAccount()
 	if account == nil {
-		account = commonaccount.Get(vmctx.ChainID())
+		account = vmctx.ChainID().CommonAccount()
 	}
-	vmctx.creditToAccount(account, vmctx.req.Assets())
+	vmctx.creditToAccount(account, vmctx.req.FungibleTokens())
+	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the dust consumed or returned by internal UTXOs
 	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
@@ -250,10 +251,10 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the allowed from the sender to the target
 		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.Iotas {
+			if tokensGuaranteed < allowed.Assets.Iotas {
 				tokensGuaranteed = 0
 			} else {
-				tokensGuaranteed -= allowed.Iotas
+				tokensGuaranteed -= allowed.Assets.Iotas
 			}
 		}
 		return tokensGuaranteed
@@ -265,7 +266,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
+			if transferTokens := iscp.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
 				if tokensAvailableBig.Cmp(transferTokens) < 0 {
 					tokensAvailableBig.SetUint64(0)
 				} else {
@@ -314,8 +315,8 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &iscp.Assets{}
-	transferToOwner := &iscp.Assets{}
+	transferToValidator := &iscp.FungibleTokens{}
+	transferToOwner := &iscp.FungibleTokens{}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		transferToValidator.Tokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
@@ -329,8 +330,8 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 	sender := vmctx.req.SenderAccount()
 
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator, nil)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner, nil)
 }
 
 func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
@@ -370,7 +371,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *VMContext) mustCheckTransactionSize() {
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(&iscp.StateData{})
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)

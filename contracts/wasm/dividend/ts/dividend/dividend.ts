@@ -167,7 +167,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
 
         // Is there anything to disperse to this member?
         if (share > 0) {
-             // Yes, so let's set up an ScTransfers map proxy that transfers the
+            // Yes, so let's set up an ScTransfers map proxy that transfers the
             // calculated amount of iotas. Note that ScTransfers wraps an
             // ScMutableMap of token color/amount combinations in a simpler to use
             // interface. The constructor we use here creates and initializes a

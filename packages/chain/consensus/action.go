@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -234,6 +235,22 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 	}
+	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
+		// TODO: OnFinish was dropped; move this block to the goroutine that calls vmRunner.Run()
+		// TODO: vmError is now task.VMError
+		if vmError != nil {
+			c.log.Errorf("runVM OnFinish callback: VM task failed: %v", vmError)
+			return
+		}
+		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
+			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.RootCommitment())
+		c.EnqueueVMResultMsg(&messages.VMResultMsg{
+			Task: task,
+		})
+		// TODO: use c.workflow.GetVMStartedTime() instead
+		elapsed := time.Since(task.StartTime)
+		c.consensusMetrics.RecordVMRunTime(elapsed)
+	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
 }
@@ -333,7 +350,7 @@ func (c *consensus) checkQuorum() {
 
 	c.finalTx = tx
 
-	//if !chainOutput.GetIsGovernanceUpdated() {
+	// if !chainOutput.GetIsGovernanceUpdated() {
 	// if it is not state controller rotation, sending message to state manager
 	// Otherwise state manager is not notified
 	c.writeToWAL()
@@ -615,7 +632,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.
 		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
 	}
 	// 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
-	//sigUnlockBlock := &iotago.SignatureUnlockBlock{signatureWithPK.Signature}
+	// sigUnlockBlock := &iotago.SignatureUnlockBlock{signatureWithPK.Signature}
 
 	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := c.stateOutput.ID()
@@ -691,7 +708,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		r = " (rotate) "
 	}*/
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.StateCommitment().String())
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.RootCommitment().String())
 	c.resetWorkflow()
 	return true
 }

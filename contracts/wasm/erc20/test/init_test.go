@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +19,7 @@ func TestDeployErc20(t *testing.T) {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 
 	require.NoError(t, ctx.ContractExists(erc20.ScName))
 
@@ -30,7 +30,7 @@ func TestDeployErc20(t *testing.T) {
 	ctx = wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.Error(t, ctx.Err)
 	_, _, rec = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 }
 
 func TestDeployErc20Fail1(t *testing.T) {
@@ -38,7 +38,7 @@ func TestDeployErc20Fail1(t *testing.T) {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad)
 	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.EqualValues(t, len(corecontracts.All), len(rec))
 }
 
 func TestDeployErc20Fail2(t *testing.T) {
@@ -48,7 +48,7 @@ func TestDeployErc20Fail2(t *testing.T) {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.EqualValues(t, len(corecontracts.All), len(rec))
 }
 
 func TestDeployErc20Fail3(t *testing.T) {
@@ -58,7 +58,7 @@ func TestDeployErc20Fail3(t *testing.T) {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.EqualValues(t, len(corecontracts.All), len(rec))
 }
 
 func TestDeployErc20Fail3Repeat(t *testing.T) {
@@ -68,7 +68,7 @@ func TestDeployErc20Fail3Repeat(t *testing.T) {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.EqualValues(t, len(corecontracts.All), len(rec))
 	require.Error(t, ctx.ContractExists(erc20.ScName))
 
 	// repeat after failure
@@ -78,6 +78,6 @@ func TestDeployErc20Fail3Repeat(t *testing.T) {
 	ctx = wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 	require.NoError(t, ctx.ContractExists(erc20.ScName))
 }

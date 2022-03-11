@@ -18,44 +18,100 @@ structs:
 # ##################################
 
 typedefs:
+  ### Array
   StringArray: String[]
+  Int32Array: Int32[]
+  Int64Array: Int64[]
+  Uint64Array: Uint64[]
+  BytesArray: Bytes[]
+  AddressArray: Address[]
+  AgentIDArray: AgentID[]
+  ChainIDArray: ChainID[]
+  ColorArray: Color[]
+  HashArray: Hash[]
+  HnameArray: Hname[]
+  RequestIDArray: RequestID[]
+  ### Map
   StringMap: map[String]String
+  Int32Map: map[Int32]Int32
+  Int64Map: map[Int64]Int64
+  Uint64Map: map[Uint64]Uint64
+  BytesMap: map[Bytes]Bytes
+  AddressMap: map[Address]Address
+  AgentIDMap: map[AgentID]AgentID
+  ChainIDMap: map[ChainID]ChainID
+  ColorMap: map[Color]Color
+  HashMap: map[Hash]Hash
+  HnameMap: map[Hname]Hname
+  RequestIDMap: map[RequestID]RequestID
   Longitude: map[Int32]Location
 
 # ##################################
 
 state:
-  arrays: map[String]StringArray
-  maps: map[String]StringMap
+  # basic value datatypes
+  stringMapOfArrays: map[String]StringArray
+  stringMapOfMaps: map[String]StringMap
+  stringArrayOfMaps: StringMap[]
+  stringArrayOfArrays: StringArray[]
+  # contracts-specific value datatypes
+  AddressArrays: map[Address]AddressArray
+  AddressMaps: map[Address]AddressMap
+  AddressMapArrays: AddressMap[]
+  AddressArrayArrays: AddressArray[]
+  # Other
   random: Uint64
   latLong: map[Int32]Longitude
-  strings2D: StringArray[]
+  # LongID: map[Longitude]Int32 # FIXME Map with struct key would cause error
+  
 
 # ##################################
 
 funcs:
-  arrayAppend:
+  mapOfArraysAppend:
     params:
       name: String
       value: String
 
-  arrayClear:
+  arrayOfArraysAppend:
+    params:
+      index: Uint32
+      value: String[]
+
+  mapOfArraysClear:
     params:
       name: String
+  
+  # Clear all the arrays of the array
+  arrayOfArraysClear:
 
-  arraySet:
+  mapOfArraysSet:
     params:
       index: Uint32
       name: String
       value: String
 
-  mapClear:
+  arrayOfArraysSet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      value: String
+
+  mapOfMapsClear:
     params:
       name: String
 
-  mapSet:
+  mapOfMapsSet:
     params:
       name: String
+      key: String
+      value: String
+
+  arrayOfMapsClear:
+
+  arrayOfMapsSet:
+    params:
+      index: Uint32
       key: String
       value: String
 
@@ -97,16 +153,41 @@ funcs:
 # ##################################
 
 views:
-  arrayLength:
+  mapOfArraysLength:
     params:
       name: String
     results:
       length: Uint32
 
-  arrayValue:
+  arrayOfArraysLength:
+    results:
+      length: Uint32
+
+  mapOfArraysValue:
     params:
       index: Uint32
       name: String
+    results:
+      value: String
+  
+  arrayOfArraysValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      value: String
+
+  mapOfMapsValue:
+    params:
+      name: String
+      key: String
+    results:
+      value: String
+
+  arrayOfMapsValue:
+    params:
+      index: Uint32
+      key: String
     results:
       value: String
 
@@ -126,13 +207,6 @@ views:
   iotaBalance:
     results:
       iotas: Uint64
-
-  mapValue:
-    params:
-      name: String
-      key: String
-    results:
-      value: String
 
   getRandom:
     results:
