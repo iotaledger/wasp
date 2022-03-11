@@ -47,12 +47,6 @@
       url: 'https://www.instagram.com/iotafoundation/',
       color: '#99A5BD',
     },
-    {
-      name: 'Facebook',
-      icon: 'facebook.svg',
-      url: 'https://www.facebook.com/TheIOTAFoundation/',
-      color: '#BAC6DE',
-    },
   ];
 </script>
 
