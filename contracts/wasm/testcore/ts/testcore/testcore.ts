@@ -196,7 +196,7 @@ export function viewGetCounter(ctx: wasmlib.ScViewContext, f: sc.GetCounterConte
 export function viewGetInt(ctx: wasmlib.ScViewContext, f: sc.GetIntContext): void {
     let name = f.params.name().value();
     let value = f.state.ints().getInt64(name);
-    ctx.require(value.exists(), "param 'value' not found");
+    ctx.require(value.exists(), "param '" + name + "' not found");
     f.results.values().getInt64(name).setValue(value.value());
 }
 

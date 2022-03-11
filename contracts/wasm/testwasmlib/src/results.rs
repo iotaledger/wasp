@@ -12,44 +12,66 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ImmutableArrayLengthResults {
+pub struct ImmutableArrayOfArraysLengthResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableArrayLengthResults {
+impl ImmutableArrayOfArraysLengthResults {
     pub fn length(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableArrayLengthResults {
+pub struct MutableArrayOfArraysLengthResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableArrayLengthResults {
+impl MutableArrayOfArraysLengthResults {
     pub fn length(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
 #[derive(Clone)]
-pub struct ImmutableArrayValueResults {
+pub struct ImmutableArrayOfArraysValueResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableArrayValueResults {
+impl ImmutableArrayOfArraysValueResults {
     pub fn value(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(RESULT_VALUE))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableArrayValueResults {
+pub struct MutableArrayOfArraysValueResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableArrayValueResults {
+impl MutableArrayOfArraysValueResults {
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(RESULT_VALUE))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableArrayOfMapsValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableArrayOfMapsValueResults {
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(RESULT_VALUE))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableArrayOfMapsValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableArrayOfMapsValueResults {
     pub fn value(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(RESULT_VALUE))
 	}
@@ -144,22 +166,66 @@ impl MutableIotaBalanceResults {
 }
 
 #[derive(Clone)]
-pub struct ImmutableMapValueResults {
+pub struct ImmutableMapOfArraysLengthResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableMapValueResults {
+impl ImmutableMapOfArraysLengthResults {
+    pub fn length(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableMapOfArraysLengthResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableMapOfArraysLengthResults {
+    pub fn length(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableMapOfArraysValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableMapOfArraysValueResults {
     pub fn value(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(RESULT_VALUE))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableMapValueResults {
+pub struct MutableMapOfArraysValueResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableMapValueResults {
+impl MutableMapOfArraysValueResults {
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(RESULT_VALUE))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableMapOfMapsValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableMapOfMapsValueResults {
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(RESULT_VALUE))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableMapOfMapsValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableMapOfMapsValueResults {
     pub fn value(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(RESULT_VALUE))
 	}

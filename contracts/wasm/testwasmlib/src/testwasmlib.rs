@@ -5,41 +5,6 @@ use wasmlib::*;
 
 use crate::*;
 
-pub fn func_array_append(_ctx: &ScFuncContext, f: &ArrayAppendContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let value = f.params.value().value();
-    array.append_string().set_value(&value);
-}
-
-pub fn func_array_clear(_ctx: &ScFuncContext, f: &ArrayClearContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    array.clear();
-}
-
-pub fn func_array_set(_ctx: &ScFuncContext, f: &ArraySetContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let index = f.params.index().value();
-    let value = f.params.value().value();
-    array.get_string(index).set_value(&value);
-}
-
-pub fn func_map_clear(_ctx: &ScFuncContext, f: &MapClearContext) {
-    let name = f.params.name().value();
-    let my_map = f.state.maps().get_string_map(&name);
-    my_map.clear();
-}
-
-pub fn func_map_set(_ctx: &ScFuncContext, f: &MapSetContext) {
-    let name = f.params.name().value();
-    let my_map = f.state.maps().get_string_map(&name);
-    let key = f.params.key().value();
-    let value = f.params.value().value();
-    my_map.get_string(&key).set_value(&value);
-}
-
 pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.address().exists() {
         ctx.require(f.params.address().value() == ctx.account_id().address(), "mismatch: Address");
@@ -109,21 +74,6 @@ pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
     f.events.test(&f.params.address().value(), &f.params.name().value());
 }
 
-pub fn view_array_length(_ctx: &ScViewContext, f: &ArrayLengthContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let length = array.length();
-    f.results.length().set_value(length);
-}
-
-pub fn view_array_value(_ctx: &ScViewContext, f: &ArrayValueContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let index = f.params.index().value();
-    let value = array.get_string(index).value();
-    f.results.value().set_value(&value);
-}
-
 pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {
     let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
     records.params.block_index().set_value(f.params.block_index().value());
@@ -148,5 +98,143 @@ pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
     f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
 }
 
-pub fn view_map_value(_ctx: &ScViewContext, _f: &MapValueContext) {
+//////////////////// array of array \\\\\\\\\\\\\\\\\\\\
+
+pub fn func_array_of_arrays_append(_ctx: &ScFuncContext, f: &ArrayOfArraysAppendContext) {
+    let index = f.params.index().value();
+    let length = f.params.value().length();
+
+    let sa: ArrayOfMutableString;
+    if f.state.string_array_of_arrays().length() <= index {
+        sa = f.state.string_array_of_arrays().append_string_array();
+    } else {
+        sa = f.state.string_array_of_arrays().get_string_array(index);
+    }
+
+    for i in 0..length {
+        let elt = f.params.value().get_string(i).value();
+        sa.append_string().set_value(&elt);
+    }
+}
+
+pub fn func_array_of_arrays_clear(_ctx: &ScFuncContext, f: &ArrayOfArraysClearContext) {
+    let length = f.state.string_array_of_arrays().length();
+    for i in 0..length {
+        let array = f.state.string_array_of_arrays().get_string_array(i);
+        array.clear();
+    }
+    f.state.string_array_of_arrays().clear();
+}
+
+pub fn func_array_of_arrays_set(_ctx: &ScFuncContext, f: &ArrayOfArraysSetContext) {
+    let index0 = f.params.index0().value();
+    let index1 = f.params.index1().value();
+    let array = f.state.string_array_of_arrays().get_string_array(index0);
+    let value = f.params.value().value();
+    array.get_string(index1).set_value(&value);
+}
+
+pub fn view_array_of_arrays_length(_ctx: &ScViewContext, f: &ArrayOfArraysLengthContext) {
+    let length = f.state.string_array_of_arrays().length();
+    f.results.length().set_value(length);
+}
+
+pub fn view_array_of_arrays_value(_ctx: &ScViewContext, f: &ArrayOfArraysValueContext) {
+    let index0 = f.params.index0().value();
+    let index1 = f.params.index1().value();
+
+    let elt = f.state.string_array_of_arrays().get_string_array(index0).get_string(index1).value();
+    f.results.value().set_value(&elt);
+}
+
+//////////////////// array of map \\\\\\\\\\\\\\\\\\\\
+
+pub fn func_array_of_maps_clear(_ctx: &ScFuncContext, f: &ArrayOfMapsClearContext) {
+    let length = f.state.string_array_of_arrays().length();
+    for i in 0..length {
+        let mmap = f.state.string_array_of_maps().get_string_map(i);
+        mmap.clear();
+    }
+    f.state.string_array_of_maps().clear();
+}
+
+pub fn func_array_of_maps_set(_ctx: &ScFuncContext, f: &ArrayOfMapsSetContext) {
+    let index = f.params.index().value();
+    let value = f.params.value().value();
+    let key = f.params.key().value();
+    if f.state.string_array_of_maps().length() <= index {
+        let mmap = f.state.string_array_of_maps().append_string_map();
+        mmap.get_string(&key).set_value(&value);
+        return
+    }
+    let mmap = f.state.string_array_of_maps().get_string_map(index);
+    mmap.get_string(&key).set_value(&value);
+}
+
+pub fn view_array_of_maps_value(_ctx: &ScViewContext, f: &ArrayOfMapsValueContext) {
+    let index = f.params.index().value();
+    let key = f.params.key().value();
+    let mmap = f.state.string_array_of_maps().get_string_map(index);
+    f.results.value().set_value(&mmap.get_string(&key).value());
+}
+
+//////////////////// map of array \\\\\\\\\\\\\\\\\\\\
+
+pub fn func_map_of_arrays_append(_ctx: &ScFuncContext, f: &MapOfArraysAppendContext) {
+    let name = f.params.name().value();
+    let array = f.state.string_map_of_arrays().get_string_array(&name);
+    let value = f.params.value().value();
+    array.append_string().set_value(&value);
+}
+
+pub fn func_map_of_arrays_clear(_ctx: &ScFuncContext, f: &MapOfArraysClearContext) {
+    let name = f.params.name().value();
+    let array = f.state.string_map_of_arrays().get_string_array(&name);
+    array.clear();
+}
+
+pub fn func_map_of_arrays_set(_ctx: &ScFuncContext, f: &MapOfArraysSetContext) {
+    let name = f.params.name().value();
+    let array = f.state.string_map_of_arrays().get_string_array(&name);
+    let index = f.params.index().value();
+    let value = f.params.value().value();
+    array.get_string(index).set_value(&value);
+}
+
+pub fn view_map_of_arrays_length(_ctx: &ScViewContext, f: &MapOfArraysLengthContext) {
+    let name = f.params.name().value();
+    let array = f.state.string_map_of_arrays().get_string_array(&name);
+    let length = array.length();
+    f.results.length().set_value(length);
+}
+
+pub fn view_map_of_arrays_value(_ctx: &ScViewContext, f: &MapOfArraysValueContext) {
+    let name = f.params.name().value();
+    let array = f.state.string_map_of_arrays().get_string_array(&name);
+    let index = f.params.index().value();
+    let value = array.get_string(index).value();
+    f.results.value().set_value(&value);
+}
+
+//////////////////// map of map \\\\\\\\\\\\\\\\\\\\
+
+pub fn func_map_of_maps_clear(_ctx: &ScFuncContext, f: &MapOfMapsClearContext) {
+    let name = f.params.name().value();
+    let mmap = f.state.string_map_of_maps().get_string_map(&name);
+    mmap.clear();
+}
+
+pub fn func_map_of_maps_set(_ctx: &ScFuncContext, f: &MapOfMapsSetContext) {
+    let name = f.params.name().value();
+    let mmap = f.state.string_map_of_maps().get_string_map(&name);
+    let key = f.params.key().value();
+    let value = f.params.value().value();
+    mmap.get_string(&key).set_value(&value);
+}
+
+pub fn view_map_of_maps_value(_ctx: &ScViewContext, f: &MapOfMapsValueContext) {
+    let name = f.params.name().value();
+    let mmap = f.state.string_map_of_maps().get_string_map(&name);
+    let key = f.params.key().value();
+    f.results.value().set_value(&mmap.get_string(&key).value());
 }

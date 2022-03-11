@@ -98,13 +98,13 @@ func TestClientV2Random(t *testing.T) {
 func TestClientV2Array(t *testing.T) {
 	svc := setupClientV2(t)
 
-	v := testwasmlib.ScFuncs.ArrayLength(svc)
+	v := testwasmlib.ScFuncs.MapOfArraysLength(svc)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
 	require.NoError(t, svc.Err)
 	require.EqualValues(t, 0, v.Results.Length().Value())
 
-	f := testwasmlib.ScFuncs.ArrayAppend(svc)
+	f := testwasmlib.ScFuncs.MapOfArraysAppend(svc)
 	f.Params.Name().SetValue("Bands")
 	f.Params.Value().SetValue("Dire Straits")
 	f.Func.Post()
@@ -112,20 +112,20 @@ func TestClientV2Array(t *testing.T) {
 	err := svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 
-	v = testwasmlib.ScFuncs.ArrayLength(svc)
+	v = testwasmlib.ScFuncs.MapOfArraysLength(svc)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
 	require.NoError(t, svc.Err)
 	require.EqualValues(t, 1, v.Results.Length().Value())
 
-	c := testwasmlib.ScFuncs.ArrayClear(svc)
+	c := testwasmlib.ScFuncs.MapOfArraysClear(svc)
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
 	require.NoError(t, svc.Err)
 	err = svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 
-	v = testwasmlib.ScFuncs.ArrayLength(svc)
+	v = testwasmlib.ScFuncs.MapOfArraysLength(svc)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
 	require.NoError(t, svc.Err)

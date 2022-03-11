@@ -196,7 +196,7 @@ pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
 pub fn view_get_int(ctx: &ScViewContext, f: &GetIntContext) {
     let name = f.params.name().value();
     let value = f.state.ints().get_int64(&name);
-    ctx.require(value.exists(), "param 'value' not found");
+    ctx.require(value.exists(), &("param '".to_string() + &name + "' not found"));
     f.results.values().get_int64(&name).set_value(value.value());
 }
 

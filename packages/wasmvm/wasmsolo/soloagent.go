@@ -9,11 +9,13 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
 type SoloAgent struct {
+	Cvt     wasmhost.WasmConvertor
 	Env     *solo.Solo
 	Pair    *cryptolib.KeyPair
 	address ledgerstate.Address
@@ -27,7 +29,7 @@ func NewSoloAgent(env *solo.Solo) *SoloAgent {
 }
 
 func (a *SoloAgent) ScAddress() wasmtypes.ScAddress {
-	return wasmtypes.AddressFromBytes(a.address.Bytes())
+	return a.Cvt.ScAddress(a.address)
 }
 
 func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
@@ -39,8 +41,7 @@ func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
 	case 0:
 		return a.Env.GetAddressBalance(a.address, colored.IOTA)
 	case 1:
-		col, err := colored.ColorFromBytes(color[0].Bytes())
-		require.NoError(a.Env.T, err)
+		col := a.Cvt.IscpColor(&color[0])
 		return a.Env.GetAddressBalance(a.address, col)
 	default:
 		require.Fail(a.Env.T, "too many color arguments")
@@ -50,5 +51,5 @@ func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
 
 func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScColor, error) {
 	color, err := a.Env.MintTokens(a.Pair, amount)
-	return wasmtypes.ColorFromBytes(color.Bytes()), err
+	return a.Cvt.ScColor(&color), err
 }

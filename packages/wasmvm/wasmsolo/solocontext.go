@@ -56,7 +56,7 @@ const (
 
 type SoloContext struct {
 	Chain       *solo.Chain
-	Convertor   wasmhost.WasmConvertor
+	Cvt         wasmhost.WasmConvertor
 	creator     *SoloAgent
 	Dust        uint64
 	Err         error
@@ -75,7 +75,6 @@ type SoloContext struct {
 }
 
 var (
-	//_ iscp.Gas                  = &SoloContext{}
 	_        wasmlib.ScFuncCallContext = &SoloContext{}
 	_        wasmlib.ScViewCallContext = &SoloContext{}
 	SoloSeed                           = cryptolib.NewSeed([]byte("SoloSeedSoloSeedSoloSeedSoloSeed"))
@@ -248,8 +247,7 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 	case 0:
 		return balances.Get(colored.IOTA)
 	case 1:
-		col, err := colored.ColorFromBytes(color[0].Bytes())
-		require.NoError(ctx.Chain.Env.T, err)
+		col := ctx.Cvt.IscpColor(&color[0])
 		return balances.Get(col)
 	default:
 		require.Fail(ctx.Chain.Env.T, "too many color arguments")
@@ -258,11 +256,11 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 }
 
 func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
-	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
+	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
-	return ctx.Convertor.ScAgentID(ctx.Chain.OriginatorAgentID)
+	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
 func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
@@ -327,7 +325,7 @@ func (ctx *SoloContext) InitFuncCallContext() {
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = wasmhost.Connect(ctx.wc)
-	return ctx.Convertor.ScHname(iscp.Hn(ctx.scName))
+	return ctx.Cvt.ScHname(iscp.Hn(ctx.scName))
 }
 
 // Minted returns the color and amount of newly minted tokens
@@ -339,7 +337,7 @@ func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
 	var mintedColor wasmtypes.ScColor
 	var mintedAmount uint64
 	for c := range mintedAmounts {
-		mintedColor = ctx.Convertor.ScColor(&c)
+		mintedColor = ctx.Cvt.ScColor(&c)
 		mintedAmount = mintedAmounts[c]
 		break
 	}
