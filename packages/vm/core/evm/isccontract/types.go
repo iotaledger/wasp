@@ -4,6 +4,8 @@
 package isccontract
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
@@ -32,6 +34,40 @@ func (c ISCChainID) MustUnwrap() *iscp.ChainID {
 		panic(err)
 	}
 	return ret
+}
+
+// IotaNativeTokenID matches the struct definition in ISC.sol
+type IotaNativeTokenID struct {
+	Data []byte
+}
+
+func WrapIotaNativeTokenID(id *iotago.NativeTokenID) IotaNativeTokenID {
+	return IotaNativeTokenID{Data: id[:]}
+}
+
+func (a IotaNativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
+	copy(ret[:], a.Data)
+	return
+}
+
+// IotaNativeToken matches the struct definition in ISC.sol
+type IotaNativeToken struct {
+	ID     IotaNativeTokenID
+	Amount *big.Int
+}
+
+func WrapIotaNativeToken(nt *iotago.NativeToken) IotaNativeToken {
+	return IotaNativeToken{
+		ID:     WrapIotaNativeTokenID(&nt.ID),
+		Amount: nt.Amount,
+	}
+}
+
+func (nt IotaNativeToken) Unwrap() *iotago.NativeToken {
+	return &iotago.NativeToken{
+		ID:     nt.ID.Unwrap(),
+		Amount: nt.Amount,
+	}
 }
 
 // IotaAddress matches the struct definition in ISC.sol

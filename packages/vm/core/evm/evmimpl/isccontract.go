@@ -79,6 +79,25 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "triggerEvent":
 		c.ctx.Event(args[0].(string))
 
+	case "getRequestID":
+		outs = []interface{}{c.ctx.Request().ID()}
+
+	case "getSenderAccount":
+		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Request().SenderAccount())}
+
+	case "getSenderAddress":
+		outs = []interface{}{isccontract.WrapIotaAddress(c.ctx.Request().SenderAddress())}
+
+	case "getAllowanceIotas":
+		outs = []interface{}{c.ctx.Request().Allowance().Assets.Iotas}
+
+	case "getAllowanceNativeTokensLen":
+		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().Assets.Tokens))}
+
+	case "getAllowanceNativeToken":
+		i := args[0].(uint16)
+		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
+
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
