@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 )
 
@@ -113,6 +114,12 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 	var outs []interface{}
 
 	switch method.Name {
+	case "hasParam":
+		outs = []interface{}{ctx.Params().MustHas(kv.Key(args[0].(string)))}
+
+	case "getParam":
+		outs = []interface{}{ctx.Params().MustGet(kv.Key(args[0].(string)))}
+
 	case "getChainID":
 		outs = []interface{}{isccontract.WrapISCChainID(ctx.ChainID())}
 

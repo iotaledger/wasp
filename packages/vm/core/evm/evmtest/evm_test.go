@@ -262,6 +262,20 @@ func TestISCTimestamp(t *testing.T) {
 	require.EqualValues(t, evmChain.soloChain.GetLatestBlockInfo().Timestamp.UnixNano(), ret)
 }
 
+func TestISCGetParam(t *testing.T) {
+	evmChain := initEVM(t)
+
+	key := string(evm.FieldCallMsg) // callView sends an ISC request including this parameter
+
+	var has bool
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "hasParam", []interface{}{key}, &has)
+	require.True(t, has)
+
+	var ret []byte
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getParam", []interface{}{key}, &ret)
+	require.NotEmpty(t, ret)
+}
+
 func TestISCLogPanic(t *testing.T) {
 	evmChain := initEVM(t)
 

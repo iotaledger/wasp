@@ -26,6 +26,10 @@ struct ISCNFT {
 
 // The interface of the native ISC contract
 interface ISC {
+	// ----- SandboxBase -----
+	function hasParam(string memory key) external view returns (bool);
+	function getParam(string memory key) external view returns (bytes memory);
+
 	function getChainID() external view returns (ISCChainID);
 	function getChainOwnerID() external view returns (ISCAgentID memory);
 	function getTimestampUnixNano() external view returns (int64);
