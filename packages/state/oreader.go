@@ -11,26 +11,26 @@ import (
 	"time"
 )
 
-// OptimisticStateReaderImpl state reader reads the chain state from db and validates it
-type OptimisticStateReaderImpl struct {
+// optimisticStateReaderImpl state reader reads the chain state from db and validates it
+type optimisticStateReaderImpl struct {
 	db          kvstore.KVStore
 	stateReader *optimism.OptimisticKVStoreReader
 	trie        trie.NodeStore
 }
 
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
-func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *OptimisticStateReaderImpl {
+func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *optimisticStateReaderImpl {
 	chainReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeState}))
 	trieReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeTrie}))
 	baseline := glb.GetSolidIndexBaseline()
-	return &OptimisticStateReaderImpl{
+	return &optimisticStateReaderImpl{
 		db:          db,
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
 		trie:        trie.NewNodeStore(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
 	}
 }
 
-func (r *OptimisticStateReaderImpl) ChainID() (*iscp.ChainID, error) {
+func (r *optimisticStateReaderImpl) ChainID() (*iscp.ChainID, error) {
 	chidBin, err := r.stateReader.Get("")
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (r *OptimisticStateReaderImpl) ChainID() (*iscp.ChainID, error) {
 	return iscp.ChainIDFromBytes(chidBin)
 }
 
-func (r *OptimisticStateReaderImpl) BlockIndex() (uint32, error) {
+func (r *optimisticStateReaderImpl) BlockIndex() (uint32, error) {
 	blockIndex, err := loadStateIndexFromState(r.stateReader)
 	if err != nil {
 		return 0, err
@@ -46,7 +46,7 @@ func (r *OptimisticStateReaderImpl) BlockIndex() (uint32, error) {
 	return blockIndex, nil
 }
 
-func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
+func (r *optimisticStateReaderImpl) Timestamp() (time.Time, error) {
 	ts, err := loadTimestampFromState(r.stateReader)
 	if err != nil {
 		return time.Time{}, err
@@ -54,14 +54,14 @@ func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 	return ts, nil
 }
 
-func (r *OptimisticStateReaderImpl) KVStoreReader() kv.KVStoreReader {
+func (r *optimisticStateReaderImpl) KVStoreReader() kv.KVStoreReader {
 	return r.stateReader
 }
 
-func (r *OptimisticStateReaderImpl) SetBaseline() {
+func (r *optimisticStateReaderImpl) SetBaseline() {
 	r.stateReader.SetBaseline()
 }
 
-func (r *OptimisticStateReaderImpl) TrieNodeStore() trie.NodeStore {
+func (r *optimisticStateReaderImpl) TrieNodeStore() trie.NodeStore {
 	return r.trie
 }
