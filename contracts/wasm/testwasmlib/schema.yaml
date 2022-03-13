@@ -62,7 +62,6 @@ state:
   # Other
   random: Uint64
   latLong: map[Int32]Longitude
-  # LongID: map[Longitude]Int32 # FIXME Map with struct key would cause error
   
 
 # ##################################
