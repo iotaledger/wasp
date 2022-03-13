@@ -441,12 +441,12 @@ func TestStateBasic(t *testing.T) {
 	h2 := trie.RootCommitment(vs2.TrieAccess())
 	require.EqualValues(t, h1, h2)
 
-	vs1.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
+	vs1.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(1))
 	vs1.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 	vs1.KVStore().Set("kuku", codec.EncodeString("A"))
 	vs1.KVStore().Set("mumu", codec.EncodeString("B"))
 
-	vs2.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
+	vs2.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(1))
 	vs2.KVStore().Set("mumu", codec.EncodeString("B"))
 	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
 	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))

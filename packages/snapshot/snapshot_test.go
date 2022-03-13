@@ -39,6 +39,8 @@ func Test1(t *testing.T) {
 	for k, v := range genRndDict(100_000) {
 		st.KVStore().Set(k, v)
 	}
+	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), testmisc.RandVectorCommitment())
+	st.ApplyStateUpdate(upd)
 	err = st.Save()
 	require.NoError(t, err)
 
@@ -49,22 +51,21 @@ func Test1(t *testing.T) {
 
 	chid, err := ordr.ChainID()
 	require.NoError(t, err)
-	stateid, err := ordr.BlockIndex()
+	stateidx, err := ordr.BlockIndex()
 	require.NoError(t, err)
 	ts, err := ordr.Timestamp()
 	require.NoError(t, err)
 
-	fname := SnapshotFileName(chid, stateid)
+	fname := SnapshotFileName(chid, stateidx)
 	t.Logf("file: %s", fname)
 	err = WriteSnapshot(ordr, "", ConsoleReportParams{
 		Console:           os.Stdout,
 		StatsEveryKVPairs: 100_000,
 	})
 	require.NoError(t, err)
-	chidB, stateidB, tsB, err := ScanSnapshotForValues(fname)
+	v, err := ScanSnapshotForValues(fname)
 	require.NoError(t, err)
-	require.True(t, chid.Equals(chidB))
-	require.EqualValues(t, stateid, stateidB)
-	require.True(t, ts.Equal(tsB))
-
+	require.True(t, chid.Equals(v.ChainID))
+	require.EqualValues(t, stateidx, v.StateIndex)
+	require.True(t, ts.Equal(v.TimeStamp))
 }

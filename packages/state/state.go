@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
-	"math"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -18,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -52,10 +50,9 @@ func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 	ret := newVirtualState(store)
 	nilChainId := iscp.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
-	var zero8 [8]byte
 	ret.KVStore().Set("", nilChainId.Bytes())
-	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), zero8[:])
-	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), zero8[:])
+	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
+	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
 	ret.Commit()
 	return ret
 }
@@ -209,14 +206,11 @@ func loadStateIndexFromState(chainState kv.KVStoreReader) (uint32, error) {
 	if blockIndexBin == nil {
 		return 0, xerrors.New("loadStateIndexFromState: not found")
 	}
-	blockIndex, err := util.Uint64From8Bytes(blockIndexBin)
+	blockIndex, err := codec.DecodeUint32(blockIndexBin)
 	if err != nil {
 		return 0, xerrors.Errorf("loadStateIndexFromState: %w", err)
 	}
-	if int(blockIndex) > math.MaxUint32 {
-		return 0, xerrors.Errorf("loadStateIndexFromState: wrong state index value")
-	}
-	return uint32(blockIndex), nil
+	return blockIndex, nil
 }
 
 func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {

@@ -97,10 +97,21 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	return nil
 }
 
-func ScanForValues(rdr kv.StreamIterator) (*iscp.ChainID, uint32, time.Time, error) {
-	var chainID *iscp.ChainID
-	var stateIndex uint32
-	var timestamp time.Time
+type ScanValues struct {
+	ChainID    *iscp.ChainID
+	StateIndex uint32
+	TimeStamp  time.Time
+	NumRecords int
+	MaxKeyLen  int
+	KeyLen     map[int]int
+	ValueLen   map[int]int
+}
+
+func ScanForValues(rdr kv.StreamIterator) (*ScanValues, error) {
+	ret := &ScanValues{
+		KeyLen:   make(map[int]int),
+		ValueLen: make(map[int]int),
+	}
 	var chainIDFound, stateIndexFound, timestampFound bool
 	var errR error
 
@@ -110,7 +121,7 @@ func ScanForValues(rdr kv.StreamIterator) (*iscp.ChainID, uint32, time.Time, err
 				errR = xerrors.New("duplicate record with chainID")
 				return false
 			}
-			if chainID, errR = iscp.ChainIDFromBytes(v); errR != nil {
+			if ret.ChainID, errR = iscp.ChainIDFromBytes(v); errR != nil {
 				return false
 			}
 			chainIDFound = true
@@ -120,7 +131,7 @@ func ScanForValues(rdr kv.StreamIterator) (*iscp.ChainID, uint32, time.Time, err
 				errR = xerrors.New("duplicate record with state index")
 				return false
 			}
-			if stateIndex, errR = util.Uint32From4Bytes(v); errR != nil {
+			if ret.StateIndex, errR = util.Uint32From4Bytes(v); errR != nil {
 				return false
 			}
 			stateIndexFound = true
@@ -130,26 +141,34 @@ func ScanForValues(rdr kv.StreamIterator) (*iscp.ChainID, uint32, time.Time, err
 				errR = xerrors.New("duplicate record with timestamp")
 				return false
 			}
-			if timestamp, errR = codec.DecodeTime(v); errR != nil {
+			if ret.TimeStamp, errR = codec.DecodeTime(v); errR != nil {
 				return false
 			}
 			timestampFound = true
 		}
+		ret.NumRecords++
+		if len(k) > ret.MaxKeyLen {
+			ret.MaxKeyLen = len(k)
+		}
+		kt := ret.KeyLen[len(k)]
+		ret.KeyLen[len(k)] = kt + 1
+		vt := ret.ValueLen[len(v)]
+		ret.ValueLen[len(v)] = vt + 1
 		return true
 	})
 	if err != nil {
-		return nil, 0, time.Time{}, err
+		return nil, err
 	}
 	if errR != nil {
-		return nil, 0, time.Time{}, errR
+		return nil, errR
 	}
-	return chainID, stateIndex, timestamp, nil
+	return ret, nil
 }
 
-func ScanSnapshotForValues(fname string) (*iscp.ChainID, uint32, time.Time, error) {
+func ScanSnapshotForValues(fname string) (*ScanValues, error) {
 	stream, err := kv.OpenKVStreamFile(fname)
 	if err != nil {
-		return nil, 0, time.Time{}, err
+		return nil, err
 	}
 	defer stream.File.Close()
 
