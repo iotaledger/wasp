@@ -72,6 +72,7 @@ func (su *stateUpdateImpl) Bytes() []byte {
 	return buf.Bytes()
 }
 
+// TODO why block index uint32 value is encoded as 8 bytes???
 func (su *stateUpdateImpl) stateIndexMutation() (uint32, bool, error) {
 	blockIndexBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixBlockIndex))
 	if !ok {

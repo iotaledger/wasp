@@ -19,7 +19,7 @@ func genRndDict(n int) dict.Dict {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < n; i++ {
-		f := rnd.Intn(1_000_000) % 5
+		f := rnd.Intn(1_000_000)%5 + 1
 		k := make([]byte, f*10)
 		rnd.Read(k)
 		f = rnd.Intn(1_000_000) % 10
@@ -36,7 +36,7 @@ func Test1(t *testing.T) {
 	st, err := state.CreateOriginState(db, chainID)
 	require.NoError(t, err)
 
-	for k, v := range genRndDict(100) {
+	for k, v := range genRndDict(100_000) {
 		st.KVStore().Set(k, v)
 	}
 	err = st.Save()
@@ -47,9 +47,24 @@ func Test1(t *testing.T) {
 	ordr := state.NewOptimisticStateReader(db, glb)
 	ordr.SetBaseline()
 
-	err = WriteSnapshotToFile(ordr, "", ConsoleReportParams{
+	chid, err := ordr.ChainID()
+	require.NoError(t, err)
+	stateid, err := ordr.BlockIndex()
+	require.NoError(t, err)
+	ts, err := ordr.Timestamp()
+	require.NoError(t, err)
+
+	fname := SnapshotFileName(chid, stateid)
+	t.Logf("file: %s", fname)
+	err = WriteSnapshot(ordr, "", ConsoleReportParams{
 		Console:           os.Stdout,
-		StatsEveryKVPairs: 10,
+		StatsEveryKVPairs: 100_000,
 	})
 	require.NoError(t, err)
+	chidB, stateidB, tsB, err := ScanSnapshotForValues(fname)
+	require.NoError(t, err)
+	require.True(t, chid.Equals(chidB))
+	require.EqualValues(t, stateid, stateidB)
+	require.True(t, ts.Equal(tsB))
+
 }
