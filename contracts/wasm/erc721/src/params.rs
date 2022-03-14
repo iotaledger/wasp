@@ -9,344 +9,348 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableApproveParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableApproveParams {
     pub fn approved(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_APPROVED))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_APPROVED))
 	}
 
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableApproveParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableApproveParams {
     pub fn approved(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_APPROVED))
+		ScMutableAgentID::new(self.proxy.root(PARAM_APPROVED))
 	}
 
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBurnParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBurnParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBurnParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBurnParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableInitParams {
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
     pub fn symbol(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_SYMBOL))
+		ScImmutableString::new(self.proxy.root(PARAM_SYMBOL))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableInitParams {
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
     pub fn symbol(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_SYMBOL))
+		ScMutableString::new(self.proxy.root(PARAM_SYMBOL))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableMintParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableMintParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
+	}
+
+    pub fn token_uri(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_TOKEN_URI))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableMintParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableMintParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
+	}
+
+    pub fn token_uri(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_TOKEN_URI))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSafeTransferFromParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSafeTransferFromParams {
     pub fn data(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, idx_map(IDX_PARAM_DATA))
+		ScImmutableBytes::new(self.proxy.root(PARAM_DATA))
 	}
 
     pub fn from(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
     pub fn to(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSafeTransferFromParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSafeTransferFromParams {
     pub fn data(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, idx_map(IDX_PARAM_DATA))
+		ScMutableBytes::new(self.proxy.root(PARAM_DATA))
 	}
 
     pub fn from(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScMutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
     pub fn to(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScMutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSetApprovalForAllParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSetApprovalForAllParams {
     pub fn approval(&self) -> ScImmutableBool {
-		ScImmutableBool::new(self.id, idx_map(IDX_PARAM_APPROVAL))
+		ScImmutableBool::new(self.proxy.root(PARAM_APPROVAL))
 	}
 
     pub fn operator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_OPERATOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSetApprovalForAllParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSetApprovalForAllParams {
     pub fn approval(&self) -> ScMutableBool {
-		ScMutableBool::new(self.id, idx_map(IDX_PARAM_APPROVAL))
+		ScMutableBool::new(self.proxy.root(PARAM_APPROVAL))
 	}
 
     pub fn operator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScMutableAgentID::new(self.proxy.root(PARAM_OPERATOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTransferFromParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTransferFromParams {
     pub fn from(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
     pub fn to(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTransferFromParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTransferFromParams {
     pub fn from(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScMutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
     pub fn to(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScMutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBalanceOfParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBalanceOfParams {
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBalanceOfParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBalanceOfParams {
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScMutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetApprovedParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetApprovedParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetApprovedParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetApprovedParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableIsApprovedForAllParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableIsApprovedForAllParams {
     pub fn operator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_OPERATOR))
 	}
 
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableIsApprovedForAllParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableIsApprovedForAllParams {
     pub fn operator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScMutableAgentID::new(self.proxy.root(PARAM_OPERATOR))
 	}
 
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScMutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableOwnerOfParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableOwnerOfParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableOwnerOfParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableOwnerOfParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTokenURIParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTokenURIParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTokenURIParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTokenURIParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 }

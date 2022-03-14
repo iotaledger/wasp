@@ -55,7 +55,7 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
 // The 'member' function will save the address/factor combination in state storage
 // and also calculate and store a running sum of all factors so that the 'divide'
 // function can simply start using these precalculated values when called.
-pub fn func_member(ctx: &ScFuncContext, f: &MemberContext) {
+pub fn func_member(_ctx: &ScFuncContext, f: &MemberContext) {
     // Note that the schema tool has already dealt with making sure that this function
     // can only be called by the owner and that the required parameters are present.
     // So once we get to this point in the code we can take that as a given.
@@ -63,16 +63,7 @@ pub fn func_member(ctx: &ScFuncContext, f: &MemberContext) {
     // Since we are sure that the 'factor' parameter actually exists we can
     // retrieve its actual value into an i64. Note that we use Rust's built-in
     // data types when manipulating Int64, String, or Bytes value objects.
-    let factor: i64 = f.params.factor().value();
-
-    // As an extra requirement we check that the 'factor' parameter value is not
-    // negative. If it is, we panic out with an error message.
-    // Note how we avoid an if expression like this one here:
-    // if factor < 0 {
-    //     ctx.panic("negative factor");
-    // }
-    // Using the require() method instead reduces typing and enhances readability.
-    ctx.require(factor >= 0, "negative factor");
+    let factor: u64 = f.params.factor().value();
 
     // Since we are sure that the 'address' parameter actually exists we can
     // retrieve its actual value into an ScAddress value type.
@@ -83,11 +74,11 @@ pub fn func_member(ctx: &ScFuncContext, f: &MemberContext) {
     // type-checked proxy map for us from the schema.json state storage definition.
     // If there is no 'members' map present yet in state storage an empty map will
     // automatically be created on the host.
-    let members: MapAddressToMutableInt64 = f.state.members();
+    let members: MapAddressToMutableUint64 = f.state.members();
 
-    // Now we create an ScMutableInt64 proxy for the value stored in the 'members'
+    // Now we create an ScMutableUint64 proxy for the value stored in the 'members'
     // map under the key defined by the 'address' parameter we retrieved earlier.
-    let current_factor: ScMutableInt64 = members.get_int64(&address);
+    let current_factor: ScMutableUint64 = members.get_uint64(&address);
 
     // We check to see if this key/value combination exists in the 'members' map.
     if !current_factor.exists() {
@@ -99,12 +90,9 @@ pub fn func_member(ctx: &ScFuncContext, f: &MemberContext) {
         let member_list: ArrayOfMutableAddress = f.state.member_list();
 
         // Now we will append the new address to the memberList array.
-        // First we determine the current length of the array.
-        let length: i32 = member_list.length();
-
-        // Next we create an ScMutableAddress proxy to the address value that lives
-        // at that index in the memberList array (no value, since we're appending).
-        let new_address: ScMutableAddress = member_list.get_address(length);
+        // We create an ScMutableAddress proxy to an address value that lives
+        // at the end of the memberList array (no value yet, since we're appending).
+        let new_address: ScMutableAddress = member_list.append_address();
 
         // And finally we append the new address to the array by telling the proxy
         // to update the value it refers to with the 'address' parameter.
@@ -114,10 +102,10 @@ pub fn func_member(ctx: &ScFuncContext, f: &MemberContext) {
         // member_list.get_address(member_list.length()).set_value(&address);
     }
 
-    // Create an ScMutableInt64 proxy named 'totalFactor' for an Int64 value in
+    // Create an ScMutableUint64 proxy named 'totalFactor' for an Int64 value in
     // state storage. Note that we don't care whether this value exists or not,
     // because WasmLib will treat it as if it has the default value of zero.
-    let total_factor: ScMutableInt64 = f.state.total_factor();
+    let total_factor: ScMutableUint64 = f.state.total_factor();
 
     // Now we calculate the new running total sum of factors by first getting the
     // current value of 'totalFactor' from the state storage, then subtracting the
@@ -125,7 +113,7 @@ pub fn func_member(ctx: &ScFuncContext, f: &MemberContext) {
     // exists. Again, if the associated value doesn't exist, WasmLib will assume it
     // to be zero. Finally we add the factor retrieved from the parameters,
     // resulting in the new totalFactor.
-    let new_total_factor: i64 = total_factor.value() - current_factor.value() + factor;
+    let new_total_factor: u64 = total_factor.value() - current_factor.value() + factor;
 
     // Now we store the new totalFactor in the state storage.
     total_factor.set_value(new_total_factor);
@@ -152,19 +140,19 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
     let balances: ScBalances = ctx.balances();
 
     // Retrieve the amount of plain iota tokens from the account balance.
-    let amount: i64 = balances.balance(&ScColor::IOTA);
+    let amount: u64 = balances.balance(&ScColor::IOTA);
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
-    let total_factor: i64 = f.state.total_factor().value();
+    let total_factor: u64 = f.state.total_factor().value();
 
     // Get the proxy to the 'members' map in the state storage.
-    let members: MapAddressToMutableInt64 = f.state.members();
+    let members: MapAddressToMutableUint64 = f.state.members();
 
     // Get the proxy to the 'memberList' array in the state storage.
     let member_list: ArrayOfMutableAddress = f.state.member_list();
 
     // Determine the current length of the memberList array.
-    let size: i32 = member_list.length();
+    let size: u32 = member_list.length();
 
     // Loop through all indexes of the memberList array.
     for i in 0..size {
@@ -172,11 +160,11 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
         let address: ScAddress = member_list.get_address(i).value();
 
         // Retrieve the factor associated with the address from the members map.
-        let factor: i64 = members.get_int64(&address).value();
+        let factor: u64 = members.get_uint64(&address).value();
 
         // Calculate the fair share of iotas to disperse to this member based on the
         // factor we just retrieved. Note that the result will be truncated.
-        let share: i64 = amount * factor / total_factor;
+        let share: u64 = amount * factor / total_factor;
 
         // Is there anything to disperse to this member?
         if share > 0 {
@@ -192,7 +180,7 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
             // member address. The transfer_to_address() method receives the address
             // value and the proxy to the new transfers map on the host, and will
             // call the corresponding host sandbox function with these values.
-            ctx.transfer_to_address(&address, transfers);
+            ctx.send(&address, &transfers);
         }
     }
 }
@@ -222,10 +210,10 @@ pub fn view_get_factor(_ctx: &ScViewContext, f: &GetFactorContext) {
     // Create an ScImmutableMap proxy to the 'members' map in the state storage.
     // Note that for views this is an *immutable* map as opposed to the *mutable*
     // map we can access from the *mutable* state that gets passed to funcs.
-    let members: MapAddressToImmutableInt64 = f.state.members();
+    let members: MapAddressToImmutableUint64 = f.state.members();
 
     // Retrieve the factor associated with the address parameter.
-    let factor: i64 = members.get_int64(&address).value();
+    let factor: u64 = members.get_uint64(&address).value();
 
     // Set the factor in the results map of the function context.
     // The contents of this results map is returned to the caller of the function.

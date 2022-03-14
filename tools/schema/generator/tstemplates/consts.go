@@ -1,20 +1,20 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package tstemplates
 
 var constsTs = map[string]string{
 	// *******************************
 	"consts.ts": `
-$#emit importWasmLib
+$#emit importWasmTypes
 
 export const ScName        = "$scName";
 export const ScDescription = "$scDesc";
-export const HScName       = new wasmlib.ScHname(0x$hscName);
+export const HScName       = new wasmtypes.ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
 $#if state constState
-
-$#each func constFunc
-
-$#each func constHFunc
+$#if funcs constFuncs
 `,
 	// *******************************
 	"constParams": `
@@ -35,6 +35,13 @@ $#set constPrefix State
 $#each state constField
 `,
 	// *******************************
+	"constFuncs": `
+
+$#each func constFunc
+
+$#each func constHFunc
+`,
+	// *******************************
 	"constField": `
 export const $constPrefix$FldName$fldPad = "$fldAlias";
 `,
@@ -44,6 +51,6 @@ export const $Kind$FuncName$funcPad = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-export const H$Kind$FuncName$funcPad = new wasmlib.ScHname(0x$funcHname);
+export const H$Kind$FuncName$funcPad = new wasmtypes.ScHname(0x$hFuncName);
 `,
 }

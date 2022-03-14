@@ -7,7 +7,7 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type CallIncrementCall struct {
 	Func *wasmlib.ScFunc
@@ -56,7 +56,11 @@ type RepeatManyCall struct {
 	Params MutableRepeatManyParams
 }
 
-type TestLeb128Call struct {
+type TestVliCodecCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type TestVluCodecCall struct {
 	Func *wasmlib.ScFunc
 }
 
@@ -68,6 +72,18 @@ type WhenMustIncrementCall struct {
 type GetCounterCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetCounterResults
+}
+
+type GetVliCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableGetVliParams
+	Results ImmutableGetVliResults
+}
+
+type GetVluCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableGetVluParams
+	Results ImmutableGetVluResults
 }
 
 type Funcs struct{}
@@ -92,13 +108,13 @@ func (sc Funcs) Increment(ctx wasmlib.ScFuncCallContext) *IncrementCall {
 
 func (sc Funcs) IncrementWithDelay(ctx wasmlib.ScFuncCallContext) *IncrementWithDelayCall {
 	f := &IncrementWithDelayCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncIncrementWithDelay)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -120,22 +136,40 @@ func (sc Funcs) PostIncrement(ctx wasmlib.ScFuncCallContext) *PostIncrementCall 
 
 func (sc Funcs) RepeatMany(ctx wasmlib.ScFuncCallContext) *RepeatManyCall {
 	f := &RepeatManyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRepeatMany)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
-func (sc Funcs) TestLeb128(ctx wasmlib.ScFuncCallContext) *TestLeb128Call {
-	return &TestLeb128Call{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestLeb128)}
+func (sc Funcs) TestVliCodec(ctx wasmlib.ScFuncCallContext) *TestVliCodecCall {
+	return &TestVliCodecCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestVliCodec)}
+}
+
+func (sc Funcs) TestVluCodec(ctx wasmlib.ScFuncCallContext) *TestVluCodecCall {
+	return &TestVluCodecCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestVluCodec)}
 }
 
 func (sc Funcs) WhenMustIncrement(ctx wasmlib.ScFuncCallContext) *WhenMustIncrementCall {
 	f := &WhenMustIncrementCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWhenMustIncrement)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GetCounter(ctx wasmlib.ScViewCallContext) *GetCounterCall {
 	f := &GetCounterCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetCounter)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) GetVli(ctx wasmlib.ScViewCallContext) *GetVliCall {
+	f := &GetVliCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVli)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) GetVlu(ctx wasmlib.ScViewCallContext) *GetVluCall {
+	f := &GetVluCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVlu)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

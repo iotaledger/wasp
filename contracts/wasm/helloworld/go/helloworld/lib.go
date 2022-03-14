@@ -7,16 +7,28 @@
 
 package helloworld
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncHelloWorld, funcHelloWorldThunk)
-	exports.AddView(ViewGetHelloWorld, viewGetHelloWorldThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncHelloWorld,
+		ViewGetHelloWorld,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcHelloWorldThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetHelloWorldThunk,
+	},
+}
 
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
 	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type HelloWorldContext struct {
@@ -27,7 +39,7 @@ func funcHelloWorldThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("helloworld.funcHelloWorld")
 	f := &HelloWorldContext{
 		State: MutableHelloWorldState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcHelloWorld(ctx, f)
@@ -41,14 +53,16 @@ type GetHelloWorldContext struct {
 
 func viewGetHelloWorldThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("helloworld.viewGetHelloWorld")
+	results := wasmlib.NewScDict()
 	f := &GetHelloWorldContext{
 		Results: MutableGetHelloWorldResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableHelloWorldState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetHelloWorld(ctx, f)
+	ctx.Results(results)
 	ctx.Log("helloworld.viewGetHelloWorld ok")
 }

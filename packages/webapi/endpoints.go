@@ -1,7 +1,9 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package webapi
 
 import (
-	"net"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -11,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
@@ -25,7 +28,6 @@ var log *logger.Logger
 
 func Init(
 	server echoswagger.ApiRoot,
-	adminWhitelist []net.IP,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
 	registryProvider registry.Provider,
@@ -33,6 +35,7 @@ func Init(
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
+	w *wal.WAL,
 ) {
 	log = logger.NewLogger("WebAPI")
 
@@ -50,14 +53,15 @@ func Init(
 		chainsProvider.ChainProvider(),
 		webapiutil.GetAccountBalance,
 		webapiutil.HasRequestBeenProcessed,
+		network.Self().PubKey(),
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
 		log,
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
+
 	admapi.AddEndpoints(
 		adm,
-		adminWhitelist,
 		network,
 		tnm,
 		registryProvider,
@@ -65,6 +69,7 @@ func Init(
 		nodeProvider,
 		shutdown,
 		metrics,
+		w,
 	)
 	log.Infof("added web api endpoints")
 }

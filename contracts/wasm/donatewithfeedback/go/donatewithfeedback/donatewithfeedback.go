@@ -4,12 +4,14 @@
 package donatewithfeedback
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
+	amount := ctx.IncomingTransfer().Balance(wasmtypes.IOTA)
 	donation := &Donation{
-		Amount:    ctx.Incoming().Balance(wasmlib.IOTA),
+		Amount:    amount,
 		Donator:   ctx.Caller(),
 		Error:     "",
 		Feedback:  f.Params.Feedback().Value(),
@@ -18,12 +20,12 @@ func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 	if donation.Amount == 0 || donation.Feedback == "" {
 		donation.Error = "error: empty feedback or donated amount = 0"
 		if donation.Amount > 0 {
-			ctx.TransferToAddress(donation.Donator.Address(), wasmlib.NewScTransferIotas(donation.Amount))
+			ctx.Send(donation.Donator.Address(), wasmlib.NewScTransferIotas(donation.Amount))
 			donation.Amount = 0
 		}
 	}
 	log := f.State.Log()
-	log.GetDonation(log.Length()).SetValue(donation)
+	log.AppendDonation().SetValue(donation)
 
 	largestDonation := f.State.MaxDonation()
 	totalDonated := f.State.TotalDonation()
@@ -34,7 +36,7 @@ func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 }
 
 func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
-	balance := ctx.Balances().Balance(wasmlib.IOTA)
+	balance := ctx.Balances().Balance(wasmtypes.IOTA)
 	amount := f.Params.Amount().Value()
 	if amount == 0 || amount > balance {
 		amount = balance
@@ -45,11 +47,11 @@ func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
 	}
 
 	scCreator := ctx.ContractCreator().Address()
-	ctx.TransferToAddress(scCreator, wasmlib.NewScTransferIotas(amount))
+	ctx.Send(scCreator, wasmlib.NewScTransferIotas(amount))
 }
 
 func viewDonation(ctx wasmlib.ScViewContext, f *DonationContext) {
-	nr := int32(f.Params.Nr().Value())
+	nr := f.Params.Nr().Value()
 	donation := f.State.Log().GetDonation(nr).Value()
 	f.Results.Amount().SetValue(donation.Amount)
 	f.Results.Donator().SetValue(donation.Donator)
@@ -61,5 +63,5 @@ func viewDonation(ctx wasmlib.ScViewContext, f *DonationContext) {
 func viewDonationInfo(ctx wasmlib.ScViewContext, f *DonationInfoContext) {
 	f.Results.MaxDonation().SetValue(f.State.MaxDonation().Value())
 	f.Results.TotalDonation().SetValue(f.State.TotalDonation().Value())
-	f.Results.Count().SetValue(int64(f.State.Log().Length()))
+	f.Results.Count().SetValue(f.State.Log().Length())
 }

@@ -1,23 +1,63 @@
 name: TestWasmLib
-description: Exercise all aspects of WasmLib
-structs: {}
+description: Exercise several aspects of WasmLib
+
+# ##################################
+events:
+# ##################################
+  test:
+    name: String
+    address: Address
+
+# ##################################
+structs:
+# ##################################
+# Location:
+#   x: Int32
+#   y: Int32
+
+# ##################################
 typedefs:
+# ##################################
   StringArray: String[]
+  StringMap: map[String]String
+# Longitude: map[Int32]Location
+
+# ##################################
 state:
+# ##################################
   arrays: map[String]StringArray
-  random: Int64
+  maps: map[String]StringMap
+  random: Uint64
+# latLong: map[Int32]Longitude
+
+# ##################################
 funcs:
+# ##################################
+  arrayAppend:
+    params:
+      name: String
+      value: String
+
   arrayClear:
     params:
       name: String
-  arrayCreate:
-    params:
-      name: String
+
   arraySet:
     params:
-      index: Int32
+      index: Uint32
       name: String
       value: String
+
+  mapClear:
+    params:
+      name: String
+
+  mapSet:
+    params:
+      name: String
+      key: String
+      value: String
+
   paramTypes:
     params:
       address: Address?
@@ -39,33 +79,54 @@ funcs:
       uint16: Uint16?
       uint32: Uint32?
       uint64: Uint64?
+
   random:
+
+  triggerEvent:
+    params:
+      name: String
+      address: Address
+
+# ##################################
 views:
+# ##################################
   arrayLength:
     params:
       name: String
     results:
-      length: Int32
+      length: Uint32
+
   arrayValue:
     params:
-      index: Int32
+      index: Uint32
       name: String
     results:
       value: String
+
   blockRecord:
     params:
-      blockIndex: Int32
-      recordIndex: Int32
+      blockIndex: Uint32
+      recordIndex: Uint32
     results:
       record: Bytes
+
   blockRecords:
     params:
-      blockIndex: Int32
+      blockIndex: Uint32
     results:
-      count: Int32
+      count: Uint32
+
   iotaBalance:
     results:
-      iotas: Int64
+      iotas: Uint64
+
+  mapValue:
+    params:
+      name: String
+      key: String
+    results:
+      value: String
+
   getRandom:
     results:
-      random: Int64
+      random: Uint64

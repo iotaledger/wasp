@@ -11,7 +11,7 @@ func TestBasicBlockContext1(t *testing.T) {
 	ctx := deployTestCore(t, false)
 
 	f := testcore.ScFuncs.TestBlockContext1(ctx)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
 
@@ -19,7 +19,7 @@ func TestBasicBlockContext2(t *testing.T) {
 	ctx := deployTestCore(t, false)
 
 	f := testcore.ScFuncs.TestBlockContext2(ctx)
-	f.Func.TransferIotas(1).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	v := testcore.ScFuncs.GetStringValue(ctx)

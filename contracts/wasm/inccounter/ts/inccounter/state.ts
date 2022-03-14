@@ -5,25 +5,29 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableIncCounterState extends wasmlib.ScMapID {
-    counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
+export class ImmutableIncCounterState extends wasmtypes.ScProxy {
+	counter(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.StateCounter));
 	}
 
-    numRepeats(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateNumRepeats]);
+	numRepeats(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.StateNumRepeats));
 	}
 }
 
-export class MutableIncCounterState extends wasmlib.ScMapID {
-    counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
+export class MutableIncCounterState extends wasmtypes.ScProxy {
+	asImmutable(): sc.ImmutableIncCounterState {
+		return new sc.ImmutableIncCounterState(this.proxy);
 	}
 
-    numRepeats(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateNumRepeats]);
+	counter(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.StateCounter));
+	}
+
+	numRepeats(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.StateNumRepeats));
 	}
 }

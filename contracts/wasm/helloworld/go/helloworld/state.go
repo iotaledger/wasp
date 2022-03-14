@@ -7,10 +7,16 @@
 
 package helloworld
 
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+
 type ImmutableHelloWorldState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 type MutableHelloWorldState struct {
-	id int32
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableHelloWorldState) AsImmutable() ImmutableHelloWorldState {
+	return ImmutableHelloWorldState(s)
 }

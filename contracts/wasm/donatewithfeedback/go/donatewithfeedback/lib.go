@@ -7,18 +7,32 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncDonate, funcDonateThunk)
-	exports.AddFunc(FuncWithdraw, funcWithdrawThunk)
-	exports.AddView(ViewDonation, viewDonationThunk)
-	exports.AddView(ViewDonationInfo, viewDonationInfoThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncDonate,
+		FuncWithdraw,
+		ViewDonation,
+		ViewDonationInfo,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcDonateThunk,
+		funcWithdrawThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewDonationThunk,
+		viewDonationInfoThunk,
+	},
+}
 
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
 	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type DonateContext struct {
@@ -30,10 +44,10 @@ func funcDonateThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("donatewithfeedback.funcDonate")
 	f := &DonateContext{
 		Params: ImmutableDonateParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcDonate(ctx, f)
@@ -47,18 +61,18 @@ type WithdrawContext struct {
 
 func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("donatewithfeedback.funcWithdraw")
+	f := &WithdrawContext{
+		Params: ImmutableWithdrawParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableDonateWithFeedbackState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only SC creator can withdraw donated funds
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &WithdrawContext{
-		Params: ImmutableWithdrawParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	funcWithdraw(ctx, f)
 	ctx.Log("donatewithfeedback.funcWithdraw ok")
 }
@@ -71,19 +85,21 @@ type DonationContext struct {
 
 func viewDonationThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("donatewithfeedback.viewDonation")
+	results := wasmlib.NewScDict()
 	f := &DonationContext{
 		Params: ImmutableDonationParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableDonationResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Nr().Exists(), "missing mandatory nr")
 	viewDonation(ctx, f)
+	ctx.Results(results)
 	ctx.Log("donatewithfeedback.viewDonation ok")
 }
 
@@ -94,14 +110,16 @@ type DonationInfoContext struct {
 
 func viewDonationInfoThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("donatewithfeedback.viewDonationInfo")
+	results := wasmlib.NewScDict()
 	f := &DonationInfoContext{
 		Results: MutableDonationInfoResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewDonationInfo(ctx, f)
+	ctx.Results(results)
 	ctx.Log("donatewithfeedback.viewDonationInfo ok")
 }

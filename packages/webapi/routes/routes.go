@@ -35,6 +35,10 @@ func DeactivateChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/deactivate"
 }
 
+func GetChainInfo(chainID string) string {
+	return "/adm/chain/" + chainID + "/info"
+}
+
 func ListChainRecords() string {
 	return "/adm/chainrecords"
 }
@@ -47,14 +51,6 @@ func GetChainRecord(chainID string) string {
 	return "/adm/chainrecord/" + chainID
 }
 
-func PutCommitteeRecord() string {
-	return "/adm/committeerecord"
-}
-
-func GetCommitteeRecord(addr string) string {
-	return "/adm/committeerecord/" + addr
-}
-
 func GetChainsNodeConnectionMetrics() string {
 	return "/adm/chain/nodeconn/metrics"
 }
@@ -63,8 +59,12 @@ func GetChainNodeConnectionMetrics(chainID string) string {
 	return "/adm/chain/" + chainID + "/nodeconn/metrics"
 }
 
-func GetCommitteeForChain(chainID string) string {
-	return "/adm/chain/" + chainID + "/committeerecord"
+func GetChainConsensusWorkflowStatus(chainID string) string {
+	return "/adm/chain/" + chainID + "/consensus/status"
+}
+
+func GetChainConsensusPipeMetrics(chainID string) string {
+	return "/adm/chain/" + chainID + "/consensus/metrics/pipe"
 }
 
 func DKSharesPost() string {
@@ -101,6 +101,10 @@ func PeeringTrustedPut(pubKey string) string {
 
 func PeeringTrustedDelete(pubKey string) string {
 	return PeeringTrustedGet(pubKey)
+}
+
+func AdmNodeOwnerCertificate() string {
+	return "/adm/node/owner/certificate"
 }
 
 func Shutdown() string {

@@ -7,76 +7,76 @@
 
 package tokenregistry
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableMintSupplyParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableMintSupplyParams) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamDescription])
+func (s ImmutableMintSupplyParams) Description() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
 
-func (s ImmutableMintSupplyParams) UserDefined() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamUserDefined])
+func (s ImmutableMintSupplyParams) UserDefined() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamUserDefined))
 }
 
 type MutableMintSupplyParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableMintSupplyParams) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamDescription])
+func (s MutableMintSupplyParams) Description() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
 
-func (s MutableMintSupplyParams) UserDefined() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamUserDefined])
+func (s MutableMintSupplyParams) UserDefined() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamUserDefined))
 }
 
 type ImmutableTransferOwnershipParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTransferOwnershipParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+func (s ImmutableTransferOwnershipParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
 type MutableTransferOwnershipParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTransferOwnershipParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+func (s MutableTransferOwnershipParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }
 
 type ImmutableUpdateMetadataParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableUpdateMetadataParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+func (s ImmutableUpdateMetadataParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
 type MutableUpdateMetadataParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableUpdateMetadataParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+func (s MutableUpdateMetadataParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }
 
 type ImmutableGetInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetInfoParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+func (s ImmutableGetInfoParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
 type MutableGetInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetInfoParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+func (s MutableGetInfoParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }

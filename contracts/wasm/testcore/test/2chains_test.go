@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +14,10 @@ func Test2Chains(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		core.PrintWellKnownHnames()
 
+		save := wasmsolo.SoloSeed
+		wasmsolo.SoloSeed = nil
 		chain1 := wasmsolo.StartChain(t, "chain1")
+		wasmsolo.SoloSeed = save
 		chain1.CheckAccountLedger()
 
 		chain2 := wasmsolo.StartChain(t, "chain2", chain1.Env)
@@ -53,7 +56,7 @@ func Test2Chains(t *testing.T) {
 
 		f := testcore.ScFuncs.WithdrawToChain(ctx2.Sign(user))
 		f.Params.ChainID().SetValue(ctx1.ChainID())
-		f.Func.TransferIotas(1).Post()
+		f.Func.Post()
 		require.NoError(t, ctx2.Err)
 
 		require.True(t, ctx1.WaitForPendingRequests(1))

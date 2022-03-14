@@ -7,7 +7,7 @@ state:
   hnameEP: Hname
   ints: map[String]Int64
   mintedColor: Color
-  mintedSupply: Int64
+  mintedSupply: Uint64
 funcs:
   callOnChain:
     params:
@@ -27,7 +27,7 @@ funcs:
   getMintedSupply:
     results:
       mintedColor: Color
-      mintedSupply: Int64
+      mintedSupply: Uint64
   incCounter: {}
   init:
     params:

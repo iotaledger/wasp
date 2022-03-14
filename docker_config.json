@@ -21,14 +21,41 @@
     "disablePlugins": [],
     "enablePlugins": []
   },
+  "users": {
+    "wasp": {
+      "password": "wasp",
+      "claims": ["dashboard", "api"]
+    }
+  },
   "webapi": {
+    "auth": {
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "userName": "wasp"
+      },
+      "ip": {
+        "whitelist": ["127.0.0.1"]
+      },
+      "addRoutes": true,
+      "scheme": "ip"
+    },
     "bindAddress": "0.0.0.0:9090"
   },
   "dashboard": {
     "auth": {
-      "scheme": "basic",
-      "username": "wasp",
-      "password": "wasp"
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "userName": "wasp"
+      },
+      "ip": {
+        "whitelist": ["127.0.0.1"]
+      },
+      "addRoutes": true,
+      "scheme": "basic"
     },
     "bindAddress": "0.0.0.0:7000"
   },

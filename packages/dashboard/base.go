@@ -8,6 +8,8 @@ import (
 	"html/template"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/authentication"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -30,11 +32,12 @@ type Tab struct {
 }
 
 type BaseTemplateParams struct {
-	NavPages    []Tab
-	Breadcrumbs []Tab
-	Path        string
-	MyNetworkID string
-	Version     string
+	IsAuthenticated bool
+	NavPages        []Tab
+	Breadcrumbs     []Tab
+	Path            string
+	MyNetworkID     string
+	Version         string
 }
 
 type WaspServices interface {
@@ -48,6 +51,8 @@ type WaspServices interface {
 	CallView(chainID *iscp.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
 	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
 	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
+	GetChainConsensusWorkflowStatus(*iscp.ChainID) (chain.ConsensusWorkflowStatus, error)
+	GetChainConsensusPipeMetrics(*iscp.ChainID) (chain.ConsensusPipeMetrics, error)
 }
 
 type Dashboard struct {
@@ -70,6 +75,7 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 	d.errorInit(server, r)
 
 	d.navPages = []Tab{
+		d.authInit(server, r),
 		d.configInit(server, r),
 		d.peeringInit(server, r),
 		d.chainsInit(server, r),
@@ -86,12 +92,23 @@ func (d *Dashboard) Stop() {
 }
 
 func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {
+	var isAuthenticated bool
+
+	auth, ok := c.Get("auth").(*authentication.AuthContext)
+
+	if !ok {
+		isAuthenticated = false
+	} else {
+		isAuthenticated = auth.IsAuthenticated()
+	}
+
 	return BaseTemplateParams{
-		NavPages:    d.navPages,
-		Breadcrumbs: breadcrumbs,
-		Path:        c.Path(),
-		MyNetworkID: d.wasp.MyNetworkID(),
-		Version:     wasp.Version,
+		IsAuthenticated: isAuthenticated,
+		NavPages:        d.navPages,
+		Breadcrumbs:     breadcrumbs,
+		Path:            c.Path(),
+		MyNetworkID:     d.wasp.MyNetworkID(),
+		Version:         wasp.Version,
 	}
 }
 
@@ -108,6 +125,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"decUint32":              decUint32,
 		"bytesToString":          bytesToString,
 		"keyToString":            keyToString,
+		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,
 		"replace":                strings.Replace,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },

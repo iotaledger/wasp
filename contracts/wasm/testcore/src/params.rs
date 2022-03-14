@@ -9,577 +9,574 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableCallOnChainParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableCallOnChainParams {
     pub fn hname_contract(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_CONTRACT))
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME_CONTRACT))
 	}
 
     pub fn hname_ep(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_EP))
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME_EP))
 	}
 
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableCallOnChainParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableCallOnChainParams {
     pub fn hname_contract(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_CONTRACT))
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME_CONTRACT))
 	}
 
     pub fn hname_ep(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_EP))
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME_EP))
 	}
 
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableCheckContextFromFullEPParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableCheckContextFromFullEPParams {
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn caller(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CALLER))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CALLER))
 	}
 
     pub fn chain_id(&self) -> ScImmutableChainID {
-		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CHAIN_OWNER_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
 	}
 
     pub fn contract_creator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_CREATOR))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableCheckContextFromFullEPParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableCheckContextFromFullEPParams {
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn caller(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CALLER))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CALLER))
 	}
 
     pub fn chain_id(&self) -> ScMutableChainID {
-		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CHAIN_OWNER_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
 	}
 
     pub fn contract_creator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_CREATOR))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableInitParams {
     pub fn fail(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_FAIL))
+		ScImmutableInt64::new(self.proxy.root(PARAM_FAIL))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableInitParams {
     pub fn fail(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_FAIL))
+		ScMutableInt64::new(self.proxy.root(PARAM_FAIL))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePassTypesFullParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePassTypesFullParams {
     pub fn address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn chain_id(&self) -> ScImmutableChainID {
-		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn contract_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CONTRACT_ID))
 	}
 
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
+		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 
     pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME))
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
     pub fn hname_zero(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_ZERO))
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME_ZERO))
 	}
 
     pub fn int64(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT64))
 	}
 
     pub fn int64_zero(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64_ZERO))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT64_ZERO))
 	}
 
     pub fn string(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+		ScImmutableString::new(self.proxy.root(PARAM_STRING))
 	}
 
     pub fn string_zero(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING_ZERO))
+		ScImmutableString::new(self.proxy.root(PARAM_STRING_ZERO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePassTypesFullParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutablePassTypesFullParams {
     pub fn address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn chain_id(&self) -> ScMutableChainID {
-		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn contract_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CONTRACT_ID))
 	}
 
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
+		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 
     pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME))
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
     pub fn hname_zero(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_ZERO))
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME_ZERO))
 	}
 
     pub fn int64(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT64))
 	}
 
     pub fn int64_zero(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64_ZERO))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT64_ZERO))
 	}
 
     pub fn string(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+		ScMutableString::new(self.proxy.root(PARAM_STRING))
 	}
 
     pub fn string_zero(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_STRING_ZERO))
+		ScMutableString::new(self.proxy.root(PARAM_STRING_ZERO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRunRecursionParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRunRecursionParams {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRunRecursionParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRunRecursionParams {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSendToAddressParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSendToAddressParams {
     pub fn address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSendToAddressParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSendToAddressParams {
     pub fn address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSetIntParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSetIntParams {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSetIntParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSetIntParams {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSpawnParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSpawnParams {
     pub fn prog_hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_PROG_HASH))
+		ScImmutableHash::new(self.proxy.root(PARAM_PROG_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSpawnParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSpawnParams {
     pub fn prog_hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_PROG_HASH))
+		ScMutableHash::new(self.proxy.root(PARAM_PROG_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTestEventLogGenericDataParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTestEventLogGenericDataParams {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
+		ScImmutableInt64::new(self.proxy.root(PARAM_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTestEventLogGenericDataParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTestEventLogGenericDataParams {
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
+		ScMutableInt64::new(self.proxy.root(PARAM_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableWithdrawToChainParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableWithdrawToChainParams {
     pub fn chain_id(&self) -> ScImmutableChainID {
-		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableWithdrawToChainParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableWithdrawToChainParams {
     pub fn chain_id(&self) -> ScMutableChainID {
-		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableCheckContextFromViewEPParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableCheckContextFromViewEPParams {
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn chain_id(&self) -> ScImmutableChainID {
-		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CHAIN_OWNER_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
 	}
 
     pub fn contract_creator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_CREATOR))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableCheckContextFromViewEPParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableCheckContextFromViewEPParams {
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn chain_id(&self) -> ScMutableChainID {
-		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CHAIN_OWNER_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
 	}
 
     pub fn contract_creator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_CREATOR))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableFibonacciParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFibonacciParams {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableFibonacciParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableFibonacciParams {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetIntParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetIntParams {
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetIntParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetIntParams {
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetStringValueParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetStringValueParams {
     pub fn var_name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_VAR_NAME))
+		ScImmutableString::new(self.proxy.root(PARAM_VAR_NAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetStringValueParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetStringValueParams {
     pub fn var_name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_VAR_NAME))
+		ScMutableString::new(self.proxy.root(PARAM_VAR_NAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePassTypesViewParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePassTypesViewParams {
     pub fn address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn chain_id(&self) -> ScImmutableChainID {
-		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn contract_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CONTRACT_ID))
 	}
 
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
+		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 
     pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME))
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
     pub fn hname_zero(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_ZERO))
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME_ZERO))
 	}
 
     pub fn int64(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT64))
 	}
 
     pub fn int64_zero(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64_ZERO))
+		ScImmutableInt64::new(self.proxy.root(PARAM_INT64_ZERO))
 	}
 
     pub fn string(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+		ScImmutableString::new(self.proxy.root(PARAM_STRING))
 	}
 
     pub fn string_zero(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING_ZERO))
+		ScImmutableString::new(self.proxy.root(PARAM_STRING_ZERO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePassTypesViewParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutablePassTypesViewParams {
     pub fn address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
     pub fn chain_id(&self) -> ScMutableChainID {
-		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
     pub fn contract_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CONTRACT_ID))
 	}
 
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
+		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 
     pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME))
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
     pub fn hname_zero(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_ZERO))
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME_ZERO))
 	}
 
     pub fn int64(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT64))
 	}
 
     pub fn int64_zero(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64_ZERO))
+		ScMutableInt64::new(self.proxy.root(PARAM_INT64_ZERO))
 	}
 
     pub fn string(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+		ScMutableString::new(self.proxy.root(PARAM_STRING))
 	}
 
     pub fn string_zero(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_STRING_ZERO))
+		ScMutableString::new(self.proxy.root(PARAM_STRING_ZERO))
 	}
 }

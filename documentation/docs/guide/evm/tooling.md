@@ -32,7 +32,7 @@ Re-using an existing Chain ID is not recommended and can be a security risk. For
 
 The Wasp CLI has some very basic functionalities to manage an EVM chain. Given the compatibility with existing tooling, only the basics are covered to get started with IOTA Smart Contracts and EVM. You can currently either run a JSON-RPC server, or deploy the EVM Chain itself on an IOTA Smart Contracts chain. To see the available options and configuration parameters simply run:
 
-```bash
+```shell
 wasp-cli chain evm
 ```
 
@@ -61,12 +61,15 @@ Metamask will ask to connect to Remix and once connected the `Environment` will 
 [![Environment will be set to Injected Web3](https://user-images.githubusercontent.com/7383572/146169653-fd692eab-6e74-4b17-8833-bd87dafc0ce2.png)](https://user-images.githubusercontent.com/7383572/146169653-fd692eab-6e74-4b17-8833-bd87dafc0ce2.png)
 
 
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/yOyl30LQfac" title="Deploy Solidity Contract via Remix + Metamask" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Hardhat
 
 [Hardhat](https://hardhat.org/) is a commandline toolbox that allows you to deploy, test, verify, and interact with Solidity smart contracts on an EVM chain. EVM chains running on IOTA Smart Contracts are compatible with Hardhat; simply make sure you add the correct network parameters to your `hardhat.config.js`, for example:
 
-```javascript=
+```javascript
 networks: {
     local: {
         url: 'http://localhost:8545',
@@ -82,6 +85,10 @@ networks: {
 Currently, there is no validation service available for EVM/Solidity smart contracts on IOTA Smart Contracts, which is often offered through block explorer API's.
 
 :::
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/zfc4ENTQkDE" title="Deploy Solidity Contracts with Hardhat" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 ## Ethers.js/Web3.js

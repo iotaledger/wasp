@@ -8,54 +8,73 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+	names: [
+		sc.FuncArrayAppend,
+		sc.FuncArrayClear,
+		sc.FuncArraySet,
+		sc.FuncMapClear,
+		sc.FuncMapSet,
+		sc.FuncParamTypes,
+		sc.FuncRandom,
+		sc.FuncTriggerEvent,
+		sc.ViewArrayLength,
+		sc.ViewArrayValue,
+		sc.ViewBlockRecord,
+		sc.ViewBlockRecords,
+		sc.ViewGetRandom,
+		sc.ViewIotaBalance,
+		sc.ViewMapValue,
+	],
+	funcs: [
+		funcArrayAppendThunk,
+		funcArrayClearThunk,
+		funcArraySetThunk,
+		funcMapClearThunk,
+		funcMapSetThunk,
+		funcParamTypesThunk,
+		funcRandomThunk,
+		funcTriggerEventThunk,
+	],
+	views: [
+		viewArrayLengthThunk,
+		viewArrayValueThunk,
+		viewBlockRecordThunk,
+		viewBlockRecordsThunk,
+		viewGetRandomThunk,
+		viewIotaBalanceThunk,
+		viewMapValueThunk,
+	],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncArrayClear,   funcArrayClearThunk);
-    exports.addFunc(sc.FuncArrayCreate,  funcArrayCreateThunk);
-    exports.addFunc(sc.FuncArraySet,     funcArraySetThunk);
-    exports.addFunc(sc.FuncParamTypes,   funcParamTypesThunk);
-    exports.addFunc(sc.FuncRandom,       funcRandomThunk);
-    exports.addView(sc.ViewArrayLength,  viewArrayLengthThunk);
-    exports.addView(sc.ViewArrayValue,   viewArrayValueThunk);
-    exports.addView(sc.ViewBlockRecord,  viewBlockRecordThunk);
-    exports.addView(sc.ViewBlockRecords, viewBlockRecordsThunk);
-    exports.addView(sc.ViewGetRandom,    viewGetRandomThunk);
-    exports.addView(sc.ViewIotaBalance,  viewIotaBalanceThunk);
+	wasmlib.ScExports.export(exportMap);
+}
 
-    for (let i = 0; i < sc.keyMap.length; i++) {
-        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
-    }
+function funcArrayAppendThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcArrayAppend");
+	let f = new sc.ArrayAppendContext();
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	sc.funcArrayAppend(ctx, f);
+	ctx.log("testwasmlib.funcArrayAppend ok");
 }
 
 function funcArrayClearThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcArrayClear");
 	let f = new sc.ArrayClearContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	sc.funcArrayClear(ctx, f);
 	ctx.log("testwasmlib.funcArrayClear ok");
 }
 
-function funcArrayCreateThunk(ctx: wasmlib.ScFuncContext): void {
-	ctx.log("testwasmlib.funcArrayCreate");
-	let f = new sc.ArrayCreateContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
-	ctx.require(f.params.name().exists(), "missing mandatory name");
-	sc.funcArrayCreate(ctx, f);
-	ctx.log("testwasmlib.funcArrayCreate ok");
-}
-
 function funcArraySetThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcArraySet");
 	let f = new sc.ArraySetContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	ctx.require(f.params.index().exists(), "missing mandatory index");
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.value().exists(), "missing mandatory value");
@@ -63,11 +82,27 @@ function funcArraySetThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcArraySet ok");
 }
 
+function funcMapClearThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcMapClear");
+	let f = new sc.MapClearContext();
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.funcMapClear(ctx, f);
+	ctx.log("testwasmlib.funcMapClear ok");
+}
+
+function funcMapSetThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcMapSet");
+	let f = new sc.MapSetContext();
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	sc.funcMapSet(ctx, f);
+	ctx.log("testwasmlib.funcMapSet ok");
+}
+
 function funcParamTypesThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcParamTypes");
 	let f = new sc.ParamTypesContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcParamTypes(ctx, f);
 	ctx.log("testwasmlib.funcParamTypes ok");
 }
@@ -75,71 +110,93 @@ function funcParamTypesThunk(ctx: wasmlib.ScFuncContext): void {
 function funcRandomThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcRandom");
 	let f = new sc.RandomContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcRandom(ctx, f);
 	ctx.log("testwasmlib.funcRandom ok");
+}
+
+function funcTriggerEventThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcTriggerEvent");
+	let f = new sc.TriggerEventContext();
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.funcTriggerEvent(ctx, f);
+	ctx.log("testwasmlib.funcTriggerEvent ok");
 }
 
 function viewArrayLengthThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewArrayLength");
 	let f = new sc.ArrayLengthContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableArrayLengthResults(results.asProxy());
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	sc.viewArrayLength(ctx, f);
+	ctx.results(results);
 	ctx.log("testwasmlib.viewArrayLength ok");
 }
 
 function viewArrayValueThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewArrayValue");
 	let f = new sc.ArrayValueContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableArrayValueResults(results.asProxy());
 	ctx.require(f.params.index().exists(), "missing mandatory index");
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	sc.viewArrayValue(ctx, f);
+	ctx.results(results);
 	ctx.log("testwasmlib.viewArrayValue ok");
 }
 
 function viewBlockRecordThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewBlockRecord");
 	let f = new sc.BlockRecordContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableBlockRecordResults(results.asProxy());
 	ctx.require(f.params.blockIndex().exists(), "missing mandatory blockIndex");
 	ctx.require(f.params.recordIndex().exists(), "missing mandatory recordIndex");
 	sc.viewBlockRecord(ctx, f);
+	ctx.results(results);
 	ctx.log("testwasmlib.viewBlockRecord ok");
 }
 
 function viewBlockRecordsThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewBlockRecords");
 	let f = new sc.BlockRecordsContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableBlockRecordsResults(results.asProxy());
 	ctx.require(f.params.blockIndex().exists(), "missing mandatory blockIndex");
 	sc.viewBlockRecords(ctx, f);
+	ctx.results(results);
 	ctx.log("testwasmlib.viewBlockRecords ok");
 }
 
 function viewGetRandomThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewGetRandom");
 	let f = new sc.GetRandomContext();
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableGetRandomResults(results.asProxy());
 	sc.viewGetRandom(ctx, f);
+	ctx.results(results);
 	ctx.log("testwasmlib.viewGetRandom ok");
 }
 
 function viewIotaBalanceThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewIotaBalance");
 	let f = new sc.IotaBalanceContext();
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableIotaBalanceResults(results.asProxy());
 	sc.viewIotaBalance(ctx, f);
+	ctx.results(results);
 	ctx.log("testwasmlib.viewIotaBalance ok");
+}
+
+function viewMapValueThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewMapValue");
+	let f = new sc.MapValueContext();
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableMapValueResults(results.asProxy());
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.viewMapValue(ctx, f);
+	ctx.results(results);
+	ctx.log("testwasmlib.viewMapValue ok");
 }

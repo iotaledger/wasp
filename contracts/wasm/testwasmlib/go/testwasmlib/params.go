@@ -7,328 +7,434 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ImmutableArrayClearParams struct {
-	id int32
+type ImmutableArrayAppendParams struct {
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayClearParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamName])
+func (s ImmutableArrayAppendParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+func (s ImmutableArrayAppendParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableArrayAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayAppendParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+func (s MutableArrayAppendParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
+type ImmutableArrayClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayClearParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
 type MutableArrayClearParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayClearParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
-}
-
-type ImmutableArrayCreateParams struct {
-	id int32
-}
-
-func (s ImmutableArrayCreateParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamName])
-}
-
-type MutableArrayCreateParams struct {
-	id int32
-}
-
-func (s MutableArrayCreateParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
+func (s MutableArrayClearParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
 type ImmutableArraySetParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArraySetParams) Index() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamIndex])
+func (s ImmutableArraySetParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s ImmutableArraySetParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamName])
+func (s ImmutableArraySetParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
-func (s ImmutableArraySetParams) Value() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamValue])
+func (s ImmutableArraySetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
 }
 
 type MutableArraySetParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableArraySetParams) Index() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamIndex])
+func (s MutableArraySetParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s MutableArraySetParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
+func (s MutableArraySetParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
-func (s MutableArraySetParams) Value() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamValue])
+func (s MutableArraySetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
+type ImmutableMapClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapClearParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableMapClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapClearParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableMapSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapSetParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+func (s ImmutableMapSetParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+func (s ImmutableMapSetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableMapSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapSetParams) Key() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
+}
+
+func (s MutableMapSetParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+func (s MutableMapSetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
 type MapStringToImmutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapStringToImmutableBytes) GetBytes(key string) wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToImmutableBytes) GetBytes(key string) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableParamTypesParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableParamTypesParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, idxMap[IdxParamAddress])
+func (s ImmutableParamTypesParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s ImmutableParamTypesParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAgentID])
+func (s ImmutableParamTypesParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s ImmutableParamTypesParams) Bool() wasmlib.ScImmutableBool {
-	return wasmlib.NewScImmutableBool(s.id, idxMap[IdxParamBool])
+func (s ImmutableParamTypesParams) Bool() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamBool))
 }
 
-func (s ImmutableParamTypesParams) Bytes() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, idxMap[IdxParamBytes])
+func (s ImmutableParamTypesParams) Bytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamBytes))
 }
 
-func (s ImmutableParamTypesParams) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, idxMap[IdxParamChainID])
+func (s ImmutableParamTypesParams) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s ImmutableParamTypesParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+func (s ImmutableParamTypesParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
-func (s ImmutableParamTypesParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamHash])
+func (s ImmutableParamTypesParams) Hash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
 
-func (s ImmutableParamTypesParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, idxMap[IdxParamHname])
+func (s ImmutableParamTypesParams) Hname() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
 }
 
-func (s ImmutableParamTypesParams) Int16() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxParamInt16])
+func (s ImmutableParamTypesParams) Int16() wasmtypes.ScImmutableInt16 {
+	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ParamInt16))
 }
 
-func (s ImmutableParamTypesParams) Int32() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamInt32])
+func (s ImmutableParamTypesParams) Int32() wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ParamInt32))
 }
 
-func (s ImmutableParamTypesParams) Int64() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamInt64])
+func (s ImmutableParamTypesParams) Int64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamInt64))
 }
 
-func (s ImmutableParamTypesParams) Int8() wasmlib.ScImmutableInt8 {
-	return wasmlib.NewScImmutableInt8(s.id, idxMap[IdxParamInt8])
+func (s ImmutableParamTypesParams) Int8() wasmtypes.ScImmutableInt8 {
+	return wasmtypes.NewScImmutableInt8(s.proxy.Root(ParamInt8))
 }
 
 func (s ImmutableParamTypesParams) Param() MapStringToImmutableBytes {
-	return MapStringToImmutableBytes{objID: s.id}
+	//nolint:gosimple
+	return MapStringToImmutableBytes{proxy: s.proxy}
 }
 
-func (s ImmutableParamTypesParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, idxMap[IdxParamRequestID])
+func (s ImmutableParamTypesParams) RequestID() wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
-func (s ImmutableParamTypesParams) String() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamString])
+func (s ImmutableParamTypesParams) String() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamString))
 }
 
-func (s ImmutableParamTypesParams) Uint16() wasmlib.ScImmutableUint16 {
-	return wasmlib.NewScImmutableUint16(s.id, idxMap[IdxParamUint16])
+func (s ImmutableParamTypesParams) Uint16() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ParamUint16))
 }
 
-func (s ImmutableParamTypesParams) Uint32() wasmlib.ScImmutableUint32 {
-	return wasmlib.NewScImmutableUint32(s.id, idxMap[IdxParamUint32])
+func (s ImmutableParamTypesParams) Uint32() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamUint32))
 }
 
-func (s ImmutableParamTypesParams) Uint64() wasmlib.ScImmutableUint64 {
-	return wasmlib.NewScImmutableUint64(s.id, idxMap[IdxParamUint64])
+func (s ImmutableParamTypesParams) Uint64() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamUint64))
 }
 
-func (s ImmutableParamTypesParams) Uint8() wasmlib.ScImmutableUint8 {
-	return wasmlib.NewScImmutableUint8(s.id, idxMap[IdxParamUint8])
+func (s ImmutableParamTypesParams) Uint8() wasmtypes.ScImmutableUint8 {
+	return wasmtypes.NewScImmutableUint8(s.proxy.Root(ParamUint8))
 }
 
 type MapStringToMutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableBytes) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapStringToMutableBytes) GetBytes(key string) wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToMutableBytes) GetBytes(key string) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableParamTypesParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableParamTypesParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, idxMap[IdxParamAddress])
+func (s MutableParamTypesParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s MutableParamTypesParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAgentID])
+func (s MutableParamTypesParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
-func (s MutableParamTypesParams) Bool() wasmlib.ScMutableBool {
-	return wasmlib.NewScMutableBool(s.id, idxMap[IdxParamBool])
+func (s MutableParamTypesParams) Bool() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamBool))
 }
 
-func (s MutableParamTypesParams) Bytes() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, idxMap[IdxParamBytes])
+func (s MutableParamTypesParams) Bytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamBytes))
 }
 
-func (s MutableParamTypesParams) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, idxMap[IdxParamChainID])
+func (s MutableParamTypesParams) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s MutableParamTypesParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+func (s MutableParamTypesParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }
 
-func (s MutableParamTypesParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamHash])
+func (s MutableParamTypesParams) Hash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }
 
-func (s MutableParamTypesParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, idxMap[IdxParamHname])
+func (s MutableParamTypesParams) Hname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
 }
 
-func (s MutableParamTypesParams) Int16() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxParamInt16])
+func (s MutableParamTypesParams) Int16() wasmtypes.ScMutableInt16 {
+	return wasmtypes.NewScMutableInt16(s.proxy.Root(ParamInt16))
 }
 
-func (s MutableParamTypesParams) Int32() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamInt32])
+func (s MutableParamTypesParams) Int32() wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(s.proxy.Root(ParamInt32))
 }
 
-func (s MutableParamTypesParams) Int64() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamInt64])
+func (s MutableParamTypesParams) Int64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamInt64))
 }
 
-func (s MutableParamTypesParams) Int8() wasmlib.ScMutableInt8 {
-	return wasmlib.NewScMutableInt8(s.id, idxMap[IdxParamInt8])
+func (s MutableParamTypesParams) Int8() wasmtypes.ScMutableInt8 {
+	return wasmtypes.NewScMutableInt8(s.proxy.Root(ParamInt8))
 }
 
 func (s MutableParamTypesParams) Param() MapStringToMutableBytes {
-	return MapStringToMutableBytes{objID: s.id}
+	//nolint:gosimple
+	return MapStringToMutableBytes{proxy: s.proxy}
 }
 
-func (s MutableParamTypesParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, idxMap[IdxParamRequestID])
+func (s MutableParamTypesParams) RequestID() wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
-func (s MutableParamTypesParams) String() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamString])
+func (s MutableParamTypesParams) String() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamString))
 }
 
-func (s MutableParamTypesParams) Uint16() wasmlib.ScMutableUint16 {
-	return wasmlib.NewScMutableUint16(s.id, idxMap[IdxParamUint16])
+func (s MutableParamTypesParams) Uint16() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ParamUint16))
 }
 
-func (s MutableParamTypesParams) Uint32() wasmlib.ScMutableUint32 {
-	return wasmlib.NewScMutableUint32(s.id, idxMap[IdxParamUint32])
+func (s MutableParamTypesParams) Uint32() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamUint32))
 }
 
-func (s MutableParamTypesParams) Uint64() wasmlib.ScMutableUint64 {
-	return wasmlib.NewScMutableUint64(s.id, idxMap[IdxParamUint64])
+func (s MutableParamTypesParams) Uint64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamUint64))
 }
 
-func (s MutableParamTypesParams) Uint8() wasmlib.ScMutableUint8 {
-	return wasmlib.NewScMutableUint8(s.id, idxMap[IdxParamUint8])
+func (s MutableParamTypesParams) Uint8() wasmtypes.ScMutableUint8 {
+	return wasmtypes.NewScMutableUint8(s.proxy.Root(ParamUint8))
+}
+
+type ImmutableTriggerEventParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableTriggerEventParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
+}
+
+func (s ImmutableTriggerEventParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableTriggerEventParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableTriggerEventParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
+}
+
+func (s MutableTriggerEventParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
 type ImmutableArrayLengthParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayLengthParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamName])
+func (s ImmutableArrayLengthParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
 type MutableArrayLengthParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayLengthParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
+func (s MutableArrayLengthParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
 type ImmutableArrayValueParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayValueParams) Index() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamIndex])
+func (s ImmutableArrayValueParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s ImmutableArrayValueParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamName])
+func (s ImmutableArrayValueParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
 type MutableArrayValueParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayValueParams) Index() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamIndex])
+func (s MutableArrayValueParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s MutableArrayValueParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
+func (s MutableArrayValueParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
 type ImmutableBlockRecordParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBlockRecordParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamBlockIndex])
+func (s ImmutableBlockRecordParams) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
-func (s ImmutableBlockRecordParams) RecordIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamRecordIndex])
+func (s ImmutableBlockRecordParams) RecordIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamRecordIndex))
 }
 
 type MutableBlockRecordParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBlockRecordParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamBlockIndex])
+func (s MutableBlockRecordParams) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
-func (s MutableBlockRecordParams) RecordIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamRecordIndex])
+func (s MutableBlockRecordParams) RecordIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamRecordIndex))
 }
 
 type ImmutableBlockRecordsParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBlockRecordsParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamBlockIndex])
+func (s ImmutableBlockRecordsParams) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type MutableBlockRecordsParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBlockRecordsParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamBlockIndex])
+func (s MutableBlockRecordsParams) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
+}
+
+type ImmutableMapValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapValueParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+func (s ImmutableMapValueParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableMapValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapValueParams) Key() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
+}
+
+func (s MutableMapValueParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }

@@ -54,6 +54,7 @@ func TestBasicAccountsNLow(t *testing.T) {
 }
 
 func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
+	chainNodeCount := uint64(len(e.chain.AllPeers))
 	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
@@ -92,8 +93,8 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2,
-		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2), "chain after deployment") {
+	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+chainNodeCount,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+chainNodeCount), "chain after deployment") {
 		e.t.Fail()
 	}
 
@@ -119,8 +120,8 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		e.t.Fail()
 	}
 
-	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2,
-		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2), "chain after") {
+	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2+chainNodeCount,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2+chainNodeCount), "chain after") {
 		e.t.Fail()
 	}
 	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
@@ -154,6 +155,7 @@ func TestBasic2Accounts(t *testing.T) {
 		root.ParamName:        incCounterSCName,
 	})
 	require.NoError(t, err)
+	chainNodeCount := uint64(len(chain.AllPeers))
 
 	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
@@ -181,16 +183,16 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, 42, counterValue)
 	}
 
-	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2,
-		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2), "chain after deployment") {
+	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+chainNodeCount,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+chainNodeCount), "chain after deployment") {
 		t.Fail()
 	}
 
 	originatorSigScheme := chain.OriginatorKeyPair()
 	originatorAddress := chain.OriginatorAddress()
 
-	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2,
-		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2),
+	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2-chainNodeCount,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2-chainNodeCount),
 		"originator after deployment") {
 		t.Fail()
 	}
@@ -217,16 +219,16 @@ func TestBasic2Accounts(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2,
-		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2),
+	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2-chainNodeCount,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2-chainNodeCount),
 		"originator after") {
 		t.Fail()
 	}
 	if !e.clu.VerifyAddressBalances(myWalletAddr, solo.Saldo-transferIotas, colored.NewBalancesForIotas(solo.Saldo-transferIotas), "myWalletAddr after") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas,
-		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas),
+	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas+chainNodeCount,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas+chainNodeCount),
 		"chain after") {
 		t.Fail()
 	}
@@ -255,8 +257,8 @@ func TestBasic2Accounts(t *testing.T) {
 	actual = chEnv.getBalanceOnChain(agentID, colored.IOTA)
 	require.EqualValues(t, 0, actual)
 
-	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3,
-		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3),
+	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3-chainNodeCount,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3-chainNodeCount),
 		"originator after withdraw: "+originatorAddress.String()) {
 		t.Fail()
 	}

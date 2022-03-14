@@ -10,7 +10,8 @@
 package fairroulette
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 // Define some default configuration parameters.
@@ -39,7 +40,8 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Get the array of current bets from state storage.
 	bets := f.State.Bets()
 
-	for i := int32(0); i < bets.Length(); i++ {
+	nrOfBets := bets.Length()
+	for i := uint32(0); i < nrOfBets; i++ {
 		bet := bets.GetBet(i).Value()
 
 		if bet.Better.Address() == ctx.Caller().Address() {
@@ -60,7 +62,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	incoming := ctx.Incoming()
 
 	// Retrieve the amount of plain iota tokens that are part of the incoming balance.
-	amount := incoming.Balance(wasmlib.IOTA)
+	amount := incoming.Balance(wasmtypes.IOTA)
 
 	// Require that there are actually some plain iotas there
 	ctx.Require(amount > 0, "empty bet")
@@ -74,17 +76,14 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 		Number: number,
 	}
 
-	// Determine what the next bet number is by retrieving the length of the bets array.
-	betNr := bets.Length()
-
 	// Append the bet data to the bets array. The bet array will automatically take care
 	// of serializing the bet struct into a bytes representation.
-	bets.GetBet(betNr).SetValue(bet)
+	bets.AppendBet().SetValue(bet)
 
 	f.Events.Bet(bet.Better.Address(), bet.Amount, bet.Number)
 
 	// Was this the first bet of this round?
-	if betNr == 0 {
+	if nrOfBets == 0 {
 		// Yes it was, query the state for the length of the playing period in seconds by
 		// retrieving the playPeriod value from state storage
 		playPeriod := f.State.PlayPeriod().Value()
@@ -100,7 +99,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 			f.State.RoundStatus().SetValue(1)
 
 			// timestamp is nanotime, divide by NanoTimeDivider to get seconds => common unix timestamp
-			timestamp := int32(ctx.Timestamp() / NanoTimeDivider)
+			timestamp := uint32(ctx.Timestamp() / NanoTimeDivider)
 			f.State.RoundStartedAt().SetValue(timestamp)
 
 			f.Events.Start()
@@ -115,7 +114,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 			// amount of seconds. This will lock in the playing period, during which more bets can
 			// be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather
 			// all bets up to that moment as the ones to consider for determining the winner.
-			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).TransferIotas(1).Post()
+			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).Post()
 		}
 	}
 }
@@ -130,7 +129,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// generator will use the next 8 bytes from the hash as its random Int64 number and once
 	// it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
 	// Here we determine the winning number for this round in the range of 1 thru MaxNumber.
-	winningNumber := ctx.Random(MaxNumber-1) + 1
+	winningNumber := uint16(ctx.Random(MaxNumber-1) + 1)
 
 	// Save the last winning number in state storage under 'lastWinningNumber' so that there
 	// is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -143,18 +142,18 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// Keep track of the total bet amount, the total win amount, and all the winners.
 	// Note how we decided to keep the winners in a local vector instead of creating
 	// yet another array in state storage or having to go through lockedBets again.
-	totalBetAmount := int64(0)
-	totalWinAmount := int64(0)
+	totalBetAmount := uint64(0)
+	totalWinAmount := uint64(0)
 	winners := make([]*Bet, 0)
 
 	// Get the 'bets' array in state storage.
 	bets := f.State.Bets()
 
 	// Determine the amount of bets in the 'bets' array.
-	nrBets := bets.Length()
+	nrOfBets := bets.Length()
 
 	// Loop through all indexes of the 'bets' array.
-	for i := int32(0); i < nrBets; i++ {
+	for i := uint32(0); i < nrOfBets; i++ {
 		// Retrieve the bet stored at the next index
 		bet := bets.GetBet(i).Value()
 
@@ -186,7 +185,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// a small percentage that would go to the owner of the smart contract as hosting payment.
 
 	// Keep track of the total payout so we can calculate the remainder after truncation.
-	totalPayout := int64(0)
+	totalPayout := uint64(0)
 
 	// Loop through all winners.
 	size := len(winners)
@@ -213,7 +212,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// of the winner. The transfer_to_address() method receives the address value and
 			// the proxy to the new transfers map on the host, and will call the corresponding
 			// host sandbox function with these values.
-			ctx.TransferToAddress(bet.Better.Address(), transfers)
+			ctx.Send(bet.Better.Address(), transfers)
 		}
 
 		// Announce who got sent what as event.
@@ -228,7 +227,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		transfers := wasmlib.NewScTransferIotas(remainder)
 
 		// Send the remainder to the contract creator.
-		ctx.TransferToAddress(ctx.ContractCreator().Address(), transfers)
+		ctx.Send(ctx.ContractCreator().Address(), transfers)
 	}
 
 	// Set round status to 0, send out event to notify that the round has ended

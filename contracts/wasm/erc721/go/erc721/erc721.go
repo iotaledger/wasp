@@ -3,7 +3,10 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 // Follows ERC-721 standard as closely as possible
 // https//eips.Ethereum.Org/EIPS/eip-721
@@ -18,12 +21,12 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 // set the required base URI, to which the base58 encoded token ID will be concatenated
 const baseURI = "my/special/base/uri/"
 
-var zero = wasmlib.ScAgentID{}
+var zero = wasmtypes.ScAgentID{}
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
 // checks if caller is owner, or one of its delegated operators
-func canOperate(state MutableErc721State, caller, owner wasmlib.ScAgentID) bool {
+func canOperate(state MutableErc721State, caller, owner wasmtypes.ScAgentID) bool {
 	if caller == owner {
 		return true
 	}
@@ -33,7 +36,7 @@ func canOperate(state MutableErc721State, caller, owner wasmlib.ScAgentID) bool 
 }
 
 // checks if caller is owner, or one of its delegated operators, or approved account for tokenID
-func canTransfer(state MutableErc721State, caller, owner wasmlib.ScAgentID, tokenID wasmlib.ScHash) bool {
+func canTransfer(state MutableErc721State, caller, owner wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) bool {
 	if canOperate(state, caller, owner) {
 		return true
 	}
@@ -43,7 +46,7 @@ func canTransfer(state MutableErc721State, caller, owner wasmlib.ScAgentID, toke
 }
 
 // common code for safeTransferFrom and transferFrom
-func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasmlib.ScAgentID, tokenID wasmlib.ScHash) {
+func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) {
 	tokenOwner := state.Owners().GetAgentID(tokenID)
 	ctx.Require(tokenOwner.Exists(), "tokenID does not exist")
 
@@ -140,6 +143,12 @@ func funcMint(ctx wasmlib.ScFuncContext, f *MintContext) {
 	tokenID := f.Params.TokenID().Value()
 	tokenOwner := f.State.Owners().GetAgentID(tokenID)
 	ctx.Require(!tokenOwner.Exists(), "tokenID already minted")
+
+	// save optional token uri
+	tokenURI := f.Params.TokenURI()
+	if tokenURI.Exists() {
+		f.State.TokenURIs().GetString(tokenID).SetValue(tokenURI.Value())
+	}
 
 	owner := ctx.Caller()
 	tokenOwner.SetValue(owner)
@@ -239,6 +248,11 @@ func viewSymbol(ctx wasmlib.ScViewContext, f *SymbolContext) {
 func viewTokenURI(ctx wasmlib.ScViewContext, f *TokenURIContext) {
 	tokenID := f.Params.TokenID()
 	if tokenID.Exists() {
-		f.Results.TokenURI().SetValue(baseURI + tokenID.String())
+		tokenURI := baseURI + tokenID.String()
+		savedURI := f.State.TokenURIs().GetString(tokenID.Value())
+		if savedURI.Exists() {
+			tokenURI = savedURI.Value()
+		}
+		f.Results.TokenURI().SetValue(tokenURI)
 	}
 }

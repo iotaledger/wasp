@@ -7,20 +7,100 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetCounterResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetCounterResults) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultCounter])
+func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetCounterResults) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultCounter])
+func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultCounter))
+}
+
+type ImmutableGetVliResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableGetVliResults) Buf() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBuf))
+}
+
+func (s ImmutableGetVliResults) Ni64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultNi64))
+}
+
+func (s ImmutableGetVliResults) Str() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultStr))
+}
+
+func (s ImmutableGetVliResults) Xi64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultXi64))
+}
+
+type MutableGetVliResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetVliResults) Buf() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBuf))
+}
+
+func (s MutableGetVliResults) Ni64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultNi64))
+}
+
+func (s MutableGetVliResults) Str() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultStr))
+}
+
+func (s MutableGetVliResults) Xi64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultXi64))
+}
+
+type ImmutableGetVluResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableGetVluResults) Buf() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBuf))
+}
+
+func (s ImmutableGetVluResults) Nu64() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultNu64))
+}
+
+func (s ImmutableGetVluResults) Str() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultStr))
+}
+
+func (s ImmutableGetVluResults) Xu64() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultXu64))
+}
+
+type MutableGetVluResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetVluResults) Buf() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBuf))
+}
+
+func (s MutableGetVluResults) Nu64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultNu64))
+}
+
+func (s MutableGetVluResults) Str() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultStr))
+}
+
+func (s MutableGetVluResults) Xu64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultXu64))
 }

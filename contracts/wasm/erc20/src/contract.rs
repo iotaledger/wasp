@@ -7,13 +7,8 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use wasmlib::*;
-
-use crate::consts::*;
-use crate::params::*;
-use crate::results::*;
+use crate::*;
 
 pub struct ApproveCall {
 	pub func: ScFunc,
@@ -56,68 +51,70 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn approve(_ctx: & dyn ScFuncCallContext) -> ApproveCall {
+    pub fn approve(_ctx: &dyn ScFuncCallContext) -> ApproveCall {
         let mut f = ApproveCall {
             func: ScFunc::new(HSC_NAME, HFUNC_APPROVE),
-            params: MutableApproveParams { id: 0 },
+            params: MutableApproveParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn init(_ctx: & dyn ScFuncCallContext) -> InitCall {
+    pub fn init(_ctx: &dyn ScFuncCallContext) -> InitCall {
         let mut f = InitCall {
             func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
-            params: MutableInitParams { id: 0 },
+            params: MutableInitParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScInitFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn transfer(_ctx: & dyn ScFuncCallContext) -> TransferCall {
+    pub fn transfer(_ctx: &dyn ScFuncCallContext) -> TransferCall {
         let mut f = TransferCall {
             func: ScFunc::new(HSC_NAME, HFUNC_TRANSFER),
-            params: MutableTransferParams { id: 0 },
+            params: MutableTransferParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn transfer_from(_ctx: & dyn ScFuncCallContext) -> TransferFromCall {
+    pub fn transfer_from(_ctx: &dyn ScFuncCallContext) -> TransferFromCall {
         let mut f = TransferFromCall {
             func: ScFunc::new(HSC_NAME, HFUNC_TRANSFER_FROM),
-            params: MutableTransferFromParams { id: 0 },
+            params: MutableTransferFromParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn allowance(_ctx: & dyn ScViewCallContext) -> AllowanceCall {
+    pub fn allowance(_ctx: &dyn ScViewCallContext) -> AllowanceCall {
         let mut f = AllowanceCall {
             func: ScView::new(HSC_NAME, HVIEW_ALLOWANCE),
-            params: MutableAllowanceParams { id: 0 },
-            results: ImmutableAllowanceResults { id: 0 },
+            params: MutableAllowanceParams { proxy: Proxy::nil() },
+            results: ImmutableAllowanceResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn balance_of(_ctx: & dyn ScViewCallContext) -> BalanceOfCall {
+    pub fn balance_of(_ctx: &dyn ScViewCallContext) -> BalanceOfCall {
         let mut f = BalanceOfCall {
             func: ScView::new(HSC_NAME, HVIEW_BALANCE_OF),
-            params: MutableBalanceOfParams { id: 0 },
-            results: ImmutableBalanceOfResults { id: 0 },
+            params: MutableBalanceOfParams { proxy: Proxy::nil() },
+            results: ImmutableBalanceOfResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn total_supply(_ctx: & dyn ScViewCallContext) -> TotalSupplyCall {
+    pub fn total_supply(_ctx: &dyn ScViewCallContext) -> TotalSupplyCall {
         let mut f = TotalSupplyCall {
             func: ScView::new(HSC_NAME, HVIEW_TOTAL_SUPPLY),
-            results: ImmutableTotalSupplyResults { id: 0 },
+            results: ImmutableTotalSupplyResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

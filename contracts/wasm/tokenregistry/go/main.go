@@ -5,20 +5,28 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//go:build wasm
 // +build wasm
 
 package main
 
-import "github.com/iotaledger/wasp/packages/vm/wasmclient"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost"
 
 import "github.com/iotaledger/wasp/contracts/wasm/tokenregistry/go/tokenregistry"
 
 func main() {
 }
 
+func init() {
+	wasmvmhost.ConnectWasmHost()
+}
+
+//export on_call
+func onCall(index int32) {
+	tokenregistry.OnLoad(index)
+}
+
 //export on_load
 func onLoad() {
-	h := &wasmclient.WasmVMHost{}
-	h.ConnectWasmHost()
-	tokenregistry.OnLoad()
+	tokenregistry.OnLoad(-1)
 }

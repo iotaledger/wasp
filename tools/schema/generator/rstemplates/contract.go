@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package rstemplates
 
 var contractRs = map[string]string{
@@ -5,10 +8,8 @@ var contractRs = map[string]string{
 	"contract.rs": `
 #![allow(dead_code)]
 
-use std::ptr;
-
-$#if core useCrate useWasmLib
-$#if core useCoreContract contractUses
+$#if core useCoreContract useWasmLib
+use crate::*;
 $#each func FuncNameCall
 
 pub struct ScFuncs {
@@ -18,13 +19,6 @@ impl ScFuncs {
 $#set separator $false
 $#each func FuncNameForCall
 }
-`,
-	// *******************************
-	"contractUses": `
-
-use crate::consts::*;
-$#if params useParams
-$#if results useResults
 `,
 	// *******************************
 	"FuncNameCall": `
@@ -49,11 +43,7 @@ $#if result ImmutableFuncNameResults
 $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
-    pub fn $func_name(_ctx: & dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
-$#set paramsID ptr::null_mut()
-$#set resultsID ptr::null_mut()
-$#if param setParamsID
-$#if result setResultsID
+    pub fn $func_name(_ctx: &dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
     }
 `,
@@ -64,24 +54,25 @@ $#if ptrs setPtrs noPtrs
 $#if param FuncNameParamsInit
 $#if result FuncNameResultsInit
         };
-        f.func.set_ptrs($paramsID, $resultsID);
+$#if param FuncNameParamsLink
+$#if result FuncNameResultsLink
         f
 `,
 	// *******************************
 	"FuncNameParamsInit": `
-            params: Mutable$FuncName$+Params { id: 0 },
+            params: Mutable$FuncName$+Params { proxy: Proxy::nil() },
 `,
 	// *******************************
 	"FuncNameResultsInit": `
-            results: Immutable$FuncName$+Results { id: 0 },
+            results: Immutable$FuncName$+Results { proxy: Proxy::nil() },
 `,
 	// *******************************
-	"setParamsID": `
-$#set paramsID &mut f.params.id
+	"FuncNameParamsLink": `
+        Sc$initFunc$Kind::link_params(&mut f.params.proxy, &f.func);
 `,
 	// *******************************
-	"setResultsID": `
-$#set resultsID &mut f.results.id
+	"FuncNameResultsLink": `
+        Sc$initFunc$Kind::link_results(&mut f.results.proxy, &f.func);
 `,
 	// *******************************
 	"noPtrs": `

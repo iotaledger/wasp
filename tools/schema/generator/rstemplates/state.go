@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package rstemplates
 
 var stateRs = map[string]string{
@@ -7,12 +10,8 @@ var stateRs = map[string]string{
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
-$#if structs useStructs
-$#if typedefs useTypeDefs
 $#set Kind STATE_
 $#set mut Immutable
 $#emit stateProxyStruct
@@ -24,9 +23,9 @@ $#emit stateProxyStruct
 $#set TypeName $mut$Package$+State
 $#each state proxyContainers
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct $TypeName {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 $#if state stateProxyImpl
 `,
@@ -35,7 +34,15 @@ $#if state stateProxyImpl
 
 impl $TypeName {
 $#set separator $false
+$#if mut stateProxyImmutableFunc
 $#each state proxyMethods
 }
+`,
+	// *******************************
+	"stateProxyImmutableFunc": `
+$#set separator $true
+    pub fn as_immutable(&self) -> Immutable$Package$+State {
+		Immutable$Package$+State { proxy: self.proxy.root("") }
+	}
 `,
 }

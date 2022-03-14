@@ -15,8 +15,6 @@ pub const HSC_NAME       : ScHname = ScHname(0x3988002e);
 
 pub const RESULT_TIMESTAMP : &str = "timestamp";
 
-pub const STATE_TIMESTAMP : &str = "timestamp";
-
 pub const FUNC_NOW           : &str = "now";
 pub const VIEW_GET_TIMESTAMP : &str = "getTimestamp";
 

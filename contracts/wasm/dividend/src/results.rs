@@ -9,51 +9,48 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetFactorResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetFactorResults {
-    pub fn factor(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
+    pub fn factor(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_FACTOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetFactorResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetFactorResults {
-    pub fn factor(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
+    pub fn factor(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_FACTOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetOwnerResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetOwnerResults {
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
+		ScImmutableAgentID::new(self.proxy.root(RESULT_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetOwnerResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetOwnerResults {
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
+		ScMutableAgentID::new(self.proxy.root(RESULT_OWNER))
 	}
 }

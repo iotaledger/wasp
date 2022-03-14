@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
+    const amount = ctx.incoming().balance(wasmtypes.IOTA);
     let donation = new sc.Donation();
-    donation.amount = ctx.incoming().balance(wasmlib.ScColor.IOTA);
+    donation.amount = amount;
     donation.donator = ctx.caller();
     donation.error = "";
     donation.feedback = f.params.feedback().value();
@@ -14,12 +16,12 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
     if (donation.amount == 0 || donation.feedback.length == 0) {
         donation.error = "error: empty feedback or donated amount = 0".toString();
         if (donation.amount > 0) {
-            ctx.transferToAddress(donation.donator.address(), wasmlib.ScTransfers.iotas(donation.amount));
+            ctx.send(donation.donator.address(), wasmlib.ScTransfers.iotas(donation.amount));
             donation.amount = 0;
         }
     }
     let log = f.state.log();
-    log.getDonation(log.length()).setValue(donation);
+    log.appendDonation().setValue(donation);
 
     let largestDonation = f.state.maxDonation();
     let totalDonated = f.state.totalDonation();
@@ -30,7 +32,7 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
 }
 
 export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext): void {
-    let balance = ctx.balances().balance(wasmlib.ScColor.IOTA);
+    let balance = ctx.balances().balance(wasmtypes.IOTA);
     let amount = f.params.amount().value();
     if (amount == 0 || amount > balance) {
         amount = balance;
@@ -41,11 +43,11 @@ export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext):
     }
 
     let scCreator = ctx.contractCreator().address();
-    ctx.transferToAddress(scCreator, wasmlib.ScTransfers.iotas(amount));
+    ctx.send(scCreator, wasmlib.ScTransfers.iotas(amount));
 }
 
 export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext): void {
-    let nr = (f.params.nr().value()) as i32;
+    let nr = f.params.nr().value();
     let donation = f.state.log().getDonation(nr).value();
     f.results.amount().setValue(donation.amount);
     f.results.donator().setValue(donation.donator);
@@ -57,5 +59,5 @@ export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext):
 export function viewDonationInfo(ctx: wasmlib.ScViewContext, f: sc.DonationInfoContext): void {
     f.results.maxDonation().setValue(f.state.maxDonation().value());
     f.results.totalDonation().setValue(f.state.totalDonation().value());
-    f.results.count().setValue(f.state.log().length() as i64);
+    f.results.count().setValue(f.state.log().length());
 }

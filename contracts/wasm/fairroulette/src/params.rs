@@ -9,52 +9,48 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePlaceBetParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePlaceBetParams {
-    pub fn number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
+    pub fn number(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.proxy.root(PARAM_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePlaceBetParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutablePlaceBetParams {
-    pub fn number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
+    pub fn number(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.proxy.root(PARAM_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePlayPeriodParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePlayPeriodParams {
-    pub fn play_period(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
+    pub fn play_period(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_PLAY_PERIOD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePlayPeriodParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutablePlayPeriodParams {
-    pub fn play_period(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
+    pub fn play_period(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_PLAY_PERIOD))
 	}
 }

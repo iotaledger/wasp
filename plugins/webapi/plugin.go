@@ -3,7 +3,6 @@ package webapi
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -22,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/metrics"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -63,8 +62,6 @@ func configure(*node.Plugin) {
 		AllowMethods: []string{"*"},
 	}))
 
-	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
-
 	network := peering.DefaultNetworkProvider()
 	if network == nil {
 		panic("dependency NetworkProvider is missing in WebAPI")
@@ -78,7 +75,6 @@ func configure(*node.Plugin) {
 	}
 	webapi.Init(
 		Server,
-		adminWhitelist(),
 		network,
 		tnm,
 		registry.DefaultRegistry,
@@ -86,15 +82,8 @@ func configure(*node.Plugin) {
 		dkg.DefaultNode,
 		gracefulshutdown.Shutdown,
 		allMetrics,
+		wal.GetWAL(),
 	)
-}
-
-func adminWhitelist() []net.IP {
-	r := make([]net.IP, 0)
-	for _, ip := range parameters.GetStringSlice(parameters.WebAPIAdminWhitelist) {
-		r = append(r, net.ParseIP(ip))
-	}
-	return r
 }
 
 func run(_ *node.Plugin) {

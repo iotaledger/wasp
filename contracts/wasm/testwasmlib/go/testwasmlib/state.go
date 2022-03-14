@@ -7,52 +7,80 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapStringToImmutableStringArray struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToImmutableStringArray) GetStringArray(key string) ImmutableStringArray {
-	subID := wasmlib.GetObjectID(m.objID, wasmlib.Key(key).KeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING)
-	return ImmutableStringArray{objID: subID}
+	return ImmutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
+}
+
+type MapStringToImmutableStringMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapStringToImmutableStringMap) GetStringMap(key string) ImmutableStringMap {
+	return ImmutableStringMap{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type ImmutableTestWasmLibState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableTestWasmLibState) Arrays() MapStringToImmutableStringArray {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateArrays], wasmlib.TYPE_MAP)
-	return MapStringToImmutableStringArray{objID: mapID}
+	return MapStringToImmutableStringArray{proxy: s.proxy.Root(StateArrays)}
 }
 
-func (s ImmutableTestWasmLibState) Random() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateRandom])
+func (s ImmutableTestWasmLibState) Maps() MapStringToImmutableStringMap {
+	return MapStringToImmutableStringMap{proxy: s.proxy.Root(StateMaps)}
+}
+
+func (s ImmutableTestWasmLibState) Random() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateRandom))
 }
 
 type MapStringToMutableStringArray struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableStringArray) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
 func (m MapStringToMutableStringArray) GetStringArray(key string) MutableStringArray {
-	subID := wasmlib.GetObjectID(m.objID, wasmlib.Key(key).KeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING)
-	return MutableStringArray{objID: subID}
+	return MutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
+}
+
+type MapStringToMutableStringMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapStringToMutableStringMap) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapStringToMutableStringMap) GetStringMap(key string) MutableStringMap {
+	return MutableStringMap{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type MutableTestWasmLibState struct {
-	id int32
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableTestWasmLibState) AsImmutable() ImmutableTestWasmLibState {
+	return ImmutableTestWasmLibState(s)
 }
 
 func (s MutableTestWasmLibState) Arrays() MapStringToMutableStringArray {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateArrays], wasmlib.TYPE_MAP)
-	return MapStringToMutableStringArray{objID: mapID}
+	return MapStringToMutableStringArray{proxy: s.proxy.Root(StateArrays)}
 }
 
-func (s MutableTestWasmLibState) Random() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateRandom])
+func (s MutableTestWasmLibState) Maps() MapStringToMutableStringMap {
+	return MapStringToMutableStringMap{proxy: s.proxy.Root(StateMaps)}
+}
+
+func (s MutableTestWasmLibState) Random() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateRandom))
 }

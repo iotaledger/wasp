@@ -5,39 +5,29 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class MapAgentIDToImmutableBool {
-	objID: i32;
+export class MapAgentIDToImmutableBool extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getBool(key: wasmlib.ScAgentID): wasmlib.ScImmutableBool {
-        return new wasmlib.ScImmutableBool(this.objID, key.getKeyID());
-    }
+	getBool(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class ImmutableOperators extends MapAgentIDToImmutableBool {
-};
+}
 
-export class MapAgentIDToMutableBool {
-	objID: i32;
+export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    getBool(key: wasmlib.ScAgentID): wasmlib.ScMutableBool {
-        return new wasmlib.ScMutableBool(this.objID, key.getKeyID());
-    }
+	getBool(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+	}
 }
 
 export class MutableOperators extends MapAgentIDToMutableBool {
-};
+}

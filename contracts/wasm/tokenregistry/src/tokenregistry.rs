@@ -9,8 +9,8 @@ use crate::structs::*;
 pub fn func_mint_supply(ctx: &ScFuncContext, f: &MintSupplyContext) {
     let minted = ctx.minted();
     let minted_colors = minted.colors();
-    ctx.require(minted_colors.length() == 1, "need single minted color");
-    let minted_color = minted_colors.get_color(0).value();
+    ctx.require(minted_colors.len() == 1, "need single minted color");
+    let minted_color = minted_colors.get(0).unwrap();
     let current_token = f.state.registry().get_token(&minted_color);
     if current_token.exists() {
         // should never happen, because transaction id is unique
@@ -30,7 +30,7 @@ pub fn func_mint_supply(ctx: &ScFuncContext, f: &MintSupplyContext) {
     }
     current_token.set_value(&token);
     let color_list = f.state.color_list();
-    color_list.get_color(color_list.length()).set_value(&minted_color);
+    color_list.append_color().set_value(&minted_color);
 }
 
 pub fn func_transfer_ownership(_ctx: &ScFuncContext, _f: &TransferOwnershipContext) {

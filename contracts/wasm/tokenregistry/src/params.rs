@@ -9,104 +9,100 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableMintSupplyParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableMintSupplyParams {
     pub fn description(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
+		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
     pub fn user_defined(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_USER_DEFINED))
+		ScImmutableString::new(self.proxy.root(PARAM_USER_DEFINED))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableMintSupplyParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableMintSupplyParams {
     pub fn description(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
+		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
     pub fn user_defined(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_USER_DEFINED))
+		ScMutableString::new(self.proxy.root(PARAM_USER_DEFINED))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTransferOwnershipParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTransferOwnershipParams {
     pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTransferOwnershipParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTransferOwnershipParams {
     pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableUpdateMetadataParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableUpdateMetadataParams {
     pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableUpdateMetadataParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableUpdateMetadataParams {
     pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetInfoParams {
     pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetInfoParams {
     pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
 	}
 }

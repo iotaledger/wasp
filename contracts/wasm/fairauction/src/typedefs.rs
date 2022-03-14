@@ -8,68 +8,75 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-use crate::structs::*;
+use crate::*;
 
+#[derive(Clone)]
 pub struct ArrayOfImmutableAgentID {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfImmutableAgentID {
-    pub fn length(&self) -> i32 {
-        get_length(self.obj_id)
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
     }
 
-    pub fn get_agent_id(&self, index: i32) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.obj_id, Key32(index))
+    pub fn get_agent_id(&self, index: u32) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.index(index))
     }
 }
 
 pub type ImmutableBidderList = ArrayOfImmutableAgentID;
 
+#[derive(Clone)]
 pub struct ArrayOfMutableAgentID {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfMutableAgentID {
-    pub fn clear(&self) {
-        clear(self.obj_id);
+	pub fn append_agent_id(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
     }
 
-    pub fn length(&self) -> i32 {
-        get_length(self.obj_id)
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
     }
 
-    pub fn get_agent_id(&self, index: i32) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.obj_id, Key32(index))
+    pub fn get_agent_id(&self, index: u32) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.index(index))
     }
 }
 
 pub type MutableBidderList = ArrayOfMutableAgentID;
 
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableBid {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableBid {
     pub fn get_bid(&self, key: &ScAgentID) -> ImmutableBid {
-        ImmutableBid { obj_id: self.obj_id, key_id: key.get_key_id() }
+        ImmutableBid { proxy: self.proxy.key(&agent_id_to_bytes(key)) }
     }
 }
 
 pub type ImmutableBids = MapAgentIDToImmutableBid;
 
+#[derive(Clone)]
 pub struct MapAgentIDToMutableBid {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableBid {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_bid(&self, key: &ScAgentID) -> MutableBid {
-        MutableBid { obj_id: self.obj_id, key_id: key.get_key_id() }
+        MutableBid { proxy: self.proxy.key(&agent_id_to_bytes(key)) }
     }
 }
 

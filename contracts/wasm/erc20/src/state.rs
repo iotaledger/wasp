@@ -9,76 +9,73 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableAllowancesForAgent {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableAllowancesForAgent {
     pub fn get_allowances_for_agent(&self, key: &ScAgentID) -> ImmutableAllowancesForAgent {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
-        ImmutableAllowancesForAgent { obj_id: sub_id }
+        ImmutableAllowancesForAgent { proxy: self.proxy.key(&agent_id_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableErc20State {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableErc20State {
     pub fn all_allowances(&self) -> MapAgentIDToImmutableAllowancesForAgent {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
-		MapAgentIDToImmutableAllowancesForAgent { obj_id: map_id }
+		MapAgentIDToImmutableAllowancesForAgent { proxy: self.proxy.root(STATE_ALL_ALLOWANCES) }
 	}
 
-    pub fn balances(&self) -> MapAgentIDToImmutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
-		MapAgentIDToImmutableInt64 { obj_id: map_id }
+    pub fn balances(&self) -> MapAgentIDToImmutableUint64 {
+		MapAgentIDToImmutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
 
-    pub fn supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_SUPPLY))
+    pub fn supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(STATE_SUPPLY))
 	}
 }
 
+#[derive(Clone)]
 pub struct MapAgentIDToMutableAllowancesForAgent {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableAllowancesForAgent {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_allowances_for_agent(&self, key: &ScAgentID) -> MutableAllowancesForAgent {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
-        MutableAllowancesForAgent { obj_id: sub_id }
+        MutableAllowancesForAgent { proxy: self.proxy.key(&agent_id_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableErc20State {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableErc20State {
+    pub fn as_immutable(&self) -> ImmutableErc20State {
+		ImmutableErc20State { proxy: self.proxy.root("") }
+	}
+
     pub fn all_allowances(&self) -> MapAgentIDToMutableAllowancesForAgent {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
-		MapAgentIDToMutableAllowancesForAgent { obj_id: map_id }
+		MapAgentIDToMutableAllowancesForAgent { proxy: self.proxy.root(STATE_ALL_ALLOWANCES) }
 	}
 
-    pub fn balances(&self) -> MapAgentIDToMutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
-		MapAgentIDToMutableInt64 { obj_id: map_id }
+    pub fn balances(&self) -> MapAgentIDToMutableUint64 {
+		MapAgentIDToMutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
 
-    pub fn supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_SUPPLY))
+    pub fn supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(STATE_SUPPLY))
 	}
 }

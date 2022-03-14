@@ -5,61 +5,61 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableMintSupplyParams extends wasmlib.ScMapID {
-    description(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamDescription]);
+export class ImmutableMintSupplyParams extends wasmtypes.ScProxy {
+	description(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
 
-    userDefined(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamUserDefined]);
-	}
-}
-
-export class MutableMintSupplyParams extends wasmlib.ScMapID {
-    description(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamDescription]);
-	}
-
-    userDefined(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamUserDefined]);
+	userDefined(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamUserDefined));
 	}
 }
 
-export class ImmutableTransferOwnershipParams extends wasmlib.ScMapID {
-    color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+export class MutableMintSupplyParams extends wasmtypes.ScProxy {
+	description(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
+	}
+
+	userDefined(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamUserDefined));
 	}
 }
 
-export class MutableTransferOwnershipParams extends wasmlib.ScMapID {
-    color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+export class ImmutableTransferOwnershipParams extends wasmtypes.ScProxy {
+	color(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
-export class ImmutableUpdateMetadataParams extends wasmlib.ScMapID {
-    color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+export class MutableTransferOwnershipParams extends wasmtypes.ScProxy {
+	color(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
-export class MutableUpdateMetadataParams extends wasmlib.ScMapID {
-    color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+export class ImmutableUpdateMetadataParams extends wasmtypes.ScProxy {
+	color(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
-export class ImmutableGetInfoParams extends wasmlib.ScMapID {
-    color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+export class MutableUpdateMetadataParams extends wasmtypes.ScProxy {
+	color(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 }
 
-export class MutableGetInfoParams extends wasmlib.ScMapID {
-    color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
+	color(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	}
+}
+
+export class MutableGetInfoParams extends wasmtypes.ScProxy {
+	color(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
 	}
 }

@@ -7,68 +7,68 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableLastWinningNumberResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableLastWinningNumberResults) LastWinningNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultLastWinningNumber])
+func (s ImmutableLastWinningNumberResults) LastWinningNumber() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ResultLastWinningNumber))
 }
 
 type MutableLastWinningNumberResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableLastWinningNumberResults) LastWinningNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultLastWinningNumber])
+func (s MutableLastWinningNumberResults) LastWinningNumber() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ResultLastWinningNumber))
 }
 
 type ImmutableRoundNumberResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRoundNumberResults) RoundNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultRoundNumber])
+func (s ImmutableRoundNumberResults) RoundNumber() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultRoundNumber))
 }
 
 type MutableRoundNumberResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRoundNumberResults) RoundNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultRoundNumber])
+func (s MutableRoundNumberResults) RoundNumber() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultRoundNumber))
 }
 
 type ImmutableRoundStartedAtResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRoundStartedAtResults) RoundStartedAt() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultRoundStartedAt])
+func (s ImmutableRoundStartedAtResults) RoundStartedAt() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultRoundStartedAt))
 }
 
 type MutableRoundStartedAtResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRoundStartedAtResults) RoundStartedAt() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultRoundStartedAt])
+func (s MutableRoundStartedAtResults) RoundStartedAt() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultRoundStartedAt))
 }
 
 type ImmutableRoundStatusResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRoundStatusResults) RoundStatus() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxResultRoundStatus])
+func (s ImmutableRoundStatusResults) RoundStatus() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ResultRoundStatus))
 }
 
 type MutableRoundStatusResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRoundStatusResults) RoundStatus() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxResultRoundStatus])
+func (s MutableRoundStatusResults) RoundStatus() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ResultRoundStatus))
 }

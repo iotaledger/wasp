@@ -147,7 +147,7 @@ func (p *peer) recvLoop() {
 	for msg := range p.recvPipe.Out() {
 		peerMsg, ok := msg.(*peering.PeerMessageNet)
 		if ok {
-			p.net.triggerRecvEvents(p.NetID(), peerMsg)
+			p.net.triggerRecvEvents(p.PubKey(), peerMsg)
 		}
 	}
 }
@@ -211,12 +211,17 @@ func (p *peer) IsInbound() bool {
 	return p.remoteNetID < p.net.myNetID
 }
 
-// IsInbound implements peering.PeerStatusProvider.
+// NumUsers implements peering.PeerStatusProvider.
 // It is used in the dashboard.
 func (p *peer) NumUsers() int {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
 	return p.numUsers
+}
+
+// Status implements peering.PeerSender interface for the remote peers.
+func (p *peer) Status() peering.PeerStatusProvider {
+	return p
 }
 
 // SendMsg implements peering.PeerSender interface for the remote peers.

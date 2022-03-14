@@ -13,27 +13,27 @@ export class HelloWorldCall {
 }
 
 export class HelloWorldContext {
-	state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState();
+	state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState(wasmlib.ScState.proxy());
 }
 
 export class GetHelloWorldCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetHelloWorld);
-	results: sc.ImmutableGetHelloWorldResults = new sc.ImmutableGetHelloWorldResults();
+	results: sc.ImmutableGetHelloWorldResults = new sc.ImmutableGetHelloWorldResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetHelloWorldContext {
-	results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults();
-	state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState();
+	results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
-    static helloWorld(ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
-        return new HelloWorldCall();
-    }
+	static helloWorld(_ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
+		return new HelloWorldCall();
+	}
 
-    static getHelloWorld(ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
-        let f = new GetHelloWorldCall();
-        f.func.setPtrs(null, f.results);
-        return f;
-    }
+	static getHelloWorld(_ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
+		const f = new GetHelloWorldCall();
+		f.results = new sc.ImmutableGetHelloWorldResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
 }

@@ -7,36 +7,36 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutablePlaceBetParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePlaceBetParams) Number() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamNumber])
+func (s ImmutablePlaceBetParams) Number() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ParamNumber))
 }
 
 type MutablePlaceBetParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutablePlaceBetParams) Number() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamNumber])
+func (s MutablePlaceBetParams) Number() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ParamNumber))
 }
 
 type ImmutablePlayPeriodParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePlayPeriodParams) PlayPeriod() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamPlayPeriod])
+func (s ImmutablePlayPeriodParams) PlayPeriod() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamPlayPeriod))
 }
 
 type MutablePlayPeriodParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutablePlayPeriodParams) PlayPeriod() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamPlayPeriod])
+func (s MutablePlayPeriodParams) PlayPeriod() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamPlayPeriod))
 }

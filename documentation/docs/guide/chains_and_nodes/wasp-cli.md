@@ -20,7 +20,7 @@ After going through the instructions on [Running a node](./running-a-node.md), y
 
 You can create a basic default configuration by running:
 
-```bash
+```shell
 wasp-cli init 
 ````
 
@@ -41,7 +41,7 @@ wasp-cli set wasp.1.api 127.0.0.1:9091
 wasp-cli set wasp.1.nanomsg 127.0.0.1:5551
 wasp-cli set wasp.1.peering 127.0.0.1:4001
 
-...
+...shell
 
 wasp-cli set wasp.N.api 127.0.0.1:9091
 wasp-cli set wasp.N.nanomsg 127.0.0.1:5551
@@ -73,3 +73,9 @@ Alternatively, you can edit the `wasp-cli.json` file and include the desired ser
       },
     }
   ```
+
+If the Wasp node is configured to use the experimental JWT authentication, it's required to login after the configuration is done.
+
+```shell
+wasp-cli login
+``` 

@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as coreblocklog from "wasmlib/coreblocklog"
 import * as sc from "./index";
 
-export function funcArrayClear(ctx: wasmlib.ScFuncContext, f: sc.ArrayClearContext): void {
+export function funcArrayAppend(ctx: wasmlib.ScFuncContext, f: sc.ArrayAppendContext): void {
     let name = f.params.name().value();
     let array = f.state.arrays().getStringArray(name);
-    array.clear();
+    let value = f.params.value().value();
+    array.appendString().setValue(value);
 }
 
-export function funcArrayCreate(ctx: wasmlib.ScFuncContext, f: sc.ArrayCreateContext): void {
+export function funcArrayClear(ctx: wasmlib.ScFuncContext, f: sc.ArrayClearContext): void {
     let name = f.params.name().value();
     let array = f.state.arrays().getStringArray(name);
     array.clear();
@@ -25,6 +27,20 @@ export function funcArraySet(ctx: wasmlib.ScFuncContext, f: sc.ArraySetContext):
     array.getString(index).setValue(value);
 }
 
+export function funcMapClear(ctx: wasmlib.ScFuncContext, f: sc.MapClearContext): void {
+    let name = f.params.name().value();
+    let myMap = f.state.maps().getStringMap(name);
+    myMap.clear();
+}
+
+export function funcMapSet(ctx: wasmlib.ScFuncContext, f: sc.MapSetContext): void {
+    let name = f.params.name().value();
+    let myMap = f.state.maps().getStringMap(name);
+    let key = f.params.key().value();
+    let value = f.params.value().value();
+    myMap.getString(key).setValue(value);
+}
+
 export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesContext): void {
     if (f.params.address().exists()) {
         ctx.require(f.params.address().value().equals(ctx.accountID().address()), "mismatch: Address");
@@ -36,18 +52,18 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.bool().value(), "mismatch: Bool");
     }
     if (f.params.bytes().exists()) {
-        let byteData = wasmlib.Convert.fromString("these are bytes");
-        ctx.require(wasmlib.Convert.equals(f.params.bytes().value(), byteData), "mismatch: Bytes");
+        const byteData = wasmtypes.stringToBytes("these are bytes");
+        ctx.require(wasmtypes.bytesCompare(f.params.bytes().value(), byteData) == 0, "mismatch: Bytes");
     }
     if (f.params.chainID().exists()) {
         ctx.require(f.params.chainID().value().equals(ctx.chainID()), "mismatch: ChainID");
     }
     if (f.params.color().exists()) {
-        let color = wasmlib.ScColor.fromBytes(wasmlib.Convert.fromString("RedGreenBlueYellowCyanBlackWhite"));
+        const color = wasmlib.colorFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhite"));
         ctx.require(f.params.color().value().equals(color), "mismatch: Color");
     }
     if (f.params.hash().exists()) {
-        let hash = wasmlib.ScHash.fromBytes(wasmlib.Convert.fromString("0123456789abcdeffedcba9876543210"));
+        const hash = wasmtypes.hashFromBytes(wasmtypes.stringToBytes("0123456789abcdeffedcba9876543210"));
         ctx.require(f.params.hash().value().equals(hash), "mismatch: Hash");
     }
     if (f.params.hname().exists()) {
@@ -66,7 +82,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
     }
     if (f.params.requestID().exists()) {
-        let requestId = wasmlib.ScRequestID.fromBytes(wasmlib.Convert.fromString("abcdefghijklmnopqrstuvwxyz123456\x00\x00"));
+        const requestId = wasmtypes.requestIDFromBytes(wasmtypes.stringToBytes("abcdefghijklmnopqrstuvwxyz123456\x00\x00"));
         ctx.require(f.params.requestID().value().equals(requestId), "mismatch: RequestID");
     }
     if (f.params.string().exists()) {
@@ -84,6 +100,14 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
     if (f.params.uint64().exists()) {
         ctx.require(f.params.uint64().value() == 1234567890123456789, "mismatch: Uint64");
     }
+}
+
+export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): void {
+    f.state.random().setValue(ctx.random(1000));
+}
+
+export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
+    f.events.test(f.params.address().value(), f.params.name().value());
 }
 
 export function viewArrayLength(ctx: wasmlib.ScViewContext, f: sc.ArrayLengthContext): void {
@@ -106,8 +130,17 @@ export function viewBlockRecord(ctx: wasmlib.ScViewContext, f: sc.BlockRecordCon
     records.params.blockIndex().setValue(f.params.blockIndex().value());
     records.func.call();
     let recordIndex = f.params.recordIndex().value();
-    ctx.require(recordIndex < records.results.requestRecord().length(), "invalid recordIndex");
-    f.results.record().setValue(records.results.requestRecord().getBytes(recordIndex).value());
+    ctx.log("index: " + recordIndex.toString());
+    recordIndex = f.params.recordIndex().value();
+    ctx.log("index: " + recordIndex.toString());
+    const requestRecord = records.results.requestRecord();
+    const length = requestRecord.length();
+    ctx.log("length: " + length.toString());
+    const length2 = requestRecord.length();
+    ctx.log("length2: " + length2.toString());
+    ctx.require(recordIndex < length, "invalid recordIndex");
+    const buf = requestRecord.getBytes(recordIndex).value();
+    f.results.record().setValue(buf);
 }
 
 export function viewBlockRecords(ctx: wasmlib.ScViewContext, f: sc.BlockRecordsContext): void {
@@ -117,14 +150,18 @@ export function viewBlockRecords(ctx: wasmlib.ScViewContext, f: sc.BlockRecordsC
     f.results.count().setValue(records.results.requestRecord().length());
 }
 
-export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().balance(wasmlib.ScColor.IOTA));
-}
-
-export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): void {
-    f.state.random().setValue(ctx.random(1000));
-}
-
 export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext): void {
     f.results.random().setValue(f.state.random().value());
+}
+
+export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
+    f.results.iotas().setValue(ctx.balances().balance(wasmtypes.IOTA));
+}
+
+export function viewMapValue(ctx: wasmlib.ScViewContext, f: sc.MapValueContext): void {
+    let name = f.params.name().value();
+    let myMap = f.state.maps().getStringMap(name);
+    let key = f.params.key().value();
+    let value = myMap.getString(key).value();
+    f.results.value().setValue(value);
 }

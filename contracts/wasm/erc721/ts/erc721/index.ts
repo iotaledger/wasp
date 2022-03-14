@@ -10,7 +10,6 @@ export * from "./erc721";
 export * from "./consts";
 export * from "./contract";
 export * from "./events";
-export * from "./keys";
 export * from "./lib";
 export * from "./params";
 export * from "./results";

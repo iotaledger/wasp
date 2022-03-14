@@ -40,7 +40,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 // - ParamValidatorFee        - int64 non-negative value of the contract fee.
 func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(governance.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "governance.setContractFee: not authorized")
+	a.Require(governance.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "governance.setChainInfo: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 

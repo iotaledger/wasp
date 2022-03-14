@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "erc721";
 export const ScDescription = "ERC-721 NFT PoC for IOTA Smart Contracts";
-export const HScName       = new wasmlib.ScHname(0xd967c216);
+export const HScName       = new wasmtypes.ScHname(0xd967c216);
 
 export const ParamApproval = "approval";
 export const ParamApproved = "approved";
@@ -21,6 +21,7 @@ export const ParamOwner    = "owner";
 export const ParamSymbol   = "s";
 export const ParamTo       = "to";
 export const ParamTokenID  = "tokenID";
+export const ParamTokenURI = "tokenURI";
 
 export const ResultAmount   = "amount";
 export const ResultApproval = "approval";
@@ -36,6 +37,7 @@ export const StateBalances          = "balances";
 export const StateName              = "name";
 export const StateOwners            = "owners";
 export const StateSymbol            = "symbol";
+export const StateTokenURIs         = "tokenURIs";
 
 export const FuncApprove           = "approve";
 export const FuncBurn              = "burn";
@@ -52,17 +54,17 @@ export const ViewOwnerOf           = "ownerOf";
 export const ViewSymbol            = "symbol";
 export const ViewTokenURI          = "tokenURI";
 
-export const HFuncApprove           = new wasmlib.ScHname(0xa0661268);
-export const HFuncBurn              = new wasmlib.ScHname(0x7bc1efb1);
-export const HFuncInit              = new wasmlib.ScHname(0x1f44d644);
-export const HFuncMint              = new wasmlib.ScHname(0xa29addcf);
-export const HFuncSafeTransferFrom  = new wasmlib.ScHname(0x130ce158);
-export const HFuncSetApprovalForAll = new wasmlib.ScHname(0xb8d8c776);
-export const HFuncTransferFrom      = new wasmlib.ScHname(0xd5e0a602);
-export const HViewBalanceOf         = new wasmlib.ScHname(0x67ef8df4);
-export const HViewGetApproved       = new wasmlib.ScHname(0xbe34b6ba);
-export const HViewIsApprovedForAll  = new wasmlib.ScHname(0x3251b0f0);
-export const HViewName              = new wasmlib.ScHname(0x0df7da3a);
-export const HViewOwnerOf           = new wasmlib.ScHname(0x1246f5ad);
-export const HViewSymbol            = new wasmlib.ScHname(0x3e93d19b);
-export const HViewTokenURI          = new wasmlib.ScHname(0x4e1a7397);
+export const HFuncApprove           = new wasmtypes.ScHname(0xa0661268);
+export const HFuncBurn              = new wasmtypes.ScHname(0x7bc1efb1);
+export const HFuncInit              = new wasmtypes.ScHname(0x1f44d644);
+export const HFuncMint              = new wasmtypes.ScHname(0xa29addcf);
+export const HFuncSafeTransferFrom  = new wasmtypes.ScHname(0x130ce158);
+export const HFuncSetApprovalForAll = new wasmtypes.ScHname(0xb8d8c776);
+export const HFuncTransferFrom      = new wasmtypes.ScHname(0xd5e0a602);
+export const HViewBalanceOf         = new wasmtypes.ScHname(0x67ef8df4);
+export const HViewGetApproved       = new wasmtypes.ScHname(0xbe34b6ba);
+export const HViewIsApprovedForAll  = new wasmtypes.ScHname(0x3251b0f0);
+export const HViewName              = new wasmtypes.ScHname(0x0df7da3a);
+export const HViewOwnerOf           = new wasmtypes.ScHname(0x1246f5ad);
+export const HViewSymbol            = new wasmtypes.ScHname(0x3e93d19b);
+export const HViewTokenURI          = new wasmtypes.ScHname(0x4e1a7397);

@@ -7,21 +7,31 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+
+type ArrayAppendCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableArrayAppendParams
+}
 
 type ArrayClearCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableArrayClearParams
 }
 
-type ArrayCreateCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayCreateParams
-}
-
 type ArraySetCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableArraySetParams
+}
+
+type MapClearCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableMapClearParams
+}
+
+type MapSetCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableMapSetParams
 }
 
 type ParamTypesCall struct {
@@ -31,6 +41,11 @@ type ParamTypesCall struct {
 
 type RandomCall struct {
 	Func *wasmlib.ScFunc
+}
+
+type TriggerEventCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableTriggerEventParams
 }
 
 type ArrayLengthCall struct {
@@ -67,31 +82,49 @@ type IotaBalanceCall struct {
 	Results ImmutableIotaBalanceResults
 }
 
+type MapValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableMapValueParams
+	Results ImmutableMapValueResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
 
-func (sc Funcs) ArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayClearCall {
-	f := &ArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayClear)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+func (sc Funcs) ArrayAppend(ctx wasmlib.ScFuncCallContext) *ArrayAppendCall {
+	f := &ArrayAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayAppend)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
-func (sc Funcs) ArrayCreate(ctx wasmlib.ScFuncCallContext) *ArrayCreateCall {
-	f := &ArrayCreateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayCreate)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+func (sc Funcs) ArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayClearCall {
+	f := &ArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayClear)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) ArraySet(ctx wasmlib.ScFuncCallContext) *ArraySetCall {
 	f := &ArraySetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArraySet)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) MapClear(ctx wasmlib.ScFuncCallContext) *MapClearCall {
+	f := &MapClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapClear)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) MapSet(ctx wasmlib.ScFuncCallContext) *MapSetCall {
+	f := &MapSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapSet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) ParamTypes(ctx wasmlib.ScFuncCallContext) *ParamTypesCall {
 	f := &ParamTypesCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncParamTypes)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -99,38 +132,55 @@ func (sc Funcs) Random(ctx wasmlib.ScFuncCallContext) *RandomCall {
 	return &RandomCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRandom)}
 }
 
+func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {
+	f := &TriggerEventCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTriggerEvent)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 func (sc Funcs) ArrayLength(ctx wasmlib.ScViewCallContext) *ArrayLengthCall {
 	f := &ArrayLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayLength)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) ArrayValue(ctx wasmlib.ScViewCallContext) *ArrayValueCall {
 	f := &ArrayValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayValue)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) BlockRecord(ctx wasmlib.ScViewCallContext) *BlockRecordCall {
 	f := &BlockRecordCall{Func: wasmlib.NewScView(ctx, HScName, HViewBlockRecord)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) BlockRecords(ctx wasmlib.ScViewCallContext) *BlockRecordsCall {
 	f := &BlockRecordsCall{Func: wasmlib.NewScView(ctx, HScName, HViewBlockRecords)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetRandom(ctx wasmlib.ScViewCallContext) *GetRandomCall {
 	f := &GetRandomCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetRandom)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) IotaBalance(ctx wasmlib.ScViewCallContext) *IotaBalanceCall {
 	f := &IotaBalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewIotaBalance)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) MapValue(ctx wasmlib.ScViewCallContext) *MapValueCall {
+	f := &MapValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

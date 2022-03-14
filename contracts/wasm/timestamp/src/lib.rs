@@ -10,31 +10,39 @@
 
 use timestamp::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
-use crate::keys::*;
 use crate::results::*;
 use crate::state::*;
 
 mod consts;
 mod contract;
-mod keys;
 mod results;
 mod state;
+
 mod timestamp;
+
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_NOW,
+    	VIEW_GET_TIMESTAMP,
+	],
+    funcs: &[
+    	func_now_thunk,
+	],
+    views: &[
+    	view_get_timestamp_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
 
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_NOW,           func_now_thunk);
-    exports.add_view(VIEW_GET_TIMESTAMP, view_get_timestamp_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct NowContext {
@@ -44,9 +52,7 @@ pub struct NowContext {
 fn func_now_thunk(ctx: &ScFuncContext) {
 	ctx.log("timestamp.funcNow");
 	let f = NowContext {
-		state: MutabletimestampState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutabletimestampState { proxy: state_proxy() },
 	};
 	func_now(ctx, &f);
 	ctx.log("timestamp.funcNow ok");
@@ -60,13 +66,10 @@ pub struct GetTimestampContext {
 fn view_get_timestamp_thunk(ctx: &ScViewContext) {
 	ctx.log("timestamp.viewGetTimestamp");
 	let f = GetTimestampContext {
-		results: MutableGetTimestampResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutabletimestampState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableGetTimestampResults { proxy: results_proxy() },
+		state: ImmutabletimestampState { proxy: state_proxy() },
 	};
 	view_get_timestamp(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("timestamp.viewGetTimestamp ok");
 }

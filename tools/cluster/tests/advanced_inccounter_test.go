@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package tests
 
 import (
@@ -119,9 +122,13 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second)
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
 
-	e.printBlocks(numRequests + 3)
+	e.printBlocks(
+		numRequests + // The actual IncCounter requests.
+			3 + // Initial State + IncCounter SC Deploy + ???
+			clusterSize, // Access node applications.
+	)
 }
 
 func TestAccessNodesOffLedger(t *testing.T) {
@@ -165,7 +172,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 
 	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
 		testutil.RunHeavy(t)
-		const waitFor = 60 * time.Second
+		const waitFor = 180 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 15
 		const clusterSize = 30
@@ -174,7 +181,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
 		testutil.RunHeavy(t)
-		const waitFor = 60 * time.Second
+		const waitFor = 300 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
 		const clusterSize = 30
@@ -212,7 +219,11 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to, "requests counted")
 
-	e.printBlocks(numRequests + 4)
+	e.printBlocks(
+		numRequests + // The actual IncCounter requests.
+			4 + // ???
+			clusterSize, // Access nodes applications.
+	)
 }
 
 // extreme test
@@ -245,7 +256,11 @@ func TestAccessNodesMany(t *testing.T) {
 		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
-	e.printBlocks(posted + 3)
+	e.printBlocks(
+		posted + // The actual SC requests.
+			3 + // ???
+			clusterSize, // GOV: Access Node Applications.
+	)
 }
 
 // cluster of 10 access nodes and two overlapping committees

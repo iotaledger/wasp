@@ -1,10 +1,13 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package dashboard
 
 import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/labstack/echo/v4"
 )
 
@@ -42,11 +45,26 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		info, err := d.fetchRootInfo(cr.ChainID)
+		rootInfo, err := d.fetchRootInfo(cr.ChainID)
+		if err != nil {
+			return nil, err
+		}
+		cmtInfo, err := d.wasp.GetChainCommitteeInfo(cr.ChainID)
+		if err != nil {
+			return nil, err
+		}
+		var cmtSize int
+		if cmtInfo == nil {
+			cmtSize = -1
+		} else {
+			cmtSize = len(cmtInfo.PeerStatus)
+		}
 		r[i] = &ChainOverview{
-			ChainRecord: cr,
-			RootInfo:    info,
-			Error:       err,
+			ChainID:       cr.ChainID,
+			Active:        cr.Active,
+			RootInfo:      rootInfo,
+			CommitteeSize: cmtSize,
+			Error:         err,
 		}
 	}
 	return r, nil
@@ -58,7 +76,9 @@ type ChainListTemplateParams struct {
 }
 
 type ChainOverview struct {
-	ChainRecord *registry.ChainRecord
-	RootInfo    RootInfo
-	Error       error
+	ChainID       *iscp.ChainID
+	Active        bool
+	RootInfo      RootInfo
+	CommitteeSize int
+	Error         error
 }

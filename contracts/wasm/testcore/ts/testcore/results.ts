@@ -5,189 +5,169 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableCallOnChainResults extends wasmlib.ScMapID {
-    intValue(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+export class ImmutableCallOnChainResults extends wasmtypes.ScProxy {
+	intValue(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));
 	}
 }
 
-export class MutableCallOnChainResults extends wasmlib.ScMapID {
-    intValue(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+export class MutableCallOnChainResults extends wasmtypes.ScProxy {
+	intValue(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultIntValue));
 	}
 }
 
-export class ImmutableGetMintedSupplyResults extends wasmlib.ScMapID {
-    mintedColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxResultMintedColor]);
+export class ImmutableGetMintedSupplyResults extends wasmtypes.ScProxy {
+	mintedColor(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultMintedColor));
 	}
 
-    mintedSupply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultMintedSupply]);
-	}
-}
-
-export class MutableGetMintedSupplyResults extends wasmlib.ScMapID {
-    mintedColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxResultMintedColor]);
-	}
-
-    mintedSupply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultMintedSupply]);
+	mintedSupply(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMintedSupply));
 	}
 }
 
-export class ImmutableRunRecursionResults extends wasmlib.ScMapID {
-    intValue(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+export class MutableGetMintedSupplyResults extends wasmtypes.ScProxy {
+	mintedColor(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultMintedColor));
+	}
+
+	mintedSupply(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMintedSupply));
 	}
 }
 
-export class MutableRunRecursionResults extends wasmlib.ScMapID {
-    intValue(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+export class ImmutableRunRecursionResults extends wasmtypes.ScProxy {
+	intValue(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));
 	}
 }
 
-export class ImmutableTestChainOwnerIDFullResults extends wasmlib.ScMapID {
-    chainOwnerID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+export class MutableRunRecursionResults extends wasmtypes.ScProxy {
+	intValue(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultIntValue));
 	}
 }
 
-export class MutableTestChainOwnerIDFullResults extends wasmlib.ScMapID {
-    chainOwnerID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+export class ImmutableTestChainOwnerIDFullResults extends wasmtypes.ScProxy {
+	chainOwnerID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
 	}
 }
 
-export class ImmutableFibonacciResults extends wasmlib.ScMapID {
-    intValue(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+export class MutableTestChainOwnerIDFullResults extends wasmtypes.ScProxy {
+	chainOwnerID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
 	}
 }
 
-export class MutableFibonacciResults extends wasmlib.ScMapID {
-    intValue(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+export class ImmutableFibonacciResults extends wasmtypes.ScProxy {
+	intValue(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));
 	}
 }
 
-export class ImmutableGetCounterResults extends wasmlib.ScMapID {
-    counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
+export class MutableFibonacciResults extends wasmtypes.ScProxy {
+	intValue(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultIntValue));
 	}
 }
 
-export class MutableGetCounterResults extends wasmlib.ScMapID {
-    counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
+export class ImmutableGetCounterResults extends wasmtypes.ScProxy {
+	counter(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultCounter));
 	}
 }
 
-export class MapStringToImmutableInt64 {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getInt64(key: string): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.objID, wasmlib.Key32.fromString(key));
-    }
-}
-
-export class ImmutableGetIntResults extends wasmlib.ScMapID {
-    values(): sc.MapStringToImmutableInt64 {
-		return new sc.MapStringToImmutableInt64(this.mapID);
+export class MutableGetCounterResults extends wasmtypes.ScProxy {
+	counter(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultCounter));
 	}
 }
 
-export class MapStringToMutableInt64 {
-	objID: i32;
+export class MapStringToImmutableInt64 extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    getInt64(key: string): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.objID, wasmlib.Key32.fromString(key));
-    }
-}
-
-export class MutableGetIntResults extends wasmlib.ScMapID {
-    values(): sc.MapStringToMutableInt64 {
-		return new sc.MapStringToMutableInt64(this.mapID);
+	getInt64(key: string): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.key(wasmtypes.stringToBytes(key)));
 	}
 }
 
-export class MapStringToImmutableString {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getString(key: string): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.objID, wasmlib.Key32.fromString(key));
-    }
-}
-
-export class ImmutableGetStringValueResults extends wasmlib.ScMapID {
-    vars(): sc.MapStringToImmutableString {
-		return new sc.MapStringToImmutableString(this.mapID);
+export class ImmutableGetIntResults extends wasmtypes.ScProxy {
+	values(): sc.MapStringToImmutableInt64 {
+		return new sc.MapStringToImmutableInt64(this.proxy);
 	}
 }
 
-export class MapStringToMutableString {
-	objID: i32;
+export class MapStringToMutableInt64 extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	clear(): void {
+		this.proxy.clearMap();
+	}
 
-    clear(): void {
-        wasmlib.clear(this.objID);
-    }
-
-    getString(key: string): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.objID, wasmlib.Key32.fromString(key));
-    }
-}
-
-export class MutableGetStringValueResults extends wasmlib.ScMapID {
-    vars(): sc.MapStringToMutableString {
-		return new sc.MapStringToMutableString(this.mapID);
+	getInt64(key: string): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.key(wasmtypes.stringToBytes(key)));
 	}
 }
 
-export class ImmutableTestChainOwnerIDViewResults extends wasmlib.ScMapID {
-    chainOwnerID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+export class MutableGetIntResults extends wasmtypes.ScProxy {
+	values(): sc.MapStringToMutableInt64 {
+		return new sc.MapStringToMutableInt64(this.proxy);
 	}
 }
 
-export class MutableTestChainOwnerIDViewResults extends wasmlib.ScMapID {
-    chainOwnerID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+export class MapStringToImmutableString extends wasmtypes.ScProxy {
+
+	getString(key: string): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.key(wasmtypes.stringToBytes(key)));
 	}
 }
 
-export class ImmutableTestSandboxCallResults extends wasmlib.ScMapID {
-    sandboxCall(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultSandboxCall]);
+export class ImmutableGetStringValueResults extends wasmtypes.ScProxy {
+	vars(): sc.MapStringToImmutableString {
+		return new sc.MapStringToImmutableString(this.proxy);
 	}
 }
 
-export class MutableTestSandboxCallResults extends wasmlib.ScMapID {
-    sandboxCall(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultSandboxCall]);
+export class MapStringToMutableString extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
+	}
+
+	getString(key: string): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.key(wasmtypes.stringToBytes(key)));
+	}
+}
+
+export class MutableGetStringValueResults extends wasmtypes.ScProxy {
+	vars(): sc.MapStringToMutableString {
+		return new sc.MapStringToMutableString(this.proxy);
+	}
+}
+
+export class ImmutableTestChainOwnerIDViewResults extends wasmtypes.ScProxy {
+	chainOwnerID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
+	}
+}
+
+export class MutableTestChainOwnerIDViewResults extends wasmtypes.ScProxy {
+	chainOwnerID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
+	}
+}
+
+export class ImmutableTestSandboxCallResults extends wasmtypes.ScProxy {
+	sandboxCall(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultSandboxCall));
+	}
+}
+
+export class MutableTestSandboxCallResults extends wasmtypes.ScProxy {
+	sandboxCall(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultSandboxCall));
 	}
 }

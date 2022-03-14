@@ -98,29 +98,37 @@ func generateCoreInterfaces() {
 }
 
 func generateSchema(file *os.File) error {
-	info, err := file.Stat()
-	if err != nil {
-		return err
-	}
-
 	s, err := loadSchema(file)
 	if err != nil {
 		return err
 	}
 	s.CoreContracts = *flagCore
 
-	s.SchemaTime = info.ModTime()
-	if *flagForce {
-		// make as if it has just been updated
-		s.SchemaTime = time.Now()
-	}
-
-	if *flagClient {
-		g := generator.NewClientGenerator(s)
-		err = g.Generate()
+	s.SchemaTime = time.Now()
+	if !*flagForce {
+		// force regeneration when schema definition file is newer
+		info, err := file.Stat()
 		if err != nil {
 			return err
 		}
+		s.SchemaTime = info.ModTime()
+
+		// also force regeneration when schema tool itself is newer
+		exe, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		info, err = os.Stat(exe)
+		if err != nil {
+			return err
+		}
+		if info.ModTime().After(s.SchemaTime) {
+			s.SchemaTime = info.ModTime()
+		}
+	}
+
+	if *flagClient && !*flagGo && !*flagTs {
+		return errors.New("missing language specification")
 	}
 
 	if *flagGo {
@@ -128,6 +136,13 @@ func generateSchema(file *os.File) error {
 		err = g.Generate()
 		if err != nil {
 			return err
+		}
+		if *flagClient {
+			cg := generator.NewGoClientGenerator(s)
+			err = cg.Generate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -144,6 +159,13 @@ func generateSchema(file *os.File) error {
 		err = g.Generate()
 		if err != nil {
 			return err
+		}
+		if *flagClient {
+			cg := generator.NewTsClientGenerator(s)
+			err = cg.Generate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

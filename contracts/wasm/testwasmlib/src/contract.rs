@@ -7,27 +7,32 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use wasmlib::*;
+use crate::*;
 
-use crate::consts::*;
-use crate::params::*;
-use crate::results::*;
+pub struct ArrayAppendCall {
+	pub func: ScFunc,
+	pub params: MutableArrayAppendParams,
+}
 
 pub struct ArrayClearCall {
 	pub func: ScFunc,
 	pub params: MutableArrayClearParams,
 }
 
-pub struct ArrayCreateCall {
-	pub func: ScFunc,
-	pub params: MutableArrayCreateParams,
-}
-
 pub struct ArraySetCall {
 	pub func: ScFunc,
 	pub params: MutableArraySetParams,
+}
+
+pub struct MapClearCall {
+	pub func: ScFunc,
+	pub params: MutableMapClearParams,
+}
+
+pub struct MapSetCall {
+	pub func: ScFunc,
+	pub params: MutableMapSetParams,
 }
 
 pub struct ParamTypesCall {
@@ -37,6 +42,11 @@ pub struct ParamTypesCall {
 
 pub struct RandomCall {
 	pub func: ScFunc,
+}
+
+pub struct TriggerEventCall {
+	pub func: ScFunc,
+	pub params: MutableTriggerEventParams,
 }
 
 pub struct ArrayLengthCall {
@@ -73,107 +83,155 @@ pub struct IotaBalanceCall {
 	pub results: ImmutableIotaBalanceResults,
 }
 
+pub struct MapValueCall {
+	pub func: ScView,
+	pub params: MutableMapValueParams,
+	pub results: ImmutableMapValueResults,
+}
+
 pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn array_clear(_ctx: & dyn ScFuncCallContext) -> ArrayClearCall {
+    pub fn array_append(_ctx: &dyn ScFuncCallContext) -> ArrayAppendCall {
+        let mut f = ArrayAppendCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_APPEND),
+            params: MutableArrayAppendParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn array_clear(_ctx: &dyn ScFuncCallContext) -> ArrayClearCall {
         let mut f = ArrayClearCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CLEAR),
-            params: MutableArrayClearParams { id: 0 },
+            params: MutableArrayClearParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn array_create(_ctx: & dyn ScFuncCallContext) -> ArrayCreateCall {
-        let mut f = ArrayCreateCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CREATE),
-            params: MutableArrayCreateParams { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
-        f
-    }
-
-    pub fn array_set(_ctx: & dyn ScFuncCallContext) -> ArraySetCall {
+    pub fn array_set(_ctx: &dyn ScFuncCallContext) -> ArraySetCall {
         let mut f = ArraySetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_SET),
-            params: MutableArraySetParams { id: 0 },
+            params: MutableArraySetParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn param_types(_ctx: & dyn ScFuncCallContext) -> ParamTypesCall {
+    pub fn map_clear(_ctx: &dyn ScFuncCallContext) -> MapClearCall {
+        let mut f = MapClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_MAP_CLEAR),
+            params: MutableMapClearParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn map_set(_ctx: &dyn ScFuncCallContext) -> MapSetCall {
+        let mut f = MapSetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_MAP_SET),
+            params: MutableMapSetParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn param_types(_ctx: &dyn ScFuncCallContext) -> ParamTypesCall {
         let mut f = ParamTypesCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PARAM_TYPES),
-            params: MutableParamTypesParams { id: 0 },
+            params: MutableParamTypesParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn random(_ctx: & dyn ScFuncCallContext) -> RandomCall {
+    pub fn random(_ctx: &dyn ScFuncCallContext) -> RandomCall {
         RandomCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
         }
     }
 
-    pub fn array_length(_ctx: & dyn ScViewCallContext) -> ArrayLengthCall {
+    pub fn trigger_event(_ctx: &dyn ScFuncCallContext) -> TriggerEventCall {
+        let mut f = TriggerEventCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TRIGGER_EVENT),
+            params: MutableTriggerEventParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn array_length(_ctx: &dyn ScViewCallContext) -> ArrayLengthCall {
         let mut f = ArrayLengthCall {
             func: ScView::new(HSC_NAME, HVIEW_ARRAY_LENGTH),
-            params: MutableArrayLengthParams { id: 0 },
-            results: ImmutableArrayLengthResults { id: 0 },
+            params: MutableArrayLengthParams { proxy: Proxy::nil() },
+            results: ImmutableArrayLengthResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn array_value(_ctx: & dyn ScViewCallContext) -> ArrayValueCall {
+    pub fn array_value(_ctx: &dyn ScViewCallContext) -> ArrayValueCall {
         let mut f = ArrayValueCall {
             func: ScView::new(HSC_NAME, HVIEW_ARRAY_VALUE),
-            params: MutableArrayValueParams { id: 0 },
-            results: ImmutableArrayValueResults { id: 0 },
+            params: MutableArrayValueParams { proxy: Proxy::nil() },
+            results: ImmutableArrayValueResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn block_record(_ctx: & dyn ScViewCallContext) -> BlockRecordCall {
+    pub fn block_record(_ctx: &dyn ScViewCallContext) -> BlockRecordCall {
         let mut f = BlockRecordCall {
             func: ScView::new(HSC_NAME, HVIEW_BLOCK_RECORD),
-            params: MutableBlockRecordParams { id: 0 },
-            results: ImmutableBlockRecordResults { id: 0 },
+            params: MutableBlockRecordParams { proxy: Proxy::nil() },
+            results: ImmutableBlockRecordResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn block_records(_ctx: & dyn ScViewCallContext) -> BlockRecordsCall {
+    pub fn block_records(_ctx: &dyn ScViewCallContext) -> BlockRecordsCall {
         let mut f = BlockRecordsCall {
             func: ScView::new(HSC_NAME, HVIEW_BLOCK_RECORDS),
-            params: MutableBlockRecordsParams { id: 0 },
-            results: ImmutableBlockRecordsResults { id: 0 },
+            params: MutableBlockRecordsParams { proxy: Proxy::nil() },
+            results: ImmutableBlockRecordsResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_random(_ctx: & dyn ScViewCallContext) -> GetRandomCall {
+    pub fn get_random(_ctx: &dyn ScViewCallContext) -> GetRandomCall {
         let mut f = GetRandomCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_RANDOM),
-            results: ImmutableGetRandomResults { id: 0 },
+            results: ImmutableGetRandomResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn iota_balance(_ctx: & dyn ScViewCallContext) -> IotaBalanceCall {
+    pub fn iota_balance(_ctx: &dyn ScViewCallContext) -> IotaBalanceCall {
         let mut f = IotaBalanceCall {
             func: ScView::new(HSC_NAME, HVIEW_IOTA_BALANCE),
-            results: ImmutableIotaBalanceResults { id: 0 },
+            results: ImmutableIotaBalanceResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn map_value(_ctx: &dyn ScViewCallContext) -> MapValueCall {
+        let mut f = MapValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_MAP_VALUE),
+            params: MutableMapValueParams { proxy: Proxy::nil() },
+            results: ImmutableMapValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

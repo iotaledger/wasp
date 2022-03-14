@@ -7,90 +7,96 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableBet struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableBet) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfImmutableBet) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableBet) GetBet(index int32) ImmutableBet {
-	return ImmutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
+func (a ArrayOfImmutableBet) GetBet(index uint32) ImmutableBet {
+	return ImmutableBet{proxy: a.proxy.Index(index)}
 }
 
 type ImmutableFairRouletteState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableFairRouletteState) Bets() ArrayOfImmutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfImmutableBet{objID: arrID}
+	return ArrayOfImmutableBet{proxy: s.proxy.Root(StateBets)}
 }
 
-func (s ImmutableFairRouletteState) LastWinningNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateLastWinningNumber])
+func (s ImmutableFairRouletteState) LastWinningNumber() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(StateLastWinningNumber))
 }
 
-func (s ImmutableFairRouletteState) PlayPeriod() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxStatePlayPeriod])
+func (s ImmutableFairRouletteState) PlayPeriod() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(StatePlayPeriod))
 }
 
-func (s ImmutableFairRouletteState) RoundNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateRoundNumber])
+func (s ImmutableFairRouletteState) RoundNumber() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(StateRoundNumber))
 }
 
-func (s ImmutableFairRouletteState) RoundStartedAt() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxStateRoundStartedAt])
+func (s ImmutableFairRouletteState) RoundStartedAt() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(StateRoundStartedAt))
 }
 
-func (s ImmutableFairRouletteState) RoundStatus() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxStateRoundStatus])
+func (s ImmutableFairRouletteState) RoundStatus() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(StateRoundStatus))
 }
 
 type ArrayOfMutableBet struct {
-	objID int32
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableBet) AppendBet() MutableBet {
+	return MutableBet{proxy: a.proxy.Append()}
 }
 
 func (a ArrayOfMutableBet) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableBet) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfMutableBet) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableBet) GetBet(index int32) MutableBet {
-	return MutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
+func (a ArrayOfMutableBet) GetBet(index uint32) MutableBet {
+	return MutableBet{proxy: a.proxy.Index(index)}
 }
 
 type MutableFairRouletteState struct {
-	id int32
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFairRouletteState) AsImmutable() ImmutableFairRouletteState {
+	return ImmutableFairRouletteState(s)
 }
 
 func (s MutableFairRouletteState) Bets() ArrayOfMutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfMutableBet{objID: arrID}
+	return ArrayOfMutableBet{proxy: s.proxy.Root(StateBets)}
 }
 
-func (s MutableFairRouletteState) LastWinningNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateLastWinningNumber])
+func (s MutableFairRouletteState) LastWinningNumber() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(StateLastWinningNumber))
 }
 
-func (s MutableFairRouletteState) PlayPeriod() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxStatePlayPeriod])
+func (s MutableFairRouletteState) PlayPeriod() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(StatePlayPeriod))
 }
 
-func (s MutableFairRouletteState) RoundNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateRoundNumber])
+func (s MutableFairRouletteState) RoundNumber() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(StateRoundNumber))
 }
 
-func (s MutableFairRouletteState) RoundStartedAt() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxStateRoundStartedAt])
+func (s MutableFairRouletteState) RoundStartedAt() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(StateRoundStartedAt))
 }
 
-func (s MutableFairRouletteState) RoundStatus() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxStateRoundStatus])
+func (s MutableFairRouletteState) RoundStatus() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(StateRoundStatus))
 }

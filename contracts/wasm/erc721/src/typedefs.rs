@@ -8,31 +8,33 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-use wasmlib::host::*;
+use crate::*;
 
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableBool {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableBool {
     pub fn get_bool(&self, key: &ScAgentID) -> ScImmutableBool {
-        ScImmutableBool::new(self.obj_id, key.get_key_id())
+        ScImmutableBool::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
 pub type ImmutableOperators = MapAgentIDToImmutableBool;
 
+#[derive(Clone)]
 pub struct MapAgentIDToMutableBool {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableBool {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_bool(&self, key: &ScAgentID) -> ScMutableBool {
-        ScMutableBool::new(self.obj_id, key.get_key_id())
+        ScMutableBool::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 

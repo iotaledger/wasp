@@ -9,63 +9,63 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTestCoreState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTestCoreState {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
+		ScImmutableInt64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn hname_ep(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_STATE_HNAME_EP))
+		ScImmutableHname::new(self.proxy.root(STATE_HNAME_EP))
 	}
 
     pub fn ints(&self) -> MapStringToImmutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_INTS), TYPE_MAP);
-		MapStringToImmutableInt64 { obj_id: map_id }
+		MapStringToImmutableInt64 { proxy: self.proxy.root(STATE_INTS) }
 	}
 
     pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_STATE_MINTED_COLOR))
+		ScImmutableColor::new(self.proxy.root(STATE_MINTED_COLOR))
 	}
 
-    pub fn minted_supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_MINTED_SUPPLY))
+    pub fn minted_supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(STATE_MINTED_SUPPLY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTestCoreState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTestCoreState {
+    pub fn as_immutable(&self) -> ImmutableTestCoreState {
+		ImmutableTestCoreState { proxy: self.proxy.root("") }
+	}
+
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
+		ScMutableInt64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn hname_ep(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_STATE_HNAME_EP))
+		ScMutableHname::new(self.proxy.root(STATE_HNAME_EP))
 	}
 
     pub fn ints(&self) -> MapStringToMutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_INTS), TYPE_MAP);
-		MapStringToMutableInt64 { obj_id: map_id }
+		MapStringToMutableInt64 { proxy: self.proxy.root(STATE_INTS) }
 	}
 
     pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_STATE_MINTED_COLOR))
+		ScMutableColor::new(self.proxy.root(STATE_MINTED_COLOR))
 	}
 
-    pub fn minted_supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_MINTED_SUPPLY))
+    pub fn minted_supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(STATE_MINTED_SUPPLY))
 	}
 }

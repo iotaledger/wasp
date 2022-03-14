@@ -9,7 +9,7 @@ export * from "./testwasmlib";
 
 export * from "./consts";
 export * from "./contract";
-export * from "./keys";
+export * from "./events";
 export * from "./lib";
 export * from "./params";
 export * from "./results";

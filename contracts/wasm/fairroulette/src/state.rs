@@ -9,104 +9,111 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
 
+#[derive(Clone)]
 pub struct ArrayOfImmutableBet {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfImmutableBet {
-    pub fn length(&self) -> i32 {
-        get_length(self.obj_id)
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
     }
 
-	pub fn get_bet(&self, index: i32) -> ImmutableBet {
-		ImmutableBet { obj_id: self.obj_id, key_id: Key32(index) }
+
+	pub fn get_bet(&self, index: u32) -> ImmutableBet {
+		ImmutableBet { proxy: self.proxy.index(index) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableFairRouletteState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFairRouletteState {
     pub fn bets(&self) -> ArrayOfImmutableBet {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
-		ArrayOfImmutableBet { obj_id: arr_id }
+		ArrayOfImmutableBet { proxy: self.proxy.root(STATE_BETS) }
 	}
 
-    pub fn last_winning_number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_LAST_WINNING_NUMBER))
+    pub fn last_winning_number(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.proxy.root(STATE_LAST_WINNING_NUMBER))
 	}
 
-    pub fn play_period(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_STATE_PLAY_PERIOD))
+    pub fn play_period(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(STATE_PLAY_PERIOD))
 	}
 
-    pub fn round_number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_ROUND_NUMBER))
+    pub fn round_number(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(STATE_ROUND_NUMBER))
 	}
 
-    pub fn round_started_at(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_STATE_ROUND_STARTED_AT))
+    pub fn round_started_at(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(STATE_ROUND_STARTED_AT))
 	}
 
-    pub fn round_status(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, idx_map(IDX_STATE_ROUND_STATUS))
+    pub fn round_status(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.proxy.root(STATE_ROUND_STATUS))
 	}
 }
 
+#[derive(Clone)]
 pub struct ArrayOfMutableBet {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfMutableBet {
-    pub fn clear(&self) {
-        clear(self.obj_id);
+
+	pub fn append_bet(&self) -> MutableBet {
+		MutableBet { proxy: self.proxy.append() }
+	}
+	pub fn clear(&self) {
+        self.proxy.clear_array();
     }
 
-    pub fn length(&self) -> i32 {
-        get_length(self.obj_id)
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
     }
 
-	pub fn get_bet(&self, index: i32) -> MutableBet {
-		MutableBet { obj_id: self.obj_id, key_id: Key32(index) }
+
+	pub fn get_bet(&self, index: u32) -> MutableBet {
+		MutableBet { proxy: self.proxy.index(index) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableFairRouletteState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableFairRouletteState {
+    pub fn as_immutable(&self) -> ImmutableFairRouletteState {
+		ImmutableFairRouletteState { proxy: self.proxy.root("") }
+	}
+
     pub fn bets(&self) -> ArrayOfMutableBet {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
-		ArrayOfMutableBet { obj_id: arr_id }
+		ArrayOfMutableBet { proxy: self.proxy.root(STATE_BETS) }
 	}
 
-    pub fn last_winning_number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_LAST_WINNING_NUMBER))
+    pub fn last_winning_number(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.proxy.root(STATE_LAST_WINNING_NUMBER))
 	}
 
-    pub fn play_period(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_STATE_PLAY_PERIOD))
+    pub fn play_period(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(STATE_PLAY_PERIOD))
 	}
 
-    pub fn round_number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_ROUND_NUMBER))
+    pub fn round_number(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(STATE_ROUND_NUMBER))
 	}
 
-    pub fn round_started_at(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_STATE_ROUND_STARTED_AT))
+    pub fn round_started_at(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(STATE_ROUND_STARTED_AT))
 	}
 
-    pub fn round_status(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, idx_map(IDX_STATE_ROUND_STATUS))
+    pub fn round_status(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.proxy.root(STATE_ROUND_STATUS))
 	}
 }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 // Follows ERC-721 standard as closely as possible
@@ -16,12 +17,12 @@ import * as sc from "./index";
 
 // set the required base URI, to which the base58 encoded token ID will be concatenated
 const BASE_URI = "my/special/base/uri/";
-const ZERO = new wasmlib.ScAgentID()
+const ZERO = wasmtypes.agentIDFromBytes([]);
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
 // checks if caller is owner, or one of its delegated operators
-function canOperate(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, owner: wasmlib.ScAgentID): boolean {
+function canOperate(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, owner: wasmlib.ScAgentID): bool {
     if (caller.equals(owner)) {
         return true;
     }
@@ -31,7 +32,7 @@ function canOperate(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, own
 }
 
 // checks if caller is owner, or one of its delegated operators, or approved account for tokenID
-function canTransfer(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, owner: wasmlib.ScAgentID, tokenID: wasmlib.ScHash): boolean {
+function canTransfer(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, owner: wasmlib.ScAgentID, tokenID: wasmlib.ScHash): bool {
     if (canOperate(state, caller, owner)) {
         return true;
     }
@@ -139,6 +140,12 @@ export function funcMint(ctx: wasmlib.ScFuncContext, f: sc.MintContext): void {
     let tokenOwner = f.state.owners().getAgentID(tokenID);
     ctx.require(!tokenOwner.exists(), "tokenID already minted");
 
+    // save optional token uri
+    let tokenURI = f.params.tokenURI();
+    if (tokenURI.exists()) {
+        f.state.tokenURIs().getString(tokenID).setValue(tokenURI.value());
+    }
+
     let owner = ctx.caller();
     tokenOwner.setValue(owner);
     let balance = f.state.balances().getUint64(owner);
@@ -237,6 +244,11 @@ export function viewSymbol(ctx: wasmlib.ScViewContext, f: sc.SymbolContext): voi
 export function viewTokenURI(ctx: wasmlib.ScViewContext, f: sc.TokenURIContext): void {
     let tokenID = f.params.tokenID();
     if (tokenID.exists()) {
-        f.results.tokenURI().setValue(BASE_URI + tokenID.toString());
+        let tokenURI = BASE_URI + tokenID.toString();
+        let savedURI = f.state.tokenURIs().getString(tokenID.value());
+        if (savedURI.exists()) {
+            tokenURI = savedURI.value();
+        }
+        f.results.tokenURI().setValue(tokenURI);
     }
 }

@@ -7,54 +7,56 @@
 
 package testcore
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableTestCoreState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestCoreState) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateCounter])
+func (s ImmutableTestCoreState) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(StateCounter))
 }
 
-func (s ImmutableTestCoreState) HnameEP() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, idxMap[IdxStateHnameEP])
+func (s ImmutableTestCoreState) HnameEP() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(StateHnameEP))
 }
 
 func (s ImmutableTestCoreState) Ints() MapStringToImmutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateInts], wasmlib.TYPE_MAP)
-	return MapStringToImmutableInt64{objID: mapID}
+	return MapStringToImmutableInt64{proxy: s.proxy.Root(StateInts)}
 }
 
-func (s ImmutableTestCoreState) MintedColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxStateMintedColor])
+func (s ImmutableTestCoreState) MintedColor() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(StateMintedColor))
 }
 
-func (s ImmutableTestCoreState) MintedSupply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateMintedSupply])
+func (s ImmutableTestCoreState) MintedSupply() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateMintedSupply))
 }
 
 type MutableTestCoreState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTestCoreState) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateCounter])
+func (s MutableTestCoreState) AsImmutable() ImmutableTestCoreState {
+	return ImmutableTestCoreState(s)
 }
 
-func (s MutableTestCoreState) HnameEP() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, idxMap[IdxStateHnameEP])
+func (s MutableTestCoreState) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(StateCounter))
+}
+
+func (s MutableTestCoreState) HnameEP() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(StateHnameEP))
 }
 
 func (s MutableTestCoreState) Ints() MapStringToMutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateInts], wasmlib.TYPE_MAP)
-	return MapStringToMutableInt64{objID: mapID}
+	return MapStringToMutableInt64{proxy: s.proxy.Root(StateInts)}
 }
 
-func (s MutableTestCoreState) MintedColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxStateMintedColor])
+func (s MutableTestCoreState) MintedColor() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(StateMintedColor))
 }
 
-func (s MutableTestCoreState) MintedSupply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateMintedSupply])
+func (s MutableTestCoreState) MintedSupply() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateMintedSupply))
 }

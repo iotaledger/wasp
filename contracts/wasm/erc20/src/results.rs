@@ -9,74 +9,70 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableAllowanceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAllowanceResults {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableAllowanceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableAllowanceResults {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBalanceOfResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBalanceOfResults {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBalanceOfResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBalanceOfResults {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTotalSupplyResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTotalSupplyResults {
-    pub fn supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
+    pub fn supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_SUPPLY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTotalSupplyResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTotalSupplyResults {
-    pub fn supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
+    pub fn supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_SUPPLY))
 	}
 }

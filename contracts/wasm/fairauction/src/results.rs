@@ -9,119 +9,114 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetInfoResults {
-    pub fn bidders(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_BIDDERS))
+    pub fn bidders(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(RESULT_BIDDERS))
 	}
 
     pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_RESULT_COLOR))
+		ScImmutableColor::new(self.proxy.root(RESULT_COLOR))
 	}
 
     pub fn creator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CREATOR))
+		ScImmutableAgentID::new(self.proxy.root(RESULT_CREATOR))
 	}
 
-    pub fn deposit(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_DEPOSIT))
+    pub fn deposit(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_DEPOSIT))
 	}
 
     pub fn description(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_DESCRIPTION))
+		ScImmutableString::new(self.proxy.root(RESULT_DESCRIPTION))
 	}
 
-    pub fn duration(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_DURATION))
+    pub fn duration(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(RESULT_DURATION))
 	}
 
-    pub fn highest_bid(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_HIGHEST_BID))
+    pub fn highest_bid(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_HIGHEST_BID))
 	}
 
     pub fn highest_bidder(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_HIGHEST_BIDDER))
+		ScImmutableAgentID::new(self.proxy.root(RESULT_HIGHEST_BIDDER))
 	}
 
-    pub fn minimum_bid(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_MINIMUM_BID))
+    pub fn minimum_bid(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_MINIMUM_BID))
 	}
 
-    pub fn num_tokens(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_NUM_TOKENS))
+    pub fn num_tokens(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_NUM_TOKENS))
 	}
 
-    pub fn owner_margin(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_OWNER_MARGIN))
+    pub fn owner_margin(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
 	}
 
-    pub fn when_started(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_WHEN_STARTED))
+    pub fn when_started(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_WHEN_STARTED))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetInfoResults {
-    pub fn bidders(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_BIDDERS))
+    pub fn bidders(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(RESULT_BIDDERS))
 	}
 
     pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_RESULT_COLOR))
+		ScMutableColor::new(self.proxy.root(RESULT_COLOR))
 	}
 
     pub fn creator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CREATOR))
+		ScMutableAgentID::new(self.proxy.root(RESULT_CREATOR))
 	}
 
-    pub fn deposit(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_DEPOSIT))
+    pub fn deposit(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_DEPOSIT))
 	}
 
     pub fn description(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_DESCRIPTION))
+		ScMutableString::new(self.proxy.root(RESULT_DESCRIPTION))
 	}
 
-    pub fn duration(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_DURATION))
+    pub fn duration(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(RESULT_DURATION))
 	}
 
-    pub fn highest_bid(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_HIGHEST_BID))
+    pub fn highest_bid(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_HIGHEST_BID))
 	}
 
     pub fn highest_bidder(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_HIGHEST_BIDDER))
+		ScMutableAgentID::new(self.proxy.root(RESULT_HIGHEST_BIDDER))
 	}
 
-    pub fn minimum_bid(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_MINIMUM_BID))
+    pub fn minimum_bid(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_MINIMUM_BID))
 	}
 
-    pub fn num_tokens(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_NUM_TOKENS))
+    pub fn num_tokens(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_NUM_TOKENS))
 	}
 
-    pub fn owner_margin(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_OWNER_MARGIN))
+    pub fn owner_margin(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
 	}
 
-    pub fn when_started(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_WHEN_STARTED))
+    pub fn when_started(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_WHEN_STARTED))
 	}
 }

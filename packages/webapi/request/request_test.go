@@ -72,6 +72,14 @@ func (m *mockedChain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionM
 	panic("implement me")
 }
 
+func (m *mockedChain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	panic("implement me")
+}
+
+func (m *mockedChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	panic("implement me")
+}
+
 // private methods
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {

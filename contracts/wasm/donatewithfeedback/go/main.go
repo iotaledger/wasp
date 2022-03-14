@@ -5,20 +5,28 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//go:build wasm
 // +build wasm
 
 package main
 
-import "github.com/iotaledger/wasp/packages/vm/wasmclient"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost"
 
 import "github.com/iotaledger/wasp/contracts/wasm/donatewithfeedback/go/donatewithfeedback"
 
 func main() {
 }
 
+func init() {
+	wasmvmhost.ConnectWasmHost()
+}
+
+//export on_call
+func onCall(index int32) {
+	donatewithfeedback.OnLoad(index)
+}
+
 //export on_load
 func onLoad() {
-	h := &wasmclient.WasmVMHost{}
-	h.ConnectWasmHost()
-	donatewithfeedback.OnLoad()
+	donatewithfeedback.OnLoad(-1)
 }

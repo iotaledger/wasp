@@ -72,14 +72,14 @@ Prerequisites:
   [downloaded here](https://rustwasm.github.io/wasm-pack/).
 
 Building a Rust smart contract is very simple when using the Rust plugin in any
-IntelliJ based development environment. Open the _contracts/rust_ sub folder in
+IntelliJ based development environment. Open the _contracts/wasm_ sub folder in
 your IntelliJ, which then provides you with the Rust workspace.
 
 The easiest way to create a new contract is to copy the _helloworld_ folder to a
 properly named new folder within the _rust_ sub folder. Next, change the fields
 in the first section of the new folder's _cargo.toml_ file to match your
 preferences. Make sure the package name equals the folder name. Finally, add the
-new folder to the workspace in the _cargo.toml_ in the _contracts/rust_ folder.
+new folder to the workspace in the _cargo.toml_ in the _contracts/wasm_ folder.
 
 To build the new smart contract select _Run->Edit Configurations_. Add a new
 configuration based on the _wasmpack_ template, type the _name_ of the new

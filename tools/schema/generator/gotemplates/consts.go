@@ -1,26 +1,24 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package gotemplates
 
 var constsGo = map[string]string{
 	// *******************************
 	"consts.go": `
-$#emit goHeader
+$#emit goPackage
+
+$#emit importWasmTypes
 
 const (
 	ScName        = "$scName"
 	ScDescription = "$scDesc"
-	HScName       = wasmlib.ScHname(0x$hscName)
+	HScName       = wasmtypes.ScHname(0x$hscName)
 )
 $#if params constParams
 $#if results constResults
 $#if state constState
-
-const (
-$#each func constFunc
-)
-
-const (
-$#each func constHFunc
-)
+$#if funcs constFuncs
 `,
 	// *******************************
 	"constParams": `
@@ -47,6 +45,17 @@ $#each state constField
 )
 `,
 	// *******************************
+	"constFuncs": `
+
+const (
+$#each func constFunc
+)
+
+const (
+$#each func constHFunc
+)
+`,
+	// *******************************
 	"constField": `
 	$constPrefix$FldName$fldPad = "$fldAlias"
 `,
@@ -56,6 +65,6 @@ $#each state constField
 `,
 	// *******************************
 	"constHFunc": `
-	H$Kind$FuncName$funcPad = wasmlib.ScHname(0x$funcHname)
+	H$Kind$FuncName$funcPad = wasmtypes.ScHname(0x$hFuncName)
 `,
 }

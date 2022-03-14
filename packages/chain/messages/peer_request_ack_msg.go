@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
 )
@@ -17,7 +18,7 @@ type RequestAckMsg struct {
 
 type RequestAckMsgIn struct {
 	RequestAckMsg
-	SenderNetID string
+	SenderPubKey *ed25519.PublicKey
 }
 
 func NewRequestAckMsg(buf []byte) (*RequestAckMsg, error) {

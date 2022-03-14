@@ -5,61 +5,61 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableInitParams extends wasmlib.ScMapID {
-    owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+export class ImmutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamOwner));
 	}
 }
 
-export class MutableInitParams extends wasmlib.ScMapID {
-    owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+export class MutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamOwner));
 	}
 }
 
-export class ImmutableMemberParams extends wasmlib.ScMapID {
-    address(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+export class ImmutableMemberParams extends wasmtypes.ScProxy {
+	address(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
 	}
 
-    factor(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
-	}
-}
-
-export class MutableMemberParams extends wasmlib.ScMapID {
-    address(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
-	}
-
-    factor(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
+	factor(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamFactor));
 	}
 }
 
-export class ImmutableSetOwnerParams extends wasmlib.ScMapID {
-    owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+export class MutableMemberParams extends wasmtypes.ScProxy {
+	address(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
+	}
+
+	factor(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamFactor));
 	}
 }
 
-export class MutableSetOwnerParams extends wasmlib.ScMapID {
-    owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+export class ImmutableSetOwnerParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamOwner));
 	}
 }
 
-export class ImmutableGetFactorParams extends wasmlib.ScMapID {
-    address(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+export class MutableSetOwnerParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamOwner));
 	}
 }
 
-export class MutableGetFactorParams extends wasmlib.ScMapID {
-    address(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+export class ImmutableGetFactorParams extends wasmtypes.ScProxy {
+	address(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
+	}
+}
+
+export class MutableGetFactorParams extends wasmtypes.ScProxy {
+	address(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
 	}
 }

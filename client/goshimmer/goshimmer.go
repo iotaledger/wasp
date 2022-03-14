@@ -69,15 +69,47 @@ func (c *Client) GetConfirmedOutputs(address ledgerstate.Address) ([]ledgerstate
 	if err != nil {
 		return nil, fmt.Errorf("GetUnspentOutputs: %w", err)
 	}
-	ret := make([]ledgerstate.Output, len(r.Outputs))
-	for i, out := range r.Outputs {
+
+	// prevent calling c.IsTransactionConfirmed() twice for the same tx
+	confirmedCache := map[string]bool{}
+	isConfirmed := func(txID string) (bool, error) {
+		confirmed, ok := confirmedCache[txID]
+		if ok {
+			return confirmed, nil
+		}
+		confirmed, err = c.IsTransactionConfirmed(txID)
+		if err != nil {
+			return false, err
+		}
+		confirmedCache[txID] = confirmed
+		return confirmed, nil
+	}
+
+	var ret []ledgerstate.Output
+	for _, out := range r.Outputs {
 		var err error
-		ret[i], err = out.ToLedgerstateOutput()
+		confirmed, err := isConfirmed(out.OutputID.TransactionID)
 		if err != nil {
 			return nil, err
 		}
+		if !confirmed {
+			continue
+		}
+		output, err := out.ToLedgerstateOutput()
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, output)
 	}
 	return ret, nil
+}
+
+func (c *Client) IsTransactionConfirmed(txID string) (bool, error) {
+	r, err := c.api.GetTransactionInclusionState(txID)
+	if err != nil {
+		return false, fmt.Errorf("IsTransactionConfirmed: %w", err)
+	}
+	return r.Confirmed && !r.Rejected, nil
 }
 
 func (c *Client) postTx(tx *ledgerstate.Transaction) error {

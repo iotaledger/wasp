@@ -9,79 +9,79 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
+#[derive(Clone)]
 pub struct Token {
-    pub created      : i64,  // creation timestamp
+    pub created      : u64,  // creation timestamp
     pub description  : String,  // description what minted token represents
     pub minted_by    : ScAgentID,  // original minter
     pub owner        : ScAgentID,  // current owner
-    pub supply       : i64,  // amount of tokens originally minted
-    pub updated      : i64,  // last update timestamp
+    pub supply       : u64,  // amount of tokens originally minted
+    pub updated      : u64,  // last update timestamp
     pub user_defined : String,  // any user defined text
 }
 
 impl Token {
     pub fn from_bytes(bytes: &[u8]) -> Token {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         Token {
-            created      : decode.int64(),
-            description  : decode.string(),
-            minted_by    : decode.agent_id(),
-            owner        : decode.agent_id(),
-            supply       : decode.int64(),
-            updated      : decode.int64(),
-            user_defined : decode.string(),
+            created      : uint64_decode(&mut dec),
+            description  : string_decode(&mut dec),
+            minted_by    : agent_id_decode(&mut dec),
+            owner        : agent_id_decode(&mut dec),
+            supply       : uint64_decode(&mut dec),
+            updated      : uint64_decode(&mut dec),
+            user_defined : string_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.int64(self.created);
-		encode.string(&self.description);
-		encode.agent_id(&self.minted_by);
-		encode.agent_id(&self.owner);
-		encode.int64(self.supply);
-		encode.int64(self.updated);
-		encode.string(&self.user_defined);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		uint64_encode(&mut enc, self.created);
+		string_encode(&mut enc, &self.description);
+		agent_id_encode(&mut enc, &self.minted_by);
+		agent_id_encode(&mut enc, &self.owner);
+		uint64_encode(&mut enc, self.supply);
+		uint64_encode(&mut enc, self.updated);
+		string_encode(&mut enc, &self.user_defined);
+        enc.buf()
     }
 }
 
+#[derive(Clone)]
 pub struct ImmutableToken {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableToken {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> Token {
-        Token::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Token::from_bytes(&self.proxy.get())
     }
 }
 
+#[derive(Clone)]
 pub struct MutableToken {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableToken {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &Token) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> Token {
-        Token::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Token::from_bytes(&self.proxy.get())
     }
 }

@@ -8,32 +8,34 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-use wasmlib::host::*;
+use crate::*;
 
-pub struct MapAgentIDToImmutableInt64 {
-	pub(crate) obj_id: i32,
+#[derive(Clone)]
+pub struct MapAgentIDToImmutableUint64 {
+	pub(crate) proxy: Proxy,
 }
 
-impl MapAgentIDToImmutableInt64 {
-    pub fn get_int64(&self, key: &ScAgentID) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.obj_id, key.get_key_id())
+impl MapAgentIDToImmutableUint64 {
+    pub fn get_uint64(&self, key: &ScAgentID) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
-pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableInt64;
+pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableUint64;
 
-pub struct MapAgentIDToMutableInt64 {
-	pub(crate) obj_id: i32,
+#[derive(Clone)]
+pub struct MapAgentIDToMutableUint64 {
+	pub(crate) proxy: Proxy,
 }
 
-impl MapAgentIDToMutableInt64 {
+impl MapAgentIDToMutableUint64 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
-    pub fn get_int64(&self, key: &ScAgentID) -> ScMutableInt64 {
-        ScMutableInt64::new(self.obj_id, key.get_key_id())
+    pub fn get_uint64(&self, key: &ScAgentID) -> ScMutableUint64 {
+        ScMutableUint64::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
-pub type MutableAllowancesForAgent = MapAgentIDToMutableInt64;
+pub type MutableAllowancesForAgent = MapAgentIDToMutableUint64;

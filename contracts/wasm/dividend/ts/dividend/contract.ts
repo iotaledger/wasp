@@ -13,93 +13,94 @@ export class DivideCall {
 }
 
 export class DivideContext {
-	state: sc.MutableDividendState = new sc.MutableDividendState();
+	state: sc.MutableDividendState = new sc.MutableDividendState(wasmlib.ScState.proxy());
 }
 
 export class InitCall {
 	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
-	params: sc.MutableInitParams = new sc.MutableInitParams();
+	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
 }
 
 export class InitContext {
-	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-	state: sc.MutableDividendState = new sc.MutableDividendState();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams(wasmlib.paramsProxy());
+	state: sc.MutableDividendState = new sc.MutableDividendState(wasmlib.ScState.proxy());
 }
 
 export class MemberCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMember);
-	params: sc.MutableMemberParams = new sc.MutableMemberParams();
+	params: sc.MutableMemberParams = new sc.MutableMemberParams(wasmlib.ScView.nilProxy);
 }
 
 export class MemberContext {
-	params: sc.ImmutableMemberParams = new sc.ImmutableMemberParams();
-	state: sc.MutableDividendState = new sc.MutableDividendState();
+	params: sc.ImmutableMemberParams = new sc.ImmutableMemberParams(wasmlib.paramsProxy());
+	state: sc.MutableDividendState = new sc.MutableDividendState(wasmlib.ScState.proxy());
 }
 
 export class SetOwnerCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetOwner);
-	params: sc.MutableSetOwnerParams = new sc.MutableSetOwnerParams();
+	params: sc.MutableSetOwnerParams = new sc.MutableSetOwnerParams(wasmlib.ScView.nilProxy);
 }
 
 export class SetOwnerContext {
-	params: sc.ImmutableSetOwnerParams = new sc.ImmutableSetOwnerParams();
-	state: sc.MutableDividendState = new sc.MutableDividendState();
+	params: sc.ImmutableSetOwnerParams = new sc.ImmutableSetOwnerParams(wasmlib.paramsProxy());
+	state: sc.MutableDividendState = new sc.MutableDividendState(wasmlib.ScState.proxy());
 }
 
 export class GetFactorCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetFactor);
-	params: sc.MutableGetFactorParams = new sc.MutableGetFactorParams();
-	results: sc.ImmutableGetFactorResults = new sc.ImmutableGetFactorResults();
+	params: sc.MutableGetFactorParams = new sc.MutableGetFactorParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetFactorResults = new sc.ImmutableGetFactorResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetFactorContext {
-	params: sc.ImmutableGetFactorParams = new sc.ImmutableGetFactorParams();
-	results: sc.MutableGetFactorResults = new sc.MutableGetFactorResults();
-	state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
+	params: sc.ImmutableGetFactorParams = new sc.ImmutableGetFactorParams(wasmlib.paramsProxy());
+	results: sc.MutableGetFactorResults = new sc.MutableGetFactorResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableDividendState = new sc.ImmutableDividendState(wasmlib.ScState.proxy());
 }
 
 export class GetOwnerCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetOwner);
-	results: sc.ImmutableGetOwnerResults = new sc.ImmutableGetOwnerResults();
+	results: sc.ImmutableGetOwnerResults = new sc.ImmutableGetOwnerResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetOwnerContext {
-	results: sc.MutableGetOwnerResults = new sc.MutableGetOwnerResults();
-	state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
+	results: sc.MutableGetOwnerResults = new sc.MutableGetOwnerResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableDividendState = new sc.ImmutableDividendState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
-    static divide(ctx: wasmlib.ScFuncCallContext): DivideCall {
-        return new DivideCall();
-    }
+	static divide(_ctx: wasmlib.ScFuncCallContext): DivideCall {
+		return new DivideCall();
+	}
 
-    static init(ctx: wasmlib.ScFuncCallContext): InitCall {
-        let f = new InitCall();
-        f.func.setPtrs(f.params, null);
-        return f;
-    }
+	static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall();
+		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
 
-    static member(ctx: wasmlib.ScFuncCallContext): MemberCall {
-        let f = new MemberCall();
-        f.func.setPtrs(f.params, null);
-        return f;
-    }
+	static member(_ctx: wasmlib.ScFuncCallContext): MemberCall {
+		const f = new MemberCall();
+		f.params = new sc.MutableMemberParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
 
-    static setOwner(ctx: wasmlib.ScFuncCallContext): SetOwnerCall {
-        let f = new SetOwnerCall();
-        f.func.setPtrs(f.params, null);
-        return f;
-    }
+	static setOwner(_ctx: wasmlib.ScFuncCallContext): SetOwnerCall {
+		const f = new SetOwnerCall();
+		f.params = new sc.MutableSetOwnerParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
 
-    static getFactor(ctx: wasmlib.ScViewCallContext): GetFactorCall {
-        let f = new GetFactorCall();
-        f.func.setPtrs(f.params, f.results);
-        return f;
-    }
+	static getFactor(_ctx: wasmlib.ScViewCallContext): GetFactorCall {
+		const f = new GetFactorCall();
+		f.params = new sc.MutableGetFactorParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetFactorResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
 
-    static getOwner(ctx: wasmlib.ScViewCallContext): GetOwnerCall {
-        let f = new GetOwnerCall();
-        f.func.setPtrs(null, f.results);
-        return f;
-    }
+	static getOwner(_ctx: wasmlib.ScViewCallContext): GetOwnerCall {
+		const f = new GetOwnerCall();
+		f.results = new sc.ImmutableGetOwnerResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
 }

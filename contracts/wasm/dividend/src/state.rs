@@ -9,113 +9,119 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
 
+#[derive(Clone)]
 pub struct ArrayOfImmutableAddress {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfImmutableAddress {
-    pub fn length(&self) -> i32 {
-        get_length(self.obj_id)
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
     }
 
-    pub fn get_address(&self, index: i32) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.obj_id, Key32(index))
-    }
-}
-
-pub struct MapAddressToImmutableInt64 {
-	pub(crate) obj_id: i32,
-}
-
-impl MapAddressToImmutableInt64 {
-    pub fn get_int64(&self, key: &ScAddress) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.obj_id, key.get_key_id())
+    pub fn get_address(&self, index: u32) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.proxy.index(index))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
+pub struct MapAddressToImmutableUint64 {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapAddressToImmutableUint64 {
+    pub fn get_uint64(&self, key: &ScAddress) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.proxy.key(&address_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableDividendState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDividendState {
     pub fn member_list(&self) -> ArrayOfImmutableAddress {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBER_LIST), TYPE_ARRAY | TYPE_ADDRESS);
-		ArrayOfImmutableAddress { obj_id: arr_id }
+		ArrayOfImmutableAddress { proxy: self.proxy.root(STATE_MEMBER_LIST) }
 	}
 
-    pub fn members(&self) -> MapAddressToImmutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBERS), TYPE_MAP);
-		MapAddressToImmutableInt64 { obj_id: map_id }
+    pub fn members(&self) -> MapAddressToImmutableUint64 {
+		MapAddressToImmutableUint64 { proxy: self.proxy.root(STATE_MEMBERS) }
 	}
 
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_STATE_OWNER))
+		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
-    pub fn total_factor(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_TOTAL_FACTOR))
+    pub fn total_factor(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(STATE_TOTAL_FACTOR))
 	}
 }
 
+#[derive(Clone)]
 pub struct ArrayOfMutableAddress {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfMutableAddress {
+	pub fn append_address(&self) -> ScMutableAddress {
+		ScMutableAddress::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
+    }
+
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_address(&self, index: u32) -> ScMutableAddress {
+        ScMutableAddress::new(self.proxy.index(index))
+    }
+}
+
+#[derive(Clone)]
+pub struct MapAddressToMutableUint64 {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapAddressToMutableUint64 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
-    pub fn length(&self) -> i32 {
-        get_length(self.obj_id)
-    }
-
-    pub fn get_address(&self, index: i32) -> ScMutableAddress {
-        ScMutableAddress::new(self.obj_id, Key32(index))
+    pub fn get_uint64(&self, key: &ScAddress) -> ScMutableUint64 {
+        ScMutableUint64::new(self.proxy.key(&address_to_bytes(key)))
     }
 }
 
-pub struct MapAddressToMutableInt64 {
-	pub(crate) obj_id: i32,
-}
-
-impl MapAddressToMutableInt64 {
-    pub fn clear(&self) {
-        clear(self.obj_id);
-    }
-
-    pub fn get_int64(&self, key: &ScAddress) -> ScMutableInt64 {
-        ScMutableInt64::new(self.obj_id, key.get_key_id())
-    }
-}
-
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDividendState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableDividendState {
-    pub fn member_list(&self) -> ArrayOfMutableAddress {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBER_LIST), TYPE_ARRAY | TYPE_ADDRESS);
-		ArrayOfMutableAddress { obj_id: arr_id }
+    pub fn as_immutable(&self) -> ImmutableDividendState {
+		ImmutableDividendState { proxy: self.proxy.root("") }
 	}
 
-    pub fn members(&self) -> MapAddressToMutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBERS), TYPE_MAP);
-		MapAddressToMutableInt64 { obj_id: map_id }
+    pub fn member_list(&self) -> ArrayOfMutableAddress {
+		ArrayOfMutableAddress { proxy: self.proxy.root(STATE_MEMBER_LIST) }
+	}
+
+    pub fn members(&self) -> MapAddressToMutableUint64 {
+		MapAddressToMutableUint64 { proxy: self.proxy.root(STATE_MEMBERS) }
 	}
 
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_STATE_OWNER))
+		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
-    pub fn total_factor(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_TOTAL_FACTOR))
+    pub fn total_factor(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(STATE_TOTAL_FACTOR))
 	}
 }

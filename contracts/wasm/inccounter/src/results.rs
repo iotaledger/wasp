@@ -9,29 +9,118 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetCounterResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetCounterResults {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+		ScImmutableInt64::new(self.proxy.root(RESULT_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetCounterResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetCounterResults {
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+		ScMutableInt64::new(self.proxy.root(RESULT_COUNTER))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetVliResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableGetVliResults {
+    pub fn buf(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(RESULT_BUF))
+	}
+
+    pub fn ni64(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.proxy.root(RESULT_NI64))
+	}
+
+    pub fn str(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(RESULT_STR))
+	}
+
+    pub fn xi64(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.proxy.root(RESULT_XI64))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableGetVliResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableGetVliResults {
+    pub fn buf(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(RESULT_BUF))
+	}
+
+    pub fn ni64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.proxy.root(RESULT_NI64))
+	}
+
+    pub fn str(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(RESULT_STR))
+	}
+
+    pub fn xi64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.proxy.root(RESULT_XI64))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetVluResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableGetVluResults {
+    pub fn buf(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(RESULT_BUF))
+	}
+
+    pub fn nu64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_NU64))
+	}
+
+    pub fn str(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(RESULT_STR))
+	}
+
+    pub fn xu64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_XU64))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableGetVluResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableGetVluResults {
+    pub fn buf(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(RESULT_BUF))
+	}
+
+    pub fn nu64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_NU64))
+	}
+
+    pub fn str(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(RESULT_STR))
+	}
+
+    pub fn xu64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_XU64))
 	}
 }

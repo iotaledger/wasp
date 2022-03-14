@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package rstemplates
 
 var constsRs = map[string]string{
@@ -13,10 +16,7 @@ pub const HSC_NAME       : ScHname = ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
 $#if state constState
-
-$#each func constFunc
-
-$#each func constHFunc
+$#if funcs constFuncs
 `,
 	// *******************************
 	"constParams": `
@@ -37,6 +37,13 @@ $#set constPrefix STATE_
 $#each state constField
 `,
 	// *******************************
+	"constFuncs": `
+
+$#each func constFunc
+
+$#each func constHFunc
+`,
+	// *******************************
 	"constField": `
 pub$crate const $constPrefix$FLD_NAME$fld_pad : &str = "$fldAlias";
 `,
@@ -46,6 +53,6 @@ pub$crate const $KIND$+_$FUNC_NAME$func_pad : &str = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-pub$crate const H$KIND$+_$FUNC_NAME$func_pad : ScHname = ScHname(0x$funcHname);
+pub$crate const H$KIND$+_$FUNC_NAME$func_pad : ScHname = ScHname(0x$hFuncName);
 `,
 }

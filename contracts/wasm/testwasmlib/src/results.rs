@@ -9,140 +9,158 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableArrayLengthResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableArrayLengthResults {
-    pub fn length(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
+    pub fn length(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableArrayLengthResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableArrayLengthResults {
-    pub fn length(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
+    pub fn length(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableArrayValueResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableArrayValueResults {
     pub fn value(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
+		ScImmutableString::new(self.proxy.root(RESULT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableArrayValueResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableArrayValueResults {
     pub fn value(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
+		ScMutableString::new(self.proxy.root(RESULT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBlockRecordResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBlockRecordResults {
     pub fn record(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
+		ScImmutableBytes::new(self.proxy.root(RESULT_RECORD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBlockRecordResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBlockRecordResults {
     pub fn record(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
+		ScMutableBytes::new(self.proxy.root(RESULT_RECORD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBlockRecordsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBlockRecordsResults {
-    pub fn count(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
+    pub fn count(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(RESULT_COUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBlockRecordsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBlockRecordsResults {
-    pub fn count(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
+    pub fn count(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(RESULT_COUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRandomResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRandomResults {
-    pub fn random(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+    pub fn random(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_RANDOM))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRandomResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRandomResults {
-    pub fn random(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+    pub fn random(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_RANDOM))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableIotaBalanceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableIotaBalanceResults {
-    pub fn iotas(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
+    pub fn iotas(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_IOTAS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableIotaBalanceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableIotaBalanceResults {
-    pub fn iotas(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
+    pub fn iotas(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_IOTAS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableMapValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableMapValueResults {
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(RESULT_VALUE))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableMapValueResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableMapValueResults {
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(RESULT_VALUE))
 	}
 }

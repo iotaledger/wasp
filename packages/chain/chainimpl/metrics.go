@@ -5,9 +5,24 @@
 package chainimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 func (c *chainObj) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
 	return c.nodeConn.GetMetrics()
+}
+
+func (c *chainObj) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	if c.consensus == nil {
+		return nil
+	}
+	return c.consensus.GetWorkflowStatus()
+}
+
+func (c *chainObj) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	if c.consensus == nil {
+		return nil
+	}
+	return c.consensus.GetPipeMetrics()
 }
