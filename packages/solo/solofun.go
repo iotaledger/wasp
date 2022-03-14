@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,7 +27,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 
 	_, err := env.utxoDB.GetFundsFromFaucet(addr)
 	require.NoError(env.T, err)
-	env.AssertL1Iotas(addr, Saldo)
+	env.AssertL1Iotas(addr, utxodb.FundsFromFaucetAmount)
 
 	return keyPair, addr
 }

@@ -6,22 +6,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/utxodb"
-
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	testOwner = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress = ledgerstate.NewED25519Address(testOwner.PublicKey)
+	myAddress = testOwner.Address()
 )
 
 func setupBlobTest(t *testing.T) *chainEnv {
@@ -41,9 +39,8 @@ func setupBlobTest(t *testing.T) *chainEnv {
 
 	e.requestFunds(myAddress, "myAddress")
 
-	if !e.clu.AssertAddressBalances(myAddress, utxodb.FundsFromFaucetAmount,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount),
-		"myAddress after request funds") {
+	if !e.clu.AssertAddressBalances(myAddress,
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
 		t.Fail()
 	}
 	return chEnv

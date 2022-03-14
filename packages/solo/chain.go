@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"math"
 	"os"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"

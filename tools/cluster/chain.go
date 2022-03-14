@@ -26,7 +26,7 @@ import (
 type Chain struct {
 	Description string
 
-	OriginatorKeyPair cryptolib.KeyPair
+	OriginatorKeyPair *cryptolib.KeyPair
 
 	AllPeers       []int
 	CommitteeNodes []int
@@ -69,7 +69,7 @@ func (ch *Chain) OriginatorID() *iscp.AgentID {
 }
 
 func (ch *Chain) OriginatorClient() *chainclient.Client {
-	return ch.Client(&ch.OriginatorKeyPair)
+	return ch.Client(ch.OriginatorKeyPair)
 }
 
 func (ch *Chain) Client(sigScheme *cryptolib.KeyPair, nodeIndex ...int) *chainclient.Client {

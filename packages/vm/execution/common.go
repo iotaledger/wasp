@@ -4,11 +4,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
-
-var ErrTooManyNFTsInAllowance = coreerrors.Register("expected at most 1 NFT in allowance").Create()
 
 // this file holds functions common to both context implementation (viewcontext and vmcontext)
 

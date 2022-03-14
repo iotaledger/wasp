@@ -42,7 +42,7 @@ type Cluster struct {
 	Config           *ClusterConfig
 	Started          bool
 	DataPath         string
-	ValidatorKeyPair cryptolib.KeyPair // Default identity for validators, chain owners, etc.
+	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
 
 	privTangle *privtangle.PrivTangle
 	waspCmds   []*exec.Cmd
@@ -53,7 +53,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 	return &Cluster{
 		Name:             name,
 		Config:           config,
-		ValidatorKeyPair: *cryptolib.NewKeyPair(),
+		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
 	}
@@ -179,7 +179,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		CommitteePubKeys:  committeePubKeys,
 		N:                 uint16(len(committeeNodes)),
 		T:                 quorum,
-		OriginatorKeyPair: &chain.OriginatorKeyPair,
+		OriginatorKeyPair: chain.OriginatorKeyPair,
 		Description:       description,
 		Textout:           os.Stdout,
 		Prefix:            "[cluster] ",
@@ -230,7 +230,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
 	scParams := chainclient.NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).WithIotas(1)
-	govClient := chain.SCClient(governance.Contract.Hname(), &chain.OriginatorKeyPair)
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
 		return err
@@ -371,7 +371,7 @@ func (clu *Cluster) start(dataPath string) error {
 
 	if !clu.Config.L1.UseProvidedNode {
 		// TODO probably worth it re-implementing "mocknode" package, using the real thing for now just to make it work
-		clu.privTangle = privtangle.Start(nil, path.Join(os.TempDir(), "L1"), clu.Config.L1.TxStreamPort, clu.Config.L1.NodeCount, clu.t)
+		clu.privTangle = privtangle.Start(context.TODO(), path.Join(os.TempDir(), "L1"), clu.Config.L1.TxStreamPort, clu.Config.L1.NodeCount, clu.t)
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}
 

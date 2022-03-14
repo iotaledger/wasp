@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -237,22 +236,6 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		TimeAssumption:     c.consensusBatch.TimeData,
 		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-	}
-	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
-		// TODO: OnFinish was dropped; move this block to the goroutine that calls vmRunner.Run()
-		// TODO: vmError is now task.VMError
-		if vmError != nil {
-			c.log.Errorf("runVM OnFinish callback: VM task failed: %v", vmError)
-			return
-		}
-		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.RootCommitment())
-		c.EnqueueVMResultMsg(&messages.VMResultMsg{
-			Task: task,
-		})
-		// TODO: use c.workflow.GetVMStartedTime() instead
-		elapsed := time.Since(task.StartTime)
-		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task

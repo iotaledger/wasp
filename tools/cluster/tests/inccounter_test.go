@@ -128,17 +128,16 @@ func TestIncrementWithTransfer(t *testing.T) {
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
-	if !e.clu.AssertAddressBalances(scOwnerAddr, utxodb.FundsFromFaucetAmount-42,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42),
-		"owner after") {
+	if !e.clu.AssertAddressBalances(scOwnerAddr,
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42)) {
 		t.Fail()
 	}
 	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	actual := e.getBalanceOnChain(agentID, colored.IOTA)
+	actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)
 	require.EqualValues(t, 42, actual)
 
 	agentID = iscp.NewAgentID(scOwnerAddr, 0)
-	actual = e.getBalanceOnChain(agentID, colored.IOTA)
+	actual = e.getBalanceOnChain(agentID, iscp.IotaTokenID)
 	require.EqualValues(t, 0, actual)
 
 	e.checkCounter(1)

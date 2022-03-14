@@ -43,7 +43,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Saldo is the default amount of tokens returned by the UTXODB faucet
+// utxodb.FundsFromFaucetAmount is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
 	MaxRequestsInBlock = 100
@@ -246,7 +246,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1Iotas(originatorAddr, Saldo-anchor.Deposit)
+	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Bech32(iscp.NetworkPrefix))

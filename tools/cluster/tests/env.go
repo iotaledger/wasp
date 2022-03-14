@@ -168,5 +168,5 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 }
 
 func (e *chainEnv) chainClient() *chainclient.Client {
-	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, &scOwner)
+	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, scOwner)
 }
