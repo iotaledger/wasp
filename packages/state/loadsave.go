@@ -46,7 +46,7 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 
 	batch := vs.db.Batched()
 
-	vs.trie.ApplyMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
+	vs.trie.PersistMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
 	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
 	for _, blk := range blocks {
 		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))

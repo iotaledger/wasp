@@ -31,7 +31,7 @@ func init() {
 }
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
-	// core.PrintWellKnownHnames()
+	// corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:                 DEBUG,
 		AutoAdjustDustDeposit: true,

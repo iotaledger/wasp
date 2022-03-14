@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,5 +23,5 @@ func TestBasic(t *testing.T) {
 		return db.NewStore()
 	}
 
-	_ = New(logger, processors.NewConfig(), 10, time.Second, false, nil, getOrCreateKVStore)
+	_ = New(logger, coreprocessors.Config(), 10, time.Second, false, nil, getOrCreateKVStore)
 }

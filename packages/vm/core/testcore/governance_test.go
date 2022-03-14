@@ -12,7 +12,7 @@ import (
 )
 
 func TestGovernance1(t *testing.T) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 
 	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
 		env := solo.New(t, false, false)
@@ -62,7 +62,7 @@ func TestGovernance1(t *testing.T) {
 }
 
 func TestRotate(t *testing.T) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 
 	t.Run("not allowed address", func(t *testing.T) {
 		env := solo.New(t, false, false)

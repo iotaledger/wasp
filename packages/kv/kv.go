@@ -3,12 +3,13 @@ package kv
 import (
 	"bytes"
 	"fmt"
-
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+	"io"
+	"os"
 )
 
-// Key since map cannot have []byte as key, to avoid unnecessary conversions
+// Key represents a key in the KVStore, to avoid unnecessary conversions
 // between string and []byte, we use string as key data type, but it does
 // not necessarily have to be a valid UTF-8 string.
 type Key string
@@ -154,4 +155,66 @@ func ByteSize(s KVStoreReader) int {
 		return 0
 	}
 	return accLen
+}
+
+func DumpToFile(r KVStoreReader, fname string) (int, error) {
+	file, err := os.Create(fname)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	var bytesTotal int
+	err = r.Iterate("", func(k Key, v []byte) bool {
+		n, errw := writeKV(file, []byte(k), v)
+		if errw != nil {
+			err = errw
+			return false
+		}
+		bytesTotal += n
+		return true
+	})
+	return bytesTotal, err
+}
+
+func UnDumpFromFile(w KVWriter, fname string) (int, error) {
+	file, err := os.Open(fname)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	var k, v []byte
+	var exit bool
+	n := 0
+	for {
+		if k, v, exit = readKV(file); exit {
+			break
+		}
+		n += len(k) + len(v) + 6
+		w.Set(Key(k), v)
+	}
+	return n, nil
+}
+
+func writeKV(w io.Writer, k, v []byte) (int, error) {
+	if err := util.WriteBytes16(w, k); err != nil {
+		return 0, err
+	}
+	if err := util.WriteBytes32(w, v); err != nil {
+		return len(k) + 2, err
+	}
+	return len(k) + len(v) + 6, nil
+}
+
+func readKV(r io.Reader) ([]byte, []byte, bool) {
+	k, err := util.ReadBytes16(r)
+	if xerrors.Is(err, io.EOF) {
+		return nil, nil, true
+	}
+	v, err := util.ReadBytes32(r)
+	if err != nil {
+		panic(err)
+	}
+	return k, v, false
 }

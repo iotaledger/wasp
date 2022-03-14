@@ -138,11 +138,11 @@ func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, *iotago.ED25519Addr
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
-	transfer := iscp.NewAssets(uint64(tokens), nil)
+	transfer := iscp.NewFungibleTokens(uint64(tokens), nil)
 	e.postRequestFull(contract, entryPoint, transfer, params)
 }
 
-func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer *iscp.Assets, params map[string]interface{}) {
+func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer *iscp.FungibleTokens, params map[string]interface{}) {
 	b := iscp.NewEmptyAssets()
 	if transfer != nil {
 		b = transfer

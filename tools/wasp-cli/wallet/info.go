@@ -59,7 +59,7 @@ func printOutputsByOutputID(outs []iotago.Output) uint64 {
 	var total uint64
 	for i, out := range outs {
 		log.Printf("    output index %d:\n", i)
-		assets := iscp.AssetsFromOutput(out)
+		assets := iscp.FungibleTokensFromOutput(out)
 		log.Printf("%s\n", assets.String())
 	}
 	return total

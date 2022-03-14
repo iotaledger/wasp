@@ -64,27 +64,3 @@ func TestBatches(t *testing.T) {
 
 	assert.EqualValues(t, util.GetHashValue(block1), util.GetHashValue(block2))
 }
-
-//func TestOriginBlock(t *testing.T) {
-//	outID1 := tpkg.RandOutputID(0).UTXOInput()
-//	outID2 := tpkg.RandOutputID(0).UTXOInput()
-//	require.NotEqualValues(t, outID1, outID2)
-//	b := newBlock1()
-//	b1 := newBlock1()
-//	b1.SetApprovingOutputID(outID1)
-//	b2 := newBlock1()
-//	b2.SetApprovingOutputID(outID2)
-//	require.EqualValues(t, b1.EssenceBytes(), b2.EssenceBytes())
-//
-//	require.EqualValues(t, 0, b.BlockIndex())
-//	require.EqualValues(t, 0, b1.BlockIndex())
-//	require.EqualValues(t, 0, b2.BlockIndex())
-//
-//	require.True(t, b.Timestamp().IsZero())
-//	require.True(t, b1.Timestamp().IsZero())
-//	require.True(t, b2.Timestamp().IsZero())
-//
-//	require.EqualValues(t, hashing.NilHash, b.PreviousStateCommitment())
-//	require.EqualValues(t, hashing.NilHash, b1.PreviousStateCommitment())
-//	require.EqualValues(t, hashing.NilHash, b2.PreviousStateCommitment())
-//}

@@ -128,7 +128,7 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
-func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.Assets) []byte {
+func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.FungibleTokens) []byte {
 	allow := assets
 	if assets.Iotas < 1000 {
 		assets = allow.Clone()
@@ -174,7 +174,7 @@ func (s *SoloSandbox) fnAccountID(args []byte) []byte {
 
 func (s *SoloSandbox) fnAllowance(args []byte) []byte {
 	//// zero incoming balance
-	assets := new(iscp.Assets)
+	assets := new(iscp.FungibleTokens)
 	return s.cvt.ScBalances(assets).Bytes()
 }
 

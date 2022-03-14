@@ -30,7 +30,7 @@ func ProofFromBytes(data []byte) (*Proof, error) {
 }
 
 // Proof converts generic proof path to the Merkle proof path
-func (m *commitmentModel) Proof(key []byte, tr trie.Access) *Proof {
+func (m *commitmentModel) Proof(key []byte, tr trie.NodeStore) *Proof {
 	proofGeneric := trie.GetProofGeneric(tr, key)
 	if proofGeneric == nil {
 		return nil

@@ -28,7 +28,7 @@ func setupErc20(t *testing.T) *wasmsolo.SoloContext {
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 
 	totalSupply := erc20.ScFuncs.TotalSupply(ctx)
 	totalSupply.Func.Call()

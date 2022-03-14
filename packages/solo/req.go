@@ -32,8 +32,9 @@ type CallParams struct {
 	target     iscp.Hname
 	epName     string
 	entryPoint iscp.Hname
-	assets     *iscp.Assets // ignored off-ledger
-	allowance  *iscp.Assets
+	assets     *iscp.FungibleTokens // ignored off-ledger
+	nft        *iscp.NFT
+	allowance  *iscp.Allowance
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -65,12 +66,12 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-func (r *CallParams) WithAllowance(allowance *iscp.Assets) *CallParams {
+func (r *CallParams) WithAllowance(allowance *iscp.Allowance) *CallParams {
 	r.allowance = allowance.Clone()
 	return r
 }
 
-func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
+func (r *CallParams) AddAllowance(allowance *iscp.Allowance) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
 	} else {
@@ -80,30 +81,41 @@ func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceIotas(amount uint64) *CallParams {
-	return r.AddAllowance(iscp.NewAssets(amount, nil))
+	return r.AddAllowance(iscp.NewAllowance(amount, nil, nil))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAllowance(&iscp.Assets{
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
+	return r
 }
 
 func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAllowance(&iscp.Assets{
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
+	r.allowance.Assets.Add(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+	return r
 }
 
-func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+func (r *CallParams) WithAssets(assets *iscp.FungibleTokens) *CallParams {
+	if r.allowance == nil {
+		r.allowance = iscp.NewEmptyAllowance()
+	}
 	r.assets = assets.Clone()
 	return r
 }
 
-func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
+func (r *CallParams) AddAssets(assets *iscp.FungibleTokens) *CallParams {
 	if r.assets == nil {
 		r.assets = assets.Clone()
 	} else {
@@ -113,22 +125,28 @@ func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
-	return r.AddAssets(iscp.NewAssets(amount, nil))
+	return r.AddAssets(iscp.NewFungibleTokens(amount, nil))
 }
 
 func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+	return r.AddAssets(&iscp.FungibleTokens{
 		Tokens: tokens,
 	})
 }
 
 func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddAssets(&iscp.Assets{
+	return r.AddAssets(&iscp.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *tokenID,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+}
+
+// Adds an nft to be sent (only appliable when the call is made via on-ledger request)
+func (r *CallParams) WithNFT(nft *iscp.NFT) *CallParams {
+	r.nft = nft
+	return r
 }
 
 func (r *CallParams) GasBudget() uint64 {
@@ -205,9 +223,9 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		SenderKeyPair:    keyPair,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
-		Requests: []*iscp.RequestParameters{{
-			TargetAddress: ch.ChainID.AsAddress(),
-			Assets:        req.assets,
+		Request: &iscp.RequestParameters{
+			TargetAddress:  ch.ChainID.AsAddress(),
+			FungibleTokens: req.assets,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
@@ -216,7 +234,8 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				GasBudget:      req.gasBudget,
 			},
 			Options: iscp.SendOptions{},
-		}},
+		},
+		NFT:                          req.nft,
 		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
@@ -307,13 +326,11 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
-
 	if err != nil {
 		return tx, res, err
 	}
 
 	return tx, res, receipt.Error.AsGoError()
-
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -338,7 +355,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 			available += req.assets.Iotas
 		}
 		if req.allowance != nil {
-			available -= req.allowance.Iotas
+			available -= req.allowance.Assets.Iotas
 		}
 	} else {
 		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
@@ -346,7 +363,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 			n.Add(n, req.assets.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if req.allowance != nil {
-			n.Sub(n, req.allowance.AmountNativeToken(policy.GasFeeTokenID))
+			n.Sub(n, req.allowance.Assets.AmountNativeToken(policy.GasFeeTokenID))
 		}
 		if n.IsUint64() {
 			available = n.Uint64()
@@ -384,7 +401,6 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
-
 	if err != nil {
 		return 0, 0, err
 	}

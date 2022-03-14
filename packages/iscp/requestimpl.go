@@ -55,7 +55,7 @@ type OffLedgerRequestData struct {
 	sender     *iotago.Ed25519Address
 	signature  []byte
 	nonce      uint64
-	allowance  *Assets
+	allowance  *Allowance
 	gasBudget  uint64
 }
 
@@ -203,7 +203,7 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	}
 	r.allowance = nil
 	if transferNotNil {
-		if r.allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+		if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}
@@ -221,13 +221,17 @@ func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 	r.signature, _ = key.GetPrivateKey().Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }
 
-// Assets is attached assets to the UTXO. Nil for off-ledger
-func (r *OffLedgerRequestData) Assets() *Assets {
+// FungibleTokens is attached assets to the UTXO. Nil for off-ledger
+func (r *OffLedgerRequestData) FungibleTokens() *FungibleTokens {
+	return nil
+}
+
+func (r *OffLedgerRequestData) NFT() *NFT {
 	return nil
 }
 
 // Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
-func (r *OffLedgerRequestData) Allowance() *Assets {
+func (r *OffLedgerRequestData) Allowance() *Allowance {
 	return r.allowance
 }
 
@@ -236,7 +240,7 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestData {
+func (r *OffLedgerRequestData) WithTransfer(transfer *Allowance) *OffLedgerRequestData {
 	r.allowance = transfer.Clone()
 	return r
 }
@@ -441,6 +445,8 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 		return out.Ident()
 	case *iotago.FoundryOutput:
 		return out.Ident()
+	case *iotago.NFTOutput:
+		return out.Ident()
 	case *iotago.AliasOutput:
 		return out.AliasID.ToAddress()
 	default:
@@ -448,14 +454,37 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	}
 }
 
-func (r *OnLedgerRequestData) Allowance() *Assets {
+func (r *OnLedgerRequestData) NFT() *NFT {
+	out, ok := r.output.(*iotago.NFTOutput)
+	if !ok {
+		return nil
+	}
+
+	ret := &NFT{}
+
+	utxoInput := r.UTXOInput()
+	ret.ID = util.NFTIDFromNFTOutput(out, utxoInput.ID())
+
+	for _, featureBlock := range out.ImmutableBlocks {
+		if block, ok := featureBlock.(*iotago.IssuerFeatureBlock); ok {
+			ret.Issuer = block.Address
+		}
+		if block, ok := featureBlock.(*iotago.MetadataFeatureBlock); ok {
+			ret.Metadata = block.Data
+		}
+	}
+
+	return ret
+}
+
+func (r *OnLedgerRequestData) Allowance() *Allowance {
 	return r.requestMetadata.Allowance
 }
 
-func (r *OnLedgerRequestData) Assets() *Assets {
+func (r *OnLedgerRequestData) FungibleTokens() *FungibleTokens {
 	amount := r.output.Deposit()
 	tokens := r.output.NativeTokenSet()
-	return NewAssets(amount, tokens)
+	return NewFungibleTokens(amount, tokens)
 }
 
 func (r *OnLedgerRequestData) GasBudget() uint64 {
@@ -677,7 +706,7 @@ type RequestMetadata struct {
 	// request arguments
 	Params dict.Dict
 	// Allowance intended to the target contract to take. Nil means zero allowance
-	Allowance *Assets
+	Allowance *Allowance
 	// gas budget
 	GasBudget uint64
 }
@@ -737,7 +766,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 	if allowanceNotEmpty {
-		if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+		if p.Allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}

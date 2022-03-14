@@ -68,10 +68,10 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             *iscp.AgentID // calling agent
-	contract           iscp.Hname    // called contract
-	params             iscp.Params   // params passed
-	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             *iscp.AgentID   // calling agent
+	contract           iscp.Hname      // called contract
+	params             iscp.Params     // params passed
+	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 type blockContext struct {
@@ -152,11 +152,15 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
 		return ret.loadFoundry(serNum)
 	}
+	nftLoader := func(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+		return ret.loadNFT(id)
+	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
+		nftLoader,
 		*ret.dustAssumptions,
 		task.L1Params,
 	)
@@ -241,12 +245,19 @@ func (vmctx *VMContext) closeBlockContexts() {
 	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 }
 
+// saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
+// Anchor Transaction outputs order must be:
+// 1. NativeTokens
+// 2. Foundries
+// 3. NFTs
 func (vmctx *VMContext) saveInternalUTXOs() {
 	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
 	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
 	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
 	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
+
+	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated()
 
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)
@@ -260,6 +271,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		for _, id := range nativeTokensToBeRemoved {
 			accounts.DeleteNativeTokenOutput(s, &id)
 		}
+
 		// update foundry UTXOs
 		for _, out := range foundrySNToBeUpdated {
 			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
@@ -268,6 +280,15 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		for _, sn := range foundriesToBeRemoved {
 			accounts.DeleteFoundryOutput(s, sn)
 		}
+
+		// update NFT Outputs
+		for _, out := range NFTOutputsToBeAdded {
+			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, out := range NFTOutputsToBeRemoved {
+			accounts.DeleteNFTOutput(s, out.NFTID)
+		}
 	})
 }
 
@@ -275,7 +296,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		return
 	}
-	var totalL2Assets *iscp.Assets
+	var totalL2Assets *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})

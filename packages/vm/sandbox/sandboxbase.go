@@ -42,7 +42,7 @@ func (s *SandboxBase) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
 	return s.Ctx.GetNativeTokenBalance(s.AccountID(), id)
 }
 
-func (s *SandboxBase) Assets() *iscp.Assets {
+func (s *SandboxBase) BalanceFungibleTokens() *iscp.FungibleTokens {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAssets(s.AccountID())
 }
@@ -60,6 +60,11 @@ func (s *SandboxBase) ChainOwnerID() *iscp.AgentID {
 func (s *SandboxBase) Contract() iscp.Hname {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.CurrentContractHname()
+}
+
+func (s *SandboxBase) ContractAgentID() *iscp.AgentID {
+	s.Ctx.GasBurn(gas.BurnCodeGetContext)
+	return iscp.NewAgentID(s.Ctx.ChainID().AsAddress(), s.Ctx.CurrentContractHname())
 }
 
 func (s *SandboxBase) ContractCreator() *iscp.AgentID {

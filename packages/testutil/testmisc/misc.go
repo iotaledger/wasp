@@ -16,8 +16,10 @@ func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 		t.FailNow()
 		return
 	}
-	if iscp.VMErrorIs(err, target) {
-		return
+	if target, ok := target.(iscp.VMErrorBase); ok {
+		if iscp.VMErrorIs(err, target) {
+			return
+		}
 	}
 	var targ string
 	switch target := target.(type) {

@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/stretchr/testify/require"
@@ -18,12 +18,16 @@ import (
 
 var errorMessageToTest = "Test error message %v"
 
-var errorContractName = "ErrorContract"
-var errorContract = coreutil.NewContract(errorContractName, "error contract")
+var (
+	errorContractName = "ErrorContract"
+	errorContract     = coreutil.NewContract(errorContractName, "error contract")
+)
 
-var funcRegisterErrors = coreutil.Func("register_errors")
-var funcThrowErrorWithoutArgs = coreutil.Func("throw_error_without_args")
-var funcThrowErrorWithArgs = coreutil.Func("throw_error_with_args")
+var (
+	funcRegisterErrors        = coreutil.Func("register_errors")
+	funcThrowErrorWithoutArgs = coreutil.Func("throw_error_without_args")
+	funcThrowErrorWithArgs    = coreutil.Func("throw_error_with_args")
+)
 
 var testError *iscp.VMErrorTemplate
 
@@ -42,7 +46,7 @@ var errorContractProcessor = errorContract.Processor(nil,
 )
 
 func setupErrorsTest(t *testing.T) (*solo.Solo, *solo.Chain) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true}).WithNativeContract(errorContractProcessor)
 	chain, _, _ := env.NewChainExt(nil, 100_000, "chain1")
 	err := chain.DeployContract(nil, errorContract.Name, errorContract.ProgramHash)
@@ -58,7 +62,7 @@ func setupErrorsTest(t *testing.T) (*solo.Solo, *solo.Chain) {
 }
 
 func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true})
 	chain, _, _ := env.NewChainExt(nil, 1, "chain1")
 

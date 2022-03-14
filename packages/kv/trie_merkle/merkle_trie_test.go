@@ -526,7 +526,7 @@ func TestTrieRnd(t *testing.T) {
 		t.Logf("root2 = %s", c2)
 		require.True(t, trie.EqualCommitments(c1, c2))
 
-		tr2.ApplyMutations(store2)
+		tr2.PersistMutations(store2)
 		trieSize := len(store2.Bytes())
 		t.Logf("key entries = %d", len(data))
 		t.Logf("Trie entries = %d", len(store2))
@@ -1013,4 +1013,35 @@ func TestDeleteCommit(t *testing.T) {
 		require.EqualValues(t, 0, len(diff))
 	}
 	require.True(t, trie.EqualCommitments(c[0], c[1]))
+}
+
+func TestGenTrie(t *testing.T) {
+	const filename = "$$for testing$$"
+	t.Run("gen file", func(t *testing.T) {
+		store := dict.New()
+		data := genRnd4()
+		for _, s := range data {
+			store.Set(kv.Key(s), []byte("abcdefghijklmnoprstquwxyz"))
+		}
+		t.Logf("num records = %d", len(data))
+		n, err := kv.DumpToFile(store, filename+".bin")
+		require.NoError(t, err)
+		t.Logf("wrote %d bytes to '%s'", n, filename+".bin")
+	})
+	t.Run("gen trie", func(t *testing.T) {
+		store := dict.New()
+		n, err := kv.UnDumpFromFile(store, filename+".bin")
+		require.NoError(t, err)
+		t.Logf("read %d bytes to '%s'", n, filename+".bin")
+
+		storeTrie := dict.New()
+		tr := trie.New(Model, storeTrie)
+		tr.UpdateAll(store)
+		tr.Commit()
+		tr.PersistMutations(store)
+		t.Logf("trie len = %d", len(store))
+		n, err = kv.DumpToFile(store, filename+".trie")
+		require.NoError(t, err)
+		t.Logf("dumped trie size = %d", n)
+	})
 }

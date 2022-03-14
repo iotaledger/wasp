@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
@@ -73,8 +73,8 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 
 func (ctx *ViewContext) AccountID() *iscp.AgentID {
 	hname := ctx.CurrentContractHname()
-	if commonaccount.IsCoreHname(hname) {
-		return commonaccount.Get(ctx.ChainID())
+	if corecontracts.IsCoreHname(hname) {
+		return ctx.ChainID().CommonAccount()
 	}
 	return iscp.NewAgentID(ctx.ChainID().AsAddress(), hname)
 }
@@ -83,7 +83,7 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
+func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
@@ -106,7 +106,7 @@ func (ctx *ViewContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *io
 		tokenID)
 }
 
-func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Assets) dict.Dict {
+func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Allowance) dict.Dict {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return ctx.callView(targetContract, epCode, params)
 }
@@ -196,7 +196,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 
 func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieAccess())
+		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {
@@ -208,7 +208,7 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err 
 // GetRootCommitment calculates root commitment from state. It must be equal to the RootCommitment from the anchor
 func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = trie.RootCommitment(ctx.stateReader.TrieAccess())
+		ret = trie.RootCommitment(ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {

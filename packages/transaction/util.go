@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -86,6 +87,7 @@ func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
+	nftsOut map[iotago.NFTID]bool,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
 	rentStructure *iotago.RentStructure,
@@ -96,6 +98,7 @@ func computeInputsAndRemainder(
 ) {
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
+	NFTsIn := make(map[iotago.NFTID]bool)
 
 	var remainder *iotago.BasicOutput
 
@@ -107,19 +110,25 @@ func computeInputsAndRemainder(
 			return nil, nil, xerrors.New("computeInputsAndRemainder: outputID is not in the set ")
 		}
 		inputCount++
+		if nftInp, ok := inp.(*iotago.NFTOutput); ok {
+			nftID := util.NFTIDFromNFTOutput(nftInp, id)
+			if nftsOut[nftID] {
+				NFTsIn[nftID] = true
+			}
+		}
 		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
-		for _, nt := range a.Tokens {
-			s, ok := tokensIn[nt.ID]
+		for _, nativeToken := range a.Tokens {
+			nativeTokenAmountSum, ok := tokensIn[nativeToken.ID]
 			if !ok {
-				s = new(big.Int)
+				nativeTokenAmountSum = new(big.Int)
 			}
-			s.Add(s, nt.Amount)
-			tokensIn[nt.ID] = s
+			nativeTokenAmountSum.Add(nativeTokenAmountSum, nativeToken.Amount)
+			tokensIn[nativeToken.ID] = nativeTokenAmountSum
 		}
 		// calculate remainder. It will return  err != nil if inputs not enough.
 		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
-		if errLast == nil {
+		if errLast == nil && len(NFTsIn) == len(nftsOut) {
 			break
 		}
 	}
@@ -247,6 +256,27 @@ func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) 
 		ret[i] = out.VByteCost(rentStructure, nil)
 	}
 	return ret
+}
+
+func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
+	essence := &iotago.TransactionEssence{
+		NetworkID: networkID,
+		Inputs:    inputs.UTXOInputs(),
+		Outputs:   outputs,
+	}
+
+	sigs, err := essence.Sign(
+		inputsCommitment,
+		wallet.GetPrivateKey().AddressKeysForEd25519Address(wallet.Address()),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+	}, nil
 }
 
 func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.AliasOutputWithID, error) {

@@ -41,8 +41,8 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestP
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {
 		requestParams := iscp.RequestParameters{
-			TargetAddress: chainAddress,
-			Assets:        nil,
+			TargetAddress:  chainAddress,
+			FungibleTokens: nil,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: iscp.Hn("dummyTargetContract"),
 				EntryPoint:     iscp.Hn("dummyEP"),

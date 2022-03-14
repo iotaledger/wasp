@@ -1,5 +1,3 @@
-// Wrapping interfaces for the request
-// see also https://hackmd.io/@Evaldas/r1-L2UcDF and https://hackmd.io/@Evaldas/ryFK3Qr8Y and
 package iscp
 
 import (
@@ -44,20 +42,16 @@ type TimeData struct {
 	Time           time.Time
 }
 
-type NFT struct {
-	NFTID       iotago.NFTID
-	NFTMetadata []byte
-}
-
 type Calldata interface {
 	ID() RequestID
 	Params() dict.Dict
 	SenderAccount() *AgentID // returns nil if sender address is not available
 	SenderAddress() iotago.Address
 	CallTarget() CallTarget
-	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
-	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
-	Allowance() *Assets            // transfer of assets to the smart contract. Debited from sender account
+	TargetAddress() iotago.Address   // TODO implement properly. Target depends on time assumptions and UTXO type
+	FungibleTokens() *FungibleTokens // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	NFT() *NFT                       // Not nil if the request is an NFT request
+	Allowance() *Allowance           // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() uint64
 }
 
@@ -100,8 +94,11 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 
 	ret := make(map[ChainID][]Request)
 	for i, out := range tx.Essence.Outputs {
-		if _, ok := out.(*iotago.BasicOutput); !ok {
-			// only BasicOutputs are interpreted right now TODO nfts and other
+		switch out.(type) {
+		case *iotago.BasicOutput, *iotago.NFTOutput:
+			// process it
+		default:
+			// only BasicOutputs and NFTs are interpreted right now, // TODO other outputs
 			continue
 		}
 		// wrap output into the iscp.Request

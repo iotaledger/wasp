@@ -48,7 +48,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	result.Balances, err = iscp.AssetsFromDict(bal)
+	result.Balances, err = iscp.FungibleTokensFromDict(bal)
 	if err != nil {
 		return err
 	}
@@ -62,5 +62,5 @@ type ChainAccountTemplateParams struct {
 	ChainID *iscp.ChainID
 	AgentID *iscp.AgentID
 
-	Balances *iscp.Assets
+	Balances *iscp.FungibleTokens
 }
