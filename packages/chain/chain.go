@@ -27,7 +27,7 @@ import (
 type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	StateCandidateToStateManager(state.VirtualStateAccess, iotago.OutputID)
+	StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput)
 	TriggerChainTransition(*ChainTransitionEventData)
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
@@ -87,7 +87,7 @@ type Committee interface {
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16
-	DKShare() *tcrypto.DKShare
+	DKShare() tcrypto.DKShare
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
@@ -98,6 +98,7 @@ type Committee interface {
 }
 
 type (
+	NodeConnectionHandleTimeDataFun    func(*iscp.TimeData)
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
 	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
 	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
@@ -107,6 +108,7 @@ type (
 type NodeConnection interface {
 	Subscribe(addr iotago.Address)
 	Unsubscribe(addr iotago.Address)
+	AttachToTimeData(*iotago.AliasAddress, NodeConnectionHandleTimeDataFun)
 	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
 	// AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
 	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
@@ -124,6 +126,7 @@ type NodeConnection interface {
 }
 
 type ChainNodeConnection interface {
+	AttachToTimeData(NodeConnectionHandleTimeDataFun)
 	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
 	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
@@ -154,7 +157,7 @@ type StateManager interface {
 }
 
 type Consensus interface {
-	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iotago.AliasOutput, time.Time)
+	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iscp.AliasOutputWithID, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
 	// EnqueueInclusionsStateMsg(iotago.TransactionID, iotago.InclusionState) // TODO does this make sense with hornet?
@@ -165,7 +168,7 @@ type Consensus interface {
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
 	GetWorkflowStatus() ConsensusWorkflowStatus
-	ShouldReceiveMissingRequest(req iscp.Calldata) bool
+	ShouldReceiveMissingRequest(req iscp.Request) bool
 }
 
 type AsynchronousCommonSubsetRunner interface {

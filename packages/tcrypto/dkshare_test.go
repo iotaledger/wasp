@@ -25,7 +25,7 @@ func TestMarshaling(t *testing.T) {
 	}
 
 	index := uint16(5)
-	dks := &DKShare{
+	dks := &DKShareImpl{
 		Address:       &iotago.AliasAddress{},
 		Index:         &index,
 		N:             10,

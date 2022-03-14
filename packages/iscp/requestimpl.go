@@ -487,8 +487,7 @@ func (r *OnLedgerRequestData) Allowance() *Allowance {
 
 func (r *OnLedgerRequestData) FungibleTokens() *FungibleTokens {
 	amount := r.output.Deposit()
-	var tokens iotago.NativeTokens
-	tokens = r.output.NativeTokenSet()
+	tokens := r.output.NativeTokenSet()
 	return NewFungibleTokens(amount, tokens)
 }
 
@@ -678,12 +677,16 @@ func (rid RequestID) String() string {
 
 func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
-	txid := hex.EncodeToString(oid.TransactionID[:])
+	txid := TxID(&oid.TransactionID)
 	return fmt.Sprintf("%d/%s", oid.TransactionOutputIndex, txid[:6]+"..")
 }
 
 func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("%d/%s", o.TransactionOutputIndex, hex.EncodeToString(o.TransactionID[:]))
+	return fmt.Sprintf("%d/%s", o.TransactionOutputIndex, TxID(&o.TransactionID))
+}
+
+func TxID(txID *iotago.TransactionID) string {
+	return hex.EncodeToString(txID[:])
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

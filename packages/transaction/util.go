@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"fmt"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -285,4 +286,23 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 		Essence:      essence,
 		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
 	}, nil
+}
+
+func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.AliasOutputWithID, error) {
+	for index, o := range tx.Essence.Outputs {
+		if out, ok := o.(*iotago.AliasOutput); ok {
+			if out.StateController().Equal(aliasAddr) {
+				txID, err := tx.ID()
+				if err != nil {
+					return nil, err
+				}
+				oid := &iotago.UTXOInput{
+					TransactionID:          *txID,
+					TransactionOutputIndex: uint16(index),
+				}
+				return iscp.NewAliasOutputWithID(out, oid), nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("cannot find alias output for address %v in transaction", aliasAddr.String())
 }

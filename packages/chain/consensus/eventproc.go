@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *iotago.AliasOutput, stateTimestamp time.Time) {
+func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *iscp.AliasOutputWithID, stateTimestamp time.Time) {
 	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
 		State:          virtualState,
 		StateOutput:    stateOutput,
@@ -52,19 +52,19 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 	c.takeAction()
 }
 
-func (c *consensus) EnqueueInclusionsStateMsg(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
+/*func (c *consensus) EnqueueInclusionsStateMsg(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
 	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
 		TxID:  txID,
 		State: inclusionState,
 	}
-}
+}*/
 
-func (c *consensus) handleInclusionState(msg *messages.InclusionStateMsg) {
-	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
+/*func (c *consensus) handleInclusionState(msg *messages.InclusionStateMsg) {
+	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", iscp.TxID(&msg.TxID), msg.State.String())
 	c.processInclusionState(msg)
 
 	c.takeAction()
-}
+}*/
 
 func (c *consensus) EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.eventACSMsgPipe.In() <- msg
@@ -86,10 +86,15 @@ func (c *consensus) handleVMResultMsg(msg *messages.VMResultMsg) {
 	if msg.Task.ResultTransactionEssence == nil {
 		essenceString = "essence is nil"
 	} else {
-		essenceString = fmt.Sprintf("essence hash: %s", hashing.HashData(msg.Task.ResultTransactionEssence.Bytes()))
+		signingMsg, err := msg.Task.ResultTransactionEssence.SigningMessage()
+		if err != nil {
+			essenceString = fmt.Sprintf("essence signing message not retrievable: %v", err)
+		} else {
+			essenceString = fmt.Sprintf("essence signing message hash: %s", hashing.HashData(signingMsg))
+		}
 	}
-	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
-		msg.Task.VirtualStateAccess.BlockIndex(), msg.Task.VirtualStateAccess.RootCommitment(), essenceString)
+	c.log.Debugf("VMResultMsg received: state index: %d state commitment: %s %s",
+		msg.Task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(msg.Task.VirtualStateAccess.TrieAccess()), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }

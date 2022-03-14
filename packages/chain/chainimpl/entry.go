@@ -14,10 +14,10 @@ import (
 )
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
-	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
+	c.log.Debugf("ReceiveTransaction: %s", iscp.TxID(tx.ID()))
 	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
-		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
+		c.log.Warnf("failed to parse transaction %s: %v", iscp.TxID(tx.ID()), err)
 		return
 	}
 	for _, req := range reqs {
