@@ -53,7 +53,6 @@ If you wish to use additional EVM chains with Metamask, you can simply add more 
 If you also want to use the [Remix IDE](https://remix.ethereum.org/) to deploy any regular Solidity Smart Contract, you should set the environment as **Injected Web3**, which should then connect with your MetaMask wallet.
 
 Click on the _Deploy & Run transactions_ button in the menu on the left and select `Injected Web3` from the `Environment` dropdown.
-Select `Injected Web3` from the `Environment` dropdown.
 
 [![Select Injected Web3 from the Environment dropdown](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)
 
