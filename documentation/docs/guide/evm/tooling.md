@@ -54,7 +54,9 @@ If you also want to use the [Remix IDE](https://remix.ethereum.org/) to deploy a
 
 Click on the _Deploy & Run transactions_ button in the menu on the left and select `Injected Web3` from the `Environment` dropdown.
 Select `Injected Web3` from the `Environment` dropdown.
-![image](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)  
+
+[![Select Injected Web3 from the Environment dropdown](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)
+
 Metamask will ask to connect to Remix and once connected the `Environment` will be set to `Injected Web3` with the `Custom (1074) network`  
 
 [![Environment will be set to Injected Web3](https://user-images.githubusercontent.com/7383572/146169653-fd692eab-6e74-4b17-8833-bd87dafc0ce2.png)](https://user-images.githubusercontent.com/7383572/146169653-fd692eab-6e74-4b17-8833-bd87dafc0ce2.png)
