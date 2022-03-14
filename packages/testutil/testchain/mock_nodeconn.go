@@ -21,16 +21,19 @@ type MockedNodeConn struct {
 	handleTransactionFun          chain.NodeConnectionHandleTransactionFun
 	handleOutputFun               chain.NodeConnectionHandleOutputFun
 	handleUnspentAliasOutputFun   chain.NodeConnectionHandleUnspentAliasOutputFun
+	stopChannel                   chan bool
 }
 
 var _ chain.ChainNodeConnection = &MockedNodeConn{}
 
 func NewMockedNodeConnection(id string, ledger *MockedLedger, log *logger.Logger) *MockedNodeConn {
 	result := &MockedNodeConn{
-		log:    log.Named("nc"),
-		id:     id,
-		ledger: ledger,
+		log:         log.Named("nc"),
+		id:          id,
+		ledger:      ledger,
+		stopChannel: make(chan bool),
 	}
+	result.handleTimeDataFun = result.defaultHandleTimeDataFun
 	result.handleTransactionFun = result.defaultHandleTransactionFun
 	result.handleOutputFun = result.defaultHandleOutputFun
 	result.handleUnspentAliasOutputFun = result.defaultHandleUnspentAliasOutputFun
@@ -39,6 +42,7 @@ func NewMockedNodeConnection(id string, ledger *MockedLedger, log *logger.Logger
 	result.SetReceiveTxAllowed(true)
 	ledger.addNode(result)
 	result.log.Debugf("Nodeconn created")
+	go result.pushTimeDataLoop()
 	return result
 }
 
@@ -50,7 +54,7 @@ func (m *MockedNodeConn) PullState() {
 	m.log.Debugf("Pull state")
 	if m.pullStateAllowed {
 		m.log.Debugf("Pull state allowed")
-		output := m.ledger.pullState()
+		output := m.ledger.PullState()
 		if output != nil {
 			m.log.Debugf("Pull state successful")
 			go m.handleUnspentAliasOutputFun(output, time.Now())
@@ -66,7 +70,7 @@ func (m *MockedNodeConn) PullConfirmedOutput(outputID *iotago.UTXOInput) {
 	m.log.Debugf("Pull confirmed output %v", iscp.OID(outputID))
 	if m.pullConfirmedOutputAllowedFun(outputID) {
 		m.log.Debugf("Pull confirmed output %v allowed", iscp.OID(outputID))
-		output := m.ledger.pullConfirmedOutput(outputID)
+		output := m.ledger.PullConfirmedOutput(outputID)
 		if output != nil {
 			m.log.Debugf("Pull confirmed output %v successful", iscp.OID(outputID))
 			go m.handleOutputFun(output, outputID)
@@ -144,8 +148,26 @@ func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {
 	m.handleUnspentAliasOutputFun = m.defaultHandleUnspentAliasOutputFun
 }
 
-func (m *MockedNodeConn) Close() {}
+func (m *MockedNodeConn) Close() {
+	close(m.stopChannel)
+}
 
 func (m *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
 	return nodeconnmetrics.NewEmptyNodeConnectionMessagesMetrics()
+}
+
+func (m *MockedNodeConn) pushTimeDataLoop() {
+	milestone := uint32(0)
+	for {
+		select {
+		case <-time.After(100 * time.Millisecond):
+			m.handleTimeDataFun(&iscp.TimeData{
+				MilestoneIndex: milestone,
+				Time:           time.Now(),
+			})
+			milestone++
+		case <-m.stopChannel:
+			return
+		}
+	}
 }

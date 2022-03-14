@@ -72,10 +72,10 @@ func SetupDkg(
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
 	require.NoError(t, networkCloser.Close())
-	return dkShare.Address, registries
+	return dkShare.GetAddress(), registries
 }
 
 func SetupDkgPregenerated(
@@ -90,7 +90,7 @@ func SetupDkgPregenerated(
 	for i := range nodePubKeys {
 		nodePubKeys[i] = identities[i].GetPublicKey()
 	}
-	dks := make([]*tcrypto.DKShare, len(serializedDks))
+	dks := make([]*tcrypto.DKShareImpl, len(serializedDks))
 	registries := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
 		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], suite)
