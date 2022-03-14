@@ -14,7 +14,7 @@ func TestDeployErc20(t *testing.T) {
 	setupTest(t)
 
 	init := erc20.ScFuncs.Init(nil)
-	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Supply().SetValue(utxodb.FundsFromFaucetAmount)
 	init.Params.Creator().SetValue(creator.ScAgentID())
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
@@ -25,7 +25,7 @@ func TestDeployErc20(t *testing.T) {
 
 	// deploy second time
 	init = erc20.ScFuncs.Init(nil)
-	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Supply().SetValue(utxodb.FundsFromFaucetAmount)
 	init.Params.Creator().SetValue(creator.ScAgentID())
 	ctx = wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.Error(t, ctx.Err)
@@ -44,7 +44,7 @@ func TestDeployErc20Fail1(t *testing.T) {
 func TestDeployErc20Fail2(t *testing.T) {
 	setupTest(t)
 	init := erc20.ScFuncs.Init(nil)
-	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Supply().SetValue(utxodb.FundsFromFaucetAmount)
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
@@ -73,7 +73,7 @@ func TestDeployErc20Fail3Repeat(t *testing.T) {
 
 	// repeat after failure
 	init = erc20.ScFuncs.Init(nil)
-	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Supply().SetValue(utxodb.FundsFromFaucetAmount)
 	init.Params.Creator().SetValue(creator.ScAgentID())
 	ctx = wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)

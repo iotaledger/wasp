@@ -37,7 +37,7 @@ func TestTutorial2(t *testing.T) {
 	t.Logf("address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.L1NativeTokens(userAddress, iscp.IotaTokenID) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressNativeTokenBalance(userAddress, iscp.IotaTokenID, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, iscp.IotaTokenID, utxodb.FundsFromFaucetAmount)
 }
 
 func TestTutorial3(t *testing.T) {
@@ -83,13 +83,13 @@ func TestTutorial5(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.L1NativeTokens(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddIotas(42)
@@ -97,7 +97,7 @@ func TestTutorial5(t *testing.T) {
 	require.NoError(t, err)
 
 	// check address balance: must be 42 iotas less
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-42)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-42)
 	// check the on-chain account. Must contain 42 iotas
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 42)
 
@@ -107,7 +107,7 @@ func TestTutorial5(t *testing.T) {
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty
 }
 
@@ -123,7 +123,7 @@ func TestTutorial6(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty on-chain
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // empty on-chain
 
@@ -133,7 +133,7 @@ func TestTutorial6(t *testing.T) {
 
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 42)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-42)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-42)
 }
 
 func TestTutorial7(t *testing.T) {
@@ -149,7 +149,7 @@ func TestTutorial7(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	// we start with these balances on address and on chain
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // empty
 
@@ -159,7 +159,7 @@ func TestTutorial7(t *testing.T) {
 	require.Error(t, err)
 
 	// assert balances didn't change on address and on chain
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // still empty
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // still empty
 }
@@ -176,7 +176,7 @@ func TestTutorial8(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
@@ -197,7 +197,7 @@ func TestTutorial8(t *testing.T) {
 	// - to deploy contract from the blob
 	// Two tokens were taken from the user account to form requests and then were
 	// deposited to the user's account on the chain
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-2)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-2)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty on-chain
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
 
@@ -211,7 +211,7 @@ func TestTutorial8(t *testing.T) {
 
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 42)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-44)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-44)
 
 	// user withdraws all iotas from the smart contract back
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
@@ -223,5 +223,5 @@ func TestTutorial8(t *testing.T) {
 
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-44+42)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-44+42)
 }

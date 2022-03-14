@@ -31,7 +31,6 @@ func TestNodeConn(t *testing.T) {
 	//
 	// Start the private L1 tangle.
 	pt := privtangle.Start(ctx, filepath.Join(os.TempDir(), "wasp-hornet-TestNodeConn"), 16400, 2, t)
-	t.Cleanup(pt.Stop)
 	time.Sleep(3 * time.Second)
 	t.Logf("Private tangle created.")
 

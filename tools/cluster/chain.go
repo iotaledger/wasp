@@ -5,20 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -28,7 +26,7 @@ import (
 type Chain struct {
 	Description string
 
-	OriginatorSeed *util.Seed
+	OriginatorKeyPair cryptolib.KeyPair
 
 	AllPeers       []int
 	CommitteeNodes []int
@@ -61,7 +59,7 @@ func (ch *Chain) AllAPIHosts() []string {
 }
 
 func (ch *Chain) OriginatorAddress() iotago.Address {
-	addr := ch.OriginatorSeed.Address(0).Address()
+	addr := ch.OriginatorKeyPair.Address()
 	return addr
 }
 
@@ -70,12 +68,8 @@ func (ch *Chain) OriginatorID() *iscp.AgentID {
 	return ret
 }
 
-func (ch *Chain) OriginatorKeyPair() *cryptolib.KeyPair {
-	return ch.OriginatorSeed.KeyPair(0)
-}
-
 func (ch *Chain) OriginatorClient() *chainclient.Client {
-	return ch.Client(ch.OriginatorKeyPair())
+	return ch.Client(&ch.OriginatorKeyPair)
 }
 
 func (ch *Chain) Client(sigScheme *cryptolib.KeyPair, nodeIndex ...int) *chainclient.Client {
@@ -84,7 +78,7 @@ func (ch *Chain) Client(sigScheme *cryptolib.KeyPair, nodeIndex ...int) *chaincl
 		idx = nodeIndex[0]
 	}
 	return chainclient.New(
-		ch.Cluster.GoshimmerClient(),
+		ch.Cluster.L1Client(),
 		ch.Cluster.WaspClient(idx),
 		ch.ChainID,
 		sigScheme,

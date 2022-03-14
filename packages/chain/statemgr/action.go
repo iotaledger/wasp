@@ -76,7 +76,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 		sm.nodeConn.PullState()
 		sm.pullStateRetryTime = currentTime.Add(sm.timers.PullStateRetry)
 		sm.log.Debugf("pullState: pulling state for address %v. Next pull in: %v",
-			chainAliasAddress.Bech32(iscp.Bech32Prefix), sm.pullStateRetryTime.Sub(currentTime))
+			chainAliasAddress.Bech32(iscp.NetworkPrefix), sm.pullStateRetryTime.Sub(currentTime))
 	} else {
 		if sm.stateOutput == nil {
 			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(currentTime))

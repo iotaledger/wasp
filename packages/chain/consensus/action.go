@@ -776,7 +776,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
-	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(iscp.Bech32Prefix))
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(iscp.NetworkPrefix))
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(

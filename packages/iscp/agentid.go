@@ -16,7 +16,7 @@ import (
 )
 
 // TODO make this configurable
-const Bech32Prefix = iotago.PrefixMainnet
+const NetworkPrefix = iotago.PrefixTestnet
 
 const nilAgentID = 0xff
 

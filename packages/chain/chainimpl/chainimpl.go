@@ -109,7 +109,7 @@ func NewChain(
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
-	chainLog := log.Named(chainID.Bech32(iscp.Bech32Prefix)[:6] + ".")
+	chainLog := log.Named(chainID.Bech32(iscp.NetworkPrefix)[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
@@ -355,7 +355,7 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 	go func() {
 		for _, msg := range evts {
 			c.log.Debugf("publishNewBlockEvents: '%s'", msg)
-			publisher.Publish("vmmsg", c.chainID.Bech32(iscp.Bech32Prefix), msg)
+			publisher.Publish("vmmsg", c.chainID.Bech32(iscp.NetworkPrefix), msg)
 		}
 	}()
 }

@@ -6,6 +6,7 @@ package consensus
 import (
 	"fmt"
 	"io"
+
 	//	"math/rand"
 	"sync"
 	"testing"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+
 	//	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -106,7 +108,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 		},
 	}
 	ret.Ledger = testchain.NewMockedLedger(output, log)
-	//ret.InitStateOutput = ret.Ledger.PullState()
+	// ret.InitStateOutput = ret.Ledger.PullState()
 
 	/*ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -115,7 +117,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
 	require.True(t, len(outputs) == 1)
 
-	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
+	bals := colored.ToL1Map(iscp.NewTokensIotas(100))
 
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())

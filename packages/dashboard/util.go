@@ -74,6 +74,6 @@ func formatTimestampOrNever(t time.Time) string {
 
 func exploreAddressURL(baseURL string) func(address iotago.Address) string {
 	return func(address iotago.Address) string {
-		return baseURL + "/" + address.Bech32(iscp.Bech32Prefix)
+		return baseURL + "/" + address.Bech32(iscp.NetworkPrefix)
 	}
 }

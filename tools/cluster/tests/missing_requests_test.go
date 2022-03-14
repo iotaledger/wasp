@@ -4,10 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -36,11 +35,11 @@ func TestMissingRequests(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	userWallet := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(0))
-	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
+	userAddress := userWallet.Address()
 
 	// deposit funds before sending the off-ledger request
 	e.requestFunds(userAddress, "userWallet")
-	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chainID, &userWallet)
+	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)

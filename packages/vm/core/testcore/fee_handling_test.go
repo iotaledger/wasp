@@ -21,7 +21,7 @@ func TestInit(t *testing.T) {
 
 	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(1)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-1)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-1)
 	chain.AssertL2TotalIotas(1)
 	chain.AssertCommonAccountIotas(1)
 
@@ -43,7 +43,7 @@ func TestBase(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertL2TotalIotas(2)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 5, 0)
 }
@@ -62,7 +62,7 @@ func TestFeeIsEnough1(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertL2TotalIotas(2)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 1, 0)
 
@@ -76,7 +76,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	chain.AssertCommonAccountIotas(2 + 1)
 	chain.AssertL2TotalIotas(2 + 1)
 	chain.AssertL2AccountNativeToken(chain.OriginatorAgentID, colored.IOTA, 0)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2-1)
 }
 
 //nolint:dupl
@@ -93,7 +93,7 @@ func TestFeeIsEnough2(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertL2TotalIotas(2)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
 
@@ -107,7 +107,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	chain.AssertCommonAccountIotas(2 + 10)
 	chain.AssertL2TotalIotas(2 + 10)
 	chain.AssertL2AccountNativeToken(chain.OriginatorAgentID, colored.IOTA, 0)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2-10)
 }
 
 func TestFeesNoNeed(t *testing.T) {
@@ -123,7 +123,7 @@ func TestFeesNoNeed(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertL2TotalIotas(2)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
 
@@ -135,7 +135,7 @@ func TestFeesNoNeed(t *testing.T) {
 	chain.AssertCommonAccountIotas(2 + 7)
 	chain.AssertL2TotalIotas(2 + 7)
 	chain.AssertL2AccountNativeToken(chain.OriginatorAgentID, colored.IOTA, 0)
-	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
+	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-2-7)
 }
 
 func TestFeesNotEnough(t *testing.T) {
@@ -157,7 +157,7 @@ func TestFeesNotEnough(t *testing.T) {
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertL2TotalIotas(2)
 	chain.AssertL2AccountIotas(userAgentID, 0)
-	env.AssertAddressIotas(userAddr, solo.Saldo)
+	env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount)
 
 	req = solo.NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, "par1", []byte("data1"))
 	req.AddIotas(7)
@@ -167,5 +167,5 @@ func TestFeesNotEnough(t *testing.T) {
 	chain.AssertCommonAccountIotas(2 + 7)
 	chain.AssertL2TotalIotas(2 + 7)
 	chain.AssertL2AccountIotas(userAgentID, 0)
-	env.AssertAddressIotas(userAddr, solo.Saldo-7)
+	env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-7)
 }

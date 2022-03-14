@@ -27,7 +27,7 @@ func TestSubmitPk(t *testing.T) {
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
 	pubKey := payer.PublicKey.Bytes()
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, pubKey,
@@ -43,10 +43,10 @@ func TestOpenChannelFail(t *testing.T) {
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 
 	_, providerAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressIotas(providerAddr, solo.Saldo)
+	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
@@ -54,7 +54,7 @@ func TestOpenChannelFail(t *testing.T) {
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 	chain.AssertL2Iotas(cAgentID, 0)
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 }
 
 func TestOpenChannelOk(t *testing.T) {
@@ -65,7 +65,7 @@ func TestOpenChannelOk(t *testing.T) {
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
 	payerPubKey := payer.PublicKey.Bytes()
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
@@ -74,7 +74,7 @@ func TestOpenChannelOk(t *testing.T) {
 	require.NoError(t, err)
 
 	_, providerAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressIotas(providerAddr, solo.Saldo)
+	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
@@ -82,7 +82,7 @@ func TestOpenChannelOk(t *testing.T) {
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 	chain.AssertL2Iotas(cAgentID, 600+1)
-	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 }
 
 func TestOpenChannelTwice(t *testing.T) {
@@ -93,7 +93,7 @@ func TestOpenChannelTwice(t *testing.T) {
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
 	payerPubKey := payer.PublicKey.Bytes()
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
@@ -102,7 +102,7 @@ func TestOpenChannelTwice(t *testing.T) {
 	require.NoError(t, err)
 
 	_, providerAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressIotas(providerAddr, solo.Saldo)
+	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 		ParamServiceAddress, providerAddr).
@@ -112,13 +112,13 @@ func TestOpenChannelTwice(t *testing.T) {
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 	chain.AssertL2Iotas(cAgentID, 600+1)
-	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	chain.AssertL2Iotas(cAgentID, 600+600+1)
-	env.AssertAddressIotas(payerAddr, solo.Saldo-600-600-1)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-600-1)
 
 	ret, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
 		ParamPayerAddress, payerAddr,
@@ -142,7 +142,7 @@ func TestRevokeWarrant(t *testing.T) {
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
 	payerPubKey := payer.PublicKey.Bytes()
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
@@ -151,7 +151,7 @@ func TestRevokeWarrant(t *testing.T) {
 	require.NoError(t, err)
 
 	_, providerAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressIotas(providerAddr, solo.Saldo)
+	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 
@@ -162,7 +162,7 @@ func TestRevokeWarrant(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertL2Iotas(cAgentID, 600+1)
-	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
 	ret, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
 		ParamPayerAddress, payerAddr,
@@ -218,7 +218,7 @@ func TestPayment(t *testing.T) {
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
 	payerPubKey := payer.PublicKey.Bytes()
-	env.AssertAddressIotas(payerAddr, solo.Saldo)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
@@ -227,7 +227,7 @@ func TestPayment(t *testing.T) {
 	require.NoError(t, err)
 
 	provider, providerAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressIotas(providerAddr, solo.Saldo)
+	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 
@@ -238,7 +238,7 @@ func TestPayment(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertL2Iotas(cAgentID, 600+1)
-	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
+	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
 	res, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
 		ParamPayerAddress, payerAddr,
@@ -264,7 +264,7 @@ func TestPayment(t *testing.T) {
 	_, err = chain.PostRequestSync(req, provider)
 	require.NoError(t, err)
 
-	env.AssertAddressIotas(providerAddr, solo.Saldo+42+41-1)
+	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount+42+41-1)
 
 	res, err = chain.CallView("micropay", FuncGetChannelInfo.Name,
 		ParamPayerAddress, payerAddr,

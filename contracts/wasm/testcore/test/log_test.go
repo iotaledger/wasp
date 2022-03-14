@@ -155,7 +155,7 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogGenericData.Name,
-// 		sbtestsc.VarCounter, solo.Saldo,
+// 		sbtestsc.VarCounter, utxodb.FundsFromFaucetAmount,
 // 	).AddIotas(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
@@ -178,7 +178,7 @@ package test
 // 	require.EqualValues(t, 0, strings.Count(str, "[req]"))
 // 	require.EqualValues(t, 1, strings.Count(str, "[GenericData]"))
 // 	require.EqualValues(t, 0, strings.Count(str, "[Event]"))
-// 	require.EqualValues(t, 1, strings.Count(str, strconv.FormatUint(solo.Saldo, 10)))
+// 	require.EqualValues(t, 1, strings.Count(str, strconv.FormatUint(utxodb.FundsFromFaucetAmount, 10)))
 
 // 	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 // 	str = strings.Join(recStr, "\n")

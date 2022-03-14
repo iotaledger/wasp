@@ -13,7 +13,7 @@ func TestExample1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex1")
 
-	chainID, chainOwner, coreContracts := chain.GetInfo()                        // calls view root::GetInfo
+	chainID, chainOwner, coreContracts := chain.GetInfo()              // calls view root::GetInfo
 	require.EqualValues(t, len(corecontracts.All), len(coreContracts)) // 5 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainID.String())
@@ -39,5 +39,5 @@ func TestExample3(t *testing.T) {
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.L1NativeTokens(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 }
