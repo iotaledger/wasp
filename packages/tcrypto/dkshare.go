@@ -17,9 +17,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// DKShare stands for the information stored on
+// DKShareImpl stands for the information stored on
 // a node as a result of the DKG procedure.
-type DKShare struct {
+type DKShareImpl struct {
 	Address       iotago.Address
 	Index         *uint16 // nil, if the current node is not a member of a group sharing the key.
 	N             uint16
@@ -32,6 +32,8 @@ type DKShare struct {
 	suite         Suite // Transient, only needed for un-marshaling.
 }
 
+var _ DKShare = &DKShareImpl{}
+
 // NewDKShare creates new share of the key.
 func NewDKShare(
 	index uint16,
@@ -42,7 +44,7 @@ func NewDKShare(
 	publicShares []kyber.Point,
 	privateShare kyber.Scalar,
 	nodePubKeys []*cryptolib.PublicKey,
-) (*DKShare, error) {
+) (*DKShareImpl, error) {
 	//var err error
 	//
 	// Derive the ChainID.
@@ -54,7 +56,7 @@ func NewDKShare(
 	sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
 	//
 	// Construct the DKShare.
-	dkShare := DKShare{
+	dkShare := DKShareImpl{
 		Address:       &sharedAddress,
 		Index:         &index,
 		N:             n,
@@ -70,9 +72,9 @@ func NewDKShare(
 }
 
 // DKShareFromBytes reads DKShare from bytes.
-func DKShareFromBytes(buf []byte, suite Suite) (*DKShare, error) {
+func DKShareFromBytes(buf []byte, suite Suite) (*DKShareImpl, error) {
 	r := bytes.NewReader(buf)
-	s := DKShare{suite: suite}
+	s := DKShareImpl{suite: suite}
 	if err := s.Read(r); err != nil {
 		return nil, err
 	}
@@ -80,7 +82,7 @@ func DKShareFromBytes(buf []byte, suite Suite) (*DKShare, error) {
 }
 
 // Bytes returns byte representation of the share.
-func (s *DKShare) Bytes() []byte {
+func (s *DKShareImpl) Bytes() []byte {
 	var buf bytes.Buffer
 	if err := s.Write(&buf); err != nil {
 		panic(xerrors.Errorf("DKShare.Bytes: %w", err))
@@ -90,7 +92,7 @@ func (s *DKShare) Bytes() []byte {
 
 // Write returns byte representation of this struct.
 
-func (s *DKShare) Write(w io.Writer) error {
+func (s *DKShareImpl) Write(w io.Writer) error {
 	panic("TODO implement")
 	// var err error
 	// if _, err = w.Write(s.Address.Bytes()); err != nil {
@@ -138,7 +140,7 @@ func (s *DKShare) Write(w io.Writer) error {
 	// return nil
 }
 
-func (s *DKShare) Read(r io.Reader) error {
+func (s *DKShareImpl) Read(r io.Reader) error {
 	panic("TODO implement")
 
 	// var err error
@@ -217,7 +219,7 @@ func (s *DKShare) Read(r io.Reader) error {
 
 // SignShare signs the data with the own key share.
 // returns SigShare, which contains signature and the index
-func (s *DKShare) SignShare(data []byte) (tbls.SigShare, error) {
+func (s *DKShareImpl) SignShare(data []byte) (tbls.SigShare, error) {
 	priShare := share.PriShare{
 		I: int(*s.Index),
 		V: s.PrivateShare,
@@ -226,7 +228,7 @@ func (s *DKShare) SignShare(data []byte) (tbls.SigShare, error) {
 }
 
 // VerifySigShare verifies the signature of a particular share.
-func (s *DKShare) VerifySigShare(data []byte, sigshare tbls.SigShare) error {
+func (s *DKShareImpl) VerifySigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || idx >= int(s.N) || idx < 0 {
 		return err
@@ -236,7 +238,7 @@ func (s *DKShare) VerifySigShare(data []byte, sigshare tbls.SigShare) error {
 
 // VerifyOwnSigShare is only used for assertions
 // NOTE: Not used.
-func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
+func (s *DKShareImpl) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || uint16(idx) != *s.Index {
 		return err
@@ -246,13 +248,13 @@ func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
 
 // VerifyMasterSignature checks signature against master public key
 // NOTE: Not used.
-func (s *DKShare) VerifyMasterSignature(data, signature []byte) error {
+func (s *DKShareImpl) VerifyMasterSignature(data, signature []byte) error {
 	return bdn.Verify(s.suite, s.SharedPublic, data, signature)
 }
 
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
-func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
+func (s *DKShareImpl) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var err error
 	var recoveredSignatureBin []byte
 	if s.N > 1 {
@@ -271,4 +273,40 @@ func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.Si
 	}
 	ret := bls.NewSignatureWithPublicKey(bls.PublicKey{Point: s.SharedPublic}, sig)
 	return &ret, nil
+}
+
+func (s *DKShareImpl) GetAddress() iotago.Address {
+	return s.Address
+}
+
+func (s *DKShareImpl) GetIndex() *uint16 {
+	return s.Index
+}
+
+func (s *DKShareImpl) GetN() uint16 {
+	return s.N
+}
+
+func (s *DKShareImpl) GetT() uint16 {
+	return s.T
+}
+
+func (s *DKShareImpl) GetNodePubKeys() []*cryptolib.PublicKey {
+	return s.NodePubKeys
+}
+
+func (s *DKShareImpl) GetSharedPublic() kyber.Point {
+	return s.SharedPublic
+}
+
+func (s *DKShareImpl) GetPublicShares() []kyber.Point {
+	return s.PublicShares
+}
+
+func (s *DKShareImpl) SetPublicShares(ps []kyber.Point) {
+	s.PublicShares = ps
+}
+
+func (s *DKShareImpl) GetPrivateShare() kyber.Scalar {
+	return s.PrivateShare
 }

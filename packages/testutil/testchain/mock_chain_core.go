@@ -34,7 +34,7 @@ type MockedChainCore struct {
 	onEventStateTransition  func(data *chain.ChainTransitionEventData)
 	onEventRequestProcessed func(id iscp.RequestID)
 	onSendPeerMsg           func(netID string, msgReceiver byte, msgType byte, msgData []byte)
-	onStateCandidate        func(state state.VirtualStateAccess, outputID iotago.OutputID)
+	onStateCandidate        func(state state.VirtualStateAccess, outputID *iotago.UTXOInput)
 	onDismissChain          func(reason string)
 	onLedgerState           func(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	onOffLedgerRequest      func(msg *messages.OffLedgerRequestMsgIn)
@@ -56,7 +56,7 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(coreprocessors.Config().WithNativeContracts(inccounter.Processor)),
-		log:        log,
+		log:        log.Named("chain"),
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
 			return []string{}
@@ -73,8 +73,8 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		onSendPeerMsg: func(netID string, msgReceiver byte, msgType byte, msgData []byte) {
 			t.Fatalf("Sending to peer msg not implemented, netID=%v, receiver=%v, msgType=%v", netID, msgReceiver, msgType)
 		},
-		onStateCandidate: func(state state.VirtualStateAccess, outputID iotago.OutputID) {
-			t.Fatalf("Receiving state candidate not implemented, outputID=%v", outputID)
+		onStateCandidate: func(state state.VirtualStateAccess, outputID *iotago.UTXOInput) {
+			t.Fatalf("Receiving state candidate not implemented, outputID=%v", iscp.OID(outputID))
 		},
 		onDismissChain: func(reason string) { t.Fatalf("Dismissing chain not implemented, reason=%v", reason) },
 		onLedgerState: func(chainOutput *iotago.AliasOutput, timestamp time.Time) {
@@ -118,7 +118,7 @@ func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("implement me")
 }
 
-func (m *MockedChainCore) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID iotago.OutputID) {
+func (m *MockedChainCore) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID *iotago.UTXOInput) {
 	m.onStateCandidate(virtualState, outputID)
 }
 
@@ -178,7 +178,7 @@ func (m *MockedChainCore) OnSendPeerMsg(fun func(netID string, msgReceiver byte,
 	m.onSendPeerMsg = fun
 }
 
-func (m *MockedChainCore) OnStateCandidate(fun func(state state.VirtualStateAccess, outputID iotago.OutputID)) {
+func (m *MockedChainCore) OnStateCandidate(fun func(state state.VirtualStateAccess, outputID *iotago.UTXOInput)) {
 	m.onStateCandidate = fun
 }
 

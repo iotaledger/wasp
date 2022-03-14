@@ -14,7 +14,7 @@ import (
 
 // Consensus -> Consensus
 type SignedResultAckMsg struct {
-	ChainInputID iotago.OutputID
+	ChainInputID *iotago.UTXOInput
 	EssenceHash  hashing.HashValue
 }
 
@@ -30,7 +30,7 @@ func NewSignedResultAckMsg(data []byte) (*SignedResultAckMsg, error) {
 	if err = util.ReadHashValue(r, &msg.EssenceHash); err != nil { // nolint:gocritic // - ignore sloppyReassign
 		return nil, err
 	}
-	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil { // nolint:gocritic // - ignore sloppyReassign
+	if msg.ChainInputID, err = util.ReadOutputID(r); err != nil {
 		return nil, err
 	}
 	return msg, nil
@@ -40,7 +40,7 @@ func (msg *SignedResultAckMsg) Write(w io.Writer) error {
 	if _, err := w.Write(msg.EssenceHash[:]); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.ChainInputID[:]); err != nil {
+	if err := util.WriteOutputID(w, msg.ChainInputID); err != nil {
 		return err
 	}
 	return nil
