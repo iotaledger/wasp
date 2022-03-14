@@ -16,12 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 )
 
-func init() {
-	if iscp.ChainIDLength != 20 {
-		panic("static check: ChainID length does not match bytes20 in ISC.sol")
-	}
-}
-
 // deployISCContractOnGenesis sets up the initial state of the ISC EVM contract
 // which will go into the EVM genesis block
 func deployISCContractOnGenesis(genesisAlloc core.GenesisAlloc) {
@@ -68,14 +62,16 @@ func newISCContract(ctx iscp.Sandbox) vm.ISCContract {
 }
 
 func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
+	if ok {
+		return ret, remainingGas
+	}
+
 	remainingGas = gas
 	method, args := parseCall(input)
 	var outs []interface{}
 
 	switch method.Name {
-	case "getChainID":
-		outs = getChainID(c.ctx, method)
-
 	case "getEntropy":
 		outs = []interface{}{c.ctx.GetEntropy()}
 
@@ -104,25 +100,50 @@ func newISCContractView(ctx iscp.SandboxView) vm.ISCContract {
 var _ vm.ISCContract = &iscContractView{}
 
 func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+	ret, remainingGas, method, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
+	if !ok {
+		panic(fmt.Sprintf("no handler for method %s", method.Name))
+	}
+	return ret, remainingGas
+}
+
+func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
-	method, _ := parseCall(input)
+	method, args := parseCall(input)
 	var outs []interface{}
 
 	switch method.Name {
 	case "getChainID":
-		outs = getChainID(c.ctx, method)
+		outs = []interface{}{isccontract.WrapISCChainID(ctx.ChainID())}
+
+	case "getChainOwnerID":
+		outs = []interface{}{isccontract.WrapISCAgentID(ctx.ChainOwnerID())}
+
+	case "getNFTData":
+		nftID := isccontract.IotaNFTIDFromUnpackedArg(args[0]).Unwrap()
+		nft := ctx.GetNFTData(nftID)
+		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
+
+	case "getTimestampUnixNano":
+		outs = []interface{}{ctx.Timestamp()}
+
+	case "logInfo":
+		ctx.Log().Infof("%s", args[0].(string))
+
+	case "logDebug":
+		ctx.Log().Debugf("%s", args[0].(string))
+
+	case "logPanic":
+		ctx.Log().Panicf("%s", args[0].(string))
 
 	default:
-		panic(fmt.Sprintf("no handler for method %s", method.Name))
+		return
 	}
 
+	ok = true
 	ret, err := method.Outputs.Pack(outs...)
 	if err != nil {
 		panic(err)
 	}
 	return
-}
-
-func getChainID(ctx iscp.SandboxBase, method *abi.Method) (ret []interface{}) {
-	return []interface{}{ctx.ChainID()}
 }

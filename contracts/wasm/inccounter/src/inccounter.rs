@@ -47,7 +47,7 @@ pub fn func_increment(_ctx: &ScFuncContext, f: &IncrementContext) {
 pub fn func_increment_with_delay(ctx: &ScFuncContext, f: &IncrementWithDelayContext) {
     let delay = f.params.delay().value();
     let inc = ScFuncs::call_increment(ctx);
-    inc.func.delay(delay).transfer_iotas(1).post();
+    inc.func.delay(delay).post();
 }
 
 pub fn func_local_state_internal_call(ctx: &ScFuncContext, f: &LocalStateInternalCallContext) {
@@ -95,7 +95,7 @@ pub fn func_post_increment(ctx: &ScFuncContext, f: &PostIncrementContext) {
     let value = counter.value();
     counter.set_value(value + 1);
     if value == 0 {
-        ScFuncs::increment(ctx).func.transfer_iotas(1).post();
+        ScFuncs::increment(ctx).func.post();
     }
 }
 
@@ -112,7 +112,7 @@ pub fn func_repeat_many(ctx: &ScFuncContext, f: &RepeatManyContext) {
         }
     }
     state_repeats.set_value(repeats - 1);
-    ScFuncs::repeat_many(ctx).func.transfer_iotas(1).post();
+    ScFuncs::repeat_many(ctx).func.post();
 }
 
 pub fn func_test_vli_codec(ctx: &ScFuncContext, _f: &TestVliCodecContext) {
@@ -216,7 +216,7 @@ fn local_state_post(ctx: &ScFuncContext, nr: i64) {
     //note: we add a dummy parameter here to prevent "duplicate outputs not allowed" error
     let f = ScFuncs::when_must_increment(ctx);
     f.params.dummy().set_value(nr);
-    f.func.transfer_iotas(1).post();
+    f.func.post();
 }
 
 fn vli_save(ctx: &ScFuncContext, name: &str, value: i64) {

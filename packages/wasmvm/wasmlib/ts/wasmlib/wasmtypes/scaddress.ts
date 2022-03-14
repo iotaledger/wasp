@@ -2,11 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {ScAgentID} from "./scagentid";
-import {bytesCompare} from "./scbytes";
-import {ScHname} from "./schname";
+import * as wasmtypes from "./index"
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -21,15 +17,15 @@ export const ScLengthNFT = 21;
 export const ScAddressLength = ScLengthEd25519;
 
 export class ScAddress {
-    id: u8[] = zeroes(ScAddressLength);
+    id: u8[] = wasmtypes.zeroes(ScAddressLength);
 
-    asAgentID(): ScAgentID {
+    asAgentID(): wasmtypes.ScAgentID {
         // agentID for address has Hname zero
-        return new ScAgentID(this, new ScHname(0));
+        return new wasmtypes.ScAgentID(this, new wasmtypes.ScHname(0));
     }
 
     public equals(other: ScAddress): bool {
-        return bytesCompare(this.id, other.id) == 0;
+        return wasmtypes.bytesCompare(this.id, other.id) == 0;
     }
 
     // convert to byte array representation
@@ -46,13 +42,13 @@ export class ScAddress {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // TODO address type-dependent encoding/decoding?
-export function addressDecode(dec: WasmDecoder): ScAddress {
+export function addressDecode(dec: wasmtypes.WasmDecoder): ScAddress {
     let addr = new ScAddress();
     addr.id = dec.fixedBytes(ScAddressLength);
     return addr;
 }
 
-export function addressEncode(enc: WasmEncoder, value: ScAddress): void {
+export function addressEncode(enc: wasmtypes.WasmEncoder, value: ScAddress): void {
     enc.fixedBytes(value.id, ScAddressLength)
 }
 
@@ -102,15 +98,15 @@ export function addressToBytes(value: ScAddress): u8[] {
 
 export function addressToString(value: ScAddress): string {
     // TODO standardize human readable string
-    return base58Encode(value.id);
+    return wasmtypes.base58Encode(value.id);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableAddress {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

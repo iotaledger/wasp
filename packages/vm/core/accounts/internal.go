@@ -30,6 +30,7 @@ var (
 	ErrOverflow                     = coreerrors.Register("overflow in token arithmetics").Create()
 	ErrInvalidNFTID                 = coreerrors.Register("invalid NFT ID").Create()
 	ErrTooManyNFTsInAllowance       = coreerrors.Register("expected at most 1 NFT in allowance").Create()
+	ErrNFTIDNotFound                = coreerrors.Register("NFTID not found: %s")
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -274,13 +275,16 @@ func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
 	nftMap.MustDelAt(id[:])
 }
 
-func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) *iscp.NFT {
+func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) iscp.NFT {
 	nftMap := getNFTStateR(state)
 	nft, err := iscp.NFTFromBytes(nftMap.MustGetAt(id[:]))
 	if err != nil {
 		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
 	}
-	return nft
+	if nft == nil {
+		panic(ErrNFTIDNotFound.Create(id))
+	}
+	return *nft
 }
 
 func creditNFTToAccount(account *collections.Map, id iotago.NFTID) {

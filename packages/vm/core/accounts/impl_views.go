@@ -63,6 +63,7 @@ func foundryOutput(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
+// viewAccountNFTs returns the NFTIDs of NFTs owned by an account
 func viewAccountNFTs(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
@@ -76,6 +77,7 @@ func viewAccountNFTs(ctx iscp.SandboxView) dict.Dict {
 	}
 }
 
+// viewNFTData returns the NFT data for a given NFTID
 func viewNFTData(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewNFTData")
 	nftIDBytes := ctx.Params().MustGetBytes(ParamNFTID)

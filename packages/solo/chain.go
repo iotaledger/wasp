@@ -522,7 +522,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
-	).AddAssetsIotas(1)
+	).AddIotas(1)
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if result.Error == nil {
 		ch.StateControllerAddress = newStateAddr
@@ -547,7 +547,7 @@ type L1L2AddressAssets struct {
 }
 
 func (a *L1L2AddressAssets) String() string {
-	return fmt.Sprintf("Address: %s\nL1 assets:\n  %s\nL2 assets:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
+	return fmt.Sprintf("Address: %s\nL1 ftokens:\n  %s\nL2 ftokens:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
 }
 
 func getAddr(addrOrKeypair interface{}) iotago.Address {

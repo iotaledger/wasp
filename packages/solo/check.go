@@ -43,7 +43,7 @@ func (ch *Chain) CheckChain() {
 }
 
 // CheckAccountLedger check integrity of the on-chain ledger.
-// Sum of all accounts must be equal to total assets
+// Sum of all accounts must be equal to total ftokens
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.L2TotalAssets()
 	accs := ch.L2Accounts()
@@ -79,6 +79,16 @@ func (ch *Chain) AssertControlAddresses() {
 	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
 }
 
+func (ch *Chain) HasL2NFT(agentID *iscp.AgentID, nftID *iotago.NFTID) bool {
+	accNFTIDs := ch.L2NFTs(agentID)
+	for _, id := range accNFTIDs {
+		if bytes.Equal(id[:], nftID[:]) {
+			return true
+		}
+	}
+	return false
+}
+
 func (env *Solo) AssertL1Iotas(addr iotago.Address, expected uint64) {
 	require.EqualValues(env.T, int(expected), int(env.L1Iotas(addr)))
 }
@@ -99,4 +109,8 @@ func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {
 		}
 	}
 	return false
+}
+
+func (env *Solo) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+	return env.utxoDB.GetUnspentOutputs(addr)
 }

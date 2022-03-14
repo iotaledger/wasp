@@ -36,7 +36,7 @@ func (s *SoloBackend) gasFeeAssets(gas, feeAmount uint64, err error) (uint64, *i
 
 func (s *SoloBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp.FungibleTokens, args dict.Dict) (uint64, *iscp.FungibleTokens, error) {
 	return s.gasFeeAssets(s.Chain.EstimateGasOnLedger(
-		solo.NewCallParamsFromDic(scName, funName, args).WithAssets(transfer),
+		solo.NewCallParamsFromDic(scName, funName, args).WithFungibleTokens(transfer),
 		s.pvtKey,
 		true,
 	))
@@ -44,7 +44,7 @@ func (s *SoloBackend) EstimateGasOnLedger(scName, funName string, transfer *iscp
 
 func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.FungibleTokens, args dict.Dict, gasBudget uint64) error {
 	_, err := s.Chain.PostRequestSync(
-		solo.NewCallParamsFromDic(scName, funName, args).WithAssets(transfer).WithGasBudget(gasBudget),
+		solo.NewCallParamsFromDic(scName, funName, args).WithFungibleTokens(transfer).WithGasBudget(gasBudget),
 		s.pvtKey,
 	)
 	return err

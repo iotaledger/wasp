@@ -160,7 +160,7 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
 
 export function funcWithdrawToChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawToChainContext): void {
     let xx = coreaccounts.ScFuncs.withdraw(ctx);
-    xx.func.transferIotas(1).postToChain(f.params.chainID().value());
+    xx.func.postToChain(f.params.chainID().value());
 }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {

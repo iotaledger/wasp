@@ -184,7 +184,7 @@ func TestRequestToView(t *testing.T) {
 		// sending request to the view entry point should
 		// return an error and leave tokens in L2 minus gas fee
 		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddAssetsIotas(1234), user.Pair)
+		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddIotas(1234), user.Pair)
 		require.Error(t, ctx.Err)
 		require.EqualValues(t, userL1-1234, user.Balance())
 		ctx.UpdateGasFees()

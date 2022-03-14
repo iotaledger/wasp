@@ -1,13 +1,14 @@
 package testcore
 
 import (
+	"os"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 )
 
 func TestProofs(t *testing.T) {

@@ -112,6 +112,20 @@ func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return ret
 }
 
+func (vmctx *VMContext) GetAccountNFTs(agentID *iscp.AgentID) (ret []iotago.NFTID) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		ret = accounts.GetAccountNFTs(s, agentID)
+	})
+	return ret
+}
+
+func (vmctx *VMContext) GetNFTData(nftID iotago.NFTID) (ret iscp.NFT) {
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		ret = accounts.GetNFTData(s, nftID)
+	})
+	return ret
+}
+
 func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 	sender := vmctx.req.SenderAccount()
 	if sender == nil {

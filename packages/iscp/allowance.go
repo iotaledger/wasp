@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type Allowance struct {
@@ -72,9 +73,6 @@ func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
 
 	return true
 }
-
-// TODO optimize serialization: In the NFT request allowance of the containing request requires 1 bit of information, no need for 20 bytes of NFTid
-//  That requires taking into account the request context
 
 func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	a.Assets.WriteToMarshalUtil(mu)
@@ -151,4 +149,21 @@ func (a *Allowance) String() string {
 		ret += fmt.Sprintf("\n NFTID: %s", nftid.String())
 	}
 	return ret
+}
+
+func (a *Allowance) fillEmptyNFTIDs(o iotago.Output, utxoInput *iotago.UTXOInput) *Allowance {
+	if a == nil {
+		return nil
+	}
+	nftOut, ok := o.(*iotago.NFTOutput)
+	if !ok {
+		return a
+	}
+	// see if there is an empty NFTID in allowance (this can happpen if the NTF is minted as a request to the chain)
+	for i, nft := range a.NFTs {
+		if nft.Empty() {
+			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOut, utxoInput.ID())
+		}
+	}
+	return a
 }

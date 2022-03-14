@@ -19,7 +19,7 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddAssetsIotas(1000).WithGasBudget(math.MaxUint64)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddIotas(1000).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
@@ -46,7 +46,7 @@ func testConcurrency(t *testing.T, w bool) {
 	commonAccountInitialBalance := chain.L2Iotas(chain.CommonAccount())
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
-		AddAssetsIotas(1000).WithGasBudget(math.MaxUint64)
+		AddIotas(1000).WithGasBudget(math.MaxUint64)
 
 	_, predictedGasFee, err := chain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(t, err)
@@ -95,7 +95,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	iotasSentPerRequest := uint64(1000)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
-		AddAssetsIotas(iotasSentPerRequest).WithGasBudget(math.MaxUint64)
+		AddIotas(iotasSentPerRequest).WithGasBudget(math.MaxUint64)
 
 	_, predictedGasFee, err := chain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(t, err)

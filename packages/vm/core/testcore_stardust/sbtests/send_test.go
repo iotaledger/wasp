@@ -26,7 +26,7 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddAssetsIotas(10_000_000).
+		AddIotas(10_000_000).
 		AddAllowanceIotas(40_000). // 40k iotas = 200 outputs
 		WithGasBudget(10_000_000)
 	_, err = ch.PostRequestSync(req, wallet)
@@ -104,7 +104,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	allowance := iscp.NewAllowanceIotas(100_000).AddNativeTokens(tokenID, 100)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddAssetsIotas(100_000).
+		AddIotas(100_000).
 		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
@@ -135,7 +135,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	allowance := iscp.NewAllowanceIotas(100_000).AddNativeTokens(tokenID, amountTokensToSend)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddAssetsIotas(100_000).
+		AddIotas(100_000).
 		WithGasBudget(200_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
@@ -160,13 +160,13 @@ func testPingIotas1(t *testing.T, w bool) {
 	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(expectedBack + 1_000). // add extra iotas besides allowance in order to estimate the gas fees
+		AddIotas(expectedBack + 1_000). // add extra iotas besides allowance in order to estimate the gas fees
 		AddAllowanceIotas(expectedBack)
 
 	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
 	require.NoError(t, err)
 	req.
-		WithAssets(iscp.NewTokensIotas(expectedBack + gasFee)).
+		WithFungibleTokens(iscp.NewTokensIotas(expectedBack + gasFee)).
 		WithGasBudget(gas)
 
 	_, err = ch.PostRequestSync(req, user)
@@ -194,7 +194,7 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	allowance := iscp.NewAllowanceIotas(1)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
 		AddAllowance(allowance).
-		AddAssetsIotas(100_000).
+		AddIotas(100_000).
 		WithGasBudget(100_000)
 
 	_, err := ch.PostRequestSync(req, wallet)
@@ -204,7 +204,7 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	allowance = iscp.NewAllowanceIotas(100_000)
 	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
 		AddAllowance(allowance).
-		AddAssetsIotas(100_000).
+		AddIotas(100_000).
 		WithGasBudget(100_000)
 
 	_, err = ch.PostRequestSync(req, wallet)
@@ -239,7 +239,7 @@ func testSendNFTsBack(t *testing.T, w bool) {
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
-		AddAssets(assetsToSend).
+		AddFungibleTokens(assetsToSend).
 		WithNFT(nft).
 		AddAllowance(iscp.NewAllowanceFungibleTokens(assetsToAllow).AddNFTs(nft.ID)).
 		WithMaxAffordableGasBudget()
@@ -260,7 +260,7 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	nft, _ := mintDummyNFT(t, ch, wallet, addr)
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddAssets(iscp.NewTokensIotas(1_000_000)).
+		AddFungibleTokens(iscp.NewTokensIotas(1_000_000)).
 		WithNFT(nft).
 		WithMaxAffordableGasBudget()
 
@@ -279,4 +279,43 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 
 	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
 	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
+}
+
+func TestNFTMintToChain(t *testing.T) { run2(t, testNFTMintToChain) }
+func testNFTMintToChain(t *testing.T, w bool) {
+	// Mints an NFT as a request
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
+
+	nftToBeMinted := &iscp.NFT{
+		ID:       iotago.NFTID{},
+		Issuer:   addr,
+		Metadata: []byte("foobar"),
+	}
+
+	iotasToSend := uint64(300_000)
+	iotasForGas := uint64(100_000)
+	assetsToSend := iscp.NewTokensIotas(iotasToSend)
+	assetsToAllow := iscp.NewTokensIotas(iotasToSend - iotasForGas)
+
+	// receive an NFT back that is sent in the same request
+	req := solo.NewCallParams(ScName, sbtestsc.FuncClaimAllowance.Name).
+		AddFungibleTokens(assetsToSend).
+		WithNFT(nftToBeMinted).
+		AddAllowance(iscp.NewAllowanceFungibleTokens(assetsToAllow).AddNFTs(iotago.NFTID{})). // empty NFTID
+		WithMaxAffordableGasBudget()
+
+	_, err := ch.PostRequestSync(req, wallet)
+	require.NoError(t, err)
+	// find out the NFTID
+	receipt := ch.LastReceipt()
+	nftID := iotago.NFTIDFromOutputID(receipt.Request.ID().OutputID())
+
+	// - Chain owns the NFT on L1
+	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nftID))
+	// - The target contract owns the NFT on L2
+	contractAgentID := iscp.NewAgentID(ch.ChainID.AsAddress(), sbtestsc.Contract.Hname())
+	require.True(t, ch.HasL2NFT(contractAgentID, &nftID))
 }

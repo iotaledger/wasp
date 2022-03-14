@@ -2,23 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {base58Encode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
+import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScColorLength = 38;
 
 export class ScColor {
-    id: u8[] = zeroes(ScColorLength);
+    id: u8[] = wasmtypes.zeroes(ScColorLength);
 
     constructor(fill: u8) {
         this.id.fill(fill);
     }
 
     public equals(other: ScColor): bool {
-        return bytesCompare(this.id, other.id) == 0;
+        return wasmtypes.bytesCompare(this.id, other.id) == 0;
     }
 
     // convert to byte array representation
@@ -39,11 +37,11 @@ export const MINT: ScColor = new ScColor(0xff);
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function colorDecode(dec: WasmDecoder): ScColor {
+export function colorDecode(dec: wasmtypes.WasmDecoder): ScColor {
     return colorFromBytesUnchecked(dec.fixedBytes(ScColorLength));
 }
 
-export function colorEncode(enc: WasmEncoder, value: ScColor): void {
+export function colorEncode(enc: wasmtypes.WasmEncoder, value: ScColor): void {
     enc.fixedBytes(value.toBytes(), ScColorLength);
 }
 
@@ -63,7 +61,7 @@ export function colorToBytes(value: ScColor): u8[] {
 
 export function colorToString(value: ScColor): string {
     // TODO standardize human readable string
-    return base58Encode(value.id);
+    return wasmtypes.base58Encode(value.id);
 }
 
 function colorFromBytesUnchecked(buf: u8[]): ScColor {
@@ -75,9 +73,9 @@ function colorFromBytesUnchecked(buf: u8[]): ScColor {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableColor {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

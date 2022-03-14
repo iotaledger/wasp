@@ -452,7 +452,7 @@ func TestDeployNativeContract(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
-		AddAssetsIotas(100_000).
+		AddIotas(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -513,7 +513,7 @@ func TestMessageSize(t *testing.T) {
 			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
 				sbtestsc.ParamSize, uint32(reqSize),
 			).
-				AddAssetsIotas(dust).
+				AddIotas(dust).
 				AddAllowanceIotas(dust).
 				WithMaxAffordableGasBudget(),
 			nil,

@@ -315,7 +315,7 @@ func TestTransferNFTs(t *testing.T) {
 	require.Equal(t, user1NFTs[0], NFT1.ID)
 
 	// nft data is saved
-	nftData := GetNFTData(state, &NFT1.ID)
+	nftData := GetNFTData(state, NFT1.ID)
 	require.Equal(t, nftData.ID, NFT1.ID)
 	require.Equal(t, nftData.Issuer, NFT1.Issuer)
 	require.Equal(t, nftData.Metadata, NFT1.Metadata)
@@ -323,11 +323,11 @@ func TestTransferNFTs(t *testing.T) {
 	agentID2 := iscp.NewRandomAgentID()
 
 	// cannot move an NFT that is not owned
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, nil, []*iotago.NFTID{{111}})
+	ok := MoveBetweenAccounts(state, agentID1, agentID2, nil, []iotago.NFTID{{111}})
 	require.False(t, ok)
 
 	// moves successfully when the NFT is owned
-	ok = MoveBetweenAccounts(state, agentID1, agentID2, nil, []*iotago.NFTID{&NFT1.ID})
+	ok = MoveBetweenAccounts(state, agentID1, agentID2, nil, []iotago.NFTID{NFT1.ID})
 	require.True(t, ok)
 
 	user1NFTs = getAccountNFTs(getAccountR(state, agentID1))
@@ -337,9 +337,9 @@ func TestTransferNFTs(t *testing.T) {
 	require.Equal(t, user2NFTs[0], NFT1.ID)
 
 	// remove the NFT from the chain
-	DebitNFTFromAccount(state, agentID2, &NFT1.ID)
+	DebitNFTFromAccount(state, agentID2, NFT1.ID)
 	require.Panics(t, func() {
-		GetNFTData(state, &NFT1.ID)
+		GetNFTData(state, NFT1.ID)
 	})
 }
 
@@ -381,7 +381,7 @@ func TestCreditDebitNFT1(t *testing.T) {
 	require.Len(t, accNFTs, 1)
 	require.Equal(t, accNFTs[0], nft.ID)
 
-	DebitNFTFromAccount(state, agentID1, &nft.ID)
+	DebitNFTFromAccount(state, agentID1, nft.ID)
 
 	accNFTs = GetAccountNFTs(state, agentID1)
 	require.Len(t, accNFTs, 0)

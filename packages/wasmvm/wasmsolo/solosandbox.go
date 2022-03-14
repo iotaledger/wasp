@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmsolo
 
 import (
@@ -128,15 +131,17 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
-func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, assets *iscp.FungibleTokens) []byte {
-	allow := assets
-	if assets.Iotas < 1000 {
-		assets = allow.Clone()
-		assets.Iotas = 1000
+func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance *iscp.Allowance) []byte {
+	assets := allowance
+	if assets.Assets.Iotas < 1000 {
+		// assets are different from allowance, so clone allowance before modifying
+		assets = allowance.Clone()
+		assets.Assets.Iotas = 1000
 	}
 	req := solo.NewCallParamsFromDic(contract, function, params)
-	req.AddAssets(assets)
-	req.WithAllowance(allow)
+	req.AddFungibleTokens(assets.Assets)
+	// TODO NFT
+	req.WithAllowance(allowance)
 	req.WithMaxAffordableGasBudget()
 	ctx := s.ctx
 	//TODO mint!

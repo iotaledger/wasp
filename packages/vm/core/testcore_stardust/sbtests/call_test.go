@@ -18,7 +18,7 @@ func testGetSet(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314).
 		WithGasBudget(100_000)
-	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
@@ -86,7 +86,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
 		WithGasBudget(100_000)
-	ret, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	ret, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)

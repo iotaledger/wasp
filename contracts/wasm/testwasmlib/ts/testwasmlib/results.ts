@@ -20,25 +20,37 @@ export class MutableTakeBalanceResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableArrayLengthResults extends wasmtypes.ScProxy {
+export class ImmutableArrayOfArraysLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class MutableArrayLengthResults extends wasmtypes.ScProxy {
+export class MutableArrayOfArraysLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class ImmutableArrayValueResults extends wasmtypes.ScProxy {
+export class ImmutableArrayOfArraysValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class MutableArrayValueResults extends wasmtypes.ScProxy {
+export class MutableArrayOfArraysValueResults extends wasmtypes.ScProxy {
+	value(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
+	}
+}
+
+export class ImmutableArrayOfMapsValueResults extends wasmtypes.ScProxy {
+	value(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
+	}
+}
+
+export class MutableArrayOfMapsValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
 	}
@@ -92,13 +104,37 @@ export class MutableIotaBalanceResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableMapValueResults extends wasmtypes.ScProxy {
+export class ImmutableMapOfArraysLengthResults extends wasmtypes.ScProxy {
+	length(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
+	}
+}
+
+export class MutableMapOfArraysLengthResults extends wasmtypes.ScProxy {
+	length(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
+	}
+}
+
+export class ImmutableMapOfArraysValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class MutableMapValueResults extends wasmtypes.ScProxy {
+export class MutableMapOfArraysValueResults extends wasmtypes.ScProxy {
+	value(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
+	}
+}
+
+export class ImmutableMapOfMapsValueResults extends wasmtypes.ScProxy {
+	value(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
+	}
+}
+
+export class MutableMapOfMapsValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
 	}

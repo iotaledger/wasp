@@ -155,7 +155,7 @@ func (txb *AnchorTransactionBuilder) Consume(req iscp.Request) int64 {
 		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	if req.NFT() != nil {
-		deltaIotasDustDepositAdjustment += txb.consumeNFT(req.AsOnLedger().Output().(*iotago.NFTOutput))
+		deltaIotasDustDepositAdjustment += txb.consumeNFT(req.AsOnLedger().Output().(*iotago.NFTOutput), req.AsOnLedger().UTXOInput())
 	}
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume OUT")

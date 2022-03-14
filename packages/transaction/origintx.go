@@ -111,6 +111,7 @@ func NewRootInitRequestTransaction(
 	}
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
+		SenderAddress:    keyPair.Address(),
 		UnspentOutputs:   unspentOutputs,
 		UnspentOutputIDs: unspentOutputIDs,
 		Request: &iscp.RequestParameters{

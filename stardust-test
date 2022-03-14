@@ -6,6 +6,7 @@
 
 PATHS=(\
     "packages/transaction/" \
+    "packages/vm/core/accounts/..." \
     "packages/vm/core/testcore_stardust/..." \
     "packages/vm/core/evm/..." \
     "packages/vm/vmcontext/..." \

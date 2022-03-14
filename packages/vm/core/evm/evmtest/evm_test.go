@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 	"github.com/stretchr/testify/require"
 )
 
@@ -157,7 +158,7 @@ func TestGasLimit(t *testing.T) {
 	_, err = storage.store(124, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet2,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas).AddAssetsIotas(fee * 9 / 10)
+			req.WithGasBudget(gas).AddIotas(fee * 9 / 10)
 		},
 	}})
 	require.Error(t, err)
@@ -168,7 +169,7 @@ func TestGasLimit(t *testing.T) {
 	_, err = storage.store(125, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet3,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas / 2).AddAssetsIotas(fee)
+			req.WithGasBudget(gas / 2).AddIotas(fee)
 		},
 	}})
 	require.Error(t, err)
@@ -189,7 +190,7 @@ func TestLoop(t *testing.T) {
 			iota: iotaCallOptions{
 				wallet: iotaWallet,
 				before: func(req *solo.CallParams) {
-					req.WithGasBudget(iscGasBudget).AddAssetsIotas(iotasSent)
+					req.WithGasBudget(iscGasBudget).AddIotas(iotasSent)
 				},
 			},
 		})
@@ -242,6 +243,78 @@ func TestISCContract(t *testing.T) {
 	require.True(t, evmChain.soloChain.ChainID.Equals(chainID))
 }
 
+func TestISCChainOwnerID(t *testing.T) {
+	evmChain := initEVM(t)
+
+	ret := new(isccontract.ISCAgentID)
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getChainOwnerID", nil, &ret)
+
+	chainOwnerID := evmChain.soloChain.OriginatorAgentID
+	require.True(t, chainOwnerID.Equals(ret.MustUnwrap()))
+}
+
+func TestISCTimestamp(t *testing.T) {
+	evmChain := initEVM(t)
+
+	var ret int64
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getTimestampUnixNano", nil, &ret)
+
+	require.EqualValues(t, evmChain.soloChain.GetLatestBlockInfo().Timestamp.UnixNano(), ret)
+}
+
+func TestISCLogPanic(t *testing.T) {
+	evmChain := initEVM(t)
+
+	_, err := evmChain.ISCContract(evmChain.faucetKey).callFn(
+		[]ethCallOptions{{iota: iotaCallOptions{
+			before: func(req *solo.CallParams) {
+				req.AddIotas(10000).WithMaxAffordableGasBudget()
+			},
+		}}},
+		"logPanic",
+		"Hi from EVM!",
+	)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Hi from EVM!")
+}
+
+func TestISCNFTData(t *testing.T) {
+	evmChain := initEVM(t)
+
+	// mint an NFT and send it to the chain
+	issuerWallet, issuerAddress := evmChain.solo.NewKeyPairWithFunds()
+	metadata := []byte("foobar")
+	nftInfo, err := evmChain.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	require.NoError(t, err)
+	_, err = evmChain.soloChain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			AddIotas(100000).
+			WithNFT(&iscp.NFT{
+				ID:       nftInfo.NFTID,
+				Issuer:   issuerAddress,
+				Metadata: metadata,
+			}).
+			WithMaxAffordableGasBudget().
+			WithSender(nftInfo.NFTID.ToAddress()),
+		issuerWallet,
+	)
+	require.NoError(t, err)
+
+	// call getNFTData from EVM
+	ret := new(isccontract.ISCNFT)
+	evmChain.ISCContract(evmChain.faucetKey).callView(
+		nil,
+		"getNFTData",
+		[]interface{}{isccontract.WrapISCNFTID(nftInfo.NFTID)},
+		&ret,
+	)
+
+	require.EqualValues(t, nftInfo.NFTID, ret.MustUnwrap().ID)
+	require.True(t, issuerAddress.Equal(ret.MustUnwrap().Issuer))
+	require.EqualValues(t, metadata, ret.MustUnwrap().Metadata)
+}
+
 func TestISCTriggerEvent(t *testing.T) {
 	evmChain := initEVM(t)
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
@@ -256,6 +329,22 @@ func TestISCTriggerEvent(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
 	require.Contains(t, ev[0], "Hi from EVM!")
+}
+
+func TestISCTriggerEventThenFail(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	// test that triggerEvent() followed by revert() does not actually trigger the event
+	_, err := iscTest.triggerEventFail("Hi from EVM!", ethCallOptions{iota: iotaCallOptions{
+		before: func(req *solo.CallParams) {
+			req.AddIotas(10000).WithMaxAffordableGasBudget()
+		},
+	}})
+	require.Error(t, err)
+	ev, err := evmChain.soloChain.GetEventsForBlock(evmChain.soloChain.GetLatestBlockInfo().BlockIndex)
+	require.NoError(t, err)
+	require.Len(t, ev, 0)
 }
 
 func TestISCEntropy(t *testing.T) {
@@ -283,7 +372,7 @@ func TestBlockTime(t *testing.T) {
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 			accounts.ParamAgentID, iscp.NewAgentID(evmChain.soloChain.ChainID.AsAddress(), evm.Contract.Hname()),
 		).
-			AddAssetsIotas(200000).
+			AddIotas(200000).
 			AddAllowanceIotas(100000).
 			WithMaxAffordableGasBudget(),
 		nil,
