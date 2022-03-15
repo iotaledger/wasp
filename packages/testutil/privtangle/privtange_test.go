@@ -26,8 +26,6 @@ func TestHornetStartup(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "wasp-hornet-private_tangle")
 	pt := privtangle.Start(ctx, tempDir, 16500, 3, t)
 
-	time.Sleep(3 * time.Second)
-
 	//
 	// Assert the node health.
 	node0 := pt.NodeClient(0)

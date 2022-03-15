@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -192,6 +193,11 @@ func (pt *PrivTangle) startNode(i int) {
 		)
 	}
 	hornetCmd := exec.CommandContext(pt.ctx, "hornet", args...)
+	// kill hornet cmd if the go test process is killed
+	hornetCmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
 	hornetCmd.Env = os.Environ()
 	hornetCmd.Env = append(hornetCmd.Env, env...)
 	hornetCmd.Dir = nodePath
