@@ -5,9 +5,7 @@ package consensus
 
 import (
 	"fmt"
-	"io"
-	//	"math/rand"
-	"sync"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -16,9 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
-	//	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -29,24 +26,20 @@ import (
 )
 
 type MockedEnv struct {
-	T                 *testing.T
-	Quorum            uint16
-	Log               *logger.Logger
-	Ledger            *testchain.MockedLedger
-	StateAddress      iotago.Address
-	OriginatorKeyPair *cryptolib.KeyPair
-	OriginatorAddress iotago.Address
-	NodeIDs           []string
-	NodePubKeys       []*cryptolib.PublicKey
-	NetworkProviders  []peering.NetworkProvider
-	NetworkBehaviour  *testutil.PeeringNetDynamic
-	NetworkCloser     io.Closer
-	DKSRegistries     []registry.DKShareRegistryProvider
-	ChainID           *iscp.ChainID
-	MockedACS         chain.AsynchronousCommonSubsetRunner
-	InitStateOutput   *iscp.AliasOutputWithID
-	mutex             sync.Mutex
-	Nodes             []*mockedNode
+	T                *testing.T
+	Quorum           uint16
+	Log              *logger.Logger
+	Ledger           *testchain.MockedLedger
+	StateAddress     iotago.Address
+	Nodes            []*mockedNode
+	NodeIDs          []string
+	NodePubKeys      []*cryptolib.PublicKey
+	NetworkProviders []peering.NetworkProvider
+	NetworkBehaviour *testutil.PeeringNetDynamic
+	DKShares         []tcrypto.DKShare
+	ChainID          *iscp.ChainID
+	MockedACS        chain.AsynchronousCommonSubsetRunner
+	InitStateOutput  *iscp.AliasOutputWithID
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) *MockedEnv {
@@ -89,12 +82,22 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	for i := range nodeIdentities {
 		ret.NodePubKeys[i] = nodeIdentities[i].GetPublicKey()
 	}
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
+	// ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())	// TODO: return to normal DKS usage after refactor
+	ret.ChainID = iscp.RandomChainID()
+	ret.StateAddress = ret.ChainID.AsAddress()
+	pubKeys := make([]*cryptolib.PublicKey, len(nodeIdentities))
+	for i := range nodeIdentities {
+		pubKeys[i] = nodeIdentities[i].GetPublicKey()
+	}
+	ret.DKShares = make([]tcrypto.DKShare, len(nodeIdentities))
+	for i := range ret.DKShares {
+		ret.DKShares[i] = NewMockedDKShare(ret, ret.StateAddress, uint16(i), quorum, pubKeys)
+	}
+	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	output := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
-		StateMetadata: state.OriginStateHash().Bytes(),
+		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: ret.StateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: ret.StateAddress},
@@ -106,32 +109,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 		},
 	}
 	ret.Ledger = testchain.NewMockedLedger(output, log)
-	//ret.InitStateOutput = ret.Ledger.PullState()
-
-	/*ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
-	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
-	require.NoError(t, err)
-
-	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
-	require.True(t, len(outputs) == 1)
-
-	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
-
-	txBuilder := utxoutil.NewBuilder(outputs...)
-	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())
-	require.NoError(t, err)
-	err = txBuilder.AddRemainderOutputIfNeeded(ret.OriginatorAddress, nil)
-	require.NoError(t, err)
-	originTx, err := txBuilder.BuildWithED25519(ret.OriginatorKeyPair)
-	require.NoError(t, err)
-	err = ret.Ledger.AddTransaction(originTx)
-	require.NoError(t, err)
-
-	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
-	require.NoError(t, err)
-
-	ret.ChainID = iscp.ChainIDFromAliasID(ret.InitStateOutput.GetAliasAddress())*/
-	ret.ChainID = iscp.RandomChainID()
+	ret.InitStateOutput = ret.Ledger.PullState()
 
 	return ret
 }
@@ -143,20 +121,7 @@ func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
 }
 
 func (env *MockedEnv) nodeCount() int {
-	return len(env.NodeIDs)
-}
-
-func (env *MockedEnv) SetInitialConsensusState() {
-	env.mutex.Lock()
-	defer env.mutex.Unlock()
-
-	for _, node := range env.Nodes {
-		go func(n *mockedNode) {
-			if n.SolidState != nil && n.SolidState.BlockIndex() == 0 {
-				n.EventStateTransition()
-			}
-		}(node)
-	}
+	return len(env.Nodes)
 }
 
 func (env *MockedEnv) StartTimers() {
@@ -236,21 +201,22 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
-	panic("TODO: implement me")
-	/*reqs := make([]*request.OffLedger, n)
+	reqs := make([]*iscp.OffLedgerRequestData, n)
 	for i := 0; i < n; i++ {
-		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).
-			NewRequestOffLedger(iscp.RandomChainID(), env.OriginatorKeyPair)
+		d := dict.New()
+		ii := uint16(i)
+		d.Set("c", []byte{byte(ii % 256), byte(ii / 256)})
+		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64())
 	}
 	rnd := len(randomize) > 0 && randomize[0]
 	for _, n := range env.Nodes {
-		for _, req := range reqs {
-			go func(node *mockedNode, r *request.OffLedger) {
+		for _, r := range reqs {
+			go func(node *mockedNode, req *iscp.OffLedgerRequestData) {
 				if rnd {
 					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 				}
-				node.Mempool.ReceiveRequest(r)
-			}(n, req)
+				node.Mempool.ReceiveRequest(req)
+			}(n, r)
 		}
-	}*/
+	}
 }

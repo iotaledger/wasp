@@ -6,8 +6,8 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"strings"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"

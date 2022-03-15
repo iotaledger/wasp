@@ -1,16 +1,16 @@
 package tests
 
 import (
-	"flag"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"math/rand"
 	"os"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -19,12 +19,9 @@ import (
 )
 
 var (
-	useGo   = flag.Bool("go", false, "use Go instead of Rust")
-	useWasp = flag.Bool("wasp", false, "use Wasp built-in instead of Rust")
-
 	wallet      = initSeed()
 	scOwner     = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(0))
-	scOwnerAddr = iotago.NewED25519Address(scOwner.PublicKey)
+	scOwnerAddr = tpkg.RandEd25519Address()
 )
 
 type env struct {
@@ -56,51 +53,25 @@ func initSeed() cryptolib.Seed {
 	return cryptolib.NewSeed()
 }
 
-// TODO detached example code
-//var builtinProgramHash = map[string]string{
-//	"donatewithfeedback": dwfimpl.ProgramHash,
-//	"fairauction":        fairauction.ProgramHash,
-//	"fairroulette":       fairroulette.ProgramHash,
-//	"inccounter":         inccounter.ProgramHash,
-//	"tokenregistry":      tokenregistry.ProgramHash,
-//}
-
 func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map[string]interface{}) *contractEnv {
 	ret := &contractEnv{chainEnv: e}
 
 	wasmPath := "wasm/" + wasmName + "_bg.wasm"
-	if *useGo {
-		wasmPath = "wasm/" + wasmName + "_go.wasm"
-	}
 
-	if !*useWasp {
-		wasm, err := os.ReadFile(wasmPath)
-		require.NoError(e.t, err)
-		chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair())
+	wasm, err := os.ReadFile(wasmPath)
+	require.NoError(e.t, err)
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair)
 
-		reqTx, err := chClient.DepositFunds(100)
-		require.NoError(e.t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
-		require.NoError(e.t, err)
+	reqTx, err := chClient.DepositFunds(100)
+	require.NoError(e.t, err)
+	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	require.NoError(e.t, err)
 
-		ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
-		require.NoError(e.t, err)
-		ret.programHash = ph
-		e.t.Logf("deployContract: proghash = %s\n", ph.String())
-		return ret
-	}
-	panic("example contract disabled")
-	//fmt.Println("Using Wasp built-in SC instead of Rust Wasm SC")
-	//time.Sleep(time.Second)
-	//hash, ok := builtinProgramHash[wasmName]
-	//if !ok {
-	//	return errors.New("Unknown built-in SC: " + wasmName)
-	//}
-
-	// TODO detached example contract code
-	//_, err := chain.DeployContract(wasmName, examples.VMType, hash, scDescription, initParams)
-	//return err
-	// return nil
+	ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+	require.NoError(e.t, err)
+	ret.programHash = ph
+	e.t.Logf("deployContract: proghash = %s\n", ph.String())
+	return ret
 }
 
 func (e *chainEnv) createNewClient() *scclient.SCClient {
@@ -109,17 +80,15 @@ func (e *chainEnv) createNewClient() *scclient.SCClient {
 	return client
 }
 
-func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, *iotago.ED25519Address) {
+func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, iotago.Address) {
 	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
 
 	randomAddress := rand.NewSource(time.Now().UnixNano())
 
 	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
-	myAddress := iotago.NewED25519Address(keyPair.PublicKey)
+	myAddress := keyPair.Address()
 
-	funds, err := e.clu.GoshimmerClient().BalanceIOTA(myAddress)
-
-	require.NoError(e.t, err)
+	funds := e.clu.AddressBalances(myAddress).Iotas
 
 	if funds <= minTokenAmountBeforeRequestingNewFunds {
 		// Requesting new token requires a new address
@@ -128,13 +97,13 @@ func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, *iotago.ED25519Addr
 		e.t.Logf("Generating new address: %v", e.addressIndex)
 
 		keyPair = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
-		myAddress = iotago.NewED25519Address(keyPair.PublicKey)
+		myAddress = keyPair.Address()
 
 		e.requestFunds(myAddress, "myAddress")
 		e.t.Logf("Funds: %v, addressIndex: %v", funds, e.addressIndex)
 	}
 
-	return &keyPair, myAddress
+	return keyPair, myAddress
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
@@ -199,5 +168,5 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 }
 
 func (e *chainEnv) chainClient() *chainclient.Client {
-	return chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, &scOwner)
+	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, scOwner)
 }

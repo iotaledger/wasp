@@ -4,7 +4,6 @@
 package chainimpl
 
 import (
-	"bytes"
 	"errors"
 	"time"
 
@@ -213,7 +212,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare *tcrypto.DKShare) erro
 	if err != nil {
 		c.setCommittee(nil)
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
-			dkShare.Address.Bech32(iscp.Bech32Prefix), err)
+			dkShare.Address.Bech32(iscp.NetworkPrefix), err)
 	}
 	attachID := cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.detachFromCommitteePeerMessagesFun = func() {
@@ -223,7 +222,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare *tcrypto.DKShare) erro
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.wal)
 	c.setCommittee(cmt)
 
-	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", dkShare.Address.Bech32(iscp.Bech32Prefix))
+	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", dkShare.Address.Bech32(iscp.NetworkPrefix))
 	return nil
 }
 

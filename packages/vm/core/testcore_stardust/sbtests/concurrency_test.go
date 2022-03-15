@@ -129,7 +129,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	for i := range users {
 		expectedBalance := uint64(repeats[i]) * (iotasSentPerRequest - predictedGasFee)
 		chain.AssertL2Iotas(iscp.NewAgentID(userAddr[i], 0), expectedBalance)
-		chain.Env.AssertL1Iotas(userAddr[i], solo.Saldo-uint64(repeats[i])*iotasSentPerRequest)
+		chain.Env.AssertL1Iotas(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*iotasSentPerRequest)
 	}
 
 	commonAccountFinalBalance := chain.L2Iotas(chain.CommonAccount())

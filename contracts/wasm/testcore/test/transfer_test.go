@@ -64,7 +64,7 @@ func TestWithdrawToAddress(t *testing.T) {
 		require.NoError(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo-42+42+1, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount-42+42+1, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))
@@ -99,7 +99,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 		user := ctx.NewSoloAgent()
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))
@@ -111,7 +111,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 		require.Error(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))
@@ -121,7 +121,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 		withdraw(t, ctx, user)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo-1, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount-1, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))
@@ -137,7 +137,7 @@ func TestDoPanicUserFee(t *testing.T) {
 		user := ctx.NewSoloAgent()
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))
@@ -147,7 +147,7 @@ func TestDoPanicUserFee(t *testing.T) {
 		setOwnerFee(t, ctx, 10)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))
@@ -159,7 +159,7 @@ func TestDoPanicUserFee(t *testing.T) {
 		require.Error(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo-10, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount-10, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
 		require.EqualValues(t, 0, ctx.Balance(user))

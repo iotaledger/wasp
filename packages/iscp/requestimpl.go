@@ -230,7 +230,7 @@ func (r *OffLedgerRequestData) NFT() *NFT {
 	return nil
 }
 
-// Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
+// Allowance from the sender's account to the target smart contract. Nil mean no Allowance
 func (r *OffLedgerRequestData) Allowance() *Allowance {
 	return r.allowance
 }

@@ -5,11 +5,12 @@ package solo
 
 import (
 	"bytes"
+	"math"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/state"
-	"math"
-	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/mempool"

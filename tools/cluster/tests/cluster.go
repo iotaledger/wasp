@@ -14,9 +14,9 @@ var defaultConfig = cluster.DefaultConfig()
 
 var (
 	numNodes                 = flag.Int("num-nodes", 4, "amount of wasp nodes")
-	goShimmerUseProvidedNode = flag.Bool("goshimmer-use-provided-node", defaultConfig.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
-	goShimmerHostname        = flag.String("goshimmer-hostname", defaultConfig.Goshimmer.Hostname, "Goshimmer hostname")
-	goShimmerPort            = flag.Int("goshimmer-txport", defaultConfig.Goshimmer.TxStreamPort, "Goshimmer port")
+	goShimmerUseProvidedNode = flag.Bool("goshimmer-use-provided-node", defaultConfig.L1.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
+	goShimmerHostname        = flag.String("goshimmer-hostname", defaultConfig.L1.Hostname, "Goshimmer hostname")
+	goShimmerPort            = flag.Int("goshimmer-txport", defaultConfig.L1.TxStreamPort, "Goshimmer port")
 )
 
 // newCluster starts a new cluster environment for tests.
@@ -30,12 +30,12 @@ func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 
 	config := cluster.DefaultConfig()
 
-	config.Goshimmer.Hostname = *goShimmerHostname
-	config.Goshimmer.UseProvidedNode = *goShimmerUseProvidedNode
+	config.L1.Hostname = *goShimmerHostname
+	config.L1.UseProvidedNode = *goShimmerUseProvidedNode
 	if *goShimmerUseProvidedNode {
-		config.Goshimmer.FaucetPoWTarget = -1
+		config.L1.FaucetPoWTarget = -1
 	}
-	config.Goshimmer.TxStreamPort = *goShimmerPort
+	config.L1.TxStreamPort = *goShimmerPort
 
 	nNodes := *numNodes
 	if len(opt) > 0 {
@@ -63,7 +63,7 @@ func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 
 	config.Wasp.NumNodes = nNodes
 
-	clu := cluster.New(t.Name(), config)
+	clu := cluster.New(t.Name(), config, t)
 
 	dataPath := path.Join(os.TempDir(), "wasp-cluster")
 	err := clu.InitDataPath(".", dataPath, true, modifyNodesConfig)

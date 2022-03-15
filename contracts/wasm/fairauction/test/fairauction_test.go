@@ -29,7 +29,7 @@ func startAuction(t *testing.T) *wasmsolo.SoloContext {
 	auctioneer = ctx.NewSoloAgent()
 	tokenColor, ctx.Err = auctioneer.Mint(10)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, solo.Saldo-10, auctioneer.Balance())
+	require.EqualValues(t, utxodb.FundsFromFaucetAmount-10, auctioneer.Balance())
 	require.EqualValues(t, 10, auctioneer.Balance(tokenColor))
 
 	// start the auction
@@ -58,7 +58,7 @@ func TestFaStartAuction(t *testing.T) {
 	require.EqualValues(t, 10, ctx.Balance(ctx.Account(), tokenColor))
 
 	// auctioneer sent 25 deposit + 10 tokenColor
-	require.EqualValues(t, solo.Saldo-25-10, auctioneer.Balance())
+	require.EqualValues(t, utxodb.FundsFromFaucetAmount-25-10, auctioneer.Balance())
 	require.EqualValues(t, 0, auctioneer.Balance(tokenColor))
 	require.EqualValues(t, 0, ctx.Balance(auctioneer))
 

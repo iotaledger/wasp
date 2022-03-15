@@ -509,11 +509,11 @@ func TestAccountBalances(t *testing.T) {
 		)
 
 		require.EqualValues(t,
-			solo.Saldo+totalGasFeeCharged-bi.TotalDustDeposit,
+			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-bi.TotalDustDeposit,
 			l1Iotas(chainOwnerAddr)+l2Iotas(chainOwnerAgentID)+l2Iotas(ch.CommonAccount()),
 		)
 		require.EqualValues(t,
-			solo.Saldo-totalGasFeeCharged,
+			utxodb.FundsFromFaucetAmount-totalGasFeeCharged,
 			l1Iotas(senderAddr)+l2Iotas(senderAgentID),
 		)
 	}

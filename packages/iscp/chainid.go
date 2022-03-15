@@ -88,7 +88,7 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 
 // String human readable form (bech32)
 func (chid *ChainID) String() string {
-	return chid.AsAddress().Bech32(Bech32Prefix)
+	return chid.AsAddress().Bech32(NetworkPrefix)
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

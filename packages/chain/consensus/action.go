@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -62,6 +62,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 	}
 	if c.timeData == nil {
 		c.log.Debugf("proposeBatch not needed: time data hasn't been received yet")
+		return
 	}
 	reqs := c.mempool.ReadyNow(*c.timeData)
 	if len(reqs) == 0 {
@@ -144,8 +145,8 @@ func (c *consensus) runVMIfNeeded() {
 				c.log.Errorf("runVM result: VM task failed: %v", vmTask.VMError)
 				return
 			}
-			c.log.Debugf("runVM result: responding by state index: %d state hash: %s",
-				vmTask.VirtualStateAccess.BlockIndex(), vmTask.VirtualStateAccess.StateCommitment())
+			c.log.Debugf("runVM result: responding by state index: %d state commitment: %s",
+				vmTask.VirtualStateAccess.BlockIndex(), trie.RootCommitment(vmTask.VirtualStateAccess.TrieAccess()))
 			c.EnqueueVMResultMsg(&messages.VMResultMsg{
 				Task: vmTask,
 			})
@@ -227,6 +228,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		AnchorOutput:       c.stateOutput.GetAliasOutput(),
+		AnchorOutputID:     c.stateOutput.OutputID(),
 		SolidStateBaseline: stateBaseline,
 		Entropy:            c.consensusEntropy,
 		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
@@ -234,22 +236,6 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		TimeAssumption:     c.consensusBatch.TimeData,
 		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-	}
-	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
-		// TODO: OnFinish was dropped; move this block to the goroutine that calls vmRunner.Run()
-		// TODO: vmError is now task.VMError
-		if vmError != nil {
-			c.log.Errorf("runVM OnFinish callback: VM task failed: %v", vmError)
-			return
-		}
-		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.RootCommitment())
-		c.EnqueueVMResultMsg(&messages.VMResultMsg{
-			Task: task,
-		})
-		// TODO: use c.workflow.GetVMStartedTime() instead
-		elapsed := time.Since(task.StartTime)
-		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
@@ -276,8 +262,8 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 		c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
-		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
-			msg.EssenceHash.String(), iscp.OID(msg.ChainInputID))
+		c.log.Debugf("broadcastSignedResult: broadcasted (except to %v): essence hash: %s, chain input %s",
+			c.resultSigAck, msg.EssenceHash.String(), iscp.OID(msg.ChainInputID))
 	} else {
 		c.log.Debugf("broadcastSignedResult not needed: delayed till %v", c.delaySendingSignedResult)
 	}
@@ -512,7 +498,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	contributorSet := make(map[uint16]struct{})
 	// validate ACS. Dismiss ACS if inconsistent. Should not happen
 	for _, prop := range acs {
-		if prop.StateOutputID != c.stateOutput.ID() {
+		if !prop.StateOutputID.Equals(c.stateOutput.ID()) {
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, generated stateOutputID: %v ",
 				iscp.OID(c.stateOutput.ID()), iscp.OID(prop.StateOutputID))
 			c.resetWorkflow()
@@ -526,10 +512,11 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		}
 		contributors = append(contributors, prop.ValidatorIndex)
 		if _, already := contributorSet[prop.ValidatorIndex]; already {
-			c.log.Errorf("receiveACS: duplicate contributors in ACS")
+			c.log.Errorf("receiveACS: duplicate contributor %v in ACS", prop.ValidatorIndex)
 			c.resetWorkflow()
 			return
 		}
+		c.log.Debugf("receiveACS: contributor %v of ACS included", prop.ValidatorIndex)
 		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
 
@@ -648,15 +635,6 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.
 	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// check consistency ---------------- end
 
-	/*blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
-	for i := range c.resultTxEssence.Inputs() {
-		if i == indexChainInput {
-			blocks[i] = sigUnlockBlock
-		} else {
-			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
-		}
-	}
-	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)*/
 	signature := &iotago.Ed25519Signature{
 		PublicKey: hashing.HashData(signatureWithPK.PublicKey.Bytes()),
 		Signature: signatureWithPK.Signature,
@@ -707,8 +685,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	/*if c.stateOutput.GetIsGovernanceUpdated() {
 		r = " (rotate) "
 	}*/
-	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.RootCommitment().String())
+	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), trie.RootCommitment(msg.State.TrieAccess()))
 	c.resetWorkflow()
 	return true
 }
@@ -776,7 +754,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
-	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(iscp.Bech32Prefix))
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(iscp.NetworkPrefix))
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(
@@ -794,20 +772,20 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
-			c.log.Errorf("receiveSignedResult: conflicting signed result from peer #%d", msg.SenderIndex)
+			c.log.Errorf("receiveSignedResult: conflicting signed result from peer %d", msg.SenderIndex)
 		} else {
-			c.log.Debugf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
+			c.log.Debugf("receiveSignedResult: duplicated signed result from peer %d", msg.SenderIndex)
 		}
 		return
 	}
 	if c.stateOutput == nil {
-		c.log.Warnf("receiveSignedResult: chain input ID %v received, but state output is nil",
-			iscp.OID(msg.ChainInputID))
+		c.log.Warnf("receiveSignedResult: chain input ID %v received from peer %d, but state output is nil",
+			msg.SenderIndex, iscp.OID(msg.ChainInputID))
 		return
 	}
-	if msg.ChainInputID != c.stateOutput.ID() {
-		c.log.Warnf("receiveSignedResult: wrong chain input ID: expected %v, received %v",
-			iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
+	if !msg.ChainInputID.Equals(c.stateOutput.ID()) {
+		c.log.Warnf("receiveSignedResult: wrong chain input ID from peer %d: expected %v, received %v",
+			msg.SenderIndex, iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
 		return
 	}
 	idx, err := msg.SigShare.Index()
@@ -815,7 +793,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 		uint16(idx) >= c.committee.Size() ||
 		uint16(idx) == c.committee.OwnPeerIndex() ||
 		uint16(idx) != msg.SenderIndex {
-		c.log.Errorf("receiveSignedResult: wrong sig share from peer #%d", msg.SenderIndex)
+		c.log.Errorf("receiveSignedResult: wrong sig share from peer %d", msg.SenderIndex)
 	} else {
 		c.resultSignatures[msg.SenderIndex] = msg
 		c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
@@ -839,7 +817,7 @@ func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {
 			msg.SenderIndex, msg.EssenceHash.String(), own.EssenceHash.String())
 		return
 	}
-	if msg.ChainInputID != own.ChainInputID {
+	if !msg.ChainInputID.Equals(own.ChainInputID) {
 		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because chain input id in ack %v is different than own chain input id %v",
 			msg.SenderIndex, iscp.OID(msg.ChainInputID), iscp.OID(own.ChainInputID))
 		return

@@ -13,6 +13,7 @@ PATHS=(\
     "packages/peering/..." \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
+    "packages/chain/consensus/" \
     "packages/utxodb/" \
     "packages/evm/jsonrpc/jsonrpctest" \
 )

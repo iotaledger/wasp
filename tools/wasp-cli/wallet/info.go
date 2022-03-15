@@ -16,7 +16,7 @@ var addressCmd = &cobra.Command{
 		log.Printf("Address index %d\n", addressIndex)
 		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().AsString())
 		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().AsString())
-		log.Printf("  Address:     %s\n", wallet.Address().Bech32(iscp.Bech32Prefix))
+		log.Printf("  Address:     %s\n", wallet.Address().Bech32(iscp.NetworkPrefix))
 	},
 }
 

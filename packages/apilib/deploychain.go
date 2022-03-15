@@ -61,7 +61,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controller: %s, N = %d, T = %d\n",
-		originatorAddr.Bech32(iscp.Bech32Prefix), stateControllerAddr.Bech32(iscp.Bech32Prefix), par.N, par.T)
+		originatorAddr.Bech32(iscp.NetworkPrefix), stateControllerAddr.Bech32(iscp.NetworkPrefix), par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
 	chainID, initRequestTx, err := CreateChainOrigin(par.Layer1Client, par.OriginatorKeyPair, stateControllerAddr, par.Description, par.InitParams)
@@ -81,10 +81,10 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.AsAddress().Bech32(iscp.Bech32Prefix), err)
+		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.AsAddress().Bech32(iscp.NetworkPrefix), err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.AsAddress().Bech32(iscp.Bech32Prefix))
+	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.AsAddress().Bech32(iscp.NetworkPrefix))
 
 	peers := multiclient.New(par.CommitteeAPIHosts)
 
@@ -96,7 +96,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
-		chainID.String(), stateControllerAddr.Bech32(iscp.Bech32Prefix), par.N, par.T)
+		chainID.String(), stateControllerAddr.Bech32(iscp.NetworkPrefix), par.N, par.T)
 
 	return chainID, err
 }

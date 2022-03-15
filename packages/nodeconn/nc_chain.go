@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
 )
 
@@ -94,14 +95,14 @@ func (ncc *ncChain) run() {
 		// Subscribe to the new outputs first.
 		eventsCh := ncc.nc.nodeEvents.OutputsByUnlockConditionAndAddress(
 			ncc.chainAddr,
-			iotago.PrefixTestnet, // TODO: Dynamic.
+			iscp.NetworkPrefix,
 			iotagox.UnlockConditionAny,
 		)
 
 		//
 		// Then fetch all the existing unspent outputs.
 		res, err := ncc.nc.nodeClient.Indexer().Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
-			AddressBech32: ncc.chainAddr.Bech32(iotago.PrefixTestnet), // TODO: Take prefix dynamically.
+			AddressBech32: ncc.chainAddr.Bech32(iscp.NetworkPrefix),
 		})
 		if err != nil {
 			ncc.nc.log.Warnf("failed to query address outputs: %v", err)
