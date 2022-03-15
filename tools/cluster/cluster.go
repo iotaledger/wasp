@@ -370,7 +370,6 @@ func (clu *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
 
 	if !clu.Config.L1.UseProvidedNode {
-		// TODO probably worth it re-implementing "mocknode" package, using the real thing for now just to make it work
 		clu.privTangle = privtangle.Start(context.TODO(), path.Join(os.TempDir(), "L1"), clu.Config.L1.TxStreamPort, clu.Config.L1.NodeCount, clu.t)
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}

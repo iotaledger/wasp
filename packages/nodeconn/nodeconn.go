@@ -68,7 +68,7 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 	return &nc
 }
 
-// RegisterChain implements chain.NodeConnection. // TODO -> ConnectChain.
+// RegisterChain implements chain.NodeConnection.
 func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output)) {
 	ncc := newNCChain(nc, chainAddr, outputHandler)
 	nc.chainsLock.Lock()
@@ -76,7 +76,7 @@ func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(i
 	nc.chains[ncc.Key()] = ncc
 }
 
-// UnregisterChain implements chain.NodeConnection. // TODO -> DisconnectChain.
+// UnregisterChain implements chain.NodeConnection.
 func (nc *nodeConn) UnregisterChain(chainAddr iotago.Address) {
 	nccKey := chainAddr.Key()
 	nc.chainsLock.Lock()
@@ -96,11 +96,6 @@ func (nc *nodeConn) PublishTransaction(chainAddr iotago.Address, stateIndex uint
 		return xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
 	}
 	return ncc.PublishTransaction(stateIndex, tx)
-}
-
-// AttachTxInclusionEvents implements chain.NodeConnection.
-func (nc *nodeConn) AttachTxInclusionEvents() {
-	// TODO: ...
 }
 
 func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler func(iotago.TransactionID, string)) (*events.Closure, error) {
