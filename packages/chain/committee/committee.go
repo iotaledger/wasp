@@ -46,7 +46,7 @@ func New(
 ) (chain.Committee, peering.GroupProvider, error) {
 	var err error
 	if dkShare.GetIndex() == nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.GetAddress().Bech32(iscp.Bech32Prefix))
+		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.GetAddress().Bech32(iscp.NetworkPrefix))
 	}
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same stateAddr for different chains
