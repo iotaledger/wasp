@@ -18,10 +18,11 @@ type AuthInfoModel struct {
 }
 
 type LoginRequest struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
 }
 
 type LoginResponse struct {
-	JWT string `json:"jwt,omitempty"`
+	JWT   string `json:"jwt,omitempty"`
+	Error error  `json:"error,omitempty"`
 }

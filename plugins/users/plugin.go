@@ -41,5 +41,16 @@ func loadUsersFromConfiguration() error {
 		userData.Username = username
 	}
 
+	if len(userMap) == 0 {
+		// During the transition phase, create a default user when the config is empty.
+		// This keeps the old authentication working.
+
+		userMap["wasp"] = &users.UserData{
+			Username:    "wasp",
+			Password:    "wasp",
+			Permissions: []string{"api", "dashboard"},
+		}
+	}
+
 	return err
 }

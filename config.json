@@ -24,7 +24,7 @@
   "users": {
     "wasp": {
       "password": "wasp",
-      "claims": ["dashboard", "api"]
+      "permissions": ["dashboard", "api", "chain.read", "chain.write"]
     }
   },
   "webapi": {
@@ -33,7 +33,7 @@
         "durationHours": 24
       },
       "basic": {
-        "userName": "wasp"
+        "username": "wasp"
       },
       "ip": {
         "whitelist": ["127.0.0.1"]
@@ -49,7 +49,7 @@
         "durationHours": 24
       },
       "basic": {
-        "userName": "wasp"
+        "username": "wasp"
       },
       "ip": {
         "whitelist": ["127.0.0.1"]
