@@ -16,6 +16,8 @@ PATHS=(\
     "packages/chain/consensus/" \
     "packages/utxodb/" \
     "packages/evm/jsonrpc/jsonrpctest" \
+    "packages/nodeconn" \
+    "packages/testutil/privtangle" \
 )
 WD=$PWD
 
