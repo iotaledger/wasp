@@ -6,10 +6,11 @@ package dashboard
 import (
 	"context"
 	"errors"
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 
 	"github.com/iotaledger/wasp/packages/authentication"
 
