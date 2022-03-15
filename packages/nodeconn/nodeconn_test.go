@@ -64,8 +64,8 @@ func TestNodeConn(t *testing.T) {
 	chainKeys := cryptolib.NewKeyPair()
 	chainAddr := chainKeys.GetPublicKey().AsEd25519Address()
 	chainOICh := make(chan iotago.OutputID)
-	chainOuts := make(map[iotago.OutputID]*iotago.Output)
-	nc.RegisterChain(chainAddr, func(oi iotago.OutputID, o *iotago.Output) {
+	chainOuts := make(map[iotago.OutputID]iotago.Output)
+	nc.RegisterChain(chainAddr, func(oi iotago.OutputID, o iotago.Output) {
 		chainOuts[oi] = o
 		chainOICh <- oi
 	})

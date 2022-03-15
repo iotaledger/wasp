@@ -11,6 +11,7 @@ import (
 	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
@@ -21,13 +22,13 @@ type ncChain struct {
 	nc              *nodeConn
 	chainAddr       iotago.Address
 	msgs            map[hashing.HashValue]*ncTransaction
-	outputHandler   func(iotago.OutputID, *iotago.Output)
+	outputHandler   chain.NodeConnectionOutputHandlerFun
 	inclusionStates *events.Event
 }
 
-func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output)) *ncChain {
+func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler chain.NodeConnectionOutputHandlerFun) *ncChain {
 	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
-		handler.(func(iotago.TransactionID, string))(params[0].(iotago.TransactionID), params[1].(string))
+		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
 	})
 	ncc := ncChain{
 		nc:              nc,
@@ -114,10 +115,9 @@ func (ncc *ncChain) run() {
 				ncc.nc.log.Warnf("failed to fetch address outputs: %v", err)
 			}
 			oids := res.Response.Items.MustOutputIDs()
-			for i, o := range outs {
-				out := o
+			for i, out := range outs {
 				oid := oids[i]
-				ncc.outputHandler(oid, &out)
+				ncc.outputHandler(oid, out)
 			}
 		}
 
@@ -136,7 +136,7 @@ func (ncc *ncChain) run() {
 					ncc.nc.log.Warnf("error while receiving unspent output tx id: %v", err)
 					continue
 				}
-				ncc.outputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), &out)
+				ncc.outputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), out)
 			case <-ncc.nc.ctx.Done():
 				return
 			}

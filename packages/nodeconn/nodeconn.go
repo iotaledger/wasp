@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
@@ -59,7 +60,7 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 		nodeClient: nodeClient,
 		nodeEvents: nodeEvents,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ *iotagox.MilestonePointer))(params[0].(*iotagox.MilestonePointer))
+			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*iotagox.MilestonePointer))
 		}),
 		net: net,
 		log: log,
@@ -69,7 +70,7 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 }
 
 // RegisterChain implements chain.NodeConnection. // TODO -> ConnectChain.
-func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output)) {
+func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler chain.NodeConnectionOutputHandlerFun) {
 	ncc := newNCChain(nc, chainAddr, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -103,7 +104,7 @@ func (nc *nodeConn) AttachTxInclusionEvents() {
 	// TODO: ...
 }
 
-func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler func(iotago.TransactionID, string)) (*events.Closure, error) {
+func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
 	nc.chainsLock.RLock()
 	ncc, ok := nc.chains[chainAddr.Key()]
 	nc.chainsLock.RUnlock()
@@ -127,7 +128,7 @@ func (nc *nodeConn) DetachTxInclusionStateEvents(chainAddr iotago.Address, closu
 }
 
 // AttachMilestones implements chain.NodeConnection.
-func (nc *nodeConn) AttachMilestones(handler func(*iotagox.MilestonePointer)) *events.Closure {
+func (nc *nodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
 	closure := events.NewClosure(handler)
 	nc.milestones.Attach(closure)
 	return closure
@@ -140,4 +141,21 @@ func (nc *nodeConn) DetachMilestones(attachID *events.Closure) {
 
 func (nc *nodeConn) Close() {
 	nc.ctxCancel()
+}
+
+func (nc *nodeConn) PullLatestOutput(chainAddr iotago.Address) {
+	// TODO
+}
+
+func (nc *nodeConn) PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID) {
+	// TODO
+}
+
+func (nc *nodeConn) PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput) {
+	// TODO
+}
+
+func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	// TODO
+	return nil
 }

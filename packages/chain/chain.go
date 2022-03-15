@@ -99,21 +99,31 @@ type Committee interface {
 }
 
 type (
-	NodeConnectionHandleTimeDataFun    func(*iscp.TimeData)
+	/*NodeConnectionHandleTimeDataFun    func(*iscp.TimeData)
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
 	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
 	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
-	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
+	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)*/
+
+	NodeConnectionOutputHandlerFun          func(iotago.OutputID, iotago.Output)
+	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
+	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
+	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
+	NodeConnectionMilestonesHandlerFun      func(*iotagox.MilestonePointer)
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output))
+	RegisterChain(chainAddr iotago.Address, handler NodeConnectionOutputHandlerFun)
 	UnregisterChain(chainAddr iotago.Address)
 	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
-	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler func(iotago.TransactionID, string)) (*events.Closure, error)
+	PullLatestOutput(chainAddr iotago.Address)
+	PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID)
+	PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput)
+	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
 	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
-	AttachMilestones(handler func(*iotagox.MilestonePointer)) *events.Closure
+	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
+	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
 
 	// Subscribe(addr iotago.Address)
@@ -135,7 +145,24 @@ type NodeConnection interface {
 }
 
 type ChainNodeConnection interface {
-	AttachToTimeData(NodeConnectionHandleTimeDataFun)
+	AttachToAliasOutput(NodeConnectionAliasOutputHandlerFun)
+	DetachFromAliasOutput()
+	AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
+	DetachFromOnLedgerRequest()
+	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun) error
+	DetachFromTxInclusionState() error
+	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
+	DetachFromMilestones()
+	Close()
+
+	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PullLatestOutput()
+	PullTxInclusionState(txid iotago.TransactionID)
+	PullOutputByID(*iotago.UTXOInput)
+
+	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
+
+	/*AttachToTimeData(NodeConnectionHandleTimeDataFun)
 	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
 	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
@@ -149,7 +176,7 @@ type ChainNodeConnection interface {
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
 	DetachFromUnspentAliasOutputReceived()
-	Close()
+	Close()*/
 }
 
 type StateManager interface {
