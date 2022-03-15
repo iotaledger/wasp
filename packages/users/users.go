@@ -1,9 +1,9 @@
 package users
 
 type UserData struct {
-	Username string
-	Password string
-	Claims   []string
+	Username    string
+	Password    string
+	Permissions []string
 }
 
 var users map[string]*UserData
@@ -20,4 +20,19 @@ func All() map[string]*UserData {
 
 func GetUserByName(name string) *UserData {
 	return users[name]
+}
+
+func GetPermissionMap(name string) map[string]bool {
+	permissionMap := make(map[string]bool)
+	user := users[name]
+
+	if user == nil {
+		return permissionMap
+	}
+
+	for _, permission := range user.Permissions {
+		permissionMap[permission] = true
+	}
+
+	return permissionMap
 }

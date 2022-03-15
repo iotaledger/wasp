@@ -31,7 +31,7 @@ type JWTAuthConfiguration struct {
 }
 
 type BasicAuthConfiguration struct {
-	UserName string `koanf:"userName"`
+	UserName string `koanf:"username"`
 }
 
 type IPWhiteListAuthConfiguration struct {

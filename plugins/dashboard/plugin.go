@@ -6,6 +6,7 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"net/http"
 	"strings"
 	"time"
@@ -173,7 +174,7 @@ func configure(*node.Plugin) {
 
 	claimValidator := func(claims *authentication.WaspClaims) bool {
 		// The Dashboard will be accessible if the token has a 'Dashboard' claim
-		return claims.Dashboard
+		return claims.HasPermission(permissions.Dashboard)
 	}
 
 	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth, claimValidator)
