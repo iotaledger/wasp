@@ -105,7 +105,6 @@ type (
 	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
 	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)*/
 
-	NodeConnectionOutputHandlerFun          func(iotago.OutputID, iotago.Output)
 	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
 	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
 	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
@@ -113,14 +112,14 @@ type (
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address, handler NodeConnectionOutputHandlerFun)
+	RegisterChain(chainAddr iotago.Address) ChainNodeConnection
 	UnregisterChain(chainAddr iotago.Address)
 	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
 	PullLatestOutput(chainAddr iotago.Address)
 	PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID)
 	PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput)
-	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
+	//	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
+	//	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
@@ -149,8 +148,8 @@ type ChainNodeConnection interface {
 	DetachFromAliasOutput()
 	AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
 	DetachFromOnLedgerRequest()
-	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun) error
-	DetachFromTxInclusionState() error
+	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun)
+	DetachFromTxInclusionState()
 	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
 	DetachFromMilestones()
 	Close()
