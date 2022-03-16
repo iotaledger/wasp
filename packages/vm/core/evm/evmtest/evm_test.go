@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
@@ -262,6 +263,20 @@ func TestISCTimestamp(t *testing.T) {
 	require.EqualValues(t, evmChain.soloChain.GetLatestBlockInfo().Timestamp.UnixNano(), ret)
 }
 
+func TestISCGetParam(t *testing.T) {
+	evmChain := initEVM(t)
+
+	key := string(evm.FieldCallMsg) // callView sends an ISC request including this parameter
+
+	var has bool
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "hasParam", []interface{}{key}, &has)
+	require.True(t, has)
+
+	var ret []byte
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getParam", []interface{}{key}, &ret)
+	require.NotEmpty(t, ret)
+}
+
 func TestISCLogPanic(t *testing.T) {
 	evmChain := initEVM(t)
 
@@ -355,13 +370,81 @@ func TestISCEntropy(t *testing.T) {
 	//  calls ISC.iscpEntropy() function of isc.sol at 0x1074, which:
 	//   returns the entropy value from the sandbox
 	//  emits an EVM event (aka log) with the entropy value
-	res, err := iscTest.emitEntropy()
+	var entropy hashing.HashValue
+	iscTest.callFnExpectEvent(nil, "EntropyEvent", &entropy, "emitEntropy")
+
+	require.NotEqualValues(t, hashing.NilHash, entropy)
+}
+
+func TestISCGetRequestID(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	reqID := new(iscp.RequestID)
+	iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
+
+	require.EqualValues(t, evmChain.soloChain.LastReceipt().Request.ID(), *reqID)
+}
+
+func TestISCGetSenderAccount(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	sender := new(isccontract.ISCAgentID)
+	iscTest.callFnExpectEvent(nil, "SenderAccountEvent", &sender, "emitSenderAccount")
+
+	require.EqualValues(t, isccontract.WrapISCAgentID(evmChain.soloChain.LastReceipt().Request.SenderAccount()), *sender)
+}
+
+func TestISCGetSenderAddress(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	sender := new(isccontract.IotaAddress)
+	iscTest.callFnExpectEvent(nil, "SenderAddressEvent", &sender, "emitSenderAddress")
+
+	require.EqualValues(t, isccontract.WrapIotaAddress(evmChain.soloChain.LastReceipt().Request.SenderAddress()), *sender)
+}
+
+func TestISCGetAllowanceIotas(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	var iotas uint64
+	iscTest.callFnExpectEvent([]ethCallOptions{{iota: iotaCallOptions{
+		before: func(req *solo.CallParams) {
+			req.AddAllowanceIotas(42)
+		},
+	}}}, "AllowanceIotasEvent", &iotas, "emitAllowanceIotas")
+
+	require.EqualValues(t, 42, iotas)
+}
+
+func TestISCGetAllowanceNativeTokens(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	// mint some native tokens
+	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	sn, tokenID, err := evmChain.soloChain.NewFoundryParams(10000).
+		WithUser(evmChain.soloChain.OriginatorPrivateKey).
+		CreateFoundry()
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	require.Len(t, res.evmReceipt.Logs, 1)
-	entropy := res.evmReceipt.Logs[0].Data
-	require.Len(t, entropy, 32)
-	require.NotEqualValues(t, entropy, make([]byte, 32))
+	err = evmChain.soloChain.MintTokens(sn, 10000, evmChain.soloChain.OriginatorPrivateKey)
+	require.NoError(t, err)
+
+	// test the getAllowanceNativeToken sandbox binding
+	nt := new(isccontract.IotaNativeToken)
+	iscTest.callFnExpectEvent([]ethCallOptions{{
+		iota: iotaCallOptions{
+			before: func(req *solo.CallParams) {
+				req.AddAllowanceNativeTokens(&tokenID, 42)
+			},
+		},
+	}}, "AllowanceNativeTokenEvent", &nt, "emitAllowanceNativeTokens")
+
+	require.EqualValues(t, tokenID[:], nt.ID.Data)
+	require.EqualValues(t, 42, nt.Amount.Uint64())
 }
 
 func TestBlockTime(t *testing.T) {
