@@ -38,3 +38,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: 
+            BUILD_TAGS: rocksdb,builtin_static
+            BUILD_LD_FLAGS: -X github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ env. GITHUB_SHA }}
