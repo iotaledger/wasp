@@ -14,41 +14,66 @@ import (
 
 // TODO describe schema details in docs
 type (
-	FieldMap     map[string]*Field
-	FieldMapMap  map[string]FieldMap
-	StringMap    map[string]string
-	StringMapMap map[string]StringMap
+	FieldMap      map[string]*Field
+	FieldMapMap   map[string]FieldMap
+	StringMap     map[string]string
+	StringMapMap  map[string]StringMap
+	DefMap        map[*DefElt]*DefElt
+	DefNameMap    map[string]*DefElt
+	DefMapMap     map[*DefElt]*DefMap
+	DefNameMapMap map[string]*DefMap
 )
 
 type FuncDef struct {
-	Access  string    `json:"access,omitempty" yaml:"access,omitempty"`
-	Params  StringMap `json:"params,omitempty" yaml:"params,omitempty"`
-	Results StringMap `json:"results,omitempty" yaml:"results,omitempty"`
+	Access  DefElt
+	Params  DefMap
+	Results DefMap
+	Line    int
+	Comment string
 }
 type FuncDefMap map[string]*FuncDef
 
+type DefElt struct {
+	Val     string
+	Comment string
+	Line    int
+}
+
 type SchemaDef struct {
-	Name        string       `json:"name" yaml:"name"`
-	Description string       `json:"description" yaml:"description"`
-	Events      StringMapMap `json:"events" yaml:"events"`
-	Structs     StringMapMap `json:"structs" yaml:"structs"`
-	Typedefs    StringMap    `json:"typedefs" yaml:"typedefs"`
-	State       StringMap    `json:"state" yaml:"state"`
-	Funcs       FuncDefMap   `json:"funcs" yaml:"funcs"`
-	Views       FuncDefMap   `json:"views" yaml:"views"`
+	Name        DefElt
+	Description DefElt
+	Events      DefMapMap
+	Structs     DefMapMap
+	Typedefs    DefMap
+	State       DefMap
+	Funcs       FuncDefMap
+	Views       FuncDefMap
+}
+
+func NewSchemaDef() *SchemaDef {
+	def := &SchemaDef{}
+	def.Events = make(DefMapMap)
+	def.Structs = make(DefMapMap)
+	def.Typedefs = make(DefMap)
+	def.State = make(DefMap)
+	def.Funcs = make(FuncDefMap)
+	def.Views = make(FuncDefMap)
+	return def
 }
 
 type Func struct {
 	Name    string
-	Access  string
+	Access  DefElt
 	Kind    string
 	Hname   iscp.Hname
 	Params  []*Field
 	Results []*Field
+	Line    int
+	Comment string
 }
 
 type Struct struct {
-	Name   string
+	Name   DefElt
 	Fields []*Field
 }
 
@@ -72,12 +97,12 @@ func NewSchema() *Schema {
 }
 
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
-	s.ContractName = strings.TrimSpace(schemaDef.Name)
+	s.ContractName = strings.TrimSpace(schemaDef.Name.Val)
 	if s.ContractName == "" {
 		return fmt.Errorf("missing contract name")
 	}
 	s.PackageName = strings.ToLower(s.ContractName)
-	s.Description = strings.TrimSpace(schemaDef.Description)
+	s.Description = strings.TrimSpace(schemaDef.Description.Val)
 
 	err := s.compileEvents(schemaDef)
 	if err != nil {
@@ -112,7 +137,7 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 
 func (s *Schema) compileEvents(schemaDef *SchemaDef) error {
 	for _, eventName := range sortedMaps(schemaDef.Events) {
-		event, err := s.compileStruct("event", eventName, schemaDef.Events[eventName])
+		event, err := s.compileStruct("event", *eventName, *schemaDef.Events[eventName])
 		if err != nil {
 			return err
 		}
@@ -121,7 +146,7 @@ func (s *Schema) compileEvents(schemaDef *SchemaDef) error {
 	return nil
 }
 
-func (s *Schema) compileField(fldName, fldType string) (*Field, error) {
+func (s *Schema) compileField(fldName, fldType *DefElt) (*Field, error) {
 	field := &Field{}
 	err := field.Compile(s, fldName, fldType)
 	if err != nil {
@@ -139,7 +164,7 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
 		if views && schemaDef.Funcs[funcName] != nil {
-			return fmt.Errorf("duplicate func/view name: %s", funcName)
+			return fmt.Errorf("duplicate func/view name: %s at %v", funcName, templateFuncs[funcName].Line)
 		}
 		funcDesc := templateFuncs[funcName]
 		if funcDesc == nil {
@@ -150,11 +175,14 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 		f.Name = funcName
 		f.Kind = funcKind
 		f.Hname = iscp.Hn(funcName)
+		f.Line = templateFuncs[funcName].Line
+		f.Comment = templateFuncs[funcName].Comment
 
 		// check for Hname collision
 		for _, other := range s.Funcs {
 			if other.Hname == f.Hname {
-				return fmt.Errorf("hname collision: %d (%s and %s)", f.Hname, f.Name, other.Name)
+				return fmt.Errorf("hname collision: %d (%s and %s) at %v and %v",
+					f.Hname, f.Name, other.Name, f.Line, other.Line)
 			}
 		}
 
@@ -172,34 +200,44 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 	return nil
 }
 
-func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, what string) ([]*Field, error) {
+func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what string) ([]*Field, error) {
 	fields := make([]*Field, 0, len(fieldMap))
-	fieldNames := make(StringMap)
-	fieldAliases := make(StringMap)
+	fieldNames := make(DefNameMap)
+	fieldAliases := make(DefNameMap)
 	for _, fldName := range sortedKeys(fieldMap) {
 		fldType := fieldMap[fldName]
 		field, err := s.compileField(fldName, fldType)
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := fieldNames[field.Name]; ok {
-			return nil, fmt.Errorf("duplicate %s name", what)
+		tmpfld, ok := fieldNames[field.Name]
+		if ok {
+			return nil, fmt.Errorf("duplicate %s name at %d and %d", what, tmpfld.Line, field.Line)
 		}
-		fieldNames[field.Name] = field.Name
-		if _, ok := fieldAliases[field.Alias]; ok {
-			return nil, fmt.Errorf("duplicate %s alias", what)
+		fieldNames[field.Name] = &DefElt{
+			Val:     field.Name,
+			Line:    field.Line,
+			Comment: field.Comment,
 		}
-		fieldAliases[field.Alias] = field.Alias
+		tmpfld, ok = fieldAliases[field.Alias]
+		if ok {
+			return nil, fmt.Errorf("duplicate %s alias at %d and %d", what, tmpfld.Line, field.Line)
+		}
+		fieldAliases[field.Alias] = &DefElt{
+			Val:     field.Alias,
+			Line:    field.Line,
+			Comment: field.Comment,
+		}
 		existing, ok := (*allFieldMap)[field.Name]
 		if !ok {
 			(*allFieldMap)[field.Name] = field
 			existing = field
 		}
 		if existing.Alias != field.Alias {
-			return nil, fmt.Errorf("redefined %s alias: '%s' != '%s", what, existing.Alias, field.Alias)
+			return nil, fmt.Errorf("redefined %s alias: '%s' != '%s' at %d and %d", what, existing.Alias, field.Alias, existing.Line, field.Line)
 		}
 		if existing.Type != field.Type {
-			return nil, fmt.Errorf("redefined %s type: %s", what, field.Name)
+			return nil, fmt.Errorf("redefined %s type: %s at %d and %d", what, field.Name, existing.Line, field.Line)
 		}
 		fields = append(fields, field)
 	}
@@ -207,22 +245,32 @@ func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, wh
 }
 
 func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
-	varNames := make(StringMap)
-	varAliases := make(StringMap)
+	varNames := make(DefNameMap)
+	varAliases := make(DefNameMap)
 	for _, varName := range sortedKeys(schemaDef.State) {
 		varType := schemaDef.State[varName]
 		varDef, err := s.compileField(varName, varType)
 		if err != nil {
 			return err
 		}
-		if _, ok := varNames[varDef.Name]; ok {
-			return fmt.Errorf("duplicate var name")
+		varState, ok := varNames[varDef.Name]
+		if ok {
+			return fmt.Errorf("duplicate var name: %s at %d and %d", varState.Val, varState.Line, varDef.Line)
 		}
-		varNames[varDef.Name] = varDef.Name
-		if _, ok := varAliases[varDef.Alias]; ok {
-			return fmt.Errorf("duplicate var alias")
+		varNames[varDef.Name] = &DefElt{
+			Val:     varDef.Name,
+			Line:    varDef.Line,
+			Comment: varDef.Comment,
 		}
-		varAliases[varDef.Alias] = varDef.Alias
+		varState, ok = varAliases[varDef.Alias]
+		if ok {
+			return fmt.Errorf("duplicate var alias: %s at %d and %d", varState.Val, varState.Line, varDef.Line)
+		}
+		varAliases[varDef.Alias] = &DefElt{
+			Val:     varDef.Alias,
+			Line:    varDef.Line,
+			Comment: varDef.Comment,
+		}
 		s.StateVars = append(s.StateVars, varDef)
 	}
 	return nil
@@ -230,7 +278,7 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 
 func (s *Schema) compileStructs(schemaDef *SchemaDef) error {
 	for _, structName := range sortedMaps(schemaDef.Structs) {
-		structDef, err := s.compileStruct("struct", structName, schemaDef.Structs[structName])
+		structDef, err := s.compileStruct("struct", *structName, *schemaDef.Structs[structName])
 		if err != nil {
 			return err
 		}
@@ -239,10 +287,10 @@ func (s *Schema) compileStructs(schemaDef *SchemaDef) error {
 	return nil
 }
 
-func (s *Schema) compileStruct(kind, structName string, structFields StringMap) (*Struct, error) {
+func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefMap) (*Struct, error) {
 	structDef := &Struct{Name: structName}
-	fieldNames := make(StringMap)
-	fieldAliases := make(StringMap)
+	fieldNames := make(DefNameMap)
+	fieldAliases := make(DefNameMap)
 	for _, fldName := range sortedKeys(structFields) {
 		fldType := structFields[fldName]
 		field, err := s.compileField(fldName, fldType)
@@ -258,36 +306,52 @@ func (s *Schema) compileStruct(kind, structName string, structFields StringMap) 
 		if field.MapKey != "" {
 			return nil, fmt.Errorf("%s field cannot be a map", kind)
 		}
-		if _, ok := fieldNames[field.Name]; ok {
-			return nil, fmt.Errorf("duplicate %s field name", kind)
+		tmpfld, ok := fieldNames[field.Name]
+		if ok {
+			return nil, fmt.Errorf("duplicate %s field name at %d and %d", kind, tmpfld.Line, field.Line)
 		}
-		fieldNames[field.Name] = field.Name
-		if _, ok := fieldAliases[field.Alias]; ok {
-			return nil, fmt.Errorf("duplicate %s field alias", kind)
+		fieldNames[field.Name] = &DefElt{
+			Val:  field.Name,
+			Line: field.Line,
 		}
-		fieldAliases[field.Alias] = field.Alias
+		tmpfld, ok = fieldAliases[field.Alias]
+		if ok {
+			return nil, fmt.Errorf("duplicate %s field alias at %d and %d", kind, tmpfld.Line, field.Line)
+		}
+		fieldAliases[field.Alias] = &DefElt{
+			Val:  field.Alias,
+			Line: field.Line,
+		}
 		structDef.Fields = append(structDef.Fields, field)
 	}
 	return structDef, nil
 }
 
 func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
-	varNames := make(StringMap)
-	varAliases := make(StringMap)
+	varNames := make(DefNameMap)
+	varAliases := make(DefNameMap)
 	for _, varName := range sortedKeys(schemaDef.Typedefs) {
 		varType := schemaDef.Typedefs[varName]
 		varDef, err := s.compileField(varName, varType)
 		if err != nil {
 			return err
 		}
-		if _, ok := varNames[varDef.Name]; ok {
-			return fmt.Errorf("duplicate sybtype name")
+		tmpvar, ok := varNames[varDef.Name]
+		if ok {
+			return fmt.Errorf("duplicate subtype name at %d and %d", tmpvar.Line, varDef.Line)
 		}
-		varNames[varDef.Name] = varDef.Name
-		if _, ok := varAliases[varDef.Alias]; ok {
-			return fmt.Errorf("duplicate subtype alias")
+		varNames[varDef.Name] = &DefElt{
+			Val:  varDef.Name,
+			Line: varDef.Line,
 		}
-		varAliases[varDef.Alias] = varDef.Alias
+		tmpvar, ok = varAliases[varDef.Alias]
+		if ok {
+			return fmt.Errorf("duplicate subtype alias at %d and %d", tmpvar.Line, varDef.Line)
+		}
+		varAliases[varDef.Alias] = &DefElt{
+			Val:  varDef.Alias,
+			Line: varDef.Line,
+		}
 		s.Typedefs = append(s.Typedefs, varDef)
 	}
 	return nil
@@ -311,20 +375,26 @@ func sortedFuncDescs(dict FuncDefMap) []string {
 	return keys
 }
 
-func sortedKeys(dict StringMap) []string {
-	keys := make([]string, 0)
-	for key := range dict {
+type DefEltList []*DefElt
+
+func (l DefEltList) Len() int           { return len(l) }
+func (l DefEltList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l DefEltList) Less(i, j int) bool { return l[i].Val < l[j].Val }
+
+func sortedKeys(dict DefMap) []*DefElt {
+	keys := make(DefEltList, 0)
+	for key, _ := range dict {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	sort.Sort(keys)
 	return keys
 }
 
-func sortedMaps(dict StringMapMap) []string {
-	keys := make([]string, 0)
+func sortedMaps(dict DefMapMap) []*DefElt {
+	keys := make(DefEltList, 0)
 	for key := range dict {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	sort.Sort(keys)
 	return keys
 }
