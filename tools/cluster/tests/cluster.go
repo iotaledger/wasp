@@ -13,10 +13,9 @@ import (
 var defaultConfig = cluster.DefaultConfig()
 
 var (
-	numNodes                 = flag.Int("num-nodes", 4, "amount of wasp nodes")
-	goShimmerUseProvidedNode = flag.Bool("goshimmer-use-provided-node", defaultConfig.L1.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
-	goShimmerHostname        = flag.String("goshimmer-hostname", defaultConfig.L1.Hostname, "Goshimmer hostname")
-	goShimmerPort            = flag.Int("goshimmer-txport", defaultConfig.L1.TxStreamPort, "Goshimmer port")
+	numNodes       = flag.Int("num-nodes", 4, "amount of wasp nodes")
+	layer1Hostname = flag.String("layer1-hostname", defaultConfig.L1.Hostname, "layer1 hostname")
+	layer1APIPort  = flag.Int("layer1-api-port", defaultConfig.L1.APIPort, "layer1 API port")
 )
 
 // newCluster starts a new cluster environment for tests.
@@ -30,12 +29,8 @@ func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 
 	config := cluster.DefaultConfig()
 
-	config.L1.Hostname = *goShimmerHostname
-	config.L1.UseProvidedNode = *goShimmerUseProvidedNode
-	if *goShimmerUseProvidedNode {
-		config.L1.FaucetPoWTarget = -1
-	}
-	config.L1.TxStreamPort = *goShimmerPort
+	config.L1.Hostname = *layer1Hostname
+	config.L1.APIPort = *layer1APIPort
 
 	nNodes := *numNodes
 	if len(opt) > 0 {

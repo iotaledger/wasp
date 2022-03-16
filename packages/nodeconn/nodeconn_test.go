@@ -70,8 +70,10 @@ func TestNodeConn(t *testing.T) {
 		chainOICh <- oi
 	})
 
+	client := pt.NewL1CLient()
+
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
-	_, err := pt.PostSimpleValueTX(ctx, pt.NodeClient(0), pt.FaucetKeyPair, chainAddr, 50000)
+	_, err := client.PostSimpleValueTX(pt.FaucetKeyPair, chainAddr, 50000)
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via tangle...")
 	oid := <-chainOICh
@@ -86,7 +88,7 @@ func TestNodeConn(t *testing.T) {
 		}
 	})
 	require.NoError(t, err)
-	tx, err := pt.MakeSimpleValueTX(ctx, pt.NodeClient(0), chainKeys, chainAddr, 50000)
+	tx, err := client.MakeSimpleValueTX(chainKeys, chainAddr, 50000)
 	require.NoError(t, err)
 	err = nc.PublishTransaction(chainAddr, uint32(0), tx)
 	require.NoError(t, err)

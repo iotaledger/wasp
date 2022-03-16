@@ -5,12 +5,10 @@
 package privtangle
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,11 +17,10 @@ import (
 	"testing"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
@@ -244,10 +241,10 @@ func (pt *PrivTangle) Stop() {
 	pt.logf("Stopping... Done")
 }
 
-func (pt *PrivTangle) NodeClient(i int) *nodeclient.Client {
+func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
 	return nodeclient.New(
 		fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)),
-		iotago.ZeroRentParas,
+		parameters.DeSerializationParametersForTesting(),
 		nodeclient.WithIndexer(),
 	)
 }
@@ -263,7 +260,7 @@ func (pt *PrivTangle) waitAllReturnTips() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
-			_, err := pt.NodeClient(i).Tips(pt.ctx)
+			_, err := pt.nodeClient(i).Tips(pt.ctx)
 			if err != nil && pt.t != nil {
 				pt.logf("Node[%d] is not ready yet: %v", i, err)
 			}
@@ -283,7 +280,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
-			ok, err := pt.NodeClient(i).Health(pt.ctx)
+			ok, err := pt.nodeClient(i).Health(pt.ctx)
 			if err != nil && pt.t != nil {
 				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
@@ -360,142 +357,17 @@ func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	}
 }
 
-// PostFaucetRequest makes a faucet request.
-// It is here mostly as an example. Simple value TX is processed faster, and should be used in tests instead.
-// Example:
-//
-//    PostFaucetRequest(context.Background(), cryptolib.Ed25519AddressFromPubKey(myKeyPair.PublicKey), iotago.PrefixTestnet)
-//
-func (pt *PrivTangle) PostFaucetRequest(ctx context.Context, recipientAddr iotago.Address, netPrefix iotago.NetworkPrefix) error {
-	faucetReq := fmt.Sprintf("{\"address\":%q}", recipientAddr.Bech32(netPrefix))
-	faucetURL := fmt.Sprintf("http://localhost:%d/api/plugins/faucet/v1/enqueue", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
-	if err != nil {
-		return xerrors.Errorf("unable to create request: %w", err)
+func (pt *PrivTangle) NewL1CLient(i ...int) cluster.L1Connection {
+	nodeIndex := 0
+	if len(i) > 0 {
+		nodeIndex = i[0]
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return xerrors.Errorf("unable to call faucet: %w", err)
+	config := cluster.L1Config{
+		Hostname:   "localhost",
+		APIPort:    pt.NodePortRestAPI(nodeIndex),
+		NetworkID:  pt.NetworkID,
+		FaucetPort: pt.NodePortFaucet(nodeIndex),
+		FaucetKey:  pt.FaucetKeyPair,
 	}
-	if res.StatusCode == 202 {
-		return nil
-	}
-	resBody, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if err != nil {
-		return xerrors.Errorf("faucet status=%v, unable to read response body: %w", res.Status, err)
-	}
-	return xerrors.Errorf("faucet call failed, responPrivateKeyse status=%v, body=%v", res.Status, resBody)
-}
-
-func (pt *PrivTangle) RequestFunds(addr iotago.Address) error {
-	return pt.PostFaucetRequest(context.TODO(), addr, iscp.NetworkPrefix)
-}
-
-func (pt *PrivTangle) PostTx(ctx context.Context, tx *iotago.Transaction, nc ...*nodeclient.Client) (*iotago.Message, error) {
-	nodeClient := pt.NodeClient(0)
-	if len(nc) > 0 {
-		nodeClient = nc[0]
-	}
-	//
-	// Build a message and post it.
-	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = nodeClient.SubmitMessage(ctx, txMsg)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
-	}
-	return txMsg, nil
-}
-
-// PostSimpleValueTX submits a simple value transfer TX.
-// Can be used instead of the faucet API if the genesis key is known.
-func (pt *PrivTangle) PostSimpleValueTX(
-	ctx context.Context,
-	nc *nodeclient.Client,
-	sender *cryptolib.KeyPair,
-	recipientAddr iotago.Address,
-	amount uint64,
-) (*iotago.Message, error) {
-	tx, err := pt.MakeSimpleValueTX(ctx, nc, sender, recipientAddr, amount)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx: %w", err)
-	}
-	return pt.PostTx(ctx, tx, nc)
-}
-
-func (pt *PrivTangle) MakeSimpleValueTX(
-	ctx context.Context,
-	nc *nodeclient.Client,
-	sender *cryptolib.KeyPair,
-	recipientAddr iotago.Address,
-	amount uint64,
-) (*iotago.Transaction, error) {
-	senderAddr := sender.GetPublicKey().AsEd25519Address()
-	senderOuts, err := pt.OutputMap(ctx, nc, senderAddr)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get address outputs: %w", err)
-	}
-	txBuilder := iotagob.NewTransactionBuilder(
-		iotago.NetworkIDFromString(pt.NetworkID),
-	)
-	inputSum := uint64(0)
-	for i, o := range senderOuts {
-		if inputSum >= amount {
-			break
-		}
-		oid := i
-		out := o
-		txBuilder = txBuilder.AddInput(&iotagob.ToBeSignedUTXOInput{
-			Address:  senderAddr,
-			OutputID: oid,
-			Output:   out,
-		})
-		inputSum += out.Deposit()
-	}
-	if inputSum < amount {
-		return nil, xerrors.Errorf("not enough funds, have=%v, need=%v", inputSum, amount)
-	}
-	txBuilder = txBuilder.AddOutput(&iotago.BasicOutput{
-		Amount:     amount,
-		Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: recipientAddr}},
-	})
-	if inputSum > amount {
-		txBuilder = txBuilder.AddOutput(&iotago.BasicOutput{
-			Amount:     inputSum - amount,
-			Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: senderAddr}},
-		})
-	}
-	tx, err := txBuilder.Build(
-		iotago.ZeroRentParas,
-		sender.AsAddressSigner(),
-	)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx: %w", err)
-	}
-	return tx, nil
-}
-
-func (pt *PrivTangle) OutputMap(ctx context.Context, node0 *nodeclient.Client, myAddress iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
-	res, err := node0.Indexer().Outputs(ctx, &nodeclient.OutputsQuery{
-		AddressBech32: myAddress.Bech32(iscp.NetworkPrefix),
-	})
-	if err != nil {
-		return nil, xerrors.Errorf("failed to query address outputs: %w", err)
-	}
-	result := make(map[iotago.OutputID]iotago.Output)
-	for res.Next() {
-		outs, err := res.Outputs()
-		if err != nil {
-			return nil, xerrors.Errorf("failed to fetch address outputs: %w", err)
-		}
-		oids := res.Response.Items.MustOutputIDs()
-		for i, o := range outs {
-			result[oids[i]] = o
-		}
-	}
-	return result, nil
+	return cluster.NewL1Client(config)
 }

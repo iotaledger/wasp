@@ -7,17 +7,17 @@ import (
 	"path"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 type L1Config struct {
-	TxStreamPort    int
-	APIPort         int
-	UseProvidedNode bool
-	FaucetPoWTarget int
-	Hostname        string
-	NodeCount       int
+	Hostname   string
+	APIPort    int
+	FaucetPort int
+	FaucetKey  *cryptolib.KeyPair
+	NetworkID  string
 }
 
 type WaspConfig struct {
@@ -50,11 +50,9 @@ func DefaultConfig() *ClusterConfig {
 			FirstMetricsPort:   2112,
 		},
 		L1: L1Config{
-			TxStreamPort:    5000,
-			APIPort:         8080,
-			UseProvidedNode: false,
-			FaucetPoWTarget: 0,
-			Hostname:        "127.0.0.1",
+			Hostname:   "127.0.0.1",
+			APIPort:    8080,
+			FaucetPort: 8091,
 		},
 		BlockedGoshimmerNodes: make(map[int]bool),
 	}
@@ -161,13 +159,6 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
-	if c.BlockedGoshimmerNodes[nodeIndex] {
-		return 0
-	}
-	return c.L1.TxStreamPort
-}
-
 func (c *ClusterConfig) TxStreamHost(nodeIndex int) string {
 	if c.BlockedGoshimmerNodes[nodeIndex] {
 		return ""
@@ -189,7 +180,6 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Addr
 		DashboardPort:                c.DashboardPort(i),
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
-		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
 		TxStreamHost:                 c.TxStreamHost(i),
 		MetricsPort:                  c.PrometheusPort(i),

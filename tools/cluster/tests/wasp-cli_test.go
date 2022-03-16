@@ -21,9 +21,6 @@ func TestWaspCLINoChains(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	w.Run("init")
-	if !*goShimmerUseProvidedNode {
-		w.Run("set", "goshimmer.faucetPoWTarget", "0")
-	}
 	w.Run("request-funds")
 
 	out := w.Run("address")

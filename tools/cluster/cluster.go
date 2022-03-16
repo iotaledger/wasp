@@ -5,7 +5,6 @@ package cluster
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"math/rand"
@@ -19,14 +18,12 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -43,10 +40,9 @@ type Cluster struct {
 	Started          bool
 	DataPath         string
 	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-
-	privTangle *privtangle.PrivTangle
-	waspCmds   []*exec.Cmd
-	t          *testing.T
+	l1               L1Connection
+	waspCmds         []*exec.Cmd
+	t                *testing.T
 }
 
 func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
@@ -56,6 +52,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
+		l1:               NewL1Client(config.L1),
 	}
 }
 
@@ -70,11 +67,11 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, e
 }
 
 func (clu *Cluster) RequestFunds(addr iotago.Address) error {
-	return clu.privTangle.RequestFunds(addr)
+	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() *nodeclient.Client {
-	return clu.privTangle.NodeClient(0)
+func (clu *Cluster) L1Client() L1Connection {
+	return clu.l1
 }
 
 func (clu *Cluster) TrustAll() error {
@@ -369,11 +366,6 @@ func (clu *Cluster) Start(dataPath string) error {
 func (clu *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
 
-	if !clu.Config.L1.UseProvidedNode {
-		clu.privTangle = privtangle.Start(context.TODO(), path.Join(os.TempDir(), "L1"), clu.Config.L1.TxStreamPort, clu.Config.L1.NodeCount, clu.t)
-		fmt.Printf("[cluster] started goshimmer node\n")
-	}
-
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
@@ -523,9 +515,6 @@ func (clu *Cluster) StopNode(nodeIndex int) {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (clu *Cluster) Stop() {
-	if clu.privTangle != nil {
-		clu.privTangle.Stop()
-	}
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
 		clu.stopNode(i)
 	}
@@ -565,13 +554,12 @@ func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCo
 }
 
 func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
-	// TODO wait for tx confirmation?
-	_, err := clu.privTangle.PostTx(context.TODO(), tx)
+	_, err := clu.l1.PostTx(tx)
 	return err
 }
 
 func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
-	outputMap, err := clu.privTangle.OutputMap(context.TODO(), clu.privTangle.NodeClient(0), addr)
+	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
@@ -588,5 +576,5 @@ func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.Fu
 }
 
 func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
-	return clu.privTangle.OutputMap(context.TODO(), clu.privTangle.NodeClient(0), addr)
+	return clu.l1.OutputMap(addr)
 }

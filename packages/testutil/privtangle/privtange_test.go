@@ -12,7 +12,6 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -27,13 +26,6 @@ func TestHornetStartup(t *testing.T) {
 	pt := privtangle.Start(ctx, tempDir, 16500, 3, t)
 
 	//
-	// Assert the node health.
-	node0 := pt.NodeClient(0)
-	health, err := node0.Health(ctx)
-	require.NoError(t, err)
-	require.True(t, health)
-
-	//
 	// Try call the faucet.
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
@@ -42,15 +34,16 @@ func TestHornetStartup(t *testing.T) {
 	require.NoError(t, nodeEvt.Connect(ctx))
 	myAddressOutputsCh := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iscp.NetworkPrefix, iotagox.UnlockConditionAny)
 
-	initialOutputCount := mustOutputCount(ctx, pt, node0, myAddress)
+	initialOutputCount := mustOutputCount(pt, myAddress)
 
+	client := pt.NewL1CLient()
 	//
 	// Check if faucet requests are working.
-	pt.PostFaucetRequest(ctx, myAddress, iscp.NetworkPrefix)
+	client.FaucetRequestHttp(myAddress)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
-		if initialOutputCount != mustOutputCount(ctx, pt, node0, myAddress) {
+		if initialOutputCount != mustOutputCount(pt, myAddress) {
 			break
 		}
 	}
@@ -60,13 +53,13 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	msg, err := pt.PostSimpleValueTX(ctx, node0, pt.FaucetKeyPair, myAddress, 50000)
+	msg, err := client.PostSimpleValueTX(pt.FaucetKeyPair, myAddress, 50000)
 	require.NoError(t, err)
 	t.Logf("Posted messageID=%v", msg.MustID())
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
-		if initialOutputCount != mustOutputCount(ctx, pt, node0, myAddress) {
+		if initialOutputCount != mustOutputCount(pt, myAddress) {
 			break
 		}
 	}
@@ -75,12 +68,13 @@ func TestHornetStartup(t *testing.T) {
 	t.Logf("Waiting for output event, done: %+v", outs)
 }
 
-func mustOutputCount(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) int {
-	return len(mustOutputMap(ctx, pt, node0, myAddress))
+func mustOutputCount(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address) int {
+	return len(mustOutputMap(pt, myAddress))
 }
 
-func mustOutputMap(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
-	outs, err := pt.OutputMap(ctx, node0, myAddress)
+func mustOutputMap(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
+	client := pt.NewL1CLient()
+	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))
 	}
