@@ -70,12 +70,11 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 }
 
 // RegisterChain implements chain.NodeConnection. // TODO -> ConnectChain.
-func (nc *nodeConn) RegisterChain(chainAddr iotago.Address) chain.ChainNodeConnection {
-	ncc := newNCChain(nc, chainAddr)
+func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) {
+	ncc := newNCChain(nc, chainAddr, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
 	nc.chains[ncc.Key()] = ncc
-	return ncc
 }
 
 // UnregisterChain implements chain.NodeConnection. // TODO -> DisconnectChain.
@@ -100,7 +99,7 @@ func (nc *nodeConn) PublishTransaction(chainAddr iotago.Address, stateIndex uint
 	return ncc.PublishTransaction(stateIndex, tx)
 }
 
-/*func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
+func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
 	nc.chainsLock.RLock()
 	ncc, ok := nc.chains[chainAddr.Key()]
 	nc.chainsLock.RUnlock()
@@ -121,7 +120,7 @@ func (nc *nodeConn) DetachTxInclusionStateEvents(chainAddr iotago.Address, closu
 	}
 	ncc.inclusionStates.Detach(closure)
 	return nil
-}*/
+}
 
 // AttachMilestones implements chain.NodeConnection.
 func (nc *nodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {

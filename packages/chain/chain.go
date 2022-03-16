@@ -112,14 +112,14 @@ type (
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address) ChainNodeConnection
+	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output))
 	UnregisterChain(chainAddr iotago.Address)
 	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
 	PullLatestOutput(chainAddr iotago.Address)
 	PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID)
 	PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput)
-	//	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	//	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
+	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
+	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics

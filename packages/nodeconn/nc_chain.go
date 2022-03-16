@@ -4,7 +4,6 @@
 package nodeconn
 
 import (
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -16,38 +15,32 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"golang.org/x/xerrors"
 )
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
-	nc        *nodeConn
-	chainAddr iotago.Address
-	msgs      map[hashing.HashValue]*ncTransaction
-	log       *logger.Logger
-
-	aliasOutputHandler     chain.NodeConnectionAliasOutputHandlerFun
-	onLedgerRequestHandler chain.NodeConnectionOnLedgerRequestHandlerFun
-	inclusionStateHandler  chain.NodeConnectionInclusionStateHandlerFun
-	milestonesHandlerRef   *events.Closure
-	mutex                  sync.RWMutex
+	nc              *nodeConn
+	chainAddr       iotago.Address
+	msgs            map[hashing.HashValue]*ncTransaction
+	outputHandler   func(iotago.OutputID, iotago.Output)
+	inclusionStates *events.Event
+	log             *logger.Logger
 }
 
-var _ chain.ChainNodeConnection = &ncChain{}
-
-func newNCChain(nc *nodeConn, chainAddr iotago.Address) *ncChain {
+func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) *ncChain {
+	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
+		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
+	})
 	ncc := ncChain{
-		nc:        nc,
-		chainAddr: chainAddr,
-		msgs:      make(map[hashing.HashValue]*ncTransaction),
-		log:       nc.log.Named(chainAddr.String()[:6]),
+		nc:              nc,
+		chainAddr:       chainAddr,
+		msgs:            make(map[hashing.HashValue]*ncTransaction),
+		outputHandler:   outputHandler,
+		inclusionStates: inclusionStates,
+		log:             nc.log.Named(chainAddr.String()[:6]),
 	}
-	ncc.aliasOutputHandler = ncc.defaultAliasOutputHandler
-	ncc.onLedgerRequestHandler = ncc.defaultOnLedgerRequestHandler
-	ncc.inclusionStateHandler = ncc.defaultInclusionStateHandle
 	go ncc.run()
-	ncc.log.Debugf("Chain nodeconnection created")
 	return &ncc
 }
 
@@ -57,8 +50,6 @@ func (ncc *ncChain) Key() string {
 
 func (ncc *ncChain) Close() {
 	// Nothing. The ncc.nc.ctx is used for that.
-	ncc.DetachFromMilestones()
-	ncc.log.Debugf("Chain nodeconnection closed")
 }
 
 func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
@@ -86,9 +77,7 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 	go func() {
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != nil {
-				ncc.mutex.RLock()
-				ncc.inclusionStateHandler(*txID, *msgMetaChange.LedgerInclusionState)
-				ncc.mutex.RUnlock()
+				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
 			}
 		}
 	}()
@@ -156,104 +145,4 @@ func (ncc *ncChain) run() {
 			}
 		}
 	}
-}
-
-func (ncc *ncChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
-	outputIDUTXO := outputID.UTXOInput()
-	outputIDstring := iscp.OID(outputIDUTXO)
-	ncc.log.Debugf("handling output ID %v", outputIDstring)
-	aliasOutput, ok := output.(*iotago.AliasOutput)
-	if ok {
-		ncc.log.Debugf("handling output ID %v: calling alias output handler", outputIDstring)
-		ncc.mutex.RLock()
-		ncc.aliasOutputHandler(iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO))
-		ncc.mutex.RUnlock()
-		return
-	}
-	onLedgerRequest, err := iscp.OnLedgerFromUTXO(output, outputIDUTXO)
-	if err != nil {
-		ncc.log.Warnf("handling output ID %v: unknown output type; ignoring it", outputIDstring)
-		return
-	}
-	ncc.log.Debugf("handling output ID %v: calling on ledger request handler", outputIDstring)
-	ncc.mutex.RLock()
-	ncc.onLedgerRequestHandler(onLedgerRequest)
-	ncc.mutex.RUnlock()
-}
-
-func (ncc *ncChain) defaultAliasOutputHandler(output *iscp.AliasOutputWithID) {
-	ncc.log.Debugf("default alias output handler: ignoring alias output with ID %v", iscp.OID(output.ID()))
-}
-
-func (ncc *ncChain) AttachToAliasOutput(handler chain.NodeConnectionAliasOutputHandlerFun) {
-	ncc.mutex.Lock()
-	defer ncc.mutex.Unlock()
-	ncc.aliasOutputHandler = handler
-}
-
-func (ncc *ncChain) DetachFromAliasOutput() {
-	ncc.mutex.Lock()
-	defer ncc.mutex.Unlock()
-	ncc.aliasOutputHandler = ncc.defaultAliasOutputHandler
-}
-
-func (ncc *ncChain) defaultOnLedgerRequestHandler(request *iscp.OnLedgerRequestData) {
-	ncc.log.Debugf("default on ledger request handler: ignoring on ledger request with ID %s", request.ID())
-}
-
-func (ncc *ncChain) AttachToOnLedgerRequest(handler chain.NodeConnectionOnLedgerRequestHandlerFun) {
-	ncc.mutex.Lock()
-	defer ncc.mutex.Unlock()
-	ncc.onLedgerRequestHandler = handler
-}
-
-func (ncc *ncChain) DetachFromOnLedgerRequest() {
-	ncc.mutex.Lock()
-	defer ncc.mutex.Unlock()
-	ncc.onLedgerRequestHandler = ncc.defaultOnLedgerRequestHandler
-}
-
-func (ncc *ncChain) defaultInclusionStateHandle(txID iotago.TransactionID, state string) {
-	ncc.log.Debugf("default on inclusion state handler: ignoring inclution state %s for transaction ID %v", state, iscp.TxID(&txID))
-}
-
-func (ncc *ncChain) AttachToTxInclusionState(handler chain.NodeConnectionInclusionStateHandlerFun) {
-	ncc.mutex.Lock()
-	defer ncc.mutex.Unlock()
-	ncc.inclusionStateHandler = handler
-}
-
-func (ncc *ncChain) DetachFromTxInclusionState() {
-	ncc.mutex.Lock()
-	defer ncc.mutex.Unlock()
-	ncc.inclusionStateHandler = ncc.defaultInclusionStateHandle
-}
-
-func (ncc *ncChain) AttachToMilestones(handler chain.NodeConnectionMilestonesHandlerFun) {
-	ncc.DetachFromMilestones()
-	ncc.milestonesHandlerRef = ncc.nc.AttachMilestones(handler)
-}
-
-func (ncc *ncChain) DetachFromMilestones() {
-	if ncc.milestonesHandlerRef != nil {
-		ncc.nc.DetachMilestones(ncc.milestonesHandlerRef)
-		ncc.milestonesHandlerRef = nil
-	}
-}
-
-func (ncc *ncChain) PullLatestOutput() {
-	ncc.nc.PullLatestOutput(ncc.chainAddr)
-}
-
-func (ncc *ncChain) PullTxInclusionState(txid iotago.TransactionID) {
-	ncc.nc.PullTxInclusionState(ncc.chainAddr, txid)
-}
-
-func (ncc *ncChain) PullOutputByID(outputID *iotago.UTXOInput) {
-	ncc.nc.PullOutputByID(ncc.chainAddr, outputID)
-}
-
-func (ncc *ncChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
-	// TODO
-	return nil
 }
