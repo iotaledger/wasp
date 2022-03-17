@@ -1,21 +1,34 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/snapshot"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"os"
+
+	"github.com/iotaledger/wasp/packages/snapshot"
 )
 
 func main() {
-	fileToScan := flag.String("scan", "", "scan the snapshot file")
-	flag.Parse()
-
-	if *fileToScan == "" {
-		fmt.Printf("USAGE: snapshot -scan <filename>")
+	if len(os.Args) < 2 {
+		fmt.Printf("USAGE: snapshot [-scan || -createdb] <filename>\n")
 		os.Exit(1)
 	}
-	values, err := snapshot.ScanSnapshotForValues(*fileToScan)
+	cmd := os.Args[1]
+	fname := os.Args[2]
+	switch cmd {
+	case "-scan", "--scan":
+		scanFile(fname)
+	case "-createdb", "--createdb":
+		fmt.Printf("creating db from snapshot file %s\n", fname)
+		values := scanFile(fname)
+		createDb(values.ChainID)
+	}
+}
+
+func scanFile(fname string) *snapshot.ScanValues {
+	fmt.Printf("scaning snapshot file %s\n", fname)
+	values, err := snapshot.ScanSnapshotForValues(fname)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
@@ -34,5 +47,26 @@ func main() {
 		if l, ok := values.ValueLen[i]; ok {
 			fmt.Printf("value len %d: %d\n", i, l)
 		}
+	}
+	return values
+}
+
+// TODO must come from config or CL
+const dbDirectory = ""
+
+func createDb(chainID *iscp.ChainID) {
+	//log := logger.NewLogger("snapshot")
+	//dbm := dbmanager.NewDBManager(log, false)
+
+	dbDir := chainID.String()
+	if _, err := os.Stat(dbDir); !os.IsNotExist(err) {
+		fmt.Printf("directory %s already exists. Can't create new database\n", dbDir)
+		os.Exit(1)
+	}
+	fmt.Printf("creating new database for chain ID %s\n", dbDir)
+	_, err := dbmanager.NewDB(dbDir)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
 	}
 }
