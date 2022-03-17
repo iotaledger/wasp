@@ -7,30 +7,30 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID *iscp.ChainID
+	ChainID iscp.ChainID
 	Active  bool
 }
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
-	panic("TODO implement")
-	// ret := &ChainRecord{}
-	// aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// ret.ChainID = iscp.NewChainID(aliasAddr)
-	
-	// ret.Active, err = mu.ReadBool()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return ret, nil
+	ret := &ChainRecord{}
+	addr, err := iscp.AddressFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	ret.ChainID = iscp.ChainIDFromAddress(addr.(*iotago.AliasAddress))
+
+	ret.Active, err = mu.ReadBool()
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 // CommitteeRecordFromBytes

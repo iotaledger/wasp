@@ -89,7 +89,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 	}
 	pt.logf("Starting... Done, all nodes started.")
 
-	time.Sleep(500 * time.Millisecond) // Just to decrease noise in the logs.
 	pt.WaitAllAlive()
 	pt.logf("Starting... Done, all nodes alive.")
 
@@ -357,17 +356,16 @@ func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	}
 }
 
-func (pt *PrivTangle) NewL1CLient(i ...int) cluster.L1Connection {
+func (pt *PrivTangle) L1Config(i ...int) cluster.L1Config {
 	nodeIndex := 0
 	if len(i) > 0 {
 		nodeIndex = i[0]
 	}
-	config := cluster.L1Config{
+	return cluster.L1Config{
 		Hostname:   "localhost",
 		APIPort:    pt.NodePortRestAPI(nodeIndex),
 		NetworkID:  pt.NetworkID,
 		FaucetPort: pt.NodePortFaucet(nodeIndex),
 		FaucetKey:  pt.FaucetKeyPair,
 	}
-	return cluster.NewL1Client(config)
 }

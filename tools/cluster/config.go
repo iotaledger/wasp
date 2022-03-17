@@ -33,9 +33,8 @@ type WaspConfig struct {
 }
 
 type ClusterConfig struct {
-	Wasp                  WaspConfig
-	L1                    L1Config
-	BlockedGoshimmerNodes map[int]bool
+	Wasp WaspConfig
+	L1   L1Config
 }
 
 func DefaultConfig() *ClusterConfig {
@@ -54,7 +53,6 @@ func DefaultConfig() *ClusterConfig {
 			APIPort:    8080,
 			FaucetPort: 8091,
 		},
-		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
 
@@ -159,11 +157,12 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) TxStreamHost(nodeIndex int) string {
-	if c.BlockedGoshimmerNodes[nodeIndex] {
-		return ""
-	}
+func (c *ClusterConfig) L1Host(nodeIndex int) string {
 	return c.L1.Hostname
+}
+
+func (c *ClusterConfig) L1Port(nodeIndex int) int {
+	return c.L1.APIPort
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
@@ -181,7 +180,8 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Addr
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
-		TxStreamHost:                 c.TxStreamHost(i),
+		L1Host:                       c.L1Host(i),
+		L1Port:                       c.L1Port(i),
 		MetricsPort:                  c.PrometheusPort(i),
 		OwnerAddress:                 ownerAddress.Bech32(iscp.NetworkPrefix),
 		OffledgerBroadcastUpToNPeers: 10,

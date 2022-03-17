@@ -8,8 +8,8 @@ type WaspConfigParams struct {
 	DashboardPort                int
 	PeeringPort                  int
 	NanomsgPort                  int
-	TxStreamPort                 int
-	TxStreamHost                 string
+	L1Host                       string
+	L1Port                       int
 	ProfilingPort                int
 	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
@@ -53,7 +53,7 @@ const WaspConfig = `
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
   "nodeconn": {
-    "address": "{{.TxStreamHost}}:{{.TxStreamPort}}"
+    "address": "{{.L1Host}}:{{.L1Port}}"
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}

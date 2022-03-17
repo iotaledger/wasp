@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
@@ -70,8 +71,7 @@ func TestNodeConn(t *testing.T) {
 		chainOICh <- oi
 	})
 
-	client := pt.NewL1CLient()
-
+	client := cluster.NewL1Client(pt.L1Config())
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
 	_, err := client.PostSimpleValueTX(pt.FaucetKeyPair, chainAddr, 50000)
 	require.NoError(t, err)

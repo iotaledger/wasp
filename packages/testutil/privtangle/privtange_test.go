@@ -16,9 +16,12 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
+
+// TODO privtangle tests might conflict with cluster tests when running in parallel, check..
 
 func TestHornetStartup(t *testing.T) {
 	ctx := context.Background()
@@ -36,7 +39,7 @@ func TestHornetStartup(t *testing.T) {
 
 	initialOutputCount := mustOutputCount(pt, myAddress)
 
-	client := pt.NewL1CLient()
+	client := cluster.NewL1Client(pt.L1Config())
 	//
 	// Check if faucet requests are working.
 	client.FaucetRequestHttp(myAddress)
@@ -73,7 +76,7 @@ func mustOutputCount(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address
 }
 
 func mustOutputMap(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
-	client := pt.NewL1CLient()
+	client := cluster.NewL1Client(pt.L1Config())
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))

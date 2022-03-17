@@ -13,9 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// cluster tests must be added to `TestCluster` in `main_test.go`
-
-func testDeployChain(t *testing.T) {
+func TestDeployChain(t *testing.T) {
 	e := setupWithNoChain(t)
 
 	counter1, err := e.clu.StartMessageCounter(map[string]int{
@@ -53,7 +51,7 @@ func testDeployChain(t *testing.T) {
 	}
 }
 
-func testDeployContractOnly(t *testing.T) {
+func TestDeployContractOnly(t *testing.T) {
 	e := setupWithNoChain(t)
 
 	counter, err := e.clu.StartMessageCounter(map[string]int{
@@ -93,7 +91,7 @@ func testDeployContractOnly(t *testing.T) {
 	}
 }
 
-func testDeployContractAndSpawn(t *testing.T) {
+func TestDeployContractAndSpawn(t *testing.T) {
 	e := setupWithNoChain(t)
 
 	counter, err := e.clu.StartMessageCounter(map[string]int{
