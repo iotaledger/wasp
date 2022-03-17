@@ -103,9 +103,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	}
 
 	ret, err := method.Outputs.Pack(outs...)
-	if err != nil {
-		panic(err)
-	}
+	c.ctx.RequireNoError(err)
 	return
 }
 
@@ -121,10 +119,37 @@ var _ vm.ISCContract = &iscContractView{}
 
 func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, method, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
-	if !ok {
+	if ok {
+		return ret, remainingGas
+	}
+
+	remainingGas = gas
+	method, args := parseCall(input)
+	var outs []interface{}
+
+	switch method.Name {
+	case "callView":
+		var callViewArgs struct {
+			ContractHname uint32
+			EntryPoint    uint32
+			Params        isccontract.ISCDict
+		}
+		err := method.Inputs.Copy(&callViewArgs, args)
+		c.ctx.RequireNoError(err)
+		callRet := c.ctx.Call(
+			iscp.Hname(callViewArgs.ContractHname),
+			iscp.Hname(callViewArgs.EntryPoint),
+			callViewArgs.Params.Unwrap(),
+		)
+		outs = []interface{}{isccontract.WrapISCDict(callRet)}
+
+	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
-	return ret, remainingGas
+
+	ret, err := method.Outputs.Pack(outs...)
+	c.ctx.RequireNoError(err)
+	return
 }
 
 func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
@@ -146,8 +171,10 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 		outs = []interface{}{isccontract.WrapISCAgentID(ctx.ChainOwnerID())}
 
 	case "getNFTData":
-		nftID := isccontract.IotaNFTIDFromUnpackedArg(args[0]).Unwrap()
-		nft := ctx.GetNFTData(nftID)
+		var nftID isccontract.IotaNFTID
+		err := method.Inputs.Copy(&nftID, args)
+		ctx.RequireNoError(err)
+		nft := ctx.GetNFTData(nftID.Unwrap())
 		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
 
 	case "getTimestampUnixNano":
@@ -168,8 +195,6 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 
 	ok = true
 	ret, err := method.Outputs.Pack(outs...)
-	if err != nil {
-		panic(err)
-	}
+	ctx.RequireNoError(err)
 	return
 }
