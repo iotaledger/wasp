@@ -13,6 +13,7 @@ import (
 // VirtualStateAccess is a virtualized access interface to the chain's database
 // It consists of state reader and the buffer to collect mutations to key values
 type VirtualStateAccess interface {
+	ChainID() *iscp.ChainID
 	BlockIndex() uint32
 	Timestamp() time.Time
 	TrieAccess() trie.NodeStore

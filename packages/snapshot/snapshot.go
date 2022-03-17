@@ -97,7 +97,8 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	return nil
 }
 
-type ScanValues struct {
+type FileProperties struct {
+	FileName   string
 	ChainID    *iscp.ChainID
 	StateIndex uint32
 	TimeStamp  time.Time
@@ -107,8 +108,8 @@ type ScanValues struct {
 	ValueLen   map[int]int
 }
 
-func ScanForValues(rdr kv.StreamIterator) (*ScanValues, error) {
-	ret := &ScanValues{
+func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
+	ret := &FileProperties{
 		KeyLen:   make(map[int]int),
 		ValueLen: make(map[int]int),
 	}
@@ -146,6 +147,10 @@ func ScanForValues(rdr kv.StreamIterator) (*ScanValues, error) {
 			}
 			timestampFound = true
 		}
+		if len(v) == 0 {
+			errR = xerrors.New("empty value encountered")
+			return false
+		}
 		ret.NumRecords++
 		if len(k) > ret.MaxKeyLen {
 			ret.MaxKeyLen = len(k)
@@ -165,12 +170,17 @@ func ScanForValues(rdr kv.StreamIterator) (*ScanValues, error) {
 	return ret, nil
 }
 
-func ScanSnapshotForValues(fname string) (*ScanValues, error) {
+func ScanFile(fname string) (*FileProperties, error) {
 	stream, err := kv.OpenKVStreamFile(fname)
 	if err != nil {
 		return nil, err
 	}
 	defer stream.File.Close()
 
-	return ScanForValues(stream)
+	ret, err := Scan(stream)
+	if err != nil {
+		return nil, err
+	}
+	ret.FileName = fname
+	return ret, nil
 }

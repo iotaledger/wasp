@@ -20,7 +20,7 @@ import (
 
 func TestOriginHashes(t *testing.T) {
 	t.Run("create new", func(t *testing.T) {
-		vs1 := newVirtualState(mapdb.NewMapDB())
+		vs1 := NewVirtualState(mapdb.NewMapDB())
 		require.Panics(t, func() {
 			vs1.BlockIndex()
 		})
@@ -31,7 +31,7 @@ func TestOriginHashes(t *testing.T) {
 		require.EqualValues(t, OriginStateCommitment().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
-		z := newVirtualState(mapdb.NewMapDB())
+		z := NewVirtualState(mapdb.NewMapDB())
 		require.Nil(t, trie.RootCommitment(z.TrieAccess()))
 	})
 	t.Run("create origin", func(t *testing.T) {

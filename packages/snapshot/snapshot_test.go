@@ -25,6 +25,9 @@ func genRndDict(n int) dict.Dict {
 		f = rnd.Intn(1_000_000) % 10
 		v := make([]byte, f*10)
 		rnd.Read(v)
+		if len(v) == 0 {
+			v = []byte{byte(rnd.Intn(1000) % 256)}
+		}
 		ret.Set(kv.Key(k), v)
 	}
 	return ret
@@ -36,7 +39,10 @@ func Test1(t *testing.T) {
 	st, err := state.CreateOriginState(db, chainID)
 	require.NoError(t, err)
 
-	for k, v := range genRndDict(100_000) {
+	for k, v := range genRndDict(1_000_000) {
+		if len(v) == 0 {
+			panic("len(v) == 0")
+		}
 		st.KVStore().Set(k, v)
 	}
 	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), testmisc.RandVectorCommitment())
@@ -63,7 +69,7 @@ func Test1(t *testing.T) {
 		StatsEveryKVPairs: 100_000,
 	})
 	require.NoError(t, err)
-	v, err := ScanSnapshotForValues(fname)
+	v, err := ScanFile(fname)
 	require.NoError(t, err)
 	require.True(t, chid.Equals(v.ChainID))
 	require.EqualValues(t, stateidx, v.StateIndex)

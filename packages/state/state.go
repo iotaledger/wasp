@@ -33,8 +33,8 @@ var (
 	_               VirtualStateAccess = &virtualStateAccess{}
 )
 
-// newVirtualState creates VirtualStateAccess interface with the partition of KVStore
-func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
+// NewVirtualState creates VirtualStateAccess interface with the partition of KVStore
+func NewVirtualState(db kvstore.KVStore) *virtualStateAccess {
 	subState := subRealm(db, []byte{dbkeys.ObjectTypeState})
 	subTrie := subRealm(db, []byte{dbkeys.ObjectTypeTrie})
 	ret := &virtualStateAccess{
@@ -47,7 +47,7 @@ func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
 
 // CreateOriginState origin state and saves it. It assumes store is empty
 func newOriginState(store kvstore.KVStore) VirtualStateAccess {
-	ret := newVirtualState(store)
+	ret := NewVirtualState(store)
 	nilChainId := iscp.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
 	ret.KVStore().Set("", nilChainId.Bytes())
@@ -105,6 +105,15 @@ func (vs *virtualStateAccess) KVStore() *buffered.BufferedKVStoreAccess {
 
 func (vs *virtualStateAccess) KVStoreReader() kv.KVStoreReader {
 	return vs.kvs
+}
+
+func (vs *virtualStateAccess) ChainID() *iscp.ChainID {
+	chainIDBin := vs.KVStoreReader().MustGet("")
+	ret, err := iscp.ChainIDFromBytes(chainIDBin)
+	if err != nil {
+		panic(xerrors.Errorf("state.ChainID: %w", err))
+	}
+	return ret
 }
 
 func (vs *virtualStateAccess) BlockIndex() uint32 {

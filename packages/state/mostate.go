@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -25,6 +26,13 @@ func WrapMustOptimisticVirtualStateAccess(state VirtualStateAccess, baseline cor
 		state:    state,
 		baseline: baseline,
 	}
+}
+
+func (s *mustOptimisticVirtualStateAccess) ChainID() *iscp.ChainID {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.ChainID()
 }
 
 func (s *mustOptimisticVirtualStateAccess) BlockIndex() uint32 {
