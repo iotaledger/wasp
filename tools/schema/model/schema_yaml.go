@@ -35,7 +35,7 @@ func (e *DefElt) FromYAMLNode(n *yaml.Node) *DefElt {
 
 func (m *DefMap) FromYAMLNode(n *yaml.Node) *DefMap {
 	for i := 0; i < len(n.Content); i += 2 {
-		key := &DefElt{
+		key := DefElt{
 			Val:  n.Content[i].Value,
 			Line: n.Content[i].Line,
 			// Take only the comment after value
@@ -54,7 +54,7 @@ func (m *DefMap) FromYAMLNode(n *yaml.Node) *DefMap {
 func (mm *DefMapMap) FromYAMLNode(n *yaml.Node) *DefMapMap {
 	for i := 0; i < len(n.Content); i += 2 {
 		m := make(DefMap)
-		key := &DefElt{
+		key := DefElt{
 			Val:  n.Content[i].Value,
 			Line: n.Content[i].Line,
 			// Take only the comment after value
