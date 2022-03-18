@@ -73,7 +73,7 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 				cT.block.SetApprovingOutputID(outputID)
 			}
 		} else {
-			if cT.block.ApprovingOutputID() == outputID {
+			if cT.block.ApprovingOutputID().Equals(outputID) {
 				cT.approved = true
 				cT.nextStateCommitment = finalCommitment
 			}

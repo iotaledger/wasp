@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
+	//	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"

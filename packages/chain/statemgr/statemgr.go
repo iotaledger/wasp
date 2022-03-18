@@ -45,8 +45,7 @@ type stateManager struct {
 	// Channels for accepting external events.
 	eventGetBlockMsgPipe       pipe.Pipe
 	eventBlockMsgPipe          pipe.Pipe
-	eventStateOutputMsgPipe    pipe.Pipe
-	eventOutputMsgPipe         pipe.Pipe
+	eventAliasOutputPipe       pipe.Pipe
 	eventStateCandidateMsgPipe pipe.Pipe
 	eventTimerMsgPipe          pipe.Pipe
 	stateManagerMetrics        metrics.StateManagerMetrics
@@ -91,15 +90,14 @@ func New(
 		pullStateRetryTime:         time.Now(),
 		eventGetBlockMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventBlockMsgPipe:          pipe.NewLimitInfinitePipe(maxMsgBuffer),
-		eventStateOutputMsgPipe:    pipe.NewLimitInfinitePipe(maxMsgBuffer),
-		eventOutputMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventAliasOutputPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventStateCandidateMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventTimerMsgPipe:          pipe.NewLimitInfinitePipe(1),
 		stateManagerMetrics:        stateManagerMetrics,
 		wal:                        wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.domain.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
-	ret.nodeConn.AttachToOutputReceived(ret.EnqueueOutputMsg)
+	ret.nodeConn.AttachToAliasOutput(ret.EnqueueAliasOutput)
 	go ret.initLoadState()
 
 	return ret
@@ -137,14 +135,13 @@ func (sm *stateManager) SetChainPeers(peers []*cryptolib.PublicKey) {
 }
 
 func (sm *stateManager) Close() {
-	sm.nodeConn.DetachFromOutputReceived()
+	sm.nodeConn.DetachFromAliasOutput()
 	sm.domain.Detach(sm.receivePeerMessagesAttachID)
 	sm.domain.Close()
 
 	sm.eventGetBlockMsgPipe.Close()
 	sm.eventBlockMsgPipe.Close()
-	sm.eventStateOutputMsgPipe.Close()
-	sm.eventOutputMsgPipe.Close()
+	sm.eventAliasOutputPipe.Close()
 	sm.eventStateCandidateMsgPipe.Close()
 	sm.eventTimerMsgPipe.Close()
 }
@@ -200,8 +197,7 @@ func (sm *stateManager) recvLoop() {
 	sm.ready.SetReady()
 	eventGetBlockMsgCh := sm.eventGetBlockMsgPipe.Out()
 	eventBlockMsgCh := sm.eventBlockMsgPipe.Out()
-	eventStateOutputMsgCh := sm.eventStateOutputMsgPipe.Out()
-	eventOutputMsgCh := sm.eventOutputMsgPipe.Out()
+	eventAliasOutputCh := sm.eventAliasOutputPipe.Out()
 	eventStateCandidateMsgCh := sm.eventStateCandidateMsgPipe.Out()
 	eventTimerMsgCh := sm.eventTimerMsgPipe.Out()
 	for {
@@ -218,17 +214,11 @@ func (sm *stateManager) recvLoop() {
 			} else {
 				eventBlockMsgCh = nil
 			}
-		case msg, ok := <-eventStateOutputMsgCh:
+		case msg, ok := <-eventAliasOutputCh:
 			if ok {
-				sm.handleStateMsg(msg.(*messages.StateMsg))
+				sm.handleAliasOutput(msg.(*iscp.AliasOutputWithID))
 			} else {
-				eventStateOutputMsgCh = nil
-			}
-		case msg, ok := <-eventOutputMsgCh:
-			if ok {
-				sm.handleOutputMsg(msg.(*messages.OutputMsg))
-			} else {
-				eventOutputMsgCh = nil
+				eventAliasOutputCh = nil
 			}
 		case msg, ok := <-eventStateCandidateMsgCh:
 			if ok {
@@ -245,8 +235,7 @@ func (sm *stateManager) recvLoop() {
 		}
 		if eventGetBlockMsgCh == nil &&
 			eventBlockMsgCh == nil &&
-			eventStateOutputMsgCh == nil &&
-			eventOutputMsgCh == nil &&
+			eventAliasOutputCh == nil &&
 			eventStateCandidateMsgCh == nil &&
 			eventTimerMsgCh == nil {
 			return

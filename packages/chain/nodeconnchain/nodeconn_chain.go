@@ -46,7 +46,7 @@ func NewChainNodeConnection(nc chain.NodeConnection, chainAddr iotago.Address, l
 	result := nodeconnChain{
 		nc:                     nc,
 		chainAddr:              chainAddr,
-		log:                    log.Named("ncc"),
+		log:                    log.Named("ncc-" + chainAddr.String()[2:8]),
 		aliasOutputCh:          make(chan *iscp.AliasOutputWithID),
 		aliasOutputStopCh:      make(chan bool),
 		onLedgerRequestCh:      make(chan *iscp.OnLedgerRequestData),

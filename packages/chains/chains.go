@@ -150,7 +150,6 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		return xerrors.New("Chains.Activate: failed to create chain object")
 	}
 	c.allChains[chainArr] = newChain
-	c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	c.log.Infof("activated chain: %s", chr.ChainID.String())
 	return nil
 }

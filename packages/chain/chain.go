@@ -182,8 +182,7 @@ type StateManager interface {
 	Ready() *ready.Ready
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
-	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(iotago.Output, *iotago.UTXOInput)
+	EnqueueAliasOutput(*iscp.AliasOutputWithID)
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo

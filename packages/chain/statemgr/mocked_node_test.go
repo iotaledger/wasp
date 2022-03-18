@@ -11,6 +11,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -23,12 +24,13 @@ import (
 )
 
 type MockedNode struct {
-	PubKey       *cryptolib.PublicKey
-	Env          *MockedEnv
-	NodeConn     *testchain.MockedNodeConn
-	ChainCore    *testchain.MockedChainCore
-	StateManager chain.StateManager
-	Log          *logger.Logger
+	PubKey        *cryptolib.PublicKey
+	Env           *MockedEnv
+	NodeConn      *testchain.MockedNodeConn
+	ChainNodeConn chain.ChainNodeConnection
+	ChainCore     *testchain.MockedChainCore
+	StateManager  chain.StateManager
+	Log           *logger.Logger
 }
 
 type MockedStateManagerMetrics struct{}
@@ -47,7 +49,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret := &MockedNode{
 		PubKey:    env.NodePubKeys[nodeIndex],
 		Env:       env,
-		NodeConn:  testchain.NewMockedNodeConnection("Node_"+nodeID, env.Ledger, log),
+		NodeConn:  testchain.NewMockedNodeConnection("Node_"+nodeID, env.Ledgers, log),
 		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
 		Log:       log,
 	}
@@ -61,31 +63,9 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(store, stateSync)
 	})
-	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, wal.NewDefault(), timers)
-	ret.NodeConn.AttachToUnspentAliasOutputReceived(func(chainOutput *iscp.AliasOutputWithID, timestamp time.Time) {
-		ret.Log.Debugf("Alias output received %v: enqueing state message", iscp.OID(chainOutput.ID()))
-		ret.StateManager.EnqueueStateMsg(&messages.StateMsg{
-			ChainOutput: chainOutput,
-			Timestamp:   timestamp,
-		})
-	})
-	ret.NodeConn.AttachToTransactionReceived(func(tx *iotago.Transaction) {
-		ret.Log.Debugf("Transaction received")
-		for index, output := range tx.Essence.Outputs {
-			aliasOutput, ok := output.(*iotago.AliasOutput)
-			if ok {
-				ret.Log.Debugf("Transaction received, alias output found")
-				txID, err := tx.ID()
-				require.NoError(env.T, err)
-				outputID := iotago.OutputIDFromTransactionIDAndIndex(*txID, uint16(index)).UTXOInput()
-				ret.Log.Debugf("Transaction %v received, alias output %v found, enqueing state message", txID, outputID) // TODO: print txID normally
-				go ret.StateManager.EnqueueStateMsg(&messages.StateMsg{
-					ChainOutput: iscp.NewAliasOutputWithID(aliasOutput, outputID),
-					Timestamp:   time.Now(),
-				})
-			}
-		}
-	})
+	ret.ChainNodeConn, err = nodeconnchain.NewChainNodeConnection(ret.NodeConn, env.ChainID.AsAddress(), log)
+	require.NoError(env.T, err)
+	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.ChainNodeConn, stateMgrMetrics, wal.NewDefault(), timers)
 	return ret
 }
 
@@ -136,7 +116,7 @@ func (node *MockedNode) MakeNewStateTransition() {
 func (node *MockedNode) NextState(vstate state.VirtualStateAccess, chainOutput *iscp.AliasOutputWithID) {
 	node.Log.Debugf("NextState: from state %d, output ID %v", vstate.BlockIndex(), iscp.OID(chainOutput.ID()))
 	nextState, tx, aliasOutputID := testchain.NextState(node.Env.T, node.Env.StateKeyPair, vstate, chainOutput, time.Now())
-	go node.NodeConn.PostTransaction(tx)
+	go node.ChainNodeConn.PublishTransaction(vstate.BlockIndex(), tx)
 	go node.StateManager.EnqueueStateCandidateMsg(nextState, aliasOutputID)
 	node.Log.Debugf("NextState: result state %d, output ID %v", nextState.BlockIndex(), iscp.OID(aliasOutputID))
 }

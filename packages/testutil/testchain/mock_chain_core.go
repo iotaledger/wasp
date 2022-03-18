@@ -56,7 +56,7 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(coreprocessors.Config().WithNativeContracts(inccounter.Processor)),
-		log:        log.Named("chain"),
+		log:        log.Named("mc-" + chainID.AsAddress().String()[2:8]),
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
 			return []string{}
