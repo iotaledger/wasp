@@ -266,8 +266,7 @@ func WriteJSONSchema(schemaDef *model.SchemaDef) error {
 	}
 	defer file.Close()
 
-	// FIXME convert to `JSONSchemaDef` first
-	b, err := json.Marshal(schemaDef)
+	b, err := json.Marshal(schemaDef.ToRawSchemaDef())
 	if err != nil {
 		return err
 	}
@@ -289,8 +288,7 @@ func WriteYAMLSchema(schemaDef *model.SchemaDef) error {
 	}
 	defer file.Close()
 
-	// FIXME convert to `YAMLSchemaDef` first
-	b, err := yaml.Marshal(schemaDef)
+	b, err := yaml.Marshal(schemaDef.ToRawSchemaDef())
 	if err != nil {
 		return err
 	}
