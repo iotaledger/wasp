@@ -7,9 +7,45 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 )
+
+type Func struct {
+	Name    string
+	Access  DefElt
+	Kind    string
+	Hname   iscp.Hname
+	Params  []*Field
+	Results []*Field
+	Line    int
+	Comment string
+}
+
+type Struct struct {
+	Name   DefElt
+	Fields []*Field
+}
+
+type Schema struct {
+	ContractName  string
+	PackageName   string
+	Description   string
+	CoreContracts bool
+	SchemaTime    time.Time
+	Events        []*Struct
+	Funcs         []*Func
+	Params        []*Field
+	Results       []*Field
+	StateVars     []*Field
+	Structs       []*Struct
+	Typedefs      []*Field
+}
+
+func NewSchema() *Schema {
+	return &Schema{}
+}
 
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.ContractName = strings.TrimSpace(schemaDef.Name.Val)
