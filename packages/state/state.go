@@ -59,7 +59,7 @@ func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 
 // calcOriginStateHash is independent of db provider nor chainID. Used for testing
 func calcOriginStateHash() trie.VCommitment {
-	return trie.RootCommitment(newOriginState(mapdb.NewMapDB()).TrieAccess())
+	return trie.RootCommitment(newOriginState(mapdb.NewMapDB()).TrieNodeStore())
 }
 
 // CreateOriginState creates and saves origin state in DB
@@ -94,7 +94,7 @@ func (vs *virtualStateAccess) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %v, state commitment: %s\n%s",
 		vs.BlockIndex(),
 		vs.Timestamp(),
-		trie.RootCommitment(vs.TrieAccess()),
+		trie.RootCommitment(vs.TrieNodeStore()),
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
@@ -105,6 +105,10 @@ func (vs *virtualStateAccess) KVStore() *buffered.BufferedKVStoreAccess {
 
 func (vs *virtualStateAccess) KVStoreReader() kv.KVStoreReader {
 	return vs.kvs
+}
+
+func (vs *virtualStateAccess) OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader {
+	return NewOptimisticStateReader(vs.db, glb)
 }
 
 func (vs *virtualStateAccess) ChainID() *iscp.ChainID {
@@ -197,8 +201,8 @@ func (vs *virtualStateAccess) Commit() {
 	vs.kvs.Mutations().ResetModified()
 }
 
-// StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) TrieAccess() trie.NodeStore {
+// TrieAccess returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
+func (vs *virtualStateAccess) TrieNodeStore() trie.NodeStore {
 	return vs.trie
 }
 

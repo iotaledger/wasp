@@ -39,6 +39,7 @@ func (k *mustKVStoreBatch) Del(key kv.Key) {
 func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
+		vs.trie.ClearCache() // clear trie cache
 		return nil
 	}
 	vs.Commit()

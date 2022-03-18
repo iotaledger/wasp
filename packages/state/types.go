@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
@@ -16,11 +17,12 @@ type VirtualStateAccess interface {
 	ChainID() *iscp.ChainID
 	BlockIndex() uint32
 	Timestamp() time.Time
-	TrieAccess() trie.NodeStore
+	TrieNodeStore() trie.NodeStore
 	PreviousStateCommitment() trie.VCommitment
 	Commit()
 	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
+	OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader
 	ApplyStateUpdate(Update)
 	ApplyBlock(Block) error
 	ProofGeneric(key []byte) *trie.ProofGeneric

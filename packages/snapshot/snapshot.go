@@ -19,7 +19,7 @@ type ConsoleReportParams struct {
 	StatsEveryKVPairs int
 }
 
-func SnapshotFileName(chainID *iscp.ChainID, stateIndex uint32) string {
+func FileName(chainID *iscp.ChainID, stateIndex uint32) string {
 	return fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
 }
 
@@ -80,7 +80,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	fmt.Fprintf(par.Console, "[WriteSnapshot] chainID:     %s\n", chainID)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] state index: %d\n", stateIndex)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] timestamp: %v\n", timestamp)
-	fname := path.Join(dir, SnapshotFileName(chainID, stateIndex))
+	fname := path.Join(dir, FileName(chainID, stateIndex))
 	fmt.Fprintf(par.Console, "[WriteSnapshot] will be writing to file: %s\n", fname)
 
 	fstream, err := kv.CreateKVStreamFile(fname)
@@ -89,6 +89,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	}
 	defer fstream.File.Close()
 
+	fmt.Printf("[WriteSnapshot] writing to file ")
 	if err = WriteKVToStream(ordr.KVStoreReader(), fstream, par); err != nil {
 		return err
 	}
@@ -104,15 +105,11 @@ type FileProperties struct {
 	TimeStamp  time.Time
 	NumRecords int
 	MaxKeyLen  int
-	KeyLen     map[int]int
-	ValueLen   map[int]int
+	Bytes      int
 }
 
 func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
-	ret := &FileProperties{
-		KeyLen:   make(map[int]int),
-		ValueLen: make(map[int]int),
-	}
+	ret := &FileProperties{}
 	var chainIDFound, stateIndexFound, timestampFound bool
 	var errR error
 
@@ -155,10 +152,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 		if len(k) > ret.MaxKeyLen {
 			ret.MaxKeyLen = len(k)
 		}
-		kt := ret.KeyLen[len(k)]
-		ret.KeyLen[len(k)] = kt + 1
-		vt := ret.ValueLen[len(v)]
-		ret.ValueLen[len(v)] = vt + 1
+		ret.Bytes += len(k) + len(v) + 6
 		return true
 	})
 	if err != nil {

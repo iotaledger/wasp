@@ -4,34 +4,14 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
 )
-
-func genRndDict(n int) dict.Dict {
-	ret := dict.New()
-
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < n; i++ {
-		f := rnd.Intn(1_000_000)%5 + 1
-		k := make([]byte, f*10)
-		rnd.Read(k)
-		f = rnd.Intn(1_000_000) % 10
-		v := make([]byte, f*10)
-		rnd.Read(v)
-		if len(v) == 0 {
-			v = []byte{byte(rnd.Intn(1000) % 256)}
-		}
-		ret.Set(kv.Key(k), v)
-	}
-	return ret
-}
 
 func Test1(t *testing.T) {
 	db := mapdb.NewMapDB()
@@ -39,15 +19,31 @@ func Test1(t *testing.T) {
 	st, err := state.CreateOriginState(db, chainID)
 	require.NoError(t, err)
 
-	for k, v := range genRndDict(1_000_000) {
-		if len(v) == 0 {
-			panic("len(v) == 0")
-		}
-		st.KVStore().Set(k, v)
-	}
+	rndKVStream := kv.NewRandStreamIterator(kv.RandStreamParams{
+		Seed:       time.Now().UnixNano(),
+		NumKVPairs: 10_000_000,
+		MaxKey:     48,
+		MaxValue:   128,
+	})
+	tm := util.NewTimer()
+	count := 0
+	totalBytes := 0
+	err = rndKVStream.Iterate(func(k []byte, v []byte) bool {
+		st.KVStore().Set(kv.Key(k), v)
+		count++
+		totalBytes += len(k) + len(v) + 6
+		return true
+	})
+	t.Logf("write %d kv pairs, %d Mbytes, to in-memory state took %v", count, totalBytes/(1024*1024), tm.Stop())
+
+	require.NoError(t, err)
 	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), testmisc.RandVectorCommitment())
 	st.ApplyStateUpdate(upd)
+
+	tm = util.NewTimer()
 	err = st.Save()
+	t.Logf("commit and save state to in-memory db took %v", tm.Stop())
+
 	require.NoError(t, err)
 
 	glb := coreutil.NewChainStateSync()
@@ -62,13 +58,17 @@ func Test1(t *testing.T) {
 	ts, err := ordr.Timestamp()
 	require.NoError(t, err)
 
-	fname := SnapshotFileName(chid, stateidx)
+	fname := FileName(chid, stateidx)
 	t.Logf("file: %s", fname)
+
+	tm = util.NewTimer()
 	err = WriteSnapshot(ordr, "", ConsoleReportParams{
 		Console:           os.Stdout,
-		StatsEveryKVPairs: 100_000,
+		StatsEveryKVPairs: 1_000_000,
 	})
 	require.NoError(t, err)
+	t.Logf("write snapshot took %v", tm.Stop())
+
 	v, err := ScanFile(fname)
 	require.NoError(t, err)
 	require.True(t, chid.Equals(v.ChainID))

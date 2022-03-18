@@ -13,7 +13,6 @@ import (
 
 // optimisticStateReaderImpl state reader reads the chain state from db and validates it
 type optimisticStateReaderImpl struct {
-	db          kvstore.KVStore
 	stateReader *optimism.OptimisticKVStoreReader
 	trie        trie.NodeStore
 }
@@ -24,7 +23,6 @@ func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *
 	trieReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeTrie}))
 	baseline := glb.GetSolidIndexBaseline()
 	return &optimisticStateReaderImpl{
-		db:          db,
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
 		trie:        trie.NewNodeStore(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
 	}
