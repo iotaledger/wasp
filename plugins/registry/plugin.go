@@ -32,8 +32,3 @@ func Init() *hive_node.Plugin {
 	}
 	return hive_node.NewPlugin(pluginName, nil, hive_node.Enabled, configure, run)
 }
-
-// InitFlags configures the relevant CLI flags.
-func InitFlags() {
-	registry.InitFlags()
-}

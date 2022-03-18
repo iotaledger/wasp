@@ -25,7 +25,7 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	}
 
 	config := cluster.DefaultConfig()
-	config.L1 = L1Config
+	config.L1 = ClustL1Config
 
 	var modifyNodesConfig cluster.ModifyNodesConfigFn
 	if len(opt) > 0 {

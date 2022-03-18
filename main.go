@@ -27,7 +27,6 @@ import (
 
 func main() {
 	params := parameters.Init()
-	registry.InitFlags()
 
 	plugins := node.Plugins(
 		banner.Init(),

@@ -163,7 +163,7 @@ func ActivateChainOnAccessNodes(apiHosts []string, chainID *iscp.ChainID) error 
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(&registry.ChainRecord{
-		ChainID: chainID,
+		ChainID: *chainID,
 	})
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
