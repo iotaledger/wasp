@@ -72,12 +72,15 @@ interface ISC {
 
 	// ----- Sandbox -----
 
+    function getCaller() external view returns (ISCAgentID memory);
 	function getRequestID() external view returns (ISCRequestID memory);
 	function getSenderAccount() external view returns (ISCAgentID memory);
 	function getSenderAddress() external view returns (IotaAddress memory);
 	function getAllowanceIotas() external view returns (uint64);
 	function getAllowanceNativeTokensLen() external view returns (uint16);
 	function getAllowanceNativeToken(uint16 i) external view returns (IotaNativeToken memory);
+    function getAllowanceNFTsLen() external view returns (uint16);
+    function getAllowanceNFTID(uint16 i) external view returns (IotaNFTID);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
 

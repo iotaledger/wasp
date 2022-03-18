@@ -31,6 +31,12 @@ contract ISCTest {
 		emit RequestIDEvent(reqID);
 	}
 
+    event GetCallerEvent(ISCAgentID agentID);
+    function emitGetCaller() public {
+        ISCAgentID memory agentID = isc.getCaller();
+        emit GetCallerEvent(agentID);
+    }
+
 	event SenderAccountEvent(ISCAgentID sender);
 	function emitSenderAccount() public {
 		ISCAgentID memory sender = isc.getSenderAccount();
@@ -55,4 +61,12 @@ contract ISCTest {
 			emit AllowanceNativeTokenEvent(isc.getAllowanceNativeToken(i));
 		}
 	}
+
+    event AllowanceNFTEvent(ISCNFT token);
+    function emitAllowanceNFTs() public {
+        uint16 n = isc.getAllowanceNFTsLen();
+        for (uint16 i = 0; i < n; i++) {
+            emit AllowanceNFTEvent(isc.getNFTData(isc.getAllowanceNFTID(i)));
+        }
+    }
 }

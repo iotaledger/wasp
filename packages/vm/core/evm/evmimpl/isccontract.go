@@ -98,6 +98,16 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		i := args[0].(uint16)
 		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
 
+	case "getAllowanceNFTsLen":
+		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().NFTs))}
+
+	case "getAllowanceNFTID":
+		i := args[0].(uint16)
+		outs = []interface{}{isccontract.WrapISCNFTID(c.ctx.AllowanceAvailable().NFTs[i])}
+
+	case "getCaller":
+		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Caller())}
+
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
