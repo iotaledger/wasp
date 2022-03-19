@@ -39,7 +39,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 // viewGetBlockInfo returns blockInfo for a given block.
 // params:
-// ParamBlockIndex - index of the block (defaults to latest block)
+// ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx iscp.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
 	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)

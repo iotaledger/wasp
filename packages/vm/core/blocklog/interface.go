@@ -479,6 +479,7 @@ func (ca *ControlAddresses) String() string {
 
 // endregion /////////////////////////////////////////////////////////////
 
+// BlockInfoKey a key to access block info record inside SC state
 func BlockInfoKey(index uint32) []byte {
 	return []byte(collections.Array32ElemKey(prefixBlockRegistry, index))
 }

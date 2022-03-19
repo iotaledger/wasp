@@ -87,4 +87,29 @@ func TestProofs(t *testing.T) {
 
 		require.True(t, trie.EqualCommitments(pastStateCommitment, bi.StateCommitment))
 	})
+	t.Run("proof past block", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+
+		err := ch.DepositIotasToL2(100_000, nil)
+		require.NoError(t, err)
+
+		pastBlockIndex := ch.State.BlockIndex()
+		pastStateCommitment := ch.GetStateCommitment()
+
+		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
+		require.NoError(t, err)
+
+		_, err = ch.UploadWasm(nil, []byte("1234567890"))
+		require.NoError(t, err)
+
+		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)
+		require.NoError(t, err)
+
+		require.True(t, trie.EqualCommitments(pastStateCommitment, pastBlockInfo.StateCommitment))
+		err = poi.Validate(ch.GetStateCommitment(), pastBlockInfo.Bytes())
+
+		require.NoError(t, err)
+		t.Logf("proof size = %d", len(poi.Bytes()))
+	})
 }

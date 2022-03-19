@@ -124,6 +124,8 @@ func Concat(fragments ...interface{}) []byte {
 			buf.WriteString(v)
 		case []byte:
 			buf.Write(v)
+		case Key:
+			buf.Write([]byte(v))
 		case byte:
 			buf.WriteByte(v)
 		case uint16:
