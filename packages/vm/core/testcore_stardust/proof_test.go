@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"os"
 	"testing"
 
@@ -112,4 +113,44 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("proof size = %d", len(poi.Bytes()))
 	})
+}
+
+func TestProofStateTerminals(t *testing.T) {
+	env := solo.New(t)
+	ch := env.NewChain(nil, "chain1")
+
+	err := ch.DepositIotasToL2(100_000, nil)
+	require.NoError(t, err)
+
+	// core contracts must contain their hname at nil key in their state
+	for _, ci := range corecontracts.AllSortedByName() {
+		proof := ch.GetMerkleProof(ci.Hname(), nil)
+		err = proof.Validate(ch.GetStateCommitment(), ci.Hname().Bytes())
+		if err != nil {
+			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
+				ci.Name, ci.Hname())
+		}
+		cS, err := ch.GetContractStateCommitment(ci.Hname())
+		require.NoError(t, err)
+		t.Logf("BEFORE: commitment to the state of the contract '%s': %s", ci.Name, cS)
+	}
+
+	_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
+	require.NoError(t, err)
+
+	_, err = ch.UploadWasm(nil, []byte("1234567890"))
+	require.NoError(t, err)
+
+	// core contracts must contain their hname at nil key in their state
+	for _, ci := range corecontracts.AllSortedByName() {
+		proof := ch.GetMerkleProof(ci.Hname(), nil)
+		err = proof.Validate(ch.GetStateCommitment(), ci.Hname().Bytes())
+		if err != nil {
+			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
+				ci.Name, ci.Hname())
+		}
+		cS, err := ch.GetContractStateCommitment(ci.Hname())
+		require.NoError(t, err)
+		t.Logf("AFTER: commitment to the state of the contract '%s': %s", ci.Name, cS)
+	}
 }

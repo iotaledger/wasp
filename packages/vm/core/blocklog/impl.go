@@ -33,6 +33,10 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 		PreviousStateCommitment: state.OriginStateCommitment(),
 	})
 	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
 	return nil
 }

@@ -15,7 +15,7 @@ import (
 
 // Call implements sandbox logic of the call between contracts on-chain
 func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Allowance) dict.Dict {
-	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
+	vmctx.Debugf("Call: targetContract: %s entry point: %s", targetContract, epCode)
 	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 

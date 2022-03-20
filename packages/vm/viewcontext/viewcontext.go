@@ -245,8 +245,9 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.P
 
 // GetRootCommitment calculates root commitment from state.
 // A valid state must return root commitment equal to the StateCommitment from the anchor
-func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
-	err = panicutil.CatchAllButDBError(func() {
+func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
+	var ret trie.VCommitment
+	err := panicutil.CatchAllButDBError(func() {
 		ret = trie.RootCommitment(ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
@@ -254,4 +255,30 @@ func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
 		ret = nil
 	}
 	return ret, err
+}
+
+// GetContractStateCommitment returns commitment to the contract's state, if possible.
+// To be able to retrieve state commitment for the contract's state, the state must contain
+// values of contracts hname at its nil key. Otherwise, function returns error
+func (ctx *ViewContext) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitment, error) {
+	var retC trie.VCommitment
+	var retErr error
+
+	err := panicutil.CatchAllButDBError(func() {
+		proof := state.CommitmentModel.Proof(hn.Bytes(), ctx.stateReader.TrieNodeStore())
+		rootC := trie.RootCommitment(ctx.stateReader.TrieNodeStore())
+		retErr = proof.Validate(rootC, hn.Bytes())
+		if retErr != nil {
+			return
+		}
+		retC = proof.CommitmentToTheTerminalNode()
+	}, ctx.log, "GetMerkleProof: ")
+
+	if err != nil {
+		return nil, err
+	}
+	if retErr != nil {
+		return nil, retErr
+	}
+	return retC, nil
 }
