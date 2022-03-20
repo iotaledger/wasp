@@ -8,6 +8,6 @@ func NewTimer() timer {
 	return timer(time.Now())
 }
 
-func (t timer) Stop() time.Duration {
+func (t timer) Duration() time.Duration {
 	return time.Now().Sub(time.Time(t))
 }

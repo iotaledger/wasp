@@ -21,7 +21,7 @@ func Test1(t *testing.T) {
 
 	rndKVStream := kv.NewRandStreamIterator(kv.RandStreamParams{
 		Seed:       time.Now().UnixNano(),
-		NumKVPairs: 10_000_000,
+		NumKVPairs: 1_000_000,
 		MaxKey:     48,
 		MaxValue:   128,
 	})
@@ -34,7 +34,7 @@ func Test1(t *testing.T) {
 		totalBytes += len(k) + len(v) + 6
 		return true
 	})
-	t.Logf("write %d kv pairs, %d Mbytes, to in-memory state took %v", count, totalBytes/(1024*1024), tm.Stop())
+	t.Logf("write %d kv pairs, %d Mbytes, to in-memory state took %v", count, totalBytes/(1024*1024), tm.Duration())
 
 	require.NoError(t, err)
 	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), testmisc.RandVectorCommitment())
@@ -42,7 +42,7 @@ func Test1(t *testing.T) {
 
 	tm = util.NewTimer()
 	err = st.Save()
-	t.Logf("commit and save state to in-memory db took %v", tm.Stop())
+	t.Logf("commit and save state to in-memory db took %v", tm.Duration())
 
 	require.NoError(t, err)
 
@@ -67,7 +67,7 @@ func Test1(t *testing.T) {
 		StatsEveryKVPairs: 1_000_000,
 	})
 	require.NoError(t, err)
-	t.Logf("write snapshot took %v", tm.Stop())
+	t.Logf("write snapshot took %v", tm.Duration())
 
 	v, err := ScanFile(fname)
 	require.NoError(t, err)

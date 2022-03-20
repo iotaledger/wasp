@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/snapshot"
 )
 
-const usage = "USAGE: snapshot [-scanfile || -restoredb] <filename>\n"
+const usage = "USAGE: snapshot [-create | -scanfile | -restoredb] <filename>\n"
 
 func main() {
 	if len(os.Args) < 3 {
@@ -22,17 +22,24 @@ func main() {
 		os.Exit(1)
 	}
 	cmd := os.Args[1]
-	fname := os.Args[2]
+	param := os.Args[2]
 	switch cmd {
+	case "-create", "--create":
+		chainID, err := iscp.ChainIDFromString(param)
+		if err != nil {
+			fmt.Printf("error: %v\n", err)
+			os.Exit(1)
+		}
+		createSnapshot(chainID)
 	case "-scanfile", "--scanfile":
-		scanFile(fname)
+		scanFile(param)
 	case "-restoredb", "--restoredb":
-		fmt.Printf("creating db from snapshot file %s\n", fname)
-		prop := scanFile(fname)
+		fmt.Printf("creating db from snapshot file %s\n", param)
+		prop := scanFile(param)
 		restoreDb(prop)
 	case "-verify", "--verify":
-		fmt.Printf("verifying state against snapshot file %s\n", fname)
-		prop := scanFile(fname)
+		fmt.Printf("verifying state against snapshot file %s\n", param)
+		prop := scanFile(param)
 		verify(prop)
 	default:
 		fmt.Printf(usage)
@@ -48,7 +55,7 @@ func scanFile(fname string) *snapshot.FileProperties {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("scan file took %v\n", tm.Stop())
+	fmt.Printf("scan file took %v\n", tm.Duration())
 	fmt.Printf("Chain ID: %s\n", prop.ChainID)
 	fmt.Printf("State index: %d\n", prop.StateIndex)
 	fmt.Printf("Timestamp: %v\n", prop.TimeStamp)
@@ -89,7 +96,7 @@ func restoreDb(prop *snapshot.FileProperties) {
 			if errW = st.Save(); errW != nil {
 				return false
 			}
-			fmt.Printf("committed %d total records to database\n", count)
+			fmt.Printf("committed %d total records to database. It took %v\n", count, tm.Duration())
 		}
 		return true
 	})
@@ -101,7 +108,7 @@ func restoreDb(prop *snapshot.FileProperties) {
 		fmt.Printf("error: %d\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("committed %d total records to database. It took %v\n", count, tm.Stop())
+	fmt.Printf("committed %d total records to database. It took %v\n", count, tm.Duration())
 
 	c := trie.RootCommitment(st.TrieNodeStore())
 	fmt.Printf("Success. Root commitment: %s\n", c)
@@ -118,7 +125,7 @@ func verify(prop *snapshot.FileProperties) {
 		fmt.Printf("directory %s does not exists\n", dbDir)
 		os.Exit(1)
 	}
-	fmt.Printf("veyfying database for chain ID %s\n", prop.ChainID)
+	fmt.Printf("verifying database for chain ID %s\n", prop.ChainID)
 
 	db, err := dbmanager.NewDB(dbDir)
 	if err != nil {
@@ -163,7 +170,7 @@ func verify(prop *snapshot.FileProperties) {
 		}
 		count++
 		if count%reportEach == 0 {
-			took := tm.Stop()
+			took := tm.Duration()
 			fmt.Printf("verified total %d records. Took %v, %d rec/sec\n", count, took, (1000*int64(count))/took.Milliseconds())
 			_ = st.Save() // just clears trie cache, to prevent the whole trie coming to memory
 		}
@@ -177,7 +184,68 @@ func verify(prop *snapshot.FileProperties) {
 		fmt.Printf("error: %v\n", errW)
 		os.Exit(1)
 	}
-	fmt.Printf("verified total %d records. It took %v\n", count, tm.Stop())
+	fmt.Printf("verified total %d records. It took %v\n", count, tm.Duration())
 
 	fmt.Printf("success: file %s match the database\n", prop.FileName)
+}
+
+func createSnapshot(chainID *iscp.ChainID) {
+	dbDir := chainID.String()
+	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+		fmt.Printf("directory %s does not exists\n", dbDir)
+		os.Exit(1)
+	}
+	fmt.Printf("creating shapshot for chain ID %s\n", chainID)
+
+	db, err := dbmanager.NewDB(dbDir)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+	st := state.NewVirtualState(db.NewStore())
+
+	var stateIndex uint32
+	err = panicutil.CatchPanic(func() {
+		stateIndex = st.BlockIndex()
+	})
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+
+	fname := fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
+	fmt.Printf("will be writing to file %s\n", fname)
+
+	kvwriter, err := kv.CreateKVStreamFile(fname)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+	defer kvwriter.File.Close()
+
+	const reportEach = 100_000
+	var errW error
+
+	tm := util.NewTimer()
+
+	err = st.KVStoreReader().Iterate("", func(k kv.Key, v []byte) bool {
+		if errW = kvwriter.Write([]byte(k), v); errW != nil {
+			return false
+		}
+		count, byteCount := kvwriter.Stats()
+		if count%reportEach == 0 {
+			fmt.Printf("wrote %d key/value pairs, %d bytes. It took %v\n", count, byteCount, tm.Duration())
+		}
+		return true
+	})
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+	if errW != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+	count, byteCount := kvwriter.Stats()
+	fmt.Printf("wrote TOTAL %d key/value pairs, %d bytes. It took %v\n", count, byteCount, tm.Duration())
 }
