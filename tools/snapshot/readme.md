@@ -60,7 +60,8 @@ The above, however, does not violate consisency of the database. It is alway gua
 
 `snapshot -restoredb <snapshot file>`
 
-The command scand file and rebuilds chain's database from it. It may take some time. The command does the following:
+The command scans file and rebuilds chain's database from it. It may take some time. 
+The command does the following:
 * reads key/value pairs from file one by one and writes it as state mutations
 * build complete trie of the state
 * periodically commits and flushes updates to the database
@@ -73,9 +74,10 @@ The command assumes databae is already restored. The command does the follwing:
 * reads key/value from the file one-by-one.
 * for each key/value pair it retrieves *proof of inclusion* from the state and verifies it.
 
-The command may be lengthy because proof and verification are expensive operations.
+The command may be lengthy because proof generation and verification are expensive operations.
 
-The `-verify` command is rarely needed practice if the database is restored from snapshot. It is mostly used for testing and benchmarking.
+The `-verify` command is rarely needed practice if the database is restored from snapshot. 
+It is mostly used for testing and benchmarking.
 
 #### Validating the snapshot
 
