@@ -105,13 +105,13 @@ one with ~1 mil of key/value pairs, another with 10 mil of key/value pairs.
 On the laptop 4 core, 2.6 GHz with 32 MB RAM and SDD HD.
 
 
-| Parameter                          | ~1 mil records   | ~10 mil records |
-|------------------------------------|------------------|-----------------|
-| Chain database size (with trie)    | 189 MB           | 1.91 GB         |
-| Snapshot file size                 | 89 MB            | 896 MB          |
-| Database (with trie) restored in   | 21 sec           | 3 min 51 sec    |
-| Retrieve/proof k/v pairs (time)    | 1 min 29 sec     | 18 min 16 sec   |
-| Retrieve/proof k/v pairs (speed)   | 11000 proofs/sec | 8800 proofs/sec |
-| Create snapshot file               | 7 sec            | 1 min 11 sec    |
+| Parameter                           | ~1 mil records   | ~10 mil records |
+|-------------------------------------|------------------|-----------------|
+| Chain database size (with trie)     | 189 MB           | 1.91 GB         |
+| Snapshot file size                  | 89 MB            | 896 MB          |
+| Database (with trie) restored in    | 21 sec           | 3 min 51 sec    |
+| Generate/verify proofs (total time) | 1 min 29 sec     | 18 min 16 sec   |
+| Generate/verify proofs (speed)      | 11000 proofs/sec | 8800 proofs/sec |
+| Create snapshot file from db        | 7 sec            | 1 min 11 sec    |
 
 
