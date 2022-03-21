@@ -281,7 +281,7 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 			return err
 		}
 		if _, ok := varNames[varDef.Name]; ok {
-			return fmt.Errorf("duplicate sybtype name")
+			return fmt.Errorf("duplicate subtype name")
 		}
 		varNames[varDef.Name] = varDef.Name
 		if _, ok := varAliases[varDef.Alias]; ok {
