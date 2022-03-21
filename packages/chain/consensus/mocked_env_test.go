@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -29,7 +28,7 @@ type MockedEnv struct {
 	T                *testing.T
 	Quorum           uint16
 	Log              *logger.Logger
-	Ledger           *testchain.MockedLedger
+	Ledgers          *testchain.MockedLedgers
 	StateAddress     iotago.Address
 	Nodes            []*mockedNode
 	NodeIDs          []string
@@ -95,21 +94,10 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	}
 	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
-	output := &iotago.AliasOutput{
-		Amount:        iotago.TokenSupply,
-		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: ret.StateAddress},
-			&iotago.GovernorAddressUnlockCondition{Address: ret.StateAddress},
-		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
-				Address: ret.StateAddress,
-			},
-		},
-	}
-	ret.Ledger = testchain.NewMockedLedger(output, log)
-	ret.InitStateOutput = ret.Ledger.PullState()
+	ret.Ledgers = testchain.NewMockedLedgers(ret.StateAddress, log)
+	ret.InitStateOutput = ret.Ledgers.GetLedger(ret.ChainID.AsAddress()).GetLatestOutput()
+
+	ret.Log.Infof("Testing environment is ready")
 
 	return ret
 }

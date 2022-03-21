@@ -191,13 +191,17 @@ func (nccT *nodeconnChain) DetachFromTxInclusionState() {
 func (nccT *nodeconnChain) AttachToMilestones(handler chain.NodeConnectionMilestonesHandlerFun) {
 	nccT.mutex.Lock()
 	defer nccT.mutex.Unlock()
-	nccT.DetachFromMilestones()
+	nccT.detachFromMilestones()
 	nccT.milestonesHandlerRef = nccT.nc.AttachMilestones(handler)
 }
 
 func (nccT *nodeconnChain) DetachFromMilestones() {
 	nccT.mutex.Lock()
 	defer nccT.mutex.Unlock()
+	nccT.detachFromMilestones()
+}
+
+func (nccT *nodeconnChain) detachFromMilestones() {
 	if nccT.milestonesHandlerRef != nil {
 		nccT.nc.DetachMilestones(nccT.milestonesHandlerRef)
 		nccT.milestonesHandlerRef = nil

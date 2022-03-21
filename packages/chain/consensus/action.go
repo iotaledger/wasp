@@ -402,16 +402,17 @@ func (c *consensus) postTransactionIfNeeded() {
 		c.log.Debugf("postTransaction not needed: delayed till %v", c.postTxDeadline)
 		return
 	}
-	go c.nodeConn.PostTransaction(c.finalTx)
+	stateIndex := c.resultState.BlockIndex()
+	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx)
 
 	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	txID, err := c.finalTx.ID()
 	if err == nil {
-		c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d",
-			iscp.TxID(txID), len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
+		c.log.Infof("postTransaction: POSTED TRANSACTION for state %v: %s, number of inputs: %d, outputs: %d",
+			stateIndex, iscp.TxID(txID), len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
 	} else {
-		c.log.Warnf("postTransaction: POSTED TRANSACTION: number of inputs: %d, outputs: %d, error calculating id: %v",
-			len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs), err)
+		c.log.Warnf("postTransaction: POSTED TRANSACTION for state %v: number of inputs: %d, outputs: %d, error calculating id: %v",
+			stateIndex, len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs), err)
 	}
 }
 

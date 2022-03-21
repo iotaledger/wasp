@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -125,9 +126,13 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	ret.nodeConn.AttachToTimeData(func(timeData *iscp.TimeData) {
-		ret.timeData = timeData
+	ret.nodeConn.AttachToMilestones(func(milestonePointer *iotagox.MilestonePointer) {
+		ret.timeData = &iscp.TimeData{
+			MilestoneIndex: milestonePointer.Index,
+			Time:           time.Unix(0, int64(milestonePointer.Timestamp)),
+		}
 	})
+	// TODO!!!
 	/*ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
 		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
 	})*/
@@ -168,7 +173,7 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
-	c.nodeConn.DetachFromInclusionStateReceived()
+	c.nodeConn.DetachFromTxInclusionState()
 	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
 
 	c.eventStateTransitionMsgPipe.Close()

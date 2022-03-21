@@ -114,10 +114,7 @@ func (mlT *MockedLedger) PullLatestOutput(nodeID string) {
 	mlT.log.Debugf("Pulling latest output")
 	if mlT.pullLatestOutputAllowed {
 		mlT.log.Debugf("Pulling latest output allowed")
-		output := mlT.getOutput(mlT.latestOutputID)
-		if output == nil {
-			mlT.log.Panicf("Pulling latest output: output with id %v not found", iscp.OID(mlT.latestOutputID))
-		}
+		output := mlT.getLatestOutput()
 		mlT.log.Debugf("Pulling latest output: output with id %v pulled", iscp.OID(mlT.latestOutputID))
 		handler, ok := mlT.outputHandlerFuns[nodeID]
 		if ok {
@@ -164,8 +161,26 @@ func (mlT *MockedLedger) PullOutputByID(nodeID string, outputID *iotago.UTXOInpu
 	}
 }
 
-func (m *MockedLedger) getOutput(id *iotago.UTXOInput) *iotago.AliasOutput {
-	output, ok := m.outputs[*id]
+func (mlT *MockedLedger) GetLatestOutput() *iscp.AliasOutputWithID {
+	mlT.log.Debugf("Getting latest output")
+	return iscp.NewAliasOutputWithID(mlT.getLatestOutput(), mlT.latestOutputID)
+}
+
+func (mlT *MockedLedger) getLatestOutput() *iotago.AliasOutput {
+	output := mlT.getOutput(mlT.latestOutputID)
+	if output == nil {
+		mlT.log.Panicf("Latest output with id %v not found", iscp.OID(mlT.latestOutputID))
+	}
+	return output
+}
+
+func (mlT *MockedLedger) GetOutputByID(id *iotago.UTXOInput) *iotago.AliasOutput {
+	mlT.log.Debugf("Getting output by ID %v", iscp.OID(id))
+	return mlT.getOutput(id)
+}
+
+func (mlT *MockedLedger) getOutput(id *iotago.UTXOInput) *iotago.AliasOutput {
+	output, ok := mlT.outputs[*id]
 	if ok {
 		return output
 	}
