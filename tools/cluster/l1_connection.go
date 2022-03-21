@@ -17,7 +17,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// requirements for a client connection to L1 (hornet or bee node)
+// interface for the cluster tool to interact with a L1 node (hornet or bee node)
 type L1Connection interface {
 	// requests funds from faucet, waits for confirmation
 	RequestFunds(addr iotago.Address, timeout ...time.Duration) error
@@ -25,25 +25,10 @@ type L1Connection interface {
 	PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Message, error)
 	// returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
-
-	// --- for testing (TODO maybe move to a separate interface)
-	// sends an HTTP request to the faucet (just for testing, normal usage should use `RequestFunds`)
-	FaucetRequestHttp(addr iotago.Address, timeout ...time.Duration) error
-	// sends a simple value Tx (just for testing)
-	PostSimpleValueTX(
-		sender *cryptolib.KeyPair,
-		recipientAddr iotago.Address,
-		amount uint64,
-	) (*iotago.Message, error)
-	// creates a simple valueTx (just for testing)
-	MakeSimpleValueTX(
-		sender *cryptolib.KeyPair,
-		recipientAddr iotago.Address,
-		amount uint64,
-	) (*iotago.Transaction, error)
 }
 
-type l1Client struct {
+// implementation of the L1Connection (hornet specific for now using the REST API)
+type L1Client struct {
 	hostname      string
 	apiPort       int
 	faucetPort    int
@@ -61,7 +46,7 @@ func NewL1Client(config L1Config) L1Connection {
 
 	// TODO
 	// /api/v2/info // func (client *Client) Info(ctx context.Context) (*InfoResponse, error)
-	// how to get protocol params via the client if we need them to start the client lol...?
+	// how to get protocol params via the client if we need them to start the client?... hmmmmmmmm
 
 	l1params := &parameters.L1{
 		NetworkID:                 iotago.NetworkIDFromString(config.NetworkID),
@@ -69,7 +54,7 @@ func NewL1Client(config L1Config) L1Connection {
 		DeSerializationParameters: parameters.DeSerializationParametersForTesting(),
 	}
 
-	return &l1Client{
+	return &L1Client{
 		hostname:      config.Hostname,
 		apiPort:       config.APIPort,
 		faucetPort:    config.FaucetPort,
@@ -79,7 +64,7 @@ func NewL1Client(config L1Config) L1Connection {
 	}
 }
 
-const defaultTimeout = 20 * time.Second
+const defaultTimeout = 1 * time.Minute
 
 func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
@@ -89,7 +74,7 @@ func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), t)
 }
 
-func (c *l1Client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error) {
+func (c *L1Client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error) {
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
@@ -113,7 +98,10 @@ func (c *l1Client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 	return result, nil
 }
 
-func (c *l1Client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Message, error) {
+const pollConfirmedTxInterval = 200 * time.Millisecond
+
+// PostTx sends any tx to the L1 node, then waits until the tx is confirmed.
+func (c *L1Client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Message, error) {
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
@@ -126,14 +114,60 @@ func (c *l1Client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*io
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
-	return txMsg, nil
+
+	// wait until tx is confirmed
+	msgID, err := txMsg.ID()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get msg ID: %w", err)
+	}
+
+	// poll the node by getting `MessageMetadataByMessageID`
+	for {
+		metadataResp, err := c.client.MessageMetadataByMessageID(ctxWithTimeout, *msgID)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to get msg metadata: %w", err)
+		}
+
+		if metadataResp.ReferencedByMilestoneIndex != nil {
+			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
+				return txMsg, nil
+			}
+			return nil, xerrors.Errorf("tx was not included in the ledger")
+		}
+		// reattach or promote if needed
+		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
+			// create an empty message and the messageID as one of the parents
+			promotionMsg, err := builder.NewMessageBuilder().Parents([][]byte{msgID[:]}).Build()
+			if err != nil {
+				return nil, xerrors.Errorf("failed to build promotion message: %w", err)
+			}
+			_, err = c.client.SubmitMessage(ctxWithTimeout, promotionMsg)
+			if err != nil {
+				return nil, xerrors.Errorf("failed to promote msg: %w", err)
+			}
+		}
+		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
+			// remote PoW: Take the message, clear parents, clear nonce, send to node
+			txMsg.Parents = nil
+			txMsg.Nonce = 0
+			txMsg, err = c.client.SubmitMessage(ctxWithTimeout, txMsg)
+			if err != nil {
+				return nil, xerrors.Errorf("failed to get re-attach msg: %w", err)
+			}
+		}
+
+		if err = ctxWithTimeout.Err(); err != nil {
+			return nil, xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
+		}
+		time.Sleep(pollConfirmedTxInterval)
+	}
 }
 
 const faucetAmountToSend = uint64(123)
 
-func (c *l1Client) RequestFunds(addr iotago.Address, timeout ...time.Duration) error {
+func (c *L1Client) RequestFunds(addr iotago.Address, timeout ...time.Duration) error {
 	if c.faucetKeyPair == nil {
-		return c.FaucetRequestHttp(addr, timeout...)
+		return c.FaucetRequestHTTP(addr, timeout...)
 	}
 	_, err := c.PostSimpleValueTX(c.faucetKeyPair, addr, faucetAmountToSend)
 	return err
@@ -141,7 +175,7 @@ func (c *l1Client) RequestFunds(addr iotago.Address, timeout ...time.Duration) e
 
 // PostFaucetRequest makes a faucet request.
 // Simple value TX is processed faster, and should be used in cases where we are using a private testnet and have the genesis key available.
-func (c *l1Client) FaucetRequestHttp(addr iotago.Address, timeout ...time.Duration) error {
+func (c *L1Client) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Duration) error {
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
@@ -169,7 +203,7 @@ func (c *l1Client) FaucetRequestHttp(addr iotago.Address, timeout ...time.Durati
 
 // PostSimpleValueTX submits a simple value transfer TX.
 // Can be used instead of the faucet API if the genesis key is known.
-func (c *l1Client) PostSimpleValueTX(
+func (c *L1Client) PostSimpleValueTX(
 	sender *cryptolib.KeyPair,
 	recipientAddr iotago.Address,
 	amount uint64,
@@ -181,7 +215,7 @@ func (c *l1Client) PostSimpleValueTX(
 	return c.PostTx(tx)
 }
 
-func (c *l1Client) MakeSimpleValueTX(
+func (c *L1Client) MakeSimpleValueTX(
 	sender *cryptolib.KeyPair,
 	recipientAddr iotago.Address,
 	amount uint64,

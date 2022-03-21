@@ -42,7 +42,7 @@ func TestHornetStartup(t *testing.T) {
 	client := cluster.NewL1Client(pt.L1Config())
 	//
 	// Check if faucet requests are working.
-	client.FaucetRequestHttp(myAddress)
+	client.(*cluster.L1Client).FaucetRequestHTTP(myAddress)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
@@ -56,7 +56,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	msg, err := client.PostSimpleValueTX(pt.FaucetKeyPair, myAddress, 50000)
+	msg, err := client.(*cluster.L1Client).PostSimpleValueTX(pt.FaucetKeyPair, myAddress, 50000)
 	require.NoError(t, err)
 	t.Logf("Posted messageID=%v", msg.MustID())
 	for i := 0; ; i++ {
