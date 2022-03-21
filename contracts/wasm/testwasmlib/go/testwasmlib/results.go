@@ -25,6 +25,38 @@ func (s MutableTakeBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
 }
 
+type ImmutableArrayOfArraysAddrLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfArraysAddrLengthResults) Length() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
+}
+
+type MutableArrayOfArraysAddrLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfArraysAddrLengthResults) Length() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
+}
+
+type ImmutableArrayOfArraysAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfArraysAddrValueResults) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
+type MutableArrayOfArraysAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfArraysAddrValueResults) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
 type ImmutableArrayOfArraysLengthResults struct {
 	proxy wasmtypes.Proxy
 }
@@ -137,6 +169,38 @@ func (s MutableIotaBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
 }
 
+type ImmutableMapOfArraysAddrLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrLengthResults) Length() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
+}
+
+type MutableMapOfArraysAddrLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrLengthResults) Length() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
+}
+
+type ImmutableMapOfArraysAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAddrValueResults) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
+type MutableMapOfArraysAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAddrValueResults) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
 type ImmutableMapOfArraysLengthResults struct {
 	proxy wasmtypes.Proxy
 }
@@ -167,6 +231,22 @@ type MutableMapOfArraysValueResults struct {
 
 func (s MutableMapOfArraysValueResults) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
+}
+
+type ImmutableMapOfMapsAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsAddrValueResults) ValueAddr() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ResultValueAddr))
+}
+
+type MutableMapOfMapsAddrValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsAddrValueResults) ValueAddr() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ResultValueAddr))
 }
 
 type ImmutableMapOfMapsValueResults struct {

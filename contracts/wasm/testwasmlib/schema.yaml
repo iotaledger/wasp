@@ -55,14 +55,13 @@ state:
   stringArrayOfMaps: StringMap[]
   stringArrayOfArrays: StringArray[]
   # contracts-specific value datatypes
-  AddressArrays: map[Address]AddressArray
-  AddressMaps: map[Address]AddressMap
-  AddressMapArrays: AddressMap[]
-  AddressArrayArrays: AddressArray[]
+  addrMapOfArrays: map[Address]AddressArray
+  addrMapOfMaps: map[Address]AddressMap
+  addrArrayOfMaps: AddressMap[]
+  addrArrayOfArrays: AddressArray[]
   # Other
   random: Uint64
   latLong: map[Int32]Longitude
-  # LongID: map[Longitude]Int32 # FIXME Map with struct key would cause error
   
 
 # ##################################
@@ -73,17 +72,18 @@ funcs:
       name: String
       value: String
 
-  arrayOfArraysAppend:
+  mapOfArraysAddrAppend:
     params:
-      index: Uint32
-      value: String[]
+      nameAddr: Address
+      valueAddr: Address
 
   mapOfArraysClear:
     params:
       name: String
-  
-  # Clear all the arrays of the array
-  arrayOfArraysClear:
+
+  mapOfArraysAddrClear:
+    params:
+      nameAddr: Address
 
   mapOfArraysSet:
     params:
@@ -91,21 +91,58 @@ funcs:
       name: String
       value: String
 
-  arrayOfArraysSet:
+  mapOfArraysAddrSet:
     params:
-      index0: Uint32
-      index1: Uint32
-      value: String
+      index: Uint32
+      nameAddr: Address
+      valueAddr: Address
 
   mapOfMapsClear:
     params:
       name: String
+
+  mapOfMapsAddrClear:
+    params:
+      nameAddr: Address
 
   mapOfMapsSet:
     params:
       name: String
       key: String
       value: String
+
+  mapOfMapsAddrSet:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+      valueAddr: Address
+
+  arrayOfArraysAppend:
+    params:
+      index: Uint32
+      value: String[]
+
+  arrayOfArraysAddrAppend:
+    params:
+      index: Uint32
+      valueAddr: Address[]
+
+  arrayOfArraysSet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      value: String
+
+  arrayOfArraysAddrSet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      valueAddr: Address
+
+  # Clear all the arrays of the array
+  arrayOfArraysClear:
+  # Clear all the arrays of the array
+  arrayOfArraysAddrClear:
 
   arrayOfMapsClear:
 
@@ -159,7 +196,9 @@ views:
     results:
       length: Uint32
 
-  arrayOfArraysLength:
+  mapOfArraysAddrLength:
+    params:
+      nameAddr: Address
     results:
       length: Uint32
 
@@ -169,13 +208,13 @@ views:
       name: String
     results:
       value: String
-  
-  arrayOfArraysValue:
+
+  mapOfArraysAddrValue:
     params:
-      index0: Uint32
-      index1: Uint32
+      index: Uint32
+      nameAddr: Address
     results:
-      value: String
+      valueAddr: Address
 
   mapOfMapsValue:
     params:
@@ -183,6 +222,35 @@ views:
       key: String
     results:
       value: String
+  
+  mapOfMapsAddrValue:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+    results:
+      valueAddr: Address
+
+  arrayOfArraysLength:
+    results:
+      length: Uint32
+
+  arrayOfArraysValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      value: String
+
+  arrayOfArraysAddrLength:
+    results:
+      length: Uint32
+
+  arrayOfArraysAddrValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      valueAddr: Address
 
   arrayOfMapsValue:
     params:

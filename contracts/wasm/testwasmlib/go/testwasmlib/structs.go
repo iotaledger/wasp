@@ -10,8 +10,8 @@ package testwasmlib
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Location struct {
-	X int32
-	Y int32
+	X int32 
+	Y int32 
 }
 
 func NewLocationFromBytes(buf []byte) *Location {
@@ -25,8 +25,8 @@ func NewLocationFromBytes(buf []byte) *Location {
 
 func (o *Location) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Int32Encode(enc, o.X)
-	wasmtypes.Int32Encode(enc, o.Y)
+		wasmtypes.Int32Encode(enc, o.X)
+		wasmtypes.Int32Encode(enc, o.Y)
 	return enc.Buf()
 }
 
