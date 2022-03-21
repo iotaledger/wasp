@@ -12,6 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -272,7 +273,102 @@ func TestMapOfArraysClear(t *testing.T) {
 	require.Error(t, ctx.Err)
 }
 
-func TestArraySet(t *testing.T) {
+func genTestAddress(ctx *wasmsolo.SoloContext, num int) []wasmtypes.ScAddress {
+	addrs := make([]wasmtypes.ScAddress, num)
+	for i := 0; i < num; i++ {
+		_, addr := ctx.Chain.Env.NewKeyPair()
+		addrs[i] = wasmhost.WasmConvertor{}.ScAddress(addr)
+	}
+
+	return addrs
+}
+
+func TestMapOfArraysAddrClear(t *testing.T) {
+	ctx := setupTest(t)
+	mapNames, mapVals := genTestAddress(ctx, 2), genTestAddress(ctx, 3)
+
+	as := testwasmlib.ScFuncs.MapOfArraysAddrAppend(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.ValueAddr().SetValue(mapVals[0])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfArraysAddrAppend(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.ValueAddr().SetValue(mapVals[1])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfArraysAddrAppend(ctx)
+	as.Params.NameAddr().SetValue(mapNames[1])
+	as.Params.ValueAddr().SetValue(mapVals[2])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	al := testwasmlib.ScFuncs.MapOfArraysAddrLength(ctx)
+	al.Params.NameAddr().SetValue(mapNames[0])
+	al.Func.Call()
+	require.NoError(t, ctx.Err)
+	length := al.Results.Length()
+	require.True(t, length.Exists())
+	require.EqualValues(t, 2, length.Value())
+
+	al = testwasmlib.ScFuncs.MapOfArraysAddrLength(ctx)
+	al.Params.NameAddr().SetValue(mapNames[1])
+	al.Func.Call()
+	require.NoError(t, ctx.Err)
+	length = al.Results.Length()
+	require.True(t, length.Exists())
+	require.EqualValues(t, 1, length.Value())
+
+	av := testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.Index().SetValue(0)
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[0], value.Value())
+
+	av = testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.Index().SetValue(1)
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[1], value.Value())
+
+	av = testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[1])
+	av.Params.Index().SetValue(0)
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[2], value.Value())
+
+	ac := testwasmlib.ScFuncs.MapOfArraysAddrClear(ctx)
+	ac.Params.NameAddr().SetValue(mapNames[0])
+	ac.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	al = testwasmlib.ScFuncs.MapOfArraysAddrLength(ctx)
+	al.Params.NameAddr().SetValue(mapNames[0])
+	al.Func.Call()
+	require.NoError(t, ctx.Err)
+	length = al.Results.Length()
+	require.True(t, length.Exists())
+	require.EqualValues(t, 0, length.Value())
+
+	av = testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.Index().SetValue(0)
+	av.Func.Call()
+	require.Error(t, ctx.Err)
+}
+
+func TestMapOfArraysSet(t *testing.T) {
 	ctx := setupTest(t)
 
 	ap := testwasmlib.ScFuncs.MapOfArraysAppend(ctx)
@@ -345,6 +441,88 @@ func TestArraySet(t *testing.T) {
 	value = av.Results.Value()
 	require.True(t, value.Exists())
 	require.EqualValues(t, "Dire Straits", value.Value())
+}
+
+func TestMapOfArraysAddrSet(t *testing.T) {
+	ctx := setupTest(t)
+	mapNames, mapVals := genTestAddress(ctx, 2), genTestAddress(ctx, 4)
+
+	aap := testwasmlib.ScFuncs.MapOfArraysAddrAppend(ctx)
+	aap.Params.NameAddr().SetValue(mapNames[0])
+	aap.Params.ValueAddr().SetValue(mapVals[0])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aap = testwasmlib.ScFuncs.MapOfArraysAddrAppend(ctx)
+	aap.Params.NameAddr().SetValue(mapNames[0])
+	aap.Params.ValueAddr().SetValue(mapVals[1])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aap = testwasmlib.ScFuncs.MapOfArraysAddrAppend(ctx)
+	aap.Params.NameAddr().SetValue(mapNames[1])
+	aap.Params.ValueAddr().SetValue(mapVals[2])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aal := testwasmlib.ScFuncs.MapOfArraysAddrLength(ctx)
+	aal.Params.NameAddr().SetValue(mapNames[0])
+	aal.Func.Call()
+	require.NoError(t, ctx.Err)
+	length := aal.Results.Length()
+	require.True(t, length.Exists())
+	require.EqualValues(t, 2, length.Value())
+
+	aav := testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	aav.Params.NameAddr().SetValue(mapNames[0])
+	aav.Params.Index().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := aav.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[0], value.Value())
+
+	aas := testwasmlib.ScFuncs.MapOfArraysAddrSet(ctx)
+	aas.Params.NameAddr().SetValue(mapNames[0])
+	aas.Params.Index().SetValue(0)
+	aas.Params.ValueAddr().SetValue(mapVals[3])
+	aas.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aal = testwasmlib.ScFuncs.MapOfArraysAddrLength(ctx)
+	aal.Params.NameAddr().SetValue(mapNames[0])
+	aal.Func.Call()
+	require.NoError(t, ctx.Err)
+	length = aal.Results.Length()
+	require.True(t, length.Exists())
+	require.EqualValues(t, 2, length.Value())
+
+	aav = testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	aav.Params.NameAddr().SetValue(mapNames[0])
+	aav.Params.Index().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = aav.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[3], value.Value())
+
+	aav = testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	aav.Params.NameAddr().SetValue(mapNames[0])
+	aav.Params.Index().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = aav.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[1], value.Value())
+
+	aav = testwasmlib.ScFuncs.MapOfArraysAddrValue(ctx)
+	aav.Params.NameAddr().SetValue(mapNames[1])
+	aav.Params.Index().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = aav.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[2], value.Value())
 }
 
 func TestInvalidIndexInGetMapOfArraysElt(t *testing.T) {
@@ -485,6 +663,63 @@ func TestArrayOfArraysClear(t *testing.T) {
 	require.Error(t, ctx.Err)
 }
 
+func TestArrayOfArraysAddrClear(t *testing.T) {
+	ctx := setupTest(t)
+	mapVals := genTestAddress(ctx, 4)
+
+	aap := testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(0)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[0])
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[1])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aap = testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(1)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[2])
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[3])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav := testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[0], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[1], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[2], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[3], aav.Results.ValueAddr().Value())
+
+	ac := testwasmlib.ScFuncs.ArrayOfArraysAddrClear(ctx)
+	ac.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.Error(t, ctx.Err)
+}
+
 func TestArrayOfArraysSet(t *testing.T) {
 	ctx := setupTest(t)
 
@@ -544,6 +779,58 @@ func TestArrayOfArraysSet(t *testing.T) {
 	require.EqualValues(t, "moon", aav.Results.Value().Value())
 }
 
+func TestArrayOfArraysAddrSet(t *testing.T) {
+	ctx := setupTest(t)
+	mapVals := genTestAddress(ctx, 4)
+
+	aap := testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(0)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[0])
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[1])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aap = testwasmlib.ScFuncs.ArrayOfArraysAddrAppend(ctx)
+	aap.Params.Index().SetValue(1)
+	aap.Params.ValueAddr().AppendAddress().SetValue(mapVals[2])
+	aap.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav := testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[0], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[1], aav.Results.ValueAddr().Value())
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(1)
+	aav.Params.Index1().SetValue(0)
+	aav.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, mapVals[2], aav.Results.ValueAddr().Value())
+
+	aas := testwasmlib.ScFuncs.ArrayOfArraysAddrSet(ctx)
+	aas.Params.Index0().SetValue(0)
+	aas.Params.Index1().SetValue(1)
+	aas.Params.ValueAddr().SetValue(mapVals[3])
+	aas.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	aav = testwasmlib.ScFuncs.ArrayOfArraysAddrValue(ctx)
+	aav.Params.Index0().SetValue(0)
+	aav.Params.Index1().SetValue(1)
+	aav.Func.Call()
+	require.EqualValues(t, mapVals[3], aav.Results.ValueAddr().Value())
+}
+
 func TestMapOfMapsClear(t *testing.T) {
 	// test reproduces a problem that needs fixing
 	t.SkipNow()
@@ -591,6 +878,143 @@ func TestMapOfMapsClear(t *testing.T) {
 	av.Func.Call()
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, "", value.Value())
+}
+
+func TestMapOfMapsAddrClear(t *testing.T) {
+	// test reproduces a problem that needs fixing
+	t.SkipNow()
+
+	ctx := setupTest(t)
+
+	mapNames, mapKeys, mapVals := genTestAddress(ctx, 2), genTestAddress(ctx, 4), genTestAddress(ctx, 4)
+
+	as := testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.KeyAddr().SetValue(mapKeys[0])
+	as.Params.ValueAddr().SetValue(mapVals[0])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.KeyAddr().SetValue(mapKeys[1])
+	as.Params.ValueAddr().SetValue(mapVals[1])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[1])
+	as.Params.KeyAddr().SetValue(mapKeys[2])
+	as.Params.ValueAddr().SetValue(mapVals[2])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av := testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.KeyAddr().SetValue(mapKeys[0])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[0], value.Value())
+
+	ac := testwasmlib.ScFuncs.MapOfMapsAddrClear(ctx)
+	ac.Params.NameAddr().SetValue(mapNames[0])
+	ac.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.KeyAddr().SetValue(mapKeys[0])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, "", value.Value())
+}
+
+func TestMapOfMapsAddrSet(t *testing.T) {
+	ctx := setupTest(t)
+
+	mapNames, mapKeys, mapVals := genTestAddress(ctx, 2), genTestAddress(ctx, 4), genTestAddress(ctx, 4)
+
+	as := testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.KeyAddr().SetValue(mapKeys[0])
+	as.Params.ValueAddr().SetValue(mapVals[0])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.KeyAddr().SetValue(mapKeys[1])
+	as.Params.ValueAddr().SetValue(mapVals[1])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[1])
+	as.Params.KeyAddr().SetValue(mapKeys[2])
+	as.Params.ValueAddr().SetValue(mapVals[2])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av := testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.KeyAddr().SetValue(mapKeys[0])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[0], value.Value())
+
+	av = testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.KeyAddr().SetValue(mapKeys[1])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[1], value.Value())
+
+	av = testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[1])
+	av.Params.KeyAddr().SetValue(mapKeys[2])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[2], value.Value())
+
+	as = testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[1])
+	as.Params.KeyAddr().SetValue(mapKeys[2])
+	as.Params.ValueAddr().SetValue(mapVals[3])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[1])
+	av.Params.KeyAddr().SetValue(mapKeys[2])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[3], value.Value())
+
+	as = testwasmlib.ScFuncs.MapOfMapsAddrSet(ctx)
+	as.Params.NameAddr().SetValue(mapNames[0])
+	as.Params.KeyAddr().SetValue(mapKeys[1])
+	as.Params.ValueAddr().SetValue(mapVals[3])
+	as.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapOfMapsAddrValue(ctx)
+	av.Params.NameAddr().SetValue(mapNames[0])
+	av.Params.KeyAddr().SetValue(mapKeys[1])
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value = av.Results.ValueAddr()
+	require.True(t, value.Exists())
+	require.EqualValues(t, mapVals[3], value.Value())
 }
 
 func TestMapOfMapsSet(t *testing.T) {

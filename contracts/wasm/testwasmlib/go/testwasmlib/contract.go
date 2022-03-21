@@ -9,65 +9,104 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
+type ArrayOfArraysAddrAppendCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfArraysAddrAppendParams
+}
+
+type ArrayOfArraysAddrClearCall struct {
+	Func    *wasmlib.ScFunc
+}
+
+type ArrayOfArraysAddrSetCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfArraysAddrSetParams
+}
+
 type ArrayOfArraysAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfArraysAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfArraysAppendParams
 }
 
 type ArrayOfArraysClearCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayOfArraysSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfArraysSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfArraysSetParams
 }
 
 type ArrayOfMapsClearCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayOfMapsSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfMapsSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfMapsSetParams
+}
+
+type MapOfArraysAddrAppendCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfArraysAddrAppendParams
+}
+
+type MapOfArraysAddrClearCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfArraysAddrClearParams
+}
+
+type MapOfArraysAddrSetCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfArraysAddrSetParams
 }
 
 type MapOfArraysAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapOfArraysAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfArraysAppendParams
 }
 
 type MapOfArraysClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapOfArraysClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfArraysClearParams
 }
 
 type MapOfArraysSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapOfArraysSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfArraysSetParams
+}
+
+type MapOfMapsAddrClearCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfMapsAddrClearParams
+}
+
+type MapOfMapsAddrSetCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfMapsAddrSetParams
 }
 
 type MapOfMapsClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapOfMapsClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfMapsClearParams
 }
 
 type MapOfMapsSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableMapOfMapsSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableMapOfMapsSetParams
 }
 
 type ParamTypesCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableParamTypesParams
+	Func    *wasmlib.ScFunc
+	Params  MutableParamTypesParams
 }
 
 type RandomCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type TakeAllowanceCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type TakeBalanceCall struct {
@@ -76,8 +115,19 @@ type TakeBalanceCall struct {
 }
 
 type TriggerEventCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTriggerEventParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTriggerEventParams
+}
+
+type ArrayOfArraysAddrLengthCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableArrayOfArraysAddrLengthResults
+}
+
+type ArrayOfArraysAddrValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableArrayOfArraysAddrValueParams
+	Results ImmutableArrayOfArraysAddrValueResults
 }
 
 type ArrayOfArraysLengthCall struct {
@@ -119,6 +169,18 @@ type IotaBalanceCall struct {
 	Results ImmutableIotaBalanceResults
 }
 
+type MapOfArraysAddrLengthCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableMapOfArraysAddrLengthParams
+	Results ImmutableMapOfArraysAddrLengthResults
+}
+
+type MapOfArraysAddrValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableMapOfArraysAddrValueParams
+	Results ImmutableMapOfArraysAddrValueResults
+}
+
 type MapOfArraysLengthCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableMapOfArraysLengthParams
@@ -131,6 +193,12 @@ type MapOfArraysValueCall struct {
 	Results ImmutableMapOfArraysValueResults
 }
 
+type MapOfMapsAddrValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableMapOfMapsAddrValueParams
+	Results ImmutableMapOfMapsAddrValueResults
+}
+
 type MapOfMapsValueCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableMapOfMapsValueParams
@@ -140,6 +208,22 @@ type MapOfMapsValueCall struct {
 type Funcs struct{}
 
 var ScFuncs Funcs
+
+func (sc Funcs) ArrayOfArraysAddrAppend(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAddrAppendCall {
+	f := &ArrayOfArraysAddrAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAddrAppend)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayOfArraysAddrClear(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAddrClearCall {
+	return &ArrayOfArraysAddrClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAddrClear)}
+}
+
+func (sc Funcs) ArrayOfArraysAddrSet(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAddrSetCall {
+	f := &ArrayOfArraysAddrSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAddrSet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
 
 func (sc Funcs) ArrayOfArraysAppend(ctx wasmlib.ScFuncCallContext) *ArrayOfArraysAppendCall {
 	f := &ArrayOfArraysAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfArraysAppend)}
@@ -167,6 +251,24 @@ func (sc Funcs) ArrayOfMapsSet(ctx wasmlib.ScFuncCallContext) *ArrayOfMapsSetCal
 	return f
 }
 
+func (sc Funcs) MapOfArraysAddrAppend(ctx wasmlib.ScFuncCallContext) *MapOfArraysAddrAppendCall {
+	f := &MapOfArraysAddrAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfArraysAddrAppend)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) MapOfArraysAddrClear(ctx wasmlib.ScFuncCallContext) *MapOfArraysAddrClearCall {
+	f := &MapOfArraysAddrClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfArraysAddrClear)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) MapOfArraysAddrSet(ctx wasmlib.ScFuncCallContext) *MapOfArraysAddrSetCall {
+	f := &MapOfArraysAddrSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfArraysAddrSet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 func (sc Funcs) MapOfArraysAppend(ctx wasmlib.ScFuncCallContext) *MapOfArraysAppendCall {
 	f := &MapOfArraysAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfArraysAppend)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -181,6 +283,18 @@ func (sc Funcs) MapOfArraysClear(ctx wasmlib.ScFuncCallContext) *MapOfArraysClea
 
 func (sc Funcs) MapOfArraysSet(ctx wasmlib.ScFuncCallContext) *MapOfArraysSetCall {
 	f := &MapOfArraysSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfArraysSet)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) MapOfMapsAddrClear(ctx wasmlib.ScFuncCallContext) *MapOfMapsAddrClearCall {
+	f := &MapOfMapsAddrClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfMapsAddrClear)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) MapOfMapsAddrSet(ctx wasmlib.ScFuncCallContext) *MapOfMapsAddrSetCall {
+	f := &MapOfMapsAddrSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapOfMapsAddrSet)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -220,6 +334,19 @@ func (sc Funcs) TakeBalance(ctx wasmlib.ScFuncCallContext) *TakeBalanceCall {
 func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {
 	f := &TriggerEventCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTriggerEvent)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) ArrayOfArraysAddrLength(ctx wasmlib.ScViewCallContext) *ArrayOfArraysAddrLengthCall {
+	f := &ArrayOfArraysAddrLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfArraysAddrLength)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) ArrayOfArraysAddrValue(ctx wasmlib.ScViewCallContext) *ArrayOfArraysAddrValueCall {
+	f := &ArrayOfArraysAddrValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfArraysAddrValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
@@ -269,6 +396,20 @@ func (sc Funcs) IotaBalance(ctx wasmlib.ScViewCallContext) *IotaBalanceCall {
 	return f
 }
 
+func (sc Funcs) MapOfArraysAddrLength(ctx wasmlib.ScViewCallContext) *MapOfArraysAddrLengthCall {
+	f := &MapOfArraysAddrLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapOfArraysAddrLength)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) MapOfArraysAddrValue(ctx wasmlib.ScViewCallContext) *MapOfArraysAddrValueCall {
+	f := &MapOfArraysAddrValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapOfArraysAddrValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
 func (sc Funcs) MapOfArraysLength(ctx wasmlib.ScViewCallContext) *MapOfArraysLengthCall {
 	f := &MapOfArraysLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapOfArraysLength)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -278,6 +419,13 @@ func (sc Funcs) MapOfArraysLength(ctx wasmlib.ScViewCallContext) *MapOfArraysLen
 
 func (sc Funcs) MapOfArraysValue(ctx wasmlib.ScViewCallContext) *MapOfArraysValueCall {
 	f := &MapOfArraysValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapOfArraysValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) MapOfMapsAddrValue(ctx wasmlib.ScViewCallContext) *MapOfMapsAddrValueCall {
+	f := &MapOfMapsAddrValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapOfMapsAddrValue)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

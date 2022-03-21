@@ -254,3 +254,107 @@ func viewMapOfMapsValue(ctx wasmlib.ScViewContext, f *MapOfMapsValueContext) {
 	key := f.Params.Key().Value()
 	f.Results.Value().SetValue(mmap.GetString(key).Value())
 }
+
+func funcMapOfArraysAddrAppend(ctx wasmlib.ScFuncContext, f *MapOfArraysAddrAppendContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddrMapOfArrays().GetAddressArray(addr)
+	value := f.Params.ValueAddr().Value()
+	array.AppendAddress().SetValue(value)
+}
+
+func funcMapOfArraysAddrClear(ctx wasmlib.ScFuncContext, f *MapOfArraysAddrClearContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddrMapOfArrays().GetAddressArray(addr)
+	array.Clear()
+}
+
+func funcMapOfArraysAddrSet(ctx wasmlib.ScFuncContext, f *MapOfArraysAddrSetContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddrMapOfArrays().GetAddressArray(addr)
+	index := f.Params.Index().Value()
+	value := f.Params.ValueAddr().Value()
+	array.GetAddress(index).SetValue(value)
+}
+
+func viewMapOfArraysAddrLength(ctx wasmlib.ScViewContext, f *MapOfArraysAddrLengthContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddrMapOfArrays().GetAddressArray(addr)
+	length := array.Length()
+	f.Results.Length().SetValue(length)
+}
+
+func viewMapOfArraysAddrValue(ctx wasmlib.ScViewContext, f *MapOfArraysAddrValueContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddrMapOfArrays().GetAddressArray(addr)
+	index := f.Params.Index().Value()
+	value := array.GetAddress(index).Value()
+	f.Results.ValueAddr().SetValue(value)
+}
+
+func funcArrayOfArraysAddrAppend(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrAppendContext) {
+	index := f.Params.Index().Value()
+	valLen := f.Params.ValueAddr().Length()
+
+	var sa ArrayOfMutableAddress
+	if f.State.StringArrayOfArrays().Length() <= index {
+		sa = f.State.AddrArrayOfArrays().AppendAddressArray()
+	} else {
+		sa = f.State.AddrArrayOfArrays().GetAddressArray(index)
+	}
+
+	for i := uint32(0); i < valLen; i++ {
+		elt := f.Params.ValueAddr().GetAddress(i).Value()
+		sa.AppendAddress().SetValue(elt)
+	}
+}
+
+func viewArrayOfArraysAddrLength(ctx wasmlib.ScViewContext, f *ArrayOfArraysAddrLengthContext) {
+	length := f.State.AddrArrayOfArrays().Length()
+	f.Results.Length().SetValue(length)
+}
+
+func viewArrayOfArraysAddrValue(ctx wasmlib.ScViewContext, f *ArrayOfArraysAddrValueContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+
+	elt := f.State.AddrArrayOfArrays().GetAddressArray(index0).GetAddress(index1).Value()
+	f.Results.ValueAddr().SetValue(elt)
+}
+
+func funcArrayOfArraysAddrClear(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrClearContext) {
+	length := f.State.AddrArrayOfArrays().Length()
+	for i := uint32(0); i < length; i++ {
+		array := f.State.AddrArrayOfArrays().GetAddressArray(i)
+		array.Clear()
+	}
+	f.State.AddrArrayOfArrays().Clear()
+}
+
+func funcArrayOfArraysAddrSet(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAddrSetContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+	array := f.State.AddrArrayOfArrays().GetAddressArray(index0)
+	value := f.Params.ValueAddr().Value()
+	array.GetAddress(index1).SetValue(value)
+}
+
+func funcMapOfMapsAddrClear(ctx wasmlib.ScFuncContext, f *MapOfMapsAddrClearContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddrMapOfMaps().GetAddressMap(name)
+	myMap.Clear()
+}
+
+func funcMapOfMapsAddrSet(ctx wasmlib.ScFuncContext, f *MapOfMapsAddrSetContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddrMapOfMaps().GetAddressMap(name)
+	key := f.Params.KeyAddr().Value()
+	value := f.Params.ValueAddr().Value()
+	myMap.GetAddress(key).SetValue(value)
+}
+
+func viewMapOfMapsAddrValue(ctx wasmlib.ScViewContext, f *MapOfMapsAddrValueContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddrMapOfMaps().GetAddressMap(name)
+	key := f.Params.KeyAddr().Value()
+	f.Results.ValueAddr().SetValue(myMap.GetAddress(key).Value())
+}
