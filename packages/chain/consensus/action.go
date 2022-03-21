@@ -599,17 +599,16 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 		return
 	}
 	switch msg.State {
-	case "ledgerstate.Pending": // TODO: set real inclusion state names
-		c.workflow.setTransactionSeen()
-		c.log.Debugf("processTxInclusionState: transaction id %v is pending.", finalTxIDStr)
-	case "ledgerstate.Confirmed":
+	case "noTransaction":
+		c.log.Debugf("processTxInclusionState: transaction id %v is not known.", finalTxIDStr)
+	case "included":
 		c.workflow.setTransactionSeen()
 		c.workflow.setCompleted()
 		c.refreshConsensusInfo()
-		c.log.Debugf("processTxInclusionState: transaction id %s is confirmed; workflow finished", finalTxIDStr)
-	case "ledgerstate.Rejected":
+		c.log.Debugf("processTxInclusionState: transaction id %s is included; workflow finished", finalTxIDStr)
+	case "conflicitng":
 		c.workflow.setTransactionSeen()
-		c.log.Infof("processTxInclusionState: transaction id %s is rejected; restarting consensus.", finalTxIDStr)
+		c.log.Infof("processTxInclusionState: transaction id %s is conflicting; restarting consensus.", finalTxIDStr)
 		c.resetWorkflow()
 	}
 }
