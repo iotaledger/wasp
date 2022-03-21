@@ -583,31 +583,35 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.runVMIfNeeded()
 }
 
-func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
-	panic("TODO implement or remove")
-	// 	if !c.workflow.IsTransactionFinalized() {
-	// 		c.log.Debugf("processInclusionState: transaction not finalized -> skipping.")
-	// 		return
-	// 	}
-	// 	if msg.TxID != c.finalTx.ID() {
-	// 		c.log.Debugf("processInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-	// 			c.finalTx.ID().Base58(), msg.TxID.Base58())
-	// 		return
-	// 	}
-	// 	switch msg.State {
-	// 	case ledgerstate.Pending:
-	// 		c.workflow.setTransactionSeen()
-	// 		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
-	// 	case ledgerstate.Confirmed:
-	// 		c.workflow.setTransactionSeen()
-	// 		c.workflow.setCompleted()
-	// 		c.refreshConsensusInfo()
-	// 		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
-	// 	case ledgerstate.Rejected:
-	// 		c.workflow.setTransactionSeen()
-	// 		c.log.Infof("processInclusionState: transaction id %s is rejected; restarting consensus.", msg.TxID.Base58())
-	// 		c.resetWorkflow()
-	// 	}
+func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
+	if !c.workflow.IsTransactionFinalized() {
+		c.log.Debugf("processTxInclusionState: transaction not finalized -> skipping.")
+		return
+	}
+	finalTxID, err := c.finalTx.ID()
+	finalTxIDStr := iscp.TxID(finalTxID)
+	if err != nil {
+		c.log.Panicf("processTxInclusionState: cannot calculate final transaction id: %v", err)
+	}
+	if msg.TxID != *finalTxID {
+		c.log.Debugf("processTxInclusionState: current transaction id %v does not match the received one %v -> skipping.",
+			finalTxIDStr, iscp.TxID(&msg.TxID))
+		return
+	}
+	switch msg.State {
+	case "ledgerstate.Pending": // TODO: set real inclusion state names
+		c.workflow.setTransactionSeen()
+		c.log.Debugf("processTxInclusionState: transaction id %v is pending.", finalTxIDStr)
+	case "ledgerstate.Confirmed":
+		c.workflow.setTransactionSeen()
+		c.workflow.setCompleted()
+		c.refreshConsensusInfo()
+		c.log.Debugf("processTxInclusionState: transaction id %s is confirmed; workflow finished", finalTxIDStr)
+	case "ledgerstate.Rejected":
+		c.workflow.setTransactionSeen()
+		c.log.Infof("processTxInclusionState: transaction id %s is rejected; restarting consensus.", finalTxIDStr)
+		c.resetWorkflow()
+	}
 }
 
 func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.Transaction, *iscp.AliasOutputWithID, error) {

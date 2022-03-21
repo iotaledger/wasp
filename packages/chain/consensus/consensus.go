@@ -132,10 +132,9 @@ func New(
 			Time:           time.Unix(0, int64(milestonePointer.Timestamp)),
 		}
 	})
-	// TODO!!!
-	/*ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
-	})*/
+	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {
+		ret.EnqueueTxInclusionsStateMsg(txID, inclusionState)
+	})
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
@@ -238,14 +237,14 @@ func (c *consensus) recvLoop() {
 			} else {
 				eventSignedResultAckMsgCh = nil
 			}
-			/*		case msg, ok := <-eventInclusionStateMsgCh:
-					if ok {
-						c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
-						c.handleInclusionState(msg.(*messages.InclusionStateMsg))
-						c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
-					} else {
-						eventInclusionStateMsgCh = nil
-					}*/
+		case msg, ok := <-eventInclusionStateMsgCh:
+			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState...")
+				c.handleTxInclusionState(msg.(*messages.TxInclusionStateMsg))
+				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState... Done")
+			} else {
+				eventInclusionStateMsgCh = nil
+			}
 		case msg, ok := <-eventACSMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")

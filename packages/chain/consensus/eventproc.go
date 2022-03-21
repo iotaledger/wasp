@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -52,19 +53,19 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 	c.takeAction()
 }
 
-/*func (c *consensus) EnqueueInclusionsStateMsg(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
-	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
+func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclusionState string) {
+	c.eventInclusionStateMsgPipe.In() <- &messages.TxInclusionStateMsg{
 		TxID:  txID,
 		State: inclusionState,
 	}
-}*/
+}
 
-/*func (c *consensus) handleInclusionState(msg *messages.InclusionStateMsg) {
-	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", iscp.TxID(&msg.TxID), msg.State.String())
-	c.processInclusionState(msg)
+func (c *consensus) handleTxInclusionState(msg *messages.TxInclusionStateMsg) {
+	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", iscp.TxID(&msg.TxID), msg.State)
+	c.processTxInclusionState(msg)
 
 	c.takeAction()
-}*/
+}
 
 func (c *consensus) EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.eventACSMsgPipe.In() <- msg
