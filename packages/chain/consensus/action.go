@@ -38,7 +38,7 @@ func (c *consensus) takeAction() {
 	c.broadcastSignedResultIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
-	//	c.pullInclusionStateIfNeeded()
+	c.pullInclusionStateIfNeeded()
 }
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
@@ -418,7 +418,7 @@ func (c *consensus) postTransactionIfNeeded() {
 
 // pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
 // starts immediately after finalization of the transaction, not after posting it
-/*func (c *consensus) pullInclusionStateIfNeeded() {
+func (c *consensus) pullInclusionStateIfNeeded() {
 	if !c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("pullInclusionState not needed: transaction is not finalized")
 		return
@@ -431,10 +431,14 @@ func (c *consensus) postTransactionIfNeeded() {
 		c.log.Debugf("pullInclusionState not needed: delayed till %v", c.pullInclusionStateDeadline)
 		return
 	}
-	c.nodeConn.PullTransactionInclusionState(c.finalTx.ID())
+	finalTxID, err := c.finalTx.ID()
+	if err != nil {
+		c.log.Panicf("pullInclusionState: cannot calculate final transaction id: %v", err)
+	}
+	c.nodeConn.PullTxInclusionState(*finalTxID)
 	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
 	c.log.Debugf("pullInclusionState: request for inclusion state sent")
-}*/
+}
 
 // prepareBatchProposal creates a batch proposal structure out of requests
 func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
