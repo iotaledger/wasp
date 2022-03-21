@@ -20,9 +20,39 @@ contract ISCTest {
 	}
 
 	event EntropyEvent(bytes32 entropy);
-
 	function emitEntropy() public {
 		bytes32 e = isc.getEntropy();
 		emit EntropyEvent(e);
+	}
+
+	event RequestIDEvent(ISCRequestID reqID);
+	function emitRequestID() public {
+		ISCRequestID memory reqID = isc.getRequestID();
+		emit RequestIDEvent(reqID);
+	}
+
+	event SenderAccountEvent(ISCAgentID sender);
+	function emitSenderAccount() public {
+		ISCAgentID memory sender = isc.getSenderAccount();
+		emit SenderAccountEvent(sender);
+	}
+
+	event SenderAddressEvent(IotaAddress sender);
+	function emitSenderAddress() public {
+		IotaAddress memory sender = isc.getSenderAddress();
+		emit SenderAddressEvent(sender);
+	}
+
+	event AllowanceIotasEvent(uint64 iotas);
+	function emitAllowanceIotas() public {
+		emit AllowanceIotasEvent(isc.getAllowanceIotas());
+	}
+
+	event AllowanceNativeTokenEvent(IotaNativeToken token);
+	function emitAllowanceNativeTokens() public {
+		uint16 n = isc.getAllowanceNativeTokensLen();
+		for (uint16 i = 0; i < n; i++) {
+			emit AllowanceNativeTokenEvent(isc.getAllowanceNativeToken(i));
+		}
 	}
 }

@@ -371,6 +371,15 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	return
 }
 
+func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
+	res, err := e.callFn(opts, fnName, args...)
+	require.NoError(e.chain.t, err)
+	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+	require.Len(e.chain.t, res.evmReceipt.Logs, 1)
+	err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+	require.NoError(e.chain.t, err)
+}
+
 func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, args []interface{}, v interface{}) {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
@@ -404,10 +413,6 @@ func (i *iscTestContractInstance) triggerEvent(s string) (res callFnResult, err 
 
 func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res callFnResult, err error) {
 	return i.callFn(opts, "triggerEventFail", s)
-}
-
-func (i *iscTestContractInstance) emitEntropy() (res callFnResult, err error) {
-	return i.callFn(nil, "emitEntropy")
 }
 
 func (s *storageContractInstance) retrieve() uint32 {

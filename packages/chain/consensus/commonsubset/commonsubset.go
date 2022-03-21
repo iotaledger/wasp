@@ -79,7 +79,7 @@ func NewCommonSubset(
 	sessionID uint64,
 	stateIndex uint32,
 	committeePeerGroup peering.GroupProvider,
-	dkShare *tcrypto.DKShare,
+	dkShare tcrypto.DKShare,
 	allRandom bool, // Set to true to have real CC rounds for each epoch. That's for testing mostly.
 	outputCh chan map[uint16][]byte,
 	log *logger.Logger,
@@ -100,7 +100,7 @@ func NewCommonSubset(
 	binary.BigEndian.PutUint64(salt[:], sessionID)
 	acsCfg := hbbft.Config{
 		N:          nodeCount,
-		F:          nodeCount - int(dkShare.T),
+		F:          nodeCount - int(dkShare.GetT()),
 		ID:         uint64(ownIndex),
 		Nodes:      nodes,
 		BatchSize:  0, // Unused in ACS.

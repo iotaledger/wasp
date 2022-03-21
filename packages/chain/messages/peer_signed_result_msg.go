@@ -15,7 +15,7 @@ import (
 
 // Consensus -> Consensus
 type SignedResultMsg struct {
-	ChainInputID iotago.OutputID
+	ChainInputID *iotago.UTXOInput
 	EssenceHash  hashing.HashValue
 	SigShare     tbls.SigShare
 }
@@ -35,7 +35,7 @@ func NewSignedResultMsg(data []byte) (*SignedResultMsg, error) {
 	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
 		return nil, err
 	}
-	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil { // nolint:gocritic // - ignore sloppyReassign
+	if msg.ChainInputID, err = util.ReadOutputID(r); err != nil {
 		return nil, err
 	}
 	return msg, nil
@@ -48,7 +48,7 @@ func (msg *SignedResultMsg) Write(w io.Writer) error {
 	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.ChainInputID[:]); err != nil {
+	if err := util.WriteOutputID(w, msg.ChainInputID); err != nil {
 		return err
 	}
 	return nil

@@ -41,7 +41,7 @@ const (
 type proc struct {
 	dkgRef       string            // User supplied unique ID for this instance.
 	dkgID        peering.PeeringID // DKG procedure ID we are participating in.
-	dkShare      *tcrypto.DKShare  // This will be generated as a result of this procedure.
+	dkShare      tcrypto.DKShare   // This will be generated as a result of this procedure.
 	node         *Node             // DKG node we are running in.
 	nodeIndex    uint16            // Index of this node.
 	initiatorPub *cryptolib.PublicKey
@@ -53,7 +53,7 @@ type proc struct {
 	attachID     interface{}                      // We keep it here to be able to detach from the network.
 	peerMsgCh    chan *peering.PeerMessageGroupIn // A buffer for the received peer messages.
 	log          *logger.Logger                   // A logger to use.
-	myPubKey     *cryptolib.PublicKey              // Just to make logging easier.
+	myPubKey     *cryptolib.PublicKey             // Just to make logging easier.
 	steps        map[byte]*procStep               // All the steps for the procedure.
 }
 
@@ -579,7 +579,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 	}
 	p.log.Debugf(
 		"All reconstruct commits received, shared public: %v.",
-		p.dkShare.SharedPublic,
+		p.dkShare.GetSharedPublic(),
 	)
 	var pubShareMsg *initiatorPubShareMsg
 	if pubShareMsg, err = p.makeInitiatorPubShareMsg(step); err != nil {
@@ -601,7 +601,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, initRecv *peering
 	if p.dkShare == nil {
 		return nil, errors.New("there is no dkShare to commit")
 	}
-	p.dkShare.PublicShares = doneMsg.pubShares // Store public shares of all the other peers.
+	p.dkShare.SetPublicShares(doneMsg.pubShares) // Store public shares of all the other peers.
 	if err := p.node.registry.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
@@ -630,18 +630,18 @@ func (p *proc) nodeInQUAL(nodeIdx uint16) bool {
 func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error) {
 	var err error
 	var publicShareBytes []byte
-	if publicShareBytes, err = p.dkShare.PublicShares[*p.dkShare.Index].MarshalBinary(); err != nil {
+	if publicShareBytes, err = p.dkShare.GetPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
 		return nil, err
 	}
 	var signature []byte
-	if signature, err = bdn.Sign(p.node.blsSuite, p.dkShare.PrivateShare, publicShareBytes); err != nil {
+	if signature, err = bdn.Sign(p.node.blsSuite, p.dkShare.GetPrivateShare(), publicShareBytes); err != nil {
 		return nil, err
 	}
 	return &initiatorPubShareMsg{
 		step:          step,
-		sharedAddress: p.dkShare.Address,
-		sharedPublic:  p.dkShare.SharedPublic,
-		publicShare:   p.dkShare.PublicShares[*p.dkShare.Index],
+		sharedAddress: p.dkShare.GetAddress(),
+		sharedPublic:  p.dkShare.GetSharedPublic(),
+		publicShare:   p.dkShare.GetPublicShares()[*p.dkShare.GetIndex()],
 		signature:     signature,
 	}, nil
 }

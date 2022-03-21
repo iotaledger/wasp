@@ -51,14 +51,14 @@ type CommonSubsetCoordinator struct {
 	lock                        sync.RWMutex
 
 	netGroup peering.GroupProvider
-	dkShare  *tcrypto.DKShare
+	dkShare  tcrypto.DKShare
 	log      *logger.Logger
 }
 
 func NewCommonSubsetCoordinator(
 	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
-	dkShare *tcrypto.DKShare,
+	dkShare tcrypto.DKShare,
 	log *logger.Logger,
 ) *CommonSubsetCoordinator {
 	ret := &CommonSubsetCoordinator{

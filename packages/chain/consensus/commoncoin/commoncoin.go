@@ -24,14 +24,14 @@ import (
 // region blsCommonCoin ////////////////////////////////////////////////////////
 
 type blsCommonCoin struct {
-	dkShare   *tcrypto.DKShare // Key set used to generate the coin.
+	dkShare   tcrypto.DKShare // Key set used to generate the coin.
 	allRandom bool
 	salt      []byte // Bytes to use when generating SID.
 	nodeID    uint64
 	epochs    map[uint32]*blsCommonCoinEpoch
 }
 
-func NewBlsCommonCoin(dkShare *tcrypto.DKShare, salt []byte, allRandom bool) hbbft.CommonCoin {
+func NewBlsCommonCoin(dkShare tcrypto.DKShare, salt []byte, allRandom bool) hbbft.CommonCoin {
 	cc := blsCommonCoin{
 		dkShare:   dkShare,
 		allRandom: allRandom,
@@ -142,7 +142,7 @@ func (cce *blsCommonCoinEpoch) acceptShare(share tbls.SigShare) error {
 	if index, err = share.Index(); err != nil {
 		return xerrors.Errorf("unable to extract coin share index: %w", err)
 	}
-	if uint16(index) > dkShare.N {
+	if uint16(index) > dkShare.GetN() {
 		return xerrors.Errorf("invalid coin share index %v > N", index)
 	}
 	if _, ok := cce.shares[index]; ok {
@@ -150,7 +150,7 @@ func (cce *blsCommonCoinEpoch) acceptShare(share tbls.SigShare) error {
 		return nil
 	}
 	cce.shares[index] = share
-	if uint16(len(cce.shares)) < dkShare.T {
+	if uint16(len(cce.shares)) < dkShare.GetT() {
 		return xerrors.New("threshold not reached")
 	}
 	receivedShares := make([][]byte, 0)

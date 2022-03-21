@@ -5,7 +5,9 @@ package iscp
 
 import (
 	"bytes"
+	"fmt"
 
+	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -79,4 +81,15 @@ func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 		}
 	}
 	return ao1.Blocks.Equal(ao2.Blocks)
+}
+
+func UTXOInputIDFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
+	idBytes, err := marshalUtil.ReadBytes(iotago.OutputIDLength)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse output ID: %v", err)
+	}
+	var oid iotago.OutputID
+	copy(oid[:], idBytes)
+	return oid.UTXOInput(), nil
+
 }

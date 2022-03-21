@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -150,4 +151,8 @@ func RequestIsUnlockable(req AsOnLedger, chainAddress iotago.Address, currentTim
 		ConfMsIndex: currentTime.MilestoneIndex,
 		ConfUnix:    uint32(currentTime.Time.Unix()),
 	})
+}
+
+func RequestHash(req Request) hashing.HashValue {
+	return hashing.HashData(req.Bytes())
 }

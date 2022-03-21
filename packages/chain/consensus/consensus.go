@@ -33,8 +33,9 @@ type consensus struct {
 	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
-	stateOutput                      *iotago.AliasOutput
+	stateOutput                      *iscp.AliasOutputWithID
 	stateTimestamp                   time.Time
+	timeData                         *iscp.TimeData
 	acsSessionID                     uint64
 	consensusBatch                   *BatchProposal
 	consensusEntropy                 hashing.HashValue
@@ -83,7 +84,7 @@ const (
 
 func New(
 	chainCore chain.ChainCore,
-	mempool chain.Mempool,
+	mempool mempool.Mempool,
 	committee chain.Committee,
 	peerGroup peering.GroupProvider,
 	nodeConn chain.ChainNodeConnection,
@@ -124,10 +125,12 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	panic("TODO implement") // AttachToInclusionStateReceived needs to be refactored
-	// ret.nodeConn.AttachToInclusionStateReceived(func(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
-	// 	ret.EnqueueInclusionsStateMsg(txID, inclusionState)
-	// })
+	ret.nodeConn.AttachToTimeData(func(timeData *iscp.TimeData) {
+		ret.timeData = timeData
+	})
+	/*ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
+	})*/
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
@@ -230,14 +233,14 @@ func (c *consensus) recvLoop() {
 			} else {
 				eventSignedResultAckMsgCh = nil
 			}
-		case msg, ok := <-eventInclusionStateMsgCh:
-			if ok {
-				c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
-				c.handleInclusionState(msg.(*messages.InclusionStateMsg))
-				c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
-			} else {
-				eventInclusionStateMsgCh = nil
-			}
+			/*		case msg, ok := <-eventInclusionStateMsgCh:
+					if ok {
+						c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
+						c.handleInclusionState(msg.(*messages.InclusionStateMsg))
+						c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
+					} else {
+						eventInclusionStateMsgCh = nil
+					}*/
 		case msg, ok := <-eventACSMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")

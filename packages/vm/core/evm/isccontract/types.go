@@ -4,8 +4,12 @@
 package isccontract
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // ISCChainID matches the type definition in ISC.sol
@@ -32,6 +36,40 @@ func (c ISCChainID) MustUnwrap() *iscp.ChainID {
 		panic(err)
 	}
 	return ret
+}
+
+// IotaNativeTokenID matches the struct definition in ISC.sol
+type IotaNativeTokenID struct {
+	Data []byte
+}
+
+func WrapIotaNativeTokenID(id *iotago.NativeTokenID) IotaNativeTokenID {
+	return IotaNativeTokenID{Data: id[:]}
+}
+
+func (a IotaNativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
+	copy(ret[:], a.Data)
+	return
+}
+
+// IotaNativeToken matches the struct definition in ISC.sol
+type IotaNativeToken struct {
+	ID     IotaNativeTokenID
+	Amount *big.Int
+}
+
+func WrapIotaNativeToken(nt *iotago.NativeToken) IotaNativeToken {
+	return IotaNativeToken{
+		ID:     WrapIotaNativeTokenID(&nt.ID),
+		Amount: nt.Amount,
+	}
+}
+
+func (nt IotaNativeToken) Unwrap() *iotago.NativeToken {
+	return &iotago.NativeToken{
+		ID:     nt.ID.Unwrap(),
+		Amount: nt.Amount,
+	}
 }
 
 // IotaAddress matches the struct definition in ISC.sol
@@ -94,12 +132,6 @@ func init() {
 	}
 }
 
-func IotaNFTIDFromUnpackedArg(arg interface{}) (ret IotaNFTID) {
-	b := arg.([iotago.NFTIDLength]byte)
-	copy(ret[:], b[:])
-	return
-}
-
 func WrapISCNFTID(c iotago.NFTID) (ret IotaNFTID) {
 	copy(ret[:], c[:])
 	return
@@ -141,6 +173,33 @@ func (a ISCNFT) MustUnwrap() *iscp.NFT {
 	ret, err := a.Unwrap()
 	if err != nil {
 		panic(err)
+	}
+	return ret
+}
+
+// ISCDictItem matches the struct definition in ISC.sol
+type ISCDictItem struct {
+	Key   []byte
+	Value []byte
+}
+
+// ISCDict matches the struct definition in ISC.sol
+type ISCDict struct {
+	Items []ISCDictItem
+}
+
+func WrapISCDict(d dict.Dict) ISCDict {
+	items := make([]ISCDictItem, 0, len(d))
+	for k, v := range d {
+		items = append(items, ISCDictItem{Key: []byte(k), Value: v})
+	}
+	return ISCDict{Items: items}
+}
+
+func (d ISCDict) Unwrap() dict.Dict {
+	ret := dict.Dict{}
+	for _, item := range d.Items {
+		ret[kv.Key(item.Key)] = item.Value
 	}
 	return ret
 }
