@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
@@ -155,16 +156,23 @@ func verify(prop *snapshot.FileProperties) {
 
 	tm := util.NewTimer()
 
-	// decided not to use optimistic state reader here because
-	// rdr.TrieNodeStore() is not not-cached. It is 3-4 times slower than the cached one with st.TrieNodeStore()
-	//
-	//glb := coreutil.NewChainStateSync()
-	//glb.SetSolidIndex(st.BlockIndex())
-	//rdr := st.OptimisticStateReader(glb)
-	//rdr.SetBaseline()
+	const useCachedNodeStore = true
+	const clearCacheEach = 100_000
+
+	var nodeStore trie.NodeStore
+	if useCachedNodeStore {
+		nodeStore = st.TrieNodeStore()
+	} else {
+		// this is uo to 3-4 times slower
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(st.BlockIndex())
+		rdr := st.OptimisticStateReader(glb)
+		rdr.SetBaseline()
+		nodeStore = rdr.TrieNodeStore()
+	}
 
 	err = kvstream.Iterate(func(k, v []byte) bool {
-		proof := state.CommitmentModel.Proof(k, st.TrieNodeStore())
+		proof := state.CommitmentModel.Proof(k, nodeStore)
 		if errW = proof.Validate(c, v); errW != nil {
 			return false
 		}
@@ -172,6 +180,8 @@ func verify(prop *snapshot.FileProperties) {
 		if count%reportEach == 0 {
 			took := tm.Duration()
 			fmt.Printf("verified total %d records. Took %v, %d rec/sec\n", count, took, (1000*int64(count))/took.Milliseconds())
+		}
+		if useCachedNodeStore && count%clearCacheEach == 0 {
 			_ = st.Save() // just clears trie cache, to prevent the whole trie coming to memory
 		}
 		return true
