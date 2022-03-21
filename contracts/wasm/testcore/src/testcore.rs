@@ -53,15 +53,15 @@ pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
     ctx.log("doing nothing...");
 }
 
-pub fn func_get_minted_supply(ctx: &ScFuncContext, f: &GetMintedSupplyContext) {
-    let minted = ctx.minted();
-    let minted_colors = minted.colors();
-    ctx.require(minted_colors.len() == 1, "test only supports one minted color");
-    let color = minted_colors.get(0).unwrap();
-    let amount = minted.balance(&color);
-    f.results.minted_supply().set_value(amount);
-    f.results.minted_color().set_value(&color);
-}
+// pub fn func_get_minted_supply(ctx: &ScFuncContext, f: &GetMintedSupplyContext) {
+//     let minted = ctx.minted();
+//     let minted_colors = minted.colors();
+//     ctx.require(minted_colors.len() == 1, "test only supports one minted color");
+//     let color = minted_colors.get(0).unwrap();
+//     let amount = minted.balance(&color);
+//     f.results.minted_supply().set_value(amount);
+//     f.results.minted_color().set_value(&color);
+// }
 
 pub fn func_inc_counter(_ctx: &ScFuncContext, f: &IncCounterContext) {
     let counter = f.state.counter();
@@ -100,8 +100,8 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
 }
 
 pub fn func_send_to_address(ctx: &ScFuncContext, f: &SendToAddressContext) {
-    let balances = ScTransfers::from_balances(ctx.balances());
-    ctx.send(&f.params.address().value(), &balances);
+    // let balances = ScTransfers::from_balances(ctx.balances());
+    // ctx.send(&f.params.address().value(), &balances);
 }
 
 pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
@@ -109,9 +109,10 @@ pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
 }
 
 pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
+    let program_hash = ctx.utility().hash_blake2b(SC_NAME.as_bytes());
     let spawn_name = SC_NAME.to_string() + "_spawned";
     let spawn_descr = "spawned contract description";
-    ctx.deploy_contract(&f.params.prog_hash().value(), &spawn_name, spawn_descr, None);
+    ctx.deploy_contract(&program_hash, &spawn_name, spawn_descr, None);
 
     let spawn_hname = ctx.utility().hash_name(&spawn_name);
     for _i in 0..5 {
@@ -158,10 +159,10 @@ pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext)
     ctx.panic(MSG_FULL_PANIC);
 }
 
-pub fn func_withdraw_to_chain(ctx: &ScFuncContext, f: &WithdrawToChainContext) {
-    let xx = coreaccounts::ScFuncs::withdraw(ctx);
-    xx.func.post_to_chain(f.params.chain_id().value());
-}
+// pub fn func_withdraw_to_chain(ctx: &ScFuncContext, f: &WithdrawToChainContext) {
+//     let xx = coreaccounts::ScFuncs::withdraw(ctx);
+//     xx.func.post_to_chain(f.params.chain_id().value());
+// }
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {
     ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
@@ -235,4 +236,34 @@ pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
     let get_chain_info = coregovernance::ScFuncs::get_chain_info(ctx);
     get_chain_info.func.call();
     f.results.sandbox_call().set_value(&get_chain_info.results.description().value());
+}
+
+pub fn func_claim_allowance(ctx: &ScFuncContext, f: &ClaimAllowanceContext) {
+}
+
+pub fn func_estimate_min_dust(ctx: &ScFuncContext, f: &EstimateMinDustContext) {
+}
+
+pub fn func_infinite_loop(ctx: &ScFuncContext, f: &InfiniteLoopContext) {
+}
+
+pub fn func_ping_allowance_back(ctx: &ScFuncContext, f: &PingAllowanceBackContext) {
+}
+
+pub fn func_send_large_request(ctx: &ScFuncContext, f: &SendLargeRequestContext) {
+}
+
+pub fn func_send_nf_ts_back(ctx: &ScFuncContext, f: &SendNFTsBackContext) {
+}
+
+pub fn func_split_funds(ctx: &ScFuncContext, f: &SplitFundsContext) {
+}
+
+pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, f: &SplitFundsNativeTokensContext) {
+}
+
+pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContext) {
+}
+
+pub fn view_infinite_loop_view(ctx: &ScViewContext, f: &InfiniteLoopViewContext) {
 }

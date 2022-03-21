@@ -196,18 +196,6 @@ export class MutableRunRecursionParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableSendToAddressParams extends wasmtypes.ScProxy {
-	address(): wasmtypes.ScImmutableAddress {
-		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
-	}
-}
-
-export class MutableSendToAddressParams extends wasmtypes.ScProxy {
-	address(): wasmtypes.ScMutableAddress {
-		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
-	}
-}
-
 export class ImmutableSetIntParams extends wasmtypes.ScProxy {
 	intValue(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamIntValue));
@@ -228,18 +216,6 @@ export class MutableSetIntParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableSpawnParams extends wasmtypes.ScProxy {
-	progHash(): wasmtypes.ScImmutableHash {
-		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamProgHash));
-	}
-}
-
-export class MutableSpawnParams extends wasmtypes.ScProxy {
-	progHash(): wasmtypes.ScMutableHash {
-		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamProgHash));
-	}
-}
-
 export class ImmutableTestEventLogGenericDataParams extends wasmtypes.ScProxy {
 	counter(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamCounter));
@@ -252,15 +228,31 @@ export class MutableTestEventLogGenericDataParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableWithdrawToChainParams extends wasmtypes.ScProxy {
+export class ImmutableWithdrawFromChainParams extends wasmtypes.ScProxy {
 	chainID(): wasmtypes.ScImmutableChainID {
 		return new wasmtypes.ScImmutableChainID(this.proxy.root(sc.ParamChainID));
 	}
+
+	gasBudget(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamGasBudget));
+	}
+
+	iotasWithdrawal(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamIotasWithdrawal));
+	}
 }
 
-export class MutableWithdrawToChainParams extends wasmtypes.ScProxy {
+export class MutableWithdrawFromChainParams extends wasmtypes.ScProxy {
 	chainID(): wasmtypes.ScMutableChainID {
 		return new wasmtypes.ScMutableChainID(this.proxy.root(sc.ParamChainID));
+	}
+
+	gasBudget(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamGasBudget));
+	}
+
+	iotasWithdrawal(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamIotasWithdrawal));
 	}
 }
 

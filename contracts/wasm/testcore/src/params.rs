@@ -250,28 +250,6 @@ impl MutableRunRecursionParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableSendToAddressParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSendToAddressParams {
-    pub fn address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableSendToAddressParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableSendToAddressParams {
-    pub fn address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
-	}
-}
-
-#[derive(Clone)]
 pub struct ImmutableSetIntParams {
 	pub(crate) proxy: Proxy,
 }
@@ -302,28 +280,6 @@ impl MutableSetIntParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableSpawnParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSpawnParams {
-    pub fn prog_hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.proxy.root(PARAM_PROG_HASH))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableSpawnParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableSpawnParams {
-    pub fn prog_hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.proxy.root(PARAM_PROG_HASH))
-	}
-}
-
-#[derive(Clone)]
 pub struct ImmutableTestEventLogGenericDataParams {
 	pub(crate) proxy: Proxy,
 }
@@ -346,24 +302,40 @@ impl MutableTestEventLogGenericDataParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableWithdrawToChainParams {
+pub struct ImmutableWithdrawFromChainParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableWithdrawToChainParams {
+impl ImmutableWithdrawFromChainParams {
     pub fn chain_id(&self) -> ScImmutableChainID {
 		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
+	}
+
+    pub fn gas_budget(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_GAS_BUDGET))
+	}
+
+    pub fn iotas_withdrawal(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_IOTAS_WITHDRAWAL))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableWithdrawToChainParams {
+pub struct MutableWithdrawFromChainParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableWithdrawToChainParams {
+impl MutableWithdrawFromChainParams {
     pub fn chain_id(&self) -> ScMutableChainID {
 		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
+	}
+
+    pub fn gas_budget(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_GAS_BUDGET))
+	}
+
+    pub fn iotas_withdrawal(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_IOTAS_WITHDRAWAL))
 	}
 }
 

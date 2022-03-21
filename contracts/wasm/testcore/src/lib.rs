@@ -28,15 +28,22 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
     	FUNC_CALL_ON_CHAIN,
     	FUNC_CHECK_CONTEXT_FROM_FULL_EP,
+    	FUNC_CLAIM_ALLOWANCE,
     	FUNC_DO_NOTHING,
-    	FUNC_GET_MINTED_SUPPLY,
+    	FUNC_ESTIMATE_MIN_DUST,
     	FUNC_INC_COUNTER,
+    	FUNC_INFINITE_LOOP,
     	FUNC_INIT,
     	FUNC_PASS_TYPES_FULL,
+    	FUNC_PING_ALLOWANCE_BACK,
     	FUNC_RUN_RECURSION,
+    	FUNC_SEND_LARGE_REQUEST,
+    	FUNC_SEND_NF_TS_BACK,
     	FUNC_SEND_TO_ADDRESS,
     	FUNC_SET_INT,
     	FUNC_SPAWN,
+    	FUNC_SPLIT_FUNDS,
+    	FUNC_SPLIT_FUNDS_NATIVE_TOKENS,
     	FUNC_TEST_BLOCK_CONTEXT1,
     	FUNC_TEST_BLOCK_CONTEXT2,
     	FUNC_TEST_CALL_PANIC_FULL_EP,
@@ -46,12 +53,13 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	FUNC_TEST_EVENT_LOG_EVENT_DATA,
     	FUNC_TEST_EVENT_LOG_GENERIC_DATA,
     	FUNC_TEST_PANIC_FULL_EP,
-    	FUNC_WITHDRAW_TO_CHAIN,
+    	FUNC_WITHDRAW_FROM_CHAIN,
     	VIEW_CHECK_CONTEXT_FROM_VIEW_EP,
     	VIEW_FIBONACCI,
     	VIEW_GET_COUNTER,
     	VIEW_GET_INT,
     	VIEW_GET_STRING_VALUE,
+    	VIEW_INFINITE_LOOP_VIEW,
     	VIEW_JUST_VIEW,
     	VIEW_PASS_TYPES_VIEW,
     	VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW,
@@ -62,15 +70,22 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     funcs: &[
     	func_call_on_chain_thunk,
     	func_check_context_from_full_ep_thunk,
+    	func_claim_allowance_thunk,
     	func_do_nothing_thunk,
-    	func_get_minted_supply_thunk,
+    	func_estimate_min_dust_thunk,
     	func_inc_counter_thunk,
+    	func_infinite_loop_thunk,
     	func_init_thunk,
     	func_pass_types_full_thunk,
+    	func_ping_allowance_back_thunk,
     	func_run_recursion_thunk,
+    	func_send_large_request_thunk,
+    	func_send_nf_ts_back_thunk,
     	func_send_to_address_thunk,
     	func_set_int_thunk,
     	func_spawn_thunk,
+    	func_split_funds_thunk,
+    	func_split_funds_native_tokens_thunk,
     	func_test_block_context1_thunk,
     	func_test_block_context2_thunk,
     	func_test_call_panic_full_ep_thunk,
@@ -80,7 +95,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	func_test_event_log_event_data_thunk,
     	func_test_event_log_generic_data_thunk,
     	func_test_panic_full_ep_thunk,
-    	func_withdraw_to_chain_thunk,
+    	func_withdraw_from_chain_thunk,
 	],
     views: &[
     	view_check_context_from_view_ep_thunk,
@@ -88,6 +103,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_get_counter_thunk,
     	view_get_int_thunk,
     	view_get_string_value_thunk,
+    	view_infinite_loop_view_thunk,
     	view_just_view_thunk,
     	view_pass_types_view_thunk,
     	view_test_call_panic_view_ep_from_view_thunk,
@@ -146,6 +162,19 @@ fn func_check_context_from_full_ep_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcCheckContextFromFullEP ok");
 }
 
+pub struct ClaimAllowanceContext {
+	state: MutableTestCoreState,
+}
+
+fn func_claim_allowance_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcClaimAllowance");
+	let f = ClaimAllowanceContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_claim_allowance(ctx, &f);
+	ctx.log("testcore.funcClaimAllowance ok");
+}
+
 pub struct DoNothingContext {
 	state: MutableTestCoreState,
 }
@@ -159,20 +188,17 @@ fn func_do_nothing_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcDoNothing ok");
 }
 
-pub struct GetMintedSupplyContext {
-	results: MutableGetMintedSupplyResults,
+pub struct EstimateMinDustContext {
 	state: MutableTestCoreState,
 }
 
-fn func_get_minted_supply_thunk(ctx: &ScFuncContext) {
-	ctx.log("testcore.funcGetMintedSupply");
-	let f = GetMintedSupplyContext {
-		results: MutableGetMintedSupplyResults { proxy: results_proxy() },
+fn func_estimate_min_dust_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcEstimateMinDust");
+	let f = EstimateMinDustContext {
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
-	func_get_minted_supply(ctx, &f);
-	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("testcore.funcGetMintedSupply ok");
+	func_estimate_min_dust(ctx, &f);
+	ctx.log("testcore.funcEstimateMinDust ok");
 }
 
 pub struct IncCounterContext {
@@ -186,6 +212,19 @@ fn func_inc_counter_thunk(ctx: &ScFuncContext) {
 	};
 	func_inc_counter(ctx, &f);
 	ctx.log("testcore.funcIncCounter ok");
+}
+
+pub struct InfiniteLoopContext {
+	state: MutableTestCoreState,
+}
+
+fn func_infinite_loop_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcInfiniteLoop");
+	let f = InfiniteLoopContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_infinite_loop(ctx, &f);
+	ctx.log("testcore.funcInfiniteLoop ok");
 }
 
 pub struct InitContext {
@@ -229,6 +268,19 @@ fn func_pass_types_full_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcPassTypesFull ok");
 }
 
+pub struct PingAllowanceBackContext {
+	state: MutableTestCoreState,
+}
+
+fn func_ping_allowance_back_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcPingAllowanceBack");
+	let f = PingAllowanceBackContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_ping_allowance_back(ctx, &f);
+	ctx.log("testcore.funcPingAllowanceBack ok");
+}
+
 pub struct RunRecursionContext {
 	params: ImmutableRunRecursionParams,
 	results: MutableRunRecursionResults,
@@ -248,20 +300,41 @@ fn func_run_recursion_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcRunRecursion ok");
 }
 
+pub struct SendLargeRequestContext {
+	state: MutableTestCoreState,
+}
+
+fn func_send_large_request_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcSendLargeRequest");
+	let f = SendLargeRequestContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_send_large_request(ctx, &f);
+	ctx.log("testcore.funcSendLargeRequest ok");
+}
+
+pub struct SendNFTsBackContext {
+	state: MutableTestCoreState,
+}
+
+fn func_send_nf_ts_back_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcSendNFTsBack");
+	let f = SendNFTsBackContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_send_nf_ts_back(ctx, &f);
+	ctx.log("testcore.funcSendNFTsBack ok");
+}
+
 pub struct SendToAddressContext {
-	params: ImmutableSendToAddressParams,
 	state: MutableTestCoreState,
 }
 
 fn func_send_to_address_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSendToAddress");
 	let f = SendToAddressContext {
-		params: ImmutableSendToAddressParams { proxy: params_proxy() },
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
-
-	ctx.require(f.params.address().exists(), "missing mandatory address");
 	func_send_to_address(ctx, &f);
 	ctx.log("testcore.funcSendToAddress ok");
 }
@@ -284,19 +357,42 @@ fn func_set_int_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct SpawnContext {
-	params: ImmutableSpawnParams,
 	state: MutableTestCoreState,
 }
 
 fn func_spawn_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSpawn");
 	let f = SpawnContext {
-		params: ImmutableSpawnParams { proxy: params_proxy() },
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.prog_hash().exists(), "missing mandatory progHash");
 	func_spawn(ctx, &f);
 	ctx.log("testcore.funcSpawn ok");
+}
+
+pub struct SplitFundsContext {
+	state: MutableTestCoreState,
+}
+
+fn func_split_funds_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcSplitFunds");
+	let f = SplitFundsContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_split_funds(ctx, &f);
+	ctx.log("testcore.funcSplitFunds ok");
+}
+
+pub struct SplitFundsNativeTokensContext {
+	state: MutableTestCoreState,
+}
+
+fn func_split_funds_native_tokens_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcSplitFundsNativeTokens");
+	let f = SplitFundsNativeTokensContext {
+		state: MutableTestCoreState { proxy: state_proxy() },
+	};
+	func_split_funds_native_tokens(ctx, &f);
+	ctx.log("testcore.funcSplitFundsNativeTokens ok");
 }
 
 pub struct TestBlockContext1Context {
@@ -422,20 +518,22 @@ fn func_test_panic_full_ep_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcTestPanicFullEP ok");
 }
 
-pub struct WithdrawToChainContext {
-	params: ImmutableWithdrawToChainParams,
+pub struct WithdrawFromChainContext {
+	params: ImmutableWithdrawFromChainParams,
 	state: MutableTestCoreState,
 }
 
-fn func_withdraw_to_chain_thunk(ctx: &ScFuncContext) {
-	ctx.log("testcore.funcWithdrawToChain");
-	let f = WithdrawToChainContext {
-		params: ImmutableWithdrawToChainParams { proxy: params_proxy() },
+fn func_withdraw_from_chain_thunk(ctx: &ScFuncContext) {
+	ctx.log("testcore.funcWithdrawFromChain");
+	let f = WithdrawFromChainContext {
+		params: ImmutableWithdrawFromChainParams { proxy: params_proxy() },
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
-	func_withdraw_to_chain(ctx, &f);
-	ctx.log("testcore.funcWithdrawToChain ok");
+	ctx.require(f.params.gas_budget().exists(), "missing mandatory gasBudget");
+	ctx.require(f.params.iotas_withdrawal().exists(), "missing mandatory iotasWithdrawal");
+	func_withdraw_from_chain(ctx, &f);
+	ctx.log("testcore.funcWithdrawFromChain ok");
 }
 
 pub struct CheckContextFromViewEPContext {
@@ -528,6 +626,19 @@ fn view_get_string_value_thunk(ctx: &ScViewContext) {
 	view_get_string_value(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewGetStringValue ok");
+}
+
+pub struct InfiniteLoopViewContext {
+	state: ImmutableTestCoreState,
+}
+
+fn view_infinite_loop_view_thunk(ctx: &ScViewContext) {
+	ctx.log("testcore.viewInfiniteLoopView");
+	let f = InfiniteLoopViewContext {
+		state: ImmutableTestCoreState { proxy: state_proxy() },
+	};
+	view_infinite_loop_view(ctx, &f);
+	ctx.log("testcore.viewInfiniteLoopView ok");
 }
 
 pub struct JustViewContext {

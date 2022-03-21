@@ -25,30 +25,6 @@ func (s MutableCallOnChainResults) IntValue() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
 }
 
-type ImmutableGetMintedSupplyResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableGetMintedSupplyResults) MintedColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultMintedColor))
-}
-
-func (s ImmutableGetMintedSupplyResults) MintedSupply() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultMintedSupply))
-}
-
-type MutableGetMintedSupplyResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableGetMintedSupplyResults) MintedColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultMintedColor))
-}
-
-func (s MutableGetMintedSupplyResults) MintedSupply() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultMintedSupply))
-}
-
 type ImmutableRunRecursionResults struct {
 	proxy wasmtypes.Proxy
 }

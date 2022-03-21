@@ -53,15 +53,15 @@ export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext
     ctx.log("doing nothing...");
 }
 
-export function funcGetMintedSupply(ctx: wasmlib.ScFuncContext, f: sc.GetMintedSupplyContext): void {
-    let minted = ctx.minted();
-    let mintedColors = minted.colors();
-    ctx.require(mintedColors.length == 1, "test only supports one minted color");
-    let color = mintedColors[0];
-    let amount = minted.balance(color);
-    f.results.mintedSupply().setValue(amount);
-    f.results.mintedColor().setValue(color);
-}
+// export function funcGetMintedSupply(ctx: wasmlib.ScFuncContext, f: sc.GetMintedSupplyContext): void {
+//     let minted = ctx.minted();
+//     let mintedColors = minted.colors();
+//     ctx.require(mintedColors.length == 1, "test only supports one minted color");
+//     let color = mintedColors[0];
+//     let amount = minted.balance(color);
+//     f.results.mintedSupply().setValue(amount);
+//     f.results.mintedColor().setValue(color);
+// }
 
 export function funcIncCounter(ctx: wasmlib.ScFuncContext, f: sc.IncCounterContext): void {
     let counter = f.state.counter();
@@ -100,8 +100,8 @@ export function funcRunRecursion(ctx: wasmlib.ScFuncContext, f: sc.RunRecursionC
 }
 
 export function funcSendToAddress(ctx: wasmlib.ScFuncContext, f: sc.SendToAddressContext): void {
-    let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
-    ctx.send(f.params.address().value(), transfer);
+    // let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
+    // ctx.send(f.params.address().value(), transfer);
 }
 
 export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): void {
@@ -109,9 +109,10 @@ export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): voi
 }
 
 export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void {
+    let programHash = ctx.utility().hashBlake2b(wasmtypes.stringToBytes(sc.ScName));
     let spawnName = sc.ScName + "_spawned";
     let spawnDescr = "spawned contract description";
-    ctx.deployContract(f.params.progHash().value(), spawnName, spawnDescr, null);
+    ctx.deployContract(programHash, spawnName, spawnDescr, null);
 
     let spawnHname = ctx.utility().hname(spawnName);
     for (let i = 0; i < 5; i++) {
@@ -158,10 +159,10 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
     ctx.panic(MSG_FULL_PANIC);
 }
 
-export function funcWithdrawToChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawToChainContext): void {
-    let xx = coreaccounts.ScFuncs.withdraw(ctx);
-    xx.func.postToChain(f.params.chainID().value());
-}
+// export function funcWithdrawToChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawToChainContext): void {
+//     let xx = coreaccounts.ScFuncs.withdraw(ctx);
+//     xx.func.postToChain(f.params.chainID().value());
+// }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
@@ -235,4 +236,34 @@ export function viewTestSandboxCall(ctx: wasmlib.ScViewContext, f: sc.TestSandbo
     let getChainInfo = coregovernance.ScFuncs.getChainInfo(ctx);
     getChainInfo.func.call();
     f.results.sandboxCall().setValue(getChainInfo.results.description().value());
+}
+
+export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
+}
+
+export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
+}
+
+export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopContext): void {
+}
+
+export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllowanceBackContext): void {
+}
+
+export function funcSendLargeRequest(ctx: wasmlib.ScFuncContext, f: sc.SendLargeRequestContext): void {
+}
+
+export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackContext): void {
+}
+
+export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
+}
+
+export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
+}
+
+export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
+}
+
+export function viewInfiniteLoopView(ctx: wasmlib.ScViewContext, f: sc.InfiniteLoopViewContext): void {
 }

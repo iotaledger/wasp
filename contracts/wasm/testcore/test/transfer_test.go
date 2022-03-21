@@ -40,38 +40,38 @@ func TestDoNothingUser(t *testing.T) {
 	})
 }
 
-func TestWithdrawToAddress(t *testing.T) {
-	t.SkipNow()
-	run2(t, func(t *testing.T, w bool) {
-		ctx := deployTestCore(t, w)
-
-		user := ctx.NewSoloAgent()
-		bal := ctx.Balances(user)
-
-		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
-		nop.Func.TransferIotas(1234).Post()
-		require.NoError(t, ctx.Err)
-
-		bal.Chain += ctx.GasFee
-		bal.Add(user, 1234-ctx.GasFee)
-		bal.VerifyBalances(t)
-
-		// TODO
-		// send entire contract balance back to user
-		xfer := testcore.ScFuncs.SendToAddress(ctx.Sign(ctx.Originator()))
-		xfer.Params.Address().SetValue(user.ScAddress())
-		xfer.Func.Post()
-		require.NoError(t, ctx.Err)
-
-		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, solo.Saldo-42+42+1, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
-		require.EqualValues(t, 0, ctx.Balance(user))
-		originatorBalanceReducedBy(ctx, w, 2+1)
-		chainAccountBalances(ctx, w, 2, 2)
-	})
-}
+//func TestWithdrawToAddress(t *testing.T) {
+//	t.SkipNow()
+//	run2(t, func(t *testing.T, w bool) {
+//		ctx := deployTestCore(t, w)
+//
+//		user := ctx.NewSoloAgent()
+//		bal := ctx.Balances(user)
+//
+//		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
+//		nop.Func.TransferIotas(1234).Post()
+//		require.NoError(t, ctx.Err)
+//
+//		bal.Chain += ctx.GasFee
+//		bal.Add(user, 1234-ctx.GasFee)
+//		bal.VerifyBalances(t)
+//
+//		// TODO
+//		// send entire contract balance back to user
+//		xfer := testcore.ScFuncs.SendToAddress(ctx.Sign(ctx.Originator()))
+//		xfer.Params.Address().SetValue(user.ScAddress())
+//		xfer.Func.Post()
+//		require.NoError(t, ctx.Err)
+//
+//		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+//		require.EqualValues(t, solo.Saldo-42+42+1, user.Balance())
+//		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+//		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
+//		require.EqualValues(t, 0, ctx.Balance(user))
+//		originatorBalanceReducedBy(ctx, w, 2+1)
+//		chainAccountBalances(ctx, w, 2, 2)
+//	})
+//}
 
 func TestDoPanicUser(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {

@@ -14,7 +14,12 @@ import (
 const (
 	ContractNameDeployed = "exampleDeployTR"
 	MsgCoreOnlyPanic     = "========== core only ========="
+	MsgCounterNumber     = "[GenericData] Counter Number: "
+	MsgDoNothing         = "========== doing nothing"
+	MsgFailOnPurpose     = "failing on purpose"
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
+	MsgJustView          = "calling empty view entry point"
+	MsgTestingEvent      = "[Event] - Testing Event..."
 	MsgViewPanic         = "========== panic VIEW ========="
 )
 
@@ -33,7 +38,7 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 
 	counter := f.State.Counter()
 
-	ctx.Log("call depth = " + f.Params.IntValue().String() +
+	ctx.Log("param IN = " + f.Params.IntValue().String() +
 		", hnameContract = " + hnameContract.String() +
 		", hnameEP = " + hnameEP.String() +
 		", counter = " + counter.String())
@@ -58,39 +63,48 @@ func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFu
 
 //nolint:unparam
 func funcDoNothing(ctx wasmlib.ScFuncContext, f *DoNothingContext) {
-	ctx.Log("doing nothing...")
+	ctx.Log(MsgDoNothing)
 }
 
-func funcGetMintedSupply(ctx wasmlib.ScFuncContext, f *GetMintedSupplyContext) {
-	minted := ctx.Minted()
-	mintedColors := minted.Colors()
-	ctx.Require(len(mintedColors) == 1, "test only supports one minted color")
-	color := mintedColors[0]
-	amount := minted.Balance(color)
-	f.Results.MintedColor().SetValue(color)
-	f.Results.MintedSupply().SetValue(amount)
-}
+//func funcGetMintedSupply(ctx wasmlib.ScFuncContext, f *GetMintedSupplyContext) {
+//	//minted := ctx.Minted()
+//	//mintedColors := minted.Colors()
+//	//ctx.Require(len(mintedColors) == 1, "test only supports one minted color")
+//	//color := mintedColors[0]
+//	//amount := minted.Balance(color)
+//	//f.Results.MintedColor().SetValue(color)
+//	//f.Results.MintedSupply().SetValue(amount)
+//}
 
 func funcIncCounter(ctx wasmlib.ScFuncContext, f *IncCounterContext) {
 	counter := f.State.Counter()
 	counter.SetValue(counter.Value() + 1)
 }
 
+//nolint:unparam
+func funcInfiniteLoop(ctx wasmlib.ScFuncContext, f *InfiniteLoopContext) {
+	//nolint:staticcheck
+	for {
+		// do nothing, just waste gas
+	}
+}
+
 func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	if f.Params.Fail().Exists() {
-		ctx.Panic("failing on purpose")
+		ctx.Panic(MsgFailOnPurpose)
 	}
 }
 
 func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(ParamHash))
-	ctx.Require(f.Params.Hash().Value() == hash, "Hash wrong")
-	ctx.Require(f.Params.Int64().Value() == 42, "int64 wrong")
-	ctx.Require(f.Params.Int64Zero().Value() == 0, "int64-0 wrong")
-	ctx.Require(f.Params.String().Value() == string(ParamString), "string wrong")
-	ctx.Require(f.Params.StringZero().Value() == "", "string-0 wrong")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "Hname wrong")
-	ctx.Require(f.Params.HnameZero().Value() == 0, "Hname-0 wrong")
+	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
+	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "wrong hname")
+	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
+	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
+	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")
+	ctx.Require(f.Params.String().Value() == ParamString, "wrong string")
+	ctx.Require(f.Params.StringZero().Value() == "", "wrong string-0")
+	// TODO more?
 }
 
 func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
@@ -108,21 +122,35 @@ func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
 }
 
 func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
-	transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
-	ctx.Send(f.Params.Address().Value(), transfer)
+	// transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
+	// ctx.Send(f.Params.Address().Value(), transfer)
 }
 
 func funcSetInt(ctx wasmlib.ScFuncContext, f *SetIntContext) {
 	f.State.Ints().GetInt64(f.Params.Name().Value()).SetValue(f.Params.IntValue().Value())
 }
 
+func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
+	programHash := ctx.Utility().HashBlake2b([]byte(ScName))
+	spawnName := ScName + "_spawned"
+	spawnDescr := "spawned contract description"
+	ctx.DeployContract(programHash, spawnName, spawnDescr, nil)
+
+	spawnHname := wasmtypes.NewScHname(spawnName)
+	for i := 0; i < 5; i++ {
+		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
+	}
+}
+
 //nolint:unparam
 func funcTestCallPanicFullEP(ctx wasmlib.ScFuncContext, f *TestCallPanicFullEPContext) {
+	ctx.Log("will be calling entry point '" + FuncTestPanicFullEP + "' from full EP")
 	ScFuncs.TestPanicFullEP(ctx).Func.Call()
 }
 
 //nolint:unparam
 func funcTestCallPanicViewEPFromFull(ctx wasmlib.ScFuncContext, f *TestCallPanicViewEPFromFullContext) {
+	ctx.Log("will be calling entry point '" + ViewTestPanicViewEP + "' from full EP")
 	ScFuncs.TestPanicViewEP(ctx).Func.Call()
 }
 
@@ -133,17 +161,17 @@ func funcTestChainOwnerIDFull(ctx wasmlib.ScFuncContext, f *TestChainOwnerIDFull
 //nolint:unparam
 func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, f *TestEventLogDeployContext) {
 	// deploy the same contract with another name
-	programHash := ctx.Utility().HashBlake2b([]byte("testcore"))
+	programHash := ctx.Utility().HashBlake2b([]byte(ScName))
 	ctx.DeployContract(programHash, ContractNameDeployed, "test contract deploy log", nil)
 }
 
 //nolint:unparam
 func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, f *TestEventLogEventDataContext) {
-	ctx.Event("[Event] - Testing Event...")
+	ctx.Event(MsgTestingEvent)
 }
 
 func funcTestEventLogGenericData(ctx wasmlib.ScFuncContext, f *TestEventLogGenericDataContext) {
-	event := "[GenericData] Counter Number: " + f.Params.Counter().String()
+	event := MsgCounterNumber + f.Params.Counter().String()
 	ctx.Event(event)
 }
 
@@ -152,8 +180,37 @@ func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, f *TestPanicFullEPContext) {
 	ctx.Panic(MsgFullPanic)
 }
 
-func funcWithdrawToChain(ctx wasmlib.ScFuncContext, f *WithdrawToChainContext) {
-	coreaccounts.ScFuncs.Withdraw(ctx).Func.PostToChain(f.Params.ChainID().Value())
+//func funcWithdrawToChain(ctx wasmlib.ScFuncContext, f *WithdrawToChainContext) {
+//	//coreaccounts.ScFuncs.Withdraw(ctx).Func.PostToChain(f.Params.ChainID().Value())
+//}
+
+func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
+	targetChain := f.Params.ChainID().Value()
+	iotasToWithdrawal := f.Params.IotasWithdrawal().Value()
+	// gasBudget := f.Params.GasBudget().Value()
+
+	// TODO more
+	availableIotas := ctx.Allowance().Balance(wasmtypes.IOTA)
+	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
+	if availableIotas < 1000 {
+		ctx.Panic("no enough iotas sent to cover dust deposit")
+	}
+	transfer := wasmlib.NewScTransfersFromBalances(ctx.Allowance())
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+
+	//request := iscp.RequestParameters{
+	//	TargetAddress:  targetChain.AsAddress(),
+	//	FungibleTokens: iscp.NewTokensIotas(availableIotas),
+	//	Metadata: &iscp.SendMetadata{
+	//		TargetContract: accounts.Contract.Hname(),
+	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
+	//		GasBudget:      gasBudget,
+	//		Allowance:      iscp.NewAllowanceIotas(iotasToWithdrawal),
+	//	},
+	//}
+
+	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
+	withdraw.Func.TransferIotas(iotasToWithdrawal).PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {
@@ -195,22 +252,24 @@ func viewGetInt(ctx wasmlib.ScViewContext, f *GetIntContext) {
 
 //nolint:unparam
 func viewJustView(ctx wasmlib.ScViewContext, f *JustViewContext) {
-	ctx.Log("doing nothing...")
+	ctx.Log(MsgJustView)
 }
 
 func viewPassTypesView(ctx wasmlib.ScViewContext, f *PassTypesViewContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(ParamHash))
-	ctx.Require(f.Params.Hash().Value() == hash, "Hash wrong")
-	ctx.Require(f.Params.Int64().Value() == 42, "int64 wrong")
-	ctx.Require(f.Params.Int64Zero().Value() == 0, "int64-0 wrong")
-	ctx.Require(f.Params.String().Value() == string(ParamString), "string wrong")
-	ctx.Require(f.Params.StringZero().Value() == "", "string-0 wrong")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "Hname wrong")
-	ctx.Require(f.Params.HnameZero().Value() == 0, "Hname-0 wrong")
+	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
+	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "wrong hname")
+	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
+	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
+	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")
+	ctx.Require(f.Params.String().Value() == ParamString, "wrong string")
+	ctx.Require(f.Params.StringZero().Value() == "", "wrong string-0")
+	// TODO more?
 }
 
 //nolint:unparam
 func viewTestCallPanicViewEPFromView(ctx wasmlib.ScViewContext, f *TestCallPanicViewEPFromViewContext) {
+	ctx.Log("will be calling entry point '" + ViewTestPanicViewEP + "' from view EP")
 	ScFuncs.TestPanicViewEP(ctx).Func.Call()
 }
 
@@ -242,15 +301,36 @@ func funcTestBlockContext2(ctx wasmlib.ScFuncContext, f *TestBlockContext2Contex
 //nolint:unparam
 func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
 	ctx.Panic(MsgCoreOnlyPanic)
+	// varName := f.Params.VarName().Value()
+	// value := f.State.Strings().GetString(varName).Value()
+	// f.Results.Vars().GetString(varName).SetValue(value)
 }
 
-func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
-	spawnName := ScName + "_spawned"
-	spawnDescr := "spawned contract description"
-	ctx.DeployContract(f.Params.ProgHash().Value(), spawnName, spawnDescr, nil)
-
-	spawnHname := ctx.Utility().Hname(spawnName)
-	for i := 0; i < 5; i++ {
-		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
+//nolint:unparam
+func viewInfiniteLoopView(ctx wasmlib.ScViewContext, f *InfiniteLoopViewContext) {
+	//nolint:staticcheck
+	for {
+		// do nothing, just waste gas
 	}
+}
+
+func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
+}
+
+func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
+}
+
+func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContext) {
+}
+
+func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext) {
+}
+
+func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
+}
+
+func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
+}
+
+func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
 }
