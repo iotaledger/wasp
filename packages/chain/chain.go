@@ -39,6 +39,7 @@ type ChainCore interface {
 	GetAnchorOutput() *iscp.AliasOutputWithID
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
+	EnqueueAliasOutput(*iscp.AliasOutputWithID)
 }
 
 type ChainCoreMock interface {
@@ -47,7 +48,6 @@ type ChainCoreMock interface {
 	// FIXME these methods should not be part of the chain interface just for the need of mocking
 	//  Mocking interfaces should be available only in the testing environment
 	// Most of these methods are made public for mocking in tests
-	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
 	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
@@ -57,8 +57,8 @@ type ChainCoreMock interface {
 
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
-	ReceiveTransaction(*iotago.Transaction)
-	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
+	ReceiveOnLedgerRequest(*iscp.OnLedgerRequestData)
+	//ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
 	Dismiss(reason string)
 	IsDismissed() bool
 }

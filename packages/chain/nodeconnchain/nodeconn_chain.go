@@ -41,7 +41,7 @@ type txInclusionStateMsg struct {
 
 var _ chain.ChainNodeConnection = &nodeconnChain{}
 
-func NewChainNodeConnection(nc chain.NodeConnection, chainAddr iotago.Address, log *logger.Logger) (chain.ChainNodeConnection, error) {
+func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
 	var err error
 	result := nodeconnChain{
 		nc:                     nc,

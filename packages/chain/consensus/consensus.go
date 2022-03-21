@@ -281,9 +281,15 @@ func (c *consensus) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
+	var timeData iscp.TimeData
+	if c.timeData == nil {
+		timeData = iscp.TimeData{Time: time.Now()}
+	} else {
+		timeData = *c.timeData
+	}
 	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
-		Mempool:    c.mempool.Info(iscp.TimeData{Time: time.Now()}),
+		Mempool:    c.mempool.Info(timeData),
 		TimerTick:  int(c.lastTimerTick.Load()),
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+

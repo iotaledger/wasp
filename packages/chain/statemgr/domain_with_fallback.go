@@ -39,7 +39,7 @@ func NewDomainWithFallback(peeringID peering.PeeringID, net peering.NetworkProvi
 		dom:       dom,
 		fallback:  false,
 		mainPeers: make([]*cryptolib.PublicKey, 0),
-		log:       log,
+		log:       log.Named("dwf"),
 	}
 	go df.run()
 	return &df, nil

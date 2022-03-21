@@ -94,7 +94,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	require.Equal(env.T, uint32(0), originState.BlockIndex())
 	require.True(env.T, ret.addNewState(originState))
 
-	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(ret.NodeConn, env.ChainID.AsAddress(), log)
+	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID.AsAddress(), ret.NodeConn, log)
 	require.NoError(env.T, err)
 	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
