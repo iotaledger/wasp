@@ -12,8 +12,10 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
+	"github.com/iotaledger/wasp/packages/database/textdb"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 type ChainKVStoreProvider func(chainID *iscp.ChainID) kvstore.KVStore
@@ -28,7 +30,7 @@ type DBManager struct {
 	inMemory      bool
 }
 
-func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
+func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Config) *DBManager {
 	dbm := DBManager{
 		log:       log,
 		databases: make(map[[ledgerstate.AddressLength]byte]database.DB),
@@ -38,7 +40,11 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	}
 	// registry db is created with an empty chainID
 	dbm.registryDB = dbm.createDB(nil)
-	dbm.registryStore = registrykvstore.New(dbm.registryDB.NewStore())
+	if registryConfig.UseText {
+		dbm.registryStore = registrykvstore.New(textdb.NewTextKV(log, registryConfig.Filename))
+	} else {
+		dbm.registryStore = registrykvstore.New(dbm.registryDB.NewStore())
+	}
 	return &dbm
 }
 

@@ -60,6 +60,9 @@ const (
 
 	WALEnabled   = "wal.enabled"
 	WALDirectory = "wal.directory"
+
+	RegistryUseText = "registry.useText"
+	RegistryFile    = "registry.file"
 )
 
 func Init() *configuration.Configuration {
@@ -111,6 +114,9 @@ func Init() *configuration.Configuration {
 
 	flag.Bool(WALEnabled, true, "enabled wal")
 	flag.String(WALDirectory, "wal", "path to logs folder")
+
+	flag.Bool(RegistryUseText, false, "enable text key/value store for registry db.")
+	flag.String(RegistryFile, "chain-registry.json", "registry filename. Ignored if registry.useText is false.")
 
 	return all
 }
