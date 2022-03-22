@@ -306,11 +306,10 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		res := viewcontext.New(c).Call(
+		res := viewcontext.New(c).CallViewExternal(
 			governance.Contract.Hname(),
 			governance.FuncGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),
-			nil, // TODO: *iscp.Allowance???
 		)
 		govResponse := governance.NewGetChainNodesResponseFromDict(res)
 		govAccessNodes = govResponse.AccessNodes
