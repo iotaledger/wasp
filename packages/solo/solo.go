@@ -256,14 +256,13 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieAccess()))
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieNodeStore()))
 
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
 	glbSync := coreutil.NewChainStateSync().SetSolidIndex(0)
-	srdr := state.NewOptimisticStateReader(store, glbSync)
 
 	ret := &Chain{
 		Env:                    env,
@@ -276,8 +275,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		State:                  vs,
-		StateReader:            srdr,
 		GlobalSync:             glbSync,
+		StateReader:            vs.OptimisticStateReader(glbSync),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 	}
