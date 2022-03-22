@@ -37,33 +37,6 @@ type L1Client struct {
 	client        *nodeclient.Client
 }
 
-func NewL1Client(config L1Config) L1Connection {
-	nodeClient := nodeclient.New(
-		fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort),
-		parameters.DeSerializationParametersForTesting(),
-		nodeclient.WithIndexer(),
-	)
-
-	// TODO
-	// /api/v2/info // func (client *Client) Info(ctx context.Context) (*InfoResponse, error)
-	// how to get protocol params via the client if we need them to start the client?... hmmmmmmmm
-
-	l1params := &parameters.L1{
-		NetworkID:                 iotago.NetworkIDFromString(config.NetworkID),
-		MaxTransactionSize:        32000, // TODO should be some const from iotago
-		DeSerializationParameters: parameters.DeSerializationParametersForTesting(),
-	}
-
-	return &L1Client{
-		hostname:      config.Hostname,
-		apiPort:       config.APIPort,
-		faucetPort:    config.FaucetPort,
-		client:        nodeClient,
-		faucetKeyPair: config.FaucetKey,
-		l1params:      l1params,
-	}
-}
-
 const defaultTimeout = 1 * time.Minute
 
 func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
@@ -74,11 +47,45 @@ func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), t)
 }
 
+func NewL1Client(config L1Config, timeout ...time.Duration) L1Connection {
+	nc := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
+
+	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	defer cancelContext()
+	l1Info, err := nc.Info(ctxWithTimeout)
+	if err != nil {
+		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
+	}
+
+	l1params := &parameters.L1{
+		NetworkName:        l1Info.Protocol.NetworkName,
+		NetworkID:          iotago.NetworkIDFromString(l1Info.Protocol.NetworkName),
+		Bech32Prefix:       l1Info.Protocol.Bech32HRP,
+		MaxTransactionSize: 32000, // TODO should be some const from iotago
+		DeSerializationParameters: &iotago.DeSerializationParameters{
+			RentStructure: &l1Info.Protocol.RentStructure,
+		},
+	}
+
+	return &L1Client{
+		hostname:      config.Hostname,
+		apiPort:       config.APIPort,
+		faucetPort:    config.FaucetPort,
+		client:        nc,
+		faucetKeyPair: config.FaucetKey,
+		l1params:      l1params,
+	}
+}
+
 func (c *L1Client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error) {
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
-	res, err := c.client.Indexer().Outputs(ctxWithTimeout, &nodeclient.OutputsQuery{
+	indexerClient, err := c.client.Indexer(ctxWithTimeout)
+	if err != nil {
+		return nil, xerrors.Errorf("failed getting the indexer client: %w", err)
+	}
+	res, err := indexerClient.Outputs(ctxWithTimeout, &nodeclient.OutputsQuery{
 		AddressBech32: myAddress.Bech32(iscp.NetworkPrefix),
 	})
 	if err != nil {
@@ -110,7 +117,7 @@ func (c *L1Client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*io
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
 	}
-	txMsg, err = c.client.SubmitMessage(ctxWithTimeout, txMsg)
+	txMsg, err = c.client.SubmitMessage(ctxWithTimeout, txMsg, c.l1params.DeSerializationParameters)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
@@ -141,7 +148,7 @@ func (c *L1Client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*io
 			if err != nil {
 				return nil, xerrors.Errorf("failed to build promotion message: %w", err)
 			}
-			_, err = c.client.SubmitMessage(ctxWithTimeout, promotionMsg)
+			_, err = c.client.SubmitMessage(ctxWithTimeout, promotionMsg, c.l1params.DeSerializationParameters)
 			if err != nil {
 				return nil, xerrors.Errorf("failed to promote msg: %w", err)
 			}
@@ -150,7 +157,7 @@ func (c *L1Client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*io
 			// remote PoW: Take the message, clear parents, clear nonce, send to node
 			txMsg.Parents = nil
 			txMsg.Nonce = 0
-			txMsg, err = c.client.SubmitMessage(ctxWithTimeout, txMsg)
+			txMsg, err = c.client.SubmitMessage(ctxWithTimeout, txMsg, c.l1params.DeSerializationParameters)
 			if err != nil {
 				return nil, xerrors.Errorf("failed to get re-attach msg: %w", err)
 			}

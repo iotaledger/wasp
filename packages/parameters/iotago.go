@@ -13,9 +13,14 @@ func DeSerializationParametersForTesting() *iotago.DeSerializationParameters {
 	return testdeserparams.DeSerializationParameters() // TODO
 }
 
+// TODO  - get the max tx size from iotago somehow
+// const MaxTransactionSize = iotago.Transaction.
+
 // L1 describes parameters coming from the L1 node
 type L1 struct {
+	NetworkName               string
 	NetworkID                 uint64
+	Bech32Prefix              string
 	MaxTransactionSize        int
 	DeSerializationParameters *iotago.DeSerializationParameters
 }
@@ -26,6 +31,8 @@ func (l1 *L1) RentStructure() *iotago.RentStructure {
 
 func L1ForTesting() *L1 {
 	return &L1{
+		NetworkName:               "iota",
+		Bech32Prefix:              "iota",
 		NetworkID:                 0,
 		MaxTransactionSize:        32000,
 		DeSerializationParameters: DeSerializationParametersForTesting(),

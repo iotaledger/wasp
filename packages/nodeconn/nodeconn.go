@@ -43,11 +43,7 @@ var _ chain.NodeConnection = &nodeConn{}
 
 func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger.Logger) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeClient := nodeclient.New(
-		fmt.Sprintf("http://%s:%d", nodeHost, nodePort),
-		iotago.ZeroRentParas, // TODO: ...
-		nodeclient.WithIndexer(),
-	)
+	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", nodeHost, nodePort))
 	nodeEvents := iotagox.NewNodeEventAPIClient(
 		fmt.Sprintf("ws://%s:%d/mqtt", nodeHost, nodePort),
 	)
