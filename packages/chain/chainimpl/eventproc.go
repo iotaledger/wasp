@@ -156,9 +156,9 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 			return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
 		}
 	}
+
 	// rotation needed
 	// close current in any case
-
 	currentCmt.Close()
 	c.consensus.Close()
 	c.setCommittee(nil)

@@ -626,8 +626,6 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.
 	if err != nil {
 		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
 	}
-	// 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
-	// sigUnlockBlock := &iotago.SignatureUnlockBlock{signatureWithPK.Signature}
 
 	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := c.stateOutput.ID()
@@ -690,7 +688,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	oid := msg.StateOutput.OutputID()
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
 	r := ""
-	/*if c.stateOutput.GetIsGovernanceUpdated() {
+	/* TODO
+	if c.stateOutput.GetIsGovernanceUpdated() {
 		r = " (rotate) "
 	}*/
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",

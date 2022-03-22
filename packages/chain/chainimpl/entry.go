@@ -5,20 +5,8 @@
 package chainimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
-
-func (c *chainObj) ReceiveOnLedgerRequest(request *iscp.OnLedgerRequestData) {
-	c.log.Debugf("ReceiveOnLedgerRequest: %s", request.ID())
-	c.mempool.ReceiveRequest(request)
-}
-
-/*func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
-	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
-		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.EnqueueLedgerState(stateOutput, timestamp)
-}*/
 
 func (c *chainObj) Dismiss(reason string) {
 	c.log.Infof("Dismiss chain. Reason: '%s'", reason)

@@ -169,7 +169,7 @@ func NewChain(
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
 	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
-	ret.nodeConn.AttachToOnLedgerRequest(ret.ReceiveOnLedgerRequest)
+	ret.nodeConn.AttachToOnLedgerRequest(ret.receiveOnLedgerRequest)
 	ret.nodeConn.AttachToAliasOutput(ret.EnqueueAliasOutput)
 	ret.receiveChainPeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.recvLoop()
@@ -187,6 +187,11 @@ func (c *chainObj) startTimer() {
 			time.Sleep(chain.TimerTickPeriod)
 		}
 	}()
+}
+
+func (c *chainObj) receiveOnLedgerRequest(request *iscp.OnLedgerRequestData) {
+	c.log.Debugf("receiveOnLedgerRequest: %s", request.ID())
+	c.mempool.ReceiveRequest(request)
 }
 
 func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {

@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
-// nodeconn_chain is responsible for maintaining the information related to a single chain.
+// nodeconnChain is responsible for maintaining the information related to a single chain.
 type nodeconnChain struct {
 	nc        chain.NodeConnection
 	chainAddr iotago.Address
@@ -230,9 +230,8 @@ func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMe
 }
 
 func (nccT *nodeconnChain) Close() {
-	// Nothing. The ncc.nc.ctx is used for that.
 	nccT.DetachFromMilestones()
-	nccT.nc.DetachTxInclusionStateEvents(nccT.chainAddr, nccT.txInclusionStateHandlerRef)
+	_ = nccT.nc.DetachTxInclusionStateEvents(nccT.chainAddr, nccT.txInclusionStateHandlerRef)
 	nccT.nc.UnregisterChain(nccT.chainAddr)
 	nccT.log.Debugf("chain nodeconnection closed")
 }

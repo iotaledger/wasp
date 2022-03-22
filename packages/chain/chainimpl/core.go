@@ -64,14 +64,6 @@ func (c *chainObj) GetCandidateNodes() []*governance.AccessNodeInfo {
 	return c.candidateNodes
 }
 
-func (c *chainObj) GetAnchorOutput() *iscp.AliasOutputWithID {
-	panic("TODO: implement me")
-}
-
-func (c *chainObj) VirtualStateAccess() state.VirtualStateAccess {
-	panic("TODO: implement me")
-}
-
 func (c *chainObj) Log() *logger.Logger {
 	return c.log
 }

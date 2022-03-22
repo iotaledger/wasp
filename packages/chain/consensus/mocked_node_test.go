@@ -5,7 +5,6 @@ package consensus
 
 import (
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -43,7 +42,6 @@ type mockedNode struct {
 	StateOutput         *iscp.AliasOutputWithID             // State manager mock
 	Log                 *logger.Logger
 	stateSync           coreutil.ChainStateSync // Chain mock
-	mutex               sync.Mutex
 }
 
 func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNode { //nolint:revive
