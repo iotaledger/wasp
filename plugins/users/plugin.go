@@ -32,10 +32,8 @@ func configure(plugin *node.Plugin) {
 }
 
 func loadUsersFromConfiguration() error {
+	userMap = make(map[string]*users.UserData)
 	err := config.Unmarshal(parameters.UserList, &userMap)
-	if err != nil {
-		userMap = make(map[string]*users.UserData)
-	}
 
 	for username, userData := range userMap {
 		userData.Username = username
@@ -44,7 +42,6 @@ func loadUsersFromConfiguration() error {
 	if len(userMap) == 0 {
 		// During the transition phase, create a default user when the config is empty.
 		// This keeps the old authentication working.
-
 		userMap["wasp"] = &users.UserData{
 			Username:    "wasp",
 			Password:    "wasp",
