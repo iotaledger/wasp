@@ -66,6 +66,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainNodeConn, err = nodeconnchain.NewChainNodeConnection(env.ChainID.AsAddress(), ret.NodeConn, log)
 	require.NoError(env.T, err)
 	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.ChainNodeConn, stateMgrMetrics, wal.NewDefault(), timers)
+	ret.ChainNodeConn.AttachToAliasOutput(ret.StateManager.EnqueueAliasOutput)
 	return ret
 }
 

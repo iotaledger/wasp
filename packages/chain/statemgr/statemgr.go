@@ -97,7 +97,6 @@ func New(
 		wal:                        wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.domain.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
-	ret.nodeConn.AttachToAliasOutput(ret.EnqueueAliasOutput)
 	go ret.initLoadState()
 
 	return ret
@@ -135,7 +134,6 @@ func (sm *stateManager) SetChainPeers(peers []*cryptolib.PublicKey) {
 }
 
 func (sm *stateManager) Close() {
-	sm.nodeConn.DetachFromAliasOutput()
 	sm.domain.Detach(sm.receivePeerMessagesAttachID)
 	sm.domain.Close()
 
