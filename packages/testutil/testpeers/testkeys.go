@@ -86,7 +86,7 @@ func SetupDkgPregenerated(
 	suite tcrypto.Suite,
 ) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
 	var err error
-	var serializedDks = pregeneratedDksRead(uint16(len(identities)), threshold)
+	serializedDks := pregeneratedDksRead(uint16(len(identities)), threshold)
 	nodePubKeys := make([]*ed25519.PublicKey, len(identities))
 	for i := range nodePubKeys {
 		nodePubKeys[i] = &identities[i].PublicKey
