@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// NOTE: this test tests verification of off ledger requests rather than chainimpl.
+// It should possibly be moved to other place.
 func TestValidateOffledger(t *testing.T) {
 	c := &chainObj{
 		chainID: iscp.RandomChainID(),
