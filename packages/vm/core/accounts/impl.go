@@ -41,6 +41,9 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
 	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
 
 	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
 	initialLoadIotas := iscp.NewFungibleTokens(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)

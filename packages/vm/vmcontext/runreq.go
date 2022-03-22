@@ -345,7 +345,7 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 
 func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
 	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
-		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
+		return root.ContractRecordFromContractInfo(root.Contract, &iscp.NilAgentID)
 	}
 	return vmctx.GetContractRecord(contractHname)
 }

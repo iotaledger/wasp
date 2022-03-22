@@ -54,6 +54,11 @@ func (i *ContractInfo) Hname() iscp.Hname {
 	return CoreHname(i.Name)
 }
 
+// FullKey concatenates 4 bytes of hname with postfix
+func (i *ContractInfo) FullKey(postfix []byte) []byte {
+	return kv.Concat(i.Hname(), postfix)
+}
+
 type (
 	ProcessorEntryPoint interface {
 		iscp.VMProcessorEntryPoint

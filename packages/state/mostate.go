@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -25,6 +26,13 @@ func WrapMustOptimisticVirtualStateAccess(state VirtualStateAccess, baseline cor
 		state:    state,
 		baseline: baseline,
 	}
+}
+
+func (s *mustOptimisticVirtualStateAccess) ChainID() *iscp.ChainID {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.ChainID()
 }
 
 func (s *mustOptimisticVirtualStateAccess) BlockIndex() uint32 {
@@ -55,11 +63,11 @@ func (s *mustOptimisticVirtualStateAccess) Commit() {
 	s.state.Commit()
 }
 
-func (s *mustOptimisticVirtualStateAccess) TrieAccess() trie.NodeStore {
+func (s *mustOptimisticVirtualStateAccess) TrieNodeStore() trie.NodeStore {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.state.TrieAccess()
+	return s.state.TrieNodeStore()
 }
 
 func (s *mustOptimisticVirtualStateAccess) ReconcileTrie() []kv.Key {
@@ -74,6 +82,13 @@ func (s *mustOptimisticVirtualStateAccess) KVStoreReader() kv.KVStoreReader {
 	defer s.baseline.MustValidate()
 
 	return s.state.KVStoreReader()
+}
+
+func (s *mustOptimisticVirtualStateAccess) OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.OptimisticStateReader(glb)
 }
 
 func (s *mustOptimisticVirtualStateAccess) ApplyStateUpdate(upd Update) {
