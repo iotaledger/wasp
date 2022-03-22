@@ -8,7 +8,7 @@ The snapshot-related library code is located in `packages/snapshot`. The `tools/
 ## How we create a snapshot of the chain's state?
 
 There are two possibilities:
-- by backing up the database
+- creating a backup of the database
 - by creating a snapshot file
 
 ### Database backup
@@ -19,7 +19,7 @@ Upon activation of the chain in the node, the `state manager` automatically load
 
 The directory can be backed up and restored with usual backup tools.
 
-Note, that `state manager` updates the database when syncing the state and when state transition occurs, i.e. at least once per 10 sec. It means, for the backed up database to be consistent, all chain activity must be stopped.
+Note: the `state manager` updates the database when syncing the state and when state transition occurs, i.e. at least once per 10 sec. It means, for the backed up database to be consistent, all chain activity must be stopped.
 
 Pros of database copy:
 - simple, no need for special tools
@@ -41,15 +41,15 @@ For example for chainID = `210fc7bb818639ac48a4c6afa2f1581a8b9525e2` snapshot fi
 
 The command expect database of the chain in the current directory. The chain must be deactivated or the node must be stopped.
 
-The command iterates the detabase and creates the snapshot file.
+The command iterates the database and creates a snapshot file.
 
 **Important.** The order in which key/value pairs in database are iterated, is **not-deterministic** in general. This means, that content of the snapshot file (and, therefore, digest/hash of it) is not guaranteed to be the same for the same source database.
 
-The above, however, does not violate consisency of the database. It is alway guaranteed, that *root commitment* to the state is fully deterministic.
+The above, however, does not violate consistency of the database. It is always guaranteed, that *root commitment* to the state is fully deterministic.
 
 #### Scan snapshot file
 
-`snapshot -scan <chainID>` scans the file, checks it formatting and extracts main parameters of the state stored in the snapshot itself (not in the file name):
+`snapshot -scan <chainID>` scans the file, checks the formatting and extracts main parameters of the state stored in the snapshot itself (not in the file name):
 
 * chainID
 * state index

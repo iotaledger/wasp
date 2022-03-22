@@ -201,7 +201,7 @@ func (vs *virtualStateAccess) Commit() {
 	vs.kvs.Mutations().ResetModified()
 }
 
-// TrieAccess returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
+// TrieNodeStore returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
 func (vs *virtualStateAccess) TrieNodeStore() trie.NodeStore {
 	return vs.trie
 }

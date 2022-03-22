@@ -1,6 +1,8 @@
-package kv
+// Package kvtest contains key/value related functions used for testing (otherwise of general nature)
+package kvtest
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 	"io"
@@ -12,9 +14,9 @@ import (
 
 const nilprefix = ""
 
-func ByteSize(s KVStoreReader) int {
+func ByteSize(s kv.KVStoreReader) int {
 	accLen := 0
-	err := s.Iterate(nilprefix, func(k Key, v []byte) bool {
+	err := s.Iterate(nilprefix, func(k kv.Key, v []byte) bool {
 		accLen += len([]byte(k)) + len(v)
 		return true
 	})
@@ -24,7 +26,7 @@ func ByteSize(s KVStoreReader) int {
 	return accLen
 }
 
-func DumpToFile(r KVStoreReader, fname string) (int, error) {
+func DumpToFile(r kv.KVStoreReader, fname string) (int, error) {
 	file, err := os.Create(fname)
 	if err != nil {
 		return 0, err
@@ -32,7 +34,7 @@ func DumpToFile(r KVStoreReader, fname string) (int, error) {
 	defer file.Close()
 
 	var bytesTotal int
-	err = r.Iterate("", func(k Key, v []byte) bool {
+	err = r.Iterate("", func(k kv.Key, v []byte) bool {
 		n, errw := writeKV(file, []byte(k), v)
 		if errw != nil {
 			err = errw
@@ -44,7 +46,7 @@ func DumpToFile(r KVStoreReader, fname string) (int, error) {
 	return bytesTotal, err
 }
 
-func UnDumpFromFile(w KVWriter, fname string) (int, error) {
+func UnDumpFromFile(w kv.KVWriter, fname string) (int, error) {
 	file, err := os.Open(fname)
 	if err != nil {
 		return 0, err
@@ -59,7 +61,7 @@ func UnDumpFromFile(w KVWriter, fname string) (int, error) {
 			break
 		}
 		n += len(k) + len(v) + 6
-		w.Set(Key(k), v)
+		w.Set(kv.Key(k), v)
 	}
 	return n, nil
 }

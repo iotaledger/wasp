@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/kvtest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -19,7 +20,7 @@ func Test1(t *testing.T) {
 	st, err := state.CreateOriginState(db, chainID)
 	require.NoError(t, err)
 
-	rndKVStream := kv.NewRandStreamIterator(kv.RandStreamParams{
+	rndKVStream := kvtest.NewRandStreamIterator(kvtest.RandStreamParams{
 		Seed:       time.Now().UnixNano(),
 		NumKVPairs: 1_000_000,
 		MaxKey:     48,

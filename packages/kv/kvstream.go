@@ -20,22 +20,22 @@ type StreamIterator interface {
 	Iterate(func(k, v []byte) bool) error
 }
 
-// binStreamWriter writes stream of k/v pairs in binary format.
+// BinaryStreamWriter writes stream of k/v pairs in binary format.
 // Keys encoding is 'bytes16' and values is 'bytes32'
-type binStreamWriter struct {
+type BinaryStreamWriter struct {
 	w         io.Writer
 	kvCount   int
 	byteCount int
 }
 
-func NewBinaryStreamWriter(w io.Writer) binStreamWriter {
-	return binStreamWriter{w: w}
+func NewBinaryStreamWriter(w io.Writer) *BinaryStreamWriter {
+	return &BinaryStreamWriter{w: w}
 }
 
-// binStreamWriter implements StreamWriter interface
-var _ StreamWriter = &binStreamWriter{}
+// BinaryStreamWriter implements StreamWriter interface
+var _ StreamWriter = &BinaryStreamWriter{}
 
-func (b *binStreamWriter) Write(key, value []byte) error {
+func (b *BinaryStreamWriter) Write(key, value []byte) error {
 	if err := util.WriteBytes16(b.w, key); err != nil {
 		return err
 	}
@@ -48,19 +48,19 @@ func (b *binStreamWriter) Write(key, value []byte) error {
 	return nil
 }
 
-func (b *binStreamWriter) Stats() (int, int) {
+func (b *BinaryStreamWriter) Stats() (int, int) {
 	return b.kvCount, b.byteCount
 }
 
-type binStreamIterator struct {
+type BinaryStreamIterator struct {
 	r io.Reader
 }
 
-func NewBinaryStreamIterator(r io.Reader) binStreamIterator {
-	return binStreamIterator{r: r}
+func NewBinaryStreamIterator(r io.Reader) *BinaryStreamIterator {
+	return &BinaryStreamIterator{r: r}
 }
 
-func (b binStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
+func (b BinaryStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
 	for {
 		k, err := util.ReadBytes16(b.r)
 		if errors.Is(err, io.EOF) {
@@ -79,36 +79,36 @@ func (b binStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
 	}
 }
 
-type binStreamFileWriter struct {
-	binStreamWriter
+type BinaryStreamFileWriter struct {
+	*BinaryStreamWriter
 	File *os.File
 }
 
 // CreateKVStreamFile create a new k/v file
-func CreateKVStreamFile(fname string) (*binStreamFileWriter, error) {
+func CreateKVStreamFile(fname string) (*BinaryStreamFileWriter, error) {
 	file, err := os.Create(fname)
 	if err != nil {
 		return nil, err
 	}
-	return &binStreamFileWriter{
-		binStreamWriter: NewBinaryStreamWriter(file),
-		File:            file,
+	return &BinaryStreamFileWriter{
+		BinaryStreamWriter: NewBinaryStreamWriter(file),
+		File:               file,
 	}, nil
 }
 
-type binStreamFileIterator struct {
-	binStreamIterator
+type BinaryStreamFileIterator struct {
+	*BinaryStreamIterator
 	File *os.File
 }
 
 // OpenKVStreamFile opens existing file with k/v stream
-func OpenKVStreamFile(fname string) (*binStreamFileIterator, error) {
+func OpenKVStreamFile(fname string) (*BinaryStreamFileIterator, error) {
 	file, err := os.Open(fname)
 	if err != nil {
 		return nil, err
 	}
-	return &binStreamFileIterator{
-		binStreamIterator: NewBinaryStreamIterator(file),
-		File:              file,
+	return &BinaryStreamFileIterator{
+		BinaryStreamIterator: NewBinaryStreamIterator(file),
+		File:                 file,
 	}, nil
 }
