@@ -515,6 +515,10 @@ func (ch *Chain) EnqueueDismissChain(reason string) {
 	// not used, just to implement ChainCore interface
 }
 
+func (ch *Chain) EnqueueAliasOutput(_ *iscp.AliasOutputWithID) {
+	// not used, just to implement ChainCore interface
+}
+
 // ---------------------------------------------
 
 func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
