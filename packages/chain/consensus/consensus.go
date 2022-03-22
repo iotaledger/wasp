@@ -11,7 +11,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
+	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -30,7 +30,7 @@ type consensus struct {
 	chain                            chain.ChainCore
 	committee                        chain.Committee
 	committeePeerGroup               peering.GroupProvider
-	mempool                          mempool.Mempool
+	mempool                          mempool_pkg.Mempool
 	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
@@ -85,7 +85,7 @@ const (
 
 func New(
 	chainCore chain.ChainCore,
-	mempool mempool.Mempool,
+	mempool mempool_pkg.Mempool,
 	committee chain.Committee,
 	peerGroup peering.GroupProvider,
 	nodeConn chain.ChainNodeConnection,

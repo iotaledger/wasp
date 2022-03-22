@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
+	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
@@ -47,7 +47,7 @@ var (
 
 type chainObj struct {
 	committee                          atomic.Value
-	mempool                            mempool.Mempool
+	mempool                            mempool_pkg.Mempool
 	mempoolLastCleanedIndex            uint32
 	dismissed                          atomic.Bool
 	dismissOnce                        sync.Once
@@ -111,7 +111,7 @@ func NewChain(
 	chainLog := log.Named("c-" + chainID.AsAddress().String()[2:8])
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:        mempool.New(chainID.AsAddress(), state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
+		mempool:        mempool_pkg.New(chainID.AsAddress(), state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
 		procset:        processors.MustNew(processorConfig),
 		chainID:        chainID,
 		log:            chainLog,
