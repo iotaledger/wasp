@@ -109,7 +109,7 @@ export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): voi
 }
 
 export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void {
-    let programHash = ctx.utility().hashBlake2b(wasmtypes.stringToBytes(sc.ScName));
+    let programHash = f.params.progHash().value();
     let spawnName = sc.ScName + "_spawned";
     let spawnDescr = "spawned contract description";
     ctx.deployContract(programHash, spawnName, spawnDescr, null);

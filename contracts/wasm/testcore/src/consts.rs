@@ -33,6 +33,7 @@ pub const PARAM_INT64_ZERO       : &str = "int64-0";
 pub const PARAM_INT_VALUE        : &str = "intParamValue";
 pub const PARAM_IOTAS_WITHDRAWAL : &str = "iotasWithdrawal";
 pub const PARAM_NAME             : &str = "intParamName";
+pub const PARAM_PROG_HASH        : &str = "progHash";
 pub const PARAM_STRING           : &str = "string";
 pub const PARAM_STRING_ZERO      : &str = "string-0";
 pub const PARAM_VAR_NAME         : &str = "varName";

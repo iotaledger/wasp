@@ -42,10 +42,10 @@ func TestCallFibonacci(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		n := fiboN
-		//if *wasmsolo.TsWasm {
-		//	// Typescript burns 600K gas per call
-		//	n = 3
-		//}
+		if *wasmsolo.TsWasm {
+			// Typescript burns 600K gas per call
+			n = 7
+		}
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
 		f.Params.IntValue().SetValue(n)
@@ -62,10 +62,10 @@ func TestCallFibonacciIndirect(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		n := fiboN
-		//if *wasmsolo.TsWasm {
-		//	// Typescript burns 600K per call
-		//	n = 3
-		//}
+		if *wasmsolo.TsWasm {
+			// Typescript burns 600K per call
+			n = 7
+		}
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
 		f.Params.IntValue().SetValue(n)

@@ -78,7 +78,8 @@ type SetIntCall struct {
 }
 
 type SpawnCall struct {
-	Func *wasmlib.ScFunc
+	Func   *wasmlib.ScFunc
+	Params MutableSpawnParams
 }
 
 type SplitFundsCall struct {
@@ -270,7 +271,9 @@ func (sc Funcs) SetInt(ctx wasmlib.ScFuncCallContext) *SetIntCall {
 }
 
 func (sc Funcs) Spawn(ctx wasmlib.ScFuncCallContext) *SpawnCall {
-	return &SpawnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSpawn)}
+	f := &SpawnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSpawn)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
 }
 
 func (sc Funcs) SplitFunds(ctx wasmlib.ScFuncCallContext) *SplitFundsCall {

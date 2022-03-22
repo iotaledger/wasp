@@ -357,14 +357,17 @@ fn func_set_int_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct SpawnContext {
+	params: ImmutableSpawnParams,
 	state: MutableTestCoreState,
 }
 
 fn func_spawn_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSpawn");
 	let f = SpawnContext {
+		params: ImmutableSpawnParams { proxy: params_proxy() },
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
+	ctx.require(f.params.prog_hash().exists(), "missing mandatory progHash");
 	func_spawn(ctx, &f);
 	ctx.log("testcore.funcSpawn ok");
 }

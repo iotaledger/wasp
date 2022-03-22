@@ -131,7 +131,7 @@ func funcSetInt(ctx wasmlib.ScFuncContext, f *SetIntContext) {
 }
 
 func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
-	programHash := ctx.Utility().HashBlake2b([]byte(ScName))
+	programHash := f.Params.ProgHash().Value()
 	spawnName := ScName + "_spawned"
 	spawnDescr := "spawned contract description"
 	ctx.DeployContract(programHash, spawnName, spawnDescr, nil)

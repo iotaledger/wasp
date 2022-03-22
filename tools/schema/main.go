@@ -40,7 +40,7 @@ func init() {
 func main() {
 	err := generator.FindModulePath()
 	if err != nil && *flagGo {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	if *flagCore {
@@ -55,11 +55,11 @@ func main() {
 	if err == nil {
 		defer file.Close()
 		if *flagInit != "" {
-			log.Fatal("schema definition file already exists")
+			log.Panic("schema definition file already exists")
 		}
 		err = generateSchema(file)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 		return
 	}
@@ -67,7 +67,7 @@ func main() {
 	if *flagInit != "" {
 		err = generateSchemaNew()
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 		return
 	}
@@ -92,7 +92,7 @@ func generateCoreInterfaces() {
 		return generateSchema(file)
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 }
 

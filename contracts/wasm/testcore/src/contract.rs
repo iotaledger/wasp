@@ -80,6 +80,7 @@ pub struct SetIntCall {
 
 pub struct SpawnCall {
 	pub func: ScFunc,
+	pub params: MutableSpawnParams,
 }
 
 pub struct SplitFundsCall {
@@ -309,9 +310,12 @@ impl ScFuncs {
     }
 
     pub fn spawn(_ctx: &dyn ScFuncCallContext) -> SpawnCall {
-        SpawnCall {
+        let mut f = SpawnCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SPAWN),
-        }
+            params: MutableSpawnParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
     }
 
     pub fn split_funds(_ctx: &dyn ScFuncCallContext) -> SplitFundsCall {

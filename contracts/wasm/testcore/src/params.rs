@@ -280,6 +280,28 @@ impl MutableSetIntParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableSpawnParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSpawnParams {
+    pub fn prog_hash(&self) -> ScImmutableHash {
+		ScImmutableHash::new(self.proxy.root(PARAM_PROG_HASH))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableSpawnParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableSpawnParams {
+    pub fn prog_hash(&self) -> ScMutableHash {
+		ScMutableHash::new(self.proxy.root(PARAM_PROG_HASH))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableTestEventLogGenericDataParams {
 	pub(crate) proxy: Proxy,
 }

@@ -49,16 +49,16 @@ typedefs:
 # ##################################
 
 state:
-  # basic value datatypes
-  stringMapOfArrays: map[String]StringArray
-  stringMapOfMaps: map[String]StringMap
-  stringArrayOfMaps: StringMap[]
-  stringArrayOfArrays: StringArray[]
-  # contracts-specific value datatypes
-  addrMapOfArrays: map[Address]AddressArray
-  addrMapOfMaps: map[Address]AddressMap
-  addrArrayOfMaps: AddressMap[]
-  addrArrayOfArrays: AddressArray[]
+  # basic datatypes, using String
+  arrayOfStringArray: StringArray[]
+  arrayOfStringMap: StringMap[]
+  stringMapOfStringArray: map[String]StringArray
+  stringMapOfStringMap: map[String]StringMap
+  # ISCP-specific datatypes, using Address
+  arrayOfAddressArray: AddressArray[]
+  arrayOfAddressMap: AddressMap[]
+  addressMapOfAddressArray: map[Address]AddressArray
+  addressMapOfAddressMap: map[Address]AddressMap
   # Other
   random: Uint64
   latLong: map[Int32]Longitude
@@ -67,90 +67,98 @@ state:
 # ##################################
 
 funcs:
-  mapOfArraysAppend:
+  stringMapOfStringArrayAppend:
     params:
       name: String
       value: String
 
-  mapOfArraysAddrAppend:
+  addressMapOfAddressArrayAppend:
     params:
       nameAddr: Address
       valueAddr: Address
 
-  mapOfArraysClear:
+  stringMapOfStringArrayClear:
     params:
       name: String
 
-  mapOfArraysAddrClear:
+  addressMapOfAddressArrayClear:
     params:
       nameAddr: Address
 
-  mapOfArraysSet:
+  stringMapOfStringArraySet:
     params:
       index: Uint32
       name: String
       value: String
 
-  mapOfArraysAddrSet:
+  addressMapOfAddressArraySet:
     params:
       index: Uint32
       nameAddr: Address
       valueAddr: Address
 
-  mapOfMapsClear:
+  stringMapOfStringMapClear:
     params:
       name: String
 
-  mapOfMapsAddrClear:
+  addressMapOfAddressMapClear:
     params:
       nameAddr: Address
 
-  mapOfMapsSet:
+  stringMapOfStringMapSet:
     params:
       name: String
       key: String
       value: String
 
-  mapOfMapsAddrSet:
+  addressMapOfAddressMapSet:
     params:
       nameAddr: Address
       keyAddr: Address
       valueAddr: Address
 
-  arrayOfArraysAppend:
+  arrayOfStringArrayAppend:
     params:
       index: Uint32
       value: String[]
 
-  arrayOfArraysAddrAppend:
+  arrayOfAddressArrayAppend:
     params:
       index: Uint32
       valueAddr: Address[]
 
-  arrayOfArraysSet:
+  arrayOfStringArraySet:
     params:
       index0: Uint32
       index1: Uint32
       value: String
 
-  arrayOfArraysAddrSet:
+  arrayOfAddressArraySet:
     params:
       index0: Uint32
       index1: Uint32
       valueAddr: Address
 
   # Clear all the arrays of the array
-  arrayOfArraysClear:
+  arrayOfStringArrayClear:
   # Clear all the arrays of the array
-  arrayOfArraysAddrClear:
+  arrayOfAddressArrayClear:
 
-  arrayOfMapsClear:
+  arrayOfStringMapClear:
 
-  arrayOfMapsSet:
+  arrayOfAddressMapClear:
+
+  arrayOfStringMapSet:
     params:
       index: Uint32
       key: String
       value: String
+
+  arrayOfAddressMapSet:
+    params:
+      index: Uint32
+      keyAddr: Address
+      valueAddr: Address
 
   paramTypes:
     params:
@@ -190,74 +198,81 @@ funcs:
 # ##################################
 
 views:
-  mapOfArraysLength:
+  stringMapOfStringArrayLength:
     params:
       name: String
     results:
       length: Uint32
 
-  mapOfArraysAddrLength:
+  addressMapOfAddressArrayLength:
     params:
       nameAddr: Address
     results:
       length: Uint32
 
-  mapOfArraysValue:
+  stringMapOfStringArrayValue:
     params:
       index: Uint32
       name: String
     results:
       value: String
 
-  mapOfArraysAddrValue:
+  addressMapOfAddressArrayValue:
     params:
       index: Uint32
       nameAddr: Address
     results:
       valueAddr: Address
 
-  mapOfMapsValue:
+  stringMapOfStringMapValue:
     params:
       name: String
       key: String
     results:
       value: String
   
-  mapOfMapsAddrValue:
+  addressMapOfAddressMapValue:
     params:
       nameAddr: Address
       keyAddr: Address
     results:
       valueAddr: Address
 
-  arrayOfArraysLength:
+  arrayOfStringArrayLength:
     results:
       length: Uint32
 
-  arrayOfArraysValue:
+  arrayOfStringArrayValue:
     params:
       index0: Uint32
       index1: Uint32
     results:
       value: String
 
-  arrayOfArraysAddrLength:
+  arrayOfAddressArrayLength:
     results:
       length: Uint32
 
-  arrayOfArraysAddrValue:
+  arrayOfAddressArrayValue:
     params:
       index0: Uint32
       index1: Uint32
     results:
       valueAddr: Address
 
-  arrayOfMapsValue:
+  arrayOfStringMapValue:
     params:
       index: Uint32
       key: String
     results:
       value: String
+
+  arrayOfAddressMapValue:
+    params:
+      index: Uint32
+      keyAddr: Address
+    results:
+      valueAddr: Address
 
   blockRecord:
     params:

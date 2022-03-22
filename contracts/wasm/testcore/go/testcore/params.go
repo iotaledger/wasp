@@ -241,6 +241,22 @@ func (s MutableSetIntParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
+type ImmutableSpawnParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableSpawnParams) ProgHash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamProgHash))
+}
+
+type MutableSpawnParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableSpawnParams) ProgHash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamProgHash))
+}
+
 type ImmutableTestEventLogGenericDataParams struct {
 	proxy wasmtypes.Proxy
 }

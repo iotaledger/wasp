@@ -36,6 +36,7 @@ const (
 	ParamIntValue        = "intParamValue"
 	ParamIotasWithdrawal = "iotasWithdrawal"
 	ParamName            = "intParamName"
+	ParamProgHash        = "progHash"
 	ParamString          = "string"
 	ParamStringZero      = "string-0"
 	ParamVarName         = "varName"

@@ -31,6 +31,7 @@ export const ParamInt64Zero       = "int64-0";
 export const ParamIntValue        = "intParamValue";
 export const ParamIotasWithdrawal = "iotasWithdrawal";
 export const ParamName            = "intParamName";
+export const ParamProgHash        = "progHash";
 export const ParamString          = "string";
 export const ParamStringZero      = "string-0";
 export const ParamVarName         = "varName";

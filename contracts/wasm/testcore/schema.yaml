@@ -57,6 +57,8 @@ funcs:
       intValue=intParamValue: Int64
       name=intParamName: String
   spawn:
+    params:
+      progHash: Hash
   splitFunds:
   splitFundsNativeTokens:
   testBlockContext1:

@@ -216,6 +216,18 @@ export class MutableSetIntParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableSpawnParams extends wasmtypes.ScProxy {
+	progHash(): wasmtypes.ScImmutableHash {
+		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamProgHash));
+	}
+}
+
+export class MutableSpawnParams extends wasmtypes.ScProxy {
+	progHash(): wasmtypes.ScMutableHash {
+		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamProgHash));
+	}
+}
+
 export class ImmutableTestEventLogGenericDataParams extends wasmtypes.ScProxy {
 	counter(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamCounter));

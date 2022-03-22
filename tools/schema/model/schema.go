@@ -334,7 +334,7 @@ func (l DefEltList) Less(i, j int) bool { return l[i].Val < l[j].Val }
 
 func sortedKeys(dict DefMap) []DefElt {
 	keys := make(DefEltList, 0)
-	for key, _ := range dict {
+	for key := range dict {
 		keys = append(keys, key)
 	}
 	sort.Sort(keys)

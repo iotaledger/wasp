@@ -15,7 +15,7 @@ import (
 
 const (
 	DEBUG           = false
-	FORCE_SKIP_WASM = false
+	FORCE_SKIP_WASM = true
 )
 
 const (

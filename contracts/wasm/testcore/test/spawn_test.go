@@ -13,6 +13,7 @@ func TestSpawn(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Spawn(ctx)
+		f.Params.ProgHash().SetValue(ctx.Cvt.ScHash(ctx.Hprog))
 		f.Func.Post()
 		require.NoError(t, ctx.Err)
 

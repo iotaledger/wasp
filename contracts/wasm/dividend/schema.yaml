@@ -4,10 +4,14 @@ structs: {}
 typedefs: {}
 state:
   memberList: Address[] // array with all the recipients of this dividend
+
+  # factors per member
+
   members: map[Address]Uint64 // map with all the recipient factors of this dividend
   owner: AgentID // owner of contract, the only one who can call 'member' func
   totalFactor: Uint64 // sum of all recipient factors
 funcs:
+  # divide tokens over members
   divide: {}
   init:
     params:

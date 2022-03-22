@@ -121,7 +121,7 @@ func (g *GenBase) emitEach(line string) {
 	g.indent()
 	defer g.undent()
 
-	parts := strings.Fields(line)
+	parts := strings.Split(line, " ")
 	if len(parts) != 3 {
 		g.error(line)
 		return
@@ -235,7 +235,7 @@ func (g *GenBase) emitFunc(line string) {
 	g.indent()
 	defer g.undent()
 
-	parts := strings.Fields(line)
+	parts := strings.Split(line, " ")
 	if len(parts) != 2 {
 		g.error(line)
 		return
@@ -259,7 +259,7 @@ func (g *GenBase) emitIf(line string) {
 	g.indent()
 	defer g.undent()
 
-	parts := strings.Fields(line)
+	parts := strings.Split(line, " ")
 	if len(parts) < 3 || len(parts) > 4 {
 		g.error(line)
 		return
@@ -341,7 +341,7 @@ func (g *GenBase) emitIf(line string) {
 func (g *GenBase) emitSet(line string) {
 	g.log(line)
 
-	parts := strings.Fields(line)
+	parts := strings.Split(line, " ")
 	if len(parts) < 3 {
 		g.error(line)
 		return

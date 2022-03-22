@@ -109,7 +109,7 @@ pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
 }
 
 pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
-    let program_hash = ctx.utility().hash_blake2b(SC_NAME.as_bytes());
+    let program_hash = f.params.prog_hash().value();
     let spawn_name = SC_NAME.to_string() + "_spawned";
     let spawn_descr = "spawned contract description";
     ctx.deploy_contract(&program_hash, &spawn_name, spawn_descr, None);

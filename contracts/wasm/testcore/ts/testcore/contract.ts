@@ -146,9 +146,11 @@ export class SetIntContext {
 
 export class SpawnCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSpawn);
+	params: sc.MutableSpawnParams = new sc.MutableSpawnParams(wasmlib.ScView.nilProxy);
 }
 
 export class SpawnContext {
+	params: sc.ImmutableSpawnParams = new sc.ImmutableSpawnParams(wasmlib.paramsProxy());
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -448,7 +450,9 @@ export class ScFuncs {
 	}
 
 	static spawn(_ctx: wasmlib.ScFuncCallContext): SpawnCall {
-		return new SpawnCall();
+		const f = new SpawnCall();
+		f.params = new sc.MutableSpawnParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
 	}
 
 	static splitFunds(_ctx: wasmlib.ScFuncCallContext): SplitFundsCall {

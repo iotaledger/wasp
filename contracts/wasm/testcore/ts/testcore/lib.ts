@@ -239,6 +239,7 @@ function funcSetIntThunk(ctx: wasmlib.ScFuncContext): void {
 function funcSpawnThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testcore.funcSpawn");
 	let f = new sc.SpawnContext();
+	ctx.require(f.params.progHash().exists(), "missing mandatory progHash");
 	sc.funcSpawn(ctx, f);
 	ctx.log("testcore.funcSpawn ok");
 }

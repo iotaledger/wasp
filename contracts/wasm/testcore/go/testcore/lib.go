@@ -390,16 +390,21 @@ func funcSetIntThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type SpawnContext struct {
-	State MutableTestCoreState
+	Params ImmutableSpawnParams
+	State  MutableTestCoreState
 }
 
 func funcSpawnThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcSpawn")
 	f := &SpawnContext{
+		Params: ImmutableSpawnParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+	ctx.Require(f.Params.ProgHash().Exists(), "missing mandatory progHash")
 	funcSpawn(ctx, f)
 	ctx.Log("testcore.funcSpawn ok")
 }

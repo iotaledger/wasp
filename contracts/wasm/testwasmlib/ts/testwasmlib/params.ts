@@ -8,7 +8,183 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableArrayOfArraysAppendParams extends wasmtypes.ScProxy {
+export class ImmutableAddressMapOfAddressArrayAppendParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressArrayAppendParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressArrayClearParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressArrayClearParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressArraySetParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressArraySetParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressMapClearParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressMapClearParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressMapSetParams extends wasmtypes.ScProxy {
+	keyAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressMapSetParams extends wasmtypes.ScProxy {
+	keyAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class ImmutableArrayOfAddressArrayAppendParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	valueAddr(): sc.ArrayOfImmutableAddress {
+		return new sc.ArrayOfImmutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class MutableArrayOfAddressArrayAppendParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	valueAddr(): sc.ArrayOfMutableAddress {
+		return new sc.ArrayOfMutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class ImmutableArrayOfAddressArraySetParams extends wasmtypes.ScProxy {
+	index0(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex0));
+	}
+
+	index1(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex1));
+	}
+
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class MutableArrayOfAddressArraySetParams extends wasmtypes.ScProxy {
+	index0(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex0));
+	}
+
+	index1(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex1));
+	}
+
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class ImmutableArrayOfAddressMapSetParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	keyAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class MutableArrayOfAddressMapSetParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	keyAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamValueAddr));
+	}
+}
+
+export class ImmutableArrayOfStringArrayAppendParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -18,7 +194,7 @@ export class ImmutableArrayOfArraysAppendParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableArrayOfArraysAppendParams extends wasmtypes.ScProxy {
+export class MutableArrayOfStringArrayAppendParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -28,7 +204,7 @@ export class MutableArrayOfArraysAppendParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableArrayOfArraysSetParams extends wasmtypes.ScProxy {
+export class ImmutableArrayOfStringArraySetParams extends wasmtypes.ScProxy {
 	index0(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex0));
 	}
@@ -42,7 +218,7 @@ export class ImmutableArrayOfArraysSetParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableArrayOfArraysSetParams extends wasmtypes.ScProxy {
+export class MutableArrayOfStringArraySetParams extends wasmtypes.ScProxy {
 	index0(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex0));
 	}
@@ -56,7 +232,7 @@ export class MutableArrayOfArraysSetParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableArrayOfMapsSetParams extends wasmtypes.ScProxy {
+export class ImmutableArrayOfStringMapSetParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -70,113 +246,13 @@ export class ImmutableArrayOfMapsSetParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableArrayOfMapsSetParams extends wasmtypes.ScProxy {
+export class MutableArrayOfStringMapSetParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
 	}
 
 	key(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamKey));
-	}
-
-	value(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
-	}
-}
-
-export class ImmutableMapOfArraysAppendParams extends wasmtypes.ScProxy {
-	name(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
-	}
-
-	value(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
-	}
-}
-
-export class MutableMapOfArraysAppendParams extends wasmtypes.ScProxy {
-	name(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
-	}
-
-	value(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
-	}
-}
-
-export class ImmutableMapOfArraysClearParams extends wasmtypes.ScProxy {
-	name(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
-	}
-}
-
-export class MutableMapOfArraysClearParams extends wasmtypes.ScProxy {
-	name(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
-	}
-}
-
-export class ImmutableMapOfArraysSetParams extends wasmtypes.ScProxy {
-	index(): wasmtypes.ScImmutableUint32 {
-		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
-	}
-
-	name(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
-	}
-
-	value(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
-	}
-}
-
-export class MutableMapOfArraysSetParams extends wasmtypes.ScProxy {
-	index(): wasmtypes.ScMutableUint32 {
-		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
-	}
-
-	name(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
-	}
-
-	value(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
-	}
-}
-
-export class ImmutableMapOfMapsClearParams extends wasmtypes.ScProxy {
-	name(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
-	}
-}
-
-export class MutableMapOfMapsClearParams extends wasmtypes.ScProxy {
-	name(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
-	}
-}
-
-export class ImmutableMapOfMapsSetParams extends wasmtypes.ScProxy {
-	key(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamKey));
-	}
-
-	name(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
-	}
-
-	value(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
-	}
-}
-
-export class MutableMapOfMapsSetParams extends wasmtypes.ScProxy {
-	key(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamKey));
-	}
-
-	name(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
 	value(): wasmtypes.ScMutableString {
@@ -358,6 +434,106 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableStringMapOfStringArrayAppendParams extends wasmtypes.ScProxy {
+	name(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
+	}
+
+	value(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
+	}
+}
+
+export class MutableStringMapOfStringArrayAppendParams extends wasmtypes.ScProxy {
+	name(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
+	}
+
+	value(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
+	}
+}
+
+export class ImmutableStringMapOfStringArrayClearParams extends wasmtypes.ScProxy {
+	name(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
+	}
+}
+
+export class MutableStringMapOfStringArrayClearParams extends wasmtypes.ScProxy {
+	name(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
+	}
+}
+
+export class ImmutableStringMapOfStringArraySetParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	name(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
+	}
+
+	value(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
+	}
+}
+
+export class MutableStringMapOfStringArraySetParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	name(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
+	}
+
+	value(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
+	}
+}
+
+export class ImmutableStringMapOfStringMapClearParams extends wasmtypes.ScProxy {
+	name(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
+	}
+}
+
+export class MutableStringMapOfStringMapClearParams extends wasmtypes.ScProxy {
+	name(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
+	}
+}
+
+export class ImmutableStringMapOfStringMapSetParams extends wasmtypes.ScProxy {
+	key(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamKey));
+	}
+
+	name(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
+	}
+
+	value(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
+	}
+}
+
+export class MutableStringMapOfStringMapSetParams extends wasmtypes.ScProxy {
+	key(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamKey));
+	}
+
+	name(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
+	}
+
+	value(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
+	}
+}
+
 export class ImmutableTriggerEventParams extends wasmtypes.ScProxy {
 	address(): wasmtypes.ScImmutableAddress {
 		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
@@ -378,7 +554,59 @@ export class MutableTriggerEventParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableArrayOfArraysValueParams extends wasmtypes.ScProxy {
+export class ImmutableAddressMapOfAddressArrayLengthParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressArrayLengthParams extends wasmtypes.ScProxy {
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressArrayValueParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressArrayValueParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressMapValueParams extends wasmtypes.ScProxy {
+	keyAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+
+	nameAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressMapValueParams extends wasmtypes.ScProxy {
+	keyAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+
+	nameAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamNameAddr));
+	}
+}
+
+export class ImmutableArrayOfAddressArrayValueParams extends wasmtypes.ScProxy {
 	index0(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex0));
 	}
@@ -388,7 +616,7 @@ export class ImmutableArrayOfArraysValueParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableArrayOfArraysValueParams extends wasmtypes.ScProxy {
+export class MutableArrayOfAddressArrayValueParams extends wasmtypes.ScProxy {
 	index0(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex0));
 	}
@@ -398,7 +626,47 @@ export class MutableArrayOfArraysValueParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableArrayOfMapsValueParams extends wasmtypes.ScProxy {
+export class ImmutableArrayOfAddressMapValueParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	keyAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+}
+
+export class MutableArrayOfAddressMapValueParams extends wasmtypes.ScProxy {
+	index(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
+	}
+
+	keyAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamKeyAddr));
+	}
+}
+
+export class ImmutableArrayOfStringArrayValueParams extends wasmtypes.ScProxy {
+	index0(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex0));
+	}
+
+	index1(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex1));
+	}
+}
+
+export class MutableArrayOfStringArrayValueParams extends wasmtypes.ScProxy {
+	index0(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex0));
+	}
+
+	index1(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex1));
+	}
+}
+
+export class ImmutableArrayOfStringMapValueParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -408,7 +676,7 @@ export class ImmutableArrayOfMapsValueParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableArrayOfMapsValueParams extends wasmtypes.ScProxy {
+export class MutableArrayOfStringMapValueParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -450,19 +718,19 @@ export class MutableBlockRecordsParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableMapOfArraysLengthParams extends wasmtypes.ScProxy {
+export class ImmutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
-export class MutableMapOfArraysLengthParams extends wasmtypes.ScProxy {
+export class MutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
 	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
-export class ImmutableMapOfArraysValueParams extends wasmtypes.ScProxy {
+export class ImmutableStringMapOfStringArrayValueParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -472,7 +740,7 @@ export class ImmutableMapOfArraysValueParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableMapOfArraysValueParams extends wasmtypes.ScProxy {
+export class MutableStringMapOfStringArrayValueParams extends wasmtypes.ScProxy {
 	index(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamIndex));
 	}
@@ -482,7 +750,7 @@ export class MutableMapOfArraysValueParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableMapOfMapsValueParams extends wasmtypes.ScProxy {
+export class ImmutableStringMapOfStringMapValueParams extends wasmtypes.ScProxy {
 	key(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamKey));
 	}
@@ -492,7 +760,7 @@ export class ImmutableMapOfMapsValueParams extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableMapOfMapsValueParams extends wasmtypes.ScProxy {
+export class MutableStringMapOfStringMapValueParams extends wasmtypes.ScProxy {
 	key(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamKey));
 	}
