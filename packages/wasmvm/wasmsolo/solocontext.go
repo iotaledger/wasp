@@ -127,7 +127,8 @@ func NewSoloContext(t *testing.T, scName string, onLoad wasmhost.ScOnloadFunc, i
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
 func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string,
-	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
+	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc,
+) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 
 	var keyPair *cryptolib.KeyPair
@@ -172,7 +173,8 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
 func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string, onLoad wasmhost.ScOnloadFunc,
-	proc *coreutil.ContractProcessor, init ...*wasmlib.ScInitFunc) *SoloContext {
+	proc *coreutil.ContractProcessor, init ...*wasmlib.ScInitFunc,
+) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 	ctx.Chain.Env.WithNativeContract(proc)
 	ctx.Hprog = proc.Contract.ProgramHash
