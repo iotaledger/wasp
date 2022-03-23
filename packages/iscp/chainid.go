@@ -4,6 +4,8 @@
 package iscp
 
 import (
+	"encoding/hex"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -88,7 +90,7 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 
 // String human readable form (bech32)
 func (chid *ChainID) String() string {
-	return chid.AsAddress().Bech32(NetworkPrefix)
+	return hex.EncodeToString(chid[:])
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

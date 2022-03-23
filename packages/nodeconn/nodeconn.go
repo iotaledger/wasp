@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
@@ -36,14 +37,33 @@ type nodeConn struct {
 	nodeEvents *nodeclient.EventAPIClient
 	milestones *events.Event
 	net        peering.NetworkProvider
+	l1params   *parameters.L1
 	log        *logger.Logger
 }
 
 var _ chain.NodeConnection = &nodeConn{}
 
+func L1ParamsFromInfoResp(info *nodeclient.InfoResponse) *parameters.L1 {
+	return &parameters.L1{
+		NetworkName:        info.Protocol.NetworkName,
+		NetworkID:          iotago.NetworkIDFromString(info.Protocol.NetworkName),
+		Bech32Prefix:       iotago.NetworkPrefix(info.Protocol.Bech32HRP),
+		MaxTransactionSize: 32000, // TODO should be some const from iotago
+		DeSerializationParameters: &iotago.DeSerializationParameters{
+			RentStructure: &info.Protocol.RentStructure,
+		},
+	}
+}
+
 func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger.Logger) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", nodeHost, nodePort))
+
+	l1Info, err := nodeClient.Info(ctx)
+	if err != nil {
+		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
+	}
+
 	nodeEvents, err := nodeClient.EventAPI(ctx)
 	if err != nil {
 		panic(xerrors.Errorf("error getting node event client: %w", err))
@@ -58,11 +78,16 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
-		net: net,
-		log: log.Named("nc"),
+		net:      net,
+		l1params: L1ParamsFromInfoResp(l1Info),
+		log:      log.Named("nc"),
 	}
 	go nc.run()
 	return &nc
+}
+
+func (nc *nodeConn) L1Params() *parameters.L1 {
+	return nc.l1params
 }
 
 // RegisterChain implements chain.NodeConnection.

@@ -14,7 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -37,7 +37,9 @@ func TestHornetStartup(t *testing.T) {
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iscp.NetworkPrefix, nodeclient.UnlockConditionAny)
+	l1Info, err := nc.Info(ctx)
+
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
 
 	initialOutputCount := mustOutputCount(pt, myAddress)
 

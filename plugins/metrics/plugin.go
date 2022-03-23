@@ -32,7 +32,7 @@ func run(_ *node.Plugin) {
 	}
 
 	log.Infof("Starting %s ...", PluginName)
-	if err := daemon.BackgroundWorker("Prometheus exporter", func(_ context.Context) {
+	if err := daemon.BackgroundWorker("Prometheus exporter", func(ctx context.Context) {
 		log.Info("Starting Prometheus exporter ... done")
 
 		bindAddr := parameters.GetString(parameters.MetricsBindAddress)
@@ -42,7 +42,10 @@ func run(_ *node.Plugin) {
 			allMetrics.Start(bindAddr)
 		}()
 
-		<-stopped
+		select {
+		case <-ctx.Done():
+		case <-stopped:
+		}
 		log.Infof("Stopping %s ...", PluginName)
 		defer log.Infof("Stopping %s ... done", PluginName)
 		if err := allMetrics.Stop(); err != nil {

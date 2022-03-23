@@ -106,7 +106,7 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func worker(shutdownSignal <-chan struct{}) {
+func worker(ctx context.Context) {
 	stopped := make(chan struct{})
 	server := Server.Echo()
 	go func() {
@@ -122,7 +122,7 @@ func worker(shutdownSignal <-chan struct{}) {
 
 	// stop if we are shutting down or the server could not be started
 	select {
-	case <-shutdownSignal:
+	case <-ctx.Done():
 	case <-stopped:
 	}
 

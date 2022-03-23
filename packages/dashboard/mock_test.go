@@ -89,7 +89,7 @@ func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
 
 func (w *waspServicesMock) GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error) {
 	return &registry.ChainRecord{
-		ChainID: chainID,
+		ChainID: *chainID,
 		Active:  true,
 	}, nil
 }
@@ -161,7 +161,7 @@ type dashboardTestEnv struct {
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
 	ch := e.solo.NewChain(cryptolib.NewKeyPair(), fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[ch.ChainID.Array()] = ch
+	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }
 

@@ -470,10 +470,10 @@ func (ca *ControlAddresses) Bytes() []byte {
 func (ca *ControlAddresses) String() string {
 	var ret string
 	if ca.StateAddress.Equal(ca.GoverningAddress) {
-		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(iscp.NetworkPrefix), ca.SinceBlockIndex)
+		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress, ca.SinceBlockIndex)
 	} else {
 		ret = fmt.Sprintf("ControlAddresses(%s, %s), block: %d",
-			ca.StateAddress.Bech32(iscp.NetworkPrefix), ca.GoverningAddress.Bech32(iscp.NetworkPrefix), ca.SinceBlockIndex)
+			ca.StateAddress, ca.GoverningAddress, ca.SinceBlockIndex)
 	}
 	return ret
 }

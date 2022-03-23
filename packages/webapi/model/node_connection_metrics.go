@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
@@ -30,12 +31,12 @@ type NodeConnectionMetrics struct {
 	Subscribed []Address
 }
 
-func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) *NodeConnectionMetrics {
+func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics, networkPrefix iotago.NetworkPrefix) *NodeConnectionMetrics {
 	ncmm := NewNodeConnectionMessagesMetrics(metrics)
 	subscribed := metrics.GetSubscribed()
 	s := make([]Address, len(subscribed))
 	for i := range s {
-		s[i] = NewAddress(subscribed[i])
+		s[i] = NewAddress(subscribed[i], networkPrefix)
 	}
 	return &NodeConnectionMetrics{
 		NodeConnectionMessagesMetrics: *ncmm,

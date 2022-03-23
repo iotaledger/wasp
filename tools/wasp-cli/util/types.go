@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,14 +17,15 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+// TODO: address is currently being encoded in HEX, should it be bech32? if so, where should the prefix come from?
+
 //nolint:funlen
 func ValueFromString(vtype, s string) []byte {
 	switch vtype {
 	case "address":
-		panic("TODO implement")
-		// addr, err := ledgerstate.AddressFromBase58EncodedString(s)
-		// log.Check(err)
-		// return addr.Bytes()
+		bytes, err := hex.DecodeString(s)
+		log.Check(err)
+		return bytes
 	case "agentid":
 		agentid, err := iscp.NewAgentIDFromString(s)
 		log.Check(err)
@@ -99,7 +101,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		return addr.Bech32(iscp.NetworkPrefix)
+		return addr.String()
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)

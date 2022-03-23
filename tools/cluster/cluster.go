@@ -291,7 +291,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			waspNodeDataPath(dataPath, i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress()),
+			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), clu.l1.L1Params().Bech32Prefix),
 			i,
 			modifyConfig,
 		)

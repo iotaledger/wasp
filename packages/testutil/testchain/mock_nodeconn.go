@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type MockedNodeConn struct {
@@ -103,7 +104,7 @@ func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 }
 
 func (mncT *MockedNodeConn) Close() {
-	//TODO
+	// TODO
 }
 
 func (mncT *MockedNodeConn) SetPublishTransactionAllowed(flag bool) {
@@ -132,6 +133,10 @@ func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainAddr iotago.Address, outputID *iotago.UTXOInput) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
+}
+
+func (mncT *MockedNodeConn) L1Params() *parameters.L1 {
+	return parameters.L1ForTesting()
 }
 
 /*func (m *MockedNodeConn) PullLatestOutput() {
@@ -212,7 +217,7 @@ func (m *MockedNodeConn) DetachFromTransactionReceived() {
 	m.handleTransactionFun = m.defaultHandleTransactionFun
 }*/
 
-//func (m *MockedNodeConn) DetachFromInclusionStateReceived() { /* TODO */ }
+// func (m *MockedNodeConn) DetachFromInclusionStateReceived() { /* TODO */ }
 
 /*func (m *MockedNodeConn) defaultHandleOutputFun(iotago.Output, *iotago.UTXOInput) {}
 

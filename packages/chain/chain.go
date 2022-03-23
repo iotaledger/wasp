@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -102,6 +103,7 @@ type NodeConnection interface {
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 	//----------delimeter to appease linter
+	L1Params() *parameters.L1
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
 }
@@ -115,6 +117,7 @@ type ChainNodeConnection interface {
 	DetachFromTxInclusionState()
 	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
 	DetachFromMilestones()
+	L1Params() *parameters.L1
 	Close()
 	//----------delimeter to appease linter
 	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error

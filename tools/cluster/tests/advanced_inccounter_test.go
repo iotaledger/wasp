@@ -38,7 +38,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	t.Logf("generated state address: %s", addr.Bech32(iscp.NetworkPrefix))
+	t.Logf("generated state address: %s", addr.Bech32(clu.L1Client().L1Params().Bech32Prefix))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
@@ -276,8 +276,8 @@ func TestRotation(t *testing.T) {
 	addr2, err := clu.RunDKG(cmt2, 3)
 	require.NoError(t, err)
 
-	t.Logf("addr1: %s", addr1.Bech32(iscp.NetworkPrefix))
-	t.Logf("addr2: %s", addr2.Bech32(iscp.NetworkPrefix))
+	t.Logf("addr1: %s", addr1.Bech32(clu.L1Client().L1Params().Bech32Prefix))
+	t.Logf("addr2: %s", addr2.Bech32(clu.L1Client().L1Params().Bech32Prefix))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
@@ -386,7 +386,7 @@ func TestRotationMany(t *testing.T) {
 	for i := range cmt {
 		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
 		require.NoError(t, err)
-		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(iscp.NetworkPrefix))
+		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(clu.L1Client().L1Params().Bech32Prefix))
 	}
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])

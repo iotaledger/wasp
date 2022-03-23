@@ -8,7 +8,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -173,7 +172,7 @@ func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
 	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
-func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address) *templates.WaspConfigParams {
+func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address, networkPrefix iotago.NetworkPrefix) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
 		DashboardPort:                c.DashboardPort(i),
@@ -183,7 +182,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Addr
 		L1Host:                       c.L1Host(i),
 		L1Port:                       c.L1Port(i),
 		MetricsPort:                  c.PrometheusPort(i),
-		OwnerAddress:                 ownerAddress.Bech32(iscp.NetworkPrefix),
+		OwnerAddress:                 ownerAddress.Bech32(networkPrefix),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

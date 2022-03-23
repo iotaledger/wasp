@@ -15,9 +15,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// TODO make this configurable
-const NetworkPrefix = iotago.PrefixTestnet
-
 const nilAgentID = 0xff
 
 // AgentID represents address on the ledger with optional hname

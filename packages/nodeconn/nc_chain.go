@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
 )
 
@@ -60,7 +59,7 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 	if err != nil {
 		return xerrors.Errorf("failed to build a tx message: %w", err)
 	}
-	txMsg, err = ncc.nc.nodeClient.SubmitMessage(ncc.nc.ctx, txMsg, iotago.ZeroRentParas) // TODO change
+	txMsg, err = ncc.nc.nodeClient.SubmitMessage(ncc.nc.ctx, txMsg, ncc.nc.l1params.DeSerializationParameters)
 	if err != nil {
 		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
@@ -101,7 +100,7 @@ func (ncc *ncChain) run() {
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.nodeEvents.OutputsByUnlockConditionAndAddress(
 			ncc.chainAddr,
-			iscp.NetworkPrefix,
+			ncc.nc.l1params.Bech32Prefix,
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {
@@ -110,8 +109,12 @@ func (ncc *ncChain) run() {
 		//
 		// Then fetch all the existing unspent outputs.
 		indexer, err := ncc.nc.nodeClient.Indexer(ncc.nc.ctx)
+		if err != nil {
+			ncc.log.Warnf("failed to get nodeclient indexer: %v", err)
+			continue
+		}
 		res, err := indexer.Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
-			AddressBech32: ncc.chainAddr.Bech32(iscp.NetworkPrefix),
+			AddressBech32: string(ncc.nc.l1params.Bech32Prefix),
 		})
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)

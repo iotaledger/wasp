@@ -10,7 +10,6 @@ require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.34.0
 	github.com/ethereum/go-ethereum v1.10.16
-	github.com/iotaledger/goshimmer v0.8.5
 	github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220321174547-5b62a60c7774

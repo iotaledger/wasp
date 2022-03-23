@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // nodeconnChain is responsible for maintaining the information related to a single chain.
@@ -62,6 +63,10 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 	}
 	result.log.Debugf("chain nodeconnection created")
 	return &result, nil
+}
+
+func (nccT *nodeconnChain) L1Params() *parameters.L1 {
+	return nccT.nc.L1Params()
 }
 
 func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {

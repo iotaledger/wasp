@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
@@ -25,6 +25,8 @@ type L1Connection interface {
 	PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Message, error)
 	// returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
+	// returns the l1 parameters used by the node
+	L1Params() *parameters.L1
 }
 
 // implementation of the L1Connection (hornet specific for now using the REST API)
@@ -57,24 +59,18 @@ func NewL1Client(config L1Config, timeout ...time.Duration) L1Connection {
 		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
 	}
 
-	l1params := &parameters.L1{
-		NetworkName:        l1Info.Protocol.NetworkName,
-		NetworkID:          iotago.NetworkIDFromString(l1Info.Protocol.NetworkName),
-		Bech32Prefix:       l1Info.Protocol.Bech32HRP,
-		MaxTransactionSize: 32000, // TODO should be some const from iotago
-		DeSerializationParameters: &iotago.DeSerializationParameters{
-			RentStructure: &l1Info.Protocol.RentStructure,
-		},
-	}
-
 	return &L1Client{
 		hostname:      config.Hostname,
 		apiPort:       config.APIPort,
 		faucetPort:    config.FaucetPort,
 		client:        nc,
 		faucetKeyPair: config.FaucetKey,
-		l1params:      l1params,
+		l1params:      nodeconn.L1ParamsFromInfoResp(l1Info),
 	}
+}
+
+func (c *L1Client) L1Params() *parameters.L1 {
+	return c.l1params
 }
 
 func (c *L1Client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error) {
@@ -86,7 +82,7 @@ func (c *L1Client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 		return nil, xerrors.Errorf("failed getting the indexer client: %w", err)
 	}
 	res, err := indexerClient.Outputs(ctxWithTimeout, &nodeclient.OutputsQuery{
-		AddressBech32: myAddress.Bech32(iscp.NetworkPrefix),
+		AddressBech32: myAddress.Bech32(c.l1params.Bech32Prefix),
 	})
 	if err != nil {
 		return nil, xerrors.Errorf("failed to query address outputs: %w", err)
@@ -186,7 +182,7 @@ func (c *L1Client) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durati
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
-	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(iscp.NetworkPrefix))
+	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(c.L1Params().Bech32Prefix))
 	faucetURL := fmt.Sprintf("http://%s:%d/api/plugins/faucet/v1/enqueue", c.hostname, c.faucetPort)
 	httpReq, err := http.NewRequestWithContext(ctxWithTimeout, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
 	if err != nil {

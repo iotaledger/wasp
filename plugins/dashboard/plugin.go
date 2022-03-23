@@ -78,7 +78,7 @@ func (w *waspServices) PeeringStats() (*dashboard.PeeringStats, error) {
 	for i, t := range tpeers {
 		ret.TrustedPeers[i] = dashboard.TrustedPeer{
 			NetID:  t.NetID,
-			PubKey: t.PubKey,
+			PubKey: *t.PubKey,
 		}
 	}
 	return ret, nil

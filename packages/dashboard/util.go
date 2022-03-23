@@ -6,7 +6,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -72,8 +71,8 @@ func formatTimestampOrNever(t time.Time) string {
 	return formatTimestamp(t)
 }
 
-func exploreAddressURL(baseURL string) func(address iotago.Address) string {
-	return func(address iotago.Address) string {
-		return baseURL + "/" + address.Bech32(iscp.NetworkPrefix)
+func exploreAddressURL(baseURL string) func(address iotago.Address, networkPrefix iotago.NetworkPrefix) string {
+	return func(address iotago.Address, networkPrefix iotago.NetworkPrefix) string {
+		return baseURL + "/" + address.Bech32(networkPrefix)
 	}
 }
