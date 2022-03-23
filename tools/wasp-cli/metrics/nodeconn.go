@@ -22,8 +22,8 @@ var nodeconnMetricsCmd = &cobra.Command{
 		if chainIDStr == "" {
 			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 			log.Check(err)
-			log.Printf("Following chains subscribed to L1 events:\n")
-			for _, s := range nodeconnMetrics.Subscribed {
+			log.Printf("Following chains are registered for L1 events:\n")
+			for _, s := range nodeconnMetrics.Registered {
 				log.Printf("\t%s\n", s)
 			}
 			printMessagesMetrics(&nodeconnMetrics.NodeConnectionMessagesMetrics)
