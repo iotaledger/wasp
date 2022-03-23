@@ -19,7 +19,10 @@ type nodeConnectionMetricsImpl struct {
 var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 
 func New(log *logger.Logger) NodeConnectionMetrics {
-	ret := &nodeConnectionMetricsImpl{log: log.Named("nodeconn")}
+	ret := &nodeConnectionMetricsImpl{
+		log:        log.Named("nodeconn"),
+		registered: make([]iotago.Address, 0),
+	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
 	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics(ret, nil, "in_milestone")
 	return ret

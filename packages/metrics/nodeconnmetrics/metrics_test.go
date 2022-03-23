@@ -6,12 +6,57 @@ package nodeconnmetrics
 import (
 	"testing"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
-func TestMetrics(t *testing.T) {
+func TestRegister(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	address1 := iscp.RandomChainID().AsAddress()
+	address2 := iscp.RandomChainID().AsAddress()
+	address3 := iscp.RandomChainID().AsAddress()
+	ncm := New(log)
+
+	require.Equal(t, []iotago.Address{}, ncm.GetRegistered())
+
+	ncm.SetRegistered(address1)
+	require.Equal(t, []iotago.Address{address1}, ncm.GetRegistered())
+
+	ncm.SetRegistered(address2)
+	registered := ncm.GetRegistered()
+	require.Equal(t, 2, len(registered))
+	require.Contains(t, registered, address1)
+	require.Contains(t, registered, address2)
+
+	ncm.SetUnregistered(address1)
+	require.Equal(t, []iotago.Address{address2}, ncm.GetRegistered())
+
+	ncm.SetRegistered(address3)
+	registered = ncm.GetRegistered()
+	require.Equal(t, 2, len(registered))
+	require.Contains(t, registered, address2)
+	require.Contains(t, registered, address3)
+
+	ncm.SetUnregistered(address3)
+	require.Equal(t, []iotago.Address{address2}, ncm.GetRegistered())
+
+	ncm.SetRegistered(address1)
+	registered = ncm.GetRegistered()
+	require.Equal(t, 2, len(registered))
+	require.Contains(t, registered, address1)
+	require.Contains(t, registered, address2)
+
+	ncm.SetRegistered(address3)
+	registered = ncm.GetRegistered()
+	require.Equal(t, 3, len(registered))
+	require.Contains(t, registered, address1)
+	require.Contains(t, registered, address2)
+	require.Contains(t, registered, address3)
+}
+
+func TestMessageMetrics(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	cID1 := iscp.RandomChainID()
 	cID2 := iscp.RandomChainID()
@@ -91,6 +136,12 @@ func TestMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, "OutPullOutputByID3", cncm1.GetOutPullOutputByID())
 	checkMetricsValues(t, 0, "NIL", cncm2.GetOutPullOutputByID())
 	checkMetricsValues(t, 3, "OutPullOutputByID3", ncm.GetOutPullOutputByID())
+
+	// IN Milestone
+	ncm.GetInMilestone().CountLastMessage("InMilestone1")
+	ncm.GetInMilestone().CountLastMessage("InMilestone2")
+
+	checkMetricsValues(t, 2, "InMilestone2", ncm.GetInMilestone())
 }
 
 func checkMetricsValues(t *testing.T, expectedTotal uint32, expectedLastMessage string, metrics NodeConnectionMessageMetrics) {
