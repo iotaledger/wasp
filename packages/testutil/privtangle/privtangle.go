@@ -19,7 +19,6 @@ import (
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -241,11 +240,7 @@ func (pt *PrivTangle) Stop() {
 }
 
 func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
-	return nodeclient.New(
-		fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)),
-		parameters.DeSerializationParametersForTesting(),
-		nodeclient.WithIndexer(),
-	)
+	return nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
 }
 
 // The health endpoint is not working for now.

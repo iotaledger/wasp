@@ -209,7 +209,7 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(util.IsZeroBigInt(out.CirculatingSupply), "can't destroy foundry with positive circulating supply")
+	ctx.Requiref(util.IsZeroBigInt(out.MintedTokens), "can't destroy foundry with positive circulating supply")
 
 	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 

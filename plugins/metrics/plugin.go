@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"context"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -30,7 +32,7 @@ func run(_ *node.Plugin) {
 	}
 
 	log.Infof("Starting %s ...", PluginName)
-	if err := daemon.BackgroundWorker("Prometheus exporter", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Prometheus exporter", func(_ context.Context) {
 		log.Info("Starting Prometheus exporter ... done")
 
 		bindAddr := parameters.GetString(parameters.MetricsBindAddress)
@@ -40,10 +42,7 @@ func run(_ *node.Plugin) {
 			allMetrics.Start(bindAddr)
 		}()
 
-		select {
-		case <-shutdownSignal:
-		case <-stopped:
-		}
+		<-stopped
 		log.Infof("Stopping %s ...", PluginName)
 		defer log.Infof("Stopping %s ... done", PluginName)
 		if err := allMetrics.Stop(); err != nil {

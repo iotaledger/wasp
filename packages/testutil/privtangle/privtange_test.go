@@ -12,7 +12,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
@@ -33,9 +33,11 @@ func TestHornetStartup(t *testing.T) {
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nodeEvt := iotagox.NewNodeEventAPIClient(fmt.Sprintf("ws://localhost:%d/mqtt", pt.NodePortRestAPI(0)))
+	nc := nodeclient.New(fmt.Sprintf("ws://localhost:%d/mqtt", pt.NodePortRestAPI(0)))
+	nodeEvt, err := nc.EventAPI(ctx)
+	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
-	myAddressOutputsCh := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iscp.NetworkPrefix, iotagox.UnlockConditionAny)
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iscp.NetworkPrefix, nodeclient.UnlockConditionAny)
 
 	initialOutputCount := mustOutputCount(pt, myAddress)
 

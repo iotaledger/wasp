@@ -51,11 +51,12 @@ func (w *waspServices) ConfigDump() map[string]interface{} {
 }
 
 func (w *waspServices) ExploreAddressBaseURL() string {
-	baseURL := parameters.GetString(parameters.DashboardExploreAddressURL)
-	if baseURL != "" {
-		return baseURL
-	}
-	return exploreAddressURLFromGoshimmerURI(parameters.GetString(parameters.NodeAddress))
+	panic("TODO implement")
+	// baseURL := parameters.GetString(parameters.DashboardExploreAddressURL)
+	// if baseURL != "" {
+	// 	return baseURL
+	// }
+	// return exploreAddressURLFromGoshimmerURI(parameters.GetString(parameters.NodeAddress))
 }
 
 func (w *waspServices) PeeringStats() (*dashboard.PeeringStats, error) {

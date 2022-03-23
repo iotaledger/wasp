@@ -11,7 +11,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -61,7 +60,7 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 	if err != nil {
 		return xerrors.Errorf("failed to build a tx message: %w", err)
 	}
-	txMsg, err = ncc.nc.nodeClient.SubmitMessage(ncc.nc.ctx, txMsg)
+	txMsg, err = ncc.nc.nodeClient.SubmitMessage(ncc.nc.ctx, txMsg, iotago.ZeroRentParas) // TODO change
 	if err != nil {
 		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
@@ -73,7 +72,10 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 
 	//
 	// TODO: Move it to `nc_transaction.go`
-	msgMetaChanges := ncc.nc.nodeEvents.MessageMetadataChange(*txMsgID)
+	msgMetaChanges, subInfo := ncc.nc.nodeEvents.MessageMetadataChange(*txMsgID)
+	if subInfo.Error() != nil {
+		return xerrors.Errorf("failed to subscribe: %w", subInfo.Error())
+	}
 	go func() {
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != nil {
@@ -97,15 +99,18 @@ func (ncc *ncChain) run() {
 
 		//
 		// Subscribe to the new outputs first.
-		eventsCh := ncc.nc.nodeEvents.OutputsByUnlockConditionAndAddress(
+		eventsCh, subInfo := ncc.nc.nodeEvents.OutputsByUnlockConditionAndAddress(
 			ncc.chainAddr,
 			iscp.NetworkPrefix,
-			iotagox.UnlockConditionAny,
+			nodeclient.UnlockConditionAny,
 		)
-
+		if subInfo.Error() != nil {
+			ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+		}
 		//
 		// Then fetch all the existing unspent outputs.
-		res, err := ncc.nc.nodeClient.Indexer().Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
+		indexer, err := ncc.nc.nodeClient.Indexer(ncc.nc.ctx)
+		res, err := indexer.Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
 			AddressBech32: ncc.chainAddr.Bech32(iscp.NetworkPrefix),
 		})
 		if err != nil {

@@ -562,14 +562,14 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 
 // foundryOutputRec contains information to reconstruct output
 type foundryOutputRec struct {
-	Amount            uint64 // always dust deposit
-	TokenTag          iotago.TokenTag
-	TokenScheme       iotago.TokenScheme
-	MaximumSupply     *big.Int
-	CirculatingSupply *big.Int
-	Metadata          []byte
-	BlockIndex        uint32
-	OutputIndex       uint16
+	Amount        uint64 // always dust deposit
+	TokenTag      iotago.TokenTag
+	TokenScheme   iotago.TokenScheme
+	MaximumSupply *big.Int
+	MintedTokens  *big.Int
+	Metadata      []byte
+	BlockIndex    uint32
+	OutputIndex   uint16
 }
 
 func (f *foundryOutputRec) Bytes() []byte {
@@ -580,7 +580,7 @@ func (f *foundryOutputRec) Bytes() []byte {
 	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenTag(f.TokenTag), mu)
 	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
 	util.WriteBytes8ToMarshalUtil(f.MaximumSupply.Bytes(), mu)
-	util.WriteBytes8ToMarshalUtil(f.CirculatingSupply.Bytes(), mu)
+	util.WriteBytes8ToMarshalUtil(f.MintedTokens.Bytes(), mu)
 	util.WriteBytes16ToMarshalUtil(f.Metadata, mu)
 
 	return mu.Bytes()
@@ -622,7 +622,7 @@ func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutpu
 	if err != nil {
 		return nil, err
 	}
-	ret.CirculatingSupply = big.NewInt(0).SetBytes(bigIntBin)
+	ret.MintedTokens = big.NewInt(0).SetBytes(bigIntBin)
 	if ret.Metadata, err = util.ReadBytes16FromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
@@ -649,13 +649,13 @@ func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 // SaveFoundryOutput stores foundry output into the map of all foundry outputs (compressed form)
 func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
 	foundryRec := foundryOutputRec{
-		Amount:            f.Amount,
-		TokenTag:          f.TokenTag,
-		TokenScheme:       f.TokenScheme,
-		MaximumSupply:     f.MaximumSupply,
-		CirculatingSupply: f.CirculatingSupply,
-		BlockIndex:        blockIndex,
-		OutputIndex:       outputIndex,
+		Amount:        f.Amount,
+		TokenTag:      f.TokenTag,
+		TokenScheme:   f.TokenScheme,
+		MaximumSupply: f.MaximumSupply,
+		MintedTokens:  f.MintedTokens,
+		BlockIndex:    blockIndex,
+		OutputIndex:   outputIndex,
 	}
 	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(f.SerialNumber), foundryRec.Bytes())
 }
@@ -673,13 +673,13 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
 	ret := &iotago.FoundryOutput{
-		Amount:            rec.Amount,
-		NativeTokens:      nil,
-		SerialNumber:      sn,
-		TokenScheme:       rec.TokenScheme,
-		TokenTag:          rec.TokenTag,
-		CirculatingSupply: rec.CirculatingSupply,
-		MaximumSupply:     rec.MaximumSupply,
+		Amount:        rec.Amount,
+		NativeTokens:  nil,
+		SerialNumber:  sn,
+		TokenScheme:   rec.TokenScheme,
+		TokenTag:      rec.TokenTag,
+		MintedTokens:  rec.MintedTokens,
+		MaximumSupply: rec.MaximumSupply,
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
 		},

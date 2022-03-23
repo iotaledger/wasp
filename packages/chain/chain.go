@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -85,7 +85,7 @@ type (
 	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
 	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
 	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
-	NodeConnectionMilestonesHandlerFun      func(*iotagox.MilestonePointer)
+	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestonePointer)
 )
 
 type NodeConnection interface {

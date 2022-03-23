@@ -14,7 +14,10 @@ func (nc *nodeConn) run() {
 		nc.log.Warnf("Unable to connect to Hornet MQTT: %w", err)
 		time.Sleep(1 * time.Second)
 	}
-	milestones := nc.nodeEvents.ConfirmedMilestones()
+	milestones, subInfo := nc.nodeEvents.ConfirmedMilestones()
+	if subInfo.Error() != nil {
+		nc.log.Panicf("Error subscribing: %w", subInfo.Error())
+	}
 	for {
 		select {
 		case m, ok := <-milestones:

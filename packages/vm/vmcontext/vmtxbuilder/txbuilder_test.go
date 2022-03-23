@@ -1,11 +1,12 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math/big"
 	"math/rand"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -791,14 +792,14 @@ func TestSerDe(t *testing.T) {
 			Conditions: iotago.UnlockConditions{
 				&iotago.ImmutableAliasUnlockCondition{Address: tpkg.RandAliasAddress()},
 			},
-			Amount:            1337,
-			NativeTokens:      nil,
-			SerialNumber:      5,
-			TokenTag:          iotago.TokenTag{},
-			CirculatingSupply: big.NewInt(200),
-			MaximumSupply:     big.NewInt(2000),
-			TokenScheme:       &iotago.SimpleTokenScheme{},
-			Blocks:            nil,
+			Amount:        1337,
+			NativeTokens:  nil,
+			SerialNumber:  5,
+			TokenTag:      iotago.TokenTag{},
+			MintedTokens:  big.NewInt(200),
+			MaximumSupply: big.NewInt(2000),
+			TokenScheme:   &iotago.SimpleTokenScheme{},
+			Blocks:        nil,
 		}
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

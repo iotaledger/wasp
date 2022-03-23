@@ -56,7 +56,7 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 
 	//
 	// Check, if supplied node PubKey matches.
-	if !bytes.Equal(nodeIdentity.PublicKey, reqNodePubKeyBytes) {
+	if !bytes.Equal(nodeIdentity.GetPublicKey().AsBytes(), reqNodePubKeyBytes) {
 		return &httperrors.HTTPError{Code: 400, Message: "Wrong NodePubKey"}
 	}
 

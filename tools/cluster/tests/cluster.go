@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes")
-
 type waspClusterOpts struct {
 	nNodes       int
 	modifyConfig cluster.ModifyNodesConfigFn

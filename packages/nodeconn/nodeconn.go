@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -34,7 +33,7 @@ type nodeConn struct {
 	chains     map[string]*ncChain // key = iotago.Address.Key()
 	chainsLock sync.RWMutex
 	nodeClient *nodeclient.Client
-	nodeEvents *iotagox.NodeEventAPIClient
+	nodeEvents *nodeclient.EventAPIClient
 	milestones *events.Event
 	net        peering.NetworkProvider
 	log        *logger.Logger
@@ -45,9 +44,10 @@ var _ chain.NodeConnection = &nodeConn{}
 func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger.Logger) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", nodeHost, nodePort))
-	nodeEvents := iotagox.NewNodeEventAPIClient(
-		fmt.Sprintf("ws://%s:%d/mqtt", nodeHost, nodePort),
-	)
+	nodeEvents, err := nodeClient.EventAPI(ctx)
+	if err != nil {
+		panic(xerrors.Errorf("error getting node event client: %w", err))
+	}
 	nc := nodeConn{
 		ctx:        ctx,
 		ctxCancel:  ctxCancel,
@@ -56,7 +56,7 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 		nodeClient: nodeClient,
 		nodeEvents: nodeEvents,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*iotagox.MilestonePointer))
+			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
 		net: net,
 		log: log.Named("nc"),

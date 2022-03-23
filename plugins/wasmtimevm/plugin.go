@@ -20,7 +20,7 @@ const pluginName = "WasmTimeVM"
 var log *logger.Logger
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {

@@ -341,7 +341,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1_000_000))
 		out, err = ch.GetFoundryOutput(1)
 		require.NoError(t, err)
-		require.True(t, big.NewInt(1_000_000).Cmp(out.CirculatingSupply) == 0)
+		require.True(t, big.NewInt(1_000_000).Cmp(out.MintedTokens) == 0)
 
 		// FIXME bug iotago can't destroy foundry
 		// err = destroyTokens(sn, big.NewInt(1000000))
@@ -350,7 +350,7 @@ func TestFoundries(t *testing.T) {
 		// ch.AssertL2NativeTokens(userAgentID, &tokenID, util.Big0)
 		// out, err = ch.GetFoundryOutput(1)
 		// require.NoError(t, err)
-		// require.True(t, util.Big0.Cmp(out.CirculatingSupply) == 0)
+		// require.True(t, util.Big0.Cmp(out.MintedTokens) == 0)
 	})
 	t.Run("10 foundries", func(t *testing.T) {
 		initTest()
@@ -378,7 +378,7 @@ func TestFoundries(t *testing.T) {
 
 			require.EqualValues(t, sn, out.SerialNumber)
 			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
-			require.True(t, out.CirculatingSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
+			require.True(t, out.MintedTokens.Cmp(big.NewInt(int64(sn+1))) == 0)
 			tokenID := out.MustNativeTokenID()
 
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn+1)))
@@ -396,7 +396,7 @@ func TestFoundries(t *testing.T) {
 
 			require.EqualValues(t, sn, out.SerialNumber)
 			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
-			require.True(t, out.CirculatingSupply.Cmp(big.NewInt(int64(sn))) == 0)
+			require.True(t, out.MintedTokens.Cmp(big.NewInt(int64(sn))) == 0)
 			tokenID := out.MustNativeTokenID()
 
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn)))
@@ -890,8 +890,8 @@ func TestTransferPartialAssets(t *testing.T) {
 	v.ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
 }
 
-// TestCirculatingSupplyBurn belongs to iota.go
-func TestCirculatingSupplyBurn(t *testing.T) {
+// TestMintedTokensBurn belongs to iota.go
+func TestMintedTokensBurn(t *testing.T) {
 	const OneMi = 1_000_000
 
 	_, ident1, ident1AddrKeys := tpkg.RandEd25519Identity()
@@ -921,13 +921,13 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 			Blocks: nil,
 		},
 		inputIDs[2]: &iotago.FoundryOutput{
-			Amount:            OneMi,
-			NativeTokens:      nil,
-			SerialNumber:      1,
-			TokenTag:          tokenTag,
-			CirculatingSupply: big.NewInt(50),
-			MaximumSupply:     big.NewInt(50),
-			TokenScheme:       &iotago.SimpleTokenScheme{},
+			Amount:        OneMi,
+			NativeTokens:  nil,
+			SerialNumber:  1,
+			TokenTag:      tokenTag,
+			MintedTokens:  big.NewInt(50),
+			MaximumSupply: big.NewInt(50),
+			TokenScheme:   &iotago.SimpleTokenScheme{},
 			Conditions: iotago.UnlockConditions{
 				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 			},
@@ -967,9 +967,9 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 				SerialNumber: 1,
 				TokenTag:     tokenTag,
 				// burn supply by -50
-				CirculatingSupply: util.Big0,
-				MaximumSupply:     big.NewInt(50),
-				TokenScheme:       &iotago.SimpleTokenScheme{},
+				MintedTokens:  util.Big0,
+				MaximumSupply: big.NewInt(50),
+				TokenScheme:   &iotago.SimpleTokenScheme{},
 				Conditions: iotago.UnlockConditions{
 					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 				},

@@ -12,7 +12,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -53,8 +53,8 @@ func TestNodeConn(t *testing.T) {
 
 	//
 	// Check milestone attach/detach.
-	mChan := make(chan *iotagox.MilestonePointer, 10)
-	mSub := nc.AttachMilestones(func(m *iotagox.MilestonePointer) {
+	mChan := make(chan *nodeclient.MilestonePointer, 10)
+	mSub := nc.AttachMilestones(func(m *nodeclient.MilestonePointer) {
 		mChan <- m
 	})
 	<-mChan

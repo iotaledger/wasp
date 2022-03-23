@@ -50,7 +50,7 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 	reg := s.registry()
 	bd := req.Record()
 
-	bd2, err := reg.GetChainRecordByChainID(bd.ChainID)
+	bd2, err := reg.GetChainRecordByChainID(&bd.ChainID)
 	if err != nil {
 		return err
 	}
