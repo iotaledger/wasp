@@ -306,7 +306,7 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		res := viewcontext.New(c).CallViewExternal(
+		res, err := viewcontext.New(c).CallViewExternal(
 			governance.Contract.Hname(),
 			governance.FuncGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),
@@ -314,6 +314,9 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 		govResponse := governance.NewGetChainNodesResponseFromDict(res)
 		govAccessNodes = govResponse.AccessNodes
 		govCandidateNodes = govResponse.AccessNodeCandidates
+		if err != nil {
+			c.log.Panicf("unable to read the governance contract state: %v", err)
+		}
 	}
 
 	//
