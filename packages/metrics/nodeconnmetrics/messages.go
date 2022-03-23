@@ -19,23 +19,23 @@ type nodeConnectionMessagesMetricsImpl struct {
 var _ NodeConnectionMessagesMetrics = &nodeConnectionMessagesMetricsImpl{}
 
 func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
-	createMessageMetricsFun := func(msgType string, relatedMetrics NodeConnectionMessageMetrics) NodeConnectionMessageMetrics {
+	createMessageMetricsFun := func(msgType string, makeRelatedMetricsFun func() NodeConnectionMessageMetrics) NodeConnectionMessageMetrics {
 		simpleMessageMetrics := newNodeConnectionMessageSimpleMetrics(ncmi, chainID, msgType)
 		if chainID == nil {
 			return simpleMessageMetrics
 		}
-		return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, relatedMetrics)
+		return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, makeRelatedMetricsFun())
 	}
 	return &nodeConnectionMessagesMetricsImpl{
-		outPublishTransactionMetrics:   createMessageMetricsFun("out_publish_transaction", ncmi.GetOutPublishTransaction()),
-		outPullLatestOutputMetrics:     createMessageMetricsFun("out_pull_latest_output", ncmi.GetOutPullLatestOutput()),
-		outPullTxInclusionStateMetrics: createMessageMetricsFun("out_pull_tx_inclusion_state", ncmi.GetOutPullTxInclusionState()),
-		outPullOutputByIDMetrics:       createMessageMetricsFun("out_pull_output_by_id", ncmi.GetOutPullOutputByID()),
+		outPublishTransactionMetrics:   createMessageMetricsFun("out_publish_transaction", func() NodeConnectionMessageMetrics { return ncmi.GetOutPublishTransaction() }),
+		outPullLatestOutputMetrics:     createMessageMetricsFun("out_pull_latest_output", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullLatestOutput() }),
+		outPullTxInclusionStateMetrics: createMessageMetricsFun("out_pull_tx_inclusion_state", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullTxInclusionState() }),
+		outPullOutputByIDMetrics:       createMessageMetricsFun("out_pull_output_by_id", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullOutputByID() }),
 
-		inOutputMetrics:           createMessageMetricsFun("in_output", ncmi.GetInOutput()),
-		inAliasOutputMetrics:      createMessageMetricsFun("in_alias_output", ncmi.GetInAliasOutput()),
-		inOnLedgerRequestMetrics:  createMessageMetricsFun("in_on_ledger_request", ncmi.GetInOnLedgerRequest()),
-		inTxInclusionStateMetrics: createMessageMetricsFun("in_tx_inclusion_state", ncmi.GetInTxInclusionState()),
+		inOutputMetrics:           createMessageMetricsFun("in_output", func() NodeConnectionMessageMetrics { return ncmi.GetInOutput() }),
+		inAliasOutputMetrics:      createMessageMetricsFun("in_alias_output", func() NodeConnectionMessageMetrics { return ncmi.GetInAliasOutput() }),
+		inOnLedgerRequestMetrics:  createMessageMetricsFun("in_on_ledger_request", func() NodeConnectionMessageMetrics { return ncmi.GetInOnLedgerRequest() }),
+		inTxInclusionStateMetrics: createMessageMetricsFun("in_tx_inclusion_state", func() NodeConnectionMessageMetrics { return ncmi.GetInTxInclusionState() }),
 	}
 }
 

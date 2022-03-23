@@ -1,7 +1,5 @@
 package nodeconnmetrics
 
-import ()
-
 type nodeConnectionMessageRelatedMetricsImpl struct {
 	NodeConnectionMessageMetrics
 	related NodeConnectionMessageMetrics
