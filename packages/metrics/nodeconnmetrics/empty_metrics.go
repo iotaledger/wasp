@@ -2,7 +2,6 @@ package nodeconnmetrics
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type emptyNodeConnectionMetrics struct {
@@ -21,7 +20,7 @@ func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 
 func (encmT *emptyNodeConnectionMetrics) RegisterMetrics() {}
 
-func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainAddr iotago.Address) NodeConnectionMessagesMetrics {
 	return newEmptyNodeConnectionMessagesMetrics()
 }
 

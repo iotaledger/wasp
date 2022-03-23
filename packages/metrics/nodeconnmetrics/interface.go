@@ -4,7 +4,6 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type NodeConnectionMessageMetrics interface {
@@ -32,5 +31,5 @@ type NodeConnectionMetrics interface {
 	SetUnregistered(iotago.Address)
 	GetRegistered() []iotago.Address
 	RegisterMetrics()
-	NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics
+	NewMessagesMetrics(iotago.Address) NodeConnectionMessagesMetrics
 }

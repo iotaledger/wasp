@@ -37,12 +37,13 @@ type nodeConn struct {
 	nodeEvents *iotagox.NodeEventAPIClient
 	milestones *events.Event
 	net        peering.NetworkProvider
+	metrics    nodeconnmetrics.NodeConnectionMetrics
 	log        *logger.Logger
 }
 
 var _ chain.NodeConnection = &nodeConn{}
 
-func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger.Logger) chain.NodeConnection {
+func New(nodeHost string, nodePort int, net peering.NetworkProvider, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeClient := nodeclient.New(
 		fmt.Sprintf("http://%s:%d", nodeHost, nodePort),
@@ -62,8 +63,9 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*iotagox.MilestonePointer))
 		}),
-		net: net,
-		log: log.Named("nc"),
+		net:     net,
+		metrics: metrics,
+		log:     log.Named("nc"),
 	}
 	go nc.run()
 	return &nc
@@ -71,6 +73,7 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 
 // RegisterChain implements chain.NodeConnection. // TODO -> ConnectChain.
 func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) {
+	nc.metrics.SetRegistered(chainAddr)
 	ncc := newNCChain(nc, chainAddr, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -79,6 +82,7 @@ func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(i
 
 // UnregisterChain implements chain.NodeConnection. // TODO -> DisconnectChain.
 func (nc *nodeConn) UnregisterChain(chainAddr iotago.Address) {
+	nc.metrics.SetUnregistered(chainAddr)
 	nccKey := chainAddr.Key()
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -151,6 +155,5 @@ func (nc *nodeConn) PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInpu
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	// TODO
-	return nil
+	return nc.metrics
 }

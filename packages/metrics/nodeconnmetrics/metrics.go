@@ -3,7 +3,6 @@ package nodeconnmetrics
 import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -43,8 +42,8 @@ func (ncmiT *nodeConnectionMetricsImpl) RegisterMetrics() {
 	ncmiT.log.Info("Registering nodeconnection metrics to prometheus... Done")
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
-	return newNodeConnectionMessagesMetrics(ncmiT, chainID)
+func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainAddr iotago.Address) NodeConnectionMessagesMetrics {
+	return newNodeConnectionMessagesMetrics(ncmiT, chainAddr)
 }
 
 // TODO: connect registered to Prometheus

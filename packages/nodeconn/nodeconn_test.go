@@ -14,6 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
@@ -47,7 +48,7 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	nc := nodeconn.New("localhost", pt.NodePortRestAPI(0), networkProviders[0], log)
+	nc := nodeconn.New("localhost", pt.NodePortRestAPI(0), networkProviders[0], nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
 	t.Cleanup(nc.Close)
 
 	//

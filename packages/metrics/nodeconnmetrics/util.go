@@ -1,7 +1,7 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -10,15 +10,15 @@ const (
 	msgTypeLabelNameConst = "message_type"
 )
 
-func getMetricsLabel(chainID *iscp.ChainID, msgType string) prometheus.Labels {
-	var chainIDStr string
-	if chainID == nil {
-		chainIDStr = ""
+func getMetricsLabel(chainAddr iotago.Address, msgType string) prometheus.Labels {
+	var chainAddrStr string
+	if chainAddr == nil {
+		chainAddrStr = ""
 	} else {
-		chainIDStr = chainID.String()
+		chainAddrStr = chainAddr.String()
 	}
 	return prometheus.Labels{
-		chainLabelNameConst:   chainIDStr,
+		chainLabelNameConst:   chainAddrStr,
 		msgTypeLabelNameConst: msgType,
 	}
 }

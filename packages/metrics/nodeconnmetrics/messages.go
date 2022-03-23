@@ -1,7 +1,7 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type nodeConnectionMessagesMetricsImpl struct {
@@ -18,10 +18,10 @@ type nodeConnectionMessagesMetricsImpl struct {
 
 var _ NodeConnectionMessagesMetrics = &nodeConnectionMessagesMetricsImpl{}
 
-func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainAddr iotago.Address) NodeConnectionMessagesMetrics {
 	createMessageMetricsFun := func(msgType string, makeRelatedMetricsFun func() NodeConnectionMessageMetrics) NodeConnectionMessageMetrics {
-		simpleMessageMetrics := newNodeConnectionMessageSimpleMetrics(ncmi, chainID, msgType)
-		if chainID == nil {
+		simpleMessageMetrics := newNodeConnectionMessageSimpleMetrics(ncmi, chainAddr, msgType)
+		if chainAddr == nil {
 			return simpleMessageMetrics
 		}
 		return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, makeRelatedMetricsFun())

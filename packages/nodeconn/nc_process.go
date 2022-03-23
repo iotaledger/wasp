@@ -20,6 +20,7 @@ func (nc *nodeConn) run() {
 		case m, ok := <-milestones:
 			nc.log.Debugf("Milestone received, index=%v, timestamp=%v", m.Index, m.Timestamp)
 			if ok {
+				nc.metrics.GetInMilestone().CountLastMessage(m)
 				nc.milestones.Trigger(m)
 			}
 		case <-nc.ctx.Done():

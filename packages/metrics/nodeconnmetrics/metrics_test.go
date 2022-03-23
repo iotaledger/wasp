@@ -58,11 +58,9 @@ func TestRegister(t *testing.T) {
 
 func TestMessageMetrics(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	cID1 := iscp.RandomChainID()
-	cID2 := iscp.RandomChainID()
 	ncm := New(log)
-	cncm1 := ncm.NewMessagesMetrics(cID1)
-	cncm2 := ncm.NewMessagesMetrics(cID2)
+	cncm1 := ncm.NewMessagesMetrics(iscp.RandomChainID().AsAddress())
+	cncm2 := ncm.NewMessagesMetrics(iscp.RandomChainID().AsAddress())
 	ncm.RegisterMetrics()
 
 	// IN Output

@@ -31,6 +31,7 @@ type nodeconnChain struct {
 	txInclusionStateStopCh     chan bool
 	txInclusionStateHandlerRef *events.Closure
 	milestonesHandlerRef       *events.Closure
+	metrics                    nodeconnmetrics.NodeConnectionMessagesMetrics
 	mutex                      sync.Mutex // NOTE: mutexes might also be separated for aliasOutput, onLedgerRequest and txInclusionState; however, it is not going to be used heavily, so the common one is used.
 }
 
@@ -53,6 +54,7 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 		onLedgerRequestStopCh:  make(chan bool),
 		txInclusionStateCh:     make(chan *txInclusionStateMsg),
 		txInclusionStateStopCh: make(chan bool),
+		metrics:                nc.GetMetrics().NewMessagesMetrics(chainAddr),
 	}
 	result.nc.RegisterChain(result.chainAddr, result.outputHandler)
 	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainAddr, result.txInclusionStateHandler)
@@ -65,6 +67,13 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 }
 
 func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
+	nccT.metrics.GetInOutput().CountLastMessage(struct {
+		OutputID iotago.OutputID
+		Output   iotago.Output
+	}{
+		OutputID: outputID,
+		Output:   output,
+	})
 	outputIDUTXO := outputID.UTXOInput()
 	outputIDstring := iscp.OID(outputIDUTXO)
 	nccT.log.Debugf("handling output ID %v", outputIDstring)
@@ -107,6 +116,7 @@ func (nccT *nodeconnChain) AttachToAliasOutput(handler chain.NodeConnectionAlias
 		for {
 			select {
 			case aliasOutput := <-nccT.aliasOutputCh:
+				nccT.metrics.GetInAliasOutput().CountLastMessage(aliasOutput)
 				handler(aliasOutput)
 			case <-nccT.aliasOutputStopCh:
 				nccT.log.Debugf("alias output handler stopped")
@@ -138,6 +148,7 @@ func (nccT *nodeconnChain) AttachToOnLedgerRequest(handler chain.NodeConnectionO
 		for {
 			select {
 			case onLedgerRequest := <-nccT.onLedgerRequestCh:
+				nccT.metrics.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest)
 				handler(onLedgerRequest)
 			case <-nccT.onLedgerRequestStopCh:
 				nccT.log.Debugf("on ledger request handler stopped")
@@ -169,6 +180,7 @@ func (nccT *nodeconnChain) AttachToTxInclusionState(handler chain.NodeConnection
 		for {
 			select {
 			case msg := <-nccT.txInclusionStateCh:
+				nccT.metrics.GetInTxInclusionState().CountLastMessage(msg)
 				handler(msg.txID, msg.state)
 			case <-nccT.txInclusionStateStopCh:
 				nccT.log.Debugf("transaction inclusion state handler stopped")
@@ -209,24 +221,33 @@ func (nccT *nodeconnChain) detachFromMilestones() {
 }
 
 func (nccT *nodeconnChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+	nccT.metrics.GetOutPublishTransaction().CountLastMessage(struct {
+		StateIndex  uint32
+		Transaction *iotago.Transaction
+	}{
+		StateIndex:  stateIndex,
+		Transaction: tx,
+	})
 	return nccT.nc.PublishTransaction(nccT.chainAddr, stateIndex, tx)
 }
 
 func (nccT *nodeconnChain) PullLatestOutput() {
+	nccT.metrics.GetOutPullLatestOutput().CountLastMessage(nil)
 	nccT.nc.PullLatestOutput(nccT.chainAddr)
 }
 
-func (nccT *nodeconnChain) PullTxInclusionState(txid iotago.TransactionID) {
-	nccT.nc.PullTxInclusionState(nccT.chainAddr, txid)
+func (nccT *nodeconnChain) PullTxInclusionState(txID iotago.TransactionID) {
+	nccT.metrics.GetOutPullTxInclusionState().CountLastMessage(txID)
+	nccT.nc.PullTxInclusionState(nccT.chainAddr, txID)
 }
 
 func (nccT *nodeconnChain) PullOutputByID(outputID *iotago.UTXOInput) {
+	nccT.metrics.GetOutPullOutputByID().CountLastMessage(outputID)
 	nccT.nc.PullOutputByID(nccT.chainAddr, outputID)
 }
 
 func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
-	// TODO
-	return nil
+	return nccT.metrics
 }
 
 func (nccT *nodeconnChain) Close() {
