@@ -5,61 +5,68 @@ import (
 )
 
 type nodeConnectionMessagesMetricsImpl struct {
-	outPullStateMetrics                     NodeConnectionMessageMetrics
-	outPullTransactionInclusionStateMetrics NodeConnectionMessageMetrics
-	outPullConfirmedOutputMetrics           NodeConnectionMessageMetrics
-	outPostTransactionMetrics               NodeConnectionMessageMetrics
+	outPublishTransactionMetrics   NodeConnectionMessageMetrics
+	outPullLatestOutputMetrics     NodeConnectionMessageMetrics
+	outPullTxInclusionStateMetrics NodeConnectionMessageMetrics
+	outPullOutputByIDMetrics       NodeConnectionMessageMetrics
 
-	inTransactionMetrics        NodeConnectionMessageMetrics
-	inInclusionStateMetrics     NodeConnectionMessageMetrics
-	inOutputMetrics             NodeConnectionMessageMetrics
-	inUnspentAliasOutputMetrics NodeConnectionMessageMetrics
+	inOutputMetrics           NodeConnectionMessageMetrics
+	inAliasOutputMetrics      NodeConnectionMessageMetrics
+	inOnLedgerRequestMetrics  NodeConnectionMessageMetrics
+	inTxInclusionStateMetrics NodeConnectionMessageMetrics
 }
 
 var _ NodeConnectionMessagesMetrics = &nodeConnectionMessagesMetricsImpl{}
 
 func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+	createMessageMetricsFun := func(msgType string, relatedMetrics NodeConnectionMessageMetrics) NodeConnectionMessageMetrics {
+		simpleMessageMetrics := newNodeConnectionMessageSimpleMetrics(ncmi, chainID, msgType)
+		if chainID == nil {
+			return simpleMessageMetrics
+		}
+		return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, relatedMetrics)
+	}
 	return &nodeConnectionMessagesMetricsImpl{
-		outPullStateMetrics:                     newNodeConnectionMessageMetrics(ncmi, chainID, "out_pull_state"),
-		outPullTransactionInclusionStateMetrics: newNodeConnectionMessageMetrics(ncmi, chainID, "out_pull_transaction_inclusion_state"),
-		outPullConfirmedOutputMetrics:           newNodeConnectionMessageMetrics(ncmi, chainID, "out_pull_confirmed_output"),
-		outPostTransactionMetrics:               newNodeConnectionMessageMetrics(ncmi, chainID, "out_post_transaction"),
+		outPublishTransactionMetrics:   createMessageMetricsFun("out_publish_transaction", ncmi.GetOutPublishTransaction()),
+		outPullLatestOutputMetrics:     createMessageMetricsFun("out_pull_latest_output", ncmi.GetOutPullLatestOutput()),
+		outPullTxInclusionStateMetrics: createMessageMetricsFun("out_pull_tx_inclusion_state", ncmi.GetOutPullTxInclusionState()),
+		outPullOutputByIDMetrics:       createMessageMetricsFun("out_pull_output_by_id", ncmi.GetOutPullOutputByID()),
 
-		inTransactionMetrics:        newNodeConnectionMessageMetrics(ncmi, chainID, "in_transaction"),
-		inInclusionStateMetrics:     newNodeConnectionMessageMetrics(ncmi, chainID, "in_inclusion_state"),
-		inOutputMetrics:             newNodeConnectionMessageMetrics(ncmi, chainID, "in_output"),
-		inUnspentAliasOutputMetrics: newNodeConnectionMessageMetrics(ncmi, chainID, "in_alias_output"),
+		inOutputMetrics:           createMessageMetricsFun("in_output", ncmi.GetInOutput()),
+		inAliasOutputMetrics:      createMessageMetricsFun("in_alias_output", ncmi.GetInAliasOutput()),
+		inOnLedgerRequestMetrics:  createMessageMetricsFun("in_on_ledger_request", ncmi.GetInOnLedgerRequest()),
+		inTxInclusionStateMetrics: createMessageMetricsFun("in_tx_inclusion_state", ncmi.GetInTxInclusionState()),
 	}
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetOutPullState() NodeConnectionMessageMetrics {
-	return ncmmi.outPullStateMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPublishTransaction() NodeConnectionMessageMetrics {
+	return ncmmiT.outPublishTransactionMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetOutPullTransactionInclusionState() NodeConnectionMessageMetrics {
-	return ncmmi.outPullTransactionInclusionStateMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullLatestOutput() NodeConnectionMessageMetrics {
+	return ncmmiT.outPullLatestOutputMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetOutPullConfirmedOutput() NodeConnectionMessageMetrics {
-	return ncmmi.outPullConfirmedOutputMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullTxInclusionState() NodeConnectionMessageMetrics {
+	return ncmmiT.outPullTxInclusionStateMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetOutPostTransaction() NodeConnectionMessageMetrics {
-	return ncmmi.outPostTransactionMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullOutputByID() NodeConnectionMessageMetrics {
+	return ncmmiT.outPullOutputByIDMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetInTransaction() NodeConnectionMessageMetrics {
-	return ncmmi.inTransactionMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInOutput() NodeConnectionMessageMetrics {
+	return ncmmiT.inOutputMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetInInclusionState() NodeConnectionMessageMetrics {
-	return ncmmi.inInclusionStateMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInAliasOutput() NodeConnectionMessageMetrics {
+	return ncmmiT.inAliasOutputMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetInOutput() NodeConnectionMessageMetrics {
-	return ncmmi.inOutputMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInOnLedgerRequest() NodeConnectionMessageMetrics {
+	return ncmmiT.inOnLedgerRequestMetrics
 }
 
-func (ncmmi *nodeConnectionMessagesMetricsImpl) GetInUnspentAliasOutput() NodeConnectionMessageMetrics {
-	return ncmmi.inUnspentAliasOutputMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInTxInclusionState() NodeConnectionMessageMetrics {
+	return ncmmiT.inTxInclusionStateMetrics
 }

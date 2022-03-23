@@ -15,21 +15,22 @@ type NodeConnectionMessageMetrics interface {
 }
 
 type NodeConnectionMessagesMetrics interface {
-	GetOutPullState() NodeConnectionMessageMetrics
-	GetOutPullTransactionInclusionState() NodeConnectionMessageMetrics
-	GetOutPullConfirmedOutput() NodeConnectionMessageMetrics
-	GetOutPostTransaction() NodeConnectionMessageMetrics
-	GetInTransaction() NodeConnectionMessageMetrics
-	GetInInclusionState() NodeConnectionMessageMetrics
+	GetOutPublishTransaction() NodeConnectionMessageMetrics
+	GetOutPullLatestOutput() NodeConnectionMessageMetrics
+	GetOutPullTxInclusionState() NodeConnectionMessageMetrics
+	GetOutPullOutputByID() NodeConnectionMessageMetrics
 	GetInOutput() NodeConnectionMessageMetrics
-	GetInUnspentAliasOutput() NodeConnectionMessageMetrics
+	GetInAliasOutput() NodeConnectionMessageMetrics
+	GetInOnLedgerRequest() NodeConnectionMessageMetrics
+	GetInTxInclusionState() NodeConnectionMessageMetrics
 }
 
 type NodeConnectionMetrics interface {
 	NodeConnectionMessagesMetrics
-	SetSubscribed(iotago.Address)
-	SetUnsubscribed(iotago.Address)
-	GetSubscribed() []iotago.Address
+	GetInMilestone() NodeConnectionMessageMetrics
+	SetRegistered(iotago.Address)
+	SetUnregistered(iotago.Address)
+	GetRegistered() []iotago.Address
 	RegisterMetrics()
 	NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics
 }

@@ -1,43 +1,43 @@
 package nodeconnmetrics
 
 type emptyNodeConnectionMessagesMetrics struct {
-	empty NodeConnectionMessageMetrics
+	emptyMessageMetrics NodeConnectionMessageMetrics
 }
 
 var _ NodeConnectionMessagesMetrics = &emptyNodeConnectionMessagesMetrics{}
 
-func NewEmptyNodeConnectionMessagesMetrics() NodeConnectionMessagesMetrics {
-	return &emptyNodeConnectionMessagesMetrics{empty: newEmptyNodeConnectionMessageMetrics()}
+func newEmptyNodeConnectionMessagesMetrics() *emptyNodeConnectionMessagesMetrics {
+	return &emptyNodeConnectionMessagesMetrics{emptyMessageMetrics: newEmptyNodeConnectionMessageMetrics()}
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetOutPullState() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPublishTransaction() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetOutPullTransactionInclusionState() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullLatestOutput() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetOutPullConfirmedOutput() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullTxInclusionState() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetOutPostTransaction() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullOutputByID() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetInTransaction() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInOutput() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetInInclusionState() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInAliasOutput() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetInOutput() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInOnLedgerRequest() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
 
-func (ecmm *emptyNodeConnectionMessagesMetrics) GetInUnspentAliasOutput() NodeConnectionMessageMetrics {
-	return ecmm.empty
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInTxInclusionState() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
 }
