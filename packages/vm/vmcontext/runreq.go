@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"errors"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -17,13 +16,13 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"golang.org/x/xerrors"
 )
 
 // RunTheRequest processes each iscp.Request in the batch
@@ -338,7 +337,7 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: contract = %s", vm.ErrTargetContractNotFound, contractHname))
+		panic(vm.ErrContractNotFound.Create(contractHname))
 	}
 	return ret
 }

@@ -132,7 +132,7 @@ func init() {
 	}
 }
 
-func WrapISCNFTID(c iotago.NFTID) (ret IotaNFTID) {
+func WrapIotaNFTID(c iotago.NFTID) (ret IotaNFTID) {
 	copy(ret[:], c[:])
 	return
 }
@@ -151,7 +151,7 @@ type ISCNFT struct {
 
 func WrapISCNFT(n *iscp.NFT) ISCNFT {
 	return ISCNFT{
-		ID:       WrapISCNFTID(n.ID),
+		ID:       WrapIotaNFTID(n.ID),
 		Issuer:   WrapIotaAddress(n.Issuer),
 		Metadata: n.Metadata,
 	}
@@ -175,6 +175,41 @@ func (a ISCNFT) MustUnwrap() *iscp.NFT {
 		panic(err)
 	}
 	return ret
+}
+
+// ISCAllowance matches the struct definition in ISC.sol
+type ISCAllowance struct {
+	Iotas  uint64
+	Tokens []IotaNativeToken
+	NFTs   []IotaNFTID
+}
+
+func WrapISCAllowance(a *iscp.Allowance) ISCAllowance {
+	tokens := make([]IotaNativeToken, len(a.Assets.Tokens))
+	for i, t := range a.Assets.Tokens {
+		tokens[i] = WrapIotaNativeToken(t)
+	}
+	nfts := make([]IotaNFTID, len(a.NFTs))
+	for i, id := range a.NFTs {
+		nfts[i] = WrapIotaNFTID(id)
+	}
+	return ISCAllowance{
+		Iotas:  a.Assets.Iotas,
+		Tokens: tokens,
+		NFTs:   nfts,
+	}
+}
+
+func (a ISCAllowance) Unwrap() *iscp.Allowance {
+	tokens := make(iotago.NativeTokens, len(a.Tokens))
+	for i, t := range a.Tokens {
+		tokens[i] = t.Unwrap()
+	}
+	nfts := make([]iotago.NFTID, len(a.NFTs))
+	for i, id := range a.NFTs {
+		nfts[i] = id.Unwrap()
+	}
+	return iscp.NewAllowance(a.Iotas, tokens, nfts)
 }
 
 // ISCDictItem matches the struct definition in ISC.sol
