@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -41,26 +40,26 @@ func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []i
 	}
 }
 
-func PublishStateTransition(chainID *iscp.ChainID, stateOutputID iotago.OutputID, stateOutput *iotago.AliasOutput, reqIDsLength int) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.StateMetadata)
+func PublishStateTransition(chainID *iscp.ChainID, stateOutput *iscp.AliasOutputWithID, reqIDsLength int) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateMetadata())
 
 	publisher.Publish("state",
 		chainID.String(),
-		strconv.Itoa(int(stateOutput.StateIndex)),
+		strconv.Itoa(int(stateOutput.GetStateIndex())),
 		strconv.Itoa(reqIDsLength),
-		iscp.OID(stateOutputID.UTXOInput()),
+		iscp.OID(stateOutput.ID()),
 		stateHash.String(),
 	)
 }
 
-func PublishGovernanceTransition(stateOutputID iotago.OutputID, stateOutput *iotago.AliasOutput) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.StateMetadata)
-	chainID := iscp.ChainIDFromAliasID(stateOutput.AliasID)
+func PublishGovernanceTransition(stateOutput *iscp.AliasOutputWithID) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateMetadata())
+	chainID := iscp.ChainIDFromAliasID(stateOutput.GetAliasID())
 
 	publisher.Publish("rotate",
 		chainID.String(),
-		strconv.Itoa(int(stateOutput.StateIndex)),
-		iscp.OID(stateOutputID.UTXOInput()),
+		strconv.Itoa(int(stateOutput.GetStateIndex())),
+		iscp.OID(stateOutput.ID()),
 		stateHash.String(),
 	)
 }

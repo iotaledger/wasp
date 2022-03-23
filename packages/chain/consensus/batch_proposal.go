@@ -137,6 +137,7 @@ func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, state
 			maxReqTime = requests[i].Timestamp()
 		}*/
 	}
+	//TODO
 	/*if b.Timestamp.Before(maxReqTime) {
 		b.Timestamp = maxReqTime
 	}*/

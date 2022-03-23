@@ -77,45 +77,20 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	}
 }
 
-func (sm *stateManager) EnqueueOutputMsg(output iotago.Output, id *iotago.UTXOInput) {
-	sm.eventOutputMsgPipe.In() <- &messages.OutputMsg{
-		Output: output,
-		ID:     id,
-	}
+func (sm *stateManager) EnqueueAliasOutput(output *iscp.AliasOutputWithID) {
+	sm.eventAliasOutputPipe.In() <- output
 }
 
-func (sm *stateManager) handleOutputMsg(msg *messages.OutputMsg) {
-	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID))
-	chainOutput, ok := msg.Output.(*iotago.AliasOutput)
-	if !ok {
-		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *iotago.AliasOutput", msg.Output)
-		return
-	}
-	if sm.outputPulled(iscp.NewAliasOutputWithID(chainOutput, msg.ID)) {
-		sm.takeAction()
-	}
-}
-
-// EventStateTransactionMsg triggered whenever new state transaction arrives
-// the state transaction may be confirmed or not
-func (sm *stateManager) EnqueueStateMsg(msg *messages.StateMsg) {
-	sm.eventStateOutputMsgPipe.In() <- msg
-}
-
-func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
-	sm.log.Debugw("EventStateMsg received: ",
-		"state index", msg.ChainOutput.GetStateIndex(),
-		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
-	)
-	sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex())
-	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(msg.ChainOutput.GetAliasOutput())
+func (sm *stateManager) handleAliasOutput(output *iscp.AliasOutputWithID) {
+	sm.log.Debugf("EventAliasOutput received: output id %s for state index", iscp.OID(output.ID()), output.GetStateIndex())
+	//sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex()) //TODO!!!
+	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 	if err != nil {
-		sm.log.Errorf("EventStateMsg ignored: failed to parse state commitment: %v", err)
+		sm.log.Errorf("EventAliasOutput ignored: failed to parse state commitment: %v", err)
 		return
 	}
-	stateCommitment := stateL1Commitment.Commitment
-	sm.log.Debugf("EventStateMsg state commitment is %s", stateCommitment)
-	if sm.stateOutputReceived(msg.ChainOutput, msg.Timestamp) {
+	sm.log.Debugf("EventAliasOutput received: state commitment is %s", stateL1Commitment.Commitment)
+	if sm.aliasOutputReceived(output) {
 		sm.takeAction()
 	}
 }

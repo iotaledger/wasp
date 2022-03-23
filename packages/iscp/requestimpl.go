@@ -2,7 +2,6 @@ package iscp
 
 import (
 	"bytes"
-	"crypto"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -218,7 +217,7 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 // Sign signs essence
 func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 	r.publicKey = key.GetPublicKey()
-	r.signature, _ = key.GetPrivateKey().Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
+	r.signature = key.GetPrivateKey().Sign(r.essenceBytes())
 }
 
 // FungibleTokens is attached assets to the UTXO. Nil for off-ledger

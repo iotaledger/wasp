@@ -38,7 +38,7 @@ func (c *consensus) takeAction() {
 	c.broadcastSignedResultIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
-	//	c.pullInclusionStateIfNeeded()
+	c.pullInclusionStateIfNeeded()
 }
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
@@ -402,22 +402,23 @@ func (c *consensus) postTransactionIfNeeded() {
 		c.log.Debugf("postTransaction not needed: delayed till %v", c.postTxDeadline)
 		return
 	}
-	go c.nodeConn.PostTransaction(c.finalTx)
+	stateIndex := c.resultState.BlockIndex()
+	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx)
 
 	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	txID, err := c.finalTx.ID()
 	if err == nil {
-		c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d",
-			iscp.TxID(txID), len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
+		c.log.Infof("postTransaction: POSTED TRANSACTION for state %v: %s, number of inputs: %d, outputs: %d",
+			stateIndex, iscp.TxID(txID), len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
 	} else {
-		c.log.Warnf("postTransaction: POSTED TRANSACTION: number of inputs: %d, outputs: %d, error calculating id: %v",
-			len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs), err)
+		c.log.Warnf("postTransaction: POSTED TRANSACTION for state %v: number of inputs: %d, outputs: %d, error calculating id: %v",
+			stateIndex, len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs), err)
 	}
 }
 
 // pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
 // starts immediately after finalization of the transaction, not after posting it
-/*func (c *consensus) pullInclusionStateIfNeeded() {
+func (c *consensus) pullInclusionStateIfNeeded() {
 	if !c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("pullInclusionState not needed: transaction is not finalized")
 		return
@@ -430,10 +431,14 @@ func (c *consensus) postTransactionIfNeeded() {
 		c.log.Debugf("pullInclusionState not needed: delayed till %v", c.pullInclusionStateDeadline)
 		return
 	}
-	c.nodeConn.PullTransactionInclusionState(c.finalTx.ID())
+	finalTxID, err := c.finalTx.ID()
+	if err != nil {
+		c.log.Panicf("pullInclusionState: cannot calculate final transaction id: %v", err)
+	}
+	c.nodeConn.PullTxInclusionState(*finalTxID)
 	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
 	c.log.Debugf("pullInclusionState: request for inclusion state sent")
-}*/
+}
 
 // prepareBatchProposal creates a batch proposal structure out of requests
 func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
@@ -582,31 +587,34 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.runVMIfNeeded()
 }
 
-func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
-	panic("TODO implement or remove")
-	// 	if !c.workflow.IsTransactionFinalized() {
-	// 		c.log.Debugf("processInclusionState: transaction not finalized -> skipping.")
-	// 		return
-	// 	}
-	// 	if msg.TxID != c.finalTx.ID() {
-	// 		c.log.Debugf("processInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-	// 			c.finalTx.ID().Base58(), msg.TxID.Base58())
-	// 		return
-	// 	}
-	// 	switch msg.State {
-	// 	case ledgerstate.Pending:
-	// 		c.workflow.setTransactionSeen()
-	// 		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
-	// 	case ledgerstate.Confirmed:
-	// 		c.workflow.setTransactionSeen()
-	// 		c.workflow.setCompleted()
-	// 		c.refreshConsensusInfo()
-	// 		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
-	// 	case ledgerstate.Rejected:
-	// 		c.workflow.setTransactionSeen()
-	// 		c.log.Infof("processInclusionState: transaction id %s is rejected; restarting consensus.", msg.TxID.Base58())
-	// 		c.resetWorkflow()
-	// 	}
+func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
+	if !c.workflow.IsTransactionFinalized() {
+		c.log.Debugf("processTxInclusionState: transaction not finalized -> skipping.")
+		return
+	}
+	finalTxID, err := c.finalTx.ID()
+	finalTxIDStr := iscp.TxID(finalTxID)
+	if err != nil {
+		c.log.Panicf("processTxInclusionState: cannot calculate final transaction id: %v", err)
+	}
+	if msg.TxID != *finalTxID {
+		c.log.Debugf("processTxInclusionState: current transaction id %v does not match the received one %v -> skipping.",
+			finalTxIDStr, iscp.TxID(&msg.TxID))
+		return
+	}
+	switch msg.State {
+	case "noTransaction":
+		c.log.Debugf("processTxInclusionState: transaction id %v is not known.", finalTxIDStr)
+	case "included":
+		c.workflow.setTransactionSeen()
+		c.workflow.setCompleted()
+		c.refreshConsensusInfo()
+		c.log.Debugf("processTxInclusionState: transaction id %s is included; workflow finished", finalTxIDStr)
+	case "conflicitng":
+		c.workflow.setTransactionSeen()
+		c.log.Infof("processTxInclusionState: transaction id %s is conflicting; restarting consensus.", finalTxIDStr)
+		c.resetWorkflow()
+	}
 }
 
 func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.Transaction, *iscp.AliasOutputWithID, error) {
@@ -618,8 +626,6 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.
 	if err != nil {
 		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
 	}
-	// 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
-	// sigUnlockBlock := &iotago.SignatureUnlockBlock{signatureWithPK.Signature}
 
 	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := c.stateOutput.ID()
@@ -682,7 +688,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	oid := msg.StateOutput.OutputID()
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
 	r := ""
-	/*if c.stateOutput.GetIsGovernanceUpdated() {
+	/* TODO
+	if c.stateOutput.GetIsGovernanceUpdated() {
 		r = " (rotate) "
 	}*/
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",

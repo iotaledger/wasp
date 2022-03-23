@@ -5,7 +5,6 @@ package governance
 
 import (
 	"bytes"
-	"crypto"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -25,11 +24,7 @@ func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress io
 	certData := bytes.Buffer{}
 	certData.Write(nodeKeyPair.GetPublicKey().AsBytes())
 	certData.Write(iscp.BytesFromAddress(ownerAddress))
-	result, err := nodeKeyPair.GetPrivateKey().Sign(nil, certData.Bytes(), crypto.Hash(0))
-	if err != nil {
-		panic(err)
-	}
-	return result
+	return nodeKeyPair.GetPrivateKey().Sign(certData.Bytes())
 }
 
 func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
