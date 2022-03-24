@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -337,7 +339,7 @@ func TestISCNFTData(t *testing.T) {
 	evmChain.ISCContract(evmChain.faucetKey).callView(
 		nil,
 		"getNFTData",
-		[]interface{}{isccontract.WrapISCNFTID(nftInfo.NFTID)},
+		[]interface{}{isccontract.WrapIotaNFTID(nftInfo.NFTID)},
 		&ret,
 	)
 
@@ -461,6 +463,24 @@ func TestISCGetAllowanceNativeTokens(t *testing.T) {
 
 	require.EqualValues(t, tokenID[:], nt.ID.Data)
 	require.EqualValues(t, 42, nt.Amount.Uint64())
+}
+
+func TestISCCall(t *testing.T) {
+	evmChain := initEVM(t, inccounter.Processor)
+	err := evmChain.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
+	require.NoError(t, err)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	res, err := iscTest.callFn(nil, "callInccounter")
+	require.NoError(evmChain.solo.T, err)
+	require.Equal(evmChain.solo.T, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+
+	r, err := evmChain.soloChain.CallView(
+		inccounter.Contract.Name,
+		inccounter.FuncGetCounter.Name,
+	)
+	require.NoError(evmChain.solo.T, err)
+	require.EqualValues(t, 42, codec.MustDecodeInt64(r.MustGet(inccounter.VarCounter)))
 }
 
 func TestBlockTime(t *testing.T) {

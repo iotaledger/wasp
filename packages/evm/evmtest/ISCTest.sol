@@ -55,4 +55,12 @@ contract ISCTest {
 			emit AllowanceNativeTokenEvent(isc.getAllowanceNativeToken(i));
 		}
 	}
+
+	function callInccounter() public {
+		ISCDict memory params = ISCDict(new ISCDictItem[](1));
+        bytes memory int64Encoded42 = hex"2A00000000000000";
+		params.items[0] = ISCDictItem("counter", int64Encoded42);
+		ISCAllowance memory allowance;
+		isc.call(isc.hn("inccounter"), isc.hn("incCounter"), params, allowance);
+	}
 }
