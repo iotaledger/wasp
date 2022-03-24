@@ -98,6 +98,23 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		i := args[0].(uint16)
 		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
 
+	case "call":
+		var callArgs struct {
+			ContractHname uint32
+			EntryPoint    uint32
+			Params        isccontract.ISCDict
+			Allowance     isccontract.ISCAllowance
+		}
+		err := method.Inputs.Copy(&callArgs, args)
+		c.ctx.RequireNoError(err)
+		callRet := c.ctx.Call(
+			iscp.Hname(callArgs.ContractHname),
+			iscp.Hname(callArgs.EntryPoint),
+			callArgs.Params.Unwrap(),
+			callArgs.Allowance.Unwrap(),
+		)
+		outs = []interface{}{isccontract.WrapISCDict(callRet)}
+
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
@@ -158,6 +175,9 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 	var outs []interface{}
 
 	switch method.Name {
+	case "hn":
+		outs = []interface{}{iscp.Hn(args[0].(string))}
+
 	case "hasParam":
 		outs = []interface{}{ctx.Params().MustHas(kv.Key(args[0].(string)))}
 

@@ -50,8 +50,17 @@ struct ISCDict {
 	ISCDictItem[] items;
 }
 
+struct ISCAllowance {
+	uint64 iotas;
+	IotaNativeToken[] tokens;
+	IotaNFTID[] nfts;
+}
+
 // The interface of the native ISC contract
 interface ISC {
+	// ----- misc -----
+	function hn(string memory s) external view returns (ISCHname);
+
 	// ----- SandboxBase -----
 
 	function hasParam(string memory key) external view returns (bool);
@@ -80,6 +89,7 @@ interface ISC {
 	function getAllowanceNativeToken(uint16 i) external view returns (IotaNativeToken memory);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
+	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
 
 	// ----- SandboxView -----
 

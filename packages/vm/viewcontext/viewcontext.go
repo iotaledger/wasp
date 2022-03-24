@@ -1,6 +1,8 @@
 package viewcontext
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -26,7 +28,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"go.uber.org/zap"
-	"math/big"
 )
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
@@ -172,6 +173,9 @@ func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 
 func (ctx *ViewContext) callView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
 	contractRecord := ctx.GetContractRecord(targetContract)
+	if contractRecord == nil {
+		panic(vm.ErrContractNotFound.Create(targetContract))
+	}
 	ep := execution.GetEntryPointByProgHash(ctx, targetContract, entryPoint, contractRecord.ProgramHash)
 
 	if !ep.IsView() {
