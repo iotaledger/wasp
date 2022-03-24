@@ -14,14 +14,16 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"golang.org/x/xerrors"
 )
 
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer1Client      interface{}
+	Layer1Client      nodeconn.L1Client
 	CommitteeAPIHosts []string
 	CommitteePubKeys  []string
 	N                 uint16
@@ -101,60 +103,70 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	return chainID, err
 }
 
+func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
+	var utxoIDs iotago.OutputIDs
+	for id := range utxoMap {
+		utxoIDs = append(utxoIDs, id)
+	}
+	return utxoIDs
+}
+
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string, initParams dict.Dict) (*iscp.ChainID, *iotago.Transaction, error) {
-	panic("TODO implement")
-	// originatorAddr := originator.GetPublicKey().AsEd25519Address()
-	// // ----------- request owner address' outputs from the ledger
-	// allOuts, err := Layer1Client.GetConfirmedOutputs(originatorAddr)
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
-	// }
+func CreateChainOrigin(layer1Client nodeconn.L1Client, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string, initParams dict.Dict) (*iscp.ChainID, *iotago.Transaction, error) {
+	originatorAddr := originator.GetPublicKey().AsEd25519Address()
+	// ----------- request owner address' outputs from the ledger
+	utxoMap, err := layer1Client.OutputMap(originatorAddr)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+	}
 
-	// // ----------- create origin transaction
-	// originTx, chainID, err := transaction.NewChainOriginTransaction(
-	// 	originator,
-	// 	stateController,
-	// 	nil,
-	// 	time.Now(),
-	// 	allOuts,
-	// )
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
-	// }
+	// ----------- create origin transaction
+	originTx, chainID, err := transaction.NewChainOriginTransaction(
+		originator,
+		stateController,
+		stateController,
+		0,
+		utxoMap,
+		utxoIDsFromUtxoMap(utxoMap),
+		layer1Client.L1Params(),
+	)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+	}
 
-	// // ------------- post origin transaction and wait for confirmation
-	// err = Layer1Client.PostAndWaitForConfirmation(originTx)
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
-	// }
+	// ------------- post origin transaction and wait for confirmation
+	err = layer1Client.PostTx(originTx)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+	}
 
-	// allOuts, err = Layer1Client.GetConfirmedOutputs(originatorAddr)
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
-	// }
+	utxoMap, err = layer1Client.OutputMap(originatorAddr)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+	}
 
-	// // NOTE: whoever send first init request, is an owner of the chain
-	// // create root init transaction
-	// reqTx, err := transaction.NewRootInitRequestTransaction(
-	// 	originator,
-	// 	chainID,
-	// 	dscr,
-	// 	time.Now(),
-	// 	allOuts...,
-	//  initParams...,
-	// )
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
-	// }
+	// NOTE: whoever send first init request, is an owner of the chain
+	// create root init transaction
+	reqTx, err := transaction.NewRootInitRequestTransaction(
+		originator,
+		chainID,
+		dscr,
+		utxoMap,
+		utxoIDsFromUtxoMap(utxoMap),
+		layer1Client.L1Params(),
+		initParams,
+	)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+	}
 
-	// // ---------- post root init request transaction and wait for confirmation
-	// err = Layer1Client.PostAndWaitForConfirmation(reqTx)
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
-	// }
+	// ---------- post root init request transaction and wait for confirmation
+	err = layer1Client.PostTx(reqTx)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+	}
 
-	// return chainID, reqTx, nil
+	return chainID, reqTx, nil
 }
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its

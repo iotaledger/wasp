@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
@@ -351,12 +351,12 @@ func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	}
 }
 
-func (pt *PrivTangle) L1Config(i ...int) cluster.L1Config {
+func (pt *PrivTangle) L1Config(i ...int) apilib.L1Config {
 	nodeIndex := 0
 	if len(i) > 0 {
 		nodeIndex = i[0]
 	}
-	return cluster.L1Config{
+	return apilib.L1Config{
 		Hostname:   "localhost",
 		APIPort:    pt.NodePortRestAPI(nodeIndex),
 		NetworkID:  pt.NetworkID,

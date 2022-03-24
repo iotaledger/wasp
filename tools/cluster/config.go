@@ -7,17 +7,8 @@ import (
 	"path"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
-
-type L1Config struct {
-	Hostname   string
-	APIPort    int
-	FaucetPort int
-	FaucetKey  *cryptolib.KeyPair
-	NetworkID  string
-}
 
 type WaspConfig struct {
 	NumNodes int

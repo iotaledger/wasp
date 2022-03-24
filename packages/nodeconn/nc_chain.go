@@ -50,7 +50,7 @@ func (ncc *ncChain) Close() {
 	// Nothing. The ncc.nc.ctx is used for that.
 }
 
-func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 	txID, err := tx.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to get a tx ID: %w", err)

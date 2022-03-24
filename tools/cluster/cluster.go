@@ -40,7 +40,7 @@ type Cluster struct {
 	Started          bool
 	DataPath         string
 	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-	l1               L1Connection
+	l1               apilib.L1Connection
 	waspCmds         []*exec.Cmd
 	t                *testing.T
 }
@@ -52,7 +52,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               NewL1Client(config.L1),
+		l1:               apilib.NewL1Client(config.L1),
 	}
 }
 
@@ -70,7 +70,7 @@ func (clu *Cluster) RequestFunds(addr iotago.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() L1Connection {
+func (clu *Cluster) L1Client() apilib.L1Connection {
 	return clu.l1
 }
 

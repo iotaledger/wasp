@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,7 +39,7 @@ func TestNodeConn(t *testing.T) {
 	// peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(peerCount))
 	networkLog := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
-	networkProviders, networkCloser := testpeers.SetupNet(
+	_, networkCloser := testpeers.SetupNet(
 		peerNetIDs,
 		peerIdentities,
 		testutil.NewPeeringNetReliable(networkLog),
@@ -48,8 +47,13 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	nc := nodeconn.New("localhost", pt.NodePortRestAPI(0), networkProviders[0], log)
-	t.Cleanup(nc.Close)
+	nc := nodeconn.New(
+		nodeconn.L1Config{
+			Hostname: "localhost",
+			APIPort:  pt.NodePortRestAPI(0),
+		},
+		log,
+	)
 
 	//
 	// Check milestone attach/detach.
@@ -71,9 +75,15 @@ func TestNodeConn(t *testing.T) {
 		chainOICh <- oi
 	})
 
-	client := cluster.NewL1Client(pt.L1Config())
+	client := nodeconn.NewL1Client(
+		nodeconn.L1Config{
+			Hostname: "localhost",
+			APIPort:  pt.NodePortRestAPI(0),
+		},
+		log,
+	)
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
-	_, err := client.(*cluster.L1Client).PostSimpleValueTX(pt.FaucetKeyPair, chainAddr, 50000)
+	err := client.RequestFunds(chainAddr)
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via tangle...")
 	oid := <-chainOICh
@@ -88,7 +98,7 @@ func TestNodeConn(t *testing.T) {
 		}
 	})
 	require.NoError(t, err)
-	tx, err := client.(*cluster.L1Client).MakeSimpleValueTX(chainKeys, chainAddr, 50000)
+	tx, err := nodeconn.MakeSimpleValueTX(client, chainKeys, chainAddr, 50000)
 	require.NoError(t, err)
 	err = nc.PublishTransaction(chainAddr, uint32(0), tx)
 	require.NoError(t, err)

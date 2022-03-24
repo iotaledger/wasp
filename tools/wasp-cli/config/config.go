@@ -5,6 +5,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -71,10 +72,10 @@ func GoshimmerFaucetPoWTarget() int {
 	return viper.GetInt(key)
 }
 
-func GoshimmerClient() interface{} {
-	panic("TODO implement")
-	// log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerAPI(), GoshimmerFaucetPoWTarget())
-	// return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
+func L1Client() apilib.L1Connection {
+	// panic("TODO implement")
+	log.Verbosef("using L1 host %s\n", L1Host())
+	return apilib.NewL1Client(apilib.L1Config{})
 }
 
 func WaspClient() *client.WaspClient {

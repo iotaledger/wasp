@@ -13,10 +13,10 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -43,10 +43,10 @@ func TestHornetStartup(t *testing.T) {
 
 	initialOutputCount := mustOutputCount(pt, myAddress)
 
-	client := cluster.NewL1Client(pt.L1Config())
+	client := apilib.NewL1Client(pt.L1Config())
 	//
 	// Check if faucet requests are working.
-	client.(*cluster.L1Client).FaucetRequestHTTP(myAddress)
+	client.(*apilib.L1Client).FaucetRequestHTTP(myAddress)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
@@ -60,7 +60,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	msg, err := client.(*cluster.L1Client).PostSimpleValueTX(pt.FaucetKeyPair, myAddress, 50000)
+	msg, err := client.(*apilib.L1Client).PostSimpleValueTX(pt.FaucetKeyPair, myAddress, 50000)
 	require.NoError(t, err)
 	t.Logf("Posted messageID=%v", msg.MustID())
 	for i := 0; ; i++ {
@@ -80,7 +80,7 @@ func mustOutputCount(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address
 }
 
 func mustOutputMap(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
-	client := cluster.NewL1Client(pt.L1Config())
+	client := apilib.NewL1Client(pt.L1Config())
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))

@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -21,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
 
@@ -36,9 +36,9 @@ type nodeConn struct {
 	nodeClient *nodeclient.Client
 	nodeEvents *nodeclient.EventAPIClient
 	milestones *events.Event
-	net        peering.NetworkProvider
 	l1params   *parameters.L1
 	log        *logger.Logger
+	config     L1Config
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -55,11 +55,25 @@ func L1ParamsFromInfoResp(info *nodeclient.InfoResponse) *parameters.L1 {
 	}
 }
 
-func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger.Logger) chain.NodeConnection {
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", nodeHost, nodePort))
+func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
+	t := defaultTimeout
+	if len(timeout) > 0 {
+		t = timeout[0]
+	}
+	return context.WithTimeout(context.Background(), t)
+}
 
-	l1Info, err := nodeClient.Info(ctx)
+func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
+	return newNodeConn(config, log, timeout...)
+}
+
+func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
+
+	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	defer cancelContext()
+	l1Info, err := nodeClient.Info(ctxWithTimeout)
 	if err != nil {
 		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
 	}
@@ -78,9 +92,9 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
-		net:      net,
 		l1params: L1ParamsFromInfoResp(l1Info),
 		log:      log.Named("nc"),
+		config:   config,
 	}
 	go nc.run()
 	return &nc
@@ -117,7 +131,7 @@ func (nc *nodeConn) PublishTransaction(chainAddr iotago.Address, stateIndex uint
 	if !ok {
 		return xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
 	}
-	return ncc.PublishTransaction(stateIndex, tx)
+	return ncc.PublishTransaction(tx)
 }
 
 func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
