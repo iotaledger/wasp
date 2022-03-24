@@ -18,18 +18,18 @@ func testTypesFull(t *testing.T, w bool) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull.Name,
-		"string", "string",
-		"string-0", "",
-		"int64", 42,
-		"int64-0", 0,
+		"address", ch.ChainID.AsAddress(),
+		"agentID", ch.OriginatorAgentID,
+		"chainID", ch.ChainID,
+		"contractID", cID,
 		"Hash", hashing.HashStrings("Hash"),
 		"Hname", iscp.Hn("Hname"),
 		"Hname-0", iscp.Hname(0),
-		"contractID", cID,
-		"chainID", ch.ChainID,
-		"address", ch.ChainID.AsAddress(),
-		"agentID", ch.OriginatorAgentID,
-	).WithGasBudget(10_000)
+		"int64", 42,
+		"int64-0", 0,
+		"string", "string",
+		"string-0", "",
+	).WithGasBudget(150_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }

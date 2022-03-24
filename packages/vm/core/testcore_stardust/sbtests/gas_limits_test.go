@@ -39,7 +39,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
 	require.Less(t, receipt.GasBurned, req.GasBudget())
-	require.Greater(t, receipt.GasBurned, gas.MaxGasPerCall) // should exceed MaxGasPerCall by 1 operation
+	require.GreaterOrEqual(t, receipt.GasBurned, gas.MaxGasPerCall) // should exceed MaxGasPerCall by 1 operation
 }
 
 // queue many transactions with enough gas to fill a block, assert that they are split across blocks
@@ -69,7 +69,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	// the request number #{nRequests} should overflow the block and be moved to the next one
 	require.Equal(t, int(fullGasBlockInfo.TotalRequests), nRequests-1)
 	// gas burned will be sightly below the limit
-	require.Less(t, fullGasBlockInfo.GasBurned, gas.MaxGasPerBlock)
+	require.LessOrEqual(t, fullGasBlockInfo.GasBurned, gas.MaxGasPerBlock)
 
 	// 1 requests should be moved to the next block
 	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex + 2)

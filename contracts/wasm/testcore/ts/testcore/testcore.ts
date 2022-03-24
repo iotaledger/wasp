@@ -245,6 +245,9 @@ export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMi
 }
 
 export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopContext): void {
+    for (; ;) {
+        // do nothing, just waste gas
+    }
 }
 
 export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllowanceBackContext): void {
@@ -257,6 +260,13 @@ export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackC
 }
 
 export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
+    let iotas = ctx.allowance().balance(wasmtypes.IOTA);
+    const address = ctx.caller().address();
+    const transfer = wasmlib.ScTransfers.iotas(200);
+    for (; iotas >= 200; iotas -= 200) {
+        ctx.transferAllowed(ctx.accountID(), transfer, false);
+        ctx.send(address, transfer);
+    }
 }
 
 export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
@@ -266,4 +276,7 @@ export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.Withdraw
 }
 
 export function viewInfiniteLoopView(ctx: wasmlib.ScViewContext, f: sc.InfiniteLoopViewContext): void {
+    for (; ;) {
+        // do nothing, just waste gas
+    }
 }

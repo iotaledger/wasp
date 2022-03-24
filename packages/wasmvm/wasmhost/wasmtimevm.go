@@ -61,7 +61,7 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 	// consume 0 fuel to determine remaining budget
 	remainingBudget, err := vm.store.ConsumeFuel(0)
 	if err != nil {
-		panic("GasBurned.determine: " + err.Error())
+		vm.proc.log.Infof("GasBurned.determine: " + err.Error())
 	}
 
 	burned := vm.lastBudget - remainingBudget

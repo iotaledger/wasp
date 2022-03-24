@@ -8,7 +8,7 @@ import (
 )
 
 func Test2Chains(t *testing.T) {
-	t.SkipNow()
+	// t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		chain1 := wasmsolo.StartChain(t, "chain1")
 		chain1.CheckAccountLedger()

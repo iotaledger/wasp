@@ -244,7 +244,10 @@ pub fn func_claim_allowance(ctx: &ScFuncContext, f: &ClaimAllowanceContext) {
 pub fn func_estimate_min_dust(ctx: &ScFuncContext, f: &EstimateMinDustContext) {
 }
 
-pub fn func_infinite_loop(ctx: &ScFuncContext, f: &InfiniteLoopContext) {
+pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
+    loop {
+        // do nothing, just waste gas
+    }
 }
 
 pub fn func_ping_allowance_back(ctx: &ScFuncContext, f: &PingAllowanceBackContext) {
@@ -256,7 +259,15 @@ pub fn func_send_large_request(ctx: &ScFuncContext, f: &SendLargeRequestContext)
 pub fn func_send_nf_ts_back(ctx: &ScFuncContext, f: &SendNFTsBackContext) {
 }
 
-pub fn func_split_funds(ctx: &ScFuncContext, f: &SplitFundsContext) {
+pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
+    let mut iotas = ctx.allowance().balance(&wasmtypes::ScColor::IOTA);
+    let address = ctx.caller().address();
+    let transfer = wasmlib::ScTransfers::iotas(200);
+    while iotas >= 200 {
+        ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+        ctx.send(&address, &transfer);
+        iotas -= 200;
+    }
 }
 
 pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, f: &SplitFundsNativeTokensContext) {
@@ -265,5 +276,8 @@ pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, f: &SplitFundsNativeT
 pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContext) {
 }
 
-pub fn view_infinite_loop_view(ctx: &ScViewContext, f: &InfiniteLoopViewContext) {
+pub fn view_infinite_loop_view(_ctx: &ScViewContext, _f: &InfiniteLoopViewContext) {
+    loop {
+        // do nothing, just waste gas
+    }
 }

@@ -35,13 +35,13 @@ func testCallRecursive(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	depth := 20
+	depth := 27
 	t.Logf("originator iotas: %d", ch.L2Iotas(ch.OriginatorAgentID))
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, depth,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname()).
-		WithGasBudget(3_000_000)
+		WithGasBudget(5_000_000)
 	_, err := ch.PostRequestSync(req, nil)
 	t.Logf("receipt: %s", ch.LastReceipt())
 	require.NoError(t, err)
@@ -54,7 +54,7 @@ func testCallRecursive(t *testing.T, w bool) {
 	require.EqualValues(t, depth+1, r)
 }
 
-const n = 9
+const fiboN = 8
 
 func fibo(n int64) int64 {
 	if n == 0 || n == 1 {
@@ -69,12 +69,12 @@ func testCallFibonacci(t *testing.T, w bool) {
 	setupTestSandboxSC(t, chain, nil, w)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacci.Name,
-		sbtestsc.ParamIntParamValue, n,
+		sbtestsc.ParamIntParamValue, fiboN,
 	)
 	require.NoError(t, err)
 	val, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)
-	require.EqualValues(t, fibo(n), val)
+	require.EqualValues(t, fibo(fiboN), val)
 }
 
 func TestCallFibonacciIndirect(t *testing.T) { run2(t, testCallFibonacciIndirect) }
@@ -83,15 +83,15 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 	setupTestSandboxSC(t, chain, nil, w)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
-		sbtestsc.ParamIntParamValue, n,
+		sbtestsc.ParamIntParamValue, fiboN,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
-		WithGasBudget(100_000)
+		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)
-	require.EqualValues(t, fibo(n), r)
+	require.EqualValues(t, fibo(fiboN), r)
 
 	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)

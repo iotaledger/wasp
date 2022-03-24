@@ -330,6 +330,13 @@ func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
 }
 
 func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
+	iotas := ctx.Allowance().Balance(wasmtypes.IOTA)
+	address := ctx.Caller().Address()
+	transfer := wasmlib.NewScTransferIotas(200)
+	for ; iotas >= 200; iotas -= 200 {
+		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+		ctx.Send(address, transfer)
+	}
 }
 
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
