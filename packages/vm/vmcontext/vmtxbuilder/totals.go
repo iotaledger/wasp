@@ -74,7 +74,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	for _, f := range txb.invokedFoundries {
 		if f.requiresInput() {
 			ret.TotalIotasInDustDeposit += f.in.Amount
-			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).Set(f.in.MintedTokens)
+			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).Sub(f.in.MintedTokens, f.in.MeltedTokens)
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
@@ -108,7 +108,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 			ret.TotalIotasInDustDeposit += f.out.Amount
 			id := f.out.MustNativeTokenID()
 			ret.TokenCirculatingSupplies[id] = big.NewInt(0)
-			ret.TokenCirculatingSupplies[id].Set(f.out.MintedTokens)
+			ret.TokenCirculatingSupplies[id].Sub(f.out.MintedTokens, f.out.MeltedTokens)
 		}
 	}
 	for _, o := range txb.postedOutputs {

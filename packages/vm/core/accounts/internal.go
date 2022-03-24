@@ -567,6 +567,7 @@ type foundryOutputRec struct {
 	TokenScheme   iotago.TokenScheme
 	MaximumSupply *big.Int
 	MintedTokens  *big.Int
+	MeltedTokens  *big.Int
 	Metadata      []byte
 	BlockIndex    uint32
 	OutputIndex   uint16
@@ -581,6 +582,7 @@ func (f *foundryOutputRec) Bytes() []byte {
 	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
 	util.WriteBytes8ToMarshalUtil(f.MaximumSupply.Bytes(), mu)
 	util.WriteBytes8ToMarshalUtil(f.MintedTokens.Bytes(), mu)
+	util.WriteBytes8ToMarshalUtil(f.MeltedTokens.Bytes(), mu)
 	util.WriteBytes16ToMarshalUtil(f.Metadata, mu)
 
 	return mu.Bytes()
@@ -623,6 +625,11 @@ func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutpu
 		return nil, err
 	}
 	ret.MintedTokens = big.NewInt(0).SetBytes(bigIntBin)
+	bigIntBin, err = util.ReadBytes8FromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	ret.MeltedTokens = big.NewInt(0).SetBytes(bigIntBin)
 	if ret.Metadata, err = util.ReadBytes16FromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
@@ -654,6 +661,7 @@ func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uin
 		TokenScheme:   f.TokenScheme,
 		MaximumSupply: f.MaximumSupply,
 		MintedTokens:  f.MintedTokens,
+		MeltedTokens:  f.MeltedTokens,
 		BlockIndex:    blockIndex,
 		OutputIndex:   outputIndex,
 	}
@@ -679,6 +687,7 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		TokenScheme:   rec.TokenScheme,
 		TokenTag:      rec.TokenTag,
 		MintedTokens:  rec.MintedTokens,
+		MeltedTokens:  rec.MeltedTokens,
 		MaximumSupply: rec.MaximumSupply,
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},

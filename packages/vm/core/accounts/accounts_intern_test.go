@@ -350,6 +350,7 @@ func TestFoundryOutputRec(t *testing.T) {
 		TokenScheme:   &iotago.SimpleTokenScheme{},
 		MaximumSupply: big.NewInt(1000),
 		MintedTokens:  big.NewInt(20),
+		MeltedTokens:  util.Big0,
 		BlockIndex:    3,
 		OutputIndex:   2,
 	}

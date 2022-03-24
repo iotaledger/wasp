@@ -797,6 +797,7 @@ func TestSerDe(t *testing.T) {
 			SerialNumber:  5,
 			TokenTag:      iotago.TokenTag{},
 			MintedTokens:  big.NewInt(200),
+			MeltedTokens:  big.NewInt(0),
 			MaximumSupply: big.NewInt(2000),
 			TokenScheme:   &iotago.SimpleTokenScheme{},
 			Blocks:        nil,
