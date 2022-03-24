@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"math"
+	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -209,7 +210,7 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(util.IsZeroBigInt(out.MintedTokens), "can't destroy foundry with positive circulating supply")
+	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(out.MintedTokens, out.MeltedTokens)), "can't destroy foundry with positive circulating supply")
 
 	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 

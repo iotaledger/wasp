@@ -396,7 +396,7 @@ func TestFoundries(t *testing.T) {
 
 			require.EqualValues(t, sn, out.SerialNumber)
 			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
-			require.True(t, out.MintedTokens.Cmp(big.NewInt(int64(sn))) == 0)
+			require.True(t, big.NewInt(0).Sub(out.MintedTokens, out.MeltedTokens).Cmp(big.NewInt(int64(sn))) == 0)
 			tokenID := out.MustNativeTokenID()
 
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn)))
@@ -436,27 +436,6 @@ func TestFoundries(t *testing.T) {
 		receipt := ch.LastReceipt()
 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountIotas()
 		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint+receipt.GasFeeCharged)
-	})
-}
-
-// TestFoundryValidation reveals bug in iota.go. Validation fails when whole supply is destroyed
-func TestFoundryValidation(t *testing.T) {
-	tokenID := tpkg.RandNativeToken().ID
-	inSums := iotago.NativeTokenSum{
-		tokenID: big.NewInt(1000000),
-	}
-	circSupplyChange := big.NewInt(-1000000)
-
-	outSumsBad := iotago.NativeTokenSum{}
-	outSumsGood := iotago.NativeTokenSum{tokenID: util.Big0}
-
-	t.Run("fail", func(t *testing.T) {
-		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsBad, circSupplyChange)
-		require.NoError(t, err)
-	})
-	t.Run("pass", func(t *testing.T) {
-		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsGood, circSupplyChange)
-		require.NoError(t, err)
 	})
 }
 
@@ -926,6 +905,7 @@ func TestMintedTokensBurn(t *testing.T) {
 			SerialNumber:  1,
 			TokenTag:      tokenTag,
 			MintedTokens:  big.NewInt(50),
+			MeltedTokens:  util.Big0,
 			MaximumSupply: big.NewInt(50),
 			TokenScheme:   &iotago.SimpleTokenScheme{},
 			Conditions: iotago.UnlockConditions{
@@ -967,7 +947,8 @@ func TestMintedTokensBurn(t *testing.T) {
 				SerialNumber: 1,
 				TokenTag:     tokenTag,
 				// burn supply by -50
-				MintedTokens:  util.Big0,
+				MintedTokens:  big.NewInt(50),
+				MeltedTokens:  big.NewInt(50),
 				MaximumSupply: big.NewInt(50),
 				TokenScheme:   &iotago.SimpleTokenScheme{},
 				Conditions: iotago.UnlockConditions{

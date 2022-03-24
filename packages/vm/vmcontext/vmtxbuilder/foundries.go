@@ -31,7 +31,8 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		NativeTokens:  nil,
 		SerialNumber:  txb.nextFoundrySerialNumber(),
 		TokenTag:      tag,
-		MintedTokens:  big.NewInt(0),
+		MintedTokens:  util.Big0,
+		MeltedTokens:  util.Big0,
 		MaximumSupply: maxSupply,
 		TokenScheme:   scheme,
 		Conditions: iotago.UnlockConditions{
@@ -77,14 +78,22 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
 	// check the supply bounds
-	newSupply := big.NewInt(0).Add(f.out.MintedTokens, delta)
-	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
+	var newMinted, newMelted *big.Int
+	if delta.Cmp(util.Big0) >= 0 {
+		newMinted = big.NewInt(0).Add(f.out.MintedTokens, delta)
+		newMelted = f.out.MeltedTokens
+	} else {
+		newMinted = f.out.MintedTokens
+		newMelted = big.NewInt(0).Sub(f.out.MeltedTokens, delta)
+	}
+	if newMinted.Cmp(util.Big0) < 0 || newMinted.Cmp(f.out.MaximumSupply) > 0 {
 		panic(vm.ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
 	adjustment := txb.addNativeTokenBalanceDelta(tokenID, delta)
 	// update the supply and foundry record in the builder
-	f.out.MintedTokens = newSupply
+	f.out.MintedTokens = newMinted
+	f.out.MeltedTokens = newMelted
 	txb.invokedFoundries[sn] = f
 
 	adjustment += int64(f.in.Amount) - int64(f.out.Amount)
@@ -234,6 +243,8 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 	case f1.SerialNumber != f2.SerialNumber:
 		return false
 	case f1.MintedTokens.Cmp(f2.MintedTokens) != 0:
+		return false
+	case f1.MeltedTokens.Cmp(f2.MeltedTokens) != 0:
 		return false
 	case f1.Amount != f2.Amount:
 		panic("identicalFoundries: inconsistency, amount is assumed immutable")
