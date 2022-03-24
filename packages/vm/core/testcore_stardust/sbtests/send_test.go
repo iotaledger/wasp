@@ -136,7 +136,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddIotas(100_000).
-		WithGasBudget(200_000)
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 	require.Equal(t, ch.L2NativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)

@@ -329,6 +329,7 @@ func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext)
 func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
 }
 
+//nolint:unparam
 func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
 	iotas := ctx.Allowance().Balance(wasmtypes.IOTA)
 	address := ctx.Caller().Address()
@@ -339,5 +340,21 @@ func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
 	}
 }
 
+//nolint:unparam
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
+	iotas := ctx.Allowance().Balance(wasmtypes.IOTA)
+	address := ctx.Caller().Address()
+	transfer := wasmlib.NewScTransferIotas(iotas)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	for _, token := range ctx.Allowance().Colors() {
+		if token == wasmtypes.IOTA {
+			continue
+		}
+		transfer = wasmlib.NewScTransfer(token, 1)
+		tokens := ctx.Allowance().Balance(token)
+		for ; tokens >= 1; tokens-- {
+			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+			ctx.Send(address, transfer)
+		}
+	}
 }

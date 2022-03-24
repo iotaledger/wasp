@@ -271,6 +271,22 @@ pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
 }
 
 pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, f: &SplitFundsNativeTokensContext) {
+    let iotas = ctx.allowance().balance(&wasmtypes::ScColor::IOTA);
+    let address = ctx.caller().address();
+    let transfer = wasmlib::ScTransfers::iotas(iotas);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    for token in ctx.allowance().colors() {
+        if token == wasmtypes::ScColor::IOTA {
+            continue;
+        }
+        let transfer = wasmlib::ScTransfers::transfer(&token, 1);
+        let mut tokens = ctx.allowance().balance(&token);
+        while tokens >= 1 {
+            ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+            ctx.send(&address, &transfer);
+            tokens -= 1;
+        }
+    }
 }
 
 pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContext) {

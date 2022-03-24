@@ -270,6 +270,23 @@ export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsConte
 }
 
 export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
+    let iotas = ctx.allowance().balance(wasmtypes.IOTA);
+    const address = ctx.caller().address();
+    let transfer = wasmlib.ScTransfers.iotas(iotas);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    const colors = ctx.allowance().colors();
+    for (let i = 0; i < colors.length; i++) {
+        const token = colors[i];
+        if (token.equals(wasmtypes.IOTA)) {
+            continue;
+        }
+        transfer = wasmlib.ScTransfers.transfer(token, 1);
+        let tokens = ctx.allowance().balance(token);
+        for (; tokens >= 1; tokens--) {
+            ctx.transferAllowed(ctx.accountID(), transfer, false);
+            ctx.send(address, transfer);
+        }
+    }
 }
 
 export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
