@@ -10,7 +10,7 @@ import (
 type Address string
 
 func NewAddress(address iotago.Address, networkPrefix iotago.NetworkPrefix) Address {
-	return Address(address.Bech32(networkPrefix))
+	return Address(address.String())
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {

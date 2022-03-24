@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -24,22 +25,15 @@ import (
 )
 
 type chainWebAPI struct {
-	registry   registry.Provider
-	chains     chains.Provider
-	network    peering.NetworkProvider
-	allMetrics *metrics.Metrics
-	w          *wal.WAL
+	registry      registry.Provider
+	chains        chains.Provider
+	network       peering.NetworkProvider
+	allMetrics    *metrics.Metrics
+	w             *wal.WAL
+	networkPrefix iotago.NetworkPrefix
 }
 
-func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider, network peering.NetworkProvider, allMetrics *metrics.Metrics, w *wal.WAL) {
-	c := &chainWebAPI{
-		registryProvider,
-		chainsProvider,
-		network,
-		allMetrics,
-		w,
-	}
-
+func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {
 	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Activate a chain")
@@ -141,7 +135,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	res := model.ChainInfo{
 		ChainID:        model.ChainID(chainID.String()),
 		Active:         chainRecord.Active,
-		StateAddress:   model.NewAddress(committeeInfo.Address),
+		StateAddress:   model.NewAddress(committeeInfo.Address, w.networkPrefix),
 		CommitteeNodes: cmtNodes,
 		AccessNodes:    acnNodes,
 		CandidateNodes: cndNodes,

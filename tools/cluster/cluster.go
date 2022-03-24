@@ -215,7 +215,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 	if err != nil {
 		return err
 	}
-	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress())
+	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), clu.l1.L1Params().Bech32Prefix)
 	if err != nil {
 		return err
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wal"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -47,12 +48,21 @@ func AddEndpoints(
 		echoGroup.Use(protected(adminWhitelist))
 	}
 
+	networkPrefix := nodeconn.NodeConnection().L1Params().Bech32Prefix
+
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
-	addChainMetricsEndpoints(adm, chainsProvider)
-	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics, w)
-	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
+	addChainMetricsEndpoints(adm, chainsProvider, networkPrefix)
+	addChainEndpoints(adm, &chainWebAPI{
+		registry:      registryProvider,
+		chains:        chainsProvider,
+		network:       network,
+		allMetrics:    metrics,
+		networkPrefix: networkPrefix,
+		w:             w,
+	})
+	addDKSharesEndpoints(adm, registryProvider, nodeProvider, networkPrefix)
 	addPeeringEndpoints(adm, network, tnm)
 }
 
