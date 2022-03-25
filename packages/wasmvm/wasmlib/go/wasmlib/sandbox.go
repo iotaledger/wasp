@@ -46,6 +46,7 @@ const (
 	FnUtilsHashName       = int32(-35)
 	FnUtilsHashSha3       = int32(-36)
 	FnTransferAllowed     = int32(-37)
+	FnEstimateDust        = int32(-38)
 )
 
 type ScSandbox struct{}
@@ -206,6 +207,17 @@ func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, descri
 // returns random entropy data for current request.
 func (s ScSandboxFunc) Entropy() wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnEntropy, nil))
+}
+
+func (s ScSandboxFunc) EstimateDust(fn *ScFunc) uint64 {
+	req := &wasmrequests.PostRequest{
+		Contract: fn.hContract,
+		Function: fn.hFunction,
+		Params:   fn.params.Bytes(),
+		Transfer: fn.transfer.Bytes(),
+		Delay:    fn.delay,
+	}
+	return wasmtypes.Uint64FromBytes(Sandbox(FnEstimateDust, req.Bytes()))
 }
 
 // signals an event on the node that external entities can subscribe to

@@ -242,6 +242,10 @@ export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowa
 }
 
 export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
+    const provided = ctx.allowance().balance(wasmtypes.IOTA);
+    let dummy = sc.ScFuncs.estimateMinDust(ctx);
+    const required = ctx.estimateDust(dummy.func);
+    ctx.require(provided >= required, "not enough funds");
 }
 
 export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopContext): void {
@@ -251,6 +255,11 @@ export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopC
 }
 
 export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllowanceBackContext): void {
+    const caller = ctx.caller();
+    ctx.require(caller.isAddress(), "pingAllowanceBack: caller expected to be a L1 address");
+    const transfer = wasmlib.ScTransfers.fromBalances(ctx.allowance());
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.send(caller.address(), transfer);
 }
 
 export function funcSendLargeRequest(ctx: wasmlib.ScFuncContext, f: sc.SendLargeRequestContext): void {

@@ -61,6 +61,7 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnUtilsHashName,
 	(*SoloSandbox).fnUtilsHashSha3,
 	(*SoloSandbox).fnTransferAllowed,
+	(*SoloSandbox).fnEstimateDust,
 }
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
@@ -76,11 +77,11 @@ type SoloSandbox struct {
 }
 
 func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
-	panic("implement me")
+	panic("implement Burn")
 }
 
 func (s *SoloSandbox) Budget() uint64 {
-	panic("implement me")
+	panic("implement Budget")
 }
 
 var (
@@ -196,7 +197,7 @@ func (s *SoloSandbox) fnBalances(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnBlockContext(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnBlockContext")
 }
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
@@ -251,16 +252,19 @@ func (s *SoloSandbox) fnContractCreator(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnDeployContract(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnDeployContract")
 }
 
 func (s *SoloSandbox) fnEntropy(args []byte) []byte {
 	return s.ctx.Chain.ChainID.Bytes()
 }
 
+func (s *SoloSandbox) fnEstimateDust(args []byte) []byte {
+	panic("implement fnEstimateDust")
+}
+
 func (s *SoloSandbox) fnEvent(args []byte) []byte {
-	s.Panicf("solo cannot send events")
-	return nil
+	panic("implement fnEvent")
 }
 
 func (s *SoloSandbox) fnLog(args []byte) []byte {
@@ -269,7 +273,7 @@ func (s *SoloSandbox) fnLog(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnMinted(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnMinted")
 }
 
 func (s *SoloSandbox) fnPanic(args []byte) []byte {
@@ -307,7 +311,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnRequest(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnRequest")
 }
 
 func (s *SoloSandbox) fnRequestID(args []byte) []byte {
@@ -315,16 +319,16 @@ func (s *SoloSandbox) fnRequestID(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnResults(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnResults")
 }
 
 // transfer tokens to L1 address
 func (s *SoloSandbox) fnSend(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnSend")
 }
 
 func (s *SoloSandbox) fnStateAnchor(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnStateAnchor")
 }
 
 func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
@@ -338,5 +342,5 @@ func (s *SoloSandbox) fnTrace(args []byte) []byte {
 
 // transfer allowed tokens to L2 agent
 func (s *SoloSandbox) fnTransferAllowed(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnTransferAllowed")
 }

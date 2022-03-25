@@ -151,15 +151,19 @@ impl ScFunc {
         self.post_to_chain(ScFuncContext {}.chain_id())
     }
 
-    pub fn post_to_chain(&self, chain_id: ScChainID) {
-        let req = wasmrequests::PostRequest {
+    pub(crate) fn post_request(&self, chain_id: ScChainID) -> wasmrequests::PostRequest {
+        wasmrequests::PostRequest {
             chain_id: chain_id,
             contract: self.view.h_contract,
             function: self.view.h_function,
             params: self.view.params.to_bytes(),
             transfer: self.transfer.to_bytes(),
             delay: self.delay,
-        };
+        }
+    }
+
+    pub fn post_to_chain(&self, chain_id: ScChainID) {
+        let req = self.post_request(chain_id);
         let res = sandbox(FN_POST, &req.to_bytes());
         self.view.results.copy(&res);
     }

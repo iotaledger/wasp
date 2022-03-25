@@ -317,10 +317,21 @@ func viewInfiniteLoopView(ctx wasmlib.ScViewContext, f *InfiniteLoopViewContext)
 func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
 }
 
+//nolint:unparam
 func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
+	provided := ctx.Allowance().Balance(wasmtypes.IOTA)
+	dummy := ScFuncs.EstimateMinDust(ctx)
+	required := ctx.EstimateDust(dummy.Func)
+	ctx.Require(provided >= required, "not enough funds")
 }
 
+//nolint:unparam
 func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContext) {
+	caller := ctx.Caller()
+	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
+	transfer := wasmlib.NewScTransfersFromBalances(ctx.Allowance())
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.Send(caller.Address(), transfer)
 }
 
 func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext) {

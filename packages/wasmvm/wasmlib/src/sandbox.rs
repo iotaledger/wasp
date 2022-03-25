@@ -44,6 +44,7 @@ pub const FN_UTILS_HASH_BLAKE2B    : i32 = -34;
 pub const FN_UTILS_HASH_NAME       : i32 = -35;
 pub const FN_UTILS_HASH_SHA3       : i32 = -36;
 pub const FN_TRANSFER_ALLOWED      : i32 = -37;
+pub const FN_ESTIMATE_DUST         : i32 = -38;
 // @formatter:on
 
 // Direct logging of informational text to host log
@@ -219,6 +220,11 @@ pub trait ScSandboxFunc: ScSandbox {
     // returns random entropy data for current request.
     fn entropy(&self) -> ScHash {
         return hash_from_bytes(&sandbox(FN_ENTROPY, &[]));
+    }
+
+    fn estimate_dust(&self, f: &ScFunc) -> u64 {
+        let req = f.post_request(ScFuncContext {}.chain_id());
+        uint64_from_bytes(&sandbox(FN_ESTIMATE_DUST, &req.to_bytes()))
     }
 
     // signals an event on the node that external entities can subscribe to

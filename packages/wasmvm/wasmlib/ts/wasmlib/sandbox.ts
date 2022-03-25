@@ -8,6 +8,7 @@ import {ScDict, ScImmutableDict} from "./dict";
 import {sandbox} from "./host";
 import {ScSandboxUtils} from "./sandboxutils";
 import {ScImmutableState, ScState} from "./state";
+import {ScFunc} from "./contract";
 
 // @formatter:off
 export const FnAccountID           : i32 = -1;
@@ -47,6 +48,7 @@ export const FnUtilsHashBlake2b    : i32 = -34;
 export const FnUtilsHashName       : i32 = -35;
 export const FnUtilsHashSha3       : i32 = -36;
 export const FnTransferAllowed     : i32 = -37;
+export const FnEstimateDust        : i32 = -38;
 // @formatter:on
 
 // Direct logging of text to host log
@@ -213,6 +215,20 @@ export class ScSandboxFunc extends ScSandbox {
     // returns random entropy data for current request.
     public entropy(): wasmtypes.ScHash {
         return wasmtypes.hashFromBytes(sandbox(FnEntropy, null));
+    }
+
+    public estimateDust(fn: ScFunc): u64 {
+        let transfer = fn.transfers;
+        if (transfer === null) {
+            transfer = new ScAssets([]);
+        }
+        const req = new wasmrequests.PostRequest();
+        req.contract = fn.hContract;
+        req.function = fn.hFunction;
+        req.params = fn.params.toBytes();
+        req.transfer = transfer.toBytes();
+        req.delay = fn.delaySeconds;
+        return wasmtypes.uint64FromBytes(sandbox(FnEstimateDust, req.bytes()));
     }
 
     // signals an event on the node that external entities can subscribe to

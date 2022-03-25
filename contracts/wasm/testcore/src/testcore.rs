@@ -242,6 +242,10 @@ pub fn func_claim_allowance(ctx: &ScFuncContext, f: &ClaimAllowanceContext) {
 }
 
 pub fn func_estimate_min_dust(ctx: &ScFuncContext, f: &EstimateMinDustContext) {
+    let provided = ctx.allowance().balance(&wasmtypes::ScColor::IOTA);
+    let dummy = ScFuncs::estimate_min_dust(ctx);
+    let required = ctx.estimate_dust(&dummy.func);
+    ctx.require(provided >= required, "not enough funds");
 }
 
 pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
@@ -250,7 +254,12 @@ pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
     }
 }
 
-pub fn func_ping_allowance_back(ctx: &ScFuncContext, f: &PingAllowanceBackContext) {
+pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackContext) {
+    let caller = ctx.caller();
+    ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
+    let transfer = wasmlib::ScTransfers::from_balances(ctx.allowance());
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.send(&caller.address(), &transfer);
 }
 
 pub fn func_send_large_request(ctx: &ScFuncContext, f: &SendLargeRequestContext) {
