@@ -299,13 +299,13 @@ func (n *netImpl) eventHandler(handler interface{}, params ...interface{}) {
 }
 
 // Run starts listening and communicating with the network.
-func (n *netImpl) Run(shutdownSignal <-chan struct{}) {
+func (n *netImpl) Run(ctx context.Context) {
 	queueRecvStopCh := make(chan bool)
 	receiveStopCh := make(chan bool)
 	maintenanceStopCh := make(chan bool)
 	go n.maintenanceLoop(maintenanceStopCh)
 
-	<-shutdownSignal
+	<-ctx.Done()
 	n.ctxCancel()
 	close(maintenanceStopCh)
 	close(receiveStopCh)
