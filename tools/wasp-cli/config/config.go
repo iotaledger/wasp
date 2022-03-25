@@ -66,8 +66,10 @@ func L1FaucetPort() int {
 }
 
 func L1Client() nodeconn.L1Client {
-	// panic("TODO implement")
 	log.Verbosef("using L1 host %s\n", L1Host())
+
+	// TODO this will fail with "global loger not initialized", not sure what should be done here...
+
 	return nodeconn.NewL1Client(
 		nodeconn.L1Config{
 			Hostname:   L1Host(),

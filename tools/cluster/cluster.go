@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -48,6 +49,11 @@ type Cluster struct {
 }
 
 func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
+	err := logger.InitGlobalLogger(parameters.Init())
+	if err != nil {
+		panic(err)
+	}
+
 	return &Cluster{
 		Name:             name,
 		Config:           config,

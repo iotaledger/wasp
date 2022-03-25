@@ -16,8 +16,6 @@ import (
 // PluginName is the name of the NodeConn plugin.
 const PluginName = "NodeConn"
 
-const dialTimeout = 1 * time.Second
-
 var (
 	log *logger.Logger
 
