@@ -315,7 +315,7 @@ func (pt *PrivTangle) NodeMultiAddr(i int) string {
 	if err != nil {
 		panic(xerrors.Errorf("Unable to convert privKey to the standard priv key."))
 	}
-	tmpNode, err := libp2p.New(context.Background(), libp2p.Identity(lppPrivKey))
+	tmpNode, err := libp2p.New(libp2p.Identity(lppPrivKey))
 	if err != nil {
 		panic(xerrors.Errorf("Unable to create temporary p2p node: %v", err))
 	}

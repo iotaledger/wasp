@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
-	"github.com/iotaledger/wasp/plugins/peering"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -44,8 +43,13 @@ func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
 		addr := parameters.GetString(parameters.NodeConnHost)
 		port := parameters.GetInt(parameters.NodeConnPort)
-		networkProvider := peering.DefaultNetworkProvider()
-		nc = nodeconn.New(addr, port, networkProvider, log)
+		nc = nodeconn.New(
+			nodeconn.L1Config{
+				Hostname: addr,
+				APIPort:  port,
+			},
+			log,
+		)
 		defer nc.Close()
 
 		initialized.SetReady()
