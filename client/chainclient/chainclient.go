@@ -7,12 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	Layer1Client interface{} // TODO implement
+	Layer1Client nodeconn.L1Client
 	WaspClient   *client.WaspClient
 	ChainID      *iscp.ChainID
 	KeyPair      *cryptolib.KeyPair
@@ -21,7 +22,7 @@ type Client struct {
 
 // New creates a new chainclient.Client
 func New(
-	layer1Client interface{},
+	layer1Client nodeconn.L1Client,
 	waspClient *client.WaspClient,
 	chainID *iscp.ChainID,
 	keyPair *cryptolib.KeyPair,

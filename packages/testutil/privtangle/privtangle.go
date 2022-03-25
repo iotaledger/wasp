@@ -5,6 +5,7 @@
 package privtangle
 
 import (
+	"bufio"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -18,8 +19,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
@@ -47,8 +48,6 @@ type PrivTangle struct {
 	NodeCount     int
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
-	NodeStdouts   []io.ReadCloser
-	NodeStderrs   []io.ReadCloser
 	ctx           context.Context
 	t             *testing.T
 }
@@ -66,8 +65,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		NodeCount:     nodeCount,
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
-		NodeStdouts:   make([]io.ReadCloser, nodeCount),
-		NodeStderrs:   make([]io.ReadCloser, nodeCount),
 		ctx:           ctx,
 		t:             t,
 	}
@@ -176,7 +173,7 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.bindAddress=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
-		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+		// fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
@@ -205,34 +202,54 @@ func (pt *PrivTangle) startNode(i int) {
 		panic(xerrors.Errorf("Unable to get stdout for HORNET[%d]: %w", i, err))
 	}
 	pt.NodeCommands[i] = hornetCmd
-	pt.NodeStdouts[i] = stdout
-	pt.NodeStderrs[i] = stderr
+
+	// TODO just for testing, the files are not getting closed right now
+	outFile, err := os.Create(filepath.Join(nodePath, "log.txt"))
+	if err != nil {
+		panic(err)
+	}
+
+	errOutFile, err := os.Create(filepath.Join(nodePath, "errors.txt"))
+	if err != nil {
+		panic(err)
+	}
+
+	go scanLog(
+		stderr,
+		func(line string) { errOutFile.WriteString(fmt.Sprintln(line)) },
+	)
+	go scanLog(
+		stdout,
+		func(line string) { outFile.WriteString(fmt.Sprintln(line)) },
+	)
+
 	if err := hornetCmd.Start(); err != nil {
 		panic(xerrors.Errorf("Cannot start hornet node[%d]: %w", i, err))
 	}
 }
 
+func scanLog(reader io.Reader, hooks ...func(string)) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		for _, hook := range hooks {
+			hook(line)
+		}
+	}
+}
+
 func (pt *PrivTangle) Stop() {
 	pt.logf("Stopping...")
-	printOutput := func(i int) {
-		stdoutData, _ := io.ReadAll(pt.NodeStdouts[i])
-		stderrData, _ := io.ReadAll(pt.NodeStderrs[i])
-		pt.logf("Node[%d] stdout=%s", i, stdoutData)
-		pt.logf("Node[%d] stderr=%s", i, stderrData)
-	}
 	for i, c := range pt.NodeCommands {
 		if err := c.Process.Signal(os.Interrupt); err != nil {
-			printOutput(i)
 			panic(xerrors.Errorf("Unable to send INT signal to Hornet node [%d]: %w", i, err))
 		}
 	}
 	for i, c := range pt.NodeCommands {
 		if err := c.Wait(); err != nil {
-			printOutput(i)
 			panic(xerrors.Errorf("Failed while waiting for a HORNET node [%d]: %w", i, err))
 		}
 		if !c.ProcessState.Success() {
-			printOutput(i)
 			panic(xerrors.Errorf("Hornet node [%d] failed: %w", i, c.ProcessState.String()))
 		}
 	}
@@ -351,15 +368,14 @@ func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	}
 }
 
-func (pt *PrivTangle) L1Config(i ...int) apilib.L1Config {
+func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 	nodeIndex := 0
 	if len(i) > 0 {
 		nodeIndex = i[0]
 	}
-	return apilib.L1Config{
+	return nodeconn.L1Config{
 		Hostname:   "localhost",
 		APIPort:    pt.NodePortRestAPI(nodeIndex),
-		NetworkID:  pt.NetworkID,
 		FaucetPort: pt.NodePortFaucet(nodeIndex),
 		FaucetKey:  pt.FaucetKeyPair,
 	}

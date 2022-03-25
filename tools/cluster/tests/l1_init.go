@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 )
 
@@ -21,7 +21,7 @@ var (
 	layer1FaucetPort = flag.Int("layer1-faucet-port", 0, "layer1 faucet port")
 	pvtTangleNnodes  = flag.Int("priv-tangle-n-nodes", 2, "number of hornet nodes to be spawned in the private tangle")
 )
-var ClustL1Config apilib.L1Config
+var ClustL1Config nodeconn.L1Config
 
 const pvtTangleAPIPort = 16500
 

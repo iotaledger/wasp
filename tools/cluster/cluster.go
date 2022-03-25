@@ -17,6 +17,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -24,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -40,7 +42,7 @@ type Cluster struct {
 	Started          bool
 	DataPath         string
 	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-	l1               apilib.L1Connection
+	l1               nodeconn.L1Client
 	waspCmds         []*exec.Cmd
 	t                *testing.T
 }
@@ -52,7 +54,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               apilib.NewL1Client(config.L1),
+		l1:               nodeconn.NewL1Client(config.L1, logger.NewLogger("l1client")),
 	}
 }
 
@@ -70,7 +72,7 @@ func (clu *Cluster) RequestFunds(addr iotago.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() apilib.L1Connection {
+func (clu *Cluster) L1Client() nodeconn.L1Client {
 	return clu.l1
 }
 
@@ -554,8 +556,7 @@ func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCo
 }
 
 func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
-	_, err := clu.l1.PostTx(tx)
-	return err
+	return clu.l1.PostTx(tx)
 }
 
 func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {

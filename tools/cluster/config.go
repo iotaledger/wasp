@@ -7,6 +7,7 @@ import (
 	"path"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -24,7 +25,7 @@ type WaspConfig struct {
 
 type ClusterConfig struct {
 	Wasp WaspConfig
-	L1   L1Config
+	L1   nodeconn.L1Config
 }
 
 func DefaultConfig() *ClusterConfig {
@@ -38,7 +39,7 @@ func DefaultConfig() *ClusterConfig {
 			FirstProfilingPort: 6060,
 			FirstMetricsPort:   2112,
 		},
-		L1: L1Config{
+		L1: nodeconn.L1Config{
 			Hostname:   "127.0.0.1",
 			APIPort:    8080,
 			FaucetPort: 8091,

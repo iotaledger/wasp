@@ -77,7 +77,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID)
+	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
 	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
