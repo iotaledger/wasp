@@ -88,6 +88,11 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 
 func (ncc *ncChain) run() {
 	init := true
+	indexer, err := ncc.nc.nodeClient.Indexer(ncc.nc.ctx)
+	if err != nil {
+		ncc.log.Warnf("failed to get nodeclient indexer: %v", err)
+		return
+	}
 	for {
 		if init {
 			init = false
@@ -108,11 +113,6 @@ func (ncc *ncChain) run() {
 		}
 		//
 		// Then fetch all the existing unspent outputs.
-		indexer, err := ncc.nc.nodeClient.Indexer(ncc.nc.ctx)
-		if err != nil {
-			ncc.log.Warnf("failed to get nodeclient indexer: %v", err)
-			continue
-		}
 		res, err := indexer.Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
 			AddressBech32: string(ncc.nc.l1params.Bech32Prefix),
 		})

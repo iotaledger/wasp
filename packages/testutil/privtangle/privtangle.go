@@ -26,6 +26,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// requires hornet, inx-mqtt and inx-indexer binaries to be in PATH
+// https://github.com/gohornet/hornet
+// https://github.com/gohornet/inx-mqtt
+// https://github.com/gohornet/inx-indexer
+
 const (
 	nodePortOffsetRestAPI = iota
 	nodePortOffsetPeering
@@ -34,6 +39,7 @@ const (
 	nodePortOffsetPrometheus
 	nodePortOffsetFaucet
 	nodePortOffsetMQTT
+	nodePortOffsetINX
 )
 
 type PrivTangle struct {
@@ -88,6 +94,11 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 	pt.WaitAllAlive()
 	pt.logf("Starting... Done, all nodes alive.")
 
+	for i := range pt.NodeKeyPairs {
+		pt.startIndexer(i)
+		pt.startMqtt(i)
+	}
+
 	// Close when the test ends
 	if t != nil {
 		t.Cleanup(pt.Stop)
@@ -114,9 +125,9 @@ func (pt *PrivTangle) generateSnapshot() {
 
 func (pt *PrivTangle) startNode(i int) {
 	env := []string{}
-	plugins := "MQTT,Debug,Prometheus,Indexer"
+	plugins := "INX,Debug,Prometheus"
 	if i == 0 {
-		plugins = "Coordinator,MQTT,Debug,Prometheus,Faucet,Indexer"
+		plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
 		env = append(env,
 			fmt.Sprintf("COO_PRV_KEYS=%s,%s",
 				hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
@@ -173,7 +184,7 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.bindAddress=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
-		// fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
@@ -193,48 +204,74 @@ func (pt *PrivTangle) startNode(i int) {
 	hornetCmd.Env = os.Environ()
 	hornetCmd.Env = append(hornetCmd.Env, env...)
 	hornetCmd.Dir = nodePath
-	stdout, err := hornetCmd.StdoutPipe()
-	if err != nil {
-		panic(xerrors.Errorf("Unable to get stdout for HORNET[%d]: %w", i, err))
-	}
-	stderr, err := hornetCmd.StderrPipe()
-	if err != nil {
-		panic(xerrors.Errorf("Unable to get stdout for HORNET[%d]: %w", i, err))
-	}
 	pt.NodeCommands[i] = hornetCmd
 
-	// TODO just for testing, the files are not getting closed right now
-	outFile, err := os.Create(filepath.Join(nodePath, "log.txt"))
-	if err != nil {
-		panic(err)
-	}
-
-	errOutFile, err := os.Create(filepath.Join(nodePath, "errors.txt"))
-	if err != nil {
-		panic(err)
-	}
-
-	go scanLog(
-		stderr,
-		func(line string) { errOutFile.WriteString(fmt.Sprintln(line)) },
-	)
-	go scanLog(
-		stdout,
-		func(line string) { outFile.WriteString(fmt.Sprintln(line)) },
-	)
+	writeOutputToFiles(nodePath, hornetCmd)
 
 	if err := hornetCmd.Start(); err != nil {
 		panic(xerrors.Errorf("Cannot start hornet node[%d]: %w", i, err))
 	}
 }
 
-func scanLog(reader io.Reader, hooks ...func(string)) {
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		for _, hook := range hooks {
-			hook(line)
-		}
+func (pt *PrivTangle) startIndexer(i int) {
+	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-indexer")
+
+	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
+	}
+
+	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
+		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+	}
+
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		fmt.Sprintf("--prometheus.bindAddress=%s", pt.NetworkID),
+	}
+
+	indexerCmd := exec.CommandContext(pt.ctx, "inx-indexer", args...)
+	// kill indexer cmd if the go test process is killed
+	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
+	indexerCmd.Dir = indexerPath
+
+	writeOutputToFiles(indexerPath, indexerCmd)
+
+	if err := indexerCmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
+	}
+}
+
+func (pt *PrivTangle) startMqtt(i int) {
+	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-mqtt")
+
+	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
+	}
+
+	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
+		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+	}
+
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+	}
+
+	indexerCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
+	// kill indexer cmd if the go test process is killed
+	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
+	indexerCmd.Dir = indexerPath
+
+	writeOutputToFiles(indexerPath, indexerCmd)
+
+	if err := indexerCmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
 	}
 }
 
@@ -362,6 +399,10 @@ func (pt *PrivTangle) NodePortMQTT(i int) int {
 	return pt.BasePort + i*10 + nodePortOffsetMQTT
 }
 
+func (pt *PrivTangle) NodePortINX(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetINX
+}
+
 func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	if pt.t != nil {
 		pt.t.Logf("HORNET Cluster: "+msg, args...)
@@ -378,5 +419,54 @@ func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 		APIPort:    pt.NodePortRestAPI(nodeIndex),
 		FaucetPort: pt.NodePortFaucet(nodeIndex),
 		FaucetKey:  pt.FaucetKeyPair,
+	}
+}
+
+func writeOutputToFiles(path string, cmd *exec.Cmd) {
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(xerrors.Errorf("Unable to get stdout for HORNET [path: %s]: %w", path, err))
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		panic(xerrors.Errorf("Unable to get stdout for HORNET[path: %s]: %w", path, err))
+	}
+	outFilePath := filepath.Join(path, "log.txt")
+	outFile, err := os.Create(outFilePath)
+	if err != nil {
+		panic(err)
+	}
+	errFilePath := filepath.Join(path, "errors.txt")
+	errFile, err := os.Create(errFilePath)
+	if err != nil {
+		panic(err)
+	}
+	go scanLog(
+		stderr,
+		func(line string) {
+			_, err := errFile.WriteString(fmt.Sprintln(line))
+			if err != nil {
+				panic(xerrors.Errorf("error writing to file %s: %w", errFilePath, err))
+			}
+		},
+	)
+	go scanLog(
+		stdout,
+		func(line string) {
+			_, err := outFile.WriteString(fmt.Sprintln(line))
+			if err != nil {
+				panic(xerrors.Errorf("error writing to file %s: %w", outFilePath, err))
+			}
+		},
+	)
+}
+
+func scanLog(reader io.Reader, hooks ...func(string)) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		for _, hook := range hooks {
+			hook(line)
+		}
 	}
 }
