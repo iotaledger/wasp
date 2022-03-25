@@ -4,6 +4,7 @@
 package domain_test
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -23,7 +24,7 @@ func TestDomainProvider(t *testing.T) {
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 
 	//
@@ -71,7 +72,7 @@ func TestRandom(t *testing.T) {
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 	peeringID := peering.RandomPeeringID()
 
