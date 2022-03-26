@@ -260,6 +260,282 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
+							&yaml.Node{
+								Val:  "funcs",
+								Line: 24,
+								Contents: []*yaml.Node{
+									{
+										Val:  "TestFunc1",
+										Line: 25,
+										Contents: []*yaml.Node{
+											{
+												Val:  "access",
+												Line: 26,
+												Contents: []*yaml.Node{
+													{
+														Val:  "owner",
+														Line: 26,
+													},
+												},
+											},
+											{
+												Val:  "params",
+												Line: 27,
+												Contents: []*yaml.Node{
+													{
+														Val:  "name",
+														Line: 28,
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 28,
+															},
+														},
+													},
+													{
+														Val:  "value",
+														Line: 29,
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 29,
+															},
+														},
+													},
+												},
+											},
+											{
+												Val:  "results",
+												Line: 30,
+												Contents: []*yaml.Node{
+													{
+														Val:  "length",
+														Line: 31,
+														Contents: []*yaml.Node{
+															{
+																Val:  "Uint32",
+																Line: 31,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+									{
+										Val:  "TestFunc2",
+										Line: 32,
+										Contents: []*yaml.Node{
+											{
+												Val:  "access",
+												Line: 33,
+												Contents: []*yaml.Node{
+													{
+														Val:  "owner",
+														Line: 33,
+													},
+												},
+											},
+											{
+												Val:  "params",
+												Line: 34,
+												Contents: []*yaml.Node{
+													{
+														Val:  "name",
+														Line: 35,
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 35,
+															},
+														},
+													},
+													{
+														Val:  "value",
+														Line: 36,
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 36,
+															},
+														},
+													},
+												},
+											},
+											{
+												Val:  "results",
+												Line: 37,
+												Contents: []*yaml.Node{
+													{
+														Val:  "length",
+														Line: 38,
+														Contents: []*yaml.Node{
+															{
+																Val:  "Uint32",
+																Line: 38,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							&yaml.Node{
+								Val:  "views",
+								Line: 41,
+								Contents: []*yaml.Node{
+									{
+										Val:  "TestView1",
+										Line: 42,
+										Contents: []*yaml.Node{
+											{
+												Val:  "access",
+												Line: 43,
+												Contents: []*yaml.Node{
+													{
+														Val:  "owner",
+														Line: 43,
+													},
+												},
+											},
+											{
+												Val:  "params",
+												Line: 44,
+												Contents: []*yaml.Node{
+													{
+														Val:  "name",
+														Line: 45,
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 45,
+															},
+														},
+													},
+													{
+														Val:  "id",
+														Line: 46,
+														Contents: []*yaml.Node{
+															{
+																Val:  "Int32",
+																Line: 46,
+															},
+														},
+													},
+												},
+											},
+											{
+												Val:  "results",
+												Line: 47,
+												Contents: []*yaml.Node{
+													{
+														Val:  "length",
+														Line: 48,
+														Contents: []*yaml.Node{
+															{
+																Val:  "Uint32",
+																Line: 48,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+									{
+										Val:  "TestView2",
+										Line: 49,
+										Contents: []*yaml.Node{
+											{
+												Val:  "access",
+												Line: 50,
+												Contents: []*yaml.Node{
+													{
+														Val:  "owner",
+														Line: 50,
+													},
+												},
+											},
+											{
+												Val:  "params",
+												Line: 51,
+												Contents: []*yaml.Node{
+													{
+														Val:  "name",
+														Line: 52,
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 52,
+															},
+														},
+													},
+													{
+														Val:  "id",
+														Line: 53,
+														Contents: []*yaml.Node{
+															{
+																Val:  "Int32",
+																Line: 53,
+															},
+														},
+													},
+												},
+											},
+											{
+												Val:  "results",
+												Line: 54,
+												Contents: []*yaml.Node{
+													{
+														Val:  "length",
+														Line: 55,
+														Contents: []*yaml.Node{
+															{
+																Val:  "Uint32",
+																Line: 55,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							&yaml.Node{
+								Val:  "typedefs",
+								Line: 57,
+								Contents: []*yaml.Node{
+									{
+										Val:  "TestTypedef",
+										Line: 58,
+										Contents: []*yaml.Node{
+											{
+												Val:  "String[]",
+												Line: 58,
+											},
+										},
+									},
+								},
+							},
+							&yaml.Node{
+								Val:  "state",
+								Line: 62,
+								Contents: []*yaml.Node{
+									{
+										Val:  "TestState",
+										Line: 64,
+										Contents: []*yaml.Node{
+											{
+												Val:  "Int64[]",
+												Line: 64,
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
