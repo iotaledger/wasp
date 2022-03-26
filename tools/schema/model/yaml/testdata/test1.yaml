@@ -1,0 +1,18 @@
+name: SchemaComment
+description: test description
+
+# header comment for event 1
+# header comment for event 2
+events: # line comment for event
+  TestEvent1: # line comment for TestEvent1
+    eventParam11: String # line comment for eventParam11
+  TestEvent2: # line comment for TestEvent2
+    eventParam21: String # line comment for eventParam21
+    eventParam22: String # line comment for eventParam21
+
+# ##################################
+
+structs:
+  TestStruct:
+    x: Int32
+    y: Int32

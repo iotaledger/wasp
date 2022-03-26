@@ -1,0 +1,80 @@
+name: SchemaComment
+description: test description
+
+# ##################################
+
+# header comment for event 1
+# header comment for event 2
+events: # line comment for event 1
+        # line comment for event 2
+# line comment for event 3
+# line comment for event 4
+
+  # header comment for TestEvent 1
+  # header comment for TestEvent 2
+  TestEvent: # line comment for TestEvent 1
+             # line comment for TestEvent 2
+             # line comment for TestEvent 3
+             # line comment for TestEvent 4
+
+    # header comment for eventParam1 1
+    # header comment for eventParam1 2
+    eventParam1: String # line comment for eventParam1 1
+                        # line comment for eventParam1 2
+                        # line comment for eventParam1 3
+                        # line comment for eventParam1 4
+    
+
+    ######################INVALID CASE######################
+    # # header comment for eventParam2 1
+    # # header comment for eventParam2 2
+    # eventParam2: # line comment for eventParam2 1
+    #              # line comment for eventParam2 2
+    #              # line comment for eventParam2 3
+    #   String     # line comment for eventParam2 4
+    #              # line comment for eventParam2 5
+    #              # line comment for eventParam2 6
+    #              # line comment for eventParam2 7
+
+    
+# ##################################
+
+# structs:
+#   TestStruct:
+#     x: Int32
+#     y: Int32
+
+# # ##################################
+
+# typedefs:
+#   ### Array
+#   TestTypedef: String[]
+
+# # ##################################
+
+# state:
+#   # basic datatypes, using String
+#   TestState: Int64[]
+
+# # ##################################
+
+# funcs:
+#   stringMapOfStringArrayAppend:
+#     access: owner
+#     params:
+#       name: String
+#       value: String
+#     results:
+#       length: Uint32
+    
+# # ##################################
+
+# views:
+#   stringMapOfStringArrayLength:
+#     access: owner
+#     params:
+#       name: String
+#     results:
+#       length: Uint32
+
+

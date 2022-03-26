@@ -1,0 +1,22 @@
+name: SchemaComment
+description: test description
+
+
+
+events: 
+  TestEvent1: 
+    eventParam11: String 
+  TestEvent2: 
+    eventParam21: String 
+    eventParam22: String 
+
+
+
+structs:
+  TestStruct1:
+    x: Int32
+    y: Int32
+    
+  TestStruct2:
+    x: 
+      Int32
