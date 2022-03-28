@@ -35,6 +35,8 @@ type L1Client interface {
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
 	// returns the l1 parameters used by the node
 	L1Params() *parameters.L1
+	// used to query the health endpoint of the node
+	Health(timeout ...time.Duration) (bool, error)
 }
 
 var _ L1Client = &nodeConn{}
@@ -238,4 +240,12 @@ func MakeSimpleValueTX(
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
 	return tx, nil
+}
+
+// Health implements L1Client
+func (nc *nodeConn) Health(timeout ...time.Duration) (bool, error) {
+	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	defer cancelContext()
+
+	return nc.nodeClient.Health(ctxWithTimeout)
 }

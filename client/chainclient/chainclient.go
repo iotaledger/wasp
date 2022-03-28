@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -17,7 +18,7 @@ type Client struct {
 	WaspClient   *client.WaspClient
 	ChainID      *iscp.ChainID
 	KeyPair      *cryptolib.KeyPair
-	nonces       map[[cryptolib.PublicKeySize]byte]uint64
+	nonces       map[iotago.Address]uint64
 }
 
 // New creates a new chainclient.Client
@@ -32,58 +33,79 @@ func New(
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
-		nonces:       make(map[[cryptolib.PublicKeySize]byte]uint64),
+		nonces:       make(map[iotago.Address]uint64),
 	}
 }
 
 type PostRequestParams struct {
-	Transfer *iscp.FungibleTokens
-	Args     dict.Dict
-	Nonce    uint64
+	Transfer  *iscp.FungibleTokens
+	Args      dict.Dict
+	Nonce     uint64
+	NFT       *iscp.NFT
+	Allowance *iscp.Allowance
+	GasBudget uint64
 }
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
 func (c *Client) Post1Request(
 	contractHname iscp.Hname,
 	entryPoint iscp.Hname,
-	params ...PostRequestParams,
+	params PostRequestParams,
 ) (*iotago.Transaction, error) {
-	panic("TODO implement")
-	// par := PostRequestParams{}
-	// if len(params) > 0 {
-	// 	par = params[0]
-	// }
-	// return c.Layer1Client.PostRequestTransaction(transaction.NewRequestTransactionParams{
-	// 	SenderKeyPair: c.KeyPair,
-	// 	Requests: []transaction.RequestParams{{
-	// 		ChainID:    c.ChainID,
-	// 		Contract:   contractHname,
-	// 		EntryPoint: entryPoint,
-	// 		Allowance:   par.Allowance,
-	// 		Args:       par.Args,
-	// 	}},
-	// })
+	outputs, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
+	if err != nil {
+		return nil, err
+	}
+	outputIDs := make(iotago.OutputIDs, len(outputs))
+	i := 0
+	for id := range outputs {
+		outputIDs[i] = id
+		i++
+	}
+
+	tx, err := transaction.NewRequestTransaction(
+		transaction.NewRequestTransactionParams{
+			SenderKeyPair:    c.KeyPair,
+			SenderAddress:    c.KeyPair.Address(),
+			UnspentOutputs:   outputs,
+			UnspentOutputIDs: outputIDs,
+			Request: &iscp.RequestParameters{
+				TargetAddress:              c.ChainID.AsAddress(),
+				FungibleTokens:             params.Transfer,
+				AdjustToMinimumDustDeposit: false,
+				Metadata: &iscp.SendMetadata{
+					TargetContract: contractHname,
+					EntryPoint:     entryPoint,
+					Params:         params.Args,
+					Allowance:      params.Allowance,
+					GasBudget:      params.GasBudget,
+				},
+			},
+			NFT: params.NFT,
+			L1:  c.Layer1Client.L1Params(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = c.Layer1Client.PostTx((tx))
+	return tx, err
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
 func (c *Client) PostOffLedgerRequest(
 	contractHname iscp.Hname,
 	entrypoint iscp.Hname,
-	params ...PostRequestParams,
+	params PostRequestParams,
 ) (*iscp.OffLedgerRequestData, error) {
-	panic("TODO implement")
-	// par := PostRequestParams{}
-	// if len(params) > 0 {
-	// 	par = params[0]
-	// }
-	// if par.Nonce == 0 {
-	// 	c.nonces[c.KeyPair.PublicKey]++
-	// 	par.Nonce = c.nonces[c.KeyPair.PublicKey]
-	// }
-	// offledgerReq := request.NewOffLedger(c.ChainID, contractHname, entrypoint, par.Args).AddAllowance(par.Allowance)
-	// offledgerReq.WithNonce(par.Nonce)
-	// offledgerReq.Sign(c.KeyPair)
-	// return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
+	if params.Nonce == 0 {
+		c.nonces[c.KeyPair.Address()]++
+		params.Nonce = c.nonces[c.KeyPair.Address()]
+	}
+	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, params.Args, params.Nonce)
+	offledgerReq.WithNonce(params.Nonce)
+	offledgerReq.Sign(c.KeyPair)
+	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
 }
 
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
@@ -104,44 +126,9 @@ func (par *PostRequestParams) WithTransfer(transfer *iscp.FungibleTokens) *PostR
 	return par
 }
 
-func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRequestParams {
-	panic("TODO not implemented")
-	// if len(colval) == 0 {
-	// 	return par
-	// }
-	// if len(colval)%2 != 0 {
-	// 	panic("WithTransferEncode: len(params) % 2 != 0")
-	// }
-	// par.Allowance = colored.NewBalances()
-	// for i := 0; i < len(colval)/2; i++ {
-	// 	key, ok := colval[2*i].(colored.Color)
-	// 	if !ok {
-	// 		panic("toMap: color.Color expected")
-	// 	}
-	// 	par.Allowance.Set(key, encodeIntToUint64(colval[2*i+1]))
-	// }
-	// return par
-}
-
 func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
 	par.Transfer.AddIotas(i)
 	return par
-}
-
-func encodeIntToUint64(i interface{}) uint64 {
-	switch i := i.(type) {
-	case int:
-	case byte:
-	case int8:
-	case int16:
-	case uint16:
-	case int32:
-	case uint32:
-	case int64:
-	case uint64:
-		return i
-	}
-	panic("integer type expected")
 }
 
 func parseParams(params []interface{}) dict.Dict {

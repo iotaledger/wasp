@@ -64,7 +64,6 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
-		publicKey:  cryptolib.NewKeyPair().GetPublicKey(),
 		nonce:      nonce,
 	}
 }
