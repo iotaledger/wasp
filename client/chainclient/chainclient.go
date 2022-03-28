@@ -1,6 +1,8 @@
 package chainclient
 
 import (
+	"math"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -46,12 +48,22 @@ type PostRequestParams struct {
 	GasBudget uint64
 }
 
+func defaultParams(params ...PostRequestParams) PostRequestParams {
+	if len(params) > 0 {
+		return params[0]
+	}
+	return PostRequestParams{
+		GasBudget: math.MaxUint64,
+	}
+}
+
 // Post1Request sends an on-ledger transaction with one request on it to the chain
 func (c *Client) Post1Request(
 	contractHname iscp.Hname,
 	entryPoint iscp.Hname,
-	params PostRequestParams,
+	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
+	par := defaultParams(params...)
 	outputs, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
 	if err != nil {
 		return nil, err
@@ -71,17 +83,17 @@ func (c *Client) Post1Request(
 			UnspentOutputIDs: outputIDs,
 			Request: &iscp.RequestParameters{
 				TargetAddress:              c.ChainID.AsAddress(),
-				FungibleTokens:             params.Transfer,
+				FungibleTokens:             par.Transfer,
 				AdjustToMinimumDustDeposit: false,
 				Metadata: &iscp.SendMetadata{
 					TargetContract: contractHname,
 					EntryPoint:     entryPoint,
-					Params:         params.Args,
-					Allowance:      params.Allowance,
-					GasBudget:      params.GasBudget,
+					Params:         par.Args,
+					Allowance:      par.Allowance,
+					GasBudget:      par.GasBudget,
 				},
 			},
-			NFT: params.NFT,
+			NFT: par.NFT,
 			L1:  c.Layer1Client.L1Params(),
 		},
 	)
@@ -96,14 +108,15 @@ func (c *Client) Post1Request(
 func (c *Client) PostOffLedgerRequest(
 	contractHname iscp.Hname,
 	entrypoint iscp.Hname,
-	params PostRequestParams,
+	params ...PostRequestParams,
 ) (*iscp.OffLedgerRequestData, error) {
-	if params.Nonce == 0 {
+	par := defaultParams(params...)
+	if par.Nonce == 0 {
 		c.nonces[c.KeyPair.Address()]++
-		params.Nonce = c.nonces[c.KeyPair.Address()]
+		par.Nonce = c.nonces[c.KeyPair.Address()]
 	}
-	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, params.Args, params.Nonce)
-	offledgerReq.WithNonce(params.Nonce)
+	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
 }

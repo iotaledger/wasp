@@ -11,23 +11,7 @@ import (
 )
 
 func PostTransaction(tx *iotago.Transaction) {
-	WithTransaction(func() (*iotago.Transaction, error) {
-		panic("TODO implement")
-		// return tx, config.GoshimmerClient().PostTransaction(tx)
-	})
-}
-
-func WithTransaction(f func() (*iotago.Transaction, error)) *iotago.Transaction {
-	tx, err := f()
-	log.Check(err)
-	logTx(tx, nil)
-
-	if config.WaitForCompletion {
-		panic("TODO implement")
-		// log.Check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
-	}
-
-	return tx
+	config.L1Client().PostTx(tx)
 }
 
 func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*iscp.OffLedgerRequestData, error)) {

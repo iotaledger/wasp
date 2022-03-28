@@ -1,9 +1,14 @@
 package chain
 
 import (
+	"encoding/hex"
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -38,29 +43,29 @@ var balanceCmd = &cobra.Command{
 	Short: "Show balance of on-chain account",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		panic("TODO implement")
-		// agentID, err := iscp.NewAgentIDFromString(args[0])
-		// log.Check(err)
+		// panic("TODO implement")
+		agentID, err := iscp.NewAgentIDFromString(args[0])
+		log.Check(err)
 
-		// ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name,
-		// 	dict.Dict{
-		// 		accounts.ParamAgentID: agentID.Bytes(),
-		// 	})
-		// log.Check(err)
+		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name,
+			dict.Dict{
+				accounts.ParamAgentID: agentID.Bytes(),
+			})
+		log.Check(err)
 
-		// header := []string{"color", "amount"}
-		// rows := make([][]string, len(ret))
-		// i := 0
-		// for k, v := range ret {
-		// 	color, _, err := iotago.ColorFromBytes([]byte(k))
-		// 	log.Check(err)
-		// 	bal, err := codec.DecodeUint64(v)
-		// 	log.Check(err)
+		header := []string{"color", "amount"}
+		rows := make([][]string, len(ret))
+		i := 0
+		for k, v := range ret {
+			assetID := hex.EncodeToString([]byte(k))
+			log.Check(err)
+			bal, err := codec.DecodeUint64(v)
+			log.Check(err)
 
-		// 	rows[i] = []string{color.String(), fmt.Sprintf("%d", bal)}
-		// 	i++
-		// }
-		// log.PrintTable(header, rows)
+			rows[i] = []string{assetID, fmt.Sprintf("%d", bal)}
+			i++
+		}
+		log.PrintTable(header, rows)
 	},
 }
 

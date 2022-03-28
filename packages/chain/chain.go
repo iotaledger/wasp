@@ -52,6 +52,7 @@ type ChainRequests interface {
 	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
 	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
 	DetachFromRequestProcessed(attachID *events.Closure)
+	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 }
 
 type ChainMetrics interface {
