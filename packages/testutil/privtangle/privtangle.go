@@ -39,6 +39,8 @@ const (
 	nodePortOffsetPrometheus
 	nodePortOffsetFaucet
 	nodePortOffsetMQTT
+	nodePortOffsetMQTTWebSocket
+	nodePortOffsetIndexer
 	nodePortOffsetINX
 )
 
@@ -98,6 +100,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		pt.startIndexer(i)
 		pt.startMqtt(i)
 	}
+	pt.WaitInxPlugins()
 
 	// Close when the test ends
 	if t != nil {
@@ -226,7 +229,7 @@ func (pt *PrivTangle) startIndexer(i int) {
 
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		fmt.Sprintf("--prometheus.bindAddress=%s", pt.NetworkID),
+		fmt.Sprintf("--indexer.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
 	}
 
 	indexerCmd := exec.CommandContext(pt.ctx, "inx-indexer", args...)
@@ -258,6 +261,7 @@ func (pt *PrivTangle) startMqtt(i int) {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+		fmt.Sprintf("--mqtt.wsPort=%d", pt.NodePortMQTTWebSocket(i)),
 	}
 
 	indexerCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
@@ -346,6 +350,33 @@ func (pt *PrivTangle) waitAllHealthy() {
 	}
 }
 
+func (pt *PrivTangle) WaitInxPlugins() {
+	for {
+		allOK := true
+		for i := range pt.NodeCommands {
+			// indexer
+			_, err := pt.nodeClient(i).Indexer(pt.ctx)
+			if err != nil {
+				allOK = false
+				continue
+			}
+			// mqtt
+			_, err = pt.nodeClient(i).EventAPI(pt.ctx)
+			if err != nil {
+				allOK = false
+				continue
+			}
+		}
+		if allOK {
+			return
+		}
+		if pt.t != nil {
+			pt.logf("Waiting to all nodes INX plugings to startup.")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func (pt *PrivTangle) NodeMultiAddr(i int) string {
 	stdPrivKey := pt.NodeKeyPairs[i].GetPrivateKey().AsStdKey()
 	lppPrivKey, _, err := crypto.KeyPairFromStdKey(&stdPrivKey)
@@ -397,6 +428,14 @@ func (pt *PrivTangle) NodePortFaucet(i int) int {
 
 func (pt *PrivTangle) NodePortMQTT(i int) int {
 	return pt.BasePort + i*10 + nodePortOffsetMQTT
+}
+
+func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetMQTTWebSocket
+}
+
+func (pt *PrivTangle) NodePortIndexer(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetIndexer
 }
 
 func (pt *PrivTangle) NodePortINX(i int) int {

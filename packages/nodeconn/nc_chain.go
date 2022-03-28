@@ -90,8 +90,7 @@ func (ncc *ncChain) run() {
 	init := true
 	indexer, err := ncc.nc.nodeClient.Indexer(ncc.nc.ctx)
 	if err != nil {
-		ncc.log.Warnf("failed to get nodeclient indexer: %v", err)
-		return
+		ncc.log.Panicf("failed to get nodeclient indexer: %v", err)
 	}
 	for {
 		if init {

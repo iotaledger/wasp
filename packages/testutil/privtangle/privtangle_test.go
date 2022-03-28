@@ -13,10 +13,10 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -33,24 +33,26 @@ func TestHornetStartup(t *testing.T) {
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nc := nodeclient.New(fmt.Sprintf("ws://localhost:%d/mqtt", pt.NodePortRestAPI(0)))
+	nc := nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(0)))
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
 	l1Info, err := nc.Info(ctx)
+	require.NoError(t, err)
 
 	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
 
-	initialOutputCount := mustOutputCount(pt, myAddress)
+	log := testlogger.NewSilentLogger(t.Name(), true)
+	client := nodeconn.NewL1Client(pt.L1Config(), log)
 
-	client := apilib.NewL1Client(pt.L1Config())
+	initialOutputCount := mustOutputCount(client, myAddress)
 	//
 	// Check if faucet requests are working.
-	client.(*apilib.L1Client).FaucetRequestHTTP(myAddress)
+	client.RequestFunds(myAddress)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
-		if initialOutputCount != mustOutputCount(pt, myAddress) {
+		if initialOutputCount != mustOutputCount(client, myAddress) {
 			break
 		}
 	}
@@ -60,13 +62,14 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	msg, err := client.(*apilib.L1Client).PostSimpleValueTX(pt.FaucetKeyPair, myAddress, 50000)
+	tx, err := nodeconn.MakeSimpleValueTX(client, pt.FaucetKeyPair, myAddress, 50000)
 	require.NoError(t, err)
-	t.Logf("Posted messageID=%v", msg.MustID())
+	err = client.PostTx(tx)
+	require.NoError(t, err)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
-		if initialOutputCount != mustOutputCount(pt, myAddress) {
+		if initialOutputCount != mustOutputCount(client, myAddress) {
 			break
 		}
 	}
@@ -75,12 +78,11 @@ func TestHornetStartup(t *testing.T) {
 	t.Logf("Waiting for output event, done: %+v", outs)
 }
 
-func mustOutputCount(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address) int {
-	return len(mustOutputMap(pt, myAddress))
+func mustOutputCount(client nodeconn.L1Client, myAddress *iotago.Ed25519Address) int {
+	return len(mustOutputMap(client, myAddress))
 }
 
-func mustOutputMap(pt *privtangle.PrivTangle, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
-	client := apilib.NewL1Client(pt.L1Config())
+func mustOutputMap(client nodeconn.L1Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))
