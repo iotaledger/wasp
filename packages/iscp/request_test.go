@@ -1,28 +1,31 @@
-package iscp_test
+package iscp
 
 import (
 	"bytes"
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSerializeRequestData(t *testing.T) {
-	var req iscp.Request
+	var req Request
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
-		req = iscp.NewOffLedgerRequest(iscp.RandomChainID(), 3, 14, dict.New(), 1337)
+		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337)
 
 		serialized := req.Bytes()
-		req2, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(serialized))
+		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
 
-		reqBack := req2.(*iscp.OffLedgerRequestData)
+		reqBack := req2.(*OffLedgerRequestData)
 		require.EqualValues(t, req.ID(), reqBack.ID())
 		require.True(t, req.SenderAddress().Equal(reqBack.SenderAddress()))
 
@@ -31,12 +34,12 @@ func TestSerializeRequestData(t *testing.T) {
 	})
 
 	t.Run("on ledger", func(t *testing.T) {
-		sender, _ := iotago.ParseEd25519AddressFromHexString("0152fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649")
-		requestMetadata := &iscp.RequestMetadata{
-			SenderContract: iscp.Hn("sender_contract"),
-			TargetContract: iscp.Hn("target_contract"),
-			EntryPoint:     iscp.Hn("entrypoint"),
-			Allowance:      &iscp.Assets{Iotas: 1},
+		sender := tpkg.RandEd25519Address()
+		requestMetadata := &RequestMetadata{
+			SenderContract: Hn("sender_contract"),
+			TargetContract: Hn("target_contract"),
+			EntryPoint:     Hn("entrypoint"),
+			Allowance:      NewAllowanceIotas(1),
 			GasBudget:      1000,
 		}
 		outputOn := &iotago.BasicOutput{
@@ -55,14 +58,14 @@ func TestSerializeRequestData(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: sender},
 			},
 		}
-		req, err = iscp.OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
+		req, err = OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
 		require.NoError(t, err)
 
 		serialized := req.Bytes()
-		req2, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(serialized))
+		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
-		require.True(t, req2.SenderAccount().Equals(iscp.NewAgentID(sender, requestMetadata.SenderContract)))
-		require.True(t, req2.CallTarget().Equals(iscp.NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
+		require.True(t, req2.SenderAccount().Equals(NewAgentID(sender, requestMetadata.SenderContract)))
+		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 		require.EqualValues(t, req.ID(), req2.ID())
 		require.True(t, req.SenderAddress().Equal(req2.SenderAddress()))
 
@@ -72,11 +75,11 @@ func TestSerializeRequestData(t *testing.T) {
 }
 
 func TestRequestIDToFromString(t *testing.T) {
-	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), 3, 14, dict.New(), 1337)
+	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337)
 	oritinalID := req.ID()
 	s := oritinalID.String()
 	require.NotEmpty(t, s)
-	parsedID, err := iscp.RequestIDFromString(s)
+	parsedID, err := RequestIDFromString(s)
 	require.NoError(t, err)
 	require.Equal(t, oritinalID.TransactionID, parsedID.TransactionID)
 	require.Equal(t, oritinalID.TransactionOutputIndex, parsedID.TransactionOutputIndex)

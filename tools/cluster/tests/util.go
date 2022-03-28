@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -12,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -48,33 +49,33 @@ func (e *chainEnv) checkCoreContracts() {
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		require.NoError(e.t, err)
-		for _, rec := range core.AllCoreContractsByHash {
-			cr := contractRegistry[rec.Contract.Hname()]
-			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Contract.Name, rec.Contract.Hname())
+		for _, rec := range corecontracts.All {
+			cr := contractRegistry[rec.Hname()]
+			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
 
-			require.EqualValues(e.t, rec.Contract.ProgramHash, cr.ProgramHash)
-			require.EqualValues(e.t, rec.Contract.Description, cr.Description)
-			require.EqualValues(e.t, rec.Contract.Name, cr.Name)
+			require.EqualValues(e.t, rec.ProgramHash, cr.ProgramHash)
+			require.EqualValues(e.t, rec.Description, cr.Description)
+			require.EqualValues(e.t, rec.Name, cr.Name)
 		}
 	}
 }
 
 func (e *chainEnv) checkRootsOutside() {
-	for _, rec := range core.AllCoreContractsByHash {
-		recBack, err := e.findContract(rec.Contract.Name)
+	for _, rec := range corecontracts.All {
+		recBack, err := e.findContract(rec.Name)
 		require.NoError(e.t, err)
 		require.NotNil(e.t, recBack)
-		require.EqualValues(e.t, rec.Contract.Name, recBack.Name)
-		require.EqualValues(e.t, rec.Contract.ProgramHash, recBack.ProgramHash)
-		require.EqualValues(e.t, rec.Contract.Description, recBack.Description)
+		require.EqualValues(e.t, rec.Name, recBack.Name)
+		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
+		require.EqualValues(e.t, rec.Description, recBack.Description)
 		require.True(e.t, recBack.Creator.IsNil())
 	}
 }
 
 func (e *env) requestFunds(addr iotago.Address, who string) {
-	err := e.clu.GoshimmerClient().RequestFunds(addr)
+	err := e.clu.RequestFunds(addr)
 	require.NoError(e.t, err)
-	if !e.clu.VerifyAddressBalances(addr, solo.Saldo, iscp.NewAssets(solo.Saldo, nil), "requested funds for "+who) {
+	if !e.clu.AssertAddressBalances(addr, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
 		e.t.Logf("unexpected requested amount")
 		e.t.FailNow()
 	}
@@ -123,8 +124,8 @@ func (e *chainEnv) getAccountsOnChain() []*iscp.AgentID {
 	return ret
 }
 
-func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.Assets {
-	ret := make(map[*iscp.AgentID]*iscp.Assets)
+func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.FungibleTokens {
+	ret := make(map[*iscp.AgentID]*iscp.FungibleTokens)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.chain.Cluster.WaspClient(0).CallView(
@@ -134,18 +135,18 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.Assets {
 			},
 		)
 		require.NoError(e.t, err)
-		ret[agentID], err = iscp.AssetsFromDict(r)
+		ret[agentID], err = iscp.FungibleTokensFromDict(r)
 		require.NoError(e.t, err)
 	}
 	return ret
 }
 
-func (e *chainEnv) getTotalBalance() *iscp.Assets {
+func (e *chainEnv) getTotalBalance() *iscp.FungibleTokens {
 	r, err := e.chain.Cluster.WaspClient(0).CallView(
 		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
 	)
 	require.NoError(e.t, err)
-	ret, err := iscp.AssetsFromDict(r)
+	ret, err := iscp.FungibleTokensFromDict(r)
 	require.NoError(e.t, err)
 	return ret
 }
@@ -240,7 +241,7 @@ func (e *chainEnv) counterEquals(expected int64) conditionFn {
 
 func (e *chainEnv) accountExists(agentID *iscp.AgentID) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		return e.getBalanceOnChain(agentID, iscp.IotaAssetID, nodeIndex) > 0
+		return e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex) > 0
 	}
 }
 
@@ -257,7 +258,7 @@ func (e *chainEnv) contractIsDeployed(contractName string) conditionFn {
 
 func (e *chainEnv) balanceOnChainIotaEquals(agentID *iscp.AgentID, iotas uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		have := e.getBalanceOnChain(agentID, iscp.IotaAssetID, nodeIndex)
+		have := e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex)
 		e.t.Logf("chainEnv::balanceOnChainIotaEquals: node=%v, have=%v, expected=%v", nodeIndex, have, iotas)
 		return iotas == have
 	}

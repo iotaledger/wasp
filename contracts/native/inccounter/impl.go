@@ -72,7 +72,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: counter = %d", val+1))
 	panic("refactor me")
-	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
+	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewFungibleTokens(1, nil), &iscp.SendMetadata{
 	//	TargetContract: ctx.Contract(),
 	//	EntryPoint:     FuncIncCounter.Hname(),
 	//}, iscp.SendOptions{
@@ -111,7 +111,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
 	panic("refactor me")
-	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
+	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewFungibleTokens(1, nil), &iscp.SendMetadata{
 	//	TargetContract: ctx.Contract(),
 	//	EntryPoint:     FuncIncAndRepeatMany.Hname(),
 	//}, iscp.SendOptions{

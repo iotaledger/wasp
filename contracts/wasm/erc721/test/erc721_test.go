@@ -20,7 +20,6 @@ func TestDeploy(t *testing.T) {
 func TestMint(t *testing.T) {
 	ctx := setup(t)
 	owner := ctx.NewSoloAgent()
-	ctx.Chain.MustDepositIotasToL2(9999, owner.Pair)
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
@@ -29,7 +28,6 @@ func TestMint(t *testing.T) {
 func TestApprove(t *testing.T) {
 	ctx := setup(t)
 	owner := ctx.NewSoloAgent()
-	ctx.Chain.MustDepositIotasToL2(9999, owner.Pair)
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
@@ -60,7 +58,6 @@ func TestApprove(t *testing.T) {
 func TestApproveAll(t *testing.T) {
 	ctx := setup(t)
 	owner := ctx.NewSoloAgent()
-	ctx.Chain.MustDepositIotasToL2(9999, owner.Pair)
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
@@ -103,7 +100,6 @@ func TestApproveAll(t *testing.T) {
 func TestTransferFrom(t *testing.T) {
 	ctx := setup(t)
 	owner := ctx.NewSoloAgent()
-	ctx.Chain.MustDepositIotasToL2(9999, owner.Pair)
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)

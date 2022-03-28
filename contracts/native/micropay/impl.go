@@ -114,7 +114,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 
 	// // send deterred request to self to revoke the warrant
-	// iota1 := colored.NewBalancesForIotas(1)
+	// iota1 := iscp.NewTokensIotas(1)
 	// meta := &iscp.SendMetadata{
 	// 	TargetContract: ctx.Contract(),
 	// 	EntryPoint:     FuncCloseWarrant.Hname(),
@@ -144,7 +144,7 @@ func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
 	// warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 	// if warrant > 0 {
-	// 	tokens := colored.NewBalancesForIotas(warrant)
+	// 	tokens := iscp.NewTokensIotas(warrant)
 	// 	succ := ctx.Send(payerAddr, tokens, nil)
 	// 	a.Requiref(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
 	// }
@@ -298,7 +298,7 @@ func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAdd
 		lastOrd = uint64(p.Ord)
 	}
 	if settledSum > 0 {
-		tokens := iscp.NewAssets(settledSum, nil)
+		tokens := iscp.NewFungibleTokens(settledSum, nil)
 		ctx.Send(targetAddr, tokens, nil)
 	}
 	payerInfo := collections.NewMap(ctx.State(), string(iscp.BytesFromAddress(payerAddr)))

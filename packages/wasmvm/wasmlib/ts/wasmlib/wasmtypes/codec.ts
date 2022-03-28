@@ -1,9 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {FnUtilsBase58Encode, panic} from "../sandbox";
-import {stringFromBytes} from "./scstring";
 import {sandbox} from "../host";
+import {FnUtilsBase58Encode, panic} from "../sandbox";
+import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -127,20 +127,20 @@ export class WasmEncoder {
     }
 
     // encodes a single byte into the byte buffer
-    byte(value: u8): WasmEncoder {
+    byte(value: u8): wasmtypes.WasmEncoder {
         this.data.push(value);
         return this;
     }
 
     // encodes a variable sized slice of bytes into the byte buffer
-    bytes(value: u8[]): WasmEncoder {
+    bytes(value: u8[]): wasmtypes.WasmEncoder {
         const length = value.length;
         this.vluEncode(length as u64);
         return this.fixedBytes(value, length as u32);
     }
 
     // encodes a fixed size slice of bytes into the byte buffer
-    fixedBytes(value: u8[], length: u32): WasmEncoder {
+    fixedBytes(value: u8[], length: u32): wasmtypes.WasmEncoder {
         if ((value.length as u32) != length) {
             panic("invalid fixed bytes length");
         }
@@ -149,7 +149,7 @@ export class WasmEncoder {
     }
 
     // Variable Length Integer encoder, uses modified LEB128
-    vliEncode(value: i64): WasmEncoder {
+    vliEncode(value: i64): wasmtypes.WasmEncoder {
         // bit 7 is always continuation bit
 
         // first group: 6 bits of data plus sign bit
@@ -181,7 +181,7 @@ export class WasmEncoder {
     }
 
     // Variable Length Unsigned encoder, uses ULEB128
-    vluEncode(value: u64): WasmEncoder {
+    vluEncode(value: u64): wasmtypes.WasmEncoder {
         // bit 7 is always continuation bit
 
         // first group of 7 data bits
@@ -208,7 +208,7 @@ export class WasmEncoder {
 
 // wrapper for simplified use by hashtypes
 export function base58Encode(buf: u8[]): string {
-    return stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
+    return wasmtypes.stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
 }
 
 export function zeroes(count: u32): u8[] {

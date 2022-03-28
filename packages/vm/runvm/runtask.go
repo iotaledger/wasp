@@ -2,11 +2,11 @@ package runvm
 
 import (
 	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -16,7 +16,7 @@ type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
-	err := util.CatchPanicReturnError(
+	err := panicutil.CatchPanicReturnError(
 		func() { runTask(task) },
 		coreutil.ErrorStateInvalidated,
 	)
@@ -81,7 +81,7 @@ func runTask(task *vm.VMTask) {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(&iscp.StateData{
+		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(&state.L1Commitment{
 			Commitment: stateCommitment,
 		})
 
@@ -101,7 +101,7 @@ func runTask(task *vm.VMTask) {
 }
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger
-func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.Assets) {
+func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.FungibleTokens) {
 	//var chainOutput *ledgerstate.AliasOutput
 	//for _, o := range essence.Outputs() {
 	//	if out, ok := o.(*ledgerstate.AliasOutput); ok {

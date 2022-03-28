@@ -31,7 +31,7 @@ func NewMockedLedger(originOutput *iotago.AliasOutput, log *logger.Logger) *Mock
 	return ret
 }
 
-func (m *MockedLedger) pullState() *iscp.AliasOutputWithID {
+func (m *MockedLedger) PullState() *iscp.AliasOutputWithID {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	m.log.Debugf("Pulling state")
@@ -44,7 +44,7 @@ func (m *MockedLedger) pullState() *iscp.AliasOutputWithID {
 	return nil
 }
 
-func (m *MockedLedger) pullConfirmedOutput(id *iotago.UTXOInput) *iotago.AliasOutput {
+func (m *MockedLedger) PullConfirmedOutput(id *iotago.UTXOInput) *iotago.AliasOutput {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	m.log.Debugf("Pulling confirmed output with id %v", iscp.OID(id))

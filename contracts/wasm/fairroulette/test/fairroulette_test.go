@@ -31,6 +31,8 @@ func TestBets(t *testing.T) {
 		placeBet.Func.TransferIotas(1234).Post()
 		require.NoError(t, ctx.Err)
 	}
+
+	// wait for finalize_auction
 	ctx.AdvanceClockBy(1201 * time.Second)
 	require.True(t, ctx.WaitForPendingRequests(1))
 }

@@ -14,12 +14,12 @@ import (
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) dict.Dict {
+func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Allowance) dict.Dict {
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 
-func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) dict.Dict {
+func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Allowance) dict.Dict {
 	contractRecord := vmctx.getOrCreateContractRecord(targetContract)
 	ep := execution.GetEntryPointByProgHash(vmctx, targetContract, epCode, contractRecord.ProgramHash)
 
@@ -50,7 +50,7 @@ func (vmctx *VMContext) callerIsRoot() bool {
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, allowance *iscp.Assets) {
+func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, allowance *iscp.Allowance) {
 	ctx := &callContext{
 		caller:   vmctx.getToBeCaller(),
 		contract: contract,

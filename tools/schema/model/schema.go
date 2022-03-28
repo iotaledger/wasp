@@ -56,7 +56,6 @@ type Schema struct {
 	ContractName  string
 	PackageName   string
 	Description   string
-	KeyID         int
 	CoreContracts bool
 	SchemaTime    time.Time
 	Events        []*Struct
@@ -102,18 +101,11 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	if err != nil {
 		return err
 	}
-	s.KeyID = 0
 	for _, name := range sortedFields(params) {
-		param := params[name]
-		param.KeyID = s.KeyID
-		s.KeyID++
-		s.Params = append(s.Params, param)
+		s.Params = append(s.Params, params[name])
 	}
 	for _, name := range sortedFields(results) {
-		result := results[name]
-		result.KeyID = s.KeyID
-		s.KeyID++
-		s.Results = append(s.Results, result)
+		s.Results = append(s.Results, results[name])
 	}
 	return s.compileStateVars(schemaDef)
 }
@@ -231,8 +223,6 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 			return fmt.Errorf("duplicate var alias")
 		}
 		varAliases[varDef.Alias] = varDef.Alias
-		varDef.KeyID = s.KeyID
-		s.KeyID++
 		s.StateVars = append(s.StateVars, varDef)
 	}
 	return nil

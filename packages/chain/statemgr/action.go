@@ -4,12 +4,12 @@
 package statemgr
 
 import (
-	"bytes"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -60,8 +60,13 @@ func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	// GetStateMetadata is supposed to return hash of state data (state commitment)
-	return bytes.Equal(sm.solidState.StateCommitment().Bytes(), sm.stateOutput.GetStateMetadata())
+	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
+	if err != nil {
+		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
+		return false
+	}
+	stateCommitment := stateL1Commitment.Commitment
+	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieAccess()), stateCommitment)
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -71,7 +76,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 		sm.nodeConn.PullState()
 		sm.pullStateRetryTime = currentTime.Add(sm.timers.PullStateRetry)
 		sm.log.Debugf("pullState: pulling state for address %v. Next pull in: %v",
-			chainAliasAddress.Bech32(iscp.Bech32Prefix), sm.pullStateRetryTime.Sub(currentTime))
+			chainAliasAddress.Bech32(iscp.NetworkPrefix), sm.pullStateRetryTime.Sub(currentTime))
 	} else {
 		if sm.stateOutput == nil {
 			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(currentTime))
@@ -86,7 +91,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"hash", nextState.StateCommitment(),
+		"commitment", trie.RootCommitment(nextState.TrieAccess()),
 		"output", iscp.OID(approvingOutputID),
 	)
 
@@ -143,8 +148,8 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 	}
 	if isBlockNew {
 		if sm.stateOutput != nil {
-			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateHash %v, approvingOutputID %v, already approved %v) is approved by current stateOutput",
-				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitment().String(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
+			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateCommitment %s, approvingOutputID %v, already approved %v) is approved by current stateOutput",
+				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitment(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
 			candidate.approveIfRightOutput(sm.stateOutput)
 		}
 		sm.log.Debugf("addBlockAndCheckStateOutput: block index %v approved %v", block.BlockIndex(), candidate.isApproved())
@@ -158,17 +163,19 @@ func (sm *stateManager) storeSyncingData() {
 		sm.log.Debugf("storeSyncingData not needed: stateOutput is nil")
 		return
 	}
-	outputStateCommitment, err := sm.stateOutput.GetStateCommitment()
+	outputStateL1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
 	if err != nil {
-		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state data hash: %v", err)
+		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state commitment: %v", err)
 		return
 	}
-	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.StateCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)
+	outputStateCommitment := outputStateL1Commitment.Commitment
+	solidStateCommitment := trie.RootCommitment(sm.solidState.TrieAccess())
+	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateCommitment %s, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputCommitment %s, StateOutputTimestamp %v",
+		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
-		SyncedStateHash:       sm.solidState.StateCommitment(),
+		SyncedStateCommitment: solidStateCommitment,
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),

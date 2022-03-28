@@ -1,9 +1,6 @@
 package viewcontext
 
 import (
-	"math/big"
-	"runtime/debug"
-
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -12,11 +9,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
+	"math/big"
 )
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
@@ -73,8 +73,8 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 
 func (ctx *ViewContext) AccountID() *iscp.AgentID {
 	hname := ctx.CurrentContractHname()
-	if commonaccount.IsCoreHname(hname) {
-		return commonaccount.Get(ctx.ChainID())
+	if corecontracts.IsCoreHname(hname) {
+		return ctx.ChainID().CommonAccount()
 	}
 	return iscp.NewAgentID(ctx.ChainID().AsAddress(), hname)
 }
@@ -83,8 +83,16 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
+func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+}
+
+func (ctx *ViewContext) GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID {
+	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+}
+
+func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) iscp.NFT {
+	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
 }
 
 func (ctx *ViewContext) Timestamp() int64 {
@@ -106,7 +114,7 @@ func (ctx *ViewContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *io
 		tokenID)
 }
 
-func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Assets) dict.Dict {
+func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Allowance) dict.Dict {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return ctx.callView(targetContract, epCode, params)
 }
@@ -174,7 +182,7 @@ func (ctx *ViewContext) callView(targetContract, entryPoint iscp.Hname, params d
 	return ep.Call(sandbox.NewSandboxView(ctx))
 }
 
-func (ctx *ViewContext) initCallView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
+func (ctx *ViewContext) initAndCallView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
 	ctx.gasBurnLog = gas.NewGasBurnLog()
 	ctx.gasBudget = gas.MaxGasExternalViewCall
 
@@ -184,25 +192,35 @@ func (ctx *ViewContext) initCallView(targetContract, entryPoint iscp.Hname, para
 }
 
 func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) (ret dict.Dict, err error) {
-	func() {
-		defer func() {
-			r := recover()
-			if r == nil {
-				return
-			}
-			ret = nil
-			switch err1 := r.(type) {
-			case *kv.DBError:
-				ctx.log.Panicf("DB error: %v", err1)
-			case error:
-				err = err1
-			default:
-				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
-			}
-			ctx.log.Debugf("CallView: %v", err)
-			ctx.log.Debugf(string(debug.Stack()))
-		}()
-		ret = ctx.initCallView(targetContract, epCode, params)
-	}()
+	err = panicutil.CatchAllButDBError(func() {
+		ret = ctx.initAndCallView(targetContract, epCode, params)
+	}, ctx.log, "CallViewExternal: ")
+
+	if err != nil {
+		ret = nil
+	}
+	return ret, err
+}
+
+func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
+	err = panicutil.CatchAllButDBError(func() {
+		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
+	}, ctx.log, "GetMerkleProof: ")
+
+	if err != nil {
+		ret = nil
+	}
+	return ret, err
+}
+
+// GetRootCommitment calculates root commitment from state. It must be equal to the RootCommitment from the anchor
+func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
+	err = panicutil.CatchAllButDBError(func() {
+		ret = trie.RootCommitment(ctx.stateReader.TrieNodeStore())
+	}, ctx.log, "GetMerkleProof: ")
+
+	if err != nil {
+		ret = nil
+	}
 	return ret, err
 }

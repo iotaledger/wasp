@@ -11,7 +11,7 @@ import (
 type Address string
 
 func NewAddress(address iotago.Address) Address {
-	return Address(address.Bech32(iscp.Bech32Prefix))
+	return Address(address.Bech32(iscp.NetworkPrefix))
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {

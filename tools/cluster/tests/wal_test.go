@@ -20,7 +20,7 @@ func TestWriteToWAL(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, err)
 
-	walDir := walDirFromDataPath(e.clu.DataPath, chain.ChainID.Base58())
+	walDir := walDirFromDataPath(e.clu.DataPath, chain.ChainID.String())
 	require.True(t, walDirectoryCreated(walDir))
 
 	blockIndex, _ := chain.BlockIndex(0)
@@ -45,7 +45,7 @@ func TestWriteToWAL(t *testing.T) {
 
 	require.EqualValues(t, blockInfo.BlockIndex, block.BlockIndex())
 	require.EqualValues(t, blockInfo.Timestamp, block.Timestamp())
-	require.EqualValues(t, blockInfo.PreviousStateHash.Bytes(), block.PreviousStateHash().Bytes())
+	require.EqualValues(t, blockInfo.PreviousStateCommitment.Bytes(), block.PreviousStateCommitment(state.CommitmentModel).Bytes())
 }
 
 func walDirectoryCreated(walDir string) bool {

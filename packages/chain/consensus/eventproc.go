@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	//iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -93,8 +93,8 @@ func (c *consensus) handleVMResultMsg(msg *messages.VMResultMsg) {
 			essenceString = fmt.Sprintf("essence signing message hash: %s", hashing.HashData(signingMsg))
 		}
 	}
-	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
-		msg.Task.VirtualStateAccess.BlockIndex(), msg.Task.VirtualStateAccess.StateCommitment(), essenceString)
+	c.log.Debugf("VMResultMsg received: state index: %d state commitment: %s %s",
+		msg.Task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(msg.Task.VirtualStateAccess.TrieAccess()), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }

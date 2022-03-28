@@ -11,8 +11,12 @@ func NewRequest(chainID string) string {
 	return "/request/" + chainID
 }
 
-func CallView(chainID, contractHname, functionName string) string {
+func CallViewByName(chainID, contractHname, functionName string) string {
 	return "chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
+}
+
+func CallViewByHname(chainID, contractHname, functionHname string) string {
+	return "chain/" + chainID + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
 }
 
 func RequestStatus(chainID, reqID string) string {

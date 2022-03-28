@@ -17,10 +17,12 @@ const (
 	BurnCodeGetAllowance
 	BurnCodeGetStateAnchorInfo
 	BurnCodeGetBalance
+	BurnCodeGetNFTData
 	BurnCodeCallContract
 	BurnCodeDeployContract
 	BurnCodeEmitEventFixed
 	BurnCodeTransferAllowance
+	BurnCodeEstimateDustCost
 	BurnCodeSendL1Request
 
 	// Sandbox util codes
@@ -49,10 +51,12 @@ var burnTable = BurnTable{
 	BurnCodeGetCallerData:              {"caller", constValue(10)},
 	BurnCodeGetStateAnchorInfo:         {"anchor", constValue(10)},
 	BurnCodeGetBalance:                 {"balance", constValue(20)},
+	BurnCodeGetNFTData:                 {"nft data", constValue(10)},
 	BurnCodeCallContract:               {"call", constValue(100)},
 	BurnCodeEmitEventFixed:             {"event", constValue(10)},
 	BurnCodeGetAllowance:               {"allowance", constValue(10)},
 	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
+	BurnCodeEstimateDustCost:           {"dust estimate", constValue(5)},
 	BurnCodeSendL1Request:              {"send", linear(Coef1Send)},
 	BurnCodeDeployContract:             {"deploy", constValue(10)},
 	BurnCodeStorage1P:                  {"storage", linear(1)}, // 1 gas per byte

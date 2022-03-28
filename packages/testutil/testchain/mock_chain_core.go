@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -54,8 +55,8 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
-		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
-		log:        log,
+		processors: processors.MustNew(coreprocessors.Config().WithNativeContracts(inccounter.Processor)),
+		log:        log.Named("chain"),
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
 			return []string{}

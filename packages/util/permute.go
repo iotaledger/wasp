@@ -95,3 +95,11 @@ func findIndexOf(val uint16, sequence []uint16) (uint16, bool) {
 	}
 	return 0, false
 }
+
+func (perm *Permutation16) ForEach(f func(i uint16) bool) {
+	for _, v := range perm.permutation {
+		if !f(v) {
+			return
+		}
+	}
+}

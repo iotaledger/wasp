@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"strconv"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -15,12 +16,10 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
 			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("STATE TRANSITION. State hash: %s",
-			msg.VirtualState.StateCommitment().String())
+		log.Debugf("STATE TRANSITION. Root commitment: %s", trie.RootCommitment(msg.VirtualState.TrieAccess()))
 	} else {
 		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("ORIGIN STATE SAVED. state hash: %s",
-			msg.VirtualState.StateCommitment().String())
+		log.Debugf("ORIGIN STATE SAVED. state hash: %s", trie.RootCommitment(msg.VirtualState.TrieAccess()))
 	}
 }
 

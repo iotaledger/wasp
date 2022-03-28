@@ -19,8 +19,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -38,7 +38,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
+	fmt.Fprintf(&buf, "Root commitment: %s\n", trie.RootCommitment(ch.State.TrieAccess()))
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }
@@ -322,7 +322,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() *iscp.AgentID {
-	return commonaccount.Get(ch.ChainID)
+	return ch.ChainID.CommonAccount()
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -342,7 +342,6 @@ func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
 	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, code.Bytes(),
 	)
-
 	if err != nil {
 		return "", err
 	}
@@ -523,7 +522,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
-	).AddAssetsIotas(1)
+	).AddIotas(1)
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if result.Error == nil {
 		ch.StateControllerAddress = newStateAddr
@@ -543,12 +542,12 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.Ke
 
 type L1L2AddressAssets struct {
 	Address  iotago.Address
-	AssetsL1 *iscp.Assets
-	AssetsL2 *iscp.Assets
+	AssetsL1 *iscp.FungibleTokens
+	AssetsL2 *iscp.FungibleTokens
 }
 
 func (a *L1L2AddressAssets) String() string {
-	return fmt.Sprintf("Address: %s\nL1 assets:\n  %s\nL2 assets:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
+	return fmt.Sprintf("Address: %s\nL1 ftokens:\n  %s\nL2 ftokens:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
 }
 
 func getAddr(addrOrKeypair interface{}) iotago.Address {

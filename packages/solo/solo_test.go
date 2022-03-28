@@ -3,17 +3,17 @@ package solo
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 func TestSoloBasic1(t *testing.T) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 	env := New(t)
 	_ = env.NewChain(nil, "ch1")
 }
 
 func TestSoloBasic2(t *testing.T) {
-	core.PrintWellKnownHnames()
+	corecontracts.PrintWellKnownHnames()
 	env := New(t, &InitOptions{
 		Debug: true,
 	})

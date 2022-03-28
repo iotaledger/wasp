@@ -29,7 +29,7 @@ type committee struct {
 	size           uint16
 	quorum         uint16
 	ownIndex       uint16
-	dkshare        *tcrypto.DKShare
+	dkshare        tcrypto.DKShare
 	log            *logger.Logger
 }
 
@@ -38,39 +38,42 @@ var _ chain.Committee = &committee{}
 const waitReady = false
 
 func New(
-	dkShare *tcrypto.DKShare,
+	dkShare tcrypto.DKShare,
 	chainID *iscp.ChainID,
 	netProvider peering.NetworkProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, peering.GroupProvider, error) {
 	var err error
-	if dkShare.Index == nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.Address.Bech32(iscp.Bech32Prefix))
+	if dkShare.GetIndex() == nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.GetAddress().Bech32(iscp.NetworkPrefix))
 	}
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same stateAddr for different chains
 	var peerGroupID peering.PeeringID
-	address, err := dkShare.Address.Serialize(serializer.DeSeriModeNoValidation, nil)
+	address, err := dkShare.GetAddress().Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: cannot serialize address: %v", err)
+	}
 	var chainArr *iscp.ChainID
 	if chainID != nil {
 		chainArr = chainID
 	}
-	for i := range peerGroupID {
+	for i := range chainArr {
 		peerGroupID[i] = address[i] ^ chainArr[i]
 	}
 	var peers peering.GroupProvider
-	if peers, err = netProvider.PeerGroup(peerGroupID, dkShare.NodePubKeys); err != nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", dkShare.NodePubKeys, err)
+	if peers, err = netProvider.PeerGroup(peerGroupID, dkShare.GetNodePubKeys()); err != nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", dkShare.GetNodePubKeys(), err)
 	}
-	log.Debugf("NewCommittee: peer group: %+v", dkShare.NodePubKeys)
+	log.Debugf("NewCommittee: peer group: %+v", dkShare.GetNodePubKeys())
 	ret := &committee{
 		isReady:        atomic.NewBool(false),
-		address:        dkShare.Address,
+		address:        dkShare.GetAddress(),
 		validatorNodes: peers,
-		size:           dkShare.N,
-		quorum:         dkShare.T,
-		ownIndex:       *dkShare.Index,
+		size:           dkShare.GetN(),
+		quorum:         dkShare.GetT(),
+		ownIndex:       *dkShare.GetIndex(),
 		dkshare:        dkShare,
 		log:            log,
 	}
@@ -111,7 +114,7 @@ func (c *committee) OwnPeerIndex() uint16 {
 	return c.ownIndex
 }
 
-func (c *committee) DKShare() *tcrypto.DKShare {
+func (c *committee) DKShare() tcrypto.DKShare {
 	return c.dkshare
 }
 
@@ -177,7 +180,7 @@ func (c *committee) waitReady(waitReady bool) {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	c.log.Infof("committee started for address %s", c.dkshare.Address.Bech32(iscp.Bech32Prefix))
+	c.log.Infof("committee started for address %s", c.dkshare.GetAddress().Bech32(iscp.NetworkPrefix))
 	c.log.Debugf("peer status: %s", c.PeerStatus())
 	c.isReady.Store(true)
 }

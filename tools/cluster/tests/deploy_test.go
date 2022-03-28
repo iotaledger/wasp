@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +47,7 @@ func TestDeployChain(t *testing.T) {
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
-		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
+		require.EqualValues(t, len(corecontracts.All), len(contractRegistry))
 	}
 }
 
@@ -83,9 +83,11 @@ func TestDeployContractOnly(t *testing.T) {
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(tx.ID(), 0))
+		txID, err := tx.ID()
 		require.NoError(t, err)
-		require.Empty(t, rec.ErrorStr)
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(*txID, 0))
+		require.NoError(t, err)
+		require.Nil(t, rec.Error)
 	}
 }
 
@@ -131,7 +133,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
-		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contractRegistry))
+		require.EqualValues(t, len(corecontracts.All)+2, len(contractRegistry))
 
 		cr := contractRegistry[hnameNew]
 		require.EqualValues(t, dscrNew, cr.Description)

@@ -1,6 +1,7 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"sort"
@@ -43,7 +44,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		}}
 	}
 	f.Amount = f.VByteCost(txb.l1Params.RentStructure(), nil)
-	err := util.CatchPanicReturnError(func() {
+	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)
 	if err != nil {
@@ -175,6 +176,13 @@ func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[ui
 		ret[sn] = txb.invokedFoundries[sn].out
 	}
 	return ret
+}
+
+type foundryInvoked struct {
+	serialNumber uint32
+	input        iotago.UTXOInput      // if in != nil
+	in           *iotago.FoundryOutput // nil if created
+	out          *iotago.FoundryOutput // nil if destroyed
 }
 
 func (f *foundryInvoked) clone() *foundryInvoked {

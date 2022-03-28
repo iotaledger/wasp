@@ -27,7 +27,7 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *cryptolib.KeyPair                // Keys of the current node.
+	identity     *cryptolib.KeyPair               // Keys of the current node.
 	secKey       kyber.Scalar                     // Derived from the identity.
 	pubKey       kyber.Point                      // Derived from the identity.
 	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
@@ -104,7 +104,7 @@ func (n *Node) GenerateDistributedKey(
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
 	timeout time.Duration, // Timeout for the entire procedure.
-) (*tcrypto.DKShare, error) {
+) (tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerPubs)
 	var err error
 	peerCount := uint16(len(peerPubs))
@@ -236,7 +236,7 @@ func (n *Node) GenerateDistributedKey(
 	}
 	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, sharedPublic)
 	//
-	// Commit the keys to persistent storage.
+	// CommitToNode the keys to persistent storage.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
@@ -247,7 +247,7 @@ func (n *Node) GenerateDistributedKey(
 	); err != nil {
 		return nil, err
 	}
-	dkShare := tcrypto.DKShare{
+	dkShare := tcrypto.DKShareImpl{
 		Address:       sharedAddress,
 		N:             peerCount,
 		T:             threshold,

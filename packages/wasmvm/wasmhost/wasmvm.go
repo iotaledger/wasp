@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (
@@ -135,9 +134,6 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 
 	ctx := vm.getContext(0)
 	impl := vm.proc.vm
-	if HostTracing {
-		vm.traceGet(ctx, keyRef, keyLen, valRef, valLen)
-	}
 
 	// only check for existence ?
 	if valLen < 0 {
@@ -174,9 +170,6 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 
 	ctx := vm.getContext(0)
 	impl := vm.proc.vm
-	if HostTracing {
-		vm.traceSet(ctx, keyRef, keyLen, valRef, valLen)
-	}
 
 	// export name?
 	if keyRef == 0 {
@@ -308,102 +301,6 @@ func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {
 	return int32(len(bytes))
 }
 
-func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {
-	impl := vm.proc.vm
-
-	// only check for existence ?
-	if valLen < 0 {
-		key := impl.VMGetBytes(keyRef, keyLen)
-		ctx.log().Debugf("StateExists(%s) = %v", vm.traceKey(key), ctx.StateExists(key))
-		return
-	}
-
-	// get value for key request, or get cached result request (keyLen == 0)
-	if keyLen >= 0 {
-		if keyLen == 0 {
-			ctx.log().Debugf("  => %s", vm.traceVal(vm.cachedResult))
-			return
-		}
-		// retrieve value associated with key
-		key := impl.VMGetBytes(keyRef, keyLen)
-		ctx.log().Debugf("StateGet(%s)", vm.traceKey(key))
-		return
-	}
-
-	// sandbox func call request, keyLen is func nr
-	if keyLen == wasmlib.FnLog {
-		return
-	}
-	params := impl.VMGetBytes(valRef, valLen)
-	ctx.log().Debugf("Sandbox(%s)", vm.traceSandbox(keyLen, params))
-}
-
-func (vm *WasmVMBase) traceSandbox(funcNr int32, params []byte) string {
-	name := sandboxFuncNames[-funcNr]
-	if name[0] == '$' {
-		return name[1:] + ", " + string(params)
-	}
-	if name[0] != '#' {
-		return name
-	}
-	return name[1:] + ", " + hex(params)
-}
-
-func (vm *WasmVMBase) traceSet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {
-	impl := vm.proc.vm
-
-	// export name?
-	if keyRef == 0 {
-		name := string(impl.VMGetBytes(valRef, valLen))
-		ctx.log().Debugf("ExportName(%d, %s)", keyLen, name)
-		return
-	}
-
-	key := impl.VMGetBytes(keyRef, keyLen)
-
-	// delete key ?
-	if valLen < 0 {
-		ctx.log().Debugf("StateDelete(%s)", vm.traceKey(key))
-		return
-	}
-
-	// set key
-	val := impl.VMGetBytes(valRef, valLen)
-	ctx.log().Debugf("StateSet(%s, %s)", vm.traceKey(key), vm.traceVal(val))
-}
-
-func (vm *WasmVMBase) traceKey(key []byte) string {
-	name := ""
-	for i, b := range key {
-		if b == '.' {
-			return string(key[:i+1]) + hex(key[i+1:])
-		}
-		if b == '#' {
-			name = string(key[:i+1])
-			j := i + 1
-			for ; (key[j] & 0x80) != 0; j++ {
-			}
-			dec := wasmtypes.NewWasmDecoder(key[i+1 : j+1])
-			index := wasmtypes.Uint64Decode(dec)
-			name += wasmtypes.Uint64ToString(index)
-			if j+1 == len(key) {
-				return name
-			}
-			return name + "..." + hex(key[j+1:])
-		}
-	}
-	return `"` + string(key) + `"`
-}
-
-func (vm *WasmVMBase) traceVal(val []byte) string {
-	for _, b := range val {
-		if b < ' ' || b > '~' {
-			return hex(val)
-		}
-	}
-	return string(val)
-}
-
 // wrapUp is used in every host function to catch any panic.
 // It will save the first panic it encounters in the WasmVMBase so that
 // the caller of the Wasm function can retrieve the correct error.
@@ -434,15 +331,4 @@ func (vm *WasmVMBase) wrapUp() {
 
 	// rethrow and let nature run its course...
 	panic(panicMsg)
-}
-
-// hex returns a hex string representing the byte buffer
-func hex(buf []byte) string {
-	const hexa = "0123456789abcdef"
-	res := make([]byte, len(buf)*2)
-	for i, b := range buf {
-		res[i*2] = hexa[b>>4]
-		res[i*2+1] = hexa[b&0x0f]
-	}
-	return string(res)
 }

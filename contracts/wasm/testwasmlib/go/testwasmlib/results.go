@@ -25,35 +25,51 @@ func (s MutableTakeBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
 }
 
-type ImmutableArrayLengthResults struct {
+type ImmutableArrayOfArraysLengthResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayLengthResults) Length() wasmtypes.ScImmutableUint32 {
+func (s ImmutableArrayOfArraysLengthResults) Length() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
 }
 
-type MutableArrayLengthResults struct {
+type MutableArrayOfArraysLengthResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayLengthResults) Length() wasmtypes.ScMutableUint32 {
+func (s MutableArrayOfArraysLengthResults) Length() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
 }
 
-type ImmutableArrayValueResults struct {
+type ImmutableArrayOfArraysValueResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayValueResults) Value() wasmtypes.ScImmutableString {
+func (s ImmutableArrayOfArraysValueResults) Value() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
 }
 
-type MutableArrayValueResults struct {
+type MutableArrayOfArraysValueResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayValueResults) Value() wasmtypes.ScMutableString {
+func (s MutableArrayOfArraysValueResults) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
+}
+
+type ImmutableArrayOfMapsValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfMapsValueResults) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
+}
+
+type MutableArrayOfMapsValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfMapsValueResults) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }
 
@@ -121,18 +137,50 @@ func (s MutableIotaBalanceResults) Iotas() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultIotas))
 }
 
-type ImmutableMapValueResults struct {
+type ImmutableMapOfArraysLengthResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableMapValueResults) Value() wasmtypes.ScImmutableString {
+func (s ImmutableMapOfArraysLengthResults) Length() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
+}
+
+type MutableMapOfArraysLengthResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysLengthResults) Length() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
+}
+
+type ImmutableMapOfArraysValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysValueResults) Value() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
 }
 
-type MutableMapValueResults struct {
+type MutableMapOfArraysValueResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableMapValueResults) Value() wasmtypes.ScMutableString {
+func (s MutableMapOfArraysValueResults) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
+}
+
+type ImmutableMapOfMapsValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsValueResults) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultValue))
+}
+
+type MutableMapOfMapsValueResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsValueResults) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }

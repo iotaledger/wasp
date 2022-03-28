@@ -9,16 +9,17 @@ package rootimpl
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -59,19 +60,19 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 			contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
-	assetsOnStateAnchor := iscp.NewAssets(stateAnchor.Deposit, nil)
+	assetsOnStateAnchor := iscp.NewFungibleTokens(stateAnchor.Deposit, nil)
 	ctx.Requiref(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
-
-	extParams := ctx.Params().Dict.Clone()
 
 	// store 'root' into the registry
 	mustStoreContract(ctx, root.Contract)
+
 	// store 'blob' into the registry and run init
 	mustStoreAndInitCoreContract(ctx, blob.Contract, nil)
-	// store 'accounts' into the registry  and run init
-	// passing dust assumptions
-	extParams.Set(accounts.ParamDustDepositAssumptionsBin, ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin))
-	mustStoreAndInitCoreContract(ctx, accounts.Contract, extParams)
+
+	// store 'accounts' into the registry and run init
+	mustStoreAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
+		accounts.ParamDustDepositAssumptionsBin: ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin),
+	})
 
 	// store 'blocklog' into the registry and run init
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, nil)
@@ -80,11 +81,19 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	mustStoreAndInitCoreContract(ctx, errors.Contract, nil)
 
 	// store 'governance' into the registry and run init
-	// passing init parameters
-	extParams.Set(governance.ParamChainID, codec.EncodeChainID(ctx.ChainID()))
-	// chain owner is whoever creates origin and sends the 'init' request
-	extParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes())
-	mustStoreAndInitCoreContract(ctx, governance.Contract, extParams)
+	mustStoreAndInitCoreContract(ctx, governance.Contract, dict.Dict{
+		governance.ParamChainID: codec.EncodeChainID(ctx.ChainID()),
+		// chain owner is whoever creates origin and sends the 'init' request
+		governance.ParamChainOwner:     ctx.Caller().Bytes(),
+		governance.ParamDescription:    ctx.Params().MustGet(governance.ParamDescription),
+		governance.ParamFeePolicyBytes: ctx.Params().MustGet(governance.ParamFeePolicyBytes),
+	})
+
+	// store 'evm' into the registry and run init
+	// filter all params that have ParamEVM prefix, and remove the prefix
+	evmParams, err := dict.FromKVStore(subrealm.New(ctx.Params().Dict, root.ParamEVM("")))
+	ctx.RequireNoError(err)
+	mustStoreAndInitCoreContract(ctx, evm.Contract, evmParams)
 
 	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
 	state.Set(root.StateVarStateInitialized, []byte{0xFF})

@@ -116,10 +116,10 @@ func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 // region DKShareRegistryProvider ////////////////////////////////////////////////////
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
+func (r *Impl) SaveDKShare(dkShare tcrypto.DKShare) error {
 	var err error
 	var exists bool
-	dbKey := dbKeyForDKShare(dkShare.Address)
+	dbKey := dbKeyForDKShare(dkShare.GetAddress())
 
 	if exists, err = r.store.Has(dbKey); err != nil {
 		return err
@@ -131,7 +131,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, error) {
+func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {

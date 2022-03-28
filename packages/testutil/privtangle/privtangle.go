@@ -22,6 +22,7 @@ import (
 	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
@@ -93,6 +94,11 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 	time.Sleep(500 * time.Millisecond) // Just to decrease noise in the logs.
 	pt.WaitAllAlive()
 	pt.logf("Starting... Done, all nodes alive.")
+
+	// Close when the test ends
+	if t != nil {
+		t.Cleanup(pt.Stop)
+	}
 
 	return &pt
 }
@@ -377,6 +383,28 @@ func (pt *PrivTangle) PostFaucetRequest(ctx context.Context, recipientAddr iotag
 	return xerrors.Errorf("faucet call failed, responPrivateKeyse status=%v, body=%v", res.Status, resBody)
 }
 
+func (pt *PrivTangle) RequestFunds(addr iotago.Address) error {
+	return pt.PostFaucetRequest(context.TODO(), addr, iscp.NetworkPrefix)
+}
+
+func (pt *PrivTangle) PostTx(ctx context.Context, tx *iotago.Transaction, nc ...*nodeclient.Client) (*iotago.Message, error) {
+	nodeClient := pt.NodeClient(0)
+	if len(nc) > 0 {
+		nodeClient = nc[0]
+	}
+	//
+	// Build a message and post it.
+	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
+	}
+	txMsg, err = nodeClient.SubmitMessage(ctx, txMsg)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
+	}
+	return txMsg, nil
+}
+
 // PostSimpleValueTX submits a simple value transfer TX.
 // Can be used instead of the faucet API if the genesis key is known.
 func (pt *PrivTangle) PostSimpleValueTX(
@@ -390,17 +418,7 @@ func (pt *PrivTangle) PostSimpleValueTX(
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
-	//
-	// Build a message and post it.
-	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = nc.SubmitMessage(ctx, txMsg)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
-	}
-	return txMsg, nil
+	return pt.PostTx(ctx, tx, nc)
 }
 
 func (pt *PrivTangle) MakeSimpleValueTX(
@@ -455,9 +473,9 @@ func (pt *PrivTangle) MakeSimpleValueTX(
 	return tx, nil
 }
 
-func (pt *PrivTangle) OutputMap(ctx context.Context, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) (map[iotago.OutputID]iotago.Output, error) {
+func (pt *PrivTangle) OutputMap(ctx context.Context, node0 *nodeclient.Client, myAddress iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
 	res, err := node0.Indexer().Outputs(ctx, &nodeclient.OutputsQuery{
-		AddressBech32: myAddress.Bech32(iotago.PrefixTestnet),
+		AddressBech32: myAddress.Bech32(iscp.NetworkPrefix),
 	})
 	if err != nil {
 		return nil, xerrors.Errorf("failed to query address outputs: %w", err)

@@ -21,8 +21,8 @@ type NodeIdentityProvider interface {
 // DKShareRegistryProvider stands for a partial registry interface, needed for this package.
 // It should be implemented by registry.impl
 type DKShareRegistryProvider interface {
-	SaveDKShare(dkShare *tcrypto.DKShare) error
-	LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, error)
+	SaveDKShare(dkShare tcrypto.DKShare) error
+	LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error)
 }
 
 var ErrDKShareNotFound = errors.New("dkShare not found")

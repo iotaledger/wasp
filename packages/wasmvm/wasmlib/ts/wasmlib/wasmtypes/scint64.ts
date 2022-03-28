@@ -2,18 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import * as wasmtypes from "./index";
 
 export const ScInt64Length = 8;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function int64Decode(dec: WasmDecoder): i64 {
+export function int64Decode(dec: wasmtypes.WasmDecoder): i64 {
     return dec.vliDecode(64);
 }
 
-export function int64Encode(enc: WasmEncoder, value: i64): void {
+export function int64Encode(enc: wasmtypes.WasmEncoder, value: i64): void {
     enc.vliEncode(value);
 }
 
@@ -54,9 +53,9 @@ export function int64ToString(value: i64): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableInt64 {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

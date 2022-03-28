@@ -109,7 +109,7 @@ func NewChain(
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
-	chainLog := log.Named(chainID.Bech32(iscp.Bech32Prefix)[:6] + ".")
+	chainLog := log.Named(chainID.Bech32(iscp.NetworkPrefix)[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
@@ -242,7 +242,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String(), c.mempoolLastCleanedIndex)
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.RootCommitment().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
 		chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasAddress())
@@ -279,7 +279,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		c.chainMetrics.CurrentStateIndex(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.RootCommitment().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
@@ -288,7 +288,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	} else {
 		c.consensus.EnqueueStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
-	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
+	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.RootCommitment().String())
 }
 
 func (c *chainObj) updateChainNodes(stateIndex uint32) {
@@ -355,7 +355,7 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 	go func() {
 		for _, msg := range evts {
 			c.log.Debugf("publishNewBlockEvents: '%s'", msg)
-			publisher.Publish("vmmsg", c.chainID.Bech32(iscp.Bech32Prefix), msg)
+			publisher.Publish("vmmsg", c.chainID.Bech32(iscp.NetworkPrefix), msg)
 		}
 	}()
 }

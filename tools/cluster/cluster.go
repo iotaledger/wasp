@@ -5,6 +5,7 @@ package cluster
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
@@ -13,59 +14,67 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"testing"
 	"text/template"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
 )
 
 type Cluster struct {
-	Name          string
-	Config        *ClusterConfig
-	Started       bool
-	DataPath      string
-	ValidatorSeed *seed.Seed // Default identity for validators, chain owners, etc.
+	Name             string
+	Config           *ClusterConfig
+	Started          bool
+	DataPath         string
+	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
 
-	goshimmer *mocknode.MockNode
-	waspCmds  []*exec.Cmd
+	privTangle *privtangle.PrivTangle
+	waspCmds   []*exec.Cmd
+	t          *testing.T
 }
 
-func New(name string, config *ClusterConfig) *Cluster {
+func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 	return &Cluster{
-		Name:          name,
-		Config:        config,
-		ValidatorSeed: seed.NewSeed(),
-		waspCmds:      make([]*exec.Cmd, config.Wasp.NumNodes),
+		Name:             name,
+		Config:           config,
+		ValidatorKeyPair: cryptolib.NewKeyPair(),
+		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
+		t:                t,
 	}
 }
 
-func (clu *Cluster) ValidatorAddress() ledgerstate.Address {
-	return clu.ValidatorSeed.Address(0).Address()
+func (clu *Cluster) ValidatorAddress() iotago.Address {
+	return clu.ValidatorKeyPair.Address()
 }
 
 func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, error) {
 	key, addr := testkey.GenKeyAddr()
-	err := clu.GoshimmerClient().RequestFunds(addr)
+	err := clu.RequestFunds(addr)
 	return key, addr, err
 }
 
-func (clu *Cluster) GoshimmerClient() interface{} {
-	panic("TODO deprecate")
-	// return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.Goshimmer.FaucetPoWTarget)
+func (clu *Cluster) RequestFunds(addr iotago.Address) error {
+	return clu.privTangle.RequestFunds(addr)
+}
+
+func (clu *Cluster) L1Client() *nodeclient.Client {
+	return clu.privTangle.NodeClient(0)
 }
 
 func (clu *Cluster) TrustAll() error {
@@ -140,17 +149,17 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	}
 
 	chain := &Chain{
-		Description:    description,
-		OriginatorSeed: clu.ValidatorSeed,
-		AllPeers:       allPeers,
-		CommitteeNodes: committeeNodes,
-		Quorum:         quorum,
-		Cluster:        clu,
+		Description:       description,
+		OriginatorKeyPair: clu.ValidatorKeyPair,
+		AllPeers:          allPeers,
+		CommitteeNodes:    committeeNodes,
+		Quorum:            quorum,
+		Cluster:           clu,
 	}
 
 	address := chain.OriginatorAddress()
 
-	err := clu.GoshimmerClient().RequestFunds(address)
+	err := clu.RequestFunds(address)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
@@ -165,15 +174,15 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	}
 
 	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
-		Layer1Client:         clu.GoshimmerClient(),
-		CommitteeAPIHosts:    chain.CommitteeAPIHosts(),
-		CommitteePubKeys:     committeePubKeys,
-		N:                    uint16(len(committeeNodes)),
-		T:                    quorum,
-		OriginatorPrivateKey: chain.OriginatorKeyPair(),
-		Description:          description,
-		Textout:              os.Stdout,
-		Prefix:               "[cluster] ",
+		Layer1Client:      clu.L1Client(),
+		CommitteeAPIHosts: chain.CommitteeAPIHosts(),
+		CommitteePubKeys:  committeePubKeys,
+		N:                 uint16(len(committeeNodes)),
+		T:                 quorum,
+		OriginatorKeyPair: chain.OriginatorKeyPair,
+		Description:       description,
+		Textout:           os.Stdout,
+		Prefix:            "[cluster] ",
 	}, stateAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
@@ -215,23 +224,23 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 	}
 	scArgs := governance.AccessNodeInfo{
 		NodePubKey:    accessNodePubKey.AsBytes(),
-		ValidatorAddr: chain.OriginatorAddress().Bytes(),
+		ValidatorAddr: iscp.BytesFromAddress(chain.OriginatorAddress()),
 		Certificate:   cert.Bytes(),
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
 	scParams := chainclient.NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).WithIotas(1)
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair())
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", tx.ID(), scArgs)
+	txID, err := tx.ID()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
 	return nil
-}
-
-func (clu *Cluster) IsGoshimmerUp() bool {
-	return clu.goshimmer != nil
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
@@ -360,11 +369,9 @@ func (clu *Cluster) Start(dataPath string) error {
 func (clu *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
 
-	if !clu.Config.Goshimmer.UseProvidedNode {
-		clu.goshimmer = mocknode.Start(
-			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
-			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
-		)
+	if !clu.Config.L1.UseProvidedNode {
+		// TODO probably worth it re-implementing "mocknode" package, using the real thing for now just to make it work
+		clu.privTangle = privtangle.Start(context.TODO(), path.Join(os.TempDir(), "L1"), clu.Config.L1.TxStreamPort, clu.Config.L1.NodeCount, clu.t)
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}
 
@@ -498,14 +505,6 @@ func scanLog(reader io.Reader, hooks ...func(string)) {
 	}
 }
 
-func (clu *Cluster) stopGoshimmer() {
-	if !clu.IsGoshimmerUp() {
-		return
-	}
-	fmt.Printf("[cluster] Stopping Goshimmer MockNode\n")
-	clu.goshimmer.Stop()
-}
-
 func (clu *Cluster) stopNode(nodeIndex int) {
 	if !clu.IsNodeUp(nodeIndex) {
 		return
@@ -525,7 +524,9 @@ func (clu *Cluster) StopNode(nodeIndex int) {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (clu *Cluster) Stop() {
-	clu.stopGoshimmer()
+	if clu.privTangle != nil {
+		clu.privTangle.Stop()
+	}
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
 		clu.stopNode(i)
 	}
@@ -565,81 +566,28 @@ func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCo
 }
 
 func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
-	panic("TODO implement")
-	// fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
-	// err := clu.GoshimmerClient().PostTransaction(tx)
-	// if err != nil {
-	// 	fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.String(), err)
-	// 	return err
-	// }
-	// if err = clu.GoshimmerClient().WaitForConfirmation(tx.ID()); err != nil {
-	// 	fmt.Printf("[cluster] posting tx: %v\n", err)
-	// 	return err
-	// }
-	// fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
-	// return nil
+	// TODO wait for tx confirmation?
+	_, err := clu.privTangle.PostTx(context.TODO(), tx)
+	return err
 }
 
-func (clu *Cluster) VerifyAddressBalances(addr iotago.Address, totalExpected uint64, expect *iscp.Assets, comment ...string) bool {
-	panic("TODO implement")
-	// allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
-	// if err != nil {
-	// 	fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
-	// 	return false
-	// }
-	// dumpStr, assertionOk := dumpAssets(iscp.AssetsFromOutputs(allOuts), expect)
-
-	// var totalExpectedStr string
-	// if totalExpected == total {
-	// 	totalExpectedStr = fmt.Sprintf("(%d) OK", totalExpected)
-	// } else {
-	// 	totalExpectedStr = fmt.Sprintf("(%d) FAIL", totalExpected)
-	// 	assertionOk = false
-	// }
-	// cmt := ""
-	// if len(comment) > 0 {
-	// 	cmt = " (" + comment[0] + ")"
-	// }
-	// fmt.Printf("[cluster] Inputs of the address %s%s\n      Total tokens: %d %s\n%s\n",
-	// 	addr.Bech32(iscp.Bech32Prefix), cmt, total, totalExpectedStr, dumpStr)
-
-	// if !assertionOk {
-	// 	fmt.Printf("[cluster] assertion on balances failed\n")
-	// }
-	// return assertionOk
+func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+	outputMap, err := clu.privTangle.OutputMap(context.TODO(), clu.privTangle.NodeClient(0), addr)
+	if err != nil {
+		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
+		return nil
+	}
+	balance := iscp.NewEmptyAssets()
+	for _, out := range outputMap {
+		balance.Add(transaction.AssetsFromOutput(out))
+	}
+	return balance
 }
 
-func dumpAssets(actual, expect *iscp.Assets) (string, bool) {
-	panic("TODO implement") // this will probably be simple - just call assets.String()
-	// assertionOk := true
-	// lst := make([]colored.Color, 0, len(expect))
-	// for col := range expect {
-	// 	lst = append(lst, col)
-	// }
-	// colored.Sort(lst)
-	// ret := ""
-	// for _, col := range lst {
-	// 	act := actual[col]
-	// 	isOk := "OK"
-	// 	if act != expect[col] {
-	// 		assertionOk = false
-	// 		isOk = "FAIL"
-	// 	}
-	// 	ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
-	// }
-	// lst = lst[:0]
-	// for col := range actual {
-	// 	if _, ok := expect[col]; !ok {
-	// 		lst = append(lst, col)
-	// 	}
-	// }
-	// if len(lst) == 0 {
-	// 	return ret, assertionOk
-	// }
-	// colored.Sort(lst)
-	// ret += "      Unexpected colors in actual outputs:\n"
-	// for _, col := range lst {
-	// 	ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
-	// }
-	// return ret, assertionOk
+func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.FungibleTokens) bool {
+	return clu.AddressBalances(addr).Equals(expected)
+}
+
+func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
+	return clu.privTangle.OutputMap(context.TODO(), clu.privTangle.NodeClient(0), addr)
 }

@@ -1,9 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//go:build !noevm
-// +build !noevm
-
 package tests
 
 import (
@@ -12,12 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +52,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	require.NoError(t, err)
 
 	backend := jsonrpc.NewWaspClientBackend(chain.Client(signer))
-	evmChain := jsonrpc.NewEVMChain(backend, chainID, evm.Contract.Name)
+	evmChain := jsonrpc.NewEVMChain(backend, chainID)
 
 	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
 

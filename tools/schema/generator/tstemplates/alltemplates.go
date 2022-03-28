@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package tstemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
@@ -28,19 +31,19 @@ var Templates = []map[string]string{
 
 var TypeDependent = model.StringMapMap{
 	"fldLangType": {
-		"Address":		"wasmtypes.ScAddress",
-		"AgentID":		"wasmtypes.ScAgentID",
+		"Address":   "wasmtypes.ScAddress",
+		"AgentID":   "wasmtypes.ScAgentID",
 		"Bool":      "bool",
-		"Bytes":		"u8[]",
-		"ChainID":		"wasmtypes.ScChainID",
-		"Color":		"wasmtypes.ScColor",
-		"Hash":			"wasmtypes.ScHash",
-		"Hname":		"wasmtypes.ScHname",
+		"Bytes":     "u8[]",
+		"ChainID":   "wasmtypes.ScChainID",
+		"Color":     "wasmtypes.ScColor",
+		"Hash":      "wasmtypes.ScHash",
+		"Hname":     "wasmtypes.ScHname",
 		"Int8":      "i8",
 		"Int16":     "i16",
 		"Int32":     "i32",
 		"Int64":     "i64",
-		"RequestID":	"wasmtypes.ScRequestID",
+		"RequestID": "wasmtypes.ScRequestID",
 		"String":    "string",
 		"Uint8":     "u8",
 		"Uint16":    "u16",
@@ -48,19 +51,19 @@ var TypeDependent = model.StringMapMap{
 		"Uint64":    "u64",
 	},
 	"fldTypeInit": {
-		"Address":		"new wasmtypes.ScAddress()",
-		"AgentID":		"wasmtypes.agentIDFromBytes([])",
+		"Address":   "new wasmtypes.ScAddress()",
+		"AgentID":   "wasmtypes.agentIDFromBytes([])",
 		"Bool":      "false",
-		"Bytes":		"[]",
-		"ChainID":		"new wasmtypes.ScChainID()",
-		"Color":		"new wasmtypes.ScColor(0)",
-		"Hash":			"new wasmtypes.ScHash()",
-		"Hname":		"new wasmtypes.ScHname(0)",
+		"Bytes":     "[]",
+		"ChainID":   "new wasmtypes.ScChainID()",
+		"Color":     "new wasmtypes.ScColor(0)",
+		"Hash":      "new wasmtypes.ScHash()",
+		"Hname":     "new wasmtypes.ScHname(0)",
 		"Int8":      "0",
 		"Int16":     "0",
 		"Int32":     "0",
 		"Int64":     "0",
-		"RequestID":	"new wasmtypes.ScRequestID()",
+		"RequestID": "new wasmtypes.ScRequestID()",
 		"String":    "\"\"",
 		"Uint8":     "0",
 		"Uint16":    "0",

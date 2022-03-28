@@ -99,7 +99,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		return addr.Bech32(iscp.Bech32Prefix)
+		return addr.Bech32(iscp.NetworkPrefix)
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)

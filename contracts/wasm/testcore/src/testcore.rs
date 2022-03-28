@@ -160,7 +160,7 @@ pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext)
 
 pub fn func_withdraw_to_chain(ctx: &ScFuncContext, f: &WithdrawToChainContext) {
     let xx = coreaccounts::ScFuncs::withdraw(ctx);
-    xx.func.transfer_iotas(1).post_to_chain(f.params.chain_id().value());
+    xx.func.post_to_chain(f.params.chain_id().value());
 }
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {

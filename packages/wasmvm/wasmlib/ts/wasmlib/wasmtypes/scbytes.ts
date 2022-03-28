@@ -1,8 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {base58Encode, WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import * as wasmtypes from "./index";
 
 export function bytesCompare(lhs: u8[], rhs: u8[]): i32 {
     const size = (lhs.length < rhs.length) ? lhs.length : rhs.length;
@@ -16,11 +15,11 @@ export function bytesCompare(lhs: u8[], rhs: u8[]): i32 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function bytesDecode(dec: WasmDecoder): u8[] {
+export function bytesDecode(dec: wasmtypes.WasmDecoder): u8[] {
     return dec.bytes();
 }
 
-export function bytesEncode(enc: WasmEncoder, value: u8[]): void {
+export function bytesEncode(enc: wasmtypes.WasmEncoder, value: u8[]): void {
     enc.bytes(value);
 }
 
@@ -33,15 +32,15 @@ export function bytesToBytes(buf: u8[]): u8[] {
 }
 
 export function bytesToString(value: u8[]): string {
-    return base58Encode(value);
+    return wasmtypes.base58Encode(value);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableBytes {
-    proxy: Proxy;
+    proxy: wasmtypes.Proxy;
 
-    constructor(proxy: Proxy) {
+    constructor(proxy: wasmtypes.Proxy) {
         this.proxy = proxy;
     }
 

@@ -2,9 +2,10 @@ package tests
 
 import (
 	"crypto/rand"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -19,20 +20,20 @@ import (
 
 func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
 	userWallet := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(seedN))
-	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
+	userAddress := userWallet.Address()
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(waspnode), e.chain.ChainID, &userWallet)
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(waspnode), e.chain.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	e.requestFunds(userAddress, "userWallet")
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(iotas),
+		Transfer: iscp.NewTokensIotas(iotas),
 	})
 	require.NoError(e.t, err)
 	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
-	e.checkBalanceOnChain(userAgentID, colored.IOTA, iotas)
+	e.checkBalanceOnChain(userAgentID, iscp.IotaTokenID, iotas)
 
 	// wait until access node syncs with account
 	if len(waitOnNodes) > 0 {

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +25,6 @@ func TestSpawn(t *testing.T) {
 		require.EqualValues(t, 5, v.Results.Counter().Value())
 
 		_, _, recs := ctx.Chain.GetInfo()
-		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(recs))
+		require.EqualValues(t, len(corecontracts.All)+2, len(recs))
 	})
 }

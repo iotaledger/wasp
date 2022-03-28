@@ -57,7 +57,7 @@ func TestMintedSupplyOk(t *testing.T) {
 			requests++
 		}
 
-		require.EqualValues(t, solo.Saldo-42-requests, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount-42-requests, user.Balance())
 		require.EqualValues(t, 42, user.Balance(mintedColor))
 
 		require.EqualValues(t, mintedColor, f.Results.MintedColor().Value())

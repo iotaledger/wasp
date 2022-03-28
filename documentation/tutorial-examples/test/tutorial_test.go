@@ -22,7 +22,7 @@ func TestTutorial1(t *testing.T) {
 	// calls view root::GetChainInfo
 	chainID, chainOwnerID, coreContracts := chain.GetInfo()
 	// assert all core contracts deployed (default)
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts))
+	require.EqualValues(t, len(corecontracts.All), len(coreContracts))
 
 	t.Logf("chain ID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwnerID.String())
@@ -37,7 +37,7 @@ func TestTutorial2(t *testing.T) {
 	t.Logf("address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.L1NativeTokens(userAddress, iscp.IotaTokenID) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressNativeTokenBalance(userAddress, iscp.IotaTokenID, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, iscp.IotaTokenID, utxodb.FundsFromFaucetAmount)
 }
 
 func TestTutorial3(t *testing.T) {
@@ -48,7 +48,7 @@ func TestTutorial3(t *testing.T) {
 	require.NoError(t, err)
 
 	// call contract to store string
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddAssetsIotas(1)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -69,7 +69,7 @@ func TestTutorial4(t *testing.T) {
 	require.NoError(t, err)
 
 	// call contract incorrectly (omit 'paramString')
-	req := solo.NewCallParams("example1", "storeString").AddAssetsIotas(1)
+	req := solo.NewCallParams("example1", "storeString").AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -83,31 +83,31 @@ func TestTutorial5(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.L1NativeTokens(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
-	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssetsIotas(42)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddIotas(42)
 	_, err := chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// check address balance: must be 42 iotas less
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-42)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-42)
 	// check the on-chain account. Must contain 42 iotas
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 42)
 
 	// withdraw all iotas back to the sender
-	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).AddAssetsIotas(1)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).AddIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty
 }
 
@@ -123,17 +123,17 @@ func TestTutorial6(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty on-chain
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // empty on-chain
 
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddAssetsIotas(42)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 42)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-42)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-42)
 }
 
 func TestTutorial7(t *testing.T) {
@@ -149,17 +149,17 @@ func TestTutorial7(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	// we start with these balances on address and on chain
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // empty
 
 	// missing parameter, request will panic
-	req := solo.NewCallParams("example1", "storeString").AddAssetsIotas(42)
+	req := solo.NewCallParams("example1", "storeString").AddIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.Error(t, err)
 
 	// assert balances didn't change on address and on chain
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // still empty
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // still empty
 }
@@ -176,12 +176,12 @@ func TestTutorial8(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
-	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID).AddAssetsIotas(1)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID).AddIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -197,7 +197,7 @@ func TestTutorial8(t *testing.T) {
 	// - to deploy contract from the blob
 	// Two tokens were taken from the user account to form requests and then were
 	// deposited to the user's account on the chain
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-2)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-2)
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty on-chain
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
 
@@ -205,23 +205,23 @@ func TestTutorial8(t *testing.T) {
 	// It also takes 1 iota for the request token
 	// Result is 42 iotas moved to the smart contract's account
 	req = solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").
-		AddAssetsIotas(42)
+		AddIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 42)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-44)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-44)
 
 	// user withdraws all iotas from the smart contract back
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
 	// is accrued to the user on chain
 	req = solo.NewCallParams("example1", "withdrawIota")
-	req.AddAssetsIotas(1)
+	req.AddIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0)
 	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
-	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-44+42)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-44+42)
 }

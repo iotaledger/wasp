@@ -29,12 +29,12 @@ const (
 )
 
 func TestIncSoloInc(t *testing.T) {
-	al := solo.New(t, false, false)
+	al := solo.New(t)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "increment").
-		AddAssetsIotas(1)
+		AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	ret, err := chain.CallView(incName, "getCounter")
@@ -45,12 +45,12 @@ func TestIncSoloInc(t *testing.T) {
 }
 
 func TestIncSoloRepeatMany(t *testing.T) {
-	al := solo.New(t, false, false)
+	al := solo.New(t)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "repeatMany", varNumRepeats, 2).
-		AddAssetsIotas(1)
+		AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	require.True(t, chain.WaitForRequestsThrough(6))

@@ -83,29 +83,29 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-10)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-10)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-5-extraToken)
 //		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 //	})
 //}
@@ -119,21 +119,21 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(9), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(9), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 9)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10), user)
 //		require.Error(t, err)
 //		require.Contains(t, err.Error(), "not enough fees")
 //
@@ -141,8 +141,8 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-9)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-9)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-5-extraToken)
 //		chain.AssertCommonAccountIotas(4 + extraToken + 9)
 //	})
 //}
@@ -156,29 +156,29 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(11), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(11), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 11)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 1)
 //		chain.AssertL2Iotas(cAID, 1)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-11)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-11)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-5-extraToken)
 //		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 //	})
 //}
@@ -192,29 +192,29 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10+42)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1+42)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-10-42)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-10-42)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-5-extraToken)
 //		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 //	})
 //}
@@ -228,29 +228,29 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10+41), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10+41), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10+41)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1+41)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-10-41)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-10-41)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-5-extraToken)
 //		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 //	})
 //}
@@ -264,29 +264,29 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 //			root.ParamHname, HScName,
 //			governance.ParamOwnerFee, 10)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+//		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err = chain.PostRequestSync(req.AddAssetsIotas(10+43), user)
+//		_, err = chain.PostRequestSync(req.AddIotas(10+43), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 10+43)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(10+42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(10+42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 1)
 //		chain.AssertL2Iotas(cAID, 1+42)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-10-43)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-10-43)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-5-extraToken)
 //		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 //	})
 //}
@@ -301,22 +301,22 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
+//		_, err := chain.PostRequestSync(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 42)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1+42)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-42)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-42)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-4-extraToken)
 //		chain.AssertCommonAccountIotas(3 + extraToken)
 //	})
 //}
@@ -331,22 +331,22 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(41), user)
+//		_, err := chain.PostRequestSync(req.AddIotas(41), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 41)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 0)
 //		chain.AssertL2Iotas(cAID, 1+41)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-41)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-41)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-4-extraToken)
 //		chain.AssertCommonAccountIotas(3 + extraToken)
 //	})
 //}
@@ -361,22 +361,22 @@ func TestOffLedgerSuccess(t *testing.T) {
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-//		_, err := chain.PostRequestSync(req.AddAssetsIotas(43), user)
+//		_, err := chain.PostRequestSync(req.AddIotas(43), user)
 //		require.NoError(t, err)
 //
 //		chain.AssertL2Iotas(userAgentID, 43)
 //		chain.AssertL2Iotas(cAID, 1)
 //
 //		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-//		_, err = chain.PostRequestOffLedger(req.AddAssetsIotas(42), user)
+//		_, err = chain.PostRequestOffLedger(req.AddIotas(42), user)
 //		require.NoError(t, err)
 //
 //		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 //		chain.AssertL2Iotas(chain.OriginatorAgentID, 0)
 //		chain.AssertL2Iotas(userAgentID, 1)
 //		chain.AssertL2Iotas(cAID, 1+42)
-//		env.AssertAddressIotas(userAddr, solo.Saldo-43)
-//		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
+//		env.AssertAddressIotas(userAddr, utxodb.FundsFromFaucetAmount-43)
+//		env.AssertAddressIotas(chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-solo.ChainDustThreshold-4-extraToken)
 //		chain.AssertCommonAccountIotas(3 + extraToken)
 //	})
 //}

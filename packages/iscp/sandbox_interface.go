@@ -27,6 +27,8 @@ type SandboxBase interface {
 	ChainOwnerID() *AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
+	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
+	ContractAgentID() *AgentID
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
 	// Timestamp returns the UnixNano timestamp of the current state
@@ -37,6 +39,8 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
+	// GetNFTInfo returns information about a NFTID (issuer and metadata)
+	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
 }
 
 type Params struct {
@@ -60,8 +64,10 @@ type Balance interface {
 	BalanceIotas() uint64
 	// BalanceNativeToken returns number of native token or nil if it is empty
 	BalanceNativeToken(id *iotago.NativeTokenID) *big.Int
-	// Assets returns all assets: iotas and native tokens
-	Assets() *Assets
+	// BalanceFungibleTokens returns all fungible tokens: iotas and native tokens
+	BalanceFungibleTokens() *FungibleTokens
+	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
+	OwnedNFTs() []iotago.NFTID
 }
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -78,7 +84,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
+	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
@@ -92,22 +98,26 @@ type Sandbox interface {
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take
 	// from the caller with TransferAllowedFunds. Nil means no allowance left (zero budget)
 	// AllowanceAvailable MUTATES with each call to TransferAllowedFunds
-	AllowanceAvailable() *Assets
+	AllowanceAvailable() *Allowance
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
 	// TransferAllowedFunds fails if target does not exist
-	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
+	TransferAllowedFunds(target *AgentID, transfer ...*Allowance) *Allowance
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
 	// If it is a random target, funds may be inaccessible (less safe)
-	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
-	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
+	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
+	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
+	// SendAsNFT sends an on-ledger request as an NFTOutput
+	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
 	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
+	// MintNFT mints an NFT
+	// MintNFT(metadata []byte) // TODO returns a temporary ID
 
 	// Privileged is a sub-interface of the sandbox which should not be called by VM plugins
 	Privileged() Privileged
@@ -126,11 +136,11 @@ type Privileged interface {
 type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
-	// Assets attached to the output, always taken from the caller's account.
+	// FungibleTokens attached to the output, always taken from the caller's account.
 	// It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
-	Assets *Assets
-	// AdjustToMinimumDustDeposit if true iotas in assets will be added to meet minimum dust deposit requirements
+	FungibleTokens *FungibleTokens
+	// AdjustToMinimumDustDeposit if true iotas in attached fungible tokens will be added to meet minimum dust deposit requirements
 	AdjustToMinimumDustDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata
@@ -152,7 +162,7 @@ type StateAnchor struct {
 	StateController      iotago.Address
 	GovernanceController iotago.Address
 	StateIndex           uint32
-	StateData            StateData
+	StateData            []byte
 	Deposit              uint64
 	NativeTokens         iotago.NativeTokens
 }
@@ -167,12 +177,12 @@ type Expiration struct {
 	ReturnAddress iotago.Address
 }
 
-// RequestMetadata represents content of the data payload of the output
+// SendMetadata represents content of the data payload of the output
 type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
 	Params         dict.Dict
-	Allowance      *Assets
+	Allowance      *Allowance
 	GasBudget      uint64
 }
 

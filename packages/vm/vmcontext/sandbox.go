@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// nolint:typecheck
 package vmcontext
 
 import (
@@ -27,7 +28,7 @@ func NewSandbox(vmctx *VMContext) iscp.Sandbox {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) dict.Dict {
+func (s *contractSandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.Ctx.Call(target, entryPoint, params, transfer)
 }
@@ -55,19 +56,19 @@ func (s *contractSandbox) GetEntropy() hashing.HashValue {
 	return s.Ctx.(*VMContext).Entropy()
 }
 
-func (s *contractSandbox) AllowanceAvailable() *iscp.Assets {
+func (s *contractSandbox) AllowanceAvailable() *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetAllowance)
 	return s.Ctx.(*VMContext).AllowanceAvailable()
 }
 
-func (s *contractSandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+func (s *contractSandbox) TransferAllowedFunds(target *iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, assets...)
+	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, transfer...)
 }
 
-func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, assets...)
+	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, transfer...)
 }
 
 func (s *contractSandbox) Request() iscp.Calldata {
@@ -80,8 +81,13 @@ func (s *contractSandbox) Send(par iscp.RequestParameters) {
 	s.Ctx.(*VMContext).Send(par)
 }
 
+func (s *contractSandbox) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFTID) {
+	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
+	s.Ctx.(*VMContext).SendAsNFT(par, nftID)
+}
+
 func (s *contractSandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
-	// TODO missing gas burn
+	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateDustCost)
 	return s.Ctx.(*VMContext).EstimateRequiredDustDeposit(par)
 }
 

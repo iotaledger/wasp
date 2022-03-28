@@ -10,11 +10,14 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/state"
+
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -61,18 +64,20 @@ const (
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
+
 type BlockInfo struct {
-	BlockIndex             uint32 // not persistent. Set from key
-	Timestamp              time.Time
-	TotalRequests          uint16
-	NumSuccessfulRequests  uint16
-	NumOffLedgerRequests   uint16
-	PreviousStateHash      hashing.HashValue
-	AnchorTransactionID    iotago.TransactionID
-	TotalIotasInL2Accounts uint64
-	TotalDustDeposit       uint64
-	GasBurned              uint64
-	GasFeeCharged          uint64
+	BlockIndex              uint32 // not persistent. Set from key
+	Timestamp               time.Time
+	TotalRequests           uint16
+	NumSuccessfulRequests   uint16
+	NumOffLedgerRequests    uint16
+	PreviousStateCommitment trie.VCommitment
+	StateCommitment         trie.VCommitment // nil if not known
+	AnchorTransactionID     iotago.TransactionID
+	TotalIotasInL2Accounts  uint64
+	TotalDustDeposit        uint64
+	GasBurned               uint64
+	GasFeeCharged           uint64
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -102,7 +107,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("Prev state hash: %s\n", bi.PreviousStateHash.String())
+	ret += fmt.Sprintf("Prev state hash: %s\n", bi.PreviousStateCommitment.String())
 	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
 	ret += fmt.Sprintf("Total iotas in contracts: %d\n", bi.TotalIotasInL2Accounts)
 	ret += fmt.Sprintf("Total iotas locked in dust deposit: %d\n", bi.TotalDustDeposit)
@@ -127,8 +132,16 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.AnchorTransactionID[:]); err != nil {
 		return err
 	}
-	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
+	if _, err := w.Write(bi.PreviousStateCommitment.Bytes()); err != nil {
 		return err
+	}
+	if err := util.WriteBoolByte(w, bi.StateCommitment != nil); err != nil {
+		return err
+	}
+	if bi.StateCommitment != nil {
+		if _, err := w.Write(bi.StateCommitment.Bytes()); err != nil {
+			return err
+		}
 	}
 	if err := util.WriteUint64(w, bi.TotalIotasInL2Accounts); err != nil {
 		return err
@@ -161,8 +174,20 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadTransactionID(r, &bi.AnchorTransactionID); err != nil {
 		return err
 	}
-	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint
+	bi.PreviousStateCommitment = state.CommitmentModel.NewVectorCommitment()
+	if err := bi.PreviousStateCommitment.Read(r); err != nil {
 		return err
+	}
+	var knownStateCommitments bool
+	if err := util.ReadBoolByte(r, &knownStateCommitments); err != nil {
+		return err
+	}
+	bi.StateCommitment = nil
+	if knownStateCommitments {
+		bi.StateCommitment = state.CommitmentModel.NewVectorCommitment()
+		if err := bi.StateCommitment.Read(r); err != nil {
+			return err
+		}
 	}
 	if err := util.ReadUint64(r, &bi.TotalIotasInL2Accounts); err != nil {
 		return err
@@ -399,6 +424,10 @@ func (r *RequestReceipt) Short() string {
 	return ret
 }
 
+func (r *RequestReceipt) LookupKey() RequestLookupKey {
+	return NewRequestLookupKey(r.BlockIndex, r.RequestIndex)
+}
+
 // endregion  /////////////////////////////////////////////////////////////
 
 // region ControlAddresses ///////////////////////////////////////////////
@@ -441,12 +470,16 @@ func (ca *ControlAddresses) Bytes() []byte {
 func (ca *ControlAddresses) String() string {
 	var ret string
 	if ca.StateAddress.Equal(ca.GoverningAddress) {
-		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(iscp.Bech32Prefix), ca.SinceBlockIndex)
+		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(iscp.NetworkPrefix), ca.SinceBlockIndex)
 	} else {
 		ret = fmt.Sprintf("ControlAddresses(%s, %s), block: %d",
-			ca.StateAddress.Bech32(iscp.Bech32Prefix), ca.GoverningAddress.Bech32(iscp.Bech32Prefix), ca.SinceBlockIndex)
+			ca.StateAddress.Bech32(iscp.NetworkPrefix), ca.GoverningAddress.Bech32(iscp.NetworkPrefix), ca.SinceBlockIndex)
 	}
 	return ret
 }
 
 // endregion /////////////////////////////////////////////////////////////
+
+func BlockInfoKey(index uint32) []byte {
+	return []byte(collections.Array32ElemKey(prefixBlockRegistry, index))
+}

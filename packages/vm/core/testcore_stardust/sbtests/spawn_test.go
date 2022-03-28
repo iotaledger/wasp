@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -28,5 +28,5 @@ func TestSpawn(t *testing.T) {
 	require.EqualValues(t, 5, counter)
 
 	_, _, recs := ch.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(recs))
+	require.EqualValues(t, len(corecontracts.All)+2, len(recs))
 }

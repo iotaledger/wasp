@@ -3,7 +3,7 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -27,13 +27,13 @@ func TestInitFailRepeat(t *testing.T) {
 		sbtestsc.ParamFail, 1)
 	require.Error(t, err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.EqualValues(t, len(corecontracts.All), len(rec))
 
 	// repeat must succeed
 	err = chain.DeployContract(nil, ScName, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 	_, _, rec = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 }
 
 func TestInitFailRepeatWasm(t *testing.T) {
@@ -45,13 +45,13 @@ func TestInitFailRepeatWasm(t *testing.T) {
 		sbtestsc.ParamFail, 1)
 	require.Error(t, err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.EqualValues(t, len(corecontracts.All), len(rec))
 
 	// repeat must succeed
 	err = chain.DeployWasmContract(nil, ScName, WasmFileTestcore)
 	require.NoError(t, err)
 	_, _, rec = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 }
 
 func TestInitSuccess2(t *testing.T) {

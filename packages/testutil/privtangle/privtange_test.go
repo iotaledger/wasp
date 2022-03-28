@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
@@ -41,13 +42,13 @@ func TestHornetStartup(t *testing.T) {
 
 	nodeEvt := iotagox.NewNodeEventAPIClient(fmt.Sprintf("ws://localhost:%d/mqtt", pt.NodePortRestAPI(0)))
 	require.NoError(t, nodeEvt.Connect(ctx))
-	myAddressOutputsCh := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iotago.PrefixTestnet, iotagox.UnlockConditionAny)
+	myAddressOutputsCh := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iscp.NetworkPrefix, iotagox.UnlockConditionAny)
 
 	initialOutputCount := mustOutputCount(ctx, pt, node0, myAddress)
 
 	//
 	// Check if faucet requests are working.
-	pt.PostFaucetRequest(ctx, myAddress, iotago.PrefixTestnet)
+	pt.PostFaucetRequest(ctx, myAddress, iscp.NetworkPrefix)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
@@ -74,10 +75,6 @@ func TestHornetStartup(t *testing.T) {
 	t.Logf("Waiting for output event...")
 	outs = <-myAddressOutputsCh
 	t.Logf("Waiting for output event, done: %+v", outs)
-
-	//
-	// Close.
-	pt.Stop()
 }
 
 func mustOutputCount(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) int {

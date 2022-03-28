@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -95,16 +96,21 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
 
+	anchor, _, err := transaction.GetAnchorFromTransaction(tx)
+
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualStateAccess
 		ch.settleStateTransition(tx, task.GetProcessedRequestIDs())
 	} else {
-		anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 		require.NoError(ch.Env.T, err)
 
 		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
+
+	rootC := ch.GetRootCommitment()
+	stateC := ch.GetStateCommitment()
+	require.True(ch.Env.T, trie.EqualCommitments(rootC, stateC))
 
 	return task.Results
 }
@@ -119,7 +125,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	require.NotNil(ch.Env.T, block)
 	block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
 
-	err = ch.State.Commit(block)
+	err = ch.State.Save(block)
 	require.NoError(ch.Env.T, err)
 
 	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
