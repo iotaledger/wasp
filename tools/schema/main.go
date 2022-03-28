@@ -237,8 +237,8 @@ func loadSchema(file *os.File) (s *model.Schema, err error) {
 			err = WriteYAMLSchema(schemaDef)
 		}
 	case ".yaml":
-		schemaDef = model.NewSchemaDef()
 		fileByteArray, _ := io.ReadAll(file)
+		schemaDef = model.NewSchemaDef()
 		err = wasp_yaml.Unmarshal(fileByteArray, schemaDef)
 		if err == nil && *flagType == "convert" {
 			err = WriteJSONSchema(schemaDef)

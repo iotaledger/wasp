@@ -196,8 +196,8 @@ func TestConvert(t *testing.T) {
 			def := &model.SchemaDef{}
 			root := yaml.Parse(in)
 			assert.NotNil(t, root)
-			yaml.Convert(root, def)
-
+			err = yaml.Convert(root, def)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.wants.out.Funcs, def.Funcs)
 		})
 	}

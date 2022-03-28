@@ -121,7 +121,6 @@ func setIndentList(indent int, list []int) []int {
 	if list[len(list)-1] < indent {
 		return append(list, indent)
 	}
-
 	for _, elt := range list {
 		if elt == indent {
 			return list
