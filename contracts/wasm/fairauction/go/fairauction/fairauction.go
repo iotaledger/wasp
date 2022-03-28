@@ -207,13 +207,13 @@ func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
 	f.Results.Bidders().SetValue(bidderList.Length())
 }
 
-func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, color wasmtypes.ScColor, amount uint64) {
+func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, color wasmtypes.ScTokenID, amount uint64) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.Send(agent.Address(), wasmlib.NewScTransfer(color, amount))
+		ctx.Send(agent.Address(), wasmlib.NewScTransferToken(color, amount))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.Send(agent.Address(), wasmlib.NewScTransfer(color, amount))
+	ctx.Send(agent.Address(), wasmlib.NewScTransferToken(color, amount))
 }

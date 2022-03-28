@@ -201,8 +201,8 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// Yep, keep track of the running total payout
 			totalPayout += payout
 
-			// Set up an ScTransfers proxy that transfers the correct amount of iotas.
-			// Note that ScTransfers wraps an ScMutableMap of token color/amount combinations
+			// Set up an ScTransfer proxy that transfers the correct amount of iotas.
+			// Note that ScTransfer wraps an ScMutableMap of token color/amount combinations
 			// in a simpler to use interface. The constructor we use here creates and initializes
 			// a single token color transfer in a single statement. The actual color and amount
 			// values passed in will be stored in a new map on the host.

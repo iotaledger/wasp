@@ -4,8 +4,6 @@
 package wasmhost
 
 import (
-	"math/big"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -42,19 +40,16 @@ func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID
 	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
-func (cvt WasmConvertor) IscpAssets(assets wasmlib.ScAssets) *iscp.Allowance {
-	iscpAllowance := iscp.NewEmptyAllowance()
+func (cvt WasmConvertor) IscpAllowance(assets wasmlib.ScAssets) *iscp.Allowance {
+	iscpAllowance := iscp.NewAllowanceIotas(assets.Iotas)
 	iscpAssets := iscpAllowance.Assets
-	for color, amount := range assets {
-		if color == wasmtypes.IOTA {
-			iscpAssets.Iotas = amount
-			continue
-		}
-		token := new(iotago.NativeToken)
-		copy(token.ID[:], color.Bytes())
-		token.Amount = new(big.Int)
-		token.Amount.SetUint64(amount)
-		iscpAssets.Tokens = append(iscpAssets.Tokens, token)
+	for tokenID, amount := range assets.Tokens {
+		token := iotago.NativeToken{ ID: *cvt.IscpTokenID(&tokenID), Amount: amount}
+		iscpAssets.Tokens = append(iscpAssets.Tokens, &token)
+	}
+	for _,nftID := range assets.NFTs {
+		nft := cvt.IscpNFTID(nftID)
+		iscpAllowance.NFTs = append(iscpAllowance.NFTs, *nft)
 	}
 	return iscpAllowance
 }
@@ -64,14 +59,6 @@ func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID
 	iscpChainID := new(iscp.ChainID)
 	copy(iscpChainID[:], buf)
 	return iscpChainID
-}
-
-// TODO switch WasmLib from Color to Token
-func (cvt WasmConvertor) IscpColor(color *wasmtypes.ScColor) *iotago.NativeTokenID {
-	buf := wasmtypes.ColorToBytes(*color)
-	iscpTokenID := new(iotago.NativeTokenID)
-	copy(iscpTokenID[:], buf)
-	return iscpTokenID
 }
 
 func (cvt WasmConvertor) IscpHash(hash *wasmtypes.ScHash) *hashing.HashValue {
@@ -85,12 +72,26 @@ func (cvt WasmConvertor) IscpHname(hname wasmtypes.ScHname) iscp.Hname {
 	return iscp.Hname(hname)
 }
 
+func (cvt WasmConvertor) IscpNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
+	buf := wasmtypes.NftIDToBytes(nftID)
+	iscpNFTID := new(iotago.NFTID)
+	copy(iscpNFTID[:], buf)
+	return iscpNFTID
+}
+
 func (cvt WasmConvertor) IscpRequestID(requestID *wasmtypes.ScRequestID) *iscp.RequestID {
 	buf := wasmtypes.RequestIDToBytes(*requestID)
 	iscpRequestID := new(iscp.RequestID)
 	copy(iscpRequestID.TransactionID[:], buf)
 	iscpRequestID.TransactionOutputIndex = wasmtypes.Uint16FromBytes(buf[wasmtypes.ScHashLength:])
 	return iscpRequestID
+}
+
+func (cvt WasmConvertor) IscpTokenID(tokenID *wasmtypes.ScTokenID) *iotago.NativeTokenID {
+	buf := wasmtypes.TokenIDToBytes(tokenID)
+	iscpTokenID := new(iotago.NativeTokenID)
+	copy(iscpTokenID[:], buf)
+	return iscpTokenID
 }
 
 func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
@@ -102,26 +103,21 @@ func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {
 	return wasmtypes.NewScAgentID(cvt.ScAddress(agentID.Address()), cvt.ScHname(agentID.Hname()))
 }
 
-func (cvt WasmConvertor) ScBalances(assets *iscp.FungibleTokens) wasmlib.ScAssets {
-	scAssets := make(wasmlib.ScAssets)
-	if assets.Iotas != 0 {
-		scAssets[wasmtypes.IOTA] = assets.Iotas
+func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalances {
+	transfer := wasmlib.NewScTransferIotas(allowance.Assets.Iotas)
+	for _, token := range allowance.Assets.Tokens {
+		tokenID := cvt.ScTokenID(&token.ID)
+		transfer.Set(&tokenID, token.Amount)
 	}
-	for _, token := range assets.Tokens {
-		color := cvt.ScColor(&token.ID)
-		// TODO handle big.Int
-		scAssets[color] = token.Amount.Uint64()
+	for _, nft := range allowance.NFTs {
+		nftID := cvt.ScNftID(&nft)
+		transfer.AddNFT(&nftID)
 	}
-	return scAssets
+	return &transfer.ScBalances
 }
 
 func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
-}
-
-// TODO switch WasmLib from Color to Token
-func (cvt WasmConvertor) ScColor(color *iotago.NativeTokenID) wasmtypes.ScColor {
-	return wasmtypes.ColorFromBytes(color[:])
 }
 
 func (cvt WasmConvertor) ScHash(hash hashing.HashValue) wasmtypes.ScHash {
@@ -132,6 +128,14 @@ func (cvt WasmConvertor) ScHname(hname iscp.Hname) wasmtypes.ScHname {
 	return wasmtypes.ScHname(hname)
 }
 
+func (cvt WasmConvertor) ScNftID(nftID *iotago.NFTID) wasmtypes.ScNftID {
+	return wasmtypes.NftIDFromBytes(nftID[:])
+}
+
 func (cvt WasmConvertor) ScRequestID(requestID iscp.RequestID) wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(requestID.Bytes())
+}
+
+func (cvt WasmConvertor) ScTokenID(tokenID *iotago.NativeTokenID) wasmtypes.ScTokenID {
+	return wasmtypes.TokenIDFromBytes(tokenID[:])
 }

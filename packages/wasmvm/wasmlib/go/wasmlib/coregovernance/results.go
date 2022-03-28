@@ -81,10 +81,6 @@ func (s ImmutableGetChainInfoResults) Description() wasmtypes.ScImmutableString 
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s ImmutableGetChainInfoResults) FeeColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultFeeColor))
-}
-
 func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableInt32 {
 	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
@@ -121,10 +117,6 @@ func (s MutableGetChainInfoResults) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s MutableGetChainInfoResults) FeeColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultFeeColor))
-}
-
 func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableInt32 {
 	return wasmtypes.NewScMutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
@@ -141,10 +133,6 @@ type ImmutableGetFeeInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetFeeInfoResults) FeeColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultFeeColor))
-}
-
 func (s ImmutableGetFeeInfoResults) OwnerFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultOwnerFee))
 }
@@ -155,10 +143,6 @@ func (s ImmutableGetFeeInfoResults) ValidatorFee() wasmtypes.ScImmutableInt64 {
 
 type MutableGetFeeInfoResults struct {
 	proxy wasmtypes.Proxy
-}
-
-func (s MutableGetFeeInfoResults) FeeColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultFeeColor))
 }
 
 func (s MutableGetFeeInfoResults) OwnerFee() wasmtypes.ScMutableInt64 {

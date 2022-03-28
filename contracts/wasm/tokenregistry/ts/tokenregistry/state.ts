@@ -21,7 +21,7 @@ export class ArrayOfImmutableColor extends wasmtypes.ScProxy {
 
 export class MapColorToImmutableToken extends wasmtypes.ScProxy {
 
-	getToken(key: wasmtypes.ScColor): sc.ImmutableToken {
+	getToken(key: wasmtypes.ScTokenID): sc.ImmutableToken {
 		return new sc.ImmutableToken(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
@@ -61,7 +61,7 @@ export class MapColorToMutableToken extends wasmtypes.ScProxy {
 		this.proxy.clearMap();
 	}
 
-	getToken(key: wasmtypes.ScColor): sc.MutableToken {
+	getToken(key: wasmtypes.ScTokenID): sc.MutableToken {
 		return new sc.MutableToken(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }

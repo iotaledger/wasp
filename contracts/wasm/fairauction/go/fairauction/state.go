@@ -13,7 +13,7 @@ type MapColorToImmutableAuction struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableAuction) GetAuction(key wasmtypes.ScColor) ImmutableAuction {
+func (m MapColorToImmutableAuction) GetAuction(key wasmtypes.ScTokenID) ImmutableAuction {
 	return ImmutableAuction{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
@@ -21,7 +21,7 @@ type MapColorToImmutableBidderList struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableBidderList) GetBidderList(key wasmtypes.ScColor) ImmutableBidderList {
+func (m MapColorToImmutableBidderList) GetBidderList(key wasmtypes.ScTokenID) ImmutableBidderList {
 	return ImmutableBidderList{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
@@ -29,7 +29,7 @@ type MapColorToImmutableBids struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableBids) GetBids(key wasmtypes.ScColor) ImmutableBids {
+func (m MapColorToImmutableBids) GetBids(key wasmtypes.ScTokenID) ImmutableBids {
 	return ImmutableBids{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
@@ -61,7 +61,7 @@ func (m MapColorToMutableAuction) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableAuction) GetAuction(key wasmtypes.ScColor) MutableAuction {
+func (m MapColorToMutableAuction) GetAuction(key wasmtypes.ScTokenID) MutableAuction {
 	return MutableAuction{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
@@ -73,7 +73,7 @@ func (m MapColorToMutableBidderList) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableBidderList) GetBidderList(key wasmtypes.ScColor) MutableBidderList {
+func (m MapColorToMutableBidderList) GetBidderList(key wasmtypes.ScTokenID) MutableBidderList {
 	return MutableBidderList{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
@@ -85,7 +85,7 @@ func (m MapColorToMutableBids) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableBids) GetBids(key wasmtypes.ScColor) MutableBids {
+func (m MapColorToMutableBids) GetBids(key wasmtypes.ScTokenID) MutableBids {
 	return MutableBids{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 

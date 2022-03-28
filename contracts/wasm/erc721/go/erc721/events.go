@@ -8,12 +8,11 @@
 //nolint:gocritic
 package erc721
 
-import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type Erc721Events struct{}
+type Erc721Events struct {
+}
 
 func (e Erc721Events) Approval(approved wasmtypes.ScAgentID, owner wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) {
 	evt := wasmlib.NewEventEncoder("erc721.approval")

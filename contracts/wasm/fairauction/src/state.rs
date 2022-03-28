@@ -18,7 +18,7 @@ pub struct MapColorToImmutableAuction {
 }
 
 impl MapColorToImmutableAuction {
-    pub fn get_auction(&self, key: &ScColor) -> ImmutableAuction {
+    pub fn get_auction(&self, key: &ScTokenID) -> ImmutableAuction {
         ImmutableAuction { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }
@@ -29,7 +29,7 @@ pub struct MapColorToImmutableBidderList {
 }
 
 impl MapColorToImmutableBidderList {
-    pub fn get_bidder_list(&self, key: &ScColor) -> ImmutableBidderList {
+    pub fn get_bidder_list(&self, key: &ScTokenID) -> ImmutableBidderList {
         ImmutableBidderList { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }
@@ -40,7 +40,7 @@ pub struct MapColorToImmutableBids {
 }
 
 impl MapColorToImmutableBids {
-    pub fn get_bids(&self, key: &ScColor) -> ImmutableBids {
+    pub fn get_bids(&self, key: &ScTokenID) -> ImmutableBids {
         ImmutableBids { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }
@@ -78,7 +78,7 @@ impl MapColorToMutableAuction {
         self.proxy.clear_map();
     }
 
-    pub fn get_auction(&self, key: &ScColor) -> MutableAuction {
+    pub fn get_auction(&self, key: &ScTokenID) -> MutableAuction {
         MutableAuction { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }
@@ -93,7 +93,7 @@ impl MapColorToMutableBidderList {
         self.proxy.clear_map();
     }
 
-    pub fn get_bidder_list(&self, key: &ScColor) -> MutableBidderList {
+    pub fn get_bidder_list(&self, key: &ScTokenID) -> MutableBidderList {
         MutableBidderList { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }
@@ -108,7 +108,7 @@ impl MapColorToMutableBids {
         self.proxy.clear_map();
     }
 
-    pub fn get_bids(&self, key: &ScColor) -> MutableBids {
+    pub fn get_bids(&self, key: &ScTokenID) -> MutableBids {
         MutableBids { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }

@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Auction {
-	color         : wasmtypes.ScColor = new wasmtypes.ScColor(0);  // color of tokens for sale
+	color         : wasmtypes.ScTokenID = new wasmtypes.ScTokenID(0);  // color of tokens for sale
 	creator       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // issuer of start_auction transaction
 	deposit       : u64 = 0;  // deposit by auction owner to cover the SC fees
 	description   : string = "";  // auction description

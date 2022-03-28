@@ -10,23 +10,23 @@ package erc20
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type ApproveCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableApproveParams
+	Func    *wasmlib.ScFunc
+	Params  MutableApproveParams
 }
 
 type InitCall struct {
-	Func   *wasmlib.ScInitFunc
-	Params MutableInitParams
+	Func    *wasmlib.ScInitFunc
+	Params  MutableInitParams
 }
 
 type TransferCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTransferParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTransferParams
 }
 
 type TransferFromCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTransferFromParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTransferFromParams
 }
 
 type AllowanceCall struct {

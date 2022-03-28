@@ -252,7 +252,7 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
 // The optional color parameter can be used to retrieve the balance for the specific color.
 // When color is omitted, wasmlib.IOTA is assumed.
-func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) uint64 {
+func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScTokenID) uint64 {
 	account := iscp.NewAgentID(agent.address, agent.hname)
 	switch len(color) {
 	case 0:
@@ -263,7 +263,7 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) ui
 			iotas := ctx.Chain.L2Iotas(account)
 			return iotas
 		}
-		token := ctx.Cvt.IscpColor(&color[0])
+		token := ctx.Cvt.IscpTokenID(&color[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:
@@ -363,16 +363,16 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 }
 
 // Minted returns the color and amount of newly minted tokens
-func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
+func (ctx *SoloContext) Minted() (wasmtypes.ScTokenID, uint64) {
 	panic("fixme: soloContext.Minted")
 	//t := ctx.Chain.Env.T
 	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
 	//require.Len(t, mintedAmounts, 1)
-	//var mintedColor wasmtypes.ScColor
+	//var mintedColor wasmtypes.ScTokenID
 	//var mintedAmount uint64
 	//for c := range mintedAmounts {
-	//	mintedColor = ctx.Cvt.ScColor(c)
+	//	mintedColor = ctx.Cvt.ScTokenID(c)
 	//	mintedAmount = mintedAmounts[c]
 	//	break
 	//}
@@ -415,9 +415,9 @@ func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad w
 	return ctxCore
 }
 
-// Transfer creates a new ScTransfers proxy
-func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
-	return wasmlib.NewScTransfers()
+// Transfer creates a new ScTransfer proxy
+func (ctx *SoloContext) Transfer() wasmlib.ScTransfer {
+	return wasmlib.NewScTransfer()
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {

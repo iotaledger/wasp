@@ -5,14 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:gocritic
 package testwasmlib
 
-import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type TestWasmLibEvents struct{}
+type TestWasmLibEvents struct {
+}
 
 func (e TestWasmLibEvents) Test(address wasmtypes.ScAddress, name string) {
 	evt := wasmlib.NewEventEncoder("testwasmlib.test")

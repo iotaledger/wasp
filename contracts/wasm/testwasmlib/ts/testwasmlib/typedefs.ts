@@ -286,7 +286,7 @@ export class MutableColorArray extends ArrayOfMutableColor {
 
 export class MapColorToImmutableColor extends wasmtypes.ScProxy {
 
-	getColor(key: wasmtypes.ScColor): wasmtypes.ScImmutableColor {
+	getColor(key: wasmtypes.ScTokenID): wasmtypes.ScImmutableColor {
 		return new wasmtypes.ScImmutableColor(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
@@ -300,7 +300,7 @@ export class MapColorToMutableColor extends wasmtypes.ScProxy {
 		this.proxy.clearMap();
 	}
 
-	getColor(key: wasmtypes.ScColor): wasmtypes.ScMutableColor {
+	getColor(key: wasmtypes.ScTokenID): wasmtypes.ScMutableColor {
 		return new wasmtypes.ScMutableColor(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }

@@ -16,7 +16,7 @@ import (
 
 var (
 	auctioneer *wasmsolo.SoloAgent
-	tokenColor wasmtypes.ScColor
+	tokenColor wasmtypes.ScTokenID
 )
 
 func startAuction(t *testing.T) *wasmsolo.SoloContext {

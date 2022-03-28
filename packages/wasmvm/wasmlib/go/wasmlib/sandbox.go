@@ -74,7 +74,7 @@ func (s ScSandbox) AccountID() wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(Sandbox(FnAccountID, nil))
 }
 
-func (s ScSandbox) Balance(color wasmtypes.ScColor) uint64 {
+func (s ScSandbox) Balance(color wasmtypes.ScTokenID) uint64 {
 	return wasmtypes.Uint64FromBytes(Sandbox(FnBalance, color.Bytes()))
 }
 
@@ -84,12 +84,12 @@ func (s ScSandbox) Balances() ScBalances {
 }
 
 // calls a smart contract function
-func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
+func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer *ScTransfer) *ScImmutableDict {
 	req := &wasmrequests.CallRequest{
 		Contract: hContract,
 		Function: hFunction,
 		Params:   params.Bytes(),
-		Transfer: ScAssets(transfer).Bytes(),
+		Transfer: transfer.Bytes(),
 	}
 	res := Sandbox(FnCall, req.Bytes())
 	return NewScDictFromBytes(res).Immutable()
@@ -184,8 +184,8 @@ func (s ScSandboxFunc) Allowance() ScBalances {
 //}
 
 // calls a smart contract function
-func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
-	return s.call(hContract, hFunction, params, transfer)
+func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfer) *ScImmutableDict {
+	return s.call(hContract, hFunction, params, &transfer)
 }
 
 // retrieve the agent id of the caller of the smart contract
@@ -231,13 +231,13 @@ func (s ScSandboxFunc) Minted() ScBalances {
 }
 
 // (delayed) posts a smart contract function request
-func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers, delay uint32) {
+func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfer, delay uint32) {
 	req := &wasmrequests.PostRequest{
 		ChainID:  chainID,
 		Contract: hContract,
 		Function: hFunction,
 		Params:   params.Bytes(),
-		Transfer: ScAssets(transfer).Bytes(),
+		Transfer: transfer.Bytes(),
 		Delay:    delay,
 	}
 	Sandbox(FnPost, req.Bytes())
@@ -284,7 +284,7 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 }
 
 // transfer assets to the specified Tangle ledger address
-func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
+func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfer) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
 		return
@@ -292,7 +292,7 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 
 	req := wasmrequests.SendRequest{
 		Address:  address,
-		Transfer: ScAssets(transfer).Bytes(),
+		Transfer: transfer.Bytes(),
 	}
 	Sandbox(FnSend, req.Bytes())
 }
@@ -302,7 +302,7 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 //}
 
 // transfer assets to the specified Tangle ledger address
-func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer ScTransfers, create bool) {
+func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer ScTransfer, create bool) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
 		return
@@ -311,7 +311,7 @@ func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer ScT
 	req := wasmrequests.TransferRequest{
 		AgentID:  agentID,
 		Create:   create,
-		Transfer: ScAssets(transfer).Bytes(),
+		Transfer: transfer.Bytes(),
 	}
 	Sandbox(FnTransferAllowed, req.Bytes())
 }

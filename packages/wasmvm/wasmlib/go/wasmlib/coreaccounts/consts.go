@@ -18,13 +18,11 @@ const (
 const (
 	ParamAgentID        = "a"
 	ParamWithdrawAmount = "m"
-	ParamWithdrawColor  = "c"
 )
 
 const (
 	ResultAccountNonce = "n"
 	ResultAgents       = "this"
-	ResultBalances     = "this"
 )
 
 const (
@@ -32,9 +30,7 @@ const (
 	FuncHarvest         = "harvest"
 	FuncWithdraw        = "withdraw"
 	ViewAccounts        = "accounts"
-	ViewBalance         = "balance"
 	ViewGetAccountNonce = "getAccountNonce"
-	ViewTotalAssets     = "totalAssets"
 )
 
 const (
@@ -42,7 +38,5 @@ const (
 	HFuncHarvest         = wasmtypes.ScHname(0x7b40efbd)
 	HFuncWithdraw        = wasmtypes.ScHname(0x9dcc0f41)
 	HViewAccounts        = wasmtypes.ScHname(0x3c4b5e02)
-	HViewBalance         = wasmtypes.ScHname(0x84168cb4)
 	HViewGetAccountNonce = wasmtypes.ScHname(0x529d7df9)
-	HViewTotalAssets     = wasmtypes.ScHname(0xfab0f8d2)
 )

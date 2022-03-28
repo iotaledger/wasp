@@ -346,7 +346,7 @@ pub struct MapColorToImmutableColor {
 }
 
 impl MapColorToImmutableColor {
-    pub fn get_color(&self, key: &ScColor) -> ScImmutableColor {
+    pub fn get_color(&self, key: &ScTokenID) -> ScImmutableColor {
         ScImmutableColor::new(self.proxy.key(&color_to_bytes(key)))
     }
 }
@@ -363,7 +363,7 @@ impl MapColorToMutableColor {
         self.proxy.clear_map();
     }
 
-    pub fn get_color(&self, key: &ScColor) -> ScMutableColor {
+    pub fn get_color(&self, key: &ScTokenID) -> ScMutableColor {
         ScMutableColor::new(self.proxy.key(&color_to_bytes(key)))
     }
 }

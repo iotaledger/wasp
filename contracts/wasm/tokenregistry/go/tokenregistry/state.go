@@ -25,7 +25,7 @@ type MapColorToImmutableToken struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableToken) GetToken(key wasmtypes.ScColor) ImmutableToken {
+func (m MapColorToImmutableToken) GetToken(key wasmtypes.ScTokenID) ImmutableToken {
 	return ImmutableToken{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 
@@ -69,7 +69,7 @@ func (m MapColorToMutableToken) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableToken) GetToken(key wasmtypes.ScColor) MutableToken {
+func (m MapColorToMutableToken) GetToken(key wasmtypes.ScTokenID) MutableToken {
 	return MutableToken{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
 }
 

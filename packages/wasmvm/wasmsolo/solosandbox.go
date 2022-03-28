@@ -179,21 +179,23 @@ func (s *SoloSandbox) fnAccountID(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnAllowance(args []byte) []byte {
-	//// zero incoming balance
-	assets := new(iscp.FungibleTokens)
+	// zero incoming balance
+	assets := new(iscp.Allowance)
 	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *SoloSandbox) fnBalance(args []byte) []byte {
-	color := wasmtypes.ColorFromBytes(args)
+	color := wasmtypes.TokenIDFromBytes(args)
 	return codec.EncodeUint64(s.ctx.Balance(s.ctx.Account(), color))
 }
 
 func (s *SoloSandbox) fnBalances(args []byte) []byte {
 	agent := s.ctx.Account()
 	account := iscp.NewAgentID(agent.address, agent.hname)
-	assets := s.ctx.Chain.L2Assets(account)
-	return s.cvt.ScBalances(assets).Bytes()
+	balance := new(iscp.Allowance)
+	balance.Assets = s.ctx.Chain.L2Assets(account)
+	balance.NFTs = s.ctx.Chain.L2NFTs(account)
+	return s.cvt.ScBalances(balance).Bytes()
 }
 
 func (s *SoloSandbox) fnBlockContext(args []byte) []byte {
@@ -216,9 +218,9 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) != 0 {
-		assets := s.cvt.IscpAssets(scAssets)
-		return s.postSync(ctx.scName, funcName, params, assets)
+	if !scAssets.IsEmpty() {
+		allowance := s.cvt.IscpAllowance(scAssets)
+		return s.postSync(ctx.scName, funcName, params, allowance)
 	}
 
 	_ = wasmhost.Connect(ctx.wasmHostOld)
@@ -306,8 +308,8 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}
-	assets := s.cvt.IscpAssets(scAssets)
-	return s.postSync(s.ctx.scName, funcName, params, assets)
+	allowance := s.cvt.IscpAllowance(scAssets)
+	return s.postSync(s.ctx.scName, funcName, params, allowance)
 }
 
 func (s *SoloSandbox) fnRequest(args []byte) []byte {

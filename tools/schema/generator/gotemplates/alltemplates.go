@@ -36,7 +36,7 @@ var TypeDependent = model.StringMapMap{
 		"Bool":      "bool",
 		"Bytes":     "[]byte",
 		"ChainID":   "wasmtypes.ScChainID",
-		"Color":     "wasmtypes.ScColor",
+		"Color":     "wasmtypes.ScTokenID",
 		"Hash":      "wasmtypes.ScHash",
 		"Hname":     "wasmtypes.ScHname",
 		"Int8":      "int8",

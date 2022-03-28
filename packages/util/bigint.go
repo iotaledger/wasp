@@ -12,7 +12,7 @@ func ToBigInt(i interface{}) *big.Int {
 	case int:
 		return big.NewInt(int64(it))
 	case uint64:
-		return big.NewInt(int64(it))
+		return new(big.Int).SetUint64(it)
 	case uint32:
 		return big.NewInt(int64(it))
 	case uint16:

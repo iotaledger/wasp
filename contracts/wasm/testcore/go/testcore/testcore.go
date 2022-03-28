@@ -122,7 +122,7 @@ func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
 }
 
 func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
-	// transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
+	// transfer := wasmlib.NewScTransferFromBalances(ctx.Balances())
 	// ctx.Send(f.Params.Address().Value(), transfer)
 }
 
@@ -195,7 +195,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	if availableIotas < 1000 {
 		ctx.Panic("no enough iotas sent to cover dust deposit")
 	}
-	transfer := wasmlib.NewScTransfersFromBalances(ctx.Allowance())
+	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	//request := iscp.RequestParameters{
@@ -329,7 +329,7 @@ func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
 func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContext) {
 	caller := ctx.Caller()
 	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
-	transfer := wasmlib.NewScTransfersFromBalances(ctx.Allowance())
+	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	ctx.Send(caller.Address(), transfer)
 }
@@ -361,7 +361,7 @@ func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTo
 		if token == wasmtypes.IOTA {
 			continue
 		}
-		transfer = wasmlib.NewScTransfer(token, 1)
+		transfer = wasmlib.NewScTransferToken(token, 1)
 		tokens := ctx.Allowance().Balance(token)
 		for ; tokens >= 1; tokens-- {
 			ctx.TransferAllowed(ctx.AccountID(), transfer, false)

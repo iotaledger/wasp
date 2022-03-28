@@ -17,10 +17,6 @@ func (s ImmutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwner))
 }
 
-func (s ImmutableAddAllowedStateControllerAddressParams) FeeColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamFeeColor))
-}
-
 func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -31,10 +27,6 @@ type MutableAddAllowedStateControllerAddressParams struct {
 
 func (s MutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwner))
-}
-
-func (s MutableAddAllowedStateControllerAddressParams) FeeColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamFeeColor))
 }
 
 func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {

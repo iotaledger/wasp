@@ -10,112 +10,112 @@ package testwasmlib
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type AddressMapOfAddressArrayAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddressMapOfAddressArrayAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddressMapOfAddressArrayAppendParams
 }
 
 type AddressMapOfAddressArrayClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddressMapOfAddressArrayClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddressMapOfAddressArrayClearParams
 }
 
 type AddressMapOfAddressArraySetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddressMapOfAddressArraySetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddressMapOfAddressArraySetParams
 }
 
 type AddressMapOfAddressMapClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddressMapOfAddressMapClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddressMapOfAddressMapClearParams
 }
 
 type AddressMapOfAddressMapSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddressMapOfAddressMapSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddressMapOfAddressMapSetParams
 }
 
 type ArrayOfAddressArrayAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfAddressArrayAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfAddressArrayAppendParams
 }
 
 type ArrayOfAddressArrayClearCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayOfAddressArraySetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfAddressArraySetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfAddressArraySetParams
 }
 
 type ArrayOfAddressMapClearCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayOfAddressMapSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfAddressMapSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfAddressMapSetParams
 }
 
 type ArrayOfStringArrayAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfStringArrayAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfStringArrayAppendParams
 }
 
 type ArrayOfStringArrayClearCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayOfStringArraySetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfStringArraySetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfStringArraySetParams
 }
 
 type ArrayOfStringMapClearCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type ArrayOfStringMapSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableArrayOfStringMapSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableArrayOfStringMapSetParams
 }
 
 type ParamTypesCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableParamTypesParams
+	Func    *wasmlib.ScFunc
+	Params  MutableParamTypesParams
 }
 
 type RandomCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type StringMapOfStringArrayAppendCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableStringMapOfStringArrayAppendParams
+	Func    *wasmlib.ScFunc
+	Params  MutableStringMapOfStringArrayAppendParams
 }
 
 type StringMapOfStringArrayClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableStringMapOfStringArrayClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableStringMapOfStringArrayClearParams
 }
 
 type StringMapOfStringArraySetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableStringMapOfStringArraySetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableStringMapOfStringArraySetParams
 }
 
 type StringMapOfStringMapClearCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableStringMapOfStringMapClearParams
+	Func    *wasmlib.ScFunc
+	Params  MutableStringMapOfStringMapClearParams
 }
 
 type StringMapOfStringMapSetCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableStringMapOfStringMapSetParams
+	Func    *wasmlib.ScFunc
+	Params  MutableStringMapOfStringMapSetParams
 }
 
 type TakeAllowanceCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type TakeBalanceCall struct {
@@ -124,8 +124,8 @@ type TakeBalanceCall struct {
 }
 
 type TriggerEventCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTriggerEventParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTriggerEventParams
 }
 
 type AddressMapOfAddressArrayLengthCall struct {

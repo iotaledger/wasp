@@ -10,28 +10,26 @@ package coregovernanceclient
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
-	ArgChainOwner             = "oi"
-	ArgFeeColor               = "fc"
-	ArgHname                  = "hn"
-	ArgMaxBlobSize            = "bs"
-	ArgMaxEventSize           = "es"
-	ArgMaxEventsPerReq        = "ne"
-	ArgOwnerFee               = "of"
+	ArgChainOwner = "oi"
+	ArgHname = "hn"
+	ArgMaxBlobSize = "bs"
+	ArgMaxEventSize = "es"
+	ArgMaxEventsPerReq = "ne"
+	ArgOwnerFee = "of"
 	ArgStateControllerAddress = "S"
-	ArgValidatorFee           = "vf"
+	ArgValidatorFee = "vf"
 
 	ResAllowedStateControllerAddresses = "a"
-	ResChainID                         = "c"
-	ResChainOwnerID                    = "o"
-	ResDefaultOwnerFee                 = "do"
-	ResDefaultValidatorFee             = "dv"
-	ResDescription                     = "d"
-	ResFeeColor                        = "f"
-	ResMaxBlobSize                     = "mb"
-	ResMaxEventSize                    = "me"
-	ResMaxEventsPerReq                 = "mr"
-	ResOwnerFee                        = "of"
-	ResValidatorFee                    = "vf"
+	ResChainID = "c"
+	ResChainOwnerID = "o"
+	ResDefaultOwnerFee = "do"
+	ResDefaultValidatorFee = "dv"
+	ResDescription = "d"
+	ResMaxBlobSize = "mb"
+	ResMaxEventSize = "me"
+	ResMaxEventsPerReq = "mr"
+	ResOwnerFee = "of"
+	ResValidatorFee = "vf"
 )
 
 ///////////////////////////// addAllowedStateControllerAddress /////////////////////////////
@@ -43,10 +41,6 @@ type AddAllowedStateControllerAddressFunc struct {
 
 func (f *AddAllowedStateControllerAddressFunc) ChainOwner(v wasmclient.AgentID) {
 	f.args.Set(ArgChainOwner, f.args.FromAgentID(v))
-}
-
-func (f *AddAllowedStateControllerAddressFunc) FeeColor(v wasmclient.Color) {
-	f.args.Set(ArgFeeColor, f.args.FromColor(v))
 }
 
 func (f *AddAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient.Address) {
@@ -245,10 +239,6 @@ func (r *GetChainInfoResults) Description() string {
 	return r.res.ToString(r.res.Get(ResDescription))
 }
 
-func (r *GetChainInfoResults) FeeColor() wasmclient.Color {
-	return r.res.ToColor(r.res.Get(ResFeeColor))
-}
-
 func (r *GetChainInfoResults) MaxBlobSize() int32 {
 	return r.res.ToInt32(r.res.Get(ResMaxBlobSize))
 }
@@ -280,10 +270,6 @@ func (f *GetFeeInfoView) Call() GetFeeInfoResults {
 
 type GetFeeInfoResults struct {
 	res wasmclient.Results
-}
-
-func (r *GetFeeInfoResults) FeeColor() wasmclient.Color {
-	return r.res.ToColor(r.res.Get(ResFeeColor))
 }
 
 func (r *GetFeeInfoResults) OwnerFee() int64 {

@@ -12,7 +12,7 @@ use wasmlib::*;
 
 #[derive(Clone)]
 pub struct Auction {
-    pub color          : ScColor,  // color of tokens for sale
+    pub color          : ScTokenID,  // color of tokens for sale
     pub creator        : ScAgentID,  // issuer of start_auction transaction
     pub deposit        : u64,  // deposit by auction owner to cover the SC fees
     pub description    : String,  // auction description

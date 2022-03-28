@@ -4,106 +4,168 @@
 package wasmlib
 
 import (
+	"math/big"
 	"sort"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type ScAssets map[wasmtypes.ScColor]uint64
+type TokenAmounts map[wasmtypes.ScTokenID]*big.Int
 
-func NewScAssetsFromBytes(buf []byte) ScAssets {
-	if len(buf) == 0 {
-		return make(ScAssets)
-	}
-	dec := wasmtypes.NewWasmDecoder(buf)
-	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
-	dict := make(ScAssets, size)
-	for i := uint32(0); i < size; i++ {
-		color := wasmtypes.ColorDecode(dec)
-		dict[color] = wasmtypes.Uint64FromBytes(dec.FixedBytes(wasmtypes.ScUint64Length))
-	}
-	return dict
+type ScAssets struct {
+	Iotas  uint64
+	Tokens TokenAmounts
+	NFTs   []*wasmtypes.ScNftID
 }
 
-func (a ScAssets) Bytes() []byte {
-	keys := make([]wasmtypes.ScColor, 0, len(a))
-	for key := range a {
-		keys = append(keys, key)
+func NewScAssetsFromBytes(buf []byte) *ScAssets {
+	assets := &ScAssets{}
+	if len(buf) == 0 {
+		return assets
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return string(keys[i].Bytes()) < string(keys[j].Bytes())
-	})
+	dec := wasmtypes.NewWasmDecoder(buf)
+	assets.Iotas = wasmtypes.Uint64Decode(dec)
+
+	size := wasmtypes.Uint32Decode(dec)
+	if size > 0 {
+		assets.Tokens = make(TokenAmounts, size)
+		for ; size > 0; size-- {
+			tokenID := wasmtypes.TokenIDDecode(dec)
+			assets.Tokens[tokenID] = wasmtypes.BigIntDecode(dec)
+		}
+	}
+
+	size = wasmtypes.Uint32Decode(dec)
+	for ; size > 0; size-- {
+		nftID := wasmtypes.NftIDDecode(dec)
+		assets.NFTs = append(assets.NFTs, &nftID)
+	}
+	return assets
+}
+
+func (a *ScAssets) Balances() ScBalances {
+	return ScBalances{assets: a}
+}
+
+func (a *ScAssets) Bytes() []byte {
+	if a == nil {
+		return []byte{}
+	}
 	enc := wasmtypes.NewWasmEncoder()
-	enc.FixedBytes(wasmtypes.Uint32ToBytes(uint32(len(keys))), wasmtypes.ScUint32Length)
-	for _, color := range keys {
-		wasmtypes.ColorEncode(enc, color)
-		enc.FixedBytes(wasmtypes.Uint64ToBytes(a[color]), wasmtypes.ScUint64Length)
+	wasmtypes.Uint64Encode(enc, a.Iotas)
+
+	wasmtypes.Uint32Encode(enc, uint32(len(a.Tokens)))
+	for _, tokenID := range a.TokenIDs() {
+		wasmtypes.TokenIDEncode(enc, tokenID)
+		wasmtypes.BigIntEncode(enc, a.Tokens[*tokenID])
+	}
+
+	wasmtypes.Uint32Encode(enc, uint32(len(a.NFTs)))
+	for _, nftID := range a.NFTs {
+		wasmtypes.NftIDEncode(enc, nftID)
 	}
 	return enc.Buf()
 }
 
-func (a ScAssets) Balances() ScBalances {
-	return ScBalances{assets: a}
+func (a *ScAssets) IsEmpty() bool {
+	if a.Iotas != 0 {
+		return false
+	}
+	for _, val := range a.Tokens {
+		if val.BitLen() != 0 {
+			return false
+		}
+	}
+	return len(a.NFTs) == 0
+}
+
+func (a *ScAssets) TokenIDs() []*wasmtypes.ScTokenID {
+	keys := make([]*wasmtypes.ScTokenID, 0, len(a.Tokens))
+	for key := range a.Tokens {
+		keys = append(keys, &key)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return string(keys[i].Bytes()) < string(keys[j].Bytes())
+	})
+	return keys
 }
 
 type ScBalances struct {
-	assets ScAssets
+	assets *ScAssets
 }
 
-func (b ScBalances) Balance(color wasmtypes.ScColor) uint64 {
-	return b.assets[color]
+func (b *ScBalances) Balance(tokenID *wasmtypes.ScTokenID) *big.Int {
+	return b.assets.Tokens[*tokenID]
 }
 
-func (b ScBalances) Colors() []wasmtypes.ScColor {
-	res := make([]wasmtypes.ScColor, 0, len(b.assets))
-	for color := range b.assets {
-		res = append(res, color)
+func (b *ScBalances) Bytes() []byte {
+	if b == nil {
+		return []byte{}
 	}
-	return res
+	return b.assets.Bytes()
+}
+
+func (b *ScBalances) Iotas() uint64 {
+	return b.assets.Iotas
+}
+
+func (b *ScBalances) IsEmpty() bool {
+	return b.assets.IsEmpty()
+}
+
+func (b *ScBalances) TokenIDs() []*wasmtypes.ScTokenID {
+	return b.assets.TokenIDs()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-type ScTransfers ScAssets
-
-// create a new transfers object ready to add token transfers
-func NewScTransfers() ScTransfers {
-	return make(ScTransfers)
+type ScTransfer struct {
+	ScBalances
 }
 
-// create a new transfers object from a balances object
-func NewScTransfersFromBalances(balances ScBalances) ScTransfers {
-	transfer := NewScTransfers()
-	colors := balances.Colors()
-	for _, color := range colors {
-		transfer.Set(color, balances.Balance(color))
+// create a new transfer object ready to add token transfers
+func NewScTransfer() *ScTransfer {
+	return &ScTransfer{}
+}
+
+// create a new transfer object from a balances object
+func NewScTransferFromBalances(balances ScBalances) *ScTransfer {
+	transfer := NewScTransfer()
+	tokenIDs := balances.TokenIDs()
+	for _, tokenID := range tokenIDs {
+		transfer.Set(tokenID, balances.Balance(tokenID))
 	}
 	return transfer
 }
 
-// create a new transfers object and initialize it with the specified amount of iotas
-func NewScTransferIotas(amount uint64) ScTransfers {
-	return NewScTransfer(wasmtypes.IOTA, amount)
-}
-
-// create a new transfers object and initialize it with the specified token transfer
-func NewScTransfer(color wasmtypes.ScColor, amount uint64) ScTransfers {
-	transfer := NewScTransfers()
-	transfer.Set(color, amount)
+// create a new transfer object and initialize it with the specified amount of iotas
+func NewScTransferIotas(amount uint64) *ScTransfer {
+	transfer := NewScTransfer()
+	transfer.assets.Iotas = amount
 	return transfer
 }
 
-func (t ScTransfers) IsEmpty() bool {
-	for _, val := range t {
-		if val != 0 {
-			return false
-		}
-	}
-	return true
+// create a new transfer object and initialize it with the specified token transfer
+func NewScTransferToken(tokenID *wasmtypes.ScTokenID, amount *big.Int) *ScTransfer {
+	transfer := NewScTransfer()
+	transfer.Set(tokenID, amount)
+	return transfer
 }
 
-// set the specified colored token transfer in the transfers object
-// note that this will overwrite any previous amount for the specified color
-func (t ScTransfers) Set(color wasmtypes.ScColor, amount uint64) {
-	t[color] = amount
+// create a new transfer object and initialize it with the specified NFT
+func NewScTransferNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
+	transfer := NewScTransfer()
+	transfer.assets.NFTs = append(transfer.assets.NFTs, nftID)
+	return transfer
+}
+
+// set the specified tokenID amount in the transfers object
+// note that this will overwrite any previous amount for the specified tokenID
+func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount *big.Int) {
+	t.assets.Tokens[*tokenID] = amount
+}
+
+func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
+	//TODO filter doubles
+	t.assets.NFTs = append(t.assets.NFTs, nftID)
 }

@@ -289,7 +289,7 @@ type MapColorToImmutableColor struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableColor) GetColor(key wasmtypes.ScColor) wasmtypes.ScImmutableColor {
+func (m MapColorToImmutableColor) GetColor(key wasmtypes.ScTokenID) wasmtypes.ScImmutableColor {
 	return wasmtypes.NewScImmutableColor(m.proxy.Key(wasmtypes.ColorToBytes(key)))
 }
 
@@ -303,7 +303,7 @@ func (m MapColorToMutableColor) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableColor) GetColor(key wasmtypes.ScColor) wasmtypes.ScMutableColor {
+func (m MapColorToMutableColor) GetColor(key wasmtypes.ScTokenID) wasmtypes.ScMutableColor {
 	return wasmtypes.NewScMutableColor(m.proxy.Key(wasmtypes.ColorToBytes(key)))
 }
 

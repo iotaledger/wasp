@@ -10,21 +10,21 @@ import * as sc from "./index";
 
 export class MapColorToImmutableAuction extends wasmtypes.ScProxy {
 
-	getAuction(key: wasmtypes.ScColor): sc.ImmutableAuction {
+	getAuction(key: wasmtypes.ScTokenID): sc.ImmutableAuction {
 		return new sc.ImmutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
 
 export class MapColorToImmutableBidderList extends wasmtypes.ScProxy {
 
-	getBidderList(key: wasmtypes.ScColor): sc.ImmutableBidderList {
+	getBidderList(key: wasmtypes.ScTokenID): sc.ImmutableBidderList {
 		return new sc.ImmutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
 
 export class MapColorToImmutableBids extends wasmtypes.ScProxy {
 
-	getBids(key: wasmtypes.ScColor): sc.ImmutableBids {
+	getBids(key: wasmtypes.ScTokenID): sc.ImmutableBids {
 		return new sc.ImmutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
@@ -53,7 +53,7 @@ export class MapColorToMutableAuction extends wasmtypes.ScProxy {
 		this.proxy.clearMap();
 	}
 
-	getAuction(key: wasmtypes.ScColor): sc.MutableAuction {
+	getAuction(key: wasmtypes.ScTokenID): sc.MutableAuction {
 		return new sc.MutableAuction(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
@@ -64,7 +64,7 @@ export class MapColorToMutableBidderList extends wasmtypes.ScProxy {
 		this.proxy.clearMap();
 	}
 
-	getBidderList(key: wasmtypes.ScColor): sc.MutableBidderList {
+	getBidderList(key: wasmtypes.ScTokenID): sc.MutableBidderList {
 		return new sc.MutableBidderList(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }
@@ -75,7 +75,7 @@ export class MapColorToMutableBids extends wasmtypes.ScProxy {
 		this.proxy.clearMap();
 	}
 
-	getBids(key: wasmtypes.ScColor): sc.MutableBids {
+	getBids(key: wasmtypes.ScTokenID): sc.MutableBids {
 		return new sc.MutableBids(this.proxy.key(wasmtypes.colorToBytes(key)));
 	}
 }

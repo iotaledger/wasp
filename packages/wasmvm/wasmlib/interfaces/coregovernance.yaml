@@ -7,7 +7,7 @@ funcs:
   addAllowedStateControllerAddress:
     params:
       chainOwner=oi: AgentID
-      feeColor=fc: Color? // default colored.IOTA
+      # feeColor=fc: Color? // default colored.IOTA
       stateControllerAddress=S: Address
   claimChainOwnership: {}
   delegateChainOwnership:
@@ -46,7 +46,7 @@ views:
       defaultOwnerFee=do: Int64
       defaultValidatorFee=dv: Int64
       description=d: String
-      feeColor=f: Color
+      # feeColor=f: Color
       maxBlobSize=mb: Int32
       maxEventSize=me: Int16
       maxEventsPerReq=mr: Int16
@@ -54,7 +54,7 @@ views:
     params:
       hname=hn: Hname
     results:
-      feeColor=f: Color
+      # feeColor=f: Color
       ownerFee=of: Int64
       validatorFee=vf: Int64
   getMaxBlobSize:

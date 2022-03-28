@@ -33,7 +33,7 @@ pub struct MapColorToImmutableToken {
 }
 
 impl MapColorToImmutableToken {
-    pub fn get_token(&self, key: &ScColor) -> ImmutableToken {
+    pub fn get_token(&self, key: &ScTokenID) -> ImmutableToken {
         ImmutableToken { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }
@@ -86,7 +86,7 @@ impl MapColorToMutableToken {
         self.proxy.clear_map();
     }
 
-    pub fn get_token(&self, key: &ScColor) -> MutableToken {
+    pub fn get_token(&self, key: &ScTokenID) -> MutableToken {
         MutableToken { proxy: self.proxy.key(&color_to_bytes(key)) }
     }
 }

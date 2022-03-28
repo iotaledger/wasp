@@ -47,7 +47,7 @@ func (v *ScView) Call() {
 	v.call(nil)
 }
 
-func (v *ScView) call(transfer ScAssets) {
+func (v *ScView) call(transfer *ScTransfer) {
 	req := wasmrequests.CallRequest{
 		Contract: v.hContract,
 		Function: v.hFunction,
@@ -109,7 +109,7 @@ type ScFunc struct {
 	ScView
 	ctx      ScFuncCallContext
 	delay    uint32
-	transfer ScAssets
+	transfer *ScTransfer
 }
 
 func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
@@ -156,13 +156,12 @@ func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
 	}
 }
 
-func (f *ScFunc) Transfer(transfer ScTransfers) *ScFunc {
-	f.transfer = ScAssets(transfer)
+func (f *ScFunc) Transfer(transfer *ScTransfer) *ScFunc {
+	f.transfer = transfer
 	return f
 }
 
 func (f *ScFunc) TransferIotas(amount uint64) *ScFunc {
-	f.transfer = make(ScAssets)
-	f.transfer[wasmtypes.IOTA] = amount
+	f.transfer = NewScTransferIotas(amount)
 	return f
 }

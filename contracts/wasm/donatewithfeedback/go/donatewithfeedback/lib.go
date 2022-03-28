@@ -5,24 +5,25 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package donatewithfeedback
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncDonate,
-		FuncWithdraw,
-		ViewDonation,
-		ViewDonationInfo,
+    	FuncDonate,
+    	FuncWithdraw,
+    	ViewDonation,
+    	ViewDonationInfo,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcDonateThunk,
-		funcWithdrawThunk,
+    	funcDonateThunk,
+    	funcWithdrawThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewDonationThunk,
-		viewDonationInfoThunk,
+    	viewDonationThunk,
+    	viewDonationInfoThunk,
 	},
 }
 
@@ -36,8 +37,8 @@ func OnLoad(index int32) {
 }
 
 type DonateContext struct {
-	Params ImmutableDonateParams
-	State  MutableDonateWithFeedbackState
+	Params  ImmutableDonateParams
+	State   MutableDonateWithFeedbackState
 }
 
 func funcDonateThunk(ctx wasmlib.ScFuncContext) {
@@ -55,8 +56,8 @@ func funcDonateThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type WithdrawContext struct {
-	Params ImmutableWithdrawParams
-	State  MutableDonateWithFeedbackState
+	Params  ImmutableWithdrawParams
+	State   MutableDonateWithFeedbackState
 }
 
 func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {

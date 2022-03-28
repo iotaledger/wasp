@@ -47,44 +47,6 @@ func (s MutableAccountsResults) Agents() MapAgentIDToMutableBytes {
 	return MapAgentIDToMutableBytes{proxy: s.proxy}
 }
 
-type MapColorToImmutableInt64 struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapColorToImmutableInt64) GetInt64(key wasmtypes.ScColor) wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.ColorToBytes(key)))
-}
-
-type ImmutableBalanceResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableBalanceResults) Balances() MapColorToImmutableInt64 {
-	//nolint:gosimple
-	return MapColorToImmutableInt64{proxy: s.proxy}
-}
-
-type MapColorToMutableInt64 struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapColorToMutableInt64) Clear() {
-	m.proxy.ClearMap()
-}
-
-func (m MapColorToMutableInt64) GetInt64(key wasmtypes.ScColor) wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.ColorToBytes(key)))
-}
-
-type MutableBalanceResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableBalanceResults) Balances() MapColorToMutableInt64 {
-	//nolint:gosimple
-	return MapColorToMutableInt64{proxy: s.proxy}
-}
-
 type ImmutableGetAccountNonceResults struct {
 	proxy wasmtypes.Proxy
 }
@@ -99,22 +61,4 @@ type MutableGetAccountNonceResults struct {
 
 func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultAccountNonce))
-}
-
-type ImmutableTotalAssetsResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableTotalAssetsResults) Balances() MapColorToImmutableInt64 {
-	//nolint:gosimple
-	return MapColorToImmutableInt64{proxy: s.proxy}
-}
-
-type MutableTotalAssetsResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableTotalAssetsResults) Balances() MapColorToMutableInt64 {
-	//nolint:gosimple
-	return MapColorToMutableInt64{proxy: s.proxy}
 }
