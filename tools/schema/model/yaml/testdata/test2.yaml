@@ -24,6 +24,12 @@ events: # line comment for event 1
                         # line comment for eventParam1 3
                         # line comment for eventParam1 4
     
+    ####################
+  # discarded line 1
+  # discarded line 2
+  #
+  # discarded line 3
+  # discarded line 4
 
   TestEvent2: # line comment for TestEvent2 1
 
@@ -35,4 +41,5 @@ events: # line comment for event 1
       String     # line comment for eventParam2 4
                  # line comment for eventParam2 5
                  # line comment for eventParam2 6
+                 # 
                  # line comment for eventParam2 7

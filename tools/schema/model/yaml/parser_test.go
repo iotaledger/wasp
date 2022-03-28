@@ -189,17 +189,17 @@ func TestParse(t *testing.T) {
 									},
 									{
 										Val:     "TestEvent2",
-										Line:    28,
+										Line:    34,
 										Comment: " line comment for TestEvent2 1\n",
 										Contents: []*yaml.Node{
 											{
 												Val:     "eventParam2",
-												Line:    32,
-												Comment: " header comment for eventParam2 1\n header comment for eventParam2 2\n line comment for eventParam2 1\n line comment for eventParam2 2\n line comment for eventParam2 3\n line comment for eventParam2 4\n line comment for eventParam2 5\n line comment for eventParam2 6\n line comment for eventParam2 7\n",
+												Line:    38,
+												Comment: " header comment for eventParam2 1\n header comment for eventParam2 2\n line comment for eventParam2 1\n line comment for eventParam2 2\n line comment for eventParam2 3\n line comment for eventParam2 4\n line comment for eventParam2 5\n line comment for eventParam2 6\n \n line comment for eventParam2 7\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "String",
-														Line: 35,
+														Line: 41,
 													},
 												},
 											},

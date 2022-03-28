@@ -1,8 +1,6 @@
 package yaml
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
@@ -71,10 +69,8 @@ func (n *Node) ToDefElt() *model.DefElt {
 
 func (n *Node) ToDefMap() *model.DefMap {
 	defs := make(model.DefMap)
-	fmt.Println("n: ", n)
 	for _, yamlKey := range n.Contents {
 		key := *yamlKey.ToDefElt()
-		fmt.Println("yamlKey: ", yamlKey)
 		defs[key] = yamlKey.Contents[0].ToDefElt()
 	}
 	return &defs

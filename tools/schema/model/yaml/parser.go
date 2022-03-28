@@ -22,8 +22,8 @@ func Parse(in []byte) *Node {
 		lineNum := i + 1
 		cur := Node{}
 
-		val, comment := getComment(line)
-		if comment != "" {
+		val, comment, existComment := getComment(line)
+		if existComment {
 			if commentNode == nil {
 				commentNode = &cur
 			}
@@ -97,15 +97,15 @@ func Parse(in []byte) *Node {
 	return &root
 }
 
-func getComment(in string) (string, string) {
+func getComment(in string) (string, string, bool) {
 	if strings.Contains(in, "#") {
 		elts := strings.SplitN(in, "#", 2)
 		if len(elts) == 1 {
-			return "", elts[0]
+			return "", elts[0], true
 		}
-		return elts[0], elts[1]
+		return elts[0], elts[1], true
 	}
-	return in, ""
+	return in, "", false
 }
 
 func getLevel(indent int, path []int) int {
