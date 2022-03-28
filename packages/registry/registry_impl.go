@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/mr-tron/base58"
 )
 
 // region Registry /////////////////////////////////////////////////////////
@@ -27,6 +29,18 @@ import (
 type Impl struct {
 	log   *logger.Logger
 	store kvstore.KVStore
+}
+
+type Config struct {
+	UseText  bool
+	Filename string
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		UseText:  false,
+		Filename: "",
+	}
 }
 
 // New creates new instance of the registry implementation.
@@ -46,21 +60,28 @@ func MakeChainRecordDbKey(chainID *iscp.ChainID) []byte {
 }
 
 func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error) {
-	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
+	key := MakeChainRecordDbKey(chainID)
+	data, err := r.store.Get(key)
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return ChainRecordFromBytes(data)
+	var ch ChainRecord
+	err = json.Unmarshal(data, &ch)
+	if err != nil {
+		return nil, err
+	}
+	return &ch, nil
 }
 
 func (r *Impl) GetChainRecords() ([]*ChainRecord, error) {
 	ret := make([]*ChainRecord, 0)
 
-	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := ChainRecordFromBytes(value); err1 == nil {
+	prefix := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord)
+	err := r.store.Iterate(prefix, func(key kvstore.Key, value kvstore.Value) bool {
+		if rec, err1 := ChainRecordFromText(value); err1 == nil {
 			ret = append(ret, rec)
 		}
 		return true
@@ -107,7 +128,11 @@ func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error
 
 func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
-	return r.store.Set(k, rec.Bytes())
+	data, err := json.Marshal(rec)
+	if err != nil {
+		return err
+	}
+	return r.store.Set(k, data)
 }
 
 // endregion ///////////////////////////////////////////////////////////////
@@ -126,7 +151,11 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	if exists {
 		return fmt.Errorf("attempt to overwrite existing DK key share")
 	}
-	return r.store.Set(dbKey, dkShare.Bytes())
+	marshaled, err := json.Marshal(dkShare)
+	if err != nil {
+		return err
+	}
+	return r.store.Set(dbKey, marshaled)
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
@@ -138,7 +167,12 @@ func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare,
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())
+	var dkShare tcrypto.DKShare
+	err = json.Unmarshal(data, &dkShare)
+	if err != nil {
+		return nil, err
+	}
+	return &dkShare, nil
 }
 
 func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {
@@ -167,7 +201,7 @@ func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.Trust
 	if err != nil {
 		return nil, err
 	}
-	tpBinary, err := tp.Bytes()
+	tpBinary, err := json.Marshal(tp)
 	if err != nil {
 		return nil, err
 	}
@@ -194,9 +228,9 @@ func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, err
 	if getErr != nil {
 		return nil, nil
 	}
-	tp, err = peering.TrustedPeerFromBytes(tpBinary)
+	err = json.Unmarshal(tpBinary, tp)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return tp, nil
 }
@@ -204,10 +238,14 @@ func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, err
 // TrustedPeers implements TrustedNetworkManager interface.
 func (r *Impl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	ret := make([]*peering.TrustedPeer, 0)
-	err := r.store.Iterate([]byte{dbkeys.ObjectTypeTrustedPeer}, func(key kvstore.Key, value kvstore.Value) bool {
-		if tp, recErr := peering.TrustedPeerFromBytes(value); recErr == nil {
-			ret = append(ret, tp)
+	prefix := dbkeys.MakeKey(dbkeys.ObjectTypeTrustedPeer)
+	err := r.store.Iterate(prefix, func(key kvstore.Key, value kvstore.Value) bool {
+		var tp peering.TrustedPeer
+		err := json.Unmarshal(value, &tp)
+		if err != nil {
+			return false
 		}
+		ret = append(ret, &tp)
 		return true
 	})
 	if err != nil {
@@ -290,7 +328,10 @@ func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
 	exists, _ = r.store.Has(dbKey)
 	if !exists {
 		pair = ed25519.GenerateKeyPair()
-		data = pair.PrivateKey.Bytes()
+		data, err = base58Text(pair.PrivateKey.Bytes())
+		if err != nil {
+			return nil, err
+		}
 		if err := r.store.Set(dbKey, data); err != nil {
 			return nil, err
 		}
@@ -299,6 +340,10 @@ func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
 	}
 	if data, err = r.store.Get(dbKey); err != nil {
 		return nil, err
+	}
+	data, err = decodeBase58Text(data)
+	if err != nil {
+		panic(err)
 	}
 	if pair.PrivateKey, err, _ = ed25519.PrivateKeyFromBytes(data); err != nil {
 		return nil, err
@@ -315,6 +360,24 @@ func (r *Impl) GetNodePublicKey() (*ed25519.PublicKey, error) {
 		return nil, err
 	}
 	return &pair.PublicKey, nil
+}
+
+func base58Text(in []byte) ([]byte, error) {
+	base58Str := base58.Encode(in)
+	return json.Marshal(base58Str)
+}
+
+func decodeBase58Text(in []byte) ([]byte, error) {
+	var base58Str string
+	err := json.Unmarshal(in, &base58Str)
+	if err != nil {
+		return nil, err
+	}
+	data, err := base58.Decode(base58Str)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func dbKeyForNodeIdentity() []byte {

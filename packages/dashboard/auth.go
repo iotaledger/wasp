@@ -21,7 +21,7 @@ func (d *Dashboard) authInit(e *echo.Echo, r renderer) Tab {
 	e.GET(shared.AuthRouteSuccess(), d.handleAuthCheck)
 	e.GET("/", d.handleAuthCheck)
 
-	route := e.GET(shared.AuthRoute(), d.handleAuth)
+	route := e.GET(shared.AuthRoute(), d.RenderAuthView)
 	route.Name = "auth"
 
 	r[route.Path] = d.makeTemplate(e, tplLogin)
@@ -33,16 +33,20 @@ func (d *Dashboard) authInit(e *echo.Echo, r renderer) Tab {
 	}
 }
 
-func (d *Dashboard) handleAuth(c echo.Context) error {
+func (d *Dashboard) RenderAuthView(c echo.Context) error {
 	auth, ok := c.Get("auth").(*authentication.AuthContext)
 
 	if ok && auth.IsAuthenticated() {
-		return c.Redirect(http.StatusMovedPermanently, "/config")
+		return c.Redirect(http.StatusFound, "/config")
 	}
 
-	return c.Render(http.StatusOK, c.Path(), &AuthTemplateParams{
+	// TODO: Add sessions?
+	loginError := c.QueryParam("error")
+
+	return c.Render(http.StatusOK, "/auth", &AuthTemplateParams{
 		BaseTemplateParams: d.BaseParams(c),
 		Configuration:      d.wasp.ConfigDump(),
+		LoginError:         loginError,
 	})
 }
 
@@ -50,17 +54,18 @@ func (d *Dashboard) handleAuthCheck(c echo.Context) error {
 	auth, ok := c.Get("auth").(*authentication.AuthContext)
 
 	if !ok {
-		return c.Redirect(http.StatusMovedPermanently, shared.AuthRoute())
+		return c.Redirect(http.StatusFound, shared.AuthRoute())
 	}
 
 	if auth.IsAuthenticated() {
-		return c.Redirect(http.StatusMovedPermanently, "/config")
+		return c.Redirect(http.StatusFound, "/config")
 	}
 
-	return c.Redirect(http.StatusMovedPermanently, shared.AuthRoute())
+	return c.Redirect(http.StatusFound, shared.AuthRoute())
 }
 
 type AuthTemplateParams struct {
 	BaseTemplateParams
 	Configuration map[string]interface{}
+	LoginError    string
 }

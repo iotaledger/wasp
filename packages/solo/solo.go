@@ -159,7 +159,7 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) 
 	ret := &Solo{
 		T:               t,
 		logger:          log,
-		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
+		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true, registry.DefaultConfig()),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
 		seed:            seed,
 		blobCache:       iscp.NewInMemoryBlobCache(),

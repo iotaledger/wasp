@@ -4,10 +4,12 @@
 package iscp
 
 import (
+	"encoding/json"
 	"io"
 	"strings"
 
 	"github.com/iotaledger/hive.go/marshalutil"
+	"gopkg.in/yaml.v2"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -19,6 +21,13 @@ import (
 type ChainID struct {
 	*ledgerstate.AliasAddress
 }
+
+var (
+	_ json.Marshaler   = &ChainID{}
+	_ json.Unmarshaler = &ChainID{}
+	_ yaml.Marshaler   = &ChainID{}
+	_ yaml.Unmarshaler = &ChainID{}
+)
 
 // NewChainID creates new chain ID from alias address
 func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
@@ -116,5 +125,33 @@ func (chid *ChainID) Read(r io.Reader) error {
 
 func (chid *ChainID) Write(w io.Writer) error {
 	_, err := w.Write(chid.AliasAddress.Bytes())
+	return err
+}
+
+func (chid *ChainID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(chid.Base58())
+}
+
+func (chid *ChainID) UnmarshalJSON(in []byte) error {
+	var base58 string
+	err := json.Unmarshal(in, &base58)
+	if err != nil {
+		return err
+	}
+	chid.AliasAddress, err = ledgerstate.AliasAddressFromBase58EncodedString(base58)
+	return err
+}
+
+func (chid *ChainID) MarshalYAML() (interface{}, error) {
+	return yaml.Marshal(chid.Base58())
+}
+
+func (chid *ChainID) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var base58 string
+	err := unmarshal(&base58)
+	if err != nil {
+		return err
+	}
+	chid.AliasAddress, err = ledgerstate.AliasAddressFromBase58EncodedString(base58)
 	return err
 }

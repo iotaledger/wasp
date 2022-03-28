@@ -31,9 +31,6 @@ func Init() *node.Plugin {
 		var err error
 		var nodeKeyPair *ed25519.KeyPair
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
-			panic(err)
-		}
-		if err != nil {
 			log.Panicf("Init.peering: %v", err)
 		}
 		netID := parameters.GetString(parameters.PeeringMyNetID)

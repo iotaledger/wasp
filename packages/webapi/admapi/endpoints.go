@@ -6,6 +6,7 @@ package admapi
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
@@ -37,7 +38,7 @@ func AddEndpoints(
 
 	claimValidator := func(claims *authentication.WaspClaims) bool {
 		// The API will be accessible if the token has an 'API' claim
-		return claims.API
+		return claims.HasPermission(permissions.API)
 	}
 
 	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, claimValidator)

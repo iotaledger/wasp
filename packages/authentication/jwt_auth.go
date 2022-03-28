@@ -39,13 +39,12 @@ func NewJWTAuth(durationHours time.Duration, nodeID string, secret []byte) (*JWT
 
 type WaspClaims struct {
 	jwt.StandardClaims
-	Dashboard  bool `json:"dashboard"`
-	API        bool `json:"api"`
-	ChainRead  bool `json:"chain.read"`
-	ChainWrite bool `json:"chain.write"`
+	Permissions map[string]bool `json:"permissions"`
 }
 
-const defaultJwtDurationHours = 24
+func (c *WaspClaims) HasPermission(permission string) bool {
+	return c.Permissions[permission]
+}
 
 func (c *WaspClaims) compare(field, expected string) bool {
 	if field == "" {
@@ -61,6 +60,8 @@ func (c *WaspClaims) compare(field, expected string) bool {
 func (c *WaspClaims) VerifySubject(expected string) bool {
 	return c.compare(c.Subject, expected)
 }
+
+const defaultJwtDurationHours = 24
 
 func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidator) echo.MiddlewareFunc {
 	config := middleware.JWTConfig{
@@ -179,7 +180,7 @@ func initJWT(durationHours int, nodeID string, privateKey []byte, userMap map[st
 	}
 
 	jwtAuthSkipper := func(context echo.Context) bool {
-		path := context.Request().RequestURI
+		path := context.Request().URL.Path
 
 		if strings.HasSuffix(path, shared.AuthRoute()) || strings.HasSuffix(path, shared.AuthInfoRoute()) || path == "/" {
 			return true

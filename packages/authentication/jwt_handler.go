@@ -2,9 +2,11 @@ package authentication
 
 import (
 	"crypto/subtle"
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
+
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
@@ -31,77 +33,75 @@ func (a *AuthHandler) validateLogin(username, password string) bool {
 	return false
 }
 
-func (a *AuthHandler) GetTypedClaims(user *users.UserData) (*WaspClaims, error) {
-	claims := WaspClaims{}
-	fakeClaims := make(map[string]interface{})
-
-	for _, v := range user.Claims {
-		fakeClaims[v] = true
-	}
-
-	// TODO: Find a better solution for
-	// Turning a list of strings into WaspClaims map by their json tag names
-	enc, err := json.Marshal(fakeClaims)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(enc, &claims)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &claims, err
-}
-
-func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
+func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
 	request := &shared.LoginRequest{}
 
 	if err := c.Bind(request); err != nil {
-		return c.NoContent(http.StatusUnauthorized)
+		return "", xerrors.Errorf("Invalid form data")
 	}
 
 	if !a.validateLogin(request.Username, request.Password) {
-		return c.NoContent(http.StatusUnauthorized)
+		return "", xerrors.Errorf("Invalid credentials")
 	}
 
 	user := users.GetUserByName(request.Username)
 
 	if user == nil {
-		return c.NoContent(http.StatusUnauthorized)
+		return "", xerrors.Errorf("Invalid credentials")
 	}
 
-	claims, err := a.GetTypedClaims(user)
-	if err != nil {
-		return c.NoContent(http.StatusUnauthorized)
+	claims := &WaspClaims{
+		Permissions: users.GetPermissionMap(request.Username),
 	}
 
 	token, err := a.Jwt.IssueJWT(request.Username, claims)
 	if err != nil {
-		return c.NoContent(http.StatusUnauthorized)
+		return "", xerrors.Errorf("Unable to login")
 	}
+
+	return token, nil
+}
+
+func (a *AuthHandler) handleJSONAuthRequest(c echo.Context, token string, errorResult error) error {
+	if errorResult != nil {
+		return c.JSON(http.StatusUnauthorized, shared.LoginResponse{Error: errorResult})
+	}
+
+	return c.JSON(http.StatusOK, shared.LoginResponse{JWT: token})
+}
+
+func (a *AuthHandler) handleFormAuthRequest(c echo.Context, token string, errorResult error) error {
+	if errorResult != nil {
+		// TODO: Add sessions to get rid of the query parameter?
+		return c.Redirect(http.StatusFound, fmt.Sprintf("%s?error=%s", shared.AuthRoute(), errorResult))
+	}
+
+	cookie := http.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		HttpOnly: true, // JWT Token will be stored in a http only cookie, this is important to mitigate XSS/XSRF attacks
+		Expires:  time.Now().Add(a.Jwt.durationHours * time.Hour),
+		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	c.SetCookie(&cookie)
+
+	return c.Redirect(http.StatusFound, shared.AuthRouteSuccess())
+}
+
+func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
+	token, errorResult := a.stageAuthRequest(c)
 
 	contentType := c.Request().Header.Get(echo.HeaderContentType)
 
 	if contentType == echo.MIMEApplicationJSON {
-		return c.JSON(http.StatusOK, shared.LoginResponse{JWT: token})
+		return a.handleJSONAuthRequest(c, token, errorResult)
 	}
 
 	if contentType == echo.MIMEApplicationForm {
-		cookie := http.Cookie{
-			Name:     "jwt",
-			Value:    token,
-			HttpOnly: true, // JWT Token will be stored in a http only cookie, this is important to mitigate XSS/XSRF attacks
-			Expires:  time.Now().Add(a.Jwt.durationHours),
-			Path:     "/",
-			SameSite: http.SameSiteStrictMode,
-		}
-
-		c.SetCookie(&cookie)
-
-		return c.Redirect(http.StatusMovedPermanently, shared.AuthRouteSuccess())
+		return a.handleFormAuthRequest(c, token, errorResult)
 	}
 
-	return c.NoContent(http.StatusUnauthorized)
+	return xerrors.Errorf("Invalid login request")
 }

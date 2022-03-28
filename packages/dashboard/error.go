@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -50,12 +53,18 @@ func (d *Dashboard) handleError(err error, c echo.Context) {
 		if c.Request().Method == http.MethodHead { // Issue #608
 			err = c.NoContent(he.Code)
 		} else {
-			err = c.Render(he.Code, errorTplName, &ErrorTemplateParams{
-				BaseTemplateParams: d.BaseParams(c),
-				Code:               he.Code,
-				StatusText:         http.StatusText(he.Code),
-				Message:            fmt.Sprintf("%s", he.Message),
-			})
+			authContext, ok := c.Get("auth").(*authentication.AuthContext)
+
+			if ok && authContext.Scheme() == authentication.AuthJWT && he.Code == http.StatusUnauthorized {
+				err = c.Redirect(http.StatusFound, shared.AuthRoute())
+			} else {
+				err = c.Render(he.Code, errorTplName, &ErrorTemplateParams{
+					BaseTemplateParams: d.BaseParams(c),
+					Code:               he.Code,
+					StatusText:         http.StatusText(he.Code),
+					Message:            fmt.Sprintf("%s", he.Message),
+				})
+			}
 		}
 		if err != nil {
 			c.Echo().Logger.Error(err)
