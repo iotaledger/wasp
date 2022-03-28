@@ -1,6 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// TODO: Test connect/reconnect - start node conn, and later the hornet.
+// TODO: Test connect/reconnect - on a running node stop and later restart hornet.
+
 package nodeconn_test
 
 import (
