@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnmarshal(t *testing.T) {
+func TestConvert(t *testing.T) {
 	type args struct {
 		path string
 	}
@@ -196,7 +196,7 @@ func TestUnmarshal(t *testing.T) {
 			def := &model.SchemaDef{}
 			root := yaml.Parse(in)
 			assert.NotNil(t, root)
-			yaml.Unmarshal(root, def)
+			yaml.Convert(root, def)
 
 			assert.Equal(t, tt.wants.out.Funcs, def.Funcs)
 		})
