@@ -6,10 +6,10 @@ import (
 
 func Parse(in []byte) *Node {
 	var root Node
-	var path []*Node = []*Node{&root}
-	var indentList []int = []int{0}
-	var commentNode *Node
-	var pureComment bool
+	var path []*Node = []*Node{&root} // Nodes in each hierarchy
+	var indentList []int = []int{0}   // the list of indent space numbers in the current code block
+	var commentNode *Node             // the Node that the current comments block first meets
+	var pureComment bool              // whether previous consecutive lines contain only comments
 
 	lines := strings.Split(strings.ReplaceAll(string(in), "\r\n", "\n"), "\n")
 
@@ -33,13 +33,15 @@ func Parse(in []byte) *Node {
 				pureComment = true
 				goto next
 			} else if pureComment {
-				// a series of comments meet yaml item first time
 				pureComment = false
-				cur.Comment = commentNode.Comment
-				commentNode = &cur
+				if commentNode.Line == 0 {
+					// a series of comments meet yaml item first time
+					cur.Comment = commentNode.Comment
+					commentNode = &cur
+				}
 			}
 		} else {
-			commentNode = nil
+			pureComment = false
 		}
 
 		cur.Line = lineNum

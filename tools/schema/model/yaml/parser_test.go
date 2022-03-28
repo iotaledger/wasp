@@ -136,6 +136,82 @@ func TestParse(t *testing.T) {
 				},
 			}
 		},
+		"successfully test2": func(t *testing.T) test {
+			return test{
+				args: args{
+					path: "testdata/test2.yaml",
+				},
+				wants: wants{
+					&yaml.Node{
+						Contents: []*yaml.Node{
+							&yaml.Node{
+								Val:  "name",
+								Line: 1,
+								Contents: []*yaml.Node{
+									{
+										Val:  "SchemaComment",
+										Line: 1,
+									},
+								},
+							},
+							&yaml.Node{
+								Val:  "description",
+								Line: 2,
+								Contents: []*yaml.Node{
+									{
+										Val:  "test description",
+										Line: 2,
+									},
+								},
+							},
+							&yaml.Node{
+								Val:     "events",
+								Line:    8,
+								Comment: " header comment for event 1\n header comment for event 2\n line comment for event 1\n line comment for event 2\n line comment for event 3\n line comment for event 4\n",
+								Contents: []*yaml.Node{
+									{
+										Val:     "TestEvent1",
+										Line:    15,
+										Comment: " header comment for TestEvent1 1\n header comment for TestEvent1 2\n line comment for TestEvent1 1\n line comment for TestEvent1 2\n line comment for TestEvent1 3\n line comment for TestEvent1 4\n",
+										Contents: []*yaml.Node{
+											{
+												Val:     "eventParam1",
+												Line:    22,
+												Comment: " header comment for eventParam1 1\n header comment for eventParam1 2\n line comment for eventParam1 1\n line comment for eventParam1 2\n line comment for eventParam1 3\n line comment for eventParam1 4\n",
+												Contents: []*yaml.Node{
+													{
+														Val:  "String",
+														Line: 22,
+													},
+												},
+											},
+										},
+									},
+									{
+										Val:     "TestEvent2",
+										Line:    28,
+										Comment: " line comment for TestEvent2 1\n",
+										Contents: []*yaml.Node{
+											{
+												Val:     "eventParam2",
+												Line:    32,
+												Comment: " header comment for eventParam2 1\n header comment for eventParam2 2\n line comment for eventParam2 1\n line comment for eventParam2 2\n line comment for eventParam2 3\n line comment for eventParam2 4\n line comment for eventParam2 5\n line comment for eventParam2 6\n line comment for eventParam2 7\n",
+												Contents: []*yaml.Node{
+													{
+														Val:  "String",
+														Line: 35,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+		},
 		"successfully test3": func(t *testing.T) test {
 			return test{
 				args: args{
