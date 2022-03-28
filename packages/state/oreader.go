@@ -1,13 +1,14 @@
 package state
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"time"
 )
 
 // OptimisticStateReaderImpl state reader reads the chain state from db and validates it

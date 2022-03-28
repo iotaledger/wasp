@@ -3,7 +3,6 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"io"
 	"math"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )

@@ -6,9 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
-var (
-	Contract = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
-)
+var Contract = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
 
 // state variables
 const (
@@ -46,6 +44,4 @@ var (
 	FuncGetContractRecords       = coreutil.ViewFunc("getContractRecords")
 )
 
-var (
-	ErrChainInitConditionsFailed = coreerrors.Register("root.init can't be called in this state").Create()
-)
+var ErrChainInitConditionsFailed = coreerrors.Register("root.init can't be called in this state").Create()

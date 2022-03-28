@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"testing"
 	"text/template"
 	"time"
@@ -30,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
 )
@@ -466,20 +469,23 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 
 const pollAPIInterval = 500 * time.Millisecond
 
-// waits until API for a given node is ready
+// waits until API for a given WASP node is ready
 func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
-	// infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
+	infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
 
 	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
 		for {
 			<-ticker.C
-			ok, err := clu.L1Client().Health()
+			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
 			if err != nil {
-				fmt.Printf("error polling node %d API ready status: %v\n", nodeIndex, err)
+				fmt.Printf("Error Polling node %d API ready status: %v\n", nodeIndex, err)
 				continue
 			}
-			if err == nil && ok {
+			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)
+			//goland:noinspection GoUnhandledErrorResult
+			rsp.Body.Close()
+			if err == nil && rsp.StatusCode != 404 {
 				initOk <- true
 				ticker.Stop()
 				return
