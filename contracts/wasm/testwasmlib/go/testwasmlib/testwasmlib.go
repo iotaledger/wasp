@@ -18,6 +18,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.AgentID().Exists() {
 		ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "mismatch: AgentID")
 	}
+	// TODO big.Int
 	if f.Params.Bool().Exists() {
 		ctx.Require(f.Params.Bool().Value(), "mismatch: Bool")
 	}
@@ -27,10 +28,6 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	}
 	if f.Params.ChainID().Exists() {
 		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
-	}
-	if f.Params.Color().Exists() {
-		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
-		ctx.Require(f.Params.Color().Value() == color, "mismatch: Color")
 	}
 	if f.Params.Hash().Exists() {
 		hash := wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210"))
@@ -51,12 +48,20 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.Int64().Exists() {
 		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
+	if f.Params.NftID().Exists() {
+		nftID := wasmtypes.NftIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
+		ctx.Require(f.Params.NftID().Value() == nftID, "mismatch: TokenID")
+	}
 	if f.Params.RequestID().Exists() {
 		requestID := wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
 		ctx.Require(f.Params.RequestID().Value() == requestID, "mismatch: RequestID")
 	}
 	if f.Params.String().Exists() {
 		ctx.Require(f.Params.String().Value() == "this is a string", "mismatch: String")
+	}
+	if f.Params.TokenID().Exists() {
+		tokenID := wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
+		ctx.Require(f.Params.TokenID().Value() == tokenID, "mismatch: TokenID")
 	}
 	if f.Params.Uint8().Exists() {
 		ctx.Require(f.Params.Uint8().Value() == 123, "mismatch: Uint8")
@@ -79,11 +84,11 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 //nolint:unparam
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, f *TakeAllowanceContext) {
 	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()), false)
-	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Balance(wasmtypes.IOTA))))
+	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Iotas())))
 }
 
 func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
-	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmtypes.IOTA))
+	f.Results.Iotas().SetValue(ctx.Balances().Iotas())
 }
 
 func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
@@ -111,7 +116,7 @@ func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
 }
 
 func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
-	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmtypes.IOTA))
+	f.Results.Iotas().SetValue(ctx.Balances().Iotas())
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\

@@ -37,46 +37,46 @@ type ImmutableTransferOwnershipParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTransferOwnershipParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+func (s ImmutableTransferOwnershipParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableTransferOwnershipParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableTransferOwnershipParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+func (s MutableTransferOwnershipParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutableUpdateMetadataParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableUpdateMetadataParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+func (s ImmutableUpdateMetadataParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableUpdateMetadataParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableUpdateMetadataParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+func (s MutableUpdateMetadataParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetInfoParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+func (s ImmutableGetInfoParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetInfoParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+func (s MutableGetInfoParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }

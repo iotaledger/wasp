@@ -410,10 +410,6 @@ impl ImmutableParamTypesParams {
 		ScImmutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
-	}
-
     pub fn hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
@@ -438,6 +434,10 @@ impl ImmutableParamTypesParams {
 		ScImmutableInt8::new(self.proxy.root(PARAM_INT8))
 	}
 
+    pub fn nft_id(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_NFT_ID))
+	}
+
     pub fn param(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { proxy: self.proxy.clone() }
 	}
@@ -448,6 +448,10 @@ impl ImmutableParamTypesParams {
 
     pub fn string(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_STRING))
+	}
+
+    pub fn token_id(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 
     pub fn uint16(&self) -> ScImmutableUint16 {
@@ -508,10 +512,6 @@ impl MutableParamTypesParams {
 		ScMutableChainID::new(self.proxy.root(PARAM_CHAIN_ID))
 	}
 
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
-	}
-
     pub fn hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}
@@ -536,6 +536,10 @@ impl MutableParamTypesParams {
 		ScMutableInt8::new(self.proxy.root(PARAM_INT8))
 	}
 
+    pub fn nft_id(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_NFT_ID))
+	}
+
     pub fn param(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { proxy: self.proxy.clone() }
 	}
@@ -546,6 +550,10 @@ impl MutableParamTypesParams {
 
     pub fn string(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_STRING))
+	}
+
+    pub fn token_id(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 
     pub fn uint16(&self) -> ScMutableUint16 {

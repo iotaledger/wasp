@@ -11,8 +11,8 @@ structs:
     userDefined: String // any user defined text
 typedefs: {}
 state:
-  colorList: Color[]
-  registry: map[Color]Token
+  tokenList: TokenID[]
+  registry: map[TokenID]Token
 funcs:
   mintSupply:
     params:
@@ -21,12 +21,12 @@ funcs:
   transferOwnership:
     access: creator // TODO the one who can transfer token ownership
     params:
-      color: Color // color of token to transfer ownership of
+      token: TokenID // token of token to transfer ownership of
   updateMetadata:
     access: creator // TODO the one who can change the token info
     params:
-      color: Color // color of token to update metadata for
+      token: TokenID // token of token to update metadata for
 views:
   getInfo:
     params:
-      color: Color // color of token to view registry info of
+      token: TokenID // token of token to view registry info of

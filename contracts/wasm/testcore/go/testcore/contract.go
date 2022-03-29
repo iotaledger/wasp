@@ -16,42 +16,42 @@ type CallOnChainCall struct {
 }
 
 type CheckContextFromFullEPCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableCheckContextFromFullEPParams
+	Func   *wasmlib.ScFunc
+	Params MutableCheckContextFromFullEPParams
 }
 
 type ClaimAllowanceCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type DoNothingCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type EstimateMinDustCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type IncCounterCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type InfiniteLoopCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type InitCall struct {
-	Func    *wasmlib.ScInitFunc
-	Params  MutableInitParams
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
 }
 
 type PassTypesFullCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutablePassTypesFullParams
+	Func   *wasmlib.ScFunc
+	Params MutablePassTypesFullParams
 }
 
 type PingAllowanceBackCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type RunRecursionCall struct {
@@ -61,49 +61,49 @@ type RunRecursionCall struct {
 }
 
 type SendLargeRequestCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type SendNFTsBackCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type SendToAddressCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type SetIntCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableSetIntParams
+	Func   *wasmlib.ScFunc
+	Params MutableSetIntParams
 }
 
 type SpawnCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableSpawnParams
+	Func   *wasmlib.ScFunc
+	Params MutableSpawnParams
 }
 
 type SplitFundsCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type SplitFundsNativeTokensCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestBlockContext1Call struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestBlockContext2Call struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestCallPanicFullEPCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestCallPanicViewEPFromFullCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestChainOwnerIDFullCall struct {
@@ -112,30 +112,30 @@ type TestChainOwnerIDFullCall struct {
 }
 
 type TestEventLogDeployCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestEventLogEventDataCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TestEventLogGenericDataCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableTestEventLogGenericDataParams
+	Func   *wasmlib.ScFunc
+	Params MutableTestEventLogGenericDataParams
 }
 
 type TestPanicFullEPCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type WithdrawFromChainCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableWithdrawFromChainParams
+	Func   *wasmlib.ScFunc
+	Params MutableWithdrawFromChainParams
 }
 
 type CheckContextFromViewEPCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckContextFromViewEPParams
+	Func   *wasmlib.ScView
+	Params MutableCheckContextFromViewEPParams
 }
 
 type FibonacciCall struct {
@@ -162,20 +162,20 @@ type GetStringValueCall struct {
 }
 
 type InfiniteLoopViewCall struct {
-	Func    *wasmlib.ScView
+	Func *wasmlib.ScView
 }
 
 type JustViewCall struct {
-	Func    *wasmlib.ScView
+	Func *wasmlib.ScView
 }
 
 type PassTypesViewCall struct {
-	Func    *wasmlib.ScView
-	Params  MutablePassTypesViewParams
+	Func   *wasmlib.ScView
+	Params MutablePassTypesViewParams
 }
 
 type TestCallPanicViewEPFromViewCall struct {
-	Func    *wasmlib.ScView
+	Func *wasmlib.ScView
 }
 
 type TestChainOwnerIDViewCall struct {
@@ -184,7 +184,7 @@ type TestChainOwnerIDViewCall struct {
 }
 
 type TestPanicViewEPCall struct {
-	Func    *wasmlib.ScView
+	Func *wasmlib.ScView
 }
 
 type TestSandboxCallCall struct {

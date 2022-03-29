@@ -337,10 +337,6 @@ func (s ImmutableParamTypesParams) ChainID() wasmtypes.ScImmutableChainID {
 	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s ImmutableParamTypesParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
-}
-
 func (s ImmutableParamTypesParams) Hash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
@@ -365,6 +361,10 @@ func (s ImmutableParamTypesParams) Int8() wasmtypes.ScImmutableInt8 {
 	return wasmtypes.NewScImmutableInt8(s.proxy.Root(ParamInt8))
 }
 
+func (s ImmutableParamTypesParams) NftID() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNftID))
+}
+
 func (s ImmutableParamTypesParams) Param() MapStringToImmutableBytes {
 	//nolint:gosimple
 	return MapStringToImmutableBytes{proxy: s.proxy}
@@ -376,6 +376,10 @@ func (s ImmutableParamTypesParams) RequestID() wasmtypes.ScImmutableRequestID {
 
 func (s ImmutableParamTypesParams) String() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamString))
+}
+
+func (s ImmutableParamTypesParams) TokenID() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamTokenID))
 }
 
 func (s ImmutableParamTypesParams) Uint16() wasmtypes.ScImmutableUint16 {
@@ -430,10 +434,6 @@ func (s MutableParamTypesParams) ChainID() wasmtypes.ScMutableChainID {
 	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
 }
 
-func (s MutableParamTypesParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
-}
-
 func (s MutableParamTypesParams) Hash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }
@@ -458,6 +458,10 @@ func (s MutableParamTypesParams) Int8() wasmtypes.ScMutableInt8 {
 	return wasmtypes.NewScMutableInt8(s.proxy.Root(ParamInt8))
 }
 
+func (s MutableParamTypesParams) NftID() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNftID))
+}
+
 func (s MutableParamTypesParams) Param() MapStringToMutableBytes {
 	//nolint:gosimple
 	return MapStringToMutableBytes{proxy: s.proxy}
@@ -469,6 +473,10 @@ func (s MutableParamTypesParams) RequestID() wasmtypes.ScMutableRequestID {
 
 func (s MutableParamTypesParams) String() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamString))
+}
+
+func (s MutableParamTypesParams) TokenID() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamTokenID))
 }
 
 func (s MutableParamTypesParams) Uint16() wasmtypes.ScMutableUint16 {

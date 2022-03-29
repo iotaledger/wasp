@@ -12,11 +12,11 @@ type ScNftID struct {
 }
 
 func (o ScNftID) Bytes() []byte {
-	return NftIDToBytes(&o)
+	return NftIDToBytes(o)
 }
 
 func (o ScNftID) String() string {
-	return NftIDToString(&o)
+	return NftIDToString(o)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -25,7 +25,7 @@ func NftIDDecode(dec *WasmDecoder) ScNftID {
 	return nftIDFromBytesUnchecked(dec.FixedBytes(ScNftIDLength))
 }
 
-func NftIDEncode(enc *WasmEncoder, value *ScNftID) {
+func NftIDEncode(enc *WasmEncoder, value ScNftID) {
 	enc.FixedBytes(value.Bytes(), ScNftIDLength)
 }
 
@@ -39,11 +39,11 @@ func NftIDFromBytes(buf []byte) ScNftID {
 	return nftIDFromBytesUnchecked(buf)
 }
 
-func NftIDToBytes(value *ScNftID) []byte {
+func NftIDToBytes(value ScNftID) []byte {
 	return value.id[:]
 }
 
-func NftIDToString(value *ScNftID) string {
+func NftIDToString(value ScNftID) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])
 }
@@ -69,8 +69,7 @@ func (o ScImmutableNftID) Exists() bool {
 }
 
 func (o ScImmutableNftID) String() string {
-	value := o.Value()
-	return NftIDToString(&value)
+	return NftIDToString(o.Value())
 }
 
 func (o ScImmutableNftID) Value() ScNftID {
@@ -92,5 +91,5 @@ func (o ScMutableNftID) Delete() {
 }
 
 func (o ScMutableNftID) SetValue(value ScNftID) {
-	o.proxy.Set(NftIDToBytes(&value))
+	o.proxy.Set(NftIDToBytes(value))
 }

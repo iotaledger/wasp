@@ -12,11 +12,11 @@ type ScTokenID struct {
 }
 
 func (o ScTokenID) Bytes() []byte {
-	return TokenIDToBytes(&o)
+	return TokenIDToBytes(o)
 }
 
 func (o ScTokenID) String() string {
-	return TokenIDToString(&o)
+	return TokenIDToString(o)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -25,7 +25,7 @@ func TokenIDDecode(dec *WasmDecoder) ScTokenID {
 	return tokenIDFromBytesUnchecked(dec.FixedBytes(ScTokenIDLength))
 }
 
-func TokenIDEncode(enc *WasmEncoder, value *ScTokenID) {
+func TokenIDEncode(enc *WasmEncoder, value ScTokenID) {
 	enc.FixedBytes(TokenIDToBytes(value), ScTokenIDLength)
 }
 
@@ -39,11 +39,11 @@ func TokenIDFromBytes(buf []byte) ScTokenID {
 	return tokenIDFromBytesUnchecked(buf)
 }
 
-func TokenIDToBytes(value *ScTokenID) []byte {
+func TokenIDToBytes(value ScTokenID) []byte {
 	return value.id[:]
 }
 
-func TokenIDToString(value *ScTokenID) string {
+func TokenIDToString(value ScTokenID) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])
 }
@@ -69,8 +69,7 @@ func (o ScImmutableTokenID) Exists() bool {
 }
 
 func (o ScImmutableTokenID) String() string {
-	value := o.Value()
-	return TokenIDToString(&value)
+	return TokenIDToString(o.Value())
 }
 
 func (o ScImmutableTokenID) Value() ScTokenID {
@@ -92,5 +91,5 @@ func (o ScMutableTokenID) Delete() {
 }
 
 func (o ScMutableTokenID) SetValue(value ScTokenID) {
-	o.proxy.Set(TokenIDToBytes(&value))
+	o.proxy.Set(TokenIDToBytes(value))
 }

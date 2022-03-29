@@ -11,7 +11,6 @@ package fairroulette
 
 import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 // Define some default configuration parameters.
@@ -62,7 +61,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	allowance := ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens that are part of the allowance balance.
-	amount := allowance.Balance(wasmtypes.IOTA)
+	amount := allowance.Iotas()
 
 	// Require that there are actually some plain iotas there
 	ctx.Require(amount > 0, "empty bet")

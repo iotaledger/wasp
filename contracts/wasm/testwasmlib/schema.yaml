@@ -27,7 +27,7 @@ typedefs:
   AddressArray: Address[]
   AgentIDArray: AgentID[]
   ChainIDArray: ChainID[]
-  ColorArray: Color[]
+  TokenIDArray: TokenID[]
   HashArray: Hash[]
   HnameArray: Hname[]
   RequestIDArray: RequestID[]
@@ -40,7 +40,7 @@ typedefs:
   AddressMap: map[Address]Address
   AgentIDMap: map[AgentID]AgentID
   ChainIDMap: map[ChainID]ChainID
-  ColorMap: map[Color]Color
+  TokenIDMap: map[TokenID]TokenID
   HashMap: map[Hash]Hash
   HnameMap: map[Hname]Hname
   RequestIDMap: map[RequestID]RequestID
@@ -167,16 +167,17 @@ funcs:
       bool: Bool?
       bytes: Bytes?
       chainID: ChainID?
-      color: Color?
       hash: Hash?
       hname: Hname?
       int8: Int8?
       int16: Int16?
       int32: Int32?
       int64: Int64?
+      nftID: NftID?
       param=this: map[String]Bytes? // special hook to be able to pass key/values as raw bytes
       requestID: RequestID?
       string: String?
+      tokenID: TokenID?
       uint8: Uint8?
       uint16: Uint16?
       uint32: Uint32?

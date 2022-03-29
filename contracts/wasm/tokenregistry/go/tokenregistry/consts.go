@@ -16,14 +16,14 @@ const (
 )
 
 const (
-	ParamColor       = "color"
 	ParamDescription = "description"
+	ParamToken       = "token"
 	ParamUserDefined = "userDefined"
 )
 
 const (
-	StateColorList = "colorList"
 	StateRegistry  = "registry"
+	StateTokenList = "tokenList"
 )
 
 const (

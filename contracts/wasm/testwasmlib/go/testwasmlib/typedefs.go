@@ -249,66 +249,6 @@ func (m MapChainIDToMutableChainID) GetChainID(key wasmtypes.ScChainID) wasmtype
 
 type MutableChainIDMap = MapChainIDToMutableChainID
 
-type ArrayOfImmutableColor struct {
-	proxy wasmtypes.Proxy
-}
-
-func (a ArrayOfImmutableColor) Length() uint32 {
-	return a.proxy.Length()
-}
-
-func (a ArrayOfImmutableColor) GetColor(index uint32) wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(a.proxy.Index(index))
-}
-
-type ImmutableColorArray = ArrayOfImmutableColor
-
-type ArrayOfMutableColor struct {
-	proxy wasmtypes.Proxy
-}
-
-func (a ArrayOfMutableColor) AppendColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(a.proxy.Append())
-}
-
-func (a ArrayOfMutableColor) Clear() {
-	a.proxy.ClearArray()
-}
-
-func (a ArrayOfMutableColor) Length() uint32 {
-	return a.proxy.Length()
-}
-
-func (a ArrayOfMutableColor) GetColor(index uint32) wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(a.proxy.Index(index))
-}
-
-type MutableColorArray = ArrayOfMutableColor
-
-type MapColorToImmutableColor struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapColorToImmutableColor) GetColor(key wasmtypes.ScTokenID) wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(m.proxy.Key(wasmtypes.ColorToBytes(key)))
-}
-
-type ImmutableColorMap = MapColorToImmutableColor
-
-type MapColorToMutableColor struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapColorToMutableColor) Clear() {
-	m.proxy.ClearMap()
-}
-
-func (m MapColorToMutableColor) GetColor(key wasmtypes.ScTokenID) wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(m.proxy.Key(wasmtypes.ColorToBytes(key)))
-}
-
-type MutableColorMap = MapColorToMutableColor
-
 type ArrayOfImmutableHash struct {
 	proxy wasmtypes.Proxy
 }
@@ -692,6 +632,66 @@ func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableStrin
 }
 
 type MutableStringMap = MapStringToMutableString
+
+type ArrayOfImmutableTokenID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableTokenID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableTokenID) GetTokenID(index uint32) wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(a.proxy.Index(index))
+}
+
+type ImmutableTokenIDArray = ArrayOfImmutableTokenID
+
+type ArrayOfMutableTokenID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableTokenID) AppendTokenID() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(a.proxy.Append())
+}
+
+func (a ArrayOfMutableTokenID) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableTokenID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableTokenID) GetTokenID(index uint32) wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(a.proxy.Index(index))
+}
+
+type MutableTokenIDArray = ArrayOfMutableTokenID
+
+type MapTokenIDToImmutableTokenID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapTokenIDToImmutableTokenID) GetTokenID(key wasmtypes.ScTokenID) wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
+}
+
+type ImmutableTokenIDMap = MapTokenIDToImmutableTokenID
+
+type MapTokenIDToMutableTokenID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapTokenIDToMutableTokenID) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapTokenIDToMutableTokenID) GetTokenID(key wasmtypes.ScTokenID) wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
+}
+
+type MutableTokenIDMap = MapTokenIDToMutableTokenID
 
 type ArrayOfImmutableUint64 struct {
 	proxy wasmtypes.Proxy

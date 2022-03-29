@@ -9,68 +9,68 @@ package tokenregistry
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ArrayOfImmutableColor struct {
+type MapTokenIDToImmutableToken struct {
 	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableColor) Length() uint32 {
+func (m MapTokenIDToImmutableToken) GetToken(key wasmtypes.ScTokenID) ImmutableToken {
+	return ImmutableToken{proxy: m.proxy.Key(wasmtypes.TokenIDToBytes(key))}
+}
+
+type ArrayOfImmutableTokenID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableTokenID) Length() uint32 {
 	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableColor) GetColor(index uint32) wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(a.proxy.Index(index))
-}
-
-type MapColorToImmutableToken struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapColorToImmutableToken) GetToken(key wasmtypes.ScTokenID) ImmutableToken {
-	return ImmutableToken{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
+func (a ArrayOfImmutableTokenID) GetTokenID(index uint32) wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(a.proxy.Index(index))
 }
 
 type ImmutableTokenRegistryState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTokenRegistryState) ColorList() ArrayOfImmutableColor {
-	return ArrayOfImmutableColor{proxy: s.proxy.Root(StateColorList)}
+func (s ImmutableTokenRegistryState) Registry() MapTokenIDToImmutableToken {
+	return MapTokenIDToImmutableToken{proxy: s.proxy.Root(StateRegistry)}
 }
 
-func (s ImmutableTokenRegistryState) Registry() MapColorToImmutableToken {
-	return MapColorToImmutableToken{proxy: s.proxy.Root(StateRegistry)}
+func (s ImmutableTokenRegistryState) TokenList() ArrayOfImmutableTokenID {
+	return ArrayOfImmutableTokenID{proxy: s.proxy.Root(StateTokenList)}
 }
 
-type ArrayOfMutableColor struct {
+type MapTokenIDToMutableToken struct {
 	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfMutableColor) AppendColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(a.proxy.Append())
-}
-
-func (a ArrayOfMutableColor) Clear() {
-	a.proxy.ClearArray()
-}
-
-func (a ArrayOfMutableColor) Length() uint32 {
-	return a.proxy.Length()
-}
-
-func (a ArrayOfMutableColor) GetColor(index uint32) wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(a.proxy.Index(index))
-}
-
-type MapColorToMutableToken struct {
-	proxy wasmtypes.Proxy
-}
-
-func (m MapColorToMutableToken) Clear() {
+func (m MapTokenIDToMutableToken) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableToken) GetToken(key wasmtypes.ScTokenID) MutableToken {
-	return MutableToken{proxy: m.proxy.Key(wasmtypes.ColorToBytes(key))}
+func (m MapTokenIDToMutableToken) GetToken(key wasmtypes.ScTokenID) MutableToken {
+	return MutableToken{proxy: m.proxy.Key(wasmtypes.TokenIDToBytes(key))}
+}
+
+type ArrayOfMutableTokenID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableTokenID) AppendTokenID() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(a.proxy.Append())
+}
+
+func (a ArrayOfMutableTokenID) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableTokenID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableTokenID) GetTokenID(index uint32) wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(a.proxy.Index(index))
 }
 
 type MutableTokenRegistryState struct {
@@ -81,10 +81,10 @@ func (s MutableTokenRegistryState) AsImmutable() ImmutableTokenRegistryState {
 	return ImmutableTokenRegistryState(s)
 }
 
-func (s MutableTokenRegistryState) ColorList() ArrayOfMutableColor {
-	return ArrayOfMutableColor{proxy: s.proxy.Root(StateColorList)}
+func (s MutableTokenRegistryState) Registry() MapTokenIDToMutableToken {
+	return MapTokenIDToMutableToken{proxy: s.proxy.Root(StateRegistry)}
 }
 
-func (s MutableTokenRegistryState) Registry() MapColorToMutableToken {
-	return MapColorToMutableToken{proxy: s.proxy.Root(StateRegistry)}
+func (s MutableTokenRegistryState) TokenList() ArrayOfMutableTokenID {
+	return ArrayOfMutableTokenID{proxy: s.proxy.Root(StateTokenList)}
 }

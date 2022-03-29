@@ -13,35 +13,35 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct MapColorToImmutableAuction {
+pub struct MapTokenIDToImmutableAuction {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToImmutableAuction {
+impl MapTokenIDToImmutableAuction {
     pub fn get_auction(&self, key: &ScTokenID) -> ImmutableAuction {
-        ImmutableAuction { proxy: self.proxy.key(&color_to_bytes(key)) }
+        ImmutableAuction { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
 #[derive(Clone)]
-pub struct MapColorToImmutableBidderList {
+pub struct MapTokenIDToImmutableBidderList {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToImmutableBidderList {
+impl MapTokenIDToImmutableBidderList {
     pub fn get_bidder_list(&self, key: &ScTokenID) -> ImmutableBidderList {
-        ImmutableBidderList { proxy: self.proxy.key(&color_to_bytes(key)) }
+        ImmutableBidderList { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
 #[derive(Clone)]
-pub struct MapColorToImmutableBids {
+pub struct MapTokenIDToImmutableBids {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToImmutableBids {
+impl MapTokenIDToImmutableBids {
     pub fn get_bids(&self, key: &ScTokenID) -> ImmutableBids {
-        ImmutableBids { proxy: self.proxy.key(&color_to_bytes(key)) }
+        ImmutableBids { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
@@ -51,16 +51,16 @@ pub struct ImmutableFairAuctionState {
 }
 
 impl ImmutableFairAuctionState {
-    pub fn auctions(&self) -> MapColorToImmutableAuction {
-		MapColorToImmutableAuction { proxy: self.proxy.root(STATE_AUCTIONS) }
+    pub fn auctions(&self) -> MapTokenIDToImmutableAuction {
+		MapTokenIDToImmutableAuction { proxy: self.proxy.root(STATE_AUCTIONS) }
 	}
 
-    pub fn bidder_list(&self) -> MapColorToImmutableBidderList {
-		MapColorToImmutableBidderList { proxy: self.proxy.root(STATE_BIDDER_LIST) }
+    pub fn bidder_list(&self) -> MapTokenIDToImmutableBidderList {
+		MapTokenIDToImmutableBidderList { proxy: self.proxy.root(STATE_BIDDER_LIST) }
 	}
 
-    pub fn bids(&self) -> MapColorToImmutableBids {
-		MapColorToImmutableBids { proxy: self.proxy.root(STATE_BIDS) }
+    pub fn bids(&self) -> MapTokenIDToImmutableBids {
+		MapTokenIDToImmutableBids { proxy: self.proxy.root(STATE_BIDS) }
 	}
 
     pub fn owner_margin(&self) -> ScImmutableUint64 {
@@ -69,47 +69,47 @@ impl ImmutableFairAuctionState {
 }
 
 #[derive(Clone)]
-pub struct MapColorToMutableAuction {
+pub struct MapTokenIDToMutableAuction {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToMutableAuction {
+impl MapTokenIDToMutableAuction {
     pub fn clear(&self) {
         self.proxy.clear_map();
     }
 
     pub fn get_auction(&self, key: &ScTokenID) -> MutableAuction {
-        MutableAuction { proxy: self.proxy.key(&color_to_bytes(key)) }
+        MutableAuction { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
 #[derive(Clone)]
-pub struct MapColorToMutableBidderList {
+pub struct MapTokenIDToMutableBidderList {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToMutableBidderList {
+impl MapTokenIDToMutableBidderList {
     pub fn clear(&self) {
         self.proxy.clear_map();
     }
 
     pub fn get_bidder_list(&self, key: &ScTokenID) -> MutableBidderList {
-        MutableBidderList { proxy: self.proxy.key(&color_to_bytes(key)) }
+        MutableBidderList { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
 #[derive(Clone)]
-pub struct MapColorToMutableBids {
+pub struct MapTokenIDToMutableBids {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToMutableBids {
+impl MapTokenIDToMutableBids {
     pub fn clear(&self) {
         self.proxy.clear_map();
     }
 
     pub fn get_bids(&self, key: &ScTokenID) -> MutableBids {
-        MutableBids { proxy: self.proxy.key(&color_to_bytes(key)) }
+        MutableBids { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
@@ -123,16 +123,16 @@ impl MutableFairAuctionState {
 		ImmutableFairAuctionState { proxy: self.proxy.root("") }
 	}
 
-    pub fn auctions(&self) -> MapColorToMutableAuction {
-		MapColorToMutableAuction { proxy: self.proxy.root(STATE_AUCTIONS) }
+    pub fn auctions(&self) -> MapTokenIDToMutableAuction {
+		MapTokenIDToMutableAuction { proxy: self.proxy.root(STATE_AUCTIONS) }
 	}
 
-    pub fn bidder_list(&self) -> MapColorToMutableBidderList {
-		MapColorToMutableBidderList { proxy: self.proxy.root(STATE_BIDDER_LIST) }
+    pub fn bidder_list(&self) -> MapTokenIDToMutableBidderList {
+		MapTokenIDToMutableBidderList { proxy: self.proxy.root(STATE_BIDDER_LIST) }
 	}
 
-    pub fn bids(&self) -> MapColorToMutableBids {
-		MapColorToMutableBids { proxy: self.proxy.root(STATE_BIDS) }
+    pub fn bids(&self) -> MapTokenIDToMutableBids {
+		MapTokenIDToMutableBids { proxy: self.proxy.root(STATE_BIDS) }
 	}
 
     pub fn owner_margin(&self) -> ScMutableUint64 {

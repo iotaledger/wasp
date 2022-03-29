@@ -11,14 +11,13 @@ export const ScName        = "fairauction";
 export const ScDescription = "Decentralized auction to securely sell tokens to the highest bidder";
 export const HScName       = new wasmtypes.ScHname(0x1b5c43b1);
 
-export const ParamColor       = "color";
 export const ParamDescription = "description";
 export const ParamDuration    = "duration";
 export const ParamMinimumBid  = "minimumBid";
 export const ParamOwnerMargin = "ownerMargin";
+export const ParamToken       = "token";
 
 export const ResultBidders       = "bidders";
-export const ResultColor         = "color";
 export const ResultCreator       = "creator";
 export const ResultDeposit       = "deposit";
 export const ResultDescription   = "description";
@@ -28,6 +27,7 @@ export const ResultHighestBidder = "highestBidder";
 export const ResultMinimumBid    = "minimumBid";
 export const ResultNumTokens     = "numTokens";
 export const ResultOwnerMargin   = "ownerMargin";
+export const ResultToken         = "token";
 export const ResultWhenStarted   = "whenStarted";
 
 export const StateAuctions    = "auctions";

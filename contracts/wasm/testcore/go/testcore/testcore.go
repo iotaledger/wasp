@@ -5,6 +5,8 @@
 package testcore
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
@@ -190,7 +192,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	// gasBudget := f.Params.GasBudget().Value()
 
 	// TODO more
-	availableIotas := ctx.Allowance().Balance(wasmtypes.IOTA)
+	availableIotas := ctx.Allowance().Iotas()
 	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
 	if availableIotas < 1000 {
 		ctx.Panic("no enough iotas sent to cover dust deposit")
@@ -319,7 +321,7 @@ func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
 
 //nolint:unparam
 func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
-	provided := ctx.Allowance().Balance(wasmtypes.IOTA)
+	provided := ctx.Allowance().Iotas()
 	dummy := ScFuncs.EstimateMinDust(ctx)
 	required := ctx.EstimateDust(dummy.Func)
 	ctx.Require(provided >= required, "not enough funds")
@@ -342,7 +344,7 @@ func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
 
 //nolint:unparam
 func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
-	iotas := ctx.Allowance().Balance(wasmtypes.IOTA)
+	iotas := ctx.Allowance().Iotas()
 	address := ctx.Caller().Address()
 	transfer := wasmlib.NewScTransferIotas(200)
 	for ; iotas >= 200; iotas -= 200 {
@@ -353,17 +355,15 @@ func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
 
 //nolint:unparam
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
-	iotas := ctx.Allowance().Balance(wasmtypes.IOTA)
+	iotas := ctx.Allowance().Iotas()
 	address := ctx.Caller().Address()
 	transfer := wasmlib.NewScTransferIotas(iotas)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-	for _, token := range ctx.Allowance().Colors() {
-		if token == wasmtypes.IOTA {
-			continue
-		}
-		transfer = wasmlib.NewScTransferToken(token, 1)
+	for _, token := range ctx.Allowance().TokenIDs() {
+		one := big.NewInt(1)
+		transfer = wasmlib.NewScTransferToken(token, one)
 		tokens := ctx.Allowance().Balance(token)
-		for ; tokens >= 1; tokens-- {
+		for ; tokens.Cmp(one) >= 0; tokens.Sub(tokens, one) {
 			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 			ctx.Send(address, transfer)
 		}

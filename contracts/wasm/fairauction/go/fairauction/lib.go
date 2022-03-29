@@ -5,27 +5,26 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:dupl
 package fairauction
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-    	FuncFinalizeAuction,
-    	FuncPlaceBid,
-    	FuncSetOwnerMargin,
-    	FuncStartAuction,
-    	ViewGetInfo,
+		FuncFinalizeAuction,
+		FuncPlaceBid,
+		FuncSetOwnerMargin,
+		FuncStartAuction,
+		ViewGetInfo,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-    	funcFinalizeAuctionThunk,
-    	funcPlaceBidThunk,
-    	funcSetOwnerMarginThunk,
-    	funcStartAuctionThunk,
+		funcFinalizeAuctionThunk,
+		funcPlaceBidThunk,
+		funcSetOwnerMarginThunk,
+		funcStartAuctionThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-    	viewGetInfoThunk,
+		viewGetInfoThunk,
 	},
 }
 
@@ -39,8 +38,8 @@ func OnLoad(index int32) {
 }
 
 type FinalizeAuctionContext struct {
-	Params  ImmutableFinalizeAuctionParams
-	State   MutableFairAuctionState
+	Params ImmutableFinalizeAuctionParams
+	State  MutableFairAuctionState
 }
 
 func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
@@ -57,14 +56,14 @@ func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcFinalizeAuction(ctx, f)
 	ctx.Log("fairauction.funcFinalizeAuction ok")
 }
 
 type PlaceBidContext struct {
-	Params  ImmutablePlaceBidParams
-	State   MutableFairAuctionState
+	Params ImmutablePlaceBidParams
+	State  MutableFairAuctionState
 }
 
 func funcPlaceBidThunk(ctx wasmlib.ScFuncContext) {
@@ -77,14 +76,14 @@ func funcPlaceBidThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcPlaceBid(ctx, f)
 	ctx.Log("fairauction.funcPlaceBid ok")
 }
 
 type SetOwnerMarginContext struct {
-	Params  ImmutableSetOwnerMarginParams
-	State   MutableFairAuctionState
+	Params ImmutableSetOwnerMarginParams
+	State  MutableFairAuctionState
 }
 
 func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
@@ -107,8 +106,8 @@ func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StartAuctionContext struct {
-	Params  ImmutableStartAuctionParams
-	State   MutableFairAuctionState
+	Params ImmutableStartAuctionParams
+	State  MutableFairAuctionState
 }
 
 func funcStartAuctionThunk(ctx wasmlib.ScFuncContext) {
@@ -121,8 +120,8 @@ func funcStartAuctionThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
 	ctx.Require(f.Params.MinimumBid().Exists(), "missing mandatory minimumBid")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcStartAuction(ctx, f)
 	ctx.Log("fairauction.funcStartAuction ok")
 }
@@ -147,7 +146,7 @@ func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	viewGetInfo(ctx, f)
 	ctx.Results(results)
 	ctx.Log("fairauction.viewGetInfo ok")

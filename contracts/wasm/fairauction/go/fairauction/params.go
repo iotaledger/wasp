@@ -13,32 +13,32 @@ type ImmutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFinalizeAuctionParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+func (s ImmutableFinalizeAuctionParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableFinalizeAuctionParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+func (s MutableFinalizeAuctionParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePlaceBidParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+func (s ImmutablePlaceBidParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutablePlaceBidParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+func (s MutablePlaceBidParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutableSetOwnerMarginParams struct {
@@ -61,10 +61,6 @@ type ImmutableStartAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStartAuctionParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
-}
-
 func (s ImmutableStartAuctionParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
@@ -77,12 +73,12 @@ func (s ImmutableStartAuctionParams) MinimumBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
-type MutableStartAuctionParams struct {
-	proxy wasmtypes.Proxy
+func (s ImmutableStartAuctionParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
-func (s MutableStartAuctionParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+type MutableStartAuctionParams struct {
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableStartAuctionParams) Description() wasmtypes.ScMutableString {
@@ -97,18 +93,22 @@ func (s MutableStartAuctionParams) MinimumBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
+func (s MutableStartAuctionParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
+}
+
 type ImmutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetInfoParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+func (s ImmutableGetInfoParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetInfoParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+func (s MutableGetInfoParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }

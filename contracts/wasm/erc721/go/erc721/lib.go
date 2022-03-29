@@ -5,45 +5,44 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:dupl
 package erc721
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-    	FuncApprove,
-    	FuncBurn,
-    	FuncInit,
-    	FuncMint,
-    	FuncSafeTransferFrom,
-    	FuncSetApprovalForAll,
-    	FuncTransferFrom,
-    	ViewBalanceOf,
-    	ViewGetApproved,
-    	ViewIsApprovedForAll,
-    	ViewName,
-    	ViewOwnerOf,
-    	ViewSymbol,
-    	ViewTokenURI,
+		FuncApprove,
+		FuncBurn,
+		FuncInit,
+		FuncMint,
+		FuncSafeTransferFrom,
+		FuncSetApprovalForAll,
+		FuncTransferFrom,
+		ViewBalanceOf,
+		ViewGetApproved,
+		ViewIsApprovedForAll,
+		ViewName,
+		ViewOwnerOf,
+		ViewSymbol,
+		ViewTokenURI,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-    	funcApproveThunk,
-    	funcBurnThunk,
-    	funcInitThunk,
-    	funcMintThunk,
-    	funcSafeTransferFromThunk,
-    	funcSetApprovalForAllThunk,
-    	funcTransferFromThunk,
+		funcApproveThunk,
+		funcBurnThunk,
+		funcInitThunk,
+		funcMintThunk,
+		funcSafeTransferFromThunk,
+		funcSetApprovalForAllThunk,
+		funcTransferFromThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-    	viewBalanceOfThunk,
-    	viewGetApprovedThunk,
-    	viewIsApprovedForAllThunk,
-    	viewNameThunk,
-    	viewOwnerOfThunk,
-    	viewSymbolThunk,
-    	viewTokenURIThunk,
+		viewBalanceOfThunk,
+		viewGetApprovedThunk,
+		viewIsApprovedForAllThunk,
+		viewNameThunk,
+		viewOwnerOfThunk,
+		viewSymbolThunk,
+		viewTokenURIThunk,
 	},
 }
 
@@ -57,9 +56,9 @@ func OnLoad(index int32) {
 }
 
 type ApproveContext struct {
-	Events  Erc721Events
-	Params  ImmutableApproveParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableApproveParams
+	State  MutableErc721State
 }
 
 func funcApproveThunk(ctx wasmlib.ScFuncContext) {
@@ -78,9 +77,9 @@ func funcApproveThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type BurnContext struct {
-	Events  Erc721Events
-	Params  ImmutableBurnParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableBurnParams
+	State  MutableErc721State
 }
 
 func funcBurnThunk(ctx wasmlib.ScFuncContext) {
@@ -99,9 +98,9 @@ func funcBurnThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type InitContext struct {
-	Events  Erc721Events
-	Params  ImmutableInitParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableInitParams
+	State  MutableErc721State
 }
 
 func funcInitThunk(ctx wasmlib.ScFuncContext) {
@@ -121,9 +120,9 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type MintContext struct {
-	Events  Erc721Events
-	Params  ImmutableMintParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableMintParams
+	State  MutableErc721State
 }
 
 func funcMintThunk(ctx wasmlib.ScFuncContext) {
@@ -142,9 +141,9 @@ func funcMintThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type SafeTransferFromContext struct {
-	Events  Erc721Events
-	Params  ImmutableSafeTransferFromParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableSafeTransferFromParams
+	State  MutableErc721State
 }
 
 func funcSafeTransferFromThunk(ctx wasmlib.ScFuncContext) {
@@ -165,9 +164,9 @@ func funcSafeTransferFromThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type SetApprovalForAllContext struct {
-	Events  Erc721Events
-	Params  ImmutableSetApprovalForAllParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableSetApprovalForAllParams
+	State  MutableErc721State
 }
 
 func funcSetApprovalForAllThunk(ctx wasmlib.ScFuncContext) {
@@ -187,9 +186,9 @@ func funcSetApprovalForAllThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TransferFromContext struct {
-	Events  Erc721Events
-	Params  ImmutableTransferFromParams
-	State   MutableErc721State
+	Events Erc721Events
+	Params ImmutableTransferFromParams
+	State  MutableErc721State
 }
 
 func funcTransferFromThunk(ctx wasmlib.ScFuncContext) {

@@ -10,24 +10,24 @@ package tokenregistry
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Token struct {
-	Created     uint64  // creation timestamp
-	Description string  // description what minted token represents
-	MintedBy    wasmtypes.ScAgentID  // original minter
-	Owner       wasmtypes.ScAgentID  // current owner
-	Supply      uint64  // amount of tokens originally minted
-	Updated     uint64  // last update timestamp
-	UserDefined string  // any user defined text
+	Created     uint64              // creation timestamp
+	Description string              // description what minted token represents
+	MintedBy    wasmtypes.ScAgentID // original minter
+	Owner       wasmtypes.ScAgentID // current owner
+	Supply      uint64              // amount of tokens originally minted
+	Updated     uint64              // last update timestamp
+	UserDefined string              // any user defined text
 }
 
 func NewTokenFromBytes(buf []byte) *Token {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Token{}
-	data.Created     = wasmtypes.Uint64Decode(dec)
+	data.Created = wasmtypes.Uint64Decode(dec)
 	data.Description = wasmtypes.StringDecode(dec)
-	data.MintedBy    = wasmtypes.AgentIDDecode(dec)
-	data.Owner       = wasmtypes.AgentIDDecode(dec)
-	data.Supply      = wasmtypes.Uint64Decode(dec)
-	data.Updated     = wasmtypes.Uint64Decode(dec)
+	data.MintedBy = wasmtypes.AgentIDDecode(dec)
+	data.Owner = wasmtypes.AgentIDDecode(dec)
+	data.Supply = wasmtypes.Uint64Decode(dec)
+	data.Updated = wasmtypes.Uint64Decode(dec)
 	data.UserDefined = wasmtypes.StringDecode(dec)
 	dec.Close()
 	return data
@@ -35,13 +35,13 @@ func NewTokenFromBytes(buf []byte) *Token {
 
 func (o *Token) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-		wasmtypes.Uint64Encode(enc, o.Created)
-		wasmtypes.StringEncode(enc, o.Description)
-		wasmtypes.AgentIDEncode(enc, o.MintedBy)
-		wasmtypes.AgentIDEncode(enc, o.Owner)
-		wasmtypes.Uint64Encode(enc, o.Supply)
-		wasmtypes.Uint64Encode(enc, o.Updated)
-		wasmtypes.StringEncode(enc, o.UserDefined)
+	wasmtypes.Uint64Encode(enc, o.Created)
+	wasmtypes.StringEncode(enc, o.Description)
+	wasmtypes.AgentIDEncode(enc, o.MintedBy)
+	wasmtypes.AgentIDEncode(enc, o.Owner)
+	wasmtypes.Uint64Encode(enc, o.Supply)
+	wasmtypes.Uint64Encode(enc, o.Updated)
+	wasmtypes.StringEncode(enc, o.UserDefined)
 	return enc.Buf()
 }
 

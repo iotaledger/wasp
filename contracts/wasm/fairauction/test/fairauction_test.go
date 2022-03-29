@@ -4,11 +4,13 @@
 package test
 
 import (
+	"math/big"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/wasm/fairauction/go/fairauction"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -34,12 +36,11 @@ func startAuction(t *testing.T) *wasmsolo.SoloContext {
 
 	// start the auction
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
-	sa.Params.Color().SetValue(tokenColor)
+	sa.Params.Token().SetValue(tokenColor)
 	sa.Params.MinimumBid().SetValue(500)
 	sa.Params.Description().SetValue("Cool tokens for sale!")
-	transfer := ctx.Transfer()
-	transfer.Set(wasmtypes.IOTA, 25) // deposit, must be >=minimum*margin
-	transfer.Set(tokenColor, 10)     // the tokens to auction
+	transfer := wasmlib.NewScTransferIotas(25) // deposit, must be >=minimum*margin
+	transfer.Set(&tokenColor, big.NewInt(10))  // the tokens to auction
 	sa.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 	return ctx
@@ -71,7 +72,7 @@ func TestFaAuctionInfo(t *testing.T) {
 	ctx := startAuction(t)
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Params.Token().SetValue(tokenColor)
 	getInfo.Func.Call()
 
 	require.NoError(t, ctx.Err)
@@ -91,7 +92,7 @@ func TestFaNoBids(t *testing.T) {
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Params.Token().SetValue(tokenColor)
 	getInfo.Func.Call()
 
 	require.NoError(t, ctx.Err)
@@ -103,7 +104,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
-	placeBid.Params.Color().SetValue(tokenColor)
+	placeBid.Params.Token().SetValue(tokenColor)
 	placeBid.Func.TransferIotas(100).Post()
 	require.Error(t, ctx.Err)
 
@@ -112,7 +113,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Params.Token().SetValue(tokenColor)
 	getInfo.Func.Call()
 
 	require.NoError(t, ctx.Err)
@@ -125,7 +126,7 @@ func TestFaOneBid(t *testing.T) {
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
-	placeBid.Params.Color().SetValue(tokenColor)
+	placeBid.Params.Token().SetValue(tokenColor)
 	placeBid.Func.TransferIotas(5000).Post()
 	require.NoError(t, ctx.Err)
 
@@ -134,7 +135,7 @@ func TestFaOneBid(t *testing.T) {
 	require.True(t, ctx.WaitForPendingRequests(1))
 
 	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Params.Token().SetValue(tokenColor)
 	getInfo.Func.Call()
 
 	require.NoError(t, ctx.Err)

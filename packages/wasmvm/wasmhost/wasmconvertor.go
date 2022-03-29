@@ -40,14 +40,14 @@ func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID
 	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
-func (cvt WasmConvertor) IscpAllowance(assets wasmlib.ScAssets) *iscp.Allowance {
+func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance {
 	iscpAllowance := iscp.NewAllowanceIotas(assets.Iotas)
 	iscpAssets := iscpAllowance.Assets
 	for tokenID, amount := range assets.Tokens {
-		token := iotago.NativeToken{ ID: *cvt.IscpTokenID(&tokenID), Amount: amount}
+		token := iotago.NativeToken{ID: *cvt.IscpTokenID(&tokenID), Amount: amount}
 		iscpAssets.Tokens = append(iscpAssets.Tokens, &token)
 	}
-	for _,nftID := range assets.NFTs {
+	for _, nftID := range assets.NFTs {
 		nft := cvt.IscpNFTID(nftID)
 		iscpAllowance.NFTs = append(iscpAllowance.NFTs, *nft)
 	}
@@ -73,7 +73,7 @@ func (cvt WasmConvertor) IscpHname(hname wasmtypes.ScHname) iscp.Hname {
 }
 
 func (cvt WasmConvertor) IscpNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
-	buf := wasmtypes.NftIDToBytes(nftID)
+	buf := wasmtypes.NftIDToBytes(*nftID)
 	iscpNFTID := new(iotago.NFTID)
 	copy(iscpNFTID[:], buf)
 	return iscpNFTID
@@ -88,7 +88,7 @@ func (cvt WasmConvertor) IscpRequestID(requestID *wasmtypes.ScRequestID) *iscp.R
 }
 
 func (cvt WasmConvertor) IscpTokenID(tokenID *wasmtypes.ScTokenID) *iotago.NativeTokenID {
-	buf := wasmtypes.TokenIDToBytes(tokenID)
+	buf := wasmtypes.TokenIDToBytes(*tokenID)
 	iscpTokenID := new(iotago.NativeTokenID)
 	copy(iscpTokenID[:], buf)
 	return iscpTokenID

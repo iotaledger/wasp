@@ -79,8 +79,9 @@ func (s ScSandbox) Balance(color wasmtypes.ScTokenID) uint64 {
 }
 
 // access the current balances for all assets
-func (s ScSandbox) Balances() ScBalances {
-	return NewScAssetsFromBytes(Sandbox(FnBalances, nil)).Balances()
+func (s ScSandbox) Balances() *ScBalances {
+	balances := NewScAssetsFromBytes(Sandbox(FnBalances, nil)).Balances()
+	return &balances
 }
 
 // calls a smart contract function
@@ -174,9 +175,10 @@ type ScSandboxFunc struct {
 }
 
 // access the allowance assets
-func (s ScSandboxFunc) Allowance() ScBalances {
+func (s ScSandboxFunc) Allowance() *ScBalances {
 	buf := Sandbox(FnAllowance, nil)
-	return NewScAssetsFromBytes(buf).Balances()
+	balances := NewScAssetsFromBytes(buf).Balances()
+	return &balances
 }
 
 //func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
@@ -184,8 +186,8 @@ func (s ScSandboxFunc) Allowance() ScBalances {
 //}
 
 // calls a smart contract function
-func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfer) *ScImmutableDict {
-	return s.call(hContract, hFunction, params, &transfer)
+func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer *ScTransfer) *ScImmutableDict {
+	return s.call(hContract, hFunction, params, transfer)
 }
 
 // retrieve the agent id of the caller of the smart contract
@@ -284,7 +286,7 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 }
 
 // transfer assets to the specified Tangle ledger address
-func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfer) {
+func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer *ScTransfer) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
 		return
@@ -302,7 +304,7 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfer) {
 //}
 
 // transfer assets to the specified Tangle ledger address
-func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer ScTransfer, create bool) {
+func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer *ScTransfer, create bool) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
 		return

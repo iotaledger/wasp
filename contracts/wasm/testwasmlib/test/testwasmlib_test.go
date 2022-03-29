@@ -24,20 +24,21 @@ var (
 		testwasmlib.ParamAgentID,
 		testwasmlib.ParamBool,
 		testwasmlib.ParamChainID,
-		testwasmlib.ParamColor,
 		testwasmlib.ParamHash,
 		testwasmlib.ParamHname,
 		testwasmlib.ParamInt8,
 		testwasmlib.ParamInt16,
 		testwasmlib.ParamInt32,
 		testwasmlib.ParamInt64,
+		testwasmlib.ParamNftID,
 		testwasmlib.ParamRequestID,
+		testwasmlib.ParamTokenID,
 		testwasmlib.ParamUint8,
 		testwasmlib.ParamUint16,
 		testwasmlib.ParamUint32,
 		testwasmlib.ParamUint64,
 	}
-	allLengths    = []int{33, 33, 1, 20, 38, 32, 4, 1, 2, 4, 8, 34, 1, 2, 4, 8}
+	allLengths    = []int{33, 33, 1, 20, 32, 4, 1, 2, 4, 8, 20, 34, 38, 1, 2, 4, 8}
 	invalidValues = map[string][][]byte{
 		testwasmlib.ParamAddress: {
 			append([]byte{3}, zeroHash...),
@@ -92,7 +93,6 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Bool().SetValue(true)
 	pt.Params.Bytes().SetValue([]byte("these are bytes"))
 	pt.Params.ChainID().SetValue(ctx.ChainID())
-	pt.Params.Color().SetValue(wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple")))
 	pt.Params.Hash().SetValue(wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210")))
 	pt.Params.Hname().SetValue(testwasmlib.HScName)
 	pt.Params.Int8().SetValue(-123)
@@ -101,6 +101,7 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Int64().SetValue(-1234567890123456789)
 	pt.Params.RequestID().SetValue(wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
 	pt.Params.String().SetValue("this is a string")
+	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple")))
 	pt.Params.Uint8().SetValue(123)
 	pt.Params.Uint16().SetValue(12345)
 	pt.Params.Uint32().SetValue(1234567890)

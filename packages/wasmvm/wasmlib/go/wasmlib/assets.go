@@ -56,13 +56,13 @@ func (a *ScAssets) Bytes() []byte {
 
 	wasmtypes.Uint32Encode(enc, uint32(len(a.Tokens)))
 	for _, tokenID := range a.TokenIDs() {
-		wasmtypes.TokenIDEncode(enc, tokenID)
+		wasmtypes.TokenIDEncode(enc, *tokenID)
 		wasmtypes.BigIntEncode(enc, a.Tokens[*tokenID])
 	}
 
 	wasmtypes.Uint32Encode(enc, uint32(len(a.NFTs)))
 	for _, nftID := range a.NFTs {
-		wasmtypes.NftIDEncode(enc, nftID)
+		wasmtypes.NftIDEncode(enc, *nftID)
 	}
 	return enc.Buf()
 }
@@ -129,7 +129,7 @@ func NewScTransfer() *ScTransfer {
 }
 
 // create a new transfer object from a balances object
-func NewScTransferFromBalances(balances ScBalances) *ScTransfer {
+func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
 	transfer := NewScTransfer()
 	tokenIDs := balances.TokenIDs()
 	for _, tokenID := range tokenIDs {
@@ -166,6 +166,6 @@ func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount *big.Int) {
 }
 
 func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
-	//TODO filter doubles
+	// TODO filter doubles
 	t.assets.NFTs = append(t.assets.NFTs, nftID)
 }

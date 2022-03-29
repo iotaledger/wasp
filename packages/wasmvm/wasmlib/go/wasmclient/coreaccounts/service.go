@@ -10,11 +10,11 @@ package coreaccountsclient
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
-	ArgAgentID = "a"
+	ArgAgentID        = "a"
 	ArgWithdrawAmount = "m"
 
 	ResAccountNonce = "n"
-	ResAgents = "this"
+	ResAgents       = "this"
 )
 
 ///////////////////////////// deposit /////////////////////////////
@@ -73,10 +73,10 @@ type AccountsResults struct {
 }
 
 func (r *AccountsResults) Agents() map[wasmclient.AgentID][]byte {
-    res := make(map[wasmclient.AgentID][]byte)
-    r.res.ForEach(func(key []byte, val []byte) {
-        res[r.res.ToAgentID(key)] = r.res.ToBytes(val)
-    })
+	res := make(map[wasmclient.AgentID][]byte)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToAgentID(key)] = r.res.ToBytes(val)
+	})
 	return res
 }
 

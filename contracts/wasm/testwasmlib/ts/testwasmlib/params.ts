@@ -288,10 +288,6 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableChainID(this.proxy.root(sc.ParamChainID));
 	}
 
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
-	}
-
 	hash(): wasmtypes.ScImmutableHash {
 		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamHash));
 	}
@@ -316,6 +312,10 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableInt8(this.proxy.root(sc.ParamInt8));
 	}
 
+	nftID(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNftID));
+	}
+
 	param(): sc.MapStringToImmutableBytes {
 		return new sc.MapStringToImmutableBytes(this.proxy);
 	}
@@ -326,6 +326,10 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 
 	string(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamString));
+	}
+
+	tokenID(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamTokenID));
 	}
 
 	uint16(): wasmtypes.ScImmutableUint16 {
@@ -377,10 +381,6 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableChainID(this.proxy.root(sc.ParamChainID));
 	}
 
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
-	}
-
 	hash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamHash));
 	}
@@ -405,6 +405,10 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableInt8(this.proxy.root(sc.ParamInt8));
 	}
 
+	nftID(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNftID));
+	}
+
 	param(): sc.MapStringToMutableBytes {
 		return new sc.MapStringToMutableBytes(this.proxy);
 	}
@@ -415,6 +419,10 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 
 	string(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamString));
+	}
+
+	tokenID(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamTokenID));
 	}
 
 	uint16(): wasmtypes.ScMutableUint16 {

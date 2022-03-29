@@ -10,9 +10,9 @@ package fairroulette
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Bet struct {
-	Amount uint64 
-	Better wasmtypes.ScAgentID 
-	Number uint16 
+	Amount uint64
+	Better wasmtypes.ScAgentID
+	Number uint16
 }
 
 func NewBetFromBytes(buf []byte) *Bet {
@@ -27,9 +27,9 @@ func NewBetFromBytes(buf []byte) *Bet {
 
 func (o *Bet) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-		wasmtypes.Uint64Encode(enc, o.Amount)
-		wasmtypes.AgentIDEncode(enc, o.Better)
-		wasmtypes.Uint16Encode(enc, o.Number)
+	wasmtypes.Uint64Encode(enc, o.Amount)
+	wasmtypes.AgentIDEncode(enc, o.Better)
+	wasmtypes.Uint16Encode(enc, o.Number)
 	return enc.Buf()
 }
 

@@ -250,24 +250,20 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
-// The optional color parameter can be used to retrieve the balance for the specific color.
-// When color is omitted, wasmlib.IOTA is assumed.
-func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScTokenID) uint64 {
+// The optional tokenID parameter can be used to retrieve the balance for the specific token.
+// When color is omitted, the iota balance is assumed.
+func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
 	account := iscp.NewAgentID(agent.address, agent.hname)
-	switch len(color) {
+	switch len(tokenID) {
 	case 0:
 		iotas := ctx.Chain.L2Iotas(account)
 		return iotas
 	case 1:
-		if color[0] == wasmtypes.IOTA {
-			iotas := ctx.Chain.L2Iotas(account)
-			return iotas
-		}
-		token := ctx.Cvt.IscpTokenID(&color[0])
+		token := ctx.Cvt.IscpTokenID(&tokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:
-		require.Fail(ctx.Chain.Env.T, "too many color arguments")
+		require.Fail(ctx.Chain.Env.T, "too many tokenID arguments")
 		return 0
 	}
 }
@@ -416,7 +412,7 @@ func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad w
 }
 
 // Transfer creates a new ScTransfer proxy
-func (ctx *SoloContext) Transfer() wasmlib.ScTransfer {
+func (ctx *SoloContext) Transfer() *wasmlib.ScTransfer {
 	return wasmlib.NewScTransfer()
 }
 

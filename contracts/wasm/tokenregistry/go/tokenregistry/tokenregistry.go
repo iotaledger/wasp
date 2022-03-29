@@ -9,16 +9,16 @@ import (
 
 func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 	minted := ctx.Minted()
-	mintedColors := minted.Colors()
+	mintedColors := minted.TokenIDs()
 	ctx.Require(len(mintedColors) == 1, "need single minted color")
 	mintedColor := mintedColors[0]
-	currentToken := f.State.Registry().GetToken(mintedColor)
+	currentToken := f.State.Registry().GetToken(*mintedColor)
 	if currentToken.Exists() {
 		// should never happen, because transaction id is unique
 		ctx.Panic("TokenRegistry: registry for color already exists")
 	}
 	token := &Token{
-		Supply:      minted.Balance(mintedColor),
+		Supply:      minted.Balance(mintedColor).Uint64(),
 		MintedBy:    ctx.Caller(),
 		Owner:       ctx.Caller(),
 		Created:     ctx.Timestamp(),
@@ -30,8 +30,8 @@ func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 		token.Description += "no dscr"
 	}
 	currentToken.SetValue(token)
-	colorList := f.State.ColorList()
-	colorList.AppendColor().SetValue(mintedColor)
+	colorList := f.State.TokenList()
+	colorList.AppendTokenID().SetValue(*mintedColor)
 }
 
 func funcTransferOwnership(ctx wasmlib.ScFuncContext, f *TransferOwnershipContext) {

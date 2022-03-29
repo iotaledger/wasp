@@ -215,7 +215,7 @@ func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 func (s *WasmContextSandbox) fnBalances(args []byte) []byte {
 	allowance := &iscp.Allowance{}
 	allowance.Assets = s.common.BalanceFungibleTokens()
-	allowance.NFTs= s.common.OwnedNFTs()
+	allowance.NFTs = s.common.OwnedNFTs()
 	return s.cvt.ScBalances(allowance).Bytes()
 }
 
