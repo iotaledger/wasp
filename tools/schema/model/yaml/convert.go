@@ -61,9 +61,14 @@ func Convert(root *Node, def *model.SchemaDef) error {
 }
 
 func (n *Node) ToDefElt() *model.DefElt {
+	comment := ""
+	if len(n.Comment) > 0 {
+		// remove trailing '\n'
+		comment = n.Comment[:len(n.Comment)-1]
+	}
 	return &model.DefElt{
 		Val:     n.Val,
-		Comment: n.Comment,
+		Comment: comment,
 		Line:    n.Line,
 	}
 }
@@ -88,9 +93,13 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 			// treat "{}" as empty
 			continue
 		}
+		comment := ""
+		if len(yamlKey.Comment) > 0 {
+			comment = yamlKey.Comment[:len(yamlKey.Comment)-1] // remove trailing '\n'
+		}
 		key := model.DefElt{
 			Val:     yamlKey.Val,
-			Comment: yamlKey.Comment,
+			Comment: comment,
 			Line:    yamlKey.Line,
 		}
 		val := yamlKey.ToDefMap()
@@ -128,9 +137,13 @@ func (n *Node) ToFuncDefMap() model.FuncDefMap {
 			// treat "{}" as empty
 			continue
 		}
+		comment := ""
+		if len(yamlKey.Comment) > 0 {
+			comment = yamlKey.Comment[:len(yamlKey.Comment)-1] // remove trailing '\n'
+		}
 		key := model.DefElt{
 			Val:     yamlKey.Val,
-			Comment: yamlKey.Comment,
+			Comment: comment,
 			Line:    yamlKey.Line,
 		}
 		val := yamlKey.ToFuncDef()

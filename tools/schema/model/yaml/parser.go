@@ -28,7 +28,7 @@ func Parse(in []byte) *Node {
 				commentNode = &cur
 			}
 
-			commentNode.Comment += (comment + "\n")
+			commentNode.Comment += ("//" + comment + "\n")
 			if strings.TrimSpace(val) == "" {
 				pureComment = true
 				goto next
