@@ -46,7 +46,7 @@ func Convert(root *Node, def *model.SchemaDef) error {
 		case KeyViews:
 			views = key.ToFuncDefMap()
 		default:
-			return fmt.Errorf("not expected key")
+			return fmt.Errorf("unsupported key")
 		}
 	}
 	def.Name = name
@@ -81,7 +81,12 @@ func (n *Node) ToDefMap() model.DefMap {
 			continue
 		}
 		key := *yamlKey.ToDefElt()
-		defs[key] = yamlKey.Contents[0].ToDefElt()
+		val := yamlKey.Contents[0].ToDefElt()
+		if val.Comment != "" {
+			key.Comment = val.Comment
+			val.Comment = ""
+		}
+		defs[key] = val
 	}
 	return defs
 }
@@ -97,6 +102,7 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 		if len(yamlKey.Comment) > 0 {
 			comment = yamlKey.Comment[:len(yamlKey.Comment)-1] // remove trailing '\n'
 		}
+
 		key := model.DefElt{
 			Val:     yamlKey.Val,
 			Comment: comment,

@@ -3,7 +3,7 @@ description: test description
 
 # ##################################
 
-# header comment for event 1
+# header comment for event 1 "this comment block will be ignored in yaml.Convert()"
 # header comment for event 2
 events: # line comment for event 1
         # line comment for event 2
@@ -43,3 +43,16 @@ events: # line comment for event 1
                  # line comment for eventParam2 6
                  # 
                  # line comment for eventParam2 7
+
+structs:
+  # comment for TestStruct 1
+  TestStruct: # comment for TestStruct 2
+              # comment for TestStruct 3
+
+    # comment for x 1
+    # comment for x 2
+    x: Int32 # comment for x 3
+
+
+    y: 
+      Int32 # comment for y 1

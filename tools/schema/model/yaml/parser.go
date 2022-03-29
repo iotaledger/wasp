@@ -9,41 +9,47 @@ func Parse(in []byte) *Node {
 	var path []*Node = []*Node{&root} // Nodes in each hierarchy
 	var indentList []int = []int{0}   // the list of indent space numbers in the current code block
 	var commentNode *Node             // the Node that the current comments block first meets
-	var pureComment bool              // whether previous consecutive lines contain only comments
-
+	cur := &Node{}
 	lines := strings.Split(strings.ReplaceAll(string(in), "\r\n", "\n"), "\n")
 
 	var prevIndent, curIndent int = -1, 0
+	var comment string
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
-			commentNode = nil
 			continue
 		}
 		lineNum := i + 1
-		cur := Node{}
+		next := &Node{}
 
-		val, comment, existComment := getComment(line)
-		if existComment {
+		var val string
+		vals, comments := getComments(lines[i : i+2])
+		if strings.TrimSpace(comments[0]) != "" {
 			if commentNode == nil {
-				commentNode = &cur
+				commentNode = cur
 			}
+			comment += ("//" + comments[0][1:] + "\n")
 
-			commentNode.Comment += ("//" + comment + "\n")
-			if strings.TrimSpace(val) == "" {
-				pureComment = true
-				goto next
-			} else if pureComment {
-				pureComment = false
-				if commentNode.Line == 0 {
-					// a series of comments meet yaml item first time
-					cur.Comment = commentNode.Comment
-					commentNode = &cur
+			if commentNode.Line == 0 {
+				if strings.TrimSpace(vals[0]) != "" {
+					commentNode = cur
+				} else if strings.TrimSpace(vals[1]) != "" {
+					commentNode = next
 				}
 			}
-		} else {
-			pureComment = false
+
+			if strings.TrimSpace(comments[1]) == "" {
+				// the next line is end of comment block
+				commentNode.Comment = comment
+				comment = ""
+				commentNode = nil
+			}
+
+			if strings.TrimSpace(vals[0]) == "" {
+				goto end
+			}
 		}
 
+		val = vals[0]
 		cur.Line = lineNum
 		curIndent = len(val) - len(strings.TrimLeft(val, " "))
 		val = strings.TrimSpace(val)
@@ -74,38 +80,48 @@ func Parse(in []byte) *Node {
 				return nil
 			}
 			parent := path[len(path)-1]
-			parent.Contents = append(parent.Contents, &cur)
-			path = append(path, &cur)
+			parent.Contents = append(parent.Contents, cur)
+			path = append(path, cur)
 
 		} else if curIndent == prevIndent {
 			// sibling
 			parent := path[len(path)-2]
-			parent.Contents = append(parent.Contents, &cur)
-			path[len(path)-1] = &cur
+			parent.Contents = append(parent.Contents, cur)
+			path[len(path)-1] = cur
 		} else {
 			// uncle
 			path = path[:getLevel(curIndent, indentList)+1] // pop until parent of uncle Node
 			uncle := path[len(path)-1]
-			uncle.Contents = append(uncle.Contents, &cur)
-			path = append(path, &cur)
+			uncle.Contents = append(uncle.Contents, cur)
+			path = append(path, cur)
 		}
 
-	next:
 		prevIndent = curIndent
+	end:
+		cur = next
 	}
 
 	return &root
 }
 
-func getComment(in string) (string, string, bool) {
-	if strings.Contains(in, "#") {
-		elts := strings.SplitN(in, "#", 2)
-		if len(elts) == 1 {
-			return "", elts[0], true
-		}
-		return elts[0], elts[1], true
+func getComments(lines []string) ([]string, []string) {
+	val := make([]string, 2)
+	comment := make([]string, 2)
+	line0 := lines[0]
+	idx := strings.Index(line0, "#")
+	if idx != -1 {
+		val[0], comment[0] = line0[:idx], line0[idx:]
+	} else {
+		val[0], comment[0] = line0, ""
 	}
-	return in, "", false
+	line1 := lines[1]
+	idx = strings.Index(line1, "#")
+	if idx != -1 {
+		val[1], comment[1] = line1[:idx], line1[idx:]
+	} else {
+		val[1], comment[1] = line1, ""
+	}
+	return val, comment
 }
 
 func getLevel(indent int, path []int) int {
