@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 

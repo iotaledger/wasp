@@ -39,12 +39,10 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
-		addr := parameters.GetString(parameters.NodeConnHost)
-		port := parameters.GetInt(parameters.NodeConnPort)
 		nc = nodeconn.New(
 			nodeconn.L1Config{
-				Hostname: addr,
-				APIPort:  port,
+				Hostname: parameters.GetString(parameters.L1Host),
+				APIPort:  parameters.GetInt(parameters.L1APIPort),
 			},
 			log,
 		)
