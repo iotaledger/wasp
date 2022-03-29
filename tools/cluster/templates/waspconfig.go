@@ -52,8 +52,9 @@ const WaspConfig = `
     "port": {{.PeeringPort}},
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
-  "nodeconn": {
-    "address": "{{.L1Host}}:{{.L1Port}}"
+  "L1": {
+    "host": "{{.L1Host}}",
+    "apiport": {{.L1Port}}
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}

@@ -3,10 +3,10 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"time"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
+	"io"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 

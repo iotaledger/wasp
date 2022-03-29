@@ -6,7 +6,7 @@ package model
 import "github.com/iotaledger/wasp/packages/registry"
 
 type ChainRecord struct {
-	ChainID ChainID `swagger:"desc(ChainID (base58-encoded))"`
+	ChainID ChainID `swagger:"desc(ChainID (hex-encoded))"`
 	Active  bool    `swagger:"desc(Whether or not the chain is active)"`
 }
 

@@ -1,8 +1,8 @@
 package vmcontext
 
 import (
-	"time"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
