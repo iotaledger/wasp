@@ -83,7 +83,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 		}
 	}()
 
-	return nil
+	return ncc.nc.waitUntilConfirmed(ncc.nc.ctx, txMsg)
 }
 
 func (ncc *ncChain) run() {

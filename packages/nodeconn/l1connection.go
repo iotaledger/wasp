@@ -76,9 +76,6 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	return result, nil
 }
 
-const pollConfirmedTxInterval = 200 * time.Millisecond
-
-// TODO refactor attach/promotion to be reusable
 // PostTx implements L1Connection
 // sends any tx to the L1 node, then waits until the tx is confirmed.
 func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) error {
@@ -95,52 +92,7 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
 
-	// wait until tx is confirmed
-	msgID, err := txMsg.ID()
-	if err != nil {
-		return xerrors.Errorf("failed to get msg ID: %w", err)
-	}
-
-	// poll the node by getting `MessageMetadataByMessageID`
-	for {
-		metadataResp, err := nc.nodeClient.MessageMetadataByMessageID(ctxWithTimeout, *msgID)
-		if err != nil {
-			return xerrors.Errorf("failed to get msg metadata: %w", err)
-		}
-
-		if metadataResp.ReferencedByMilestoneIndex != nil {
-			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
-				return nil
-			}
-			return xerrors.Errorf("tx was not included in the ledger")
-		}
-		// reattach or promote if needed
-		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			// create an empty message and the messageID as one of the parents
-			promotionMsg, err := builder.NewMessageBuilder().Parents([][]byte{msgID[:]}).Build()
-			if err != nil {
-				return xerrors.Errorf("failed to build promotion message: %w", err)
-			}
-			_, err = nc.nodeClient.SubmitMessage(ctxWithTimeout, promotionMsg, nc.l1params.DeSerializationParameters)
-			if err != nil {
-				return xerrors.Errorf("failed to promote msg: %w", err)
-			}
-		}
-		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
-			// remote PoW: Take the message, clear parents, clear nonce, send to node
-			txMsg.Parents = nil
-			txMsg.Nonce = 0
-			txMsg, err = nc.nodeClient.SubmitMessage(ctxWithTimeout, txMsg, nc.l1params.DeSerializationParameters)
-			if err != nil {
-				return xerrors.Errorf("failed to get re-attach msg: %w", err)
-			}
-		}
-
-		if err = ctxWithTimeout.Err(); err != nil {
-			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
-		}
-		time.Sleep(pollConfirmedTxInterval)
-	}
+	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
 }
 
 // RequestFunds implements L1Connection
