@@ -28,7 +28,7 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry
 
 	adm.GET(routes.GetChainRecord(":chainID"), s.handleGetChainRecord).
 		SetSummary("Find the chain record for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (hex)").
 		AddResponse(http.StatusOK, "Chain Record", example, nil)
 
 	adm.GET(routes.ListChainRecords(), s.handleGetChainRecordList).

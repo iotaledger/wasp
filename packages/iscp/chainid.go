@@ -4,10 +4,11 @@
 package iscp
 
 import (
+	"encoding/hex"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
 
@@ -33,7 +34,7 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 }
 
 func ChainIDFromString(s string) (*ChainID, error) {
-	bytes, err := base58.Decode(s)
+	bytes, err := hex.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
@@ -86,9 +87,9 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return *chid == *chid1
 }
 
-// String human readable form (base58)
+// String human readable form (hex)
 func (chid *ChainID) String() string {
-	return base58.Encode(chid.Bytes())
+	return hex.EncodeToString(chid.Bytes())
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {
