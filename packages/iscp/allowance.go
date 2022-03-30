@@ -20,10 +20,10 @@ func NewEmptyAllowance() *Allowance {
 	}
 }
 
-func NewAllowance(iotas uint64, tokens iotago.NativeTokens, NFTs []iotago.NFTID) *Allowance {
+func NewAllowance(iotas uint64, tokens iotago.NativeTokens, nfts []iotago.NFTID) *Allowance {
 	return &Allowance{
 		Assets: NewFungibleTokens(iotas, tokens),
-		NFTs:   NFTs,
+		NFTs:   nfts,
 	}
 }
 
@@ -123,7 +123,7 @@ func (a *Allowance) IsEmpty() bool {
 
 func (a *Allowance) Add(b *Allowance) *Allowance {
 	a.Assets.Add(b.Assets)
-	a.NFTs = append(a.NFTs, b.NFTs...)
+	a.AddNFTs(b.NFTs...)
 	return a
 }
 
@@ -138,8 +138,17 @@ func (a *Allowance) AddNativeTokens(tokenID iotago.NativeTokenID, amount interfa
 }
 
 func (a *Allowance) AddNFTs(nfts ...iotago.NFTID) *Allowance {
-	a.NFTs = make([]iotago.NFTID, len(nfts))
-	copy(a.NFTs, nfts)
+	nftMap := make(map[iotago.NFTID]bool)
+	nfts = append(nfts, a.NFTs...)
+	for _, nftid := range nfts {
+		nftMap[nftid] = true
+	}
+	a.NFTs = make([]iotago.NFTID, len(nftMap))
+	i := 0
+	for nftid := range nftMap {
+		a.NFTs[i] = nftid
+		i++
+	}
 	return a
 }
 
