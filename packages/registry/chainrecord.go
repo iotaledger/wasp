@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
@@ -20,12 +19,11 @@ type ChainRecord struct {
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	ret := &ChainRecord{}
-	addr, err := iscp.AddressFromMarshalUtil(mu)
+	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainID = iscp.ChainIDFromAddress(addr.(*iotago.AliasAddress))
-
+	ret.ChainID = *chainID
 	ret.Active, err = mu.ReadBool()
 	if err != nil {
 		return nil, err
