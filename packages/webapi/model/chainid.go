@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-// ChainID is the string representation of iscp.ChainID (base58)
+// ChainID is the string representation of iscp.ChainID (hex)
 type ChainID string
 
 func NewChainID(chainID *iscp.ChainID) ChainID {

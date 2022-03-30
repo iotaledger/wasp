@@ -83,7 +83,7 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 
 	adm.GET(routes.GetChainNodeConnectionMetrics(":chainID"), cms.handleGetChainNodeConnMetrics).
 		SetSummary("Get chain node connection metrics for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (hex)").
 		AddResponse(http.StatusOK, "Chain metrics", chainExample, nil)
 }
 
@@ -113,7 +113,7 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 
 	adm.GET(routes.GetChainConsensusWorkflowStatus(":chainID"), cms.handleGetChainConsensusWorkflowStatus).
 		SetSummary("Get chain state statistics for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (hex)").
 		AddResponse(http.StatusOK, "Chain consensus stats", example, nil).
 		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
 }
