@@ -99,6 +99,7 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Int16().SetValue(-12345)
 	pt.Params.Int32().SetValue(-1234567890)
 	pt.Params.Int64().SetValue(-1234567890123456789)
+	pt.Params.NftID().SetValue(wasmtypes.NftIDFromBytes([]byte("01234567890123456789")))
 	pt.Params.RequestID().SetValue(wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
 	pt.Params.String().SetValue("this is a string")
 	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple")))

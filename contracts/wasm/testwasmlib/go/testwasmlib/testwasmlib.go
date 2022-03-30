@@ -49,8 +49,8 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
 	if f.Params.NftID().Exists() {
-		nftID := wasmtypes.NftIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
-		ctx.Require(f.Params.NftID().Value() == nftID, "mismatch: TokenID")
+		nftID := wasmtypes.NftIDFromBytes([]byte("01234567890123456789"))
+		ctx.Require(f.Params.NftID().Value() == nftID, "mismatch: NftID")
 	}
 	if f.Params.RequestID().Exists() {
 		requestID := wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))

@@ -125,7 +125,7 @@ type ScTransfer struct {
 
 // create a new transfer object ready to add token transfers
 func NewScTransfer() *ScTransfer {
-	return &ScTransfer{}
+	return &ScTransfer{ScBalances{assets: &ScAssets{}}}
 }
 
 // create a new transfer object from a balances object
@@ -159,13 +159,20 @@ func NewScTransferNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
 	return transfer
 }
 
+func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
+	// TODO filter doubles
+	t.assets.NFTs = append(t.assets.NFTs, nftID)
+}
+
+func (t *ScTransfer) Bytes() []byte {
+	if t == nil {
+		return []byte{}
+	}
+	return t.assets.Bytes()
+}
+
 // set the specified tokenID amount in the transfers object
 // note that this will overwrite any previous amount for the specified tokenID
 func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount *big.Int) {
 	t.assets.Tokens[*tokenID] = amount
-}
-
-func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
-	// TODO filter doubles
-	t.assets.NFTs = append(t.assets.NFTs, nftID)
 }
