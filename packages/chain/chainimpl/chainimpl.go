@@ -250,7 +250,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	stateIndex := msg.VirtualState.BlockIndex()
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	rootCommitment := trie.RootCommitment(msg.VirtualState.TrieAccess())
-	//if !msg.ChainOutput.GetIsGovernanceUpdated() {	// TODO
+	// if !msg.ChainOutput.GetIsGovernanceUpdated() {	// TODO
 	c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
 		stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
 	// normal state update:
@@ -306,11 +306,14 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	govAccessNodes := make([]*cryptolib.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if stateIndex > 0 {
-		res := viewcontext.New(c).CallViewExternal(
+		res, err := viewcontext.New(c).CallViewExternal(
 			governance.Contract.Hname(),
 			governance.FuncGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),
 		)
+		if err != nil {
+			c.log.Panicf("unable to read the governance contract state: %v", err)
+		}
 		govResponse := governance.NewGetChainNodesResponseFromDict(res)
 		govAccessNodes = govResponse.AccessNodes
 		govCandidateNodes = govResponse.AccessNodeCandidates

@@ -10,6 +10,8 @@ import (
 	"github.com/iotaledger/hive.go/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -93,128 +95,125 @@ func (s *DKShareImpl) Bytes() []byte {
 // Write returns byte representation of this struct.
 
 func (s *DKShareImpl) Write(w io.Writer) error {
-	panic("TODO implement")
-	// var err error
-	// if _, err = w.Write(s.Address.Bytes()); err != nil {
-	// 	return err
-	// }
-	// if err = util.WriteUint16(w, *s.Index); err != nil { // It must be not nil here.
-	// 	return err
-	// }
-	// if err = util.WriteUint16(w, s.N); err != nil {
-	// 	return err
-	// }
-	// if err = util.WriteUint16(w, s.T); err != nil {
-	// 	return err
-	// }
-	// if err = util.WriteMarshaled(w, s.SharedPublic); err != nil {
-	// 	return err
-	// }
-	// if err = util.WriteUint16(w, uint16(len(s.PublicCommits))); err != nil {
-	// 	return err
-	// }
-	// for i := 0; i < len(s.PublicCommits); i++ {
-	// 	if err = util.WriteMarshaled(w, s.PublicCommits[i]); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// if err = util.WriteUint16(w, uint16(len(s.PublicShares))); err != nil {
-	// 	return err
-	// }
-	// for i := 0; i < len(s.PublicShares); i++ {
-	// 	if err = util.WriteMarshaled(w, s.PublicShares[i]); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// if err = util.WriteMarshaled(w, s.PrivateShare); err != nil {
-	// 	return err
-	// }
-	// if err = util.WriteUint16(w, uint16(len(s.NodePubKeys))); err != nil {
-	// 	return err
-	// }
-	// for _, nodePubKey := range s.NodePubKeys {
-	// 	if err = util.WriteBytes16(w, nodePubKey[:]); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// return nil
+	if _, err := w.Write(iscp.BytesFromAddress(s.Address)); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, *s.Index); err != nil { // It must be not nil here.
+		return err
+	}
+	if err := util.WriteUint16(w, s.N); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, s.T); err != nil {
+		return err
+	}
+	if err := util.WriteMarshaled(w, s.SharedPublic); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, uint16(len(s.PublicCommits))); err != nil {
+		return err
+	}
+	for i := 0; i < len(s.PublicCommits); i++ {
+		if err := util.WriteMarshaled(w, s.PublicCommits[i]); err != nil {
+			return err
+		}
+	}
+	if err := util.WriteUint16(w, uint16(len(s.PublicShares))); err != nil {
+		return err
+	}
+	for i := 0; i < len(s.PublicShares); i++ {
+		if err := util.WriteMarshaled(w, s.PublicShares[i]); err != nil {
+			return err
+		}
+	}
+	if err := util.WriteMarshaled(w, s.PrivateShare); err != nil {
+		return err
+	}
+	if err := util.WriteUint16(w, uint16(len(s.NodePubKeys))); err != nil {
+		return err
+	}
+	for _, nodePubKey := range s.NodePubKeys {
+		if err := util.WriteBytes16(w, nodePubKey.AsBytes()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *DKShareImpl) Read(r io.Reader) error {
-	panic("TODO implement")
+	var err error
 
-	// var err error
-	// var addrBytes [ledgerstate.AddressLength]byte
-	// var arrLen uint16
-	// if n, err := r.Read(addrBytes[:]); err != nil || n != ledgerstate.AddressLength {
-	// 	return err
-	// }
-	// if s.Address, _, err = ledgerstate.AddressFromBytes(addrBytes[:]); err != nil {
-	// 	return err
-	// }
-	// var index uint16
-	// if err = util.ReadUint16(r, &index); err != nil {
-	// 	return err
-	// }
-	// s.Index = &index
-	// if err = util.ReadUint16(r, &s.N); err != nil {
-	// 	return err
-	// }
-	// if err = util.ReadUint16(r, &s.T); err != nil {
-	// 	return err
-	// }
-	// s.SharedPublic = s.suite.G2().Point()
-	// if err = util.ReadMarshaled(r, s.SharedPublic); err != nil {
-	// 	return err
-	// }
-	// //
-	// // PublicCommits
-	// if err = util.ReadUint16(r, &arrLen); err != nil {
-	// 	return err
-	// }
-	// s.PublicCommits = make([]kyber.Point, arrLen)
-	// for i := uint16(0); i < arrLen; i++ {
-	// 	s.PublicCommits[i] = s.suite.G2().Point()
-	// 	if err = util.ReadMarshaled(r, s.PublicCommits[i]); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// //
-	// // PublicShares
-	// if err = util.ReadUint16(r, &arrLen); err != nil {
-	// 	return err
-	// }
-	// s.PublicShares = make([]kyber.Point, arrLen)
-	// for i := uint16(0); i < arrLen; i++ {
-	// 	s.PublicShares[i] = s.suite.G2().Point()
-	// 	if err = util.ReadMarshaled(r, s.PublicShares[i]); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// //
-	// // Private share.
-	// s.PrivateShare = s.suite.G2().Scalar()
-	// if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
-	// 	return err
-	// }
-	// //
-	// // NodePubKeys
-	// if err = util.ReadUint16(r, &arrLen); err != nil {
-	// 	return err
-	// }
-	// s.NodePubKeys = make([]*cryptolib.PublicKey, arrLen)
-	// for i := range s.NodePubKeys {
-	// 	var nodePubKeyBin []byte
-	// 	var nodePubKey *cryptolib.PublicKey
-	// 	if nodePubKeyBin, err = util.ReadBytes16(r); err != nil {
-	// 		return err
-	// 	}
-	// 	if nodePubKey, _, err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin); err != nil {
-	// 		return err
-	// 	}
-	// 	s.NodePubKeys[i] = &nodePubKey
-	// }
-	// return nil
+	var addrBytes [iotago.Ed25519AddressBytesLength]byte
+	var arrLen uint16
+	if n, err := r.Read(addrBytes[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
+		return err
+	}
+	if s.Address, _, err = iscp.AddressFromBytes(addrBytes[:]); err != nil {
+		return err
+	}
+	var index uint16
+	if err := util.ReadUint16(r, &index); err != nil {
+		return err
+	}
+	s.Index = &index
+	if err := util.ReadUint16(r, &s.N); err != nil {
+		return err
+	}
+	if err := util.ReadUint16(r, &s.T); err != nil {
+		return err
+	}
+	s.SharedPublic = s.suite.G2().Point()
+	if err := util.ReadMarshaled(r, s.SharedPublic); err != nil {
+		return err
+	}
+	//
+	// PublicCommits
+	if err := util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	s.PublicCommits = make([]kyber.Point, arrLen)
+	for i := uint16(0); i < arrLen; i++ {
+		s.PublicCommits[i] = s.suite.G2().Point()
+		if err := util.ReadMarshaled(r, s.PublicCommits[i]); err != nil {
+			return err
+		}
+	}
+	//
+	// PublicShares
+	if err := util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	s.PublicShares = make([]kyber.Point, arrLen)
+	for i := uint16(0); i < arrLen; i++ {
+		s.PublicShares[i] = s.suite.G2().Point()
+		if err := util.ReadMarshaled(r, s.PublicShares[i]); err != nil {
+			return err
+		}
+	}
+	//
+	// Private share.
+	s.PrivateShare = s.suite.G2().Scalar()
+	if err := util.ReadMarshaled(r, s.PrivateShare); err != nil {
+		return err
+	}
+	//
+	// NodePubKeys
+	if err := util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	s.NodePubKeys = make([]*cryptolib.PublicKey, arrLen)
+	for i := range s.NodePubKeys {
+		var nodePubKeyBin []byte
+		var nodePubKey *cryptolib.PublicKey
+		if nodePubKeyBin, err = util.ReadBytes16(r); err != nil {
+			return err
+		}
+		if nodePubKey, err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin); err != nil {
+			return err
+		}
+		s.NodePubKeys[i] = nodePubKey
+	}
+	return nil
 }
 
 // SignShare signs the data with the own key share.

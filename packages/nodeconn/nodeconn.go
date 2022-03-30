@@ -13,15 +13,16 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -34,24 +35,54 @@ type nodeConn struct {
 	chains     map[string]*ncChain // key = iotago.Address.Key()
 	chainsLock sync.RWMutex
 	nodeClient *nodeclient.Client
-	nodeEvents *iotagox.NodeEventAPIClient
+	nodeEvents *nodeclient.EventAPIClient
 	milestones *events.Event
-	net        peering.NetworkProvider
+	l1params   *parameters.L1
 	log        *logger.Logger
+	config     L1Config
 }
 
 var _ chain.NodeConnection = &nodeConn{}
 
-func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger.Logger) chain.NodeConnection {
+func L1ParamsFromInfoResp(info *nodeclient.InfoResponse) *parameters.L1 {
+	return &parameters.L1{
+		NetworkName:        info.Protocol.NetworkName,
+		NetworkID:          iotago.NetworkIDFromString(info.Protocol.NetworkName),
+		Bech32Prefix:       iotago.NetworkPrefix(info.Protocol.Bech32HRP),
+		MaxTransactionSize: 32000, // TODO should be some const from iotago
+		DeSerializationParameters: &iotago.DeSerializationParameters{
+			RentStructure: &info.Protocol.RentStructure,
+		},
+	}
+}
+
+func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
+	t := defaultTimeout
+	if len(timeout) > 0 {
+		t = timeout[0]
+	}
+	return context.WithTimeout(context.Background(), t)
+}
+
+func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
+	return newNodeConn(config, log, timeout...)
+}
+
+func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeClient := nodeclient.New(
-		fmt.Sprintf("http://%s:%d", nodeHost, nodePort),
-		iotago.ZeroRentParas, // TODO: ...
-		nodeclient.WithIndexer(),
-	)
-	nodeEvents := iotagox.NewNodeEventAPIClient(
-		fmt.Sprintf("ws://%s:%d/mqtt", nodeHost, nodePort),
-	)
+	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
+
+	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	defer cancelContext()
+	l1Info, err := nodeClient.Info(ctxWithTimeout)
+	if err != nil {
+		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
+	}
+
+	nodeEvents, err := nodeClient.EventAPI(ctx)
+	if err != nil {
+		panic(xerrors.Errorf("error getting node event client: %w", err))
+	}
 	nc := nodeConn{
 		ctx:        ctx,
 		ctxCancel:  ctxCancel,
@@ -60,16 +91,21 @@ func New(nodeHost string, nodePort int, net peering.NetworkProvider, log *logger
 		nodeClient: nodeClient,
 		nodeEvents: nodeEvents,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*iotagox.MilestonePointer))
+			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
-		net: net,
-		log: log.Named("nc"),
+		l1params: L1ParamsFromInfoResp(l1Info),
+		log:      log.Named("nc"),
+		config:   config,
 	}
 	go nc.run()
 	return &nc
 }
 
-// RegisterChain implements chain.NodeConnection. // TODO -> ConnectChain.
+func (nc *nodeConn) L1Params() *parameters.L1 {
+	return nc.l1params
+}
+
+// RegisterChain implements chain.NodeConnection.
 func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) {
 	ncc := newNCChain(nc, chainAddr, outputHandler)
 	nc.chainsLock.Lock()
@@ -77,7 +113,7 @@ func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(i
 	nc.chains[ncc.Key()] = ncc
 }
 
-// UnregisterChain implements chain.NodeConnection. // TODO -> DisconnectChain.
+// UnregisterChain implements chain.NodeConnection.
 func (nc *nodeConn) UnregisterChain(chainAddr iotago.Address) {
 	nccKey := chainAddr.Key()
 	nc.chainsLock.Lock()
@@ -96,7 +132,7 @@ func (nc *nodeConn) PublishTransaction(chainAddr iotago.Address, stateIndex uint
 	if !ok {
 		return xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
 	}
-	return ncc.PublishTransaction(stateIndex, tx)
+	return ncc.PublishTransaction(tx)
 }
 
 func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
@@ -153,4 +189,56 @@ func (nc *nodeConn) PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInpu
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	// TODO
 	return nil
+}
+
+const pollConfirmedTxInterval = 200 * time.Millisecond
+
+// waitUntilConfirmed waits until a given tx message is confirmed, it takes care of promotions/re-attachments for that message
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Message) error {
+	// wait until tx is confirmed
+	msgID, err := txMsg.ID()
+	if err != nil {
+		return xerrors.Errorf("failed to get msg ID: %w", err)
+	}
+
+	// poll the node by getting `MessageMetadataByMessageID`
+	for {
+		metadataResp, err := nc.nodeClient.MessageMetadataByMessageID(ctx, *msgID)
+		if err != nil {
+			return xerrors.Errorf("failed to get msg metadata: %w", err)
+		}
+
+		if metadataResp.ReferencedByMilestoneIndex != nil {
+			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
+				return nil
+			}
+			return xerrors.Errorf("tx was not included in the ledger")
+		}
+		// reattach or promote if needed
+		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
+			// create an empty message and the messageID as one of the parents
+			promotionMsg, err := builder.NewMessageBuilder().Parents([][]byte{msgID[:]}).Build()
+			if err != nil {
+				return xerrors.Errorf("failed to build promotion message: %w", err)
+			}
+			_, err = nc.nodeClient.SubmitMessage(ctx, promotionMsg, nc.l1params.DeSerializationParameters)
+			if err != nil {
+				return xerrors.Errorf("failed to promote msg: %w", err)
+			}
+		}
+		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
+			// remote PoW: Take the message, clear parents, clear nonce, send to node
+			txMsg.Parents = nil
+			txMsg.Nonce = 0
+			txMsg, err = nc.nodeClient.SubmitMessage(ctx, txMsg, nc.l1params.DeSerializationParameters)
+			if err != nil {
+				return xerrors.Errorf("failed to get re-attach msg: %w", err)
+			}
+		}
+
+		if err = ctx.Err(); err != nil {
+			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
+		}
+		time.Sleep(pollConfirmedTxInterval)
+	}
 }

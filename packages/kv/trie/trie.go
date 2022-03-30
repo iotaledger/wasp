@@ -9,6 +9,7 @@ package trie
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
 )

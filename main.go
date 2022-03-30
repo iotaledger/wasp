@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/config"
-	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
@@ -27,7 +26,6 @@ import (
 
 func main() {
 	params := parameters.Init()
-	registry.InitFlags()
 
 	plugins := node.Plugins(
 		banner.Init(),
@@ -47,7 +45,7 @@ func main() {
 		metrics.Init(),
 		webapi.Init(),
 		publishernano.Init(),
-		dashboard.Init(),
+		// dashboard.Init(), // TODO fix
 		profiling.Init(),
 	)
 

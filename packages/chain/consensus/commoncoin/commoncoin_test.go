@@ -22,7 +22,7 @@ func TestBlsCommonCoin(t *testing.T) {
 	ccs := make([]hbbft.CommonCoin, len(netIDs))
 	salt := []byte{0, 1, 2, 3}
 	for i := range ccs {
-		var dkShare *tcrypto.DKShare
+		var dkShare tcrypto.DKShare
 		dkShare, err = regProviders[i].LoadDKShare(address)
 		require.NoError(t, err)
 		ccs[i] = commoncoin.NewBlsCommonCoin(dkShare, salt, true)

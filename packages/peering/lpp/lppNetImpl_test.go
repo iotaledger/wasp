@@ -4,10 +4,11 @@
 package lpp_test
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"context"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -43,7 +44,7 @@ func TestLPPPeeringImpl(t *testing.T) {
 	nodes[2], _, err = lpp.NewNetworkProvider(netIDs[2], 9029, keys[2], tnms[2], log.Named("node2"))
 	require.NoError(t, err)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 
 	n0p2, err := nodes[0].PeerByPubKey(keys[2].GetPublicKey())

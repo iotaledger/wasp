@@ -61,7 +61,7 @@ func Init() *node.Plugin {
 			panic(err)
 		}
 	}
-	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, nil, node.Enabled, configure, run)
 }
 
 // DefaultNetworkProvider returns the default network provider implementation.

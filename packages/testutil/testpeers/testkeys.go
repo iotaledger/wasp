@@ -5,12 +5,12 @@ package testpeers
 
 import (
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"io"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"

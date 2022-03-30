@@ -13,46 +13,46 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
+
+// TODO privtangle tests might conflict with cluster tests when running in parallel, check..
 
 func TestHornetStartup(t *testing.T) {
 	ctx := context.Background()
 	tempDir := filepath.Join(os.TempDir(), "wasp-hornet-private_tangle")
 	pt := privtangle.Start(ctx, tempDir, 16500, 3, t)
 
-	time.Sleep(3 * time.Second)
-
-	//
-	// Assert the node health.
-	node0 := pt.NodeClient(0)
-	health, err := node0.Health(ctx)
-	require.NoError(t, err)
-	require.True(t, health)
-
 	//
 	// Try call the faucet.
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nodeEvt := iotagox.NewNodeEventAPIClient(fmt.Sprintf("ws://localhost:%d/mqtt", pt.NodePortRestAPI(0)))
+	nc := nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(0)))
+	nodeEvt, err := nc.EventAPI(ctx)
+	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
-	myAddressOutputsCh := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, iscp.NetworkPrefix, iotagox.UnlockConditionAny)
+	l1Info, err := nc.Info(ctx)
+	require.NoError(t, err)
 
-	initialOutputCount := mustOutputCount(ctx, pt, node0, myAddress)
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
 
+	log := testlogger.NewSilentLogger(t.Name(), true)
+	client := nodeconn.NewL1Client(pt.L1Config(), log)
+
+	initialOutputCount := mustOutputCount(client, myAddress)
 	//
 	// Check if faucet requests are working.
-	pt.PostFaucetRequest(ctx, myAddress, iscp.NetworkPrefix)
+	client.RequestFunds(myAddress)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
-		if initialOutputCount != mustOutputCount(ctx, pt, node0, myAddress) {
+		if initialOutputCount != mustOutputCount(client, myAddress) {
 			break
 		}
 	}
@@ -62,13 +62,14 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	msg, err := pt.PostSimpleValueTX(ctx, node0, pt.FaucetKeyPair, myAddress, 50000)
+	tx, err := nodeconn.MakeSimpleValueTX(client, pt.FaucetKeyPair, myAddress, 50000)
 	require.NoError(t, err)
-	t.Logf("Posted messageID=%v", msg.MustID())
+	err = client.PostTx(tx)
+	require.NoError(t, err)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
-		if initialOutputCount != mustOutputCount(ctx, pt, node0, myAddress) {
+		if initialOutputCount != mustOutputCount(client, myAddress) {
 			break
 		}
 	}
@@ -77,12 +78,12 @@ func TestHornetStartup(t *testing.T) {
 	t.Logf("Waiting for output event, done: %+v", outs)
 }
 
-func mustOutputCount(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) int {
-	return len(mustOutputMap(ctx, pt, node0, myAddress))
+func mustOutputCount(client nodeconn.L1Client, myAddress *iotago.Ed25519Address) int {
+	return len(mustOutputMap(client, myAddress))
 }
 
-func mustOutputMap(ctx context.Context, pt *privtangle.PrivTangle, node0 *nodeclient.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
-	outs, err := pt.OutputMap(ctx, node0, myAddress)
+func mustOutputMap(client nodeconn.L1Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
+	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))
 	}

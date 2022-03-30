@@ -26,7 +26,7 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
 
 	server.GET(routes.RequestStatus(":chainID", ":reqID"), r.handleRequestStatus).
 		SetSummary("Get the processing status of a given request in the node").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (hex)").
 		AddParamPath("", "reqID", "Request ID (base58)").
 		AddResponse(http.StatusOK, "Request status", model.RequestStatusResponse{}, nil)
 

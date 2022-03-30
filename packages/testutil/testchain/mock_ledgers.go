@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 )
 
@@ -22,7 +22,7 @@ func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLe
 		ledgers:      make(map[string]*MockedLedger),
 		stateAddress: stateAddress,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*iotagox.MilestonePointer))
+			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
 		log: log.Named("mls"),
 	}
@@ -58,7 +58,7 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 			mlT.log.Debugf("Milestone %v reached", milestone)
 		}
 		time.Sleep(100 * time.Millisecond)
-		mlT.milestones.Trigger(&iotagox.MilestonePointer{
+		mlT.milestones.Trigger(&nodeclient.MilestonePointer{
 			Index:     milestone,
 			Timestamp: uint64(time.Now().UnixNano()),
 		})

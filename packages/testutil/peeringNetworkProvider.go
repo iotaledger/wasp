@@ -4,6 +4,7 @@
 package testutil
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -179,8 +180,8 @@ func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peer
 }
 
 // Run implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) Run(stopCh <-chan struct{}) {
-	<-stopCh
+func (p *peeringNetworkProvider) Run(ctx context.Context) {
+	<-ctx.Done()
 }
 
 // Self implements peering.NetworkProvider.

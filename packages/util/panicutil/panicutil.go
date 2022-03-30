@@ -1,10 +1,11 @@
 package panicutil
 
 import (
+	"runtime/debug"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
-	"runtime/debug"
 )
 
 func CatchPanicReturnError(fun func(), catchErrors ...error) error {

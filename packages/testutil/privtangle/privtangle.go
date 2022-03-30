@@ -5,28 +5,31 @@
 package privtangle
 
 import (
-	"bytes"
+	"bufio"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
 )
+
+// requires hornet, inx-mqtt and inx-indexer binaries to be in PATH
+// https://github.com/gohornet/hornet
+// https://github.com/gohornet/inx-mqtt
+// https://github.com/gohornet/inx-indexer
 
 const (
 	nodePortOffsetRestAPI = iota
@@ -36,6 +39,9 @@ const (
 	nodePortOffsetPrometheus
 	nodePortOffsetFaucet
 	nodePortOffsetMQTT
+	nodePortOffsetMQTTWebSocket
+	nodePortOffsetIndexer
+	nodePortOffsetINX
 )
 
 type PrivTangle struct {
@@ -50,8 +56,6 @@ type PrivTangle struct {
 	NodeCount     int
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
-	NodeStdouts   []io.ReadCloser
-	NodeStderrs   []io.ReadCloser
 	ctx           context.Context
 	t             *testing.T
 }
@@ -69,8 +73,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		NodeCount:     nodeCount,
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
-		NodeStdouts:   make([]io.ReadCloser, nodeCount),
-		NodeStderrs:   make([]io.ReadCloser, nodeCount),
 		ctx:           ctx,
 		t:             t,
 	}
@@ -91,9 +93,14 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 	}
 	pt.logf("Starting... Done, all nodes started.")
 
-	time.Sleep(500 * time.Millisecond) // Just to decrease noise in the logs.
 	pt.WaitAllAlive()
 	pt.logf("Starting... Done, all nodes alive.")
+
+	for i := range pt.NodeKeyPairs {
+		pt.startIndexer(i)
+		pt.startMqtt(i)
+	}
+	pt.WaitInxPlugins()
 
 	// Close when the test ends
 	if t != nil {
@@ -121,9 +128,9 @@ func (pt *PrivTangle) generateSnapshot() {
 
 func (pt *PrivTangle) startNode(i int) {
 	env := []string{}
-	plugins := "MQTT,Debug,Prometheus,Indexer"
+	plugins := "INX,Debug,Prometheus"
 	if i == 0 {
-		plugins = "Coordinator,MQTT,Debug,Prometheus,Faucet,Indexer"
+		plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
 		env = append(env,
 			fmt.Sprintf("COO_PRV_KEYS=%s,%s",
 				hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
@@ -180,7 +187,7 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.bindAddress=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
-		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
@@ -192,58 +199,106 @@ func (pt *PrivTangle) startNode(i int) {
 		)
 	}
 	hornetCmd := exec.CommandContext(pt.ctx, "hornet", args...)
+	// kill hornet cmd if the go test process is killed
+	hornetCmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
 	hornetCmd.Env = os.Environ()
 	hornetCmd.Env = append(hornetCmd.Env, env...)
 	hornetCmd.Dir = nodePath
-	stdout, err := hornetCmd.StdoutPipe()
-	if err != nil {
-		panic(xerrors.Errorf("Unable to get stdout for HORNET[%d]: %w", i, err))
-	}
-	stderr, err := hornetCmd.StderrPipe()
-	if err != nil {
-		panic(xerrors.Errorf("Unable to get stdout for HORNET[%d]: %w", i, err))
-	}
 	pt.NodeCommands[i] = hornetCmd
-	pt.NodeStdouts[i] = stdout
-	pt.NodeStderrs[i] = stderr
+
+	writeOutputToFiles(nodePath, hornetCmd)
+
 	if err := hornetCmd.Start(); err != nil {
 		panic(xerrors.Errorf("Cannot start hornet node[%d]: %w", i, err))
 	}
 }
 
+func (pt *PrivTangle) startIndexer(i int) {
+	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-indexer")
+
+	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
+	}
+
+	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
+		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+	}
+
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		fmt.Sprintf("--indexer.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
+	}
+
+	indexerCmd := exec.CommandContext(pt.ctx, "inx-indexer", args...)
+	// kill indexer cmd if the go test process is killed
+	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
+	indexerCmd.Dir = indexerPath
+
+	writeOutputToFiles(indexerPath, indexerCmd)
+
+	if err := indexerCmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
+	}
+}
+
+func (pt *PrivTangle) startMqtt(i int) {
+	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-mqtt")
+
+	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
+	}
+
+	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
+		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+	}
+
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+		fmt.Sprintf("--mqtt.wsPort=%d", pt.NodePortMQTTWebSocket(i)),
+	}
+
+	indexerCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
+	// kill indexer cmd if the go test process is killed
+	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
+	indexerCmd.Dir = indexerPath
+
+	writeOutputToFiles(indexerPath, indexerCmd)
+
+	if err := indexerCmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
+	}
+}
+
 func (pt *PrivTangle) Stop() {
 	pt.logf("Stopping...")
-	printOutput := func(i int) {
-		stdoutData, _ := io.ReadAll(pt.NodeStdouts[i])
-		stderrData, _ := io.ReadAll(pt.NodeStderrs[i])
-		pt.logf("Node[%d] stdout=%s", i, stdoutData)
-		pt.logf("Node[%d] stderr=%s", i, stderrData)
-	}
 	for i, c := range pt.NodeCommands {
 		if err := c.Process.Signal(os.Interrupt); err != nil {
-			printOutput(i)
 			panic(xerrors.Errorf("Unable to send INT signal to Hornet node [%d]: %w", i, err))
 		}
 	}
 	for i, c := range pt.NodeCommands {
 		if err := c.Wait(); err != nil {
-			printOutput(i)
 			panic(xerrors.Errorf("Failed while waiting for a HORNET node [%d]: %w", i, err))
 		}
 		if !c.ProcessState.Success() {
-			printOutput(i)
 			panic(xerrors.Errorf("Hornet node [%d] failed: %w", i, c.ProcessState.String()))
 		}
 	}
 	pt.logf("Stopping... Done")
 }
 
-func (pt *PrivTangle) NodeClient(i int) *nodeclient.Client {
-	return nodeclient.New(
-		fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)),
-		iotago.ZeroRentParas,
-		nodeclient.WithIndexer(),
-	)
+func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
+	return nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
 }
 
 // The health endpoint is not working for now.
@@ -257,7 +312,7 @@ func (pt *PrivTangle) waitAllReturnTips() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
-			_, err := pt.NodeClient(i).Tips(pt.ctx)
+			_, err := pt.nodeClient(i).Tips(pt.ctx)
 			if err != nil && pt.t != nil {
 				pt.logf("Node[%d] is not ready yet: %v", i, err)
 			}
@@ -277,7 +332,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
-			ok, err := pt.NodeClient(i).Health(pt.ctx)
+			ok, err := pt.nodeClient(i).Health(pt.ctx)
 			if err != nil && pt.t != nil {
 				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
@@ -295,13 +350,40 @@ func (pt *PrivTangle) waitAllHealthy() {
 	}
 }
 
+func (pt *PrivTangle) WaitInxPlugins() {
+	for {
+		allOK := true
+		for i := range pt.NodeCommands {
+			// indexer
+			_, err := pt.nodeClient(i).Indexer(pt.ctx)
+			if err != nil {
+				allOK = false
+				continue
+			}
+			// mqtt
+			_, err = pt.nodeClient(i).EventAPI(pt.ctx)
+			if err != nil {
+				allOK = false
+				continue
+			}
+		}
+		if allOK {
+			return
+		}
+		if pt.t != nil {
+			pt.logf("Waiting to all nodes INX plugings to startup.")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func (pt *PrivTangle) NodeMultiAddr(i int) string {
 	stdPrivKey := pt.NodeKeyPairs[i].GetPrivateKey().AsStdKey()
 	lppPrivKey, _, err := crypto.KeyPairFromStdKey(&stdPrivKey)
 	if err != nil {
 		panic(xerrors.Errorf("Unable to convert privKey to the standard priv key."))
 	}
-	tmpNode, err := libp2p.New(context.Background(), libp2p.Identity(lppPrivKey))
+	tmpNode, err := libp2p.New(libp2p.Identity(lppPrivKey))
 	if err != nil {
 		panic(xerrors.Errorf("Unable to create temporary p2p node: %v", err))
 	}
@@ -348,148 +430,82 @@ func (pt *PrivTangle) NodePortMQTT(i int) int {
 	return pt.BasePort + i*10 + nodePortOffsetMQTT
 }
 
+func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetMQTTWebSocket
+}
+
+func (pt *PrivTangle) NodePortIndexer(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetIndexer
+}
+
+func (pt *PrivTangle) NodePortINX(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetINX
+}
+
 func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	if pt.t != nil {
 		pt.t.Logf("HORNET Cluster: "+msg, args...)
 	}
 }
 
-// PostFaucetRequest makes a faucet request.
-// It is here mostly as an example. Simple value TX is processed faster, and should be used in tests instead.
-// Example:
-//
-//    PostFaucetRequest(context.Background(), cryptolib.Ed25519AddressFromPubKey(myKeyPair.PublicKey), iotago.PrefixTestnet)
-//
-func (pt *PrivTangle) PostFaucetRequest(ctx context.Context, recipientAddr iotago.Address, netPrefix iotago.NetworkPrefix) error {
-	faucetReq := fmt.Sprintf("{\"address\":%q}", recipientAddr.Bech32(netPrefix))
-	faucetURL := fmt.Sprintf("http://localhost:%d/api/plugins/faucet/v1/enqueue", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
-	if err != nil {
-		return xerrors.Errorf("unable to create request: %w", err)
+func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
+	nodeIndex := 0
+	if len(i) > 0 {
+		nodeIndex = i[0]
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return xerrors.Errorf("unable to call faucet: %w", err)
+	return nodeconn.L1Config{
+		Hostname:   "localhost",
+		APIPort:    pt.NodePortRestAPI(nodeIndex),
+		FaucetPort: pt.NodePortFaucet(nodeIndex),
+		FaucetKey:  pt.FaucetKeyPair,
 	}
-	if res.StatusCode == 202 {
-		return nil
-	}
-	resBody, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if err != nil {
-		return xerrors.Errorf("faucet status=%v, unable to read response body: %w", res.Status, err)
-	}
-	return xerrors.Errorf("faucet call failed, responPrivateKeyse status=%v, body=%v", res.Status, resBody)
 }
 
-func (pt *PrivTangle) RequestFunds(addr iotago.Address) error {
-	return pt.PostFaucetRequest(context.TODO(), addr, iscp.NetworkPrefix)
-}
-
-func (pt *PrivTangle) PostTx(ctx context.Context, tx *iotago.Transaction, nc ...*nodeclient.Client) (*iotago.Message, error) {
-	nodeClient := pt.NodeClient(0)
-	if len(nc) > 0 {
-		nodeClient = nc[0]
-	}
-	//
-	// Build a message and post it.
-	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
+func writeOutputToFiles(path string, cmd *exec.Cmd) {
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
+		panic(xerrors.Errorf("Unable to get stdout for HORNET [path: %s]: %w", path, err))
 	}
-	txMsg, err = nodeClient.SubmitMessage(ctx, txMsg)
+	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
+		panic(xerrors.Errorf("Unable to get stdout for HORNET[path: %s]: %w", path, err))
 	}
-	return txMsg, nil
-}
-
-// PostSimpleValueTX submits a simple value transfer TX.
-// Can be used instead of the faucet API if the genesis key is known.
-func (pt *PrivTangle) PostSimpleValueTX(
-	ctx context.Context,
-	nc *nodeclient.Client,
-	sender *cryptolib.KeyPair,
-	recipientAddr iotago.Address,
-	amount uint64,
-) (*iotago.Message, error) {
-	tx, err := pt.MakeSimpleValueTX(ctx, nc, sender, recipientAddr, amount)
+	outFilePath := filepath.Join(path, "log.txt")
+	outFile, err := os.Create(outFilePath)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx: %w", err)
+		panic(err)
 	}
-	return pt.PostTx(ctx, tx, nc)
-}
-
-func (pt *PrivTangle) MakeSimpleValueTX(
-	ctx context.Context,
-	nc *nodeclient.Client,
-	sender *cryptolib.KeyPair,
-	recipientAddr iotago.Address,
-	amount uint64,
-) (*iotago.Transaction, error) {
-	senderAddr := sender.GetPublicKey().AsEd25519Address()
-	senderOuts, err := pt.OutputMap(ctx, nc, senderAddr)
+	errFilePath := filepath.Join(path, "errors.txt")
+	errFile, err := os.Create(errFilePath)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get address outputs: %w", err)
+		panic(err)
 	}
-	txBuilder := iotagob.NewTransactionBuilder(
-		iotago.NetworkIDFromString(pt.NetworkID),
+	go scanLog(
+		stderr,
+		func(line string) {
+			_, err := errFile.WriteString(fmt.Sprintln(line))
+			if err != nil {
+				panic(xerrors.Errorf("error writing to file %s: %w", errFilePath, err))
+			}
+		},
 	)
-	inputSum := uint64(0)
-	for i, o := range senderOuts {
-		if inputSum >= amount {
-			break
-		}
-		oid := i
-		out := o
-		txBuilder = txBuilder.AddInput(&iotagob.ToBeSignedUTXOInput{
-			Address:  senderAddr,
-			OutputID: oid,
-			Output:   out,
-		})
-		inputSum += out.Deposit()
-	}
-	if inputSum < amount {
-		return nil, xerrors.Errorf("not enough funds, have=%v, need=%v", inputSum, amount)
-	}
-	txBuilder = txBuilder.AddOutput(&iotago.BasicOutput{
-		Amount:     amount,
-		Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: recipientAddr}},
-	})
-	if inputSum > amount {
-		txBuilder = txBuilder.AddOutput(&iotago.BasicOutput{
-			Amount:     inputSum - amount,
-			Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: senderAddr}},
-		})
-	}
-	tx, err := txBuilder.Build(
-		iotago.ZeroRentParas,
-		sender.AsAddressSigner(),
+	go scanLog(
+		stdout,
+		func(line string) {
+			_, err := outFile.WriteString(fmt.Sprintln(line))
+			if err != nil {
+				panic(xerrors.Errorf("error writing to file %s: %w", outFilePath, err))
+			}
+		},
 	)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx: %w", err)
-	}
-	return tx, nil
 }
 
-func (pt *PrivTangle) OutputMap(ctx context.Context, node0 *nodeclient.Client, myAddress iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
-	res, err := node0.Indexer().Outputs(ctx, &nodeclient.OutputsQuery{
-		AddressBech32: myAddress.Bech32(iscp.NetworkPrefix),
-	})
-	if err != nil {
-		return nil, xerrors.Errorf("failed to query address outputs: %w", err)
-	}
-	result := make(map[iotago.OutputID]iotago.Output)
-	for res.Next() {
-		outs, err := res.Outputs()
-		if err != nil {
-			return nil, xerrors.Errorf("failed to fetch address outputs: %w", err)
-		}
-		oids := res.Response.Items.MustOutputIDs()
-		for i, o := range outs {
-			result[oids[i]] = o
+func scanLog(reader io.Reader, hooks ...func(string)) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		for _, hook := range hooks {
+			hook(line)
 		}
 	}
-	return result, nil
 }

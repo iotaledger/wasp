@@ -11,7 +11,6 @@ import (
 )
 
 // nc_transaction maintains L1-connection related info on single message, e.g.
-// promotion status, need for reattachment, etc.
 type ncTransaction struct {
 	tx *iotago.TransactionEssence
 }

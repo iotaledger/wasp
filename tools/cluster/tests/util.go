@@ -95,7 +95,7 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, node
 		return 0
 	}
 
-	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID[:])), 0)
+	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID)), 0)
 	require.NoError(e.t, err)
 
 	return actual

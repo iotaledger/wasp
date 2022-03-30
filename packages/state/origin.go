@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/hex"
+
 	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 

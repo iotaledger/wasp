@@ -59,8 +59,8 @@ func TestBasic(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
 }
 
 // TestUnreliableNet checks, if DKG runs on an unreliable network.
@@ -110,8 +110,8 @@ func TestUnreliableNet(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
 }
 
 // TestLowN checks, if the DKG works with N=1 and other low values. N=1 is a special case.
@@ -153,7 +153,7 @@ func TestLowN(t *testing.T) {
 			timeout,
 		)
 		require.Nil(t, err)
-		require.NotNil(t, dkShare.Address)
-		require.NotNil(t, dkShare.SharedPublic)
+		require.NotNil(t, dkShare.GetAddress())
+		require.NotNil(t, dkShare.GetSharedPublic())
 	}
 }

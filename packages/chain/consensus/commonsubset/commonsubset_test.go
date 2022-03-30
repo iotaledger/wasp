@@ -52,7 +52,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	t.Logf("Network created.")
 
 	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
-	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
+	dkShares := make([]tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestRandomized(t *testing.T) {
 	t.Logf("Network created.")
 
 	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
-	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
+	dkShares := make([]tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
 		require.NoError(t, err)
@@ -196,7 +196,7 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	t.Logf("Network created.")
 
 	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
-	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
+	dkShares := make([]tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
 		require.NoError(t, err)

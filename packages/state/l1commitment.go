@@ -2,6 +2,7 @@ package state
 
 import (
 	"bytes"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 )

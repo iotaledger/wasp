@@ -4,11 +4,18 @@
 package admapi
 
 import (
+	"fmt"
+	"net/http"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -18,79 +25,62 @@ import (
 )
 
 type chainWebAPI struct {
-	registry   registry.Provider
-	chains     chains.Provider
-	network    peering.NetworkProvider
-	allMetrics *metrics.Metrics
-	w          *wal.WAL
+	registry      registry.Provider
+	chains        chains.Provider
+	network       peering.NetworkProvider
+	allMetrics    *metrics.Metrics
+	w             *wal.WAL
+	networkPrefix iotago.NetworkPrefix
 }
 
-func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider, network peering.NetworkProvider, allMetrics *metrics.Metrics, w *wal.WAL) {
-	c := &chainWebAPI{
-		registryProvider,
-		chainsProvider,
-		network,
-		allMetrics,
-		w,
-	}
-
+func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {
 	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Activate a chain")
 
 	adm.POST(routes.DeactivateChain(":chainID"), c.handleDeactivateChain).
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Deactivate a chain")
 
 	adm.GET(routes.GetChainInfo(":chainID"), c.handleGetChainInfo).
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Get basic chain info.")
 }
 
 func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
-	panic("TODO implement")
-	// aliasAddress, err := iotago.AliasAddressFromBase58EncodedString(c.Param("chainID"))
-	// if err != nil {
-	// 	return httperrors.BadRequest(fmt.Sprintf("Invalid alias address: %s", c.Param("chainID")))
-	// }
-	// chainID, err := iscp.ChainIDFromAddress(aliasAddress)
-	// if err != nil {
-	// 	return err
-	// }
-	// rec, err := w.registry().ActivateChainRecord(chainID)
-	// if err != nil {
-	// 	return err
-	// }
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	if err != nil {
+		return err
+	}
+	rec, err := w.registry().ActivateChainRecord(chainID)
+	if err != nil {
+		return err
+	}
 
-	// log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
-	// if err := w.chains().Activate(rec, w.registry, w.allMetrics, w.w); err != nil {
-	// 	return err
-	// }
+	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
+	if err := w.chains().Activate(rec, w.registry, w.allMetrics, w.w); err != nil {
+		return err
+	}
 
-	// return c.NoContent(http.StatusOK)
+	return c.NoContent(http.StatusOK)
 }
 
 func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
-	panic("TODO implement")
-	// scAddress, err := iotago.AddressFromBase58EncodedString(c.Param("chainID"))
-	// if err != nil {
-	// 	return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
-	// }
-	// chainID, err := iscp.ChainIDFromAddress(scAddress)
-	// if err != nil {
-	// 	return err
-	// }
-	// bd, err := w.registry().DeactivateChainRecord(chainID)
-	// if err != nil {
-	// 	return err
-	// }
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	if err != nil {
+		return err
+	}
+	bd, err := w.registry().DeactivateChainRecord(chainID)
+	if err != nil {
+		return err
+	}
 
-	// err = w.chains().Deactivate(bd)
-	// if err != nil {
-	// 	return err
-	// }
+	err = w.chains().Deactivate(bd)
+	if err != nil {
+		return err
+	}
 
-	// return c.NoContent(http.StatusOK)
+	return c.NoContent(http.StatusOK)
 }
 
 func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
@@ -145,7 +135,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	res := model.ChainInfo{
 		ChainID:        model.ChainID(chainID.String()),
 		Active:         chainRecord.Active,
-		StateAddress:   model.NewAddress(committeeInfo.Address),
+		StateAddress:   model.NewAddress(committeeInfo.Address, w.networkPrefix),
 		CommitteeNodes: cmtNodes,
 		AccessNodes:    acnNodes,
 		CandidateNodes: cndNodes,
@@ -155,21 +145,21 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 }
 
 func makeCmtNodes(
-	dkShare *tcrypto.DKShare,
+	dkShare tcrypto.DKShare,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
 ) []*model.ChainNodeStatus {
 	cmtNodes := make([]*model.ChainNodeStatus, 0)
-	for _, cmtNodePubKey := range dkShare.NodePubKeys {
+	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
 		cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
-		inChainNodes[cmtNodePubKey] = true
+		inChainNodes[cmtNodePubKey.AsKey()] = true
 	}
 	return cmtNodes
 }
 
 func makeAcnNodes(
-	dkShare *tcrypto.DKShare,
+	dkShare tcrypto.DKShare,
 	chainNodes []peering.PeerStatusProvider,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
@@ -179,8 +169,8 @@ func makeAcnNodes(
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
 		skip := false
-		for _, cmtNodePubKey := range dkShare.NodePubKeys {
-			if bytes.Equal(*acnPubKey, *cmtNodePubKey) {
+		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+			if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
 				skip = true
 				break
 			}
@@ -208,7 +198,7 @@ func makeCndNodes(
 		if _, ok := inChainNodes[pubKey.AsKey()]; ok {
 			continue // Only include unused candidates here.
 		}
-		cndNodes = append(cndNodes, makeChainNodeStatus(&pubKey, peeringStatus, candidateNodes))
+		cndNodes = append(cndNodes, makeChainNodeStatus(pubKey, peeringStatus, candidateNodes))
 	}
 	return cndNodes, nil
 }

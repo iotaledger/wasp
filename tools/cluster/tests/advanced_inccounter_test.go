@@ -33,12 +33,12 @@ type advancedInccounterEnv struct {
 func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *advancedInccounterEnv {
 	quorum := uint16((2*len(committee))/3 + 1)
 
-	clu := newCluster(t, clusterSize)
+	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	t.Logf("generated state address: %s", addr.Bech32(iscp.NetworkPrefix))
+	t.Logf("generated state address: %s", addr.Bech32(clu.L1Client().L1Params().Bech32Prefix))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
@@ -270,14 +270,14 @@ func TestRotation(t *testing.T) {
 	cmt1 := []int{0, 1, 2, 3}
 	cmt2 := []int{2, 3, 4, 5}
 
-	clu := newCluster(t, 10)
+	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	addr1, err := clu.RunDKG(cmt1, 3)
 	require.NoError(t, err)
 	addr2, err := clu.RunDKG(cmt2, 3)
 	require.NoError(t, err)
 
-	t.Logf("addr1: %s", addr1.Bech32(iscp.NetworkPrefix))
-	t.Logf("addr2: %s", addr2.Bech32(iscp.NetworkPrefix))
+	t.Logf("addr1: %s", addr1.Bech32(clu.L1Client().L1Params().Bech32Prefix))
+	t.Logf("addr2: %s", addr2.Bech32(clu.L1Client().L1Params().Bech32Prefix))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
@@ -382,11 +382,11 @@ func TestRotationMany(t *testing.T) {
 	addrs := make([]iotago.Address, numCmt)
 
 	var err error
-	clu := newCluster(t, 10)
+	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	for i := range cmt {
 		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
 		require.NoError(t, err)
-		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(iscp.NetworkPrefix))
+		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(clu.L1Client().L1Params().Bech32Prefix))
 	}
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
