@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -188,4 +189,56 @@ func (nc *nodeConn) PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInpu
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	// TODO
 	return nil
+}
+
+const pollConfirmedTxInterval = 200 * time.Millisecond
+
+// waitUntilConfirmed waits until a given tx message is confirmed, it takes care of promotions/re-attachments for that message
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Message) error {
+	// wait until tx is confirmed
+	msgID, err := txMsg.ID()
+	if err != nil {
+		return xerrors.Errorf("failed to get msg ID: %w", err)
+	}
+
+	// poll the node by getting `MessageMetadataByMessageID`
+	for {
+		metadataResp, err := nc.nodeClient.MessageMetadataByMessageID(ctx, *msgID)
+		if err != nil {
+			return xerrors.Errorf("failed to get msg metadata: %w", err)
+		}
+
+		if metadataResp.ReferencedByMilestoneIndex != nil {
+			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
+				return nil
+			}
+			return xerrors.Errorf("tx was not included in the ledger")
+		}
+		// reattach or promote if needed
+		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
+			// create an empty message and the messageID as one of the parents
+			promotionMsg, err := builder.NewMessageBuilder().Parents([][]byte{msgID[:]}).Build()
+			if err != nil {
+				return xerrors.Errorf("failed to build promotion message: %w", err)
+			}
+			_, err = nc.nodeClient.SubmitMessage(ctx, promotionMsg, nc.l1params.DeSerializationParameters)
+			if err != nil {
+				return xerrors.Errorf("failed to promote msg: %w", err)
+			}
+		}
+		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
+			// remote PoW: Take the message, clear parents, clear nonce, send to node
+			txMsg.Parents = nil
+			txMsg.Nonce = 0
+			txMsg, err = nc.nodeClient.SubmitMessage(ctx, txMsg, nc.l1params.DeSerializationParameters)
+			if err != nil {
+				return xerrors.Errorf("failed to get re-attach msg: %w", err)
+			}
+		}
+
+		if err = ctx.Err(); err != nil {
+			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
+		}
+		time.Sleep(pollConfirmedTxInterval)
+	}
 }
