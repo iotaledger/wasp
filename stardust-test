@@ -11,11 +11,14 @@ PATHS=(\
     "packages/vm/core/evm/..." \
     "packages/vm/vmcontext/..." \
     "packages/peering/..." \
+    "packages/chain/chainimpl/" \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/chain/consensus/" \
     "packages/utxodb/" \
     "packages/evm/jsonrpc/jsonrpctest" \
+    "packages/nodeconn" \
+    "packages/testutil/privtangle" \
 )
 WD=$PWD
 

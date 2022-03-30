@@ -35,30 +35,13 @@ type ChainCore interface {
 	GetStateReader() state.OptimisticStateReader
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
-	VirtualStateAccess() state.VirtualStateAccess
-	GetAnchorOutput() *iscp.AliasOutputWithID
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
-}
-
-type ChainCoreMock interface {
-	ChainCore
-
-	// FIXME these methods should not be part of the chain interface just for the need of mocking
-	//  Mocking interfaces should be available only in the testing environment
-	// Most of these methods are made public for mocking in tests
-	EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time)
-	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
-	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
-	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
-	EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg)
-	EnqueueTimerTick(tick int)
+	EnqueueAliasOutput(*iscp.AliasOutputWithID)
 }
 
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
-	ReceiveTransaction(*iotago.Transaction)
-	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
 	Dismiss(reason string)
 	IsDismissed() bool
 }
@@ -99,65 +82,54 @@ type Committee interface {
 }
 
 type (
-	NodeConnectionHandleTimeDataFun    func(*iscp.TimeData)
-	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
-	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
-	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
-	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
+	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
+	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
+	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
+	NodeConnectionMilestonesHandlerFun      func(*iotagox.MilestonePointer)
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output))
+	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output))
 	UnregisterChain(chainAddr iotago.Address)
+	//----------delimeter to appease linter
 	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
-	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler func(iotago.TransactionID, string)) (*events.Closure, error)
+	PullLatestOutput(chainAddr iotago.Address)
+	PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID)
+	PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput)
+	//----------delimeter to appease linter
+	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
 	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
-	AttachMilestones(handler func(*iotagox.MilestonePointer)) *events.Closure
+	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
+	//----------delimeter to appease linter
+	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
-
-	// Subscribe(addr iotago.Address)
-	// Unsubscribe(addr iotago.Address)
-	// AttachToTimeData(*iotago.AliasAddress, NodeConnectionHandleTimeDataFun)
-	// AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
-	// // AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
-	// AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
-	// AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-	// PullState(addr *iotago.AliasAddress)
-	// PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	// PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
-	// PostTransaction(tx *iotago.Transaction)
-	// GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	// DetachFromTransactionReceived(*iotago.AliasAddress)
-	// DetachFromInclusionStateReceived(*iotago.AliasAddress)
-	// DetachFromOutputReceived(*iotago.AliasAddress)
-	// DetachFromUnspentAliasOutputReceived(*iotago.AliasAddress)
 }
 
 type ChainNodeConnection interface {
-	AttachToTimeData(NodeConnectionHandleTimeDataFun)
-	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
-	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
-	AttachToOutputReceived(NodeConnectionHandleOutputFun)
-	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-	PullState()
-	PullTransactionInclusionState(txid iotago.TransactionID)
-	PullConfirmedOutput(outputID *iotago.UTXOInput)
-	PostTransaction(tx *iotago.Transaction)
-	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-	DetachFromTransactionReceived()
-	DetachFromInclusionStateReceived()
-	DetachFromOutputReceived()
-	DetachFromUnspentAliasOutputReceived()
+	AttachToAliasOutput(NodeConnectionAliasOutputHandlerFun)
+	DetachFromAliasOutput()
+	AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
+	DetachFromOnLedgerRequest()
+	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun)
+	DetachFromTxInclusionState()
+	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
+	DetachFromMilestones()
 	Close()
+	//----------delimeter to appease linter
+	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PullLatestOutput()
+	PullTxInclusionState(txid iotago.TransactionID)
+	PullOutputByID(*iotago.UTXOInput)
+	//----------delimeter to appease linter
+	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 
 type StateManager interface {
 	Ready() *ready.Ready
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
-	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(iotago.Output, *iotago.UTXOInput)
+	EnqueueAliasOutput(*iscp.AliasOutputWithID)
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
@@ -169,7 +141,7 @@ type Consensus interface {
 	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iscp.AliasOutputWithID, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
-	// EnqueueInclusionsStateMsg(iotago.TransactionID, iotago.InclusionState) // TODO does this make sense with hornet?
+	EnqueueTxInclusionsStateMsg(iotago.TransactionID, string)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EnqueueVMResultMsg(msg *messages.VMResultMsg)
 	EnqueueTimerMsg(messages.TimerTick)

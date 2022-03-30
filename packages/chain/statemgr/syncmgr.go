@@ -14,46 +14,35 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) outputPulled(output *iscp.AliasOutputWithID) bool {
-	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), iscp.OID(output.ID()))
-	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
-		// not interested
-		sm.log.Debugf("outputPulled: not interested in output for state index %v", output.GetStateIndex())
-		return false
+func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID) bool {
+	aliasOutputIndex := aliasOutput.GetStateIndex()
+	aliasOutputIDStr := iscp.OID(aliasOutput.ID())
+	sm.log.Debugf("aliasOutputReceived: received output index %v, id %v", aliasOutputIndex, aliasOutputIDStr)
+	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < aliasOutputIndex {
+		sm.log.Debugf("aliasOutputReceived: output index %v, id %v is new state output", aliasOutputIndex, aliasOutputIDStr)
+		sm.stateOutput = aliasOutput
+		sm.syncingBlocks.approveBlockCandidates(aliasOutput)
+		return true
 	}
-	return sm.syncingBlocks.approveBlockCandidates(output)
-}
-
-func (sm *stateManager) stateOutputReceived(output *iscp.AliasOutputWithID, timestamp time.Time) bool {
-	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
-		output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
-	if sm.solidState.BlockIndex() > output.GetStateIndex() {
-		sm.log.Warnf("stateOutputReceived: out of order state output: state manager is already at state %v", sm.solidState.BlockIndex())
-		return false
-	}
-	if sm.stateOutput != nil {
-		switch {
-		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
-			if sm.stateOutput.ID() == output.ID() {
-				// it is just a duplicate
-				sm.log.Debugf("stateOutputReceived ignoring: repeated state output")
-				return false
-			}
-			/*if !output.GetIsGovernanceUpdated() {
-				sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
-			}*/
-			// it is a state controller address rotation
-
-		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
-			sm.log.Warnf("stateOutputReceived: out of order state output: stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
+	if sm.stateOutput.GetStateIndex() == aliasOutputIndex {
+		if sm.stateOutput.ID().Equals(aliasOutput.ID()) {
+			sm.log.Debugf("aliasOutputReceived: output index %v, id %v is already a state output; ignored", aliasOutputIndex, aliasOutputIDStr)
 			return false
 		}
+		// TODO
+		/*if !output.GetIsGovernanceUpdated() {
+			sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
+		}*/
+		// it is a state controller address rotation
+		return false // TODO: return here?
 	}
-	sm.stateOutput = output
-	sm.stateOutputTimestamp = timestamp
-	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestamp %v", output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
-	sm.syncingBlocks.approveBlockCandidates(output)
-	return true
+	if !sm.syncingBlocks.isSyncing(aliasOutputIndex) {
+		// not interested
+		sm.log.Debugf("aliasOutputReceived: state index %v is not syncing; ignoring output id %v", aliasOutputIndex, aliasOutputIDStr)
+		return false
+	}
+	sm.log.Debugf("aliasOutputReceived: state index %v is being synced, checking if output id %v approves any blocks", aliasOutputIndex, aliasOutputIDStr)
+	return sm.syncingBlocks.approveBlockCandidates(aliasOutput)
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {

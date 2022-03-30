@@ -31,7 +31,7 @@ type mockedDKShare struct {
 
 var _ tcrypto.DKShare = &mockedDKShare{}
 
-func NewMockedDKShare(env *MockedEnv, address iotago.Address, index uint16, quorum uint16, nodePubKeys []*cryptolib.PublicKey) *mockedDKShare {
+func NewMockedDKShare(env *MockedEnv, address iotago.Address, index, quorum uint16, nodePubKeys []*cryptolib.PublicKey) tcrypto.DKShare {
 	ret := &mockedDKShare{
 		Env:          env,
 		Address:      address,

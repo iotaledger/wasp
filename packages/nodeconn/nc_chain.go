@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
@@ -21,13 +23,14 @@ type ncChain struct {
 	nc              *nodeConn
 	chainAddr       iotago.Address
 	msgs            map[hashing.HashValue]*ncTransaction
-	outputHandler   func(iotago.OutputID, *iotago.Output)
+	outputHandler   func(iotago.OutputID, iotago.Output)
 	inclusionStates *events.Event
+	log             *logger.Logger
 }
 
-func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotago.OutputID, *iotago.Output)) *ncChain {
+func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) *ncChain {
 	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
-		handler.(func(iotago.TransactionID, string))(params[0].(iotago.TransactionID), params[1].(string))
+		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
 	})
 	ncc := ncChain{
 		nc:              nc,
@@ -35,6 +38,7 @@ func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotag
 		msgs:            make(map[hashing.HashValue]*ncTransaction),
 		outputHandler:   outputHandler,
 		inclusionStates: inclusionStates,
+		log:             nc.log.Named(chainAddr.String()[:6]),
 	}
 	go ncc.run()
 	return &ncc
@@ -65,7 +69,7 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 	if err != nil {
 		return xerrors.Errorf("failed to extract a tx message ID: %w", err)
 	}
-	ncc.nc.log.Infof("Posted TX Message: messageID=%v", txMsgID)
+	ncc.log.Infof("Posted TX Message: messageID=%v", txMsgID)
 
 	//
 	// TODO: Move it to `nc_transaction.go`
@@ -87,7 +91,7 @@ func (ncc *ncChain) run() {
 		if init {
 			init = false
 		} else {
-			ncc.nc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainAddr.String())
+			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainAddr.String())
 			time.Sleep(500 * time.Millisecond) // Delay between retries.
 		}
 
@@ -105,19 +109,18 @@ func (ncc *ncChain) run() {
 			AddressBech32: ncc.chainAddr.Bech32(iscp.NetworkPrefix),
 		})
 		if err != nil {
-			ncc.nc.log.Warnf("failed to query address outputs: %v", err)
+			ncc.log.Warnf("failed to query address outputs: %v", err)
 			continue
 		}
 		for res.Next() {
 			outs, err := res.Outputs()
 			if err != nil {
-				ncc.nc.log.Warnf("failed to fetch address outputs: %v", err)
+				ncc.log.Warnf("failed to fetch address outputs: %v", err)
 			}
 			oids := res.Response.Items.MustOutputIDs()
-			for i, o := range outs {
-				out := o
+			for i, out := range outs {
 				oid := oids[i]
-				ncc.outputHandler(oid, &out)
+				ncc.outputHandler(oid, out)
 			}
 		}
 
@@ -128,15 +131,15 @@ func (ncc *ncChain) run() {
 			case outResponse := <-eventsCh:
 				out, err := outResponse.Output()
 				if err != nil {
-					ncc.nc.log.Warnf("error while receiving unspent output: %v", err)
+					ncc.log.Warnf("error while receiving unspent output: %v", err)
 					continue
 				}
 				tid, err := outResponse.TxID()
 				if err != nil {
-					ncc.nc.log.Warnf("error while receiving unspent output tx id: %v", err)
+					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
 					continue
 				}
-				ncc.outputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), &out)
+				ncc.outputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), out)
 			case <-ncc.nc.ctx.Done():
 				return
 			}
