@@ -91,5 +91,4 @@ func UTXOInputIDFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (*iotago.U
 	var oid iotago.OutputID
 	copy(oid[:], idBytes)
 	return oid.UTXOInput(), nil
-
 }
