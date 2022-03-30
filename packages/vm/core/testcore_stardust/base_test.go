@@ -107,7 +107,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		testmisc.RequireErrorToBe(t, err, vm.ErrTargetContractNotFound)
+		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(iscp.Hn("dummyContract")).Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -142,7 +142,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrTargetContractNotFound.Error())
+		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(iscp.Hn("dummyContract")).Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
