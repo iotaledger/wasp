@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -122,7 +123,9 @@ func TestFoundries(t *testing.T) {
 		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-			accounts.ParamMaxSupply, 1,
+			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
+				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: util.Big0, MeltedTokens: util.Big0},
+			),
 		).AddIotas(10000).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -155,12 +158,11 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("supply negative", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams(-1).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		// encoding will ignore sign
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
+		require.Panics(t, func() {
+			ch.NewFoundryParams(-1).
+				WithUser(senderKeyPair).
+				CreateFoundry()
+		})
 	})
 	t.Run("supply max possible", func(t *testing.T) {
 		initTest()
@@ -174,10 +176,11 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		maxSupply := new(big.Int).Set(util.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
-		_, _, err := ch.NewFoundryParams(maxSupply).CreateFoundry()
-		testmisc.RequireErrorToBe(t, err, vm.ErrCreateFoundryMaxSupplyTooBig)
+		require.Panics(t, func() {
+			ch.NewFoundryParams(maxSupply).CreateFoundry()
+		})
 	})
-	// 	// TODO cover all parameter options
+	// TODO cover all parameter options
 
 	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
 		initTest()
@@ -341,7 +344,8 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1_000_000))
 		out, err = ch.GetFoundryOutput(1)
 		require.NoError(t, err)
-		require.True(t, big.NewInt(1_000_000).Cmp(out.MintedTokens) == 0)
+		ts := util.MustTokenScheme(out.TokenScheme)
+		require.True(t, big.NewInt(1_000_000).Cmp(ts.MintedTokens) == 0)
 
 		// FIXME bug iotago can't destroy foundry
 		// err = destroyTokens(sn, big.NewInt(1000000))
@@ -377,8 +381,9 @@ func TestFoundries(t *testing.T) {
 			require.NoError(t, err)
 
 			require.EqualValues(t, sn, out.SerialNumber)
-			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
-			require.True(t, out.MintedTokens.Cmp(big.NewInt(int64(sn+1))) == 0)
+			ts := util.MustTokenScheme(out.TokenScheme)
+			require.True(t, ts.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
+			require.True(t, ts.MintedTokens.Cmp(big.NewInt(int64(sn+1))) == 0)
 			tokenID := out.MustNativeTokenID()
 
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn+1)))
@@ -395,8 +400,9 @@ func TestFoundries(t *testing.T) {
 			require.NoError(t, err)
 
 			require.EqualValues(t, sn, out.SerialNumber)
-			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
-			require.True(t, big.NewInt(0).Sub(out.MintedTokens, out.MeltedTokens).Cmp(big.NewInt(int64(sn))) == 0)
+			ts := util.MustTokenScheme(out.TokenScheme)
+			require.True(t, ts.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
+			require.True(t, big.NewInt(0).Sub(ts.MintedTokens, ts.MeltedTokens).Cmp(big.NewInt(int64(sn))) == 0)
 			tokenID := out.MustNativeTokenID()
 
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn)))
@@ -546,9 +552,8 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	return ret
 }
 
-func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.TokenTag, maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
+func (v *testParams) createFoundryAndMint(tag *iotago.TokenTag, maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
 	sn, tokenID, err := v.ch.NewFoundryParams(maxSupply).
-		WithTokenScheme(sch).
 		WithTag(tag).
 		WithUser(v.user).
 		CreateFoundry()
@@ -597,7 +602,7 @@ func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	v := initDepositTest(t, initLoad...)
 	v.ch.MustDepositIotasToL2(10_000, v.user)
 	// create foundry and mint 100 tokens
-	v.sn, v.tokenID = v.createFoundryAndMint(nil, nil, 1_000_000, 100)
+	v.sn, v.tokenID = v.createFoundryAndMint(nil, 1_000_000, 100)
 	// prepare request parameters to withdraw everything what is in the account
 	// do not run the request yet
 	v.req = solo.NewCallParams("accounts", "withdraw").
@@ -900,14 +905,15 @@ func TestMintedTokensBurn(t *testing.T) {
 			Blocks: nil,
 		},
 		inputIDs[2]: &iotago.FoundryOutput{
-			Amount:        OneMi,
-			NativeTokens:  nil,
-			SerialNumber:  1,
-			TokenTag:      tokenTag,
-			MintedTokens:  big.NewInt(50),
-			MeltedTokens:  util.Big0,
-			MaximumSupply: big.NewInt(50),
-			TokenScheme:   &iotago.SimpleTokenScheme{},
+			Amount:       OneMi,
+			NativeTokens: nil,
+			SerialNumber: 1,
+			TokenTag:     tokenTag,
+			TokenScheme: &iotago.SimpleTokenScheme{
+				MintedTokens:  big.NewInt(50),
+				MeltedTokens:  util.Big0,
+				MaximumSupply: big.NewInt(50),
+			},
 			Conditions: iotago.UnlockConditions{
 				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 			},
@@ -946,11 +952,12 @@ func TestMintedTokensBurn(t *testing.T) {
 				NativeTokens: nil,
 				SerialNumber: 1,
 				TokenTag:     tokenTag,
-				// burn supply by -50
-				MintedTokens:  big.NewInt(50),
-				MeltedTokens:  big.NewInt(50),
-				MaximumSupply: big.NewInt(50),
-				TokenScheme:   &iotago.SimpleTokenScheme{},
+				TokenScheme: &iotago.SimpleTokenScheme{
+					// burn supply by -50
+					MintedTokens:  big.NewInt(50),
+					MeltedTokens:  big.NewInt(50),
+					MaximumSupply: big.NewInt(50),
+				},
 				Conditions: iotago.UnlockConditions{
 					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 				},
