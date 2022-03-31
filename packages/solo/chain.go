@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -31,6 +32,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
+
+func (ch *Chain) L1Params() *parameters.L1 {
+	return ch.Env.L1Params()
+}
 
 // String is string representation for main parameters of the chain
 //goland:noinspection ALL
@@ -46,11 +51,14 @@ func (ch *Chain) String() string {
 // DumpAccounts dumps all account balances into the human-readable string
 func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
-	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
+	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n",
+		ch.ChainID.String(),
+		chainOwnerID.String(ch.L1Params().Bech32Prefix),
+	)
 	acc := ch.L2Accounts()
 	for i := range acc {
 		aid := acc[i]
-		ret += fmt.Sprintf("  %s:\n", aid.String())
+		ret += fmt.Sprintf("  %s:\n", aid.String(ch.L1Params().Bech32Prefix))
 		bals := ch.L2Assets(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}

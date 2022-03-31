@@ -46,7 +46,7 @@ func (ch *Chain) L2Ledger() map[string]*iscp.FungibleTokens {
 	accs := ch.L2Accounts()
 	ret := make(map[string]*iscp.FungibleTokens)
 	for i := range accs {
-		ret[accs[i].String()] = ch.L2Assets(accs[i])
+		ret[accs[i].Key()] = ch.L2Assets(accs[i])
 	}
 	return ret
 }

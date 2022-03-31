@@ -1,8 +1,10 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/parameters"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -166,6 +168,10 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	)
 
 	return ret
+}
+
+func (vmctx *VMContext) L1Params() *parameters.L1 {
+	return vmctx.task.L1Params
 }
 
 // CloseVMContext does the closing actions on the block

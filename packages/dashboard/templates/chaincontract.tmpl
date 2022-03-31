@@ -3,7 +3,6 @@
 {{define "body"}}
 	{{ $c := .ContractRecord }}
 	{{ $chainid := .ChainID }}
-	{{ $rootinfo := .RootInfo }}
 	<div class="card fluid">
 		<h2 class="section">Contract</h2>
 		<dl>
@@ -12,12 +11,6 @@
 			<dt>Description</dt><dd><code>{{trim 50 $c.Description}}</code></dd>
 			<dt>Program hash</dt><dd><code>{{$c.ProgramHash.String}}</code></dd>
 			{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-			<dt>Owner fee</dt><dd>
-					<code>{{- .OwnerFee }} {{ colorref $rootinfo.FeeColor -}}</code>
-			</dd>
-			<dt>Validator fee</dt><dd>
-					<code>{{- .ValidatorFee }} {{ colorref $rootinfo.FeeColor -}}
-			</dd>
 		</dl>
 	</div>
 
