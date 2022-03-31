@@ -81,7 +81,6 @@ funcs:
 
 views:
   stringMapOfStringArrayLength:
-    access: owner
     params:
       name: String
     results:

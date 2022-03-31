@@ -76,7 +76,7 @@ func (n *Node) ToDefElt() *model.DefElt {
 func (n *Node) ToDefMap() model.DefMap {
 	defs := make(model.DefMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" {
+		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
 			// treat "{}" as empty
 			continue
 		}
@@ -94,7 +94,8 @@ func (n *Node) ToDefMap() model.DefMap {
 func (n *Node) ToDefMapMap() model.DefMapMap {
 	defs := make(model.DefMapMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" {
+		// TODO better parsing
+		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
 			// treat "{}" as empty
 			continue
 		}
@@ -117,7 +118,7 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 func (n *Node) ToFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" {
+		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
 			// treat "{}" as empty
 			continue
 		}
@@ -131,7 +132,6 @@ func (n *Node) ToFuncDef() model.FuncDef {
 		default:
 			return model.FuncDef{}
 		}
-
 	}
 	return def
 }
@@ -139,7 +139,7 @@ func (n *Node) ToFuncDef() model.FuncDef {
 func (n *Node) ToFuncDefMap() model.FuncDefMap {
 	defs := make(model.FuncDefMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" {
+		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
 			// treat "{}" as empty
 			continue
 		}

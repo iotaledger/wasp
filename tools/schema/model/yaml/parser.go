@@ -60,10 +60,16 @@ func Parse(in []byte) *Node {
 			} else {
 				// yaml tag with value
 				elts := strings.Split(val, ":")
-				cur.Val = elts[0]
+				cur.Val = strings.TrimSpace(elts[0])
+				value := strings.TrimSpace(elts[1])
+				// TODO note that value string could be quoted! What if there is only one quote?
+				// what about special characters in value string?
+				if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
+					value = value[1 : len(value)-1]
+				}
 				cur.Contents = append(cur.Contents,
 					&Node{
-						Val:  strings.TrimSpace(elts[1]),
+						Val:  value,
 						Line: lineNum,
 					})
 			}
@@ -82,7 +88,6 @@ func Parse(in []byte) *Node {
 			parent := path[len(path)-1]
 			parent.Contents = append(parent.Contents, cur)
 			path = append(path, cur)
-
 		} else if curIndent == prevIndent {
 			// sibling
 			parent := path[len(path)-2]
