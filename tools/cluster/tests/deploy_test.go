@@ -14,7 +14,7 @@ import (
 )
 
 func TestDeployChain(t *testing.T) {
-	e := setupWithNoChain(t)
+	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
 
 	counter1, err := e.clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,

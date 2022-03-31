@@ -112,22 +112,30 @@ func (ncc *ncChain) run() {
 		}
 		//
 		// Then fetch all the existing unspent outputs.
-		res, err := indexer.Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
-			AddressBech32: string(ncc.nc.l1params.Bech32Prefix),
-		})
-		if err != nil {
-			ncc.log.Warnf("failed to query address outputs: %v", err)
-			continue
+		bech32Addr := ncc.chainAddr.Bech32(ncc.nc.l1params.Bech32Prefix)
+		queries := []nodeclient.IndexerQuery{
+			&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
+			&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+			&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
+			&nodeclient.AliasesQuery{StateControllerBech32: bech32Addr},
 		}
-		for res.Next() {
-			outs, err := res.Outputs()
+		for _, query := range queries {
+			res, err := indexer.Outputs(ncc.nc.ctx, query)
 			if err != nil {
-				ncc.log.Warnf("failed to fetch address outputs: %v", err)
+				ncc.log.Warnf("failed to query address outputs: %v", err)
+				continue
 			}
-			oids := res.Response.Items.MustOutputIDs()
-			for i, out := range outs {
-				oid := oids[i]
-				ncc.outputHandler(oid, out)
+
+			for res.Next() {
+				outs, err := res.Outputs()
+				if err != nil {
+					ncc.log.Warnf("failed to fetch address outputs: %v", err)
+				}
+				oids := res.Response.Items.MustOutputIDs()
+				for i, out := range outs {
+					oid := oids[i]
+					ncc.outputHandler(oid, out)
+				}
 			}
 		}
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-
 	"github.com/iotaledger/wasp/packages/vm"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -32,9 +31,9 @@ func (vmctx *VMContext) TryLoadContract(programHash hashing.HashValue) error {
 	return vmctx.task.Processors.NewProcessor(programHash, programBinary, vmtype)
 }
 
-func (vmctx *VMContext) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
+func (vmctx *VMContext) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, metadata []byte) (uint32, uint64) {
 	vmctx.mustBeCalledFromContract(accounts.Contract)
-	return vmctx.txbuilder.CreateNewFoundry(scheme, tag, maxSupply, metadata)
+	return vmctx.txbuilder.CreateNewFoundry(scheme, tag, metadata)
 }
 
 func (vmctx *VMContext) DestroyFoundry(sn uint32) uint64 {

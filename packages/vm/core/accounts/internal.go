@@ -655,13 +655,16 @@ func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 
 // SaveFoundryOutput stores foundry output into the map of all foundry outputs (compressed form)
 func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
+	simpleTokenScheme := util.MustTokenScheme(f.TokenScheme)
+
 	foundryRec := foundryOutputRec{
 		Amount:        f.Amount,
 		TokenTag:      f.TokenTag,
 		TokenScheme:   f.TokenScheme,
-		MaximumSupply: f.MaximumSupply,
-		MintedTokens:  f.MintedTokens,
-		MeltedTokens:  f.MeltedTokens,
+		MaximumSupply: simpleTokenScheme.MaximumSupply,
+		MintedTokens:  simpleTokenScheme.MintedTokens,
+		MeltedTokens:  simpleTokenScheme.MeltedTokens,
+		Metadata:      []byte{},
 		BlockIndex:    blockIndex,
 		OutputIndex:   outputIndex,
 	}
@@ -680,15 +683,13 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		return nil, 0, 0
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
+
 	ret := &iotago.FoundryOutput{
-		Amount:        rec.Amount,
-		NativeTokens:  nil,
-		SerialNumber:  sn,
-		TokenScheme:   rec.TokenScheme,
-		TokenTag:      rec.TokenTag,
-		MintedTokens:  rec.MintedTokens,
-		MeltedTokens:  rec.MeltedTokens,
-		MaximumSupply: rec.MaximumSupply,
+		Amount:       rec.Amount,
+		NativeTokens: nil,
+		SerialNumber: sn,
+		TokenScheme:  rec.TokenScheme,
+		TokenTag:     rec.TokenTag,
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
 		},

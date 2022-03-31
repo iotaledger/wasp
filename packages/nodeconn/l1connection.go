@@ -56,21 +56,30 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	if err != nil {
 		return nil, xerrors.Errorf("failed getting the indexer client: %w", err)
 	}
-	res, err := indexerClient.Outputs(ctxWithTimeout, &nodeclient.OutputsQuery{
-		AddressBech32: myAddress.Bech32(nc.l1params.Bech32Prefix),
-	})
-	if err != nil {
-		return nil, xerrors.Errorf("failed to query address outputs: %w", err)
+	bech32Addr := myAddress.Bech32(nc.l1params.Bech32Prefix)
+	queries := []nodeclient.IndexerQuery{
+		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
+		&nodeclient.AliasesQuery{StateControllerBech32: bech32Addr},
 	}
+
 	result := make(map[iotago.OutputID]iotago.Output)
-	for res.Next() {
-		outs, err := res.Outputs()
+
+	for _, query := range queries {
+		res, err := indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to fetch address outputs: %w", err)
+			return nil, xerrors.Errorf("failed to query address outputs: %w", err)
 		}
-		oids := res.Response.Items.MustOutputIDs()
-		for i, o := range outs {
-			result[oids[i]] = o
+		for res.Next() {
+			outs, err := res.Outputs()
+			if err != nil {
+				return nil, xerrors.Errorf("failed to fetch address outputs: %w", err)
+			}
+			oids := res.Response.Items.MustOutputIDs()
+			for i, o := range outs {
+				result[oids[i]] = o
+			}
 		}
 	}
 	return result, nil
