@@ -18,7 +18,7 @@ require (
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
-	github.com/ethereum/go-ethereum v1.10.16
+	github.com/ethereum/go-ethereum v1.10.17
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/iotaledger/hive.go v0.0.0-20220323112142-b879f04276bd
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220321174547-5b62a60c7774
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220331100243-cc6a5d0d665f
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/jackpal/gateway v1.0.5 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect
@@ -66,6 +66,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20220302125637-5f11c28912df // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/common v0.33.0 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/second-state/WasmEdge-go v0.9.2
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
@@ -81,18 +82,18 @@ require (
 	github.com/whyrusleeping/mafmt v1.2.8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.dedis.ch/kyber/v3 v3.0.13
-	go.nanomsg.org/mangos/v3 v3.3.0
+	go.nanomsg.org/mangos/v3 v3.4.1
 	go.uber.org/atomic v1.9.0
-	go.uber.org/dig v1.14.1 // indirect
+	go.uber.org/dig v1.14.1
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
+	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
+	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
 	golang.org/x/tools v0.1.10 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	google.golang.org/genproto v0.0.0-20220324131243-acbaeb5b85eb // indirect
+	google.golang.org/genproto v0.0.0-20220329172620-7be39ac1afc7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	lukechampine.com/blake3 v1.1.7 // indirect

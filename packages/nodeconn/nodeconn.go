@@ -111,6 +111,7 @@ func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(i
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
 	nc.chains[ncc.Key()] = ncc
+	nc.log.Debugf("nodeconn: chain registered: %s", chainAddr)
 }
 
 // UnregisterChain implements chain.NodeConnection.
@@ -122,6 +123,7 @@ func (nc *nodeConn) UnregisterChain(chainAddr iotago.Address) {
 		ncc.Close()
 		delete(nc.chains, nccKey)
 	}
+	nc.log.Debugf("nodeconn: chain unregistered: %s", chainAddr)
 }
 
 // PublishTransaction implements chain.NodeConnection.
