@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
@@ -45,6 +46,12 @@ func Init() *node.Plugin {
 }
 
 type waspServices struct{}
+
+var _ dashboard.WaspServices = &waspServices{}
+
+func (*waspServices) L1Params() *parameters.L1 {
+	return nodeconn.NodeConnection().L1Params()
+}
 
 func (w *waspServices) ConfigDump() map[string]interface{} {
 	return parameters.Dump()

@@ -45,7 +45,7 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		rootInfo, err := d.fetchRootInfo(&cr.ChainID)
+		chainInfo, err := d.fetchChainInfo(&cr.ChainID)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 		r[i] = &ChainOverview{
 			ChainID:       &cr.ChainID,
 			Active:        cr.Active,
-			RootInfo:      rootInfo,
+			ChainInfo:     chainInfo,
 			CommitteeSize: cmtSize,
 			Error:         err,
 		}
@@ -78,7 +78,7 @@ type ChainListTemplateParams struct {
 type ChainOverview struct {
 	ChainID       *iscp.ChainID
 	Active        bool
-	RootInfo      RootInfo
+	ChainInfo     *ChainInfo
 	CommitteeSize int
 	Error         error
 }

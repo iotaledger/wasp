@@ -23,19 +23,42 @@ func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
 	return ret
 }
 
+// GetChainInfo returns global variables of the chain
+func GetChainInfo(state kv.KVStoreReader) (*ChainInfo, error) {
+	d := kvdecoder.New(state)
+	ret := &ChainInfo{}
+	var err error
+	if ret.ChainID, err = d.GetChainID(VarChainID); err != nil {
+		return nil, err
+	}
+	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
+		return nil, err
+	}
+	if ret.Description, err = d.GetString(VarDescription, ""); err != nil {
+		return nil, err
+	}
+	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
+		return nil, err
+	}
+	if ret.MaxBlobSize, err = d.GetUint32(VarMaxBlobSize, 0); err != nil {
+		return nil, err
+	}
+	if ret.MaxEventSize, err = d.GetUint16(VarMaxEventSize, 0); err != nil {
+		return nil, err
+	}
+	if ret.MaxEventsPerReq, err = d.GetUint16(VarMaxEventsPerReq, 0); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 // MustGetChainInfo return global variables of the chain
 func MustGetChainInfo(state kv.KVStoreReader) *ChainInfo {
-	d := kvdecoder.New(state)
-	ret := &ChainInfo{
-		ChainID:         d.MustGetChainID(VarChainID),
-		ChainOwnerID:    d.MustGetAgentID(VarChainOwnerID),
-		Description:     d.MustGetString(VarDescription, ""),
-		GasFeePolicy:    GetGasFeePolicy(state),
-		MaxBlobSize:     d.MustGetUint32(VarMaxBlobSize, 0),
-		MaxEventSize:    d.MustGetUint16(VarMaxEventSize, 0),
-		MaxEventsPerReq: d.MustGetUint16(VarMaxEventsPerReq, 0),
+	info, err := GetChainInfo(state)
+	if err != nil {
+		panic(err)
 	}
-	return ret
+	return info
 }
 
 func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
@@ -44,6 +67,10 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 }
 
 // GetGasFeePolicy returns gas policy from the state
-func GetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {
+func GetGasFeePolicy(state kv.KVStoreReader) (*gas.GasFeePolicy, error) {
+	return gas.GasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+}
+
+func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {
 	return gas.MustGasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }

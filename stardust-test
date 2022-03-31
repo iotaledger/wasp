@@ -17,6 +17,7 @@ PATHS=(\
     "packages/chain/consensus/" \
     "packages/utxodb/" \
     "packages/evm/jsonrpc/jsonrpctest" \
+    "packages/dashboard" \
     "packages/nodeconn" \
     "packages/testutil/privtangle" \
 )

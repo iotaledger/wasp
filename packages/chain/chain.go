@@ -39,6 +39,7 @@ type ChainCore interface {
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
 	EnqueueAliasOutput(*iscp.AliasOutputWithID)
+	L1Params() *parameters.L1
 }
 
 // ChainEntry interface to access chain from the chain registry side

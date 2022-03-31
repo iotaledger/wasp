@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -28,6 +29,10 @@ type waspServicesMock struct {
 }
 
 var _ WaspServices = &waspServicesMock{}
+
+func (*waspServicesMock) L1Params() *parameters.L1 {
+	return parameters.L1ForTesting()
+}
 
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
@@ -160,14 +165,15 @@ type dashboardTestEnv struct {
 }
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
-	ch := e.solo.NewChain(cryptolib.NewKeyPair(), fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	kp, _ := e.solo.NewKeyPairWithFunds()
+	ch := e.solo.NewChain(kp, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
 	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t)
+	s := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true})
 	w := &waspServicesMock{
 		solo:   s,
 		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
