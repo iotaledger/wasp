@@ -4,8 +4,6 @@
 package fairauction
 
 import (
-	"math/big"
-
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -115,7 +113,7 @@ func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
 func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	color := f.Params.Token().Value()
 	numTokens := ctx.Allowance().Balance(&color)
-	if numTokens.BitLen() == 0 {
+	if numTokens.IsZero() {
 		ctx.Panic("Missing auction tokens")
 	}
 
@@ -209,12 +207,12 @@ func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
 func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, color wasmtypes.ScTokenID, amount uint64) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.Send(agent.Address(), wasmlib.NewScTransferToken(&color, big.NewInt(int64(amount))))
+		ctx.Send(agent.Address(), wasmlib.NewScTransferToken(&color, wasmtypes.NewScBigInt(amount)))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.Send(agent.Address(), wasmlib.NewScTransferToken(&color, big.NewInt(int64(amount))))
+	ctx.Send(agent.Address(), wasmlib.NewScTransferToken(&color, wasmtypes.NewScBigInt(amount)))
 }
 
 func transferIotas(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, amount uint64) {

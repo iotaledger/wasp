@@ -17,7 +17,7 @@ export class Auction {
 	minimumBid    : u64 = 0;  // minimum bid amount
 	numTokens     : u64 = 0;  // number of tokens for sale
 	ownerMargin   : u64 = 0;  // auction owner's margin in promilles
-	token         : wasmtypes.ScTokenID = new wasmtypes.ScTokenID(0);  // token of tokens for sale
+	token         : wasmtypes.ScTokenID = new wasmtypes.ScTokenID();  // token of tokens for sale
 	whenStarted   : u64 = 0;  // timestamp when auction started
 
 	static fromBytes(buf: u8[]): Auction {

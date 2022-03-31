@@ -4,13 +4,12 @@
 package wasmlib
 
 import (
-	"math/big"
 	"sort"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type TokenAmounts map[wasmtypes.ScTokenID]*big.Int
+type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
 	Iotas  uint64
@@ -72,7 +71,7 @@ func (a *ScAssets) IsEmpty() bool {
 		return false
 	}
 	for _, val := range a.Tokens {
-		if val.BitLen() != 0 {
+		if !val.IsZero() {
 			return false
 		}
 	}
@@ -94,7 +93,7 @@ type ScBalances struct {
 	assets *ScAssets
 }
 
-func (b *ScBalances) Balance(tokenID *wasmtypes.ScTokenID) *big.Int {
+func (b *ScBalances) Balance(tokenID *wasmtypes.ScTokenID) wasmtypes.ScBigInt {
 	return b.assets.Tokens[*tokenID]
 }
 
@@ -146,7 +145,7 @@ func NewScTransferIotas(amount uint64) *ScTransfer {
 }
 
 // create a new transfer object and initialize it with the specified token transfer
-func NewScTransferToken(tokenID *wasmtypes.ScTokenID, amount *big.Int) *ScTransfer {
+func NewScTransferToken(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.Set(tokenID, amount)
 	return transfer
@@ -173,6 +172,6 @@ func (t *ScTransfer) Bytes() []byte {
 
 // set the specified tokenID amount in the transfers object
 // note that this will overwrite any previous amount for the specified tokenID
-func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount *big.Int) {
+func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) {
 	t.assets.Tokens[*tokenID] = amount
 }

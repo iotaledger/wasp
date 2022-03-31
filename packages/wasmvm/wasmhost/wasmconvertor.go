@@ -4,6 +4,8 @@
 package wasmhost
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -44,14 +46,24 @@ func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance
 	iscpAllowance := iscp.NewAllowanceIotas(assets.Iotas)
 	iscpAssets := iscpAllowance.Assets
 	for tokenID, amount := range assets.Tokens {
-		token := iotago.NativeToken{ID: *cvt.IscpTokenID(&tokenID), Amount: amount}
-		iscpAssets.Tokens = append(iscpAssets.Tokens, &token)
+		token := &iotago.NativeToken{
+			ID:     *cvt.IscpTokenID(&tokenID),
+			Amount: cvt.IscpBigInt(amount),
+		}
+		iscpAssets.Tokens = append(iscpAssets.Tokens, token)
 	}
 	for _, nftID := range assets.NFTs {
 		nft := cvt.IscpNFTID(nftID)
 		iscpAllowance.NFTs = append(iscpAllowance.NFTs, *nft)
 	}
 	return iscpAllowance
+}
+
+func (cvt WasmConvertor) IscpBigInt(amount wasmtypes.ScBigInt) *big.Int {
+	buf := wasmtypes.BigIntToBytes(amount)
+	res := new(big.Int)
+	res.SetBytes(buf)
+	return res
 }
 
 func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {
@@ -107,13 +119,17 @@ func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalanc
 	transfer := wasmlib.NewScTransferIotas(allowance.Assets.Iotas)
 	for _, token := range allowance.Assets.Tokens {
 		tokenID := cvt.ScTokenID(&token.ID)
-		transfer.Set(&tokenID, token.Amount)
+		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))
 	}
 	for _, nft := range allowance.NFTs {
 		nftID := cvt.ScNftID(&nft)
 		transfer.AddNFT(&nftID)
 	}
 	return &transfer.ScBalances
+}
+
+func (cvt WasmConvertor) ScBigInt(bigInt *big.Int) wasmtypes.ScBigInt {
+	return wasmtypes.BigIntFromBytes(bigInt.Bytes())
 }
 
 func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {

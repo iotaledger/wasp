@@ -4,7 +4,6 @@
 package test
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
@@ -39,8 +38,8 @@ func startAuction(t *testing.T) *wasmsolo.SoloContext {
 	sa.Params.Token().SetValue(tokenColor)
 	sa.Params.MinimumBid().SetValue(500)
 	sa.Params.Description().SetValue("Cool tokens for sale!")
-	transfer := wasmlib.NewScTransferIotas(25) // deposit, must be >=minimum*margin
-	transfer.Set(&tokenColor, big.NewInt(10))  // the tokens to auction
+	transfer := wasmlib.NewScTransferIotas(25)           // deposit, must be >=minimum*margin
+	transfer.Set(&tokenColor, wasmtypes.NewScBigInt(10)) // the tokens to auction
 	sa.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 	return ctx

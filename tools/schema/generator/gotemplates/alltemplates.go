@@ -33,7 +33,7 @@ var TypeDependent = model.StringMapMap{
 	"fldLangType": {
 		"Address":   "wasmtypes.ScAddress",
 		"AgentID":   "wasmtypes.ScAgentID",
-		"BigInt":    "big.Int",
+		"BigInt":    "wasmtypes.ScBigInt",
 		"Bool":      "bool",
 		"Bytes":     "[]byte",
 		"ChainID":   "wasmtypes.ScChainID",

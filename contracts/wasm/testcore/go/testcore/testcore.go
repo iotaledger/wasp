@@ -5,8 +5,6 @@
 package testcore
 
 import (
-	"math/big"
-
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
@@ -360,10 +358,10 @@ func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTo
 	transfer := wasmlib.NewScTransferIotas(iotas)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	for _, token := range ctx.Allowance().TokenIDs() {
-		one := big.NewInt(1)
+		one := wasmtypes.NewScBigInt(1)
 		transfer = wasmlib.NewScTransferToken(token, one)
 		tokens := ctx.Allowance().Balance(token)
-		for ; tokens.Cmp(one) >= 0; tokens.Sub(tokens, one) {
+		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
 			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 			ctx.Send(address, transfer)
 		}

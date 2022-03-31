@@ -34,7 +34,7 @@ var TypeDependent = model.StringMapMap{
 	"fldLangType": {
 		"Address":   "ScAddress",
 		"AgentID":   "ScAgentID",
-		"BigInt":    "BigUint",
+		"BigInt":    "ScBigInt",
 		"Bool":      "bool",
 		"Bytes":     "Vec<u8>",
 		"ChainID":   "ScChainID",
@@ -56,7 +56,7 @@ var TypeDependent = model.StringMapMap{
 	"fldParamLangType": {
 		"Address":   "ScAddress",
 		"AgentID":   "ScAgentID",
-		"BigInt":    "BigUint",
+		"BigInt":    "ScBigInt",
 		"Bool":      "bool",
 		"Bytes":     "[u8]",
 		"ChainID":   "ScChainID",
@@ -77,8 +77,9 @@ var TypeDependent = model.StringMapMap{
 	},
 	"fldRef": {
 		"Address":   "&",
-		"Bytes":     "&",
 		"AgentID":   "&",
+		"BigInt":    "&",
+		"Bytes":     "&",
 		"ChainID":   "&",
 		"Hash":      "&",
 		"NftID":     "&",

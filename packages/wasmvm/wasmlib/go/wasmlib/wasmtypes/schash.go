@@ -26,7 +26,7 @@ func HashDecode(dec *WasmDecoder) ScHash {
 }
 
 func HashEncode(enc *WasmEncoder, value ScHash) {
-	enc.FixedBytes(value.Bytes(), ScHashLength)
+	enc.FixedBytes(value.id[:], ScHashLength)
 }
 
 func HashFromBytes(buf []byte) ScHash {
