@@ -19,6 +19,7 @@ import (
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"github.com/iotaledger/wasp/tools/schema/model"
+	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 	"gopkg.in/yaml.v3"
 )
 
@@ -237,9 +238,8 @@ func loadSchema(file *os.File) (s *model.Schema, err error) {
 		}
 	case ".yaml":
 		fileByteArray, _ := io.ReadAll(file)
-		var yamlSchemaDef model.YAMLSchemaDef
-		err = yaml.Unmarshal(fileByteArray, &yamlSchemaDef)
-		schemaDef = yamlSchemaDef.ToSchemaDef()
+		schemaDef = model.NewSchemaDef()
+		err = wasp_yaml.Unmarshal(fileByteArray, schemaDef)
 		if err == nil && *flagType == "convert" {
 			err = WriteJSONSchema(schemaDef)
 		}
