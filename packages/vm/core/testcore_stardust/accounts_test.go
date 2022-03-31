@@ -133,6 +133,18 @@ func TestFoundries(t *testing.T) {
 		_, err = ch.PostRequestSync(req.AddAllowanceIotas(500), nil)
 		require.NoError(t, err)
 	})
+	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
+		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+
+		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
+				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: big.NewInt(10), MeltedTokens: big.NewInt(10)},
+			),
+		).AddIotas(10000).WithGasBudget(math.MaxUint64)
+		_, err := ch.PostRequestSync(req.AddAllowanceIotas(500), nil)
+		require.NoError(t, err)
+	})
 	t.Run("supply 10", func(t *testing.T) {
 		initTest()
 		sn, _, err := ch.NewFoundryParams(10).
