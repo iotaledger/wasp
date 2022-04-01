@@ -91,7 +91,7 @@ type (
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output))
+	RegisterChain(chainAddr iotago.Address, stateOutputHandler func(iotago.OutputID, iotago.Output), outputHandler func(iotago.OutputID, iotago.Output))
 	UnregisterChain(chainAddr iotago.Address)
 	//----------delimeter to appease linter
 	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error

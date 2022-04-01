@@ -55,7 +55,7 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 		txInclusionStateCh:     make(chan *txInclusionStateMsg),
 		txInclusionStateStopCh: make(chan bool),
 	}
-	result.nc.RegisterChain(result.chainAddr, result.outputHandler)
+	result.nc.RegisterChain(result.chainAddr, result.stateOutputHandler, result.outputHandler)
 	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainAddr, result.txInclusionStateHandler)
 	if err != nil {
 		result.log.Errorf("cannot create chain nodeconnection: %v", err)
@@ -69,17 +69,23 @@ func (nccT *nodeconnChain) L1Params() *parameters.L1 {
 	return nccT.nc.L1Params()
 }
 
+func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output iotago.Output) {
+	outputIDUTXO := outputID.UTXOInput()
+	outputIDstring := iscp.OID(outputIDUTXO)
+	nccT.log.Debugf("handling state output ID %v", outputIDstring)
+	aliasOutput, ok := output.(*iotago.AliasOutput)
+	if !ok || !aliasOutput.AliasID.ToAddress().Equal(nccT.chainAddr) {
+		panic("unexpected output received as state update")
+	}
+	nccT.log.Debugf("handling state output ID %v: writing alias output to channel", outputIDstring)
+	nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
+	nccT.log.Debugf("handling state output ID %v: alias output handled", outputIDstring)
+}
+
 func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
 	outputIDUTXO := outputID.UTXOInput()
 	outputIDstring := iscp.OID(outputIDUTXO)
 	nccT.log.Debugf("handling output ID %v", outputIDstring)
-	aliasOutput, ok := output.(*iotago.AliasOutput)
-	if ok {
-		nccT.log.Debugf("handling output ID %v: writing alias output to channel", outputIDstring)
-		nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
-		nccT.log.Debugf("handling output ID %v: alias output handled", outputIDstring)
-		return
-	}
 	onLedgerRequest, err := iscp.OnLedgerFromUTXO(output, outputIDUTXO)
 	if err != nil {
 		nccT.log.Warnf("handling output ID %v: unknown output type; ignoring it", outputIDstring)

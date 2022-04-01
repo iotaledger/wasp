@@ -30,16 +30,17 @@ import (
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConn struct {
-	ctx        context.Context
-	ctxCancel  context.CancelFunc
-	chains     map[string]*ncChain // key = iotago.Address.Key()
-	chainsLock sync.RWMutex
-	nodeClient *nodeclient.Client
-	nodeEvents *nodeclient.EventAPIClient
-	milestones *events.Event
-	l1params   *parameters.L1
-	log        *logger.Logger
-	config     L1Config
+	ctx           context.Context
+	ctxCancel     context.CancelFunc
+	chains        map[string]*ncChain // key = iotago.Address.Key()
+	chainsLock    sync.RWMutex
+	nodeAPIClient *nodeclient.Client
+	mqttClient    *nodeclient.EventAPIClient
+	indexerClient nodeclient.IndexerClient
+	milestones    *events.Event
+	l1params      *parameters.L1
+	log           *logger.Logger
+	config        L1Config
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -70,26 +71,32 @@ func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.No
 
 func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
+	nodeAPIClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
 
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
-	l1Info, err := nodeClient.Info(ctxWithTimeout)
+	l1Info, err := nodeAPIClient.Info(ctxWithTimeout)
 	if err != nil {
 		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
 	}
 
-	nodeEvents, err := nodeClient.EventAPI(ctx)
+	mqttClient, err := nodeAPIClient.EventAPI(ctx)
 	if err != nil {
 		panic(xerrors.Errorf("error getting node event client: %w", err))
 	}
+
+	indexerClient, err := nodeAPIClient.Indexer(ctx)
+	if err != nil {
+		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
+	}
 	nc := nodeConn{
-		ctx:        ctx,
-		ctxCancel:  ctxCancel,
-		chains:     make(map[string]*ncChain),
-		chainsLock: sync.RWMutex{},
-		nodeClient: nodeClient,
-		nodeEvents: nodeEvents,
+		ctx:           ctx,
+		ctxCancel:     ctxCancel,
+		chains:        make(map[string]*ncChain),
+		chainsLock:    sync.RWMutex{},
+		nodeAPIClient: nodeAPIClient,
+		mqttClient:    mqttClient,
+		indexerClient: indexerClient,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
@@ -106,8 +113,12 @@ func (nc *nodeConn) L1Params() *parameters.L1 {
 }
 
 // RegisterChain implements chain.NodeConnection.
-func (nc *nodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) {
-	ncc := newNCChain(nc, chainAddr, outputHandler)
+func (nc *nodeConn) RegisterChain(
+	chainAddr iotago.Address,
+	stateOutputHandler func(iotago.OutputID, iotago.Output),
+	outputHandler func(iotago.OutputID, iotago.Output),
+) {
+	ncc := newNCChain(nc, chainAddr, stateOutputHandler, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
 	nc.chains[ncc.Key()] = ncc
@@ -205,7 +216,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 
 	// poll the node by getting `MessageMetadataByMessageID`
 	for {
-		metadataResp, err := nc.nodeClient.MessageMetadataByMessageID(ctx, *msgID)
+		metadataResp, err := nc.nodeAPIClient.MessageMetadataByMessageID(ctx, *msgID)
 		if err != nil {
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
@@ -223,7 +234,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion message: %w", err)
 			}
-			_, err = nc.nodeClient.SubmitMessage(ctx, promotionMsg, nc.l1params.DeSerializationParameters)
+			_, err = nc.nodeAPIClient.SubmitMessage(ctx, promotionMsg, nc.l1params.DeSerializationParameters)
 			if err != nil {
 				return xerrors.Errorf("failed to promote msg: %w", err)
 			}
@@ -232,7 +243,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 			// remote PoW: Take the message, clear parents, clear nonce, send to node
 			txMsg.Parents = nil
 			txMsg.Nonce = 0
-			txMsg, err = nc.nodeClient.SubmitMessage(ctx, txMsg, nc.l1params.DeSerializationParameters)
+			txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, nc.l1params.DeSerializationParameters)
 			if err != nil {
 				return xerrors.Errorf("failed to get re-attach msg: %w", err)
 			}
