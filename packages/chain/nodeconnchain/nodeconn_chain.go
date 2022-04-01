@@ -75,7 +75,8 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 	nccT.log.Debugf("handling state output ID %v", outputIDstring)
 	aliasOutput, ok := output.(*iotago.AliasOutput)
 	if !ok || !aliasOutput.AliasID.ToAddress().Equal(nccT.chainID.AsAddress()) {
-		panic("unexpected output received as state update")
+		nccT.log.Panicf("unexpected output ID %v address %s received as state update to chain ID %s, address %s",
+			outputIDstring, aliasOutput.AliasID.ToAddress(), nccT.chainID, nccT.chainID.AsAddress())
 	}
 	nccT.log.Debugf("handling state output ID %v: writing alias output to channel", outputIDstring)
 	nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)

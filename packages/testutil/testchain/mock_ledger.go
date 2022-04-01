@@ -21,6 +21,7 @@ type MockedLedger struct {
 	pullTxInclusionStateAllowedFun func(iotago.TransactionID) bool
 	pullOutputByIDAllowedFun       func(*iotago.UTXOInput) bool
 	pushOutputToNodesNeededFun     func(uint32, *iotago.Transaction, *iotago.UTXOInput, iotago.Output) bool
+	stateOutputHandlerFuns         map[string]func(iotago.OutputID, iotago.Output)
 	outputHandlerFuns              map[string]func(iotago.OutputID, iotago.Output)
 	inclusionStateEvents           map[string]*events.Event
 	mutex                          sync.RWMutex
@@ -30,6 +31,7 @@ type MockedLedger struct {
 func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *logger.Logger) *MockedLedger {
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
+		AliasID:       *chainID.AsAliasID(),
 		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
@@ -45,12 +47,13 @@ func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *lo
 	outputs := make(map[iotago.UTXOInput]*iotago.AliasOutput)
 	outputs[*outputID] = originOutput
 	ret := &MockedLedger{
-		latestOutputID:       outputID,
-		outputs:              outputs,
-		txIDs:                make(map[iotago.TransactionID]bool),
-		outputHandlerFuns:    make(map[string]func(iotago.OutputID, iotago.Output)),
-		inclusionStateEvents: make(map[string]*events.Event),
-		log:                  log.Named("ml-" + chainID.String()[2:8]),
+		latestOutputID:         outputID,
+		outputs:                outputs,
+		txIDs:                  make(map[iotago.TransactionID]bool),
+		stateOutputHandlerFuns: make(map[string]func(iotago.OutputID, iotago.Output)),
+		outputHandlerFuns:      make(map[string]func(iotago.OutputID, iotago.Output)),
+		inclusionStateEvents:   make(map[string]*events.Event),
+		log:                    log.Named("ml-" + chainID.String()[2:8]),
 	}
 	ret.SetPublishTransactionAllowed(true)
 	ret.SetPullLatestOutputAllowed(true)
@@ -60,15 +63,17 @@ func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *lo
 	return ret
 }
 
-func (mlT *MockedLedger) Register(nodeID string, handler func(iotago.OutputID, iotago.Output)) {
+func (mlT *MockedLedger) Register(nodeID string, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
 	_, ok := mlT.outputHandlerFuns[nodeID]
 	if ok {
 		mlT.log.Panicf("Output handler for node %v already registered", nodeID)
 	}
-	mlT.outputHandlerFuns[nodeID] = handler
+	mlT.stateOutputHandlerFuns[nodeID] = stateOutputHandler
+	mlT.outputHandlerFuns[nodeID] = outputHandler
 }
 
 func (mlT *MockedLedger) Unregister(nodeID string) {
+	delete(mlT.stateOutputHandlerFuns, nodeID)
 	delete(mlT.outputHandlerFuns, nodeID)
 }
 
@@ -100,7 +105,7 @@ func (mlT *MockedLedger) PublishTransaction(stateIndex uint32, tx *iotago.Transa
 			}
 			if mlT.pushOutputToNodesNeededFun(stateIndex, tx, outputID, output) {
 				mlT.log.Debugf("Publishing transaction for state %v: pushing it to nodes", stateIndex)
-				for nodeID, handler := range mlT.outputHandlerFuns {
+				for nodeID, handler := range mlT.stateOutputHandlerFuns {
 					mlT.log.Debugf("Publishing transaction for state %v: pushing it to node %v", stateIndex, nodeID)
 					go handler(outputID.ID(), output)
 				}
@@ -121,7 +126,7 @@ func (mlT *MockedLedger) PullLatestOutput(nodeID string) {
 		mlT.log.Debugf("Pulling latest output allowed")
 		output := mlT.getLatestOutput()
 		mlT.log.Debugf("Pulling latest output: output with id %v pulled", iscp.OID(mlT.latestOutputID))
-		handler, ok := mlT.outputHandlerFuns[nodeID]
+		handler, ok := mlT.stateOutputHandlerFuns[nodeID]
 		if ok {
 			go handler(mlT.latestOutputID.ID(), output)
 		} else {
@@ -168,7 +173,7 @@ func (mlT *MockedLedger) PullOutputByID(nodeID string, outputID *iotago.UTXOInpu
 			return
 		}
 		mlT.log.Debugf("Pulling output by id %v was successful", iscp.OID(outputID))
-		handler, ok := mlT.outputHandlerFuns[nodeID]
+		handler, ok := mlT.stateOutputHandlerFuns[nodeID]
 		if ok {
 			go handler(outputID.ID(), output)
 		} else {
