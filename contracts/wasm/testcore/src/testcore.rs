@@ -242,7 +242,7 @@ pub fn func_claim_allowance(ctx: &ScFuncContext, f: &ClaimAllowanceContext) {
 }
 
 pub fn func_estimate_min_dust(ctx: &ScFuncContext, f: &EstimateMinDustContext) {
-    let provided = ctx.allowance().balance(&wasmtypes::ScColor::IOTA);
+    let provided = ctx.allowance().iotas();
     let dummy = ScFuncs::estimate_min_dust(ctx);
     let required = ctx.estimate_dust(&dummy.func);
     ctx.require(provided >= required, "not enough funds");
@@ -257,7 +257,7 @@ pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
 pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackContext) {
     let caller = ctx.caller();
     ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
-    let transfer = wasmlib::ScTransfers::from_balances(ctx.allowance());
+    let transfer = wasmlib::ScTransfer::from_balances(ctx.allowance());
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     ctx.send(&caller.address(), &transfer);
 }
@@ -269,9 +269,9 @@ pub fn func_send_nf_ts_back(ctx: &ScFuncContext, f: &SendNFTsBackContext) {
 }
 
 pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
-    let mut iotas = ctx.allowance().balance(&wasmtypes::ScColor::IOTA);
+    let mut iotas = ctx.allowance().iotas();
     let address = ctx.caller().address();
-    let transfer = wasmlib::ScTransfers::iotas(200);
+    let transfer = wasmlib::ScTransfer::iotas(200);
     while iotas >= 200 {
         ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
         ctx.send(&address, &transfer);
@@ -280,20 +280,18 @@ pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
 }
 
 pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, f: &SplitFundsNativeTokensContext) {
-    let iotas = ctx.allowance().balance(&wasmtypes::ScColor::IOTA);
+    let iotas = ctx.allowance().iotas();
     let address = ctx.caller().address();
-    let transfer = wasmlib::ScTransfers::iotas(iotas);
+    let transfer = wasmlib::ScTransfer::iotas(iotas);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-    for token in ctx.allowance().colors() {
-        if token == wasmtypes::ScColor::IOTA {
-            continue;
-        }
-        let transfer = wasmlib::ScTransfers::transfer(&token, 1);
+    for token in ctx.allowance().token_ids() {
+        let one = ScBigInt::from_uint64(1);
+        let transfer = wasmlib::ScTransfer::tokens(&token, &one);
         let mut tokens = ctx.allowance().balance(&token);
-        while tokens >= 1 {
+        while tokens.cmp(&one) >= 0 {
             ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
             ctx.send(&address, &transfer);
-            tokens -= 1;
+            tokens = tokens.sub(&one);
         }
     }
 }

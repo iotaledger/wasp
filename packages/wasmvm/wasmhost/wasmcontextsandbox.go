@@ -150,7 +150,7 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	allowance := s.cvt.IscpAllowance(scAssets)
 	assets := allowance
 	// Force a minimum transfer of 1000 iotas for dust and some gas
@@ -229,7 +229,7 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	allowance := s.cvt.IscpAllowance(scAssets)
 	// TODO check, probably not right
 	transfer := iscp.NewAllowanceFungibleTokens(allowance.Assets)
@@ -346,7 +346,7 @@ func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	req := wasmrequests.NewSendRequestFromBytes(args)
 	address := s.cvt.IscpAddress(&req.Address)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
 		allowance := s.cvt.IscpAllowance(scAssets)
 		s.ctx.Send(iscp.RequestParameters{
@@ -375,7 +375,7 @@ func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	req := wasmrequests.NewTransferRequestFromBytes(args)
 	agentID := s.cvt.IscpAgentID(&req.AgentID)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
 		allowance := s.cvt.IscpAllowance(scAssets)
 		if req.Create {

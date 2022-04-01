@@ -359,7 +359,7 @@ func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTo
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	for _, token := range ctx.Allowance().TokenIDs() {
 		one := wasmtypes.NewScBigInt(1)
-		transfer = wasmlib.NewScTransferToken(token, one)
+		transfer = wasmlib.NewScTransferTokens(token, one)
 		tokens := ctx.Allowance().Balance(token)
 		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
 			ctx.TransferAllowed(ctx.AccountID(), transfer, false)

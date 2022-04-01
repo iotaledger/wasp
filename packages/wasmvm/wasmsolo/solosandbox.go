@@ -217,7 +217,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	s.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
 		allowance := s.cvt.IscpAllowance(scAssets)
 		return s.postSync(ctx.scName, funcName, params, allowance)
@@ -304,7 +304,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	s.Tracef("POST %s.%s", s.ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}

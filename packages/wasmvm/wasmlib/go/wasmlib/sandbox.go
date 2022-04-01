@@ -80,7 +80,7 @@ func (s ScSandbox) Balance(color wasmtypes.ScTokenID) uint64 {
 
 // access the current balances for all assets
 func (s ScSandbox) Balances() *ScBalances {
-	balances := NewScAssetsFromBytes(Sandbox(FnBalances, nil)).Balances()
+	balances := NewScAssets(Sandbox(FnBalances, nil)).Balances()
 	return &balances
 }
 
@@ -177,7 +177,7 @@ type ScSandboxFunc struct {
 // access the allowance assets
 func (s ScSandboxFunc) Allowance() *ScBalances {
 	buf := Sandbox(FnAllowance, nil)
-	balances := NewScAssetsFromBytes(buf).Balances()
+	balances := NewScAssets(buf).Balances()
 	return &balances
 }
 
@@ -229,7 +229,7 @@ func (s ScSandboxFunc) Event(msg string) {
 
 // retrieve the assets that were minted in this transaction
 func (s ScSandboxFunc) Minted() ScBalances {
-	return NewScAssetsFromBytes(Sandbox(FnMinted, nil)).Balances()
+	return NewScAssets(Sandbox(FnMinted, nil)).Balances()
 }
 
 // (delayed) posts a smart contract function request

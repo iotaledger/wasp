@@ -20,7 +20,7 @@ func (o ScBigInt) Add(rhs ScBigInt) ScBigInt {
 	lhsLen := len(o.bytes)
 	rhsLen := len(rhs.bytes)
 	if lhsLen < rhsLen {
-		// always add smaller value to bigger value
+		// always add shorter value to longer value
 		return rhs.Add(o)
 	}
 
@@ -55,8 +55,8 @@ func (o ScBigInt) Cmp(rhs ScBigInt) int {
 		return -1
 	}
 	for i := lhsLen - 1; i >= 0; i-- {
-		lhsByte := o.bytes[lhsLen]
-		rhsByte := rhs.bytes[lhsLen]
+		lhsByte := o.bytes[i]
+		rhsByte := rhs.bytes[i]
 		if lhsByte != rhsByte {
 			if lhsByte > rhsByte {
 				return 1
@@ -85,7 +85,7 @@ func (o ScBigInt) IsZero() bool {
 	return len(o.bytes) == 0
 }
 
-func (o ScBigInt) Mod(rhs ScBigInt) ScBigInt {
+func (o ScBigInt) Modulo(rhs ScBigInt) ScBigInt {
 	_, mod := o.DivMod(rhs)
 	return mod
 }
@@ -99,6 +99,19 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 	}
 	panic("implement Mul")
 	return o
+}
+
+func (o *ScBigInt) normalize() {
+	buf := o.bytes
+	bufLen := len(buf)
+	for ; bufLen > 0 && buf[bufLen-1] == 0; bufLen-- {
+	}
+	o.bytes = buf[:bufLen]
+}
+
+func (o *ScBigInt) SetUint64(value uint64) {
+	o.bytes = Uint64ToBytes(value)
+	o.normalize()
 }
 
 func (o ScBigInt) String() string {
@@ -127,6 +140,7 @@ func (o ScBigInt) Sub(rhs ScBigInt) ScBigInt {
 		o.bytes[i] = byte(borrow)
 		borrow >>= 8
 	}
+	o.normalize()
 	return o
 }
 
@@ -134,17 +148,9 @@ func (o ScBigInt) Uint64() uint64 {
 	if len(o.bytes) > ScUint64Length {
 		panic("value exceeds Uint64")
 	}
-	buf := make([]byte, 8)
+	buf := make([]byte, ScUint64Length)
 	copy(buf, o.bytes)
 	return Uint64FromBytes(buf)
-}
-
-func (o *ScBigInt) SetUint64(value uint64) {
-	buf := Uint64ToBytes(value)
-	bufLen := ScUint64Length
-	for ; bufLen > 0 && buf[bufLen-1] == 0; bufLen-- {
-	}
-	o.bytes = buf[:bufLen]
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -166,7 +172,8 @@ func BigIntToBytes(value ScBigInt) []byte {
 }
 
 func BigIntToString(value ScBigInt) string {
-	return value.String()
+	// TODO standardize human readable string
+	panic("implement BigIntToString")
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

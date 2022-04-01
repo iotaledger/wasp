@@ -5,128 +5,169 @@ use std::collections::BTreeMap;
 
 use crate::*;
 
-fn read_bytes(assets: &mut BTreeMap<Vec<u8>, u64>, buf: &[u8]) {
-    if buf.len() != 0 {
-        let mut dec = WasmDecoder::new(buf);
-        let size = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
-        for _i in 0..size {
-            let color = color_decode(&mut dec);
-            let amount_buf = dec.fixed_bytes(SC_UINT64_LENGTH);
-            let amount = uint64_from_bytes(&amount_buf);
-            assets.insert(color.to_bytes(), amount);
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct ScAssets {
-    assets: BTreeMap<Vec<u8>, u64>,
+    iotas: u64,
+    nfts: Vec<ScNftID>,
+    tokens: BTreeMap<Vec<u8>, ScBigInt>,
 }
 
 impl ScAssets {
     pub fn new(buf: &[u8]) -> ScAssets {
-        let mut assets = ScAssets { assets: BTreeMap::new() };
-        read_bytes(&mut assets.assets, buf);
+        let mut assets = ScAssets {
+            iotas: 0,
+            nfts: Vec::new(),
+            tokens: BTreeMap::new(),
+        };
+        if buf.len() == 0 {
+            return assets;
+        }
+
+        let mut dec = WasmDecoder::new(buf);
+        assets.iotas = uint64_decode(&mut dec);
+
+        let size = uint32_decode(&mut dec);
+        for _i in 0..size {
+            let token_id = token_id_decode(&mut dec);
+            let amount = big_int_decode(&mut dec);
+            assets.tokens.insert(token_id.to_bytes(), amount);
+        }
+
+        let size = uint32_decode(&mut dec);
+        for _i in 0..size {
+            let nft_id = nft_id_decode(&mut dec);
+            assets.nfts.push(nft_id);
+        }
         assets
     }
 
     pub fn balances(&self) -> ScBalances {
-        ScBalances { assets: self.assets.clone() }
+        ScBalances { assets: self.clone() }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        if self.iotas != 0 {
+            return false;
+        }
+        for (_key, val) in self.tokens.iter() {
+            if !val.is_zero() {
+                return false;
+            }
+        }
+        self.nfts.len() == 0
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let dict = &self.assets;
-        if dict.len() == 0 {
-            return vec![0; SC_UINT32_LENGTH];
+        let mut enc = WasmEncoder::new();
+        uint64_encode(&mut enc, self.iotas);
+
+        uint32_encode(&mut enc, self.tokens.len() as u32);
+        for (token_id, amount) in self.tokens.iter() {
+            enc.fixed_bytes(token_id, SC_TOKEN_ID_LENGTH);
+            big_int_encode(&mut enc, amount);
         }
 
-        let mut enc = WasmEncoder::new();
-        enc.fixed_bytes(&uint32_to_bytes(dict.len() as u32), SC_UINT32_LENGTH);
-        for (key, val) in dict.iter() {
-            enc.fixed_bytes(key, SC_COLOR_LENGTH);
-            enc.fixed_bytes(&uint64_to_bytes(*val), SC_UINT64_LENGTH);
+        uint32_encode(&mut enc, self.nfts.len() as u32);
+        for nft_id in self.nfts.iter() {
+            nft_id_encode(&mut enc, &nft_id);
         }
         return enc.buf();
+    }
+
+    pub fn token_ids(&self) -> Vec<ScTokenID> {
+        let mut tokens: Vec<ScTokenID> = Vec::new();
+        for (key, _val) in self.tokens.iter() {
+            tokens.push(token_id_from_bytes(key));
+        }
+        tokens
     }
 }
 
 #[derive(Clone)]
 pub struct ScBalances {
-    assets: BTreeMap<Vec<u8>, u64>,
+    assets: ScAssets,
 }
 
 impl ScBalances {
-    pub fn balance(&self, color: &ScColor) -> u64 {
-        let key = color.to_bytes();
-        if !self.assets.contains_key(&key) {
-            return 0;
-        }
-        *self.assets.get(&key).unwrap()
+    fn new() -> ScBalances {
+        ScBalances { assets: ScAssets::new(&[]) }
     }
 
-    pub fn colors(&self) -> Vec<ScColor> {
-        let mut colors: Vec<ScColor> = Vec::new();
-        for color in self.assets.keys() {
-            colors.push(color_from_bytes(color));
+    pub fn balance(&self, token: &ScTokenID) -> ScBigInt {
+        let key = token.to_bytes();
+        if !self.assets.tokens.contains_key(&key) {
+            return ScBigInt::new();
         }
-        colors
+        self.assets.tokens.get(&key).unwrap().clone()
+    }
+
+    pub fn iotas(&self) -> u64 {
+        self.assets.iotas
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.assets.is_empty()
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.assets.to_bytes()
+    }
+
+    pub fn token_ids(&self) -> Vec<ScTokenID> {
+        self.assets.token_ids()
     }
 }
 
 #[derive(Clone)]
-pub struct ScTransfers {
-    assets: BTreeMap<Vec<u8>, u64>,
+pub struct ScTransfer {
+    balances: ScBalances,
 }
 
-impl ScTransfers {
-    pub fn new(buf: &[u8]) -> ScTransfers {
-        let mut assets = ScTransfers { assets: BTreeMap::new() };
-        read_bytes(&mut assets.assets, buf);
-        assets
+impl ScTransfer {
+    pub fn new() -> ScTransfer {
+        ScTransfer { balances: ScBalances::new() }
     }
 
-    pub fn from_balances(balances: ScBalances) -> ScTransfers {
-        let mut transfers = ScTransfers { assets: BTreeMap::new() };
-        let colors = balances.colors();
-        for i in 0..colors.len() {
-            let color = colors.get(i).unwrap();
-            transfers.set(color, balances.balance(color))
+    pub fn from_balances(balances: ScBalances) -> ScTransfer {
+        let mut transfer = ScTransfer::new();
+        let token_ids = balances.token_ids();
+        for i in 0..token_ids.len() {
+            let token_id = token_ids.get(i).unwrap();
+            transfer.set(token_id, &balances.balance(token_id))
         }
-        transfers
+        transfer
     }
 
-    pub fn iotas(amount: u64) -> ScTransfers {
-        ScTransfers::transfer(&ScColor::IOTA, amount)
+    pub fn iotas(amount: u64) -> ScTransfer {
+        let mut transfer = ScTransfer::new();
+        transfer.balances.assets.iotas = amount;
+        transfer
     }
 
-    pub fn is_empty(&self) -> bool {
-        for (_key, val) in self.assets.iter() {
-            if *val != 0 {
-                return false;
-            }
-        }
-        true
+    pub fn nft(nft_id: &ScNftID) -> ScTransfer {
+        let mut transfer = ScTransfer::new();
+        transfer.add_nft(nft_id);
+        transfer
     }
 
-    pub fn transfer(color: &ScColor, amount: u64) -> ScTransfers {
-        let mut transfers = ScTransfers { assets: BTreeMap::new() };
-        transfers.set(color, amount);
-        transfers
+    pub fn tokens(token_id: &ScTokenID, amount: &ScBigInt) -> ScTransfer {
+        let mut transfer = ScTransfer::new();
+        transfer.set(token_id, amount);
+        transfer
     }
 
-    pub fn as_assets(&self) -> ScAssets {
-        ScAssets { assets: self.assets.clone() }
+    pub fn add_nft(&mut self, nft_id: &ScNftID) {
+        self.balances.assets.nfts.push(nft_id.clone());
     }
 
-    pub fn balances(&self) -> ScBalances {
-        ScBalances { assets: self.assets.clone() }
+    pub fn set(&mut self, token: &ScTokenID, amount: &ScBigInt) {
+        self.balances.assets.tokens.insert(token.to_bytes(), amount.clone());
     }
+}
 
-    pub fn set(&mut self, color: &ScColor, amount: u64) {
-        self.assets.insert(color.to_bytes(), amount);
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.as_assets().to_bytes()
+impl std::ops::Deref for ScTransfer {
+    type Target = ScBalances;
+    fn deref(&self) -> &Self::Target {
+        &self.balances
     }
 }

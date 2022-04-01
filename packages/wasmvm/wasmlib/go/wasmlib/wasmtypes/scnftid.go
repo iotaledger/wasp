@@ -26,7 +26,7 @@ func NftIDDecode(dec *WasmDecoder) ScNftID {
 }
 
 func NftIDEncode(enc *WasmEncoder, value ScNftID) {
-	enc.FixedBytes(value.Bytes(), ScNftIDLength)
+	enc.FixedBytes(value.id[:], ScNftIDLength)
 }
 
 func NftIDFromBytes(buf []byte) ScNftID {

@@ -22,10 +22,6 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.chain_id().exists() {
         ctx.require(f.params.chain_id().value() == ctx.chain_id(), "mismatch: ChainID");
     }
-    if f.params.color().exists() {
-        let color = color_from_bytes("RedGreenBlueYellowCyanBlackWhitePurple".as_bytes());
-        ctx.require(f.params.color().value() == color, "mismatch: Color");
-    }
     if f.params.hash().exists() {
         let hash = hash_from_bytes("0123456789abcdeffedcba9876543210".as_bytes());
         ctx.require(f.params.hash().value() == hash, "mismatch: Hash");
@@ -45,12 +41,20 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.int64().exists() {
         ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
     }
+    if f.params.nft_id().exists() {
+        let nft_id = nft_id_from_bytes("01234567890123456789".as_bytes());
+        ctx.require(f.params.nft_id().value() == nft_id, "mismatch: NftID");
+    }
     if f.params.request_id().exists() {
         let request_id = request_id_from_bytes("abcdefghijklmnopqrstuvwxyz123456\x00\x00".as_bytes());
         ctx.require(f.params.request_id().value() == request_id, "mismatch: RequestID");
     }
     if f.params.string().exists() {
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
+    }
+    if f.params.token_id().exists() {
+        let token_id = token_id_from_bytes("RedGreenBlueYellowCyanBlackWhitePurple".as_bytes());
+        ctx.require(f.params.token_id().value() == token_id, "mismatch: TokenID");
     }
     if f.params.uint8().exists() {
         ctx.require(f.params.uint8().value() == 123, "mismatch: Uint8");
@@ -71,11 +75,11 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
 }
 
 pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
-    ctx.transfer_allowed(&ctx.account_id(), &ScTransfers::from_balances(ctx.allowance()), false);
+    ctx.transfer_allowed(&ctx.account_id(), &ScTransfer::from_balances(ctx.allowance()), false);
 }
 
 pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
+    f.results.iotas().set_value(ctx.balances().iotas());
 }
 
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
@@ -103,7 +107,7 @@ pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
 }
 
 pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
+    f.results.iotas().set_value(ctx.balances().iotas());
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\

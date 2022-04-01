@@ -13,15 +13,16 @@ type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
 	Iotas  uint64
-	Tokens TokenAmounts
 	NFTs   []*wasmtypes.ScNftID
+	Tokens TokenAmounts
 }
 
-func NewScAssetsFromBytes(buf []byte) *ScAssets {
+func NewScAssets(buf []byte) *ScAssets {
 	assets := &ScAssets{}
 	if len(buf) == 0 {
 		return assets
 	}
+
 	dec := wasmtypes.NewWasmDecoder(buf)
 	assets.Iotas = wasmtypes.Uint64Decode(dec)
 
@@ -50,6 +51,7 @@ func (a *ScAssets) Bytes() []byte {
 	if a == nil {
 		return []byte{}
 	}
+
 	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.Uint64Encode(enc, a.Iotas)
 
@@ -144,17 +146,17 @@ func NewScTransferIotas(amount uint64) *ScTransfer {
 	return transfer
 }
 
-// create a new transfer object and initialize it with the specified token transfer
-func NewScTransferToken(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
-	transfer := NewScTransfer()
-	transfer.Set(tokenID, amount)
-	return transfer
-}
-
 // create a new transfer object and initialize it with the specified NFT
 func NewScTransferNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
 	transfer := NewScTransfer()
-	transfer.assets.NFTs = append(transfer.assets.NFTs, nftID)
+	transfer.AddNFT(nftID)
+	return transfer
+}
+
+// create a new transfer object and initialize it with the specified token transfer
+func NewScTransferTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
+	transfer := NewScTransfer()
+	transfer.Set(tokenID, amount)
 	return transfer
 }
 

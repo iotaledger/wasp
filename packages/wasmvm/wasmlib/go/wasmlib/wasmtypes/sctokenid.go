@@ -26,7 +26,7 @@ func TokenIDDecode(dec *WasmDecoder) ScTokenID {
 }
 
 func TokenIDEncode(enc *WasmEncoder, value ScTokenID) {
-	enc.FixedBytes(TokenIDToBytes(value), ScTokenIDLength)
+	enc.FixedBytes(value.id[:], ScTokenIDLength)
 }
 
 func TokenIDFromBytes(buf []byte) ScTokenID {
