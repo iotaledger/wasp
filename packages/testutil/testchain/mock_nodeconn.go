@@ -45,7 +45,7 @@ func (mncT *MockedNodeConn) ID() string {
 }
 
 func (mncT *MockedNodeConn) RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
-	mncT.ledgers.GetLedger(chainID).Register(mncT.id, outputHandler)
+	mncT.ledgers.GetLedger(chainID).Register(mncT.id, stateOutputHandler, outputHandler)
 }
 
 func (mncT *MockedNodeConn) UnregisterChain(chainID *iscp.ChainID) {

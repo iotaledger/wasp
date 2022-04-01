@@ -12,6 +12,7 @@ PATHS=(\
     "packages/vm/vmcontext/..." \
     "packages/peering/..." \
     "packages/chain/chainimpl/" \
+    "packages/chain/nodeconnchain/" \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/chain/consensus/" \

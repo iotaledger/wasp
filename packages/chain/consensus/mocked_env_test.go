@@ -95,7 +95,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	ret.Ledgers = testchain.NewMockedLedgers(ret.StateAddress, log)
-	ret.InitStateOutput = ret.Ledgers.GetLedger(ret.ChainID.AsAddress()).GetLatestOutput()
+	ret.InitStateOutput = ret.Ledgers.GetLedger(ret.ChainID).GetLatestOutput()
 
 	ret.Log.Infof("Testing environment is ready")
 
