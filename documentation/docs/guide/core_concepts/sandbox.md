@@ -2,10 +2,11 @@
 description: Smart Contracts can only interact with the world by using the Sandbox interface which provides limited and deterministic access to the state through a key/value storage abstraction.
 image: /img/sandbox.png
 keywords:
-- Smart Contracts
-- Sandbox
+- smart contracts
+- sandbox
 - interface
 - storage abstraction
+- explanation
 ---
 
 # Sandbox Interface
@@ -14,7 +15,7 @@ The only way a smart contract can interact with the world (access the state, cal
 
 The Sandbox provides limited and deterministic access to the state through a key/value storage abstraction.
 
-![Sandbox](/img/sandbox.png)
+![Sandbox](img/sandbox.png)
 
 Besides reading and writing to the contract state, the Sandbox interface allows smart contracts to access:
 

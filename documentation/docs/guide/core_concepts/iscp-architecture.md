@@ -1,11 +1,12 @@
 ---
-keywords:
-- Smart Contracts
-- Architecture
-- Ethereum
-- Implementation
-description: IOTA Smart Contracts allow anyone to start their own chain and validators. Link to full technical description of the IOTA Smart Contarcts architecture and whitepaper  
+description: An overview of the IOTA Smart Contracts architecture.
 image: /img/multichain.png
+keywords:
+- smart contracts
+- architecture
+- Layer 2
+- Layer 1
+- explanation
 ---
 # IOTA Smart Contracts Architecture
 

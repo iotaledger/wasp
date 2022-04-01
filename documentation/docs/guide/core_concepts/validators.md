@@ -1,10 +1,12 @@
 ---
-keywords:
-- Validators
-- consensus
-- state update
 description: Each chain is run by a network of validator nodes which run a consensus on the chain state update.
 image: /img/logo/WASP_logo_dark.png
+keywords:
+- validators
+- validator nodes
+- consensus
+- state update
+- explanation
 ---
 # Validators
 
