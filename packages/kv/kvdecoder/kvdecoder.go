@@ -235,7 +235,7 @@ func (p *kvdecoder) GetTokenScheme(key kv.Key, def ...iotago.TokenScheme) (iotag
 		if err != nil {
 			return nil, err
 		}
-		_, err = ts.Deserialize(v[1:], serializer.DeSeriModeNoValidation, nil)
+		_, err = ts.Deserialize(v, serializer.DeSeriModeNoValidation, nil)
 		if err != nil {
 			return nil, err
 		}

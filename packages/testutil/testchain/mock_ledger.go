@@ -27,7 +27,7 @@ type MockedLedger struct {
 	log                            *logger.Logger
 }
 
-func NewMockedLedger(chainAddr, stateAddress iotago.Address, log *logger.Logger) *MockedLedger {
+func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *logger.Logger) *MockedLedger {
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
 		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
@@ -50,7 +50,7 @@ func NewMockedLedger(chainAddr, stateAddress iotago.Address, log *logger.Logger)
 		txIDs:                make(map[iotago.TransactionID]bool),
 		outputHandlerFuns:    make(map[string]func(iotago.OutputID, iotago.Output)),
 		inclusionStateEvents: make(map[string]*events.Event),
-		log:                  log.Named("ml-" + chainAddr.String()[2:8]),
+		log:                  log.Named("ml-" + chainID.String()[2:8]),
 	}
 	ret.SetPublishTransactionAllowed(true)
 	ret.SetPullLatestOutputAllowed(true)

@@ -236,14 +236,15 @@ func cloneFoundryOutput(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 
 // identicalFoundries assumes use case and does consistency checks
 func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
+	if f1 == nil || f2 == nil {
+		return false
+	}
 	simpleTokenSchemeF1 := util.MustTokenScheme(f1.TokenScheme)
 	simpleTokenSchemeF2 := util.MustTokenScheme(f2.TokenScheme)
 
 	switch {
 	case f1 == f2:
 		return true
-	case f1 == nil || f2 == nil:
-		return false
 	case f1.SerialNumber != f2.SerialNumber:
 		return false
 	case simpleTokenSchemeF1.MintedTokens.Cmp(simpleTokenSchemeF2.MintedTokens) != 0:
@@ -258,7 +259,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, maximum supply is immutable")
 	case !f1.Ident().Equal(f2.Ident()):
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
-	case f1.TokenScheme != f2.TokenScheme:
+	case !equalTokenScheme(simpleTokenSchemeF1, simpleTokenSchemeF2):
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
 	case f1.TokenTag != f2.TokenTag:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token tags must be equal")
@@ -266,4 +267,10 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true
+}
+
+func equalTokenScheme(a, b *iotago.SimpleTokenScheme) bool {
+	return a.MintedTokens.Cmp(b.MintedTokens) == 0 &&
+		a.MeltedTokens.Cmp(b.MeltedTokens) == 0 &&
+		a.MaximumSupply.Cmp(b.MaximumSupply) == 0
 }

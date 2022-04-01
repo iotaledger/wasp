@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/iotaledger/hive.go v0.0.0-20220323112142-b879f04276bd
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220331100243-cc6a5d0d665f
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220401090040-5d344ed99192
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/jackpal/gateway v1.0.5 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect
@@ -87,7 +87,7 @@ require (
 	go.uber.org/dig v1.14.1
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
 	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect

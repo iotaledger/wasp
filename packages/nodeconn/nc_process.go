@@ -7,14 +7,14 @@ import "time"
 
 func (nc *nodeConn) run() {
 	for {
-		err := nc.nodeEvents.Connect(nc.ctx)
+		err := nc.mqttClient.Connect(nc.ctx)
 		if err == nil {
 			break
 		}
 		nc.log.Warnf("Unable to connect to Hornet MQTT: %w", err)
 		time.Sleep(1 * time.Second)
 	}
-	milestones, subInfo := nc.nodeEvents.ConfirmedMilestones()
+	milestones, subInfo := nc.mqttClient.ConfirmedMilestones()
 	if subInfo.Error() != nil {
 		nc.log.Panicf("Error subscribing: %w", subInfo.Error())
 	}

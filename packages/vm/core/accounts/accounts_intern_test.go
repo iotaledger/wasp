@@ -345,24 +345,25 @@ func TestTransferNFTs(t *testing.T) {
 
 func TestFoundryOutputRec(t *testing.T) {
 	o := foundryOutputRec{
-		Amount:        300,
-		TokenTag:      iotago.TokenTag{},
-		TokenScheme:   &iotago.SimpleTokenScheme{},
-		MaximumSupply: big.NewInt(1000),
-		MintedTokens:  big.NewInt(20),
-		MeltedTokens:  util.Big0,
-		BlockIndex:    3,
-		OutputIndex:   2,
+		Amount:   300,
+		TokenTag: iotago.TokenTag{},
+		TokenScheme: &iotago.SimpleTokenScheme{
+			MaximumSupply: big.NewInt(1000),
+			MintedTokens:  big.NewInt(20),
+			MeltedTokens:  util.Big0,
+		},
+		BlockIndex:  3,
+		OutputIndex: 2,
 	}
 	oBin := o.Bytes()
 	o1, err := foundryOutputRecFromMarshalUtil(marshalutil.New(oBin))
 	require.NoError(t, err)
 	require.EqualValues(t, o.Amount, o1.Amount)
 	require.EqualValues(t, o.TokenTag, o1.TokenTag)
-	_, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
+	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
 	require.True(t, ok)
-	require.True(t, o.MaximumSupply.Cmp(o1.MaximumSupply) == 0)
-	require.True(t, o.MintedTokens.Cmp(o1.MintedTokens) == 0)
+	require.True(t, ts.MaximumSupply.Cmp(ts.MaximumSupply) == 0)
+	require.True(t, ts.MintedTokens.Cmp(ts.MintedTokens) == 0)
 	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
 	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)
 }

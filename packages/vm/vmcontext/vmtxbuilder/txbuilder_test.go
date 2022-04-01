@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -725,7 +726,7 @@ func TestFoundries(t *testing.T) {
 	createNFoundries := func(n int) {
 		for i := 0; i < n; i++ {
 			sn, _ := txb.CreateNewFoundry(
-				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(10_000_000)},
+				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(10_000_000), MeltedTokens: util.Big0, MintedTokens: util.Big0},
 				iotago.TokenTag{},
 				nil,
 			)
