@@ -17,9 +17,9 @@ import (
 
 // nodeconnChain is responsible for maintaining the information related to a single chain.
 type nodeconnChain struct {
-	nc        chain.NodeConnection
-	chainAddr iotago.Address
-	log       *logger.Logger
+	nc      chain.NodeConnection
+	chainID *iscp.ChainID
+	log     *logger.Logger
 
 	aliasOutputIsHandled       bool
 	aliasOutputCh              chan *iscp.AliasOutputWithID
@@ -42,12 +42,12 @@ type txInclusionStateMsg struct {
 
 var _ chain.ChainNodeConnection = &nodeconnChain{}
 
-func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
+func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
 	var err error
 	result := nodeconnChain{
 		nc:                     nc,
-		chainAddr:              chainAddr,
-		log:                    log.Named("ncc-" + chainAddr.String()[2:8]),
+		chainID:                chainID,
+		log:                    log.Named("ncc-" + chainID.String()[2:8]),
 		aliasOutputCh:          make(chan *iscp.AliasOutputWithID),
 		aliasOutputStopCh:      make(chan bool),
 		onLedgerRequestCh:      make(chan *iscp.OnLedgerRequestData),
@@ -55,8 +55,8 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 		txInclusionStateCh:     make(chan *txInclusionStateMsg),
 		txInclusionStateStopCh: make(chan bool),
 	}
-	result.nc.RegisterChain(result.chainAddr, result.stateOutputHandler, result.outputHandler)
-	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainAddr, result.txInclusionStateHandler)
+	result.nc.RegisterChain(result.chainID, result.stateOutputHandler, result.outputHandler)
+	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainID, result.txInclusionStateHandler)
 	if err != nil {
 		result.log.Errorf("cannot create chain nodeconnection: %v", err)
 		return nil, err
@@ -74,7 +74,7 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 	outputIDstring := iscp.OID(outputIDUTXO)
 	nccT.log.Debugf("handling state output ID %v", outputIDstring)
 	aliasOutput, ok := output.(*iotago.AliasOutput)
-	if !ok || !aliasOutput.AliasID.ToAddress().Equal(nccT.chainAddr) {
+	if !ok || !aliasOutput.AliasID.ToAddress().Equal(nccT.chainID.AsAddress()) {
 		panic("unexpected output received as state update")
 	}
 	nccT.log.Debugf("handling state output ID %v: writing alias output to channel", outputIDstring)
@@ -220,19 +220,19 @@ func (nccT *nodeconnChain) detachFromMilestones() {
 }
 
 func (nccT *nodeconnChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
-	return nccT.nc.PublishTransaction(nccT.chainAddr, stateIndex, tx)
+	return nccT.nc.PublishTransaction(nccT.chainID, stateIndex, tx)
 }
 
 func (nccT *nodeconnChain) PullLatestOutput() {
-	nccT.nc.PullLatestOutput(nccT.chainAddr)
+	nccT.nc.PullLatestOutput(nccT.chainID)
 }
 
 func (nccT *nodeconnChain) PullTxInclusionState(txid iotago.TransactionID) {
-	nccT.nc.PullTxInclusionState(nccT.chainAddr, txid)
+	nccT.nc.PullTxInclusionState(nccT.chainID, txid)
 }
 
 func (nccT *nodeconnChain) PullOutputByID(outputID *iotago.UTXOInput) {
-	nccT.nc.PullOutputByID(nccT.chainAddr, outputID)
+	nccT.nc.PullOutputByID(nccT.chainID, outputID)
 }
 
 func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
@@ -242,7 +242,7 @@ func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMe
 
 func (nccT *nodeconnChain) Close() {
 	nccT.DetachFromMilestones()
-	_ = nccT.nc.DetachTxInclusionStateEvents(nccT.chainAddr, nccT.txInclusionStateHandlerRef)
-	nccT.nc.UnregisterChain(nccT.chainAddr)
+	_ = nccT.nc.DetachTxInclusionStateEvents(nccT.chainID, nccT.txInclusionStateHandlerRef)
+	nccT.nc.UnregisterChain(nccT.chainID)
 	nccT.log.Debugf("chain nodeconnection closed")
 }

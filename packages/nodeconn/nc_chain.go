@@ -13,13 +13,14 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
 )
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
 	nc                 *nodeConn
-	chainAddr          iotago.Address
+	chainID            *iscp.ChainID
 	msgs               map[hashing.HashValue]*ncTransaction
 	outputHandler      func(iotago.OutputID, iotago.Output)
 	stateOutputHandler func(iotago.OutputID, iotago.Output)
@@ -29,8 +30,8 @@ type ncChain struct {
 
 func newNCChain(
 	nc *nodeConn,
-	chainAddr iotago.Address,
-	stateOutputHandler func(iotago.OutputID, iotago.Output),
+	chainID *iscp.ChainID,
+	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
 ) *ncChain {
 	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
@@ -38,19 +39,19 @@ func newNCChain(
 	})
 	ncc := ncChain{
 		nc:                 nc,
-		chainAddr:          chainAddr,
+		chainID:            chainID,
 		msgs:               make(map[hashing.HashValue]*ncTransaction),
 		outputHandler:      outputHandler,
 		stateOutputHandler: stateOutputHandler,
 		inclusionStates:    inclusionStates,
-		log:                nc.log.Named(chainAddr.String()[:6]),
+		log:                nc.log.Named(chainID.String()[:6]),
 	}
 	go ncc.run()
 	return &ncc
 }
 
 func (ncc *ncChain) Key() string {
-	return ncc.chainAddr.Key()
+	return ncc.chainID.Key()
 }
 
 func (ncc *ncChain) Close() {
@@ -94,7 +95,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
-	bech32Addr := ncc.chainAddr.Bech32(ncc.nc.l1params.Bech32Prefix)
+	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Bech32Prefix)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
 		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
@@ -136,14 +137,14 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 		if init {
 			init = false
 		} else {
-			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainAddr.String())
+			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainID.String())
 			time.Sleep(500 * time.Millisecond) // Delay between retries.
 		}
 
 		//
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
-			ncc.chainAddr,
+			ncc.chainID.AsAddress(),
 			ncc.nc.l1params.Bech32Prefix,
 			nodeclient.UnlockConditionAny,
 		)
@@ -178,7 +179,21 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 }
 
 func (ncc *ncChain) subscribeToChainStateUpdates() {
-	ncc.nc.indexerClient.Alias(ncc.nc.ctx, ncc.chainAddr.(iotago.AliasID))
+	//
+	// Subscribe to the new outputs first.
+	// TODO
+
+	//
+	// Then fetch all the existing unspent outputs owned by the chain.
+	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ncc.nc.ctx, *ncc.chainID.AsAliasID())
+	if err != nil {
+		ncc.log.Panicf("error while fetching chain state output: %v", err)
+	}
+	ncc.stateOutputHandler(*stateOutputID, stateOutput)
+
+	//
+	// Then receive all the subscribed new outputs.
+	// TODO
 }
 
 func (ncc *ncChain) run() {

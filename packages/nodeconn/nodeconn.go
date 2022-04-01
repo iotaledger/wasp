@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
@@ -114,58 +115,58 @@ func (nc *nodeConn) L1Params() *parameters.L1 {
 
 // RegisterChain implements chain.NodeConnection.
 func (nc *nodeConn) RegisterChain(
-	chainAddr iotago.Address,
-	stateOutputHandler func(iotago.OutputID, iotago.Output),
+	chainID *iscp.ChainID,
+	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
 ) {
-	ncc := newNCChain(nc, chainAddr, stateOutputHandler, outputHandler)
+	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
 	nc.chains[ncc.Key()] = ncc
-	nc.log.Debugf("nodeconn: chain registered: %s", chainAddr)
+	nc.log.Debugf("nodeconn: chain registered: %s", chainID)
 }
 
 // UnregisterChain implements chain.NodeConnection.
-func (nc *nodeConn) UnregisterChain(chainAddr iotago.Address) {
-	nccKey := chainAddr.Key()
+func (nc *nodeConn) UnregisterChain(chainID *iscp.ChainID) {
+	nccKey := chainID.Key()
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
 	if ncc, ok := nc.chains[nccKey]; ok {
 		ncc.Close()
 		delete(nc.chains, nccKey)
 	}
-	nc.log.Debugf("nodeconn: chain unregistered: %s", chainAddr)
+	nc.log.Debugf("nodeconn: chain unregistered: %s", chainID)
 }
 
 // PublishTransaction implements chain.NodeConnection.
-func (nc *nodeConn) PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error {
+func (nc *nodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
 	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainAddr.Key()]
+	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()
 	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
+		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
 	}
 	return ncc.PublishTransaction(tx)
 }
 
-func (nc *nodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
+func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
 	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainAddr.Key()]
+	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()
 	if !ok {
-		return nil, xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
+		return nil, xerrors.Errorf("Chain %v is not connected.", chainID.String())
 	}
 	closure := events.NewClosure(handler)
 	ncc.inclusionStates.Attach(closure)
 	return closure, nil
 }
 
-func (nc *nodeConn) DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error {
+func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error {
 	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainAddr.Key()]
+	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()
 	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainAddr.String())
+		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
 	}
 	ncc.inclusionStates.Detach(closure)
 	return nil
@@ -187,15 +188,15 @@ func (nc *nodeConn) Close() {
 	nc.ctxCancel()
 }
 
-func (nc *nodeConn) PullLatestOutput(chainAddr iotago.Address) {
+func (nc *nodeConn) PullLatestOutput(chainID *iscp.ChainID) {
 	// TODO
 }
 
-func (nc *nodeConn) PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID) {
+func (nc *nodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID) {
 	// TODO
 }
 
-func (nc *nodeConn) PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput) {
+func (nc *nodeConn) PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
 	// TODO
 }
 

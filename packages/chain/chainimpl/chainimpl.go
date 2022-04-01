@@ -141,7 +141,7 @@ func NewChain(
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
 		wal:                              wal,
 	}
-	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID.AsAddress(), nc, chainLog)
+	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID, nc, chainLog)
 	if err != nil {
 		ret.log.Errorf("NewChain: unable to create chain node connection: v", err)
 		return nil

@@ -16,10 +16,10 @@ type MockedNodeConn struct {
 	log                            *logger.Logger
 	ledgers                        *MockedLedgers
 	id                             string
-	publishTransactionAllowedFun   func(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) bool
+	publishTransactionAllowedFun   func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool
 	pullLatestOutputAllowed        bool
-	pullTxInclusionStateAllowedFun func(chainAddr iotago.Address, txID iotago.TransactionID) bool
-	pullOutputByIDAllowedFun       func(chainAddr iotago.Address, outputID *iotago.UTXOInput) bool
+	pullTxInclusionStateAllowedFun func(chainID *iscp.ChainID, txID iotago.TransactionID) bool
+	pullOutputByIDAllowedFun       func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool
 	stopChannel                    chan bool
 }
 
@@ -44,51 +44,51 @@ func (mncT *MockedNodeConn) ID() string {
 	return mncT.id
 }
 
-func (mncT *MockedNodeConn) RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) {
-	mncT.ledgers.GetLedger(chainAddr).Register(mncT.id, outputHandler)
+func (mncT *MockedNodeConn) RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
+	mncT.ledgers.GetLedger(chainID).Register(mncT.id, outputHandler)
 }
 
-func (mncT *MockedNodeConn) UnregisterChain(chainAddr iotago.Address) {
-	mncT.ledgers.GetLedger(chainAddr).Unregister(mncT.id)
+func (mncT *MockedNodeConn) UnregisterChain(chainID *iscp.ChainID) {
+	mncT.ledgers.GetLedger(chainID).Unregister(mncT.id)
 }
 
-func (mncT *MockedNodeConn) PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error {
-	if mncT.publishTransactionAllowedFun(chainAddr, stateIndex, tx) {
-		return mncT.ledgers.GetLedger(chainAddr).PublishTransaction(stateIndex, tx)
+func (mncT *MockedNodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+	if mncT.publishTransactionAllowedFun(chainID, stateIndex, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishTransaction(stateIndex, tx)
 	}
-	return fmt.Errorf("Publishing transaction for address %s of index %v is not allowed", chainAddr, stateIndex)
+	return fmt.Errorf("Publishing transaction for address %s of index %v is not allowed", chainID, stateIndex)
 }
 
-func (mncT *MockedNodeConn) PullLatestOutput(chainAddr iotago.Address) {
+func (mncT *MockedNodeConn) PullLatestOutput(chainID *iscp.ChainID) {
 	if mncT.pullLatestOutputAllowed {
-		mncT.ledgers.GetLedger(chainAddr).PullLatestOutput(mncT.id)
+		mncT.ledgers.GetLedger(chainID).PullLatestOutput(mncT.id)
 	} else {
-		mncT.log.Errorf("Pull latest output for address %s is not allowed", chainAddr)
+		mncT.log.Errorf("Pull latest output for address %s is not allowed", chainID)
 	}
 }
 
-func (mncT *MockedNodeConn) PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID) {
-	if mncT.pullTxInclusionStateAllowedFun(chainAddr, txid) {
-		mncT.ledgers.GetLedger(chainAddr).PullTxInclusionState(mncT.id, txid)
+func (mncT *MockedNodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID) {
+	if mncT.pullTxInclusionStateAllowedFun(chainID, txid) {
+		mncT.ledgers.GetLedger(chainID).PullTxInclusionState(mncT.id, txid)
 	} else {
-		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainAddr, iscp.TxID(&txid))
+		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, iscp.TxID(&txid))
 	}
 }
 
-func (mncT *MockedNodeConn) PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput) {
-	if mncT.pullOutputByIDAllowedFun(chainAddr, id) {
-		mncT.ledgers.GetLedger(chainAddr).PullOutputByID(mncT.id, id)
+func (mncT *MockedNodeConn) PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
+	if mncT.pullOutputByIDAllowedFun(chainID, id) {
+		mncT.ledgers.GetLedger(chainID).PullOutputByID(mncT.id, id)
 	} else {
-		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainAddr, iscp.OID(id))
+		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, iscp.OID(id))
 	}
 }
 
-func (mncT *MockedNodeConn) AttachTxInclusionStateEvents(chainAddr iotago.Address, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
-	return mncT.ledgers.GetLedger(chainAddr).AttachTxInclusionStateEvents(mncT.id, handler)
+func (mncT *MockedNodeConn) AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
+	return mncT.ledgers.GetLedger(chainID).AttachTxInclusionStateEvents(mncT.id, handler)
 }
 
-func (mncT *MockedNodeConn) DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error {
-	return mncT.ledgers.GetLedger(chainAddr).DetachTxInclusionStateEvents(mncT.id, closure)
+func (mncT *MockedNodeConn) DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error {
+	return mncT.ledgers.GetLedger(chainID).DetachTxInclusionStateEvents(mncT.id, closure)
 }
 
 func (mncT *MockedNodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
@@ -108,10 +108,10 @@ func (mncT *MockedNodeConn) Close() {
 }
 
 func (mncT *MockedNodeConn) SetPublishTransactionAllowed(flag bool) {
-	mncT.SetPublishTransactionAllowedFun(func(iotago.Address, uint32, *iotago.Transaction) bool { return flag })
+	mncT.SetPublishTransactionAllowedFun(func(*iscp.ChainID, uint32, *iotago.Transaction) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPublishTransactionAllowedFun(fun func(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) bool) {
+func (mncT *MockedNodeConn) SetPublishTransactionAllowedFun(fun func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
 	mncT.publishTransactionAllowedFun = fun
 }
 
@@ -120,18 +120,18 @@ func (mncT *MockedNodeConn) SetPullLatestOutputAllowed(flag bool) {
 }
 
 func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowed(flag bool) {
-	mncT.SetPullTxInclusionStateAllowedFun(func(iotago.Address, iotago.TransactionID) bool { return flag })
+	mncT.SetPullTxInclusionStateAllowedFun(func(*iscp.ChainID, iotago.TransactionID) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowedFun(fun func(chainAddr iotago.Address, txID iotago.TransactionID) bool) {
+func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowedFun(fun func(chainID *iscp.ChainID, txID iotago.TransactionID) bool) {
 	mncT.pullTxInclusionStateAllowedFun = fun
 }
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
-	mncT.SetPullOutputByIDAllowedFun(func(iotago.Address, *iotago.UTXOInput) bool { return flag })
+	mncT.SetPullOutputByIDAllowedFun(func(*iscp.ChainID, *iotago.UTXOInput) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainAddr iotago.Address, outputID *iotago.UTXOInput) bool) {
+func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
 }
 
