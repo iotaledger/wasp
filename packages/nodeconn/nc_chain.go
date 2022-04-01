@@ -46,7 +46,7 @@ func newNCChain(
 		inclusionStates:    inclusionStates,
 		log:                nc.log.Named(chainID.String()[:6]),
 	}
-	go ncc.run()
+	ncc.run()
 	return &ncc
 }
 
@@ -197,6 +197,6 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 }
 
 func (ncc *ncChain) run() {
-	ncc.subscribeToChainStateUpdates()
-	ncc.subscribeToChainOwnedUTXOs()
+	go ncc.subscribeToChainStateUpdates()
+	go ncc.subscribeToChainOwnedUTXOs()
 }
