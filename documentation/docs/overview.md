@@ -1,11 +1,12 @@
 ---
+description: IOTA Smart Contracts allow you to run smart contracts on top of the IOTA Tangle.
+image: /img/logo/WASP_logo_dark.png
 keywords:
-- Smart Contracts
-- Core Concepts
+- smart contracts
+- core concepts
 - scaling
 - flexibility
-description: IOTA Smart Contract Protocol is IOTA's solution for running smart contracts on top of the IOTA tangle.
-image: /img/logo/WASP_logo_dark.png
+- explanation
 ---
 # IOTA Smart Contracts
 

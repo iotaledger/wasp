@@ -2,15 +2,15 @@
 description: How to run the preconfigured Docker setup.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-  - ISCP
-  - Smart Contracts
-  - Running a node
+  - smart contracts
+  - validator node
   - docker
   - image
   - build
   - configure
   - arguments
   - GoShimmer
+  - how to
 ---
 
 # Preconfigured Development Docker setup

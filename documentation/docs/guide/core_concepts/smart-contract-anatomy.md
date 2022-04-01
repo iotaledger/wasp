@@ -1,12 +1,13 @@
 ---
-keywords:
-- Smart Contracts
-- structure
-- State
-- Entry points
-- Wasm
 description: Each smart contract instance has a program with a collection of entry points and a state. 
 image: /img/tutorial/SC-structure.png
+keywords:
+- smart contracts
+- structure
+- state
+- entry points
+- Wasm
+- explanation
 ---
 
 # Anatomy of a Smart Contract

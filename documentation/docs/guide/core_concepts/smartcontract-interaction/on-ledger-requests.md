@@ -1,14 +1,15 @@
 ---
+description: Requests to the smart contract as transactions on the Tangle are called on-ledger requests.
+image: /img/tutorial/send_request.png
 keywords:
-- Smart Contracts
+- smart contracts
 - requests
 - on-ledger
-- tangle
+- Tangle
 - fees
 - fallback address
 - timelock
-description: Requests to the smart contract as transactions on the Tangle are called on-ledger requests.
-image: /img/tutorial/send_request.png
+- reference
 ---
 
 # On-ledger Requests

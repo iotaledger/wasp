@@ -1,4 +1,6 @@
 ---
+description:  An Off-ledger request is not a transaction, but it contains the same information as an on-ledger request, and it is cryptographically signed. This kind of requests do not rely on the Tangle for confirmation, so they are much faster.
+image: /img/logo/WASP_logo_dark.png
 keywords:
 - Smart Contracts
 - requests
@@ -7,8 +9,7 @@ keywords:
 - nonce
 - tangle
 - API calls
-description:  An Off-ledger request is not a transaction, but it contains the same information as an on-ledger request, and it is cryptographically signed. This kind of requests do not rely on the Tangle for confirmation, so they are much faster.
-image: /img/logo/WASP_logo_dark.png
+- reference
 ---
 
 # Off-ledger Requests
