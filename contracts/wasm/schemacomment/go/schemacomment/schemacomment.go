@@ -5,8 +5,8 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func funcStringMapOfStringArrayAppend(ctx wasmlib.ScFuncContext, f *StringMapOfStringArrayAppendContext) {
+func funcTestFunc1(ctx wasmlib.ScFuncContext, f *TestFunc1Context) {
 }
 
-func viewStringMapOfStringArrayLength(ctx wasmlib.ScViewContext, f *StringMapOfStringArrayLengthContext) {
+func viewTestView1(ctx wasmlib.ScViewContext, f *TestView1Context) {
 }

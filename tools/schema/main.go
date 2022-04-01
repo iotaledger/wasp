@@ -204,18 +204,18 @@ func generateSchemaNew() error {
 	funcInit := &model.FuncDef{}
 	funcInit.Params = make(model.DefMap)
 	funcInit.Params[defMapKey] = &model.DefElt{Val: "AgentID? // optional owner of this smart contract"}
-	schemaDef.Funcs["init"] = funcInit
+	schemaDef.Funcs[model.DefElt{Val: "init"}] = funcInit
 
 	funcSetOwner := &model.FuncDef{}
 	funcSetOwner.Access = model.DefElt{Val: "owner // current owner of this smart contract"}
 	funcSetOwner.Params = make(model.DefMap)
 	funcSetOwner.Params[defMapKey] = &model.DefElt{Val: "AgentID // new owner of this smart contract"}
-	schemaDef.Funcs["setOwner"] = funcSetOwner
+	schemaDef.Funcs[model.DefElt{Val: "setOwner"}] = funcSetOwner
 
 	viewGetOwner := &model.FuncDef{}
 	viewGetOwner.Results = make(model.DefMap)
 	viewGetOwner.Results[defMapKey] = &model.DefElt{Val: "AgentID // current owner of this smart contract"}
-	schemaDef.Views["getOwner"] = viewGetOwner
+	schemaDef.Views[model.DefElt{Val: "getOwner"}] = viewGetOwner
 	switch *flagType {
 	case "json":
 		return WriteJSONSchema(schemaDef)

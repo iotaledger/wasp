@@ -21,6 +21,7 @@ func (a ArrayOfImmutableString) GetString(index uint32) wasmtypes.ScImmutableStr
 	return wasmtypes.NewScImmutableString(a.proxy.Index(index))
 }
 
+// comment for TestTypedef
 type ImmutableTestTypedef = ArrayOfImmutableString
 
 type ArrayOfMutableString struct {
@@ -43,4 +44,5 @@ func (a ArrayOfMutableString) GetString(index uint32) wasmtypes.ScMutableString 
 	return wasmtypes.NewScMutableString(a.proxy.Index(index))
 }
 
+// comment for TestTypedef
 type MutableTestTypedef = ArrayOfMutableString

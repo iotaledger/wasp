@@ -9,55 +9,110 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type TestStruct struct {
-	X int32
-	Y int32
+// comment for TestStruct1
+type TestStruct1 struct {
+	X1 int32 // comment for x1
+	Y1 int32 // comment for y1
 }
 
-func NewTestStructFromBytes(buf []byte) *TestStruct {
+func NewTestStruct1FromBytes(buf []byte) *TestStruct1 {
 	dec := wasmtypes.NewWasmDecoder(buf)
-	data := &TestStruct{}
-	data.X = wasmtypes.Int32Decode(dec)
-	data.Y = wasmtypes.Int32Decode(dec)
+	data := &TestStruct1{}
+	data.X1 = wasmtypes.Int32Decode(dec)
+	data.Y1 = wasmtypes.Int32Decode(dec)
 	dec.Close()
 	return data
 }
 
-func (o *TestStruct) Bytes() []byte {
+func (o *TestStruct1) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Int32Encode(enc, o.X)
-	wasmtypes.Int32Encode(enc, o.Y)
+		wasmtypes.Int32Encode(enc, o.X1)
+		wasmtypes.Int32Encode(enc, o.Y1)
 	return enc.Buf()
 }
 
-type ImmutableTestStruct struct {
+type ImmutableTestStruct1 struct {
 	proxy wasmtypes.Proxy
 }
 
-func (o ImmutableTestStruct) Exists() bool {
+func (o ImmutableTestStruct1) Exists() bool {
 	return o.proxy.Exists()
 }
 
-func (o ImmutableTestStruct) Value() *TestStruct {
-	return NewTestStructFromBytes(o.proxy.Get())
+func (o ImmutableTestStruct1) Value() *TestStruct1 {
+	return NewTestStruct1FromBytes(o.proxy.Get())
 }
 
-type MutableTestStruct struct {
+type MutableTestStruct1 struct {
 	proxy wasmtypes.Proxy
 }
 
-func (o MutableTestStruct) Delete() {
+func (o MutableTestStruct1) Delete() {
 	o.proxy.Delete()
 }
 
-func (o MutableTestStruct) Exists() bool {
+func (o MutableTestStruct1) Exists() bool {
 	return o.proxy.Exists()
 }
 
-func (o MutableTestStruct) SetValue(value *TestStruct) {
+func (o MutableTestStruct1) SetValue(value *TestStruct1) {
 	o.proxy.Set(value.Bytes())
 }
 
-func (o MutableTestStruct) Value() *TestStruct {
-	return NewTestStructFromBytes(o.proxy.Get())
+func (o MutableTestStruct1) Value() *TestStruct1 {
+	return NewTestStruct1FromBytes(o.proxy.Get())
+}
+
+// comment for TestStruct2
+type TestStruct2 struct {
+	X2 int32 // comment for x2
+	Y2 int32 // comment for y2
+}
+
+func NewTestStruct2FromBytes(buf []byte) *TestStruct2 {
+	dec := wasmtypes.NewWasmDecoder(buf)
+	data := &TestStruct2{}
+	data.X2 = wasmtypes.Int32Decode(dec)
+	data.Y2 = wasmtypes.Int32Decode(dec)
+	dec.Close()
+	return data
+}
+
+func (o *TestStruct2) Bytes() []byte {
+	enc := wasmtypes.NewWasmEncoder()
+		wasmtypes.Int32Encode(enc, o.X2)
+		wasmtypes.Int32Encode(enc, o.Y2)
+	return enc.Buf()
+}
+
+type ImmutableTestStruct2 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (o ImmutableTestStruct2) Exists() bool {
+	return o.proxy.Exists()
+}
+
+func (o ImmutableTestStruct2) Value() *TestStruct2 {
+	return NewTestStruct2FromBytes(o.proxy.Get())
+}
+
+type MutableTestStruct2 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (o MutableTestStruct2) Delete() {
+	o.proxy.Delete()
+}
+
+func (o MutableTestStruct2) Exists() bool {
+	return o.proxy.Exists()
+}
+
+func (o MutableTestStruct2) SetValue(value *TestStruct2) {
+	o.proxy.Set(value.Bytes())
+}
+
+func (o MutableTestStruct2) Value() *TestStruct2 {
+	return NewTestStruct2FromBytes(o.proxy.Get())
 }

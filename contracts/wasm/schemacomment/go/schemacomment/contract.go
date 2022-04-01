@@ -9,31 +9,34 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-type StringMapOfStringArrayAppendCall struct {
+type TestFunc1Call struct {
 	Func    *wasmlib.ScFunc
-	Params  MutableStringMapOfStringArrayAppendParams
-	Results ImmutableStringMapOfStringArrayAppendResults
+	Params  MutableTestFunc1Params
+	Results ImmutableTestFunc1Results
 }
 
-type StringMapOfStringArrayLengthCall struct {
+type TestView1Call struct {
 	Func    *wasmlib.ScView
-	Params  MutableStringMapOfStringArrayLengthParams
-	Results ImmutableStringMapOfStringArrayLengthResults
+	Params  MutableTestView1Params
+	Results ImmutableTestView1Results
 }
 
 type Funcs struct{}
 
 var ScFuncs Funcs
 
-func (sc Funcs) StringMapOfStringArrayAppend(ctx wasmlib.ScFuncCallContext) *StringMapOfStringArrayAppendCall {
-	f := &StringMapOfStringArrayAppendCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStringMapOfStringArrayAppend)}
+// comment for TestFunc1 1
+// comment for TestFunc1 2
+func (sc Funcs) TestFunc1(ctx wasmlib.ScFuncCallContext) *TestFunc1Call {
+	f := &TestFunc1Call{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestFunc1)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 
-func (sc Funcs) StringMapOfStringArrayLength(ctx wasmlib.ScViewCallContext) *StringMapOfStringArrayLengthCall {
-	f := &StringMapOfStringArrayLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewStringMapOfStringArrayLength)}
+// comment for TestView1
+func (sc Funcs) TestView1(ctx wasmlib.ScViewCallContext) *TestView1Call {
+	f := &TestView1Call{Func: wasmlib.NewScView(ctx, HScName, HViewTestView1)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

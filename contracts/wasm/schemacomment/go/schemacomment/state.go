@@ -9,48 +9,18 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ArrayOfImmutableInt64 struct {
-	proxy wasmtypes.Proxy
-}
-
-func (a ArrayOfImmutableInt64) Length() uint32 {
-	return a.proxy.Length()
-}
-
-func (a ArrayOfImmutableInt64) GetInt64(index uint32) wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(a.proxy.Index(index))
-}
-
 type ImmutableSchemaCommentState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSchemaCommentState) Owner() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateOwner))
+// comment for TestState1
+func (s ImmutableSchemaCommentState) TestState1() ArrayOfImmutableInt64 {
+	return ArrayOfImmutableInt64{proxy: s.proxy.Root(StateTestState1)}
 }
 
-func (s ImmutableSchemaCommentState) TestState() ArrayOfImmutableInt64 {
-	return ArrayOfImmutableInt64{proxy: s.proxy.Root(StateTestState)}
-}
-
-type ArrayOfMutableInt64 struct {
-	proxy wasmtypes.Proxy
-}
-
-func (a ArrayOfMutableInt64) AppendInt64() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(a.proxy.Append())
-}
-
-func (a ArrayOfMutableInt64) Clear() {
-	a.proxy.ClearArray()
-}
-
-func (a ArrayOfMutableInt64) Length() uint32 {
-	return a.proxy.Length()
-}
-
-func (a ArrayOfMutableInt64) GetInt64(index uint32) wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(a.proxy.Index(index))
+// comment for TestState2
+func (s ImmutableSchemaCommentState) TestState2() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateTestState2))
 }
 
 type MutableSchemaCommentState struct {
@@ -61,10 +31,12 @@ func (s MutableSchemaCommentState) AsImmutable() ImmutableSchemaCommentState {
 	return ImmutableSchemaCommentState(s)
 }
 
-func (s MutableSchemaCommentState) Owner() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateOwner))
+// comment for TestState1
+func (s MutableSchemaCommentState) TestState1() ArrayOfMutableInt64 {
+	return ArrayOfMutableInt64{proxy: s.proxy.Root(StateTestState1)}
 }
 
-func (s MutableSchemaCommentState) TestState() ArrayOfMutableInt64 {
-	return ArrayOfMutableInt64{proxy: s.proxy.Root(StateTestState)}
+// comment for TestState2
+func (s MutableSchemaCommentState) TestState2() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateTestState2))
 }

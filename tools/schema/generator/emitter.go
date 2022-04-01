@@ -81,9 +81,9 @@ func (g *GenBase) emit(template string) {
 			if ok {
 				return text
 			}
-			return "???:" + key
+			return "key???:" + key
 		})
-
+		line = strings.ReplaceAll(line, "\r", "\n")
 		// remove concatenation markers
 		line = strings.ReplaceAll(line, "$+", "")
 
@@ -162,6 +162,7 @@ func (g *GenBase) emitEachEvent(events []*model.Struct, template string) {
 	for _, g.currentEvent = range events {
 		g.log("currentEvent: " + g.currentEvent.Name.Val)
 		g.setMultiKeyValues("evtName", g.currentEvent.Name.Val)
+		g.keys["eventComment"] = g.currentEvent.Name.Comment
 		g.emit(template)
 	}
 }
@@ -182,6 +183,7 @@ func (g *GenBase) emitEachField(fields []*model.Field, template string) {
 
 	for _, g.currentField = range fields {
 		g.log("currentField: " + g.currentField.Name)
+		fmt.Println("template: ", template)
 		g.setFieldKeys(true, maxCamelLength, maxSnakeLength)
 		g.emit(template)
 	}
@@ -223,6 +225,7 @@ func (g *GenBase) emitEachStruct(structs []*model.Struct, template string) {
 	for _, g.currentStruct = range structs {
 		g.log("currentStruct: " + g.currentStruct.Name.Val)
 		g.setMultiKeyValues("strName", g.currentStruct.Name.Val)
+		g.keys["structComment"] = g.currentStruct.Name.Comment
 		g.emit(template)
 	}
 }
@@ -399,7 +402,8 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	g.keys["fldIsMap"] = g.currentField.MapKey
 
 	g.keys["fldAlias"] = g.currentField.Alias
-	g.keys["fldComment"] = g.currentField.FldComment
+	g.keys["fldComment"] = g.currentField.Comment
+	g.keys["eventFldComment"] = g.currentField.Comment
 
 	if pad {
 		g.keys["fldPad"] = spaces[:maxCamelLength-len(g.keys["fldName"])]
@@ -441,7 +445,7 @@ func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	}
 	g.setMultiKeyValues("funcAccess", grant)
 	g.keys["funcAccessComment"] = comment
-
+	g.keys["funcComment"] = g.currentFunc.Comment
 	if pad {
 		g.keys["funcPad"] = spaces[:maxCamelLength-len(g.keys["funcName"])]
 		g.keys["func_pad"] = spaces[:maxSnakeLength-len(g.keys["func_name"])]

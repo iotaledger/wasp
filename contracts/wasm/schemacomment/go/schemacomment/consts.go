@@ -16,6 +16,7 @@ const (
 )
 
 const (
+	ParamArr   = "arr"
 	ParamName  = "name"
 	ParamValue = "value"
 )
@@ -25,16 +26,16 @@ const (
 )
 
 const (
-	StateOwner     = "Owner"
-	StateTestState = "TestState"
+	StateTestState1 = "TestState1"
+	StateTestState2 = "TestState2"
 )
 
 const (
-	FuncStringMapOfStringArrayAppend = "stringMapOfStringArrayAppend"
-	ViewStringMapOfStringArrayLength = "stringMapOfStringArrayLength"
+	FuncTestFunc1 = "testFunc1"
+	ViewTestView1 = "testView1"
 )
 
 const (
-	HFuncStringMapOfStringArrayAppend = wasmtypes.ScHname(0x414f806d)
-	HViewStringMapOfStringArrayLength = wasmtypes.ScHname(0x9f433699)
+	HFuncTestFunc1 = wasmtypes.ScHname(0xf73370b1)
+	HViewTestView1 = wasmtypes.ScHname(0xf0f3e6e8)
 )

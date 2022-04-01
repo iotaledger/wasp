@@ -132,6 +132,7 @@ func (n *Node) ToFuncDef() model.FuncDef {
 		default:
 			return model.FuncDef{}
 		}
+		def.Comment = yamlKey.Comment
 	}
 	return def
 }
@@ -153,7 +154,7 @@ func (n *Node) ToFuncDefMap() model.FuncDefMap {
 			Line:    yamlKey.Line,
 		}
 		val := yamlKey.ToFuncDef()
-		defs[key.Val] = &val
+		defs[key] = &val
 	}
 	return defs
 }

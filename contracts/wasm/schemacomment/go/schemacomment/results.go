@@ -9,34 +9,38 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ImmutableStringMapOfStringArrayAppendResults struct {
+type ImmutableTestFunc1Results struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStringMapOfStringArrayAppendResults) Length() wasmtypes.ScImmutableUint32 {
+// comment for length
+func (s ImmutableTestFunc1Results) Length() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
 }
 
-type MutableStringMapOfStringArrayAppendResults struct {
+type MutableTestFunc1Results struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableStringMapOfStringArrayAppendResults) Length() wasmtypes.ScMutableUint32 {
+// comment for length
+func (s MutableTestFunc1Results) Length() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
 }
 
-type ImmutableStringMapOfStringArrayLengthResults struct {
+type ImmutableTestView1Results struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStringMapOfStringArrayLengthResults) Length() wasmtypes.ScImmutableUint32 {
+// comment for length
+func (s ImmutableTestView1Results) Length() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultLength))
 }
 
-type MutableStringMapOfStringArrayLengthResults struct {
+type MutableTestView1Results struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableStringMapOfStringArrayLengthResults) Length() wasmtypes.ScMutableUint32 {
+// comment for length
+func (s MutableTestView1Results) Length() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultLength))
 }

@@ -8,14 +8,35 @@
 //nolint:gocritic
 package schemacomment
 
-import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type SchemaCommentEvents struct{}
+type SchemaCommentEvents struct {
+}
 
-func (e SchemaCommentEvents) TestEvent(eventParam1 string, eventParam2 string) {
+// header comment for TestEvent 1
+// header comment for TestEvent 2
+// line comment for TestEvent 1
+// line comment for TestEvent 2
+// line comment for TestEvent 3
+// line comment for TestEvent 4
+func (e SchemaCommentEvents) TestEvent(
+eventParam1 string, // header comment for eventParam1 1
+// header comment for eventParam1 2
+// line comment for eventParam1 1
+// line comment for eventParam1 2
+// line comment for eventParam1 3
+// line comment for eventParam1 4
+eventParam2 string, // header comment for eventParam2 1
+// header comment for eventParam2 2
+// line comment for eventParam2 1
+// line comment for eventParam2 2
+// line comment for eventParam2 3
+// line comment for eventParam2 4
+// line comment for eventParam2 5
+// line comment for eventParam2 6
+// line comment for eventParam2 7
+) {
 	evt := wasmlib.NewEventEncoder("schemacomment.testEvent")
 	evt.Encode(wasmtypes.StringToString(eventParam1))
 	evt.Encode(wasmtypes.StringToString(eventParam2))
