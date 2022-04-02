@@ -157,7 +157,7 @@ func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what 
 	fieldAliases := make(DefNameMap)
 	for _, fldName := range sortedKeys(fieldMap) {
 		fldType := fieldMap[fldName]
-		field, err := s.compileField(&fldName, fldType)
+		field, err := s.compileField(&fldName, fldType) //nolint:gosec
 		if err != nil {
 			return nil, err
 		}
@@ -200,7 +200,7 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 	varAliases := make(DefNameMap)
 	for _, varName := range sortedKeys(schemaDef.State) {
 		varType := schemaDef.State[varName]
-		varDef, err := s.compileField(&varName, varType)
+		varDef, err := s.compileField(&varName, varType) //nolint:gosec
 		if err != nil {
 			return err
 		}
@@ -244,7 +244,7 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 	fieldAliases := make(DefNameMap)
 	for _, fldName := range sortedKeys(structFields) {
 		fldType := structFields[fldName]
-		field, err := s.compileField(&fldName, fldType)
+		field, err := s.compileField(&fldName, fldType) //nolint:gosec
 		if err != nil {
 			return nil, err
 		}
@@ -283,7 +283,7 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 	varAliases := make(DefNameMap)
 	for _, varName := range sortedKeys(schemaDef.Typedefs) {
 		varType := schemaDef.Typedefs[varName]
-		varDef, err := s.compileField(&varName, varType)
+		varDef, err := s.compileField(&varName, varType) //nolint:gosec
 		if err != nil {
 			return err
 		}

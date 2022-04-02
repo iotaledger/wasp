@@ -74,7 +74,7 @@ func (o ScBigInt) Div(rhs ScBigInt) ScBigInt {
 
 func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	panic("implement DivMod")
-	return o, rhs
+	// return o, rhs
 }
 
 func (o ScBigInt) IsUint64() bool {
@@ -98,7 +98,7 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 		return rhs.Mul(o)
 	}
 	panic("implement Mul")
-	return o
+	// return o
 }
 
 func (o *ScBigInt) normalize() {

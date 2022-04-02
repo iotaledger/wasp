@@ -238,10 +238,13 @@ pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
     f.results.sandbox_call().set_value(&get_chain_info.results.description().value());
 }
 
-pub fn func_claim_allowance(ctx: &ScFuncContext, f: &ClaimAllowanceContext) {
+pub fn func_claim_allowance(ctx: &ScFuncContext, _f: &ClaimAllowanceContext) {
+    let allowance = ctx.allowance();
+    let transfer = wasmlib::ScTransfer::from_balances(&allowance);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
 }
 
-pub fn func_estimate_min_dust(ctx: &ScFuncContext, f: &EstimateMinDustContext) {
+pub fn func_estimate_min_dust(ctx: &ScFuncContext, _f: &EstimateMinDustContext) {
     let provided = ctx.allowance().iotas();
     let dummy = ScFuncs::estimate_min_dust(ctx);
     let required = ctx.estimate_dust(&dummy.func);
@@ -257,7 +260,7 @@ pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
 pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackContext) {
     let caller = ctx.caller();
     ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
-    let transfer = wasmlib::ScTransfer::from_balances(ctx.allowance());
+    let transfer = wasmlib::ScTransfer::from_balances(&ctx.allowance());
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     ctx.send(&caller.address(), &transfer);
 }
@@ -265,7 +268,15 @@ pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackConte
 pub fn func_send_large_request(ctx: &ScFuncContext, f: &SendLargeRequestContext) {
 }
 
-pub fn func_send_nf_ts_back(ctx: &ScFuncContext, f: &SendNFTsBackContext) {
+pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
+    let address = ctx.caller().address();
+    let allowance = ctx.allowance();
+    let transfer = wasmlib::ScTransfer::from_balances(&allowance);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    for nft_id in allowance.nft_ids() {
+        let transfer = ScTransfer::nft(nft_id);
+        ctx.send(&address, &transfer);
+    }
 }
 
 pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
@@ -279,7 +290,7 @@ pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
     }
 }
 
-pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, f: &SplitFundsNativeTokensContext) {
+pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNativeTokensContext) {
     let iotas = ctx.allowance().iotas();
     let address = ctx.caller().address();
     let transfer = wasmlib::ScTransfer::iotas(iotas);

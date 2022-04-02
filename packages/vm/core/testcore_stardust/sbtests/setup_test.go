@@ -18,7 +18,7 @@ import (
 const (
 	DEBUG           = false
 	FORCE_SKIP_WASM = false
-	FORCE_GO_WASM   = false
+	FORCE_RUST_WASM = false
 )
 
 const (
@@ -79,7 +79,7 @@ func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, ru
 		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 	}
 
-	if FORCE_GO_WASM {
+	if FORCE_RUST_WASM {
 		// run Rust Wasm version of testcore
 		return chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 	}

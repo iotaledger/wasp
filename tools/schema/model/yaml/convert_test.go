@@ -1,7 +1,7 @@
 package yaml_test
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -294,7 +294,7 @@ func TestConvert(t *testing.T) {
 
 			file, err := os.Open(tt.args.path)
 			assert.NoError(t, err)
-			in, err := ioutil.ReadAll(file)
+			in, err := io.ReadAll(file)
 			assert.NoError(t, err)
 
 			def := &model.SchemaDef{}

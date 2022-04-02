@@ -314,7 +314,11 @@ func viewInfiniteLoopView(ctx wasmlib.ScViewContext, f *InfiniteLoopViewContext)
 	}
 }
 
+//nolint:unparam
 func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
+	allowance := ctx.Allowance()
+	transfer := wasmlib.NewScTransferFromBalances(allowance)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 }
 
 //nolint:unparam
@@ -337,7 +341,16 @@ func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContex
 func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext) {
 }
 
+//nolint:unparam
 func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
+	address := ctx.Caller().Address()
+	allowance := ctx.Allowance()
+	transfer := wasmlib.NewScTransferFromBalances(allowance)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	for _, nftID := range allowance.NftIDs() {
+		transfer = wasmlib.NewScTransferNFT(nftID)
+		ctx.Send(address, transfer)
+	}
 }
 
 //nolint:unparam

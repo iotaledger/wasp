@@ -349,11 +349,16 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
 		allowance := s.cvt.IscpAllowance(scAssets)
-		s.ctx.Send(iscp.RequestParameters{
+		metadata := iscp.RequestParameters{
 			AdjustToMinimumDustDeposit: true,
 			TargetAddress:              address,
 			FungibleTokens:             allowance.Assets,
-		})
+		}
+		if len(allowance.NFTs) == 0 {
+			s.ctx.Send(metadata)
+			return nil
+		}
+		s.ctx.SendAsNFT(metadata, allowance.NFTs[0])
 	}
 	return nil
 }

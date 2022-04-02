@@ -75,7 +75,7 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
 }
 
 pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
-    ctx.transfer_allowed(&ctx.account_id(), &ScTransfer::from_balances(ctx.allowance()), false);
+    ctx.transfer_allowed(&ctx.account_id(), &ScTransfer::from_balances(&ctx.allowance()), false);
 }
 
 pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {

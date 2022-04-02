@@ -29,7 +29,7 @@ func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.
 func TestTxWithGasOverLimit(t *testing.T) { run2(t, testTxWithGasOverLimit) }
 
 func testTxWithGasOverLimit(t *testing.T, w bool) {
-	if !FORCE_GO_WASM && w {
+	if !FORCE_RUST_WASM && w {
 		t.SkipNow()
 	}
 	_, ch := setupChain(t, nil)
@@ -49,7 +49,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 func TestBlockGasOverflow(t *testing.T) { run2(t, testBlockGasOverflow) }
 
 func testBlockGasOverflow(t *testing.T, w bool) {
-	if !FORCE_GO_WASM && w {
+	if !FORCE_RUST_WASM && w {
 		t.SkipNow()
 	}
 	_, ch := setupChain(t, nil)
@@ -89,7 +89,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 
 func TestViewGasBlock(t *testing.T) { run2(t, testViewGasBlock) }
 func testViewGasBlock(t *testing.T, w bool) {
-	if !FORCE_GO_WASM && w {
+	if !FORCE_RUST_WASM && w {
 		t.SkipNow()
 	}
 	_, ch := setupChain(t, nil)

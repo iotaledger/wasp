@@ -52,7 +52,7 @@ func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance
 		}
 		iscpAssets.Tokens = append(iscpAssets.Tokens, token)
 	}
-	for _, nftID := range assets.NFTs {
+	for _, nftID := range assets.NftIDs {
 		nft := cvt.IscpNFTID(nftID)
 		iscpAllowance.NFTs = append(iscpAllowance.NFTs, *nft)
 	}
@@ -122,7 +122,7 @@ func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalanc
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))
 	}
 	for _, nft := range allowance.NFTs {
-		nftID := cvt.ScNftID(&nft)
+		nftID := cvt.ScNftID(&nft) //nolint:gosec
 		transfer.AddNFT(&nftID)
 	}
 	return &transfer.ScBalances

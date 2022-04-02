@@ -13,7 +13,7 @@ type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
 	Iotas  uint64
-	NFTs   []*wasmtypes.ScNftID
+	NftIDs []*wasmtypes.ScNftID
 	Tokens TokenAmounts
 }
 
@@ -38,7 +38,7 @@ func NewScAssets(buf []byte) *ScAssets {
 	size = wasmtypes.Uint32Decode(dec)
 	for ; size > 0; size-- {
 		nftID := wasmtypes.NftIDDecode(dec)
-		assets.NFTs = append(assets.NFTs, &nftID)
+		assets.NftIDs = append(assets.NftIDs, &nftID)
 	}
 	return assets
 }
@@ -61,8 +61,8 @@ func (a *ScAssets) Bytes() []byte {
 		wasmtypes.BigIntEncode(enc, a.Tokens[*tokenID])
 	}
 
-	wasmtypes.Uint32Encode(enc, uint32(len(a.NFTs)))
-	for _, nftID := range a.NFTs {
+	wasmtypes.Uint32Encode(enc, uint32(len(a.NftIDs)))
+	for _, nftID := range a.NftIDs {
 		wasmtypes.NftIDEncode(enc, *nftID)
 	}
 	return enc.Buf()
@@ -77,13 +77,15 @@ func (a *ScAssets) IsEmpty() bool {
 			return false
 		}
 	}
-	return len(a.NFTs) == 0
+	return len(a.NftIDs) == 0
 }
 
 func (a *ScAssets) TokenIDs() []*wasmtypes.ScTokenID {
 	keys := make([]*wasmtypes.ScTokenID, 0, len(a.Tokens))
 	for key := range a.Tokens {
-		keys = append(keys, &key)
+		// need a local copy to avoid referencing the single key var multiple times
+		key2 := key
+		keys = append(keys, &key2)
 	}
 	sort.Slice(keys, func(i, j int) bool {
 		return string(keys[i].Bytes()) < string(keys[j].Bytes())
@@ -96,6 +98,9 @@ type ScBalances struct {
 }
 
 func (b *ScBalances) Balance(tokenID *wasmtypes.ScTokenID) wasmtypes.ScBigInt {
+	if len(b.assets.Tokens) == 0 {
+		return wasmtypes.NewScBigInt()
+	}
 	return b.assets.Tokens[*tokenID]
 }
 
@@ -112,6 +117,10 @@ func (b *ScBalances) Iotas() uint64 {
 
 func (b *ScBalances) IsEmpty() bool {
 	return b.assets.IsEmpty()
+}
+
+func (b *ScBalances) NftIDs() []*wasmtypes.ScNftID {
+	return b.assets.NftIDs
 }
 
 func (b *ScBalances) TokenIDs() []*wasmtypes.ScTokenID {
@@ -131,10 +140,12 @@ func NewScTransfer() *ScTransfer {
 
 // create a new transfer object from a balances object
 func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
-	transfer := NewScTransfer()
-	tokenIDs := balances.TokenIDs()
-	for _, tokenID := range tokenIDs {
+	transfer := NewScTransferIotas(balances.Iotas())
+	for _, tokenID := range balances.TokenIDs() {
 		transfer.Set(tokenID, balances.Balance(tokenID))
+	}
+	for _, nftID := range balances.NftIDs() {
+		transfer.AddNFT(nftID)
 	}
 	return transfer
 }
@@ -162,7 +173,7 @@ func NewScTransferTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt
 
 func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
 	// TODO filter doubles
-	t.assets.NFTs = append(t.assets.NFTs, nftID)
+	t.assets.NftIDs = append(t.assets.NftIDs, nftID)
 }
 
 func (t *ScTransfer) Bytes() []byte {
@@ -175,5 +186,8 @@ func (t *ScTransfer) Bytes() []byte {
 // set the specified tokenID amount in the transfers object
 // note that this will overwrite any previous amount for the specified tokenID
 func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) {
+	if t.assets.Tokens == nil {
+		t.assets.Tokens = make(TokenAmounts)
+	}
 	t.assets.Tokens[*tokenID] = amount
 }
