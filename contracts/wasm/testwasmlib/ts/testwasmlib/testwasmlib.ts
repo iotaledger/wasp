@@ -23,10 +23,6 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
     if ((f.params.chainID().exists())) {
         ctx.require(f.params.chainID().value().equals(ctx.chainID()), "mismatch: ChainID");
     }
-    if ((f.params.color().exists())) {
-        const color = wasmlib.colorFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhitePurple"));
-        ctx.require(f.params.color().value().equals(color), "mismatch: Color");
-    }
     if ((f.params.hash().exists())) {
         const hash = wasmtypes.hashFromBytes(wasmtypes.stringToBytes("0123456789abcdeffedcba9876543210"));
         ctx.require(f.params.hash().value().equals(hash), "mismatch: Hash");
@@ -46,12 +42,20 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
     if ((f.params.int64().exists())) {
         ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
     }
+    if ((f.params.nftID().exists())) {
+        const color = wasmlib.nftIDFromBytes(wasmtypes.stringToBytes("01234567890123456789"));
+        ctx.require(f.params.nftID().value().equals(color), "mismatch: NftID");
+    }
     if ((f.params.requestID().exists())) {
         const requestId = wasmtypes.requestIDFromBytes(wasmtypes.stringToBytes("abcdefghijklmnopqrstuvwxyz123456\x00\x00"));
         ctx.require(f.params.requestID().value().equals(requestId), "mismatch: RequestID");
     }
     if ((f.params.string().exists())) {
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
+    }
+    if ((f.params.tokenID().exists())) {
+        const color = wasmlib.tokenIDFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhitePurple"));
+        ctx.require(f.params.tokenID().value().equals(color), "mismatch: TokenID");
     }
     if ((f.params.uint8().exists())) {
         ctx.require(f.params.uint8().value() == 123, "mismatch: Uint8");
@@ -72,11 +76,11 @@ export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): voi
 }
 
 export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanceContext): void {
-    ctx.transferAllowed(ctx.accountID(), wasmlib.ScTransfers.fromBalances(ctx.allowance()), false);
+    ctx.transferAllowed(ctx.accountID(), wasmlib.ScTransfer.fromBalances(ctx.allowance()), false);
 }
 
 export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().balance(wasmtypes.IOTA));
+    f.results.iotas().setValue(ctx.balances().iotas());
 }
 
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
@@ -113,7 +117,7 @@ export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext
 }
 
 export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().balance(wasmtypes.IOTA));
+    f.results.iotas().setValue(ctx.balances().iotas());
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\

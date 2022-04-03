@@ -81,8 +81,8 @@ pub trait ScSandbox {
         agent_id_from_bytes(&sandbox(FN_ACCOUNT_ID, &[]))
     }
 
-    fn balance(&self, token: ScTokenID) -> u64 {
-        uint64_from_bytes(&sandbox(FN_BALANCE, &token.to_bytes()))
+    fn balance(&self, token_id: ScTokenID) -> u64 {
+        uint64_from_bytes(&sandbox(FN_BALANCE, &token_id.to_bytes()))
     }
 
     // access the current balances for all assets

@@ -81,16 +81,16 @@ func (a *ScAssets) IsEmpty() bool {
 }
 
 func (a *ScAssets) TokenIDs() []*wasmtypes.ScTokenID {
-	keys := make([]*wasmtypes.ScTokenID, 0, len(a.Tokens))
+	tokenIDs := make([]*wasmtypes.ScTokenID, 0, len(a.Tokens))
 	for key := range a.Tokens {
 		// need a local copy to avoid referencing the single key var multiple times
-		key2 := key
-		keys = append(keys, &key2)
+		tokenID := key
+		tokenIDs = append(tokenIDs, &tokenID)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return string(keys[i].Bytes()) < string(keys[j].Bytes())
+	sort.Slice(tokenIDs, func(i, j int) bool {
+		return string(tokenIDs[i].Bytes()) < string(tokenIDs[j].Bytes())
 	})
-	return keys
+	return tokenIDs
 }
 
 type ScBalances struct {

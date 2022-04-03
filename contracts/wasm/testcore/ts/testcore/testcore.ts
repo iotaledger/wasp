@@ -239,10 +239,13 @@ export function viewTestSandboxCall(ctx: wasmlib.ScViewContext, f: sc.TestSandbo
 }
 
 export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
+    let allowance = ctx.allowance();
+    let transfer = wasmlib.ScTransfer.fromBalances(allowance);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
 }
 
 export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
-    const provided = ctx.allowance().balance(wasmtypes.IOTA);
+    const provided = ctx.allowance().iotas();
     let dummy = sc.ScFuncs.estimateMinDust(ctx);
     const required = ctx.estimateDust(dummy.func);
     ctx.require(provided >= required, "not enough funds");
@@ -257,7 +260,7 @@ export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopC
 export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllowanceBackContext): void {
     const caller = ctx.caller();
     ctx.require(caller.isAddress(), "pingAllowanceBack: caller expected to be a L1 address");
-    const transfer = wasmlib.ScTransfers.fromBalances(ctx.allowance());
+    const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance());
     ctx.transferAllowed(ctx.accountID(), transfer, false);
     ctx.send(caller.address(), transfer);
 }
@@ -266,12 +269,21 @@ export function funcSendLargeRequest(ctx: wasmlib.ScFuncContext, f: sc.SendLarge
 }
 
 export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackContext): void {
+    let address = ctx.caller().address();
+    let allowance = ctx.allowance();
+    let transfer = wasmlib.ScTransfer.fromBalances(allowance);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    const nftIDs = allowance.nftIDs();
+    for (let i = 0; i < nftIDs.length; i++) {
+        let transfer = wasmlib.ScTransfer.nft(nftIDs[i]);
+        ctx.send(address, transfer);
+    }
 }
 
 export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
-    let iotas = ctx.allowance().balance(wasmtypes.IOTA);
+    let iotas = ctx.allowance().iotas();
     const address = ctx.caller().address();
-    const transfer = wasmlib.ScTransfers.iotas(200);
+    const transfer = wasmlib.ScTransfer.iotas(200);
     for (; iotas >= 200; iotas -= 200) {
         ctx.transferAllowed(ctx.accountID(), transfer, false);
         ctx.send(address, transfer);
@@ -279,19 +291,17 @@ export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsConte
 }
 
 export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
-    let iotas = ctx.allowance().balance(wasmtypes.IOTA);
+    let iotas = ctx.allowance().iotas();
     const address = ctx.caller().address();
-    let transfer = wasmlib.ScTransfers.iotas(iotas);
+    let transfer = wasmlib.ScTransfer.iotas(iotas);
     ctx.transferAllowed(ctx.accountID(), transfer, false);
-    const colors = ctx.allowance().colors();
-    for (let i = 0; i < colors.length; i++) {
-        const token = colors[i];
-        if (token.equals(wasmtypes.IOTA)) {
-            continue;
-        }
-        transfer = wasmlib.ScTransfers.transfer(token, 1);
+    const tokenIDs = ctx.allowance().tokenIDs();
+    const one = wasmtypes.ScBigInt.fromUint64(1);
+    for (let i = 0; i < tokenIDs.length; i++) {
+        const token = tokenIDs[i];
+        transfer = wasmlib.ScTransfer.tokens(token, one);
         let tokens = ctx.allowance().balance(token);
-        for (; tokens >= 1; tokens--) {
+        for (; tokens.cmp(one) >= 0; tokens = tokens.sub(one)) {
             ctx.transferAllowed(ctx.accountID(), transfer, false);
             ctx.send(address, transfer);
         }

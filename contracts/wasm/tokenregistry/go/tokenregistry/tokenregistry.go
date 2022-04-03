@@ -9,9 +9,9 @@ import (
 
 func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 	minted := ctx.Minted()
-	mintedColors := minted.TokenIDs()
-	ctx.Require(len(mintedColors) == 1, "need single minted color")
-	mintedColor := mintedColors[0]
+	mintedTokens := minted.TokenIDs()
+	ctx.Require(len(mintedTokens) == 1, "need single minted color")
+	mintedColor := mintedTokens[0]
 	currentToken := f.State.Registry().GetToken(*mintedColor)
 	if currentToken.Exists() {
 		// should never happen, because transaction id is unique

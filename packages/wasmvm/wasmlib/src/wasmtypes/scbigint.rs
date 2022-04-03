@@ -33,7 +33,7 @@ impl ScBigInt {
             return rhs.add(self);
         }
 
-        let mut res = self.clone();
+        let mut res = big_int_from_bytes(&self.bytes);
         let mut carry: u16 = 0;
         for i in 0..rhs_len {
             carry += res.bytes[i] as u16 + rhs.bytes[i] as u16;
@@ -134,7 +134,7 @@ impl ScBigInt {
         let lhs_len = self.bytes.len();
         let rhs_len = rhs.bytes.len();
 
-        let mut res = self.clone();
+        let mut res = big_int_from_bytes(&self.bytes);
         let mut borrow: u16 = 0;
         for i in 0..rhs_len {
             borrow += res.bytes[i] as u16 - rhs.bytes[i] as u16;

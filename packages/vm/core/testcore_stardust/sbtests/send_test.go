@@ -160,14 +160,14 @@ func testPingIotas1(t *testing.T, w bool) {
 	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddIotas(expectedBack + 1_000). // add extra iotas besides allowance in order to estimate the gas fees
+		AddIotas(expectedBack + 10_000). // add extra iotas besides allowance in order to estimate the gas fees
 		AddAllowanceIotas(expectedBack)
 
 	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
 	require.NoError(t, err)
 	req.
 		WithFungibleTokens(iscp.NewTokensIotas(expectedBack + gasFee)).
-		WithGasBudget(gas)
+		WithGasBudget(gas+1)
 
 	_, err = ch.PostRequestSync(req, user)
 	require.NoError(t, err)

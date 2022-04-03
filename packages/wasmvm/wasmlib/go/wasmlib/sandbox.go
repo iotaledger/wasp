@@ -74,8 +74,8 @@ func (s ScSandbox) AccountID() wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(Sandbox(FnAccountID, nil))
 }
 
-func (s ScSandbox) Balance(color wasmtypes.ScTokenID) uint64 {
-	return wasmtypes.Uint64FromBytes(Sandbox(FnBalance, color.Bytes()))
+func (s ScSandbox) Balance(tokenID wasmtypes.ScTokenID) uint64 {
+	return wasmtypes.Uint64FromBytes(Sandbox(FnBalance, tokenID.Bytes()))
 }
 
 // access the current balances for all assets

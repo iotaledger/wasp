@@ -18,13 +18,15 @@ import (
 const (
 	DEBUG           = false
 	FORCE_SKIP_WASM = false
-	FORCE_RUST_WASM = false
+	FORCE_RUST_WASM = true
 )
 
 const (
 	ScName           = "testcore"
 	HScName          = iscp.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
+	//WasmFileTestcore = "../../../../../contracts/wasm/testcore/go/pkg/testcore_go.wasm"
+	//WasmFileTestcore = "../../../../../contracts/wasm/testcore/ts/pkg/testcore_ts.wasm"
 )
 
 func init() {
@@ -99,7 +101,7 @@ func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, ru
 
 // WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) *iscp.AgentID {
-    err := deployContract(t, chain, user, runWasm)
+	err := deployContract(t, chain, user, runWasm)
 	require.NoError(t, err)
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)

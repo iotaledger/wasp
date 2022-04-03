@@ -110,7 +110,7 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	setupTestSandboxSC(t, chain, nil, w)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicViewEPFromFull.Name).
-		WithGasBudget(10_000)
+		WithGasBudget(20_000)
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 

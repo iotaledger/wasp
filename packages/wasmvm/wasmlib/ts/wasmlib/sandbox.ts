@@ -3,7 +3,7 @@
 
 import * as wasmrequests from "./wasmrequests"
 import * as wasmtypes from "./wasmtypes"
-import {ScAssets, ScBalances, ScTransfers} from "./assets";
+import {ScAssets, ScBalances, ScTransfer} from "./assets";
 import {ScDict, ScImmutableDict} from "./dict";
 import {sandbox} from "./host";
 import {ScSandboxUtils} from "./sandboxutils";
@@ -76,8 +76,8 @@ export class ScSandbox {
         return wasmtypes.agentIDFromBytes(sandbox(FnAccountID, null));
     }
 
-    public balance(color: wasmtypes.ScColor): u64 {
-        return wasmtypes.uint64FromBytes(sandbox(FnBalance, color.toBytes()));
+    public balance(tokenID: wasmtypes.ScTokenID): u64 {
+        return wasmtypes.uint64FromBytes(sandbox(FnBalance, tokenID.toBytes()));
     }
 
     // access the current balances for all assets
@@ -86,12 +86,12 @@ export class ScSandbox {
     }
 
     // calls a smart contract function
-    protected callWithTransfer(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfers | null): ScImmutableDict {
+    protected callWithTransfer(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfer | null): ScImmutableDict {
         if (params === null) {
             params = new ScDict([]);
         }
         if (transfer === null) {
-            transfer = new ScTransfers();
+            transfer = new ScTransfer();
         }
         const req = new wasmrequests.CallRequest();
         req.contract = hContract;
@@ -190,7 +190,7 @@ export class ScSandboxFunc extends ScSandbox {
     //}
 
     // calls a smart contract function
-    public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfers | null): ScImmutableDict {
+    public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfer | null): ScImmutableDict {
         return this.callWithTransfer(hContract, hFunction, params, transfer);
     }
 
@@ -218,9 +218,9 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     public estimateDust(fn: ScFunc): u64 {
-        let transfer = fn.transfers;
+        let transfer = fn.transferAssets;
         if (transfer === null) {
-            transfer = new ScAssets([]);
+            transfer = new ScTransfer();
         }
         const req = new wasmrequests.PostRequest();
         req.contract = fn.hContract;
@@ -242,7 +242,7 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     // (delayed) posts a smart contract function request
-    public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, transfer: ScTransfers, delay: u32): void {
+    public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, transfer: ScTransfer, delay: u32): void {
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
         req.contract = hContract;
@@ -289,7 +289,7 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     // transfer assets to the specified Tangle ledger address
-    public send(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
+    public send(address: wasmtypes.ScAddress, transfer: ScTransfer): void {
         // we need some assets to send
         if (transfer.isEmpty()) {
             return;
@@ -306,7 +306,7 @@ export class ScSandboxFunc extends ScSandbox {
     //}
 
     // transfer allowed assets to the specified ISCP ledger address
-    public transferAllowed(agentID: wasmtypes.ScAgentID, transfer: ScTransfers, create: bool): void {
+    public transferAllowed(agentID: wasmtypes.ScAgentID, transfer: ScTransfer, create: bool): void {
         // we need some assets to send
         if (transfer.isEmpty()) {
             return;
