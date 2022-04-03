@@ -1,4 +1,6 @@
 ---
+description: An example game project with frontend and contract, demonstrating the development, setup, and interaction with a smart contract.
+image: /img/logo/WASP_logo_dark.png
 keywords:
 - Smart Contracts
 - Rust
@@ -6,12 +8,10 @@ keywords:
 - proof of concept
 - node
 - nvm
-- tutorial
 - JavaScript
 - TypeScript
 - Wasm
-description: An example game project with frontend and contract, demonstrating the development, setup, and interaction with a smart contract.
-image: /img/logo/WASP_logo_dark.png
+- tutorial
 ---
 
 # Fair Roulette

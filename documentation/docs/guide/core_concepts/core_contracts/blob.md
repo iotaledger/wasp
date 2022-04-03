@@ -9,6 +9,7 @@ keywords:
 - get
 - entry points
 - views
+- reference
 --- 
 # The `blob` Contract
 

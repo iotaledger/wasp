@@ -1,9 +1,10 @@
 ---
-keywords:
-- Smart Contracts
-- Consensus
 description: IOTA Smart Contracts Consensus
 image: /img/logo/WASP_logo_dark.png
+keywords:
+- smart contracts
+- consensus
+- explanation
 ---
 # Consensus
 

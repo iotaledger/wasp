@@ -1,16 +1,17 @@
 ---
+description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
+image: /img/logo/WASP_logo_dark.png
 keywords:
-- Smart Contracts
-- Chain
+- smart contracts
+- chain
 - EVM
 - Solidity
-- Tooling
+- tooling
 - wasp-cli
 - hardhat
 - metamask
 - JSON-RPC
-description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
-image: /img/logo/WASP_logo_dark.png
+- reference
 ---
 # EVM Tooling
 

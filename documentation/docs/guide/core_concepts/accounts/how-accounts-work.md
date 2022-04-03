@@ -1,11 +1,12 @@
 ---
-keywords:
-- Smart Contracts
-- on-chain account
-- Ownership
-- Accounts Contract
-description: IOTA Smart Contracts chains keeps a ledger of on-chain account balances.  ON-chain accounts are identified by an AgentID.
+description: IOTA Smart Contracts chains keeps a ledger of on-chain account balances. On-chain accounts are identified by an AgentID.
 image: /img/tutorial/accounts.png
+keywords:
+- smart contracts
+- on-chain account
+- ownership
+- accounts Contract
+- explanation
 ---
 
 # How Accounts Work

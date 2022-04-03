@@ -1,11 +1,12 @@
 ---
+description: Smart contracts are applications you can trust that run on a distributed network with multiple validators all executing and validating the same code.
+image: /img/logo/WASP_logo_dark.png
 keywords:
-- Smart Contracts
+- smart contracts
 - blockchain
 - parallel
 - scaling
-description: Smart contracts are applications you can trust that run on a distributed network with multiple validators all executing and validating the same code
-image: /img/logo/WASP_logo_dark.png
+- explanation
 ---
 # Smart Contracts
 

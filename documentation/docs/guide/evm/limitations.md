@@ -1,13 +1,14 @@
 ---
+description: EVM based smart contract limitations. The current implementation is fully sand-boxed and not aware of IOTA or IOTA Smart Contracts. You start an EVM chain with a new supply of EVM specific tokens assigned to a single address.
+image: /img/logo/WASP_logo_dark.png
 keywords:
-- Smart Contracts
+- smart contracts
 - EVM
 - Solidity
 - limitations
 - fees
 - sand-boxed
-description: EVM based smart contract limitations. The current implementation is fully sand-boxed and not aware of IOTA or IOTA Smart Contracts. You start an EVM chain with a new supply of EVM specific tokens assigned to a single address.
-image: /img/logo/WASP_logo_dark.png
+- reference
 ---
 # EVM Limitations within IOTA Smart Contracts
 
