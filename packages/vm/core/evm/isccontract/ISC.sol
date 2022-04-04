@@ -93,17 +93,6 @@ struct ISCRequestParameters {
 
 type ISCError is uint16;
 
-function test3() {
-
-	ISCRequestParameters memory params;
-	params.fungibleTokens.iotas = 1074;
-	params.fungibleTokens.tokens = new IotaNativeToken[](1);
-	params.fungibleTokens.tokens[0].amount = 1074;
-	params.metadata.entrypoint = ISCHname.wrap(0x1337);
-	params.metadata.targetContract = ISCHname.wrap(0xd34db33f);
-	params.adjustMinimumDustDeposit = true;
-}
-
 // The interface of the native ISC contract
 interface ISC {
 	// ----- SandboxBase -----
@@ -147,5 +136,5 @@ interface ISC {
 }
 
 ISC constant isc = ISC(0x0000000000000000000000000000000000001074);
+
 error VMError(ISCError);
-error TError();

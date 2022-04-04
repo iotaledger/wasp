@@ -6,7 +6,6 @@ pragma solidity >=0.8.5;
 import "@isccontract/ISC.sol";
 
 contract ISCTest {
-	error TestError();
 	ISCError test = isc.registerError("TestError");
 
     function getChainID() public view returns (ISCChainID) {
@@ -75,6 +74,7 @@ contract ISCTest {
 
 	event SendEvent();
 	function emitSend() public {
+		// WIP
 		ISCRequestParameters memory params;
 		params.fungibleTokens.iotas = 1074;
 		params.fungibleTokens.tokens = new IotaNativeToken[](1);
@@ -87,15 +87,8 @@ contract ISCTest {
 		emit SendEvent();
 	}
 
-	function emitRevertTError() public {
-		revert TError();
-	}
 
-	function emitRevertVMError() public {
+	function emitRevertVMError() public view {
 		revert VMError(test);
-	}
-
-	function emitRevertNativeError() public {
-		revert TestError();
 	}
 }
