@@ -6,6 +6,9 @@ pragma solidity >=0.8.5;
 import "@isccontract/ISC.sol";
 
 contract ISCTest {
+	error TestError();
+	ISCError test = isc.registerError("TestError");
+
     function getChainID() public view returns (ISCChainID) {
 		return isc.getChainID();
     }
@@ -68,5 +71,31 @@ contract ISCTest {
         for (uint16 i = 0; i < n; i++) {
             emit AllowanceNFTEvent(isc.getNFTData(isc.getAllowanceNFTID(i)));
         }
-    }
+	}
+
+	event SendEvent();
+	function emitSend() public {
+		ISCRequestParameters memory params;
+		params.fungibleTokens.iotas = 1074;
+		params.fungibleTokens.tokens = new IotaNativeToken[](1);
+		params.fungibleTokens.tokens[0].amount = 1074;
+		params.metadata.entrypoint = ISCHname.wrap(0x1337);
+		params.metadata.targetContract = ISCHname.wrap(0xd34db33f);
+		params.adjustMinimumDustDeposit = true;
+
+		isc.send(params);
+		emit SendEvent();
+	}
+
+	function emitRevertTError() public {
+		revert TError();
+	}
+
+	function emitRevertVMError() public {
+		revert VMError(test);
+	}
+
+	function emitRevertNativeError() public {
+		revert TestError();
+	}
 }

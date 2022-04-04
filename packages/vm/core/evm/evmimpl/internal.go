@@ -32,6 +32,7 @@ func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
 
 func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
+		ctx.Contract(),
 		evmStateSubrealm(ctx.State()),
 		timestamp(ctx),
 		newISCContract(ctx),
@@ -40,6 +41,7 @@ func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
 
 func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
+		ctx.Contract(),
 		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
 		timestamp(ctx),
 		newISCContractView(ctx),

@@ -108,6 +108,17 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "getCaller":
 		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Caller())}
 
+	case "registerError":
+		errorMessage := args[0].(string)
+		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
+
+	case "send":
+
+		params := isccontract.ISCRequestParameters{}
+		err := method.Inputs.Copy(&params, args)
+		fmt.Printf(err.Error())
+	//	c.ctx.Send(params)
+
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}

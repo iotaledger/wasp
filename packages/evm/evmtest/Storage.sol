@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.0;
 
+
 contract Storage {
     uint32 n;
 
@@ -17,5 +18,7 @@ contract Storage {
     function retrieve() public view returns (uint32) {
         return n;
     }
+
+
 }
 

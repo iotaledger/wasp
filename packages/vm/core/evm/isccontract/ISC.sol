@@ -20,7 +20,6 @@ type IotaNFTID is bytes20;
 
 type IotaTransactionID is bytes32;
 
-
 type ISCHname is uint32;
 
 type ISCChainID is bytes20;
@@ -48,6 +47,61 @@ struct ISCDictItem {
 
 struct ISCDict {
 	ISCDictItem[] items;
+}
+
+struct IotaFungibleTokens {
+	uint64 iotas;
+	IotaNativeToken[] tokens;
+}
+
+struct IotaAllowance {
+	IotaFungibleTokens assets;
+	IotaNFTID[] nfts;
+}
+
+struct ISCSendMetadata  {
+	ISCHname targetContract;
+	ISCHname entrypoint;
+	//mapping(string => bytes) params;
+	IotaAllowance allowance;
+	uint64 gasBudget;
+}
+
+struct ISCTimeData {
+	uint32 milestoneIndex;
+	int64 time;
+}
+
+struct ISCExpiration {
+	uint32 milestoneIndex;
+	uint256 time;
+	IotaAddress returnAddress;
+}
+
+struct ISCSendOptions {
+	ISCTimeData timelock;
+	ISCExpiration expiration;
+}
+
+struct ISCRequestParameters {
+	IotaAddress targetAddress;
+	IotaFungibleTokens fungibleTokens;
+	bool adjustMinimumDustDeposit;
+	ISCSendMetadata metadata;
+	ISCSendOptions sendOptions;
+}
+
+type ISCError is uint16;
+
+function test3() {
+
+	ISCRequestParameters memory params;
+	params.fungibleTokens.iotas = 1074;
+	params.fungibleTokens.tokens = new IotaNativeToken[](1);
+	params.fungibleTokens.tokens[0].amount = 1074;
+	params.metadata.entrypoint = ISCHname.wrap(0x1337);
+	params.metadata.targetContract = ISCHname.wrap(0xd34db33f);
+	params.adjustMinimumDustDeposit = true;
 }
 
 // The interface of the native ISC contract
@@ -83,6 +137,9 @@ interface ISC {
     function getAllowanceNFTID(uint16 i) external view returns (IotaNFTID);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
+	function send(ISCRequestParameters memory params) external view;
+
+	function registerError(string memory s) external view returns (ISCError);
 
 	// ----- SandboxView -----
 
@@ -90,3 +147,5 @@ interface ISC {
 }
 
 ISC constant isc = ISC(0x0000000000000000000000000000000000001074);
+error VMError(ISCError);
+error TError();

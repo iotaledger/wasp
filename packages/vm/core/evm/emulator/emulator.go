@@ -4,8 +4,12 @@
 package emulator
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"math/big"
+	"os"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -29,6 +33,7 @@ type EVMEmulator struct {
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
 	vmConfig    vm.Config
+	contractId  iscp.Hname
 }
 
 func makeConfig(chainID int) *params.ChainConfig {
@@ -53,6 +58,8 @@ const (
 	keyStateDB      = "s"
 	keyBlockchainDB = "b"
 )
+
+var VMErrorCode = crypto.Keccak256([]byte("VMError(uint16)"))[:4]
 
 func newStateDB(store kv.KVStore) *StateDB {
 	return NewStateDB(subrealm.New(store, keyStateDB))
@@ -86,16 +93,20 @@ func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, tim
 	}
 }
 
-func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContract) *EVMEmulator {
+func NewEVMEmulator(contractId iscp.Hname, store kv.KVStore, timestamp uint64, iscContract vm.ISCContract) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
 	}
+
+	logger := logger.NewJSONLogger(&logger.Config{EnableReturnData: true, EnableMemory: true}, os.Stdout)
+
 	return &EVMEmulator{
+		contractId:  contractId,
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		vmConfig:    vm.Config{ISCContract: iscContract},
+		vmConfig:    vm.Config{ISCContract: iscContract, Debug: true, Tracer: logger},
 	}
 }
 
@@ -111,13 +122,55 @@ func (e *EVMEmulator) GasLimit() uint64 {
 	return e.BlockchainDB().GetGasLimit()
 }
 
-func newRevertError(result *core.ExecutionResult) *revertError {
+func (e *EVMEmulator) unpackVMError(result *core.ExecutionResult) (*iscp.VMErrorCode, error) {
+	data := result.Revert()
+
+	if len(data) < 4 {
+		return nil, xerrors.New("invalid data for unpacking")
+	}
+
+	if !bytes.Equal(data[:4], VMErrorCode) {
+		return nil, xerrors.New("invalid data for unpacking")
+	}
+
+	abiUint16, _ := abi.NewType("uint16", "", nil)
+
+	errorId, err := (abi.Arguments{{Type: abiUint16}}).Unpack(data[4:])
+
+	if err != nil {
+		return nil, err
+	}
+
+	errorCode := iscp.NewVMErrorCode(e.contractId, errorId[0].(uint16))
+
+	return &errorCode, nil
+}
+
+func (e *EVMEmulator) unpackCommonRevertError(result *core.ExecutionResult) (string, error) {
+	var err error
+	reason, err := abi.UnpackRevert(result.Revert())
+
+	return reason, err
+}
+
+func (e *EVMEmulator) decodeRevertError(result *core.ExecutionResult) *revertError {
+	if !result.Failed() {
+		return nil
+	}
+
 	reason := "(empty reason)"
+
 	if len(result.Revert()) > 0 {
-		var err error
-		reason, err = abi.UnpackRevert(result.Revert())
-		if err != nil {
-			reason = fmt.Sprintf("(failed to decode revert reason: %v)", err)
+		// First try to decode a VMError
+		// Secondly try to decode a normal error as string
+		// Otherwise give up
+
+		vmError, _ := e.unpackVMError(result)
+
+		if vmError != nil {
+			reason = fmt.Sprintf("contractId: %v, errorId: %v", vmError.ContractID, vmError.ID)
+		} else {
+			reason, _ = e.unpackCommonRevertError(result)
 		}
 	}
 	return &revertError{
@@ -134,6 +187,10 @@ type revertError struct {
 }
 
 func (e *revertError) Error() string {
+	if e == nil {
+		return "unknown"
+	}
+
 	return e.msg
 }
 
@@ -155,7 +212,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
 		return nil, err
 	}
 	if res.Err == vm.ErrExecutionReverted {
-		return nil, newRevertError(res)
+		return nil, e.decodeRevertError(res)
 	}
 	return res.Return(), res.Err
 }
@@ -191,6 +248,7 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasLimit uint64) (*core.ExecutionResult, uint64, error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
+
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
 	gasPool := core.GasPool(gasLimit)
 	vmEnv.Reset(txContext, statedb)
@@ -199,28 +257,28 @@ func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header 
 	return result, gasUsed, err
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, error) {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, error, *revertError) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, 0, xerrors.Errorf("invalid transaction: %w", err)
+		return nil, 0, xerrors.Errorf("invalid transaction: %w", err), nil
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce), nil
 	}
 
 	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, err, nil
 	}
 
 	result, gasUsed, err := e.applyMessage(msg, statedb, pendingHeader, gasLimit)
 	if err != nil {
-		return nil, gasUsed, err
+		return nil, gasUsed, err, nil
 	}
 
 	cumulativeGasUsed := result.UsedGas
@@ -241,11 +299,13 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*
 		TransactionIndex:  index,
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+
 	if result.Failed() {
 		receipt.Status = types.ReceiptStatusFailed
 	} else {
 		receipt.Status = types.ReceiptStatusSuccessful
 	}
+
 	if msg.To() == nil {
 		receipt.ContractAddress = crypto.CreateAddress(msg.From(), tx.Nonce())
 	}
@@ -253,7 +313,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, gasUsed, nil
+	return receipt, gasUsed, nil, e.decodeRevertError(result)
 }
 
 func (e *EVMEmulator) MintBlock() {

@@ -6,6 +6,7 @@ package evmtest
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"math/big"
 	"strings"
 	"testing"
@@ -288,10 +289,15 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(e.t, e.resolveError(err))
-	req.WithGasBudget(iscpGas).AddIotas(iscpGasFee)
+	req.WithGasBudget(iscpGas)
 
+	// deposit gas fee
+	depositGasFeeReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
+	_, fee2, err := e.soloChain.EstimateGasOnLedger(depositGasFeeReq, nil, true)
+	require.NoError(e.t, e.resolveError(err))
+	_, err = e.soloChain.PostRequestSync(depositGasFeeReq.AddIotas(iscpGasFee+fee2), nil)
 	// send EVM tx
-	_, err = e.soloChain.PostRequestSync(req, nil)
+	_, err = e.soloChain.PostRequestOffLedger(req, nil)
 	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{
