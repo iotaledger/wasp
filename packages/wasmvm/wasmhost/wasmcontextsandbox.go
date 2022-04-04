@@ -173,7 +173,7 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 			Params:         params,
 			// TODO check, probably not correct
 			Allowance: allowance,
-			GasBudget: 1_000_000,
+			GasBudget: 500_000,
 		},
 	}
 	if req.Delay != 0 {

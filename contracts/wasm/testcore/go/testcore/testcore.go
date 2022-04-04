@@ -193,7 +193,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	availableIotas := ctx.Allowance().Iotas()
 	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
 	if availableIotas < 1000 {
-		ctx.Panic("no enough iotas sent to cover dust deposit")
+		ctx.Panic("not enough iotas sent to cover dust deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
