@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
@@ -288,10 +289,16 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(e.t, e.resolveError(err))
-	req.WithGasBudget(iscpGas).AddIotas(iscpGasFee)
+	req.WithGasBudget(iscpGas)
+
+	// deposit gas fee
+	depositGasFeeReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
+	_, fee2, err := e.soloChain.EstimateGasOnLedger(depositGasFeeReq, nil, true)
+	require.NoError(e.t, e.resolveError(err))
+	_, err = e.soloChain.PostRequestSync(depositGasFeeReq.AddIotas(iscpGasFee+fee2), nil)
 
 	// send EVM tx
-	_, err = e.soloChain.PostRequestSync(req, nil)
+	_, err = e.soloChain.PostRequestOffLedger(req, nil)
 	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{

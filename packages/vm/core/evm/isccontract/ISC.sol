@@ -90,6 +90,11 @@ interface ISC {
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
+    function getAllowanceAvailableIotas() external view returns (uint64);
+    function getAllowanceAvailableNativeToken(uint16 i) external view returns (IotaNativeToken memory);
+    function getAllowanceAvailableNativeTokensLen() external view returns (uint16);
+    function getAllowanceAvailableNFTsLen() external view returns (uint16);
+    function getAllowanceAvailableNFT(uint16 i) external view returns (ISCNFT memory);
 
 	// ----- SandboxView -----
 
