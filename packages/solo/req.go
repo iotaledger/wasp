@@ -4,11 +4,12 @@
 package solo
 
 import (
+	"math"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/state"
-	"math"
-	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -143,7 +144,7 @@ func (r *CallParams) AddNativeTokens(tokenID *iotago.NativeTokenID, amount inter
 	})
 }
 
-// Adds an nft to be sent (only appliable when the call is made via on-ledger request)
+// Adds an nft to be sent (only applicable when the call is made via on-ledger request)
 func (r *CallParams) WithNFT(nft *iscp.NFT) *CallParams {
 	r.nft = nft
 	return r
