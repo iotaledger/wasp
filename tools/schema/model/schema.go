@@ -115,7 +115,7 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
 		if views && schemaDef.Funcs[funcName] != nil {
-			return fmt.Errorf("duplicate func/view name: %s at %v", funcName, templateFuncs[funcName].Line)
+			return fmt.Errorf("duplicate func/view name: %s at %v", funcName.Val, templateFuncs[funcName].Line)
 		}
 		funcDesc := templateFuncs[funcName]
 		if funcDesc == nil {
@@ -123,11 +123,11 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 		}
 
 		f := &Func{}
-		f.Name = funcName
+		f.Name = funcName.Val
 		f.Kind = funcKind
-		f.Hname = iscp.Hn(funcName)
-		f.Line = templateFuncs[funcName].Line
-		f.Comment = templateFuncs[funcName].Comment
+		f.Hname = iscp.Hn(funcName.Val)
+		f.Line = funcName.Line
+		f.Comment = funcName.Comment
 
 		// check for Hname collision
 		for _, other := range s.Funcs {
@@ -317,15 +317,6 @@ func sortedFields(dict FieldMap) []string {
 	return keys
 }
 
-func sortedFuncDescs(dict FuncDefMap) []string {
-	keys := make([]string, 0)
-	for key := range dict {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
 type DefEltList []DefElt
 
 func (l DefEltList) Len() int           { return len(l) }
@@ -342,6 +333,15 @@ func sortedKeys(dict DefMap) []DefElt {
 }
 
 func sortedMaps(dict DefMapMap) []DefElt {
+	keys := make(DefEltList, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Sort(keys)
+	return keys
+}
+
+func sortedFuncDescs(dict FuncDefMap) []DefElt {
 	keys := make(DefEltList, 0)
 	for key := range dict {
 		keys = append(keys, key)

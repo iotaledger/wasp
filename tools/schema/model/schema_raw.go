@@ -53,7 +53,7 @@ func (mm StringMap) ToDefMap() DefMap {
 func (m RawFuncDefMap) ToFuncDefMap() FuncDefMap {
 	defs := make(FuncDefMap)
 	for key, val := range m {
-		defs[key] = &FuncDef{
+		defs[DefElt{Val: key}] = &FuncDef{
 			Access:  DefElt{Val: val.Access},
 			Params:  val.Params.ToDefMap(),
 			Results: val.Results.ToDefMap(),
@@ -81,7 +81,7 @@ func (m DefMap) ToStringMap() StringMap {
 func (m FuncDefMap) ToRawFuncDefMap() RawFuncDefMap {
 	ret := make(RawFuncDefMap)
 	for key, val := range m {
-		ret[key] = &RawFuncDef{
+		ret[key.Val] = &RawFuncDef{
 			Access:  val.Access.Val,
 			Params:  val.Params.ToStringMap(),
 			Results: val.Results.ToStringMap(),

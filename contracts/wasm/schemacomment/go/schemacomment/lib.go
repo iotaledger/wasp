@@ -5,20 +5,21 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncStringMapOfStringArrayAppend,
-		ViewStringMapOfStringArrayLength,
+    	FuncTestFunc1,
+    	ViewTestView1,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcStringMapOfStringArrayAppendThunk,
+    	funcTestFunc1Thunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewStringMapOfStringArrayLengthThunk,
+    	viewTestView1Thunk,
 	},
 }
 
@@ -31,52 +32,48 @@ func OnLoad(index int32) {
 	wasmlib.ScExportsExport(&exportMap)
 }
 
-type StringMapOfStringArrayAppendContext struct {
+type TestFunc1Context struct {
 	Events  SchemaCommentEvents
-	Params  ImmutableStringMapOfStringArrayAppendParams
-	Results MutableStringMapOfStringArrayAppendResults
+	Params  ImmutableTestFunc1Params
+	Results MutableTestFunc1Results
 	State   MutableSchemaCommentState
 }
 
-func funcStringMapOfStringArrayAppendThunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("schemacomment.funcStringMapOfStringArrayAppend")
+func funcTestFunc1Thunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("schemacomment.funcTestFunc1")
 	results := wasmlib.NewScDict()
-	f := &StringMapOfStringArrayAppendContext{
-		Params: ImmutableStringMapOfStringArrayAppendParams{
+	f := &TestFunc1Context{
+		Params: ImmutableTestFunc1Params{
 			proxy: wasmlib.NewParamsProxy(),
 		},
-		Results: MutableStringMapOfStringArrayAppendResults{
+		Results: MutableTestFunc1Results{
 			proxy: results.AsProxy(),
 		},
 		State: MutableSchemaCommentState{
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	access := f.State.Owner()
-	ctx.Require(access.Exists(), "access not set: owner")
-	ctx.Require(ctx.Caller() == access.Value(), "no permission")
-
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
-	funcStringMapOfStringArrayAppend(ctx, f)
+	funcTestFunc1(ctx, f)
 	ctx.Results(results)
-	ctx.Log("schemacomment.funcStringMapOfStringArrayAppend ok")
+	ctx.Log("schemacomment.funcTestFunc1 ok")
 }
 
-type StringMapOfStringArrayLengthContext struct {
-	Params  ImmutableStringMapOfStringArrayLengthParams
-	Results MutableStringMapOfStringArrayLengthResults
+type TestView1Context struct {
+	Params  ImmutableTestView1Params
+	Results MutableTestView1Results
 	State   ImmutableSchemaCommentState
 }
 
-func viewStringMapOfStringArrayLengthThunk(ctx wasmlib.ScViewContext) {
-	ctx.Log("schemacomment.viewStringMapOfStringArrayLength")
+func viewTestView1Thunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("schemacomment.viewTestView1")
 	results := wasmlib.NewScDict()
-	f := &StringMapOfStringArrayLengthContext{
-		Params: ImmutableStringMapOfStringArrayLengthParams{
+	f := &TestView1Context{
+		Params: ImmutableTestView1Params{
 			proxy: wasmlib.NewParamsProxy(),
 		},
-		Results: MutableStringMapOfStringArrayLengthResults{
+		Results: MutableTestView1Results{
 			proxy: results.AsProxy(),
 		},
 		State: ImmutableSchemaCommentState{
@@ -84,7 +81,7 @@ func viewStringMapOfStringArrayLengthThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
-	viewStringMapOfStringArrayLength(ctx, f)
+	viewTestView1(ctx, f)
 	ctx.Results(results)
-	ctx.Log("schemacomment.viewStringMapOfStringArrayLength ok")
+	ctx.Log("schemacomment.viewTestView1 ok")
 }

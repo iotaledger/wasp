@@ -49,41 +49,69 @@ events: # line comment for event 1
 # ##################################
 
 structs:
-  TestStruct:
-    x: Int32
-    y: Int32
+  # comment for TestStruct1
+  TestStruct1:
+    # comment for x1
+    x1: Int32
+    # comment for y1
+    y1: Int32
+  # comment for TestStruct2
+  TestStruct2:
+    # comment for x2
+    x2: Int32
+    # comment for y2
+    y2: Int32
 
 # ##################################
 
 typedefs:
-  ### Array
+  # comment for TestTypedef
   TestTypedef: String[]
 
 # ##################################
 
 state:
-  # basic datatypes, using String
-  TestState: Int64[]
-  Owner: AgentID # owner of contract
+  TestState1: Int64[] # comment for TestState1
+
+  TestState2: AgentID # comment for TestState2
 
 # ##################################
 
-funcs:
-  stringMapOfStringArrayAppend:
-    access: owner
-    params:
-      name: String
-      value: String
-    results:
-      length: Uint32
+funcs: # comment for funcs
+
+  # comment for TestFunc1 1
+  TestFunc1: # comment for TestFunc1 2
+  
+    # comment for params
+    params: 
+      # comment for name
+      name: String 
+      # comment for value
+      value: String 
+      # comment for arr
+      arr: Int64[]
+    # comment for results  
+    results: 
+      # comment for length
+      length: Uint32 
+        
     
 # ##################################
 
-views:
-  stringMapOfStringArrayLength:
-    params:
-      name: String
-    results:
-      length: Uint32
+views: # comment for views
+
+  # comment for TestView1
+  TestView1: 
+    # comment for params
+    params: 
+      # comment for name
+      name: String 
+      # comment for arr
+      arr: Int64[]
+    # comment for results  
+    results: 
+      # comment for length
+      length: Uint32 
+
 
 

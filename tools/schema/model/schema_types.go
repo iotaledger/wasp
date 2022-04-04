@@ -4,14 +4,16 @@ import "fmt"
 
 // TODO describe schema details in docs
 type (
-	FieldMap      map[string]*Field
-	FieldMapMap   map[string]FieldMap
-	StringMap     map[string]string
-	StringMapMap  map[string]StringMap
-	DefMap        map[DefElt]*DefElt
-	DefNameMap    map[string]*DefElt
-	DefMapMap     map[DefElt]*DefMap
-	DefNameMapMap map[string]*DefMap
+	FieldMap       map[string]*Field
+	FieldMapMap    map[string]FieldMap
+	StringMap      map[string]string
+	StringMapMap   map[string]StringMap
+	DefMap         map[DefElt]*DefElt
+	DefNameMap     map[string]*DefElt
+	DefMapMap      map[DefElt]*DefMap
+	DefNameMapMap  map[string]*DefMap
+	FuncDefMap     map[DefElt]*FuncDef
+	FuncNameDefMap map[string]*FuncDef
 )
 
 type FuncDef struct {
@@ -21,7 +23,6 @@ type FuncDef struct {
 	Line    int
 	Comment string
 }
-type FuncDefMap map[string]*FuncDef
 
 type DefElt struct {
 	Val     string

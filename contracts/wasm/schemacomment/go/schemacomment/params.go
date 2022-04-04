@@ -9,42 +9,100 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ImmutableStringMapOfStringArrayAppendParams struct {
+type ArrayOfImmutableInt64 struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStringMapOfStringArrayAppendParams) Name() wasmtypes.ScImmutableString {
+func (a ArrayOfImmutableInt64) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableInt64) GetInt64(index uint32) wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(a.proxy.Index(index))
+}
+
+type ImmutableTestFunc1Params struct {
+	proxy wasmtypes.Proxy
+}
+
+// comment for arr
+func (s ImmutableTestFunc1Params) Arr() ArrayOfImmutableInt64 {
+	return ArrayOfImmutableInt64{proxy: s.proxy.Root(ParamArr)}
+}
+
+// comment for name
+func (s ImmutableTestFunc1Params) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
-func (s ImmutableStringMapOfStringArrayAppendParams) Value() wasmtypes.ScImmutableString {
+// comment for value
+func (s ImmutableTestFunc1Params) Value() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
 }
 
-type MutableStringMapOfStringArrayAppendParams struct {
+type ArrayOfMutableInt64 struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableStringMapOfStringArrayAppendParams) Name() wasmtypes.ScMutableString {
+func (a ArrayOfMutableInt64) AppendInt64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(a.proxy.Append())
+}
+
+func (a ArrayOfMutableInt64) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableInt64) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableInt64) GetInt64(index uint32) wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(a.proxy.Index(index))
+}
+
+type MutableTestFunc1Params struct {
+	proxy wasmtypes.Proxy
+}
+
+// comment for arr
+func (s MutableTestFunc1Params) Arr() ArrayOfMutableInt64 {
+	return ArrayOfMutableInt64{proxy: s.proxy.Root(ParamArr)}
+}
+
+// comment for name
+func (s MutableTestFunc1Params) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
-func (s MutableStringMapOfStringArrayAppendParams) Value() wasmtypes.ScMutableString {
+// comment for value
+func (s MutableTestFunc1Params) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
-type ImmutableStringMapOfStringArrayLengthParams struct {
+type ImmutableTestView1Params struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStringMapOfStringArrayLengthParams) Name() wasmtypes.ScImmutableString {
+// comment for arr
+func (s ImmutableTestView1Params) Arr() ArrayOfImmutableInt64 {
+	return ArrayOfImmutableInt64{proxy: s.proxy.Root(ParamArr)}
+}
+
+// comment for name
+func (s ImmutableTestView1Params) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
-type MutableStringMapOfStringArrayLengthParams struct {
+type MutableTestView1Params struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableStringMapOfStringArrayLengthParams) Name() wasmtypes.ScMutableString {
+// comment for arr
+func (s MutableTestView1Params) Arr() ArrayOfMutableInt64 {
+	return ArrayOfMutableInt64{proxy: s.proxy.Root(ParamArr)}
+}
+
+// comment for name
+func (s MutableTestView1Params) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
