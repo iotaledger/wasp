@@ -26,14 +26,10 @@ type ContractRecord struct {
 	Creator *iscp.AgentID
 }
 
-func NewContractRecord(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {
-	// enforce correct creator agentID --  begin
+func ContractRecordFromContractInfo(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {
 	if creator == nil {
-		panic("NewContractRecord: creator can't be nil")
+		panic("ContractRecordFromContractInfo: creator can't be nil")
 	}
-	creator.Bytes() // panics if wrong address
-	// enforce correct creator agentID --  end
-
 	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,
@@ -78,13 +74,6 @@ func (p *ContractRecord) Bytes() []byte {
 		mu.Write(p.Creator)
 	}
 	return mu.Bytes()
-}
-
-func (p *ContractRecord) Hname() iscp.Hname {
-	if p.Name == "_default" {
-		return 0
-	}
-	return iscp.Hn(p.Name)
 }
 
 func ContractRecordFromBytes(data []byte) (*ContractRecord, error) {

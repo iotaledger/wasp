@@ -54,16 +54,11 @@ struct IotaFungibleTokens {
 	IotaNativeToken[] tokens;
 }
 
-struct IotaAllowance {
-	IotaFungibleTokens assets;
-	IotaNFTID[] nfts;
-}
-
 struct ISCSendMetadata  {
 	ISCHname targetContract;
 	ISCHname entrypoint;
 	//mapping(string => bytes) params;
-	IotaAllowance allowance;
+	ISCAllowance allowance;
 	uint64 gasBudget;
 }
 
@@ -93,8 +88,17 @@ struct ISCRequestParameters {
 
 type ISCError is uint16;
 
+struct ISCAllowance {
+	uint64 iotas;
+	IotaNativeToken[] tokens;
+	IotaNFTID[] nfts;
+}
+
 // The interface of the native ISC contract
 interface ISC {
+	// ----- misc -----
+	function hn(string memory s) external view returns (ISCHname);
+
 	// ----- SandboxBase -----
 
 	function hasParam(string memory key) external view returns (bool);
@@ -122,13 +126,13 @@ interface ISC {
 	function getAllowanceIotas() external view returns (uint64);
 	function getAllowanceNativeTokensLen() external view returns (uint16);
 	function getAllowanceNativeToken(uint16 i) external view returns (IotaNativeToken memory);
-    function getAllowanceNFTsLen() external view returns (uint16);
-    function getAllowanceNFTID(uint16 i) external view returns (IotaNFTID);
+  function getAllowanceNFTsLen() external view returns (uint16);
+  function getAllowanceNFTID(uint16 i) external view returns (IotaNFTID);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
 	function send(ISCRequestParameters memory params) external view;
-
 	function registerError(string memory s) external view returns (ISCError);
+	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
 
 	// ----- SandboxView -----
 

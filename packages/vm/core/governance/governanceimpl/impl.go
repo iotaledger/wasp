@@ -60,5 +60,9 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 	state.Set(governance.VarGasFeePolicyBytes, feePolicyBytes)
 
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+
 	return nil
 }

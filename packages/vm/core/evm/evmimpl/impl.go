@@ -71,6 +71,9 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evm.DefaultGasRatio)
 	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
+	// storing hname as a terminal value of the contract's state nil key.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
 
 	return nil
 }

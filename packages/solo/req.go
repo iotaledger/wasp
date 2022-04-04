@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"bytes"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/state"
@@ -477,12 +476,30 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
 	return ret
 }
 
-// GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Mekle model is used
+// GetBlockProof returns Merkle proof of the key in the state
+func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_merkle.Proof, error) {
+	ch.Log().Debugf("GetBlockProof")
+
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	biBin, retProof, err := vmctx.GetBlockProof(blockIndex)
+	if err != nil {
+		return nil, nil, err
+	}
+	retBlockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, biBin)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return retBlockInfo, retProof, nil
+}
+
+// GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
 func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Proof {
-	var buf bytes.Buffer
-	buf.Write(scHname.Bytes())
-	buf.Write(key)
-	return ch.GetMerkleProofRaw(buf.Bytes())
+	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
 // GetStateCommitment returns state commitment taken from the anchor output
@@ -500,6 +517,13 @@ func (ch *Chain) GetRootCommitment() trie.VCommitment {
 	ret, err := vmctx.GetRootCommitment()
 	require.NoError(ch.Env.T, err)
 	return ret
+}
+
+// GetContractStateCommitment returns commitment to the state of the specific contract, if possible
+func (ch *Chain) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitment, error) {
+	vmctx := viewcontext.New(ch)
+	ch.StateReader.SetBaseline()
+	return vmctx.GetContractStateCommitment(hn)
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true

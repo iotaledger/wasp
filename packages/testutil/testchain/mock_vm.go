@@ -37,7 +37,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
-		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieAccess()), iscp.OID(task.AnchorOutputID.UTXOInput()))
+		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), iscp.OID(task.AnchorOutputID.UTXOInput()))
 	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption.Time, task.Requests...)
 	task.VirtualStateAccess = nextvs
 	task.RotationAddress = nil
@@ -56,7 +56,7 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 		}
 	}
 	task.VMError = nil
-	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", nextvs.BlockIndex(), trie.RootCommitment(nextvs.TrieAccess()))
+	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", nextvs.BlockIndex(), trie.RootCommitment(nextvs.TrieNodeStore()))
 }
 
 func nextState(
@@ -77,7 +77,7 @@ func nextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieAccess()))
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieNodeStore()))
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -106,7 +106,7 @@ func nextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieAccess())).Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Blocks:         consumedOutput.Blocks,

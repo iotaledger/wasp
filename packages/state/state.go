@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
-	"math"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -18,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -35,8 +33,8 @@ var (
 	_               VirtualStateAccess = &virtualStateAccess{}
 )
 
-// newVirtualState creates VirtualStateAccess interface with the partition of KVStore
-func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
+// NewVirtualState creates VirtualStateAccess interface with the partition of KVStore
+func NewVirtualState(db kvstore.KVStore) *virtualStateAccess {
 	subState := subRealm(db, []byte{dbkeys.ObjectTypeState})
 	subTrie := subRealm(db, []byte{dbkeys.ObjectTypeTrie})
 	ret := &virtualStateAccess{
@@ -49,20 +47,19 @@ func newVirtualState(db kvstore.KVStore) *virtualStateAccess {
 
 // CreateOriginState origin state and saves it. It assumes store is empty
 func newOriginState(store kvstore.KVStore) VirtualStateAccess {
-	ret := newVirtualState(store)
+	ret := NewVirtualState(store)
 	nilChainId := iscp.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
-	var zero8 [8]byte
 	ret.KVStore().Set("", nilChainId.Bytes())
-	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), zero8[:])
-	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), zero8[:])
+	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
+	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
 	ret.Commit()
 	return ret
 }
 
 // calcOriginStateHash is independent of db provider nor chainID. Used for testing
 func calcOriginStateHash() trie.VCommitment {
-	return trie.RootCommitment(newOriginState(mapdb.NewMapDB()).TrieAccess())
+	return trie.RootCommitment(newOriginState(mapdb.NewMapDB()).TrieNodeStore())
 }
 
 // CreateOriginState creates and saves origin state in DB
@@ -97,7 +94,7 @@ func (vs *virtualStateAccess) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %v, state commitment: %s\n%s",
 		vs.BlockIndex(),
 		vs.Timestamp(),
-		trie.RootCommitment(vs.TrieAccess()),
+		trie.RootCommitment(vs.TrieNodeStore()),
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
@@ -108,6 +105,19 @@ func (vs *virtualStateAccess) KVStore() *buffered.BufferedKVStoreAccess {
 
 func (vs *virtualStateAccess) KVStoreReader() kv.KVStoreReader {
 	return vs.kvs
+}
+
+func (vs *virtualStateAccess) OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader {
+	return NewOptimisticStateReader(vs.db, glb)
+}
+
+func (vs *virtualStateAccess) ChainID() *iscp.ChainID {
+	chainIDBin := vs.KVStoreReader().MustGet("")
+	ret, err := iscp.ChainIDFromBytes(chainIDBin)
+	if err != nil {
+		panic(xerrors.Errorf("state.ChainID: %w", err))
+	}
+	return ret
 }
 
 func (vs *virtualStateAccess) BlockIndex() uint32 {
@@ -191,8 +201,8 @@ func (vs *virtualStateAccess) Commit() {
 	vs.kvs.Mutations().ResetModified()
 }
 
-// StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
-func (vs *virtualStateAccess) TrieAccess() trie.NodeStore {
+// TrieNodeStore returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
+func (vs *virtualStateAccess) TrieNodeStore() trie.NodeStore {
 	return vs.trie
 }
 
@@ -209,14 +219,11 @@ func loadStateIndexFromState(chainState kv.KVStoreReader) (uint32, error) {
 	if blockIndexBin == nil {
 		return 0, xerrors.New("loadStateIndexFromState: not found")
 	}
-	blockIndex, err := util.Uint64From8Bytes(blockIndexBin)
+	blockIndex, err := codec.DecodeUint32(blockIndexBin)
 	if err != nil {
 		return 0, xerrors.Errorf("loadStateIndexFromState: %w", err)
 	}
-	if int(blockIndex) > math.MaxUint32 {
-		return 0, xerrors.Errorf("loadStateIndexFromState: wrong state index value")
-	}
-	return uint32(blockIndex), nil
+	return blockIndex, nil
 }
 
 func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {

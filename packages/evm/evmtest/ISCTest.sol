@@ -33,11 +33,11 @@ contract ISCTest {
 		emit RequestIDEvent(reqID);
 	}
 
-    event GetCallerEvent(ISCAgentID agentID);
-    function emitGetCaller() public {
-        ISCAgentID memory agentID = isc.getCaller();
-        emit GetCallerEvent(agentID);
-    }
+  event GetCallerEvent(ISCAgentID agentID);
+  function emitGetCaller() public {
+      ISCAgentID memory agentID = isc.getCaller();
+      emit GetCallerEvent(agentID);
+  }
 
 	event SenderAccountEvent(ISCAgentID sender);
 	function emitSenderAccount() public {
@@ -64,12 +64,12 @@ contract ISCTest {
 		}
 	}
 
-    event AllowanceNFTEvent(ISCNFT token);
-    function emitAllowanceNFTs() public {
-        uint16 n = isc.getAllowanceNFTsLen();
-        for (uint16 i = 0; i < n; i++) {
-            emit AllowanceNFTEvent(isc.getNFTData(isc.getAllowanceNFTID(i)));
-        }
+  event AllowanceNFTEvent(ISCNFT token);
+  function emitAllowanceNFTs() public {
+      uint16 n = isc.getAllowanceNFTsLen();
+      for (uint16 i = 0; i < n; i++) {
+          emit AllowanceNFTEvent(isc.getNFTData(isc.getAllowanceNFTID(i)));
+      }
 	}
 
 	event SendEvent();
@@ -90,5 +90,14 @@ contract ISCTest {
 
 	function emitRevertVMError() public view {
 		revert VMError(test);
+  }
+  
+  function callInccounter() public {
+		ISCDict memory params = ISCDict(new ISCDictItem[](1));
+        bytes memory int64Encoded42 = hex"2A00000000000000";
+		params.items[0] = ISCDictItem("counter", int64Encoded42);
+		ISCAllowance memory allowance;
+		isc.call(isc.hn("inccounter"), isc.hn("incCounter"), params, allowance);
 	}
+
 }

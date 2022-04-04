@@ -20,7 +20,6 @@ var (
 	ErrContractNotFound                   = coreerrors.Register("contract not found id:%v")
 	ErrTargetEntryPointNotFound           = coreerrors.Register("entry point not found").Create()
 	ErrEntryPointCantBeAView              = coreerrors.Register("'init' entry point can't be a view").Create()
-	ErrTargetContractNotFound             = coreerrors.Register("target contract not found").Create()
 	ErrTransferTargetAccountDoesNotExists = coreerrors.Register("transfer target account does not exist").Create()
 	ErrRepeatingInitCall                  = coreerrors.Register("repeating init call").Create()
 	ErrInconsistentDustAssumptions        = coreerrors.Register("dust deposit requirements are not consistent with the chain assumptions").Create()

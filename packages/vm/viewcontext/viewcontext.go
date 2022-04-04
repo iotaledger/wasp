@@ -1,12 +1,15 @@
 package viewcontext
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/kv/trie"
@@ -16,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -24,7 +28,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"go.uber.org/zap"
-	"math/big"
 )
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
@@ -170,6 +173,9 @@ func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 
 func (ctx *ViewContext) callView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
 	contractRecord := ctx.GetContractRecord(targetContract)
+	if contractRecord == nil {
+		panic(vm.ErrContractNotFound.Create(targetContract))
+	}
 	ep := execution.GetEntryPointByProgHash(ctx, targetContract, entryPoint, contractRecord.ProgramHash)
 
 	if !ep.IsView() {
@@ -191,6 +197,7 @@ func (ctx *ViewContext) initAndCallView(targetContract, entryPoint iscp.Hname, p
 	return ctx.callView(targetContract, entryPoint, params)
 }
 
+// CallViewExternal calls a view from outside the VM, for example API call
 func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) (ret dict.Dict, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = ctx.initAndCallView(targetContract, epCode, params)
@@ -202,6 +209,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 	return ret, err
 }
 
+// GetMerkleProof returns proof for the key. It may also contain proof of absence of the key
 func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
@@ -213,9 +221,37 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err 
 	return ret, err
 }
 
-// GetRootCommitment calculates root commitment from state. It must be equal to the RootCommitment from the anchor
-func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
-	err = panicutil.CatchAllButDBError(func() {
+// GetBlockProof returns:
+// - blockInfo record in serialized form
+// - proof that the blockInfo is stored under the respective key.
+// Useful for proving commitment to the past state, because blockInfo contains commitment to that block
+func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.Proof, error) {
+	var retBlockInfoBin []byte
+	var retProof *trie_merkle.Proof
+
+	err := panicutil.CatchAllButDBError(func() {
+		// retrieve serialized block info record
+		retBlockInfoBin = ctx.initAndCallView(
+			blocklog.Contract.Hname(),
+			blocklog.FuncGetBlockInfo.Hname(),
+			codec.MakeDict(map[string]interface{}{
+				blocklog.ParamBlockIndex: blockIndex,
+			}),
+		).MustGet(blocklog.ParamBlockInfo)
+
+		// retrieve proof to serialized block
+		key := blocklog.Contract.FullKey(blocklog.BlockInfoKey(blockIndex))
+		retProof = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
+	}, ctx.log, "GetMerkleProof: ")
+
+	return retBlockInfoBin, retProof, err
+}
+
+// GetRootCommitment calculates root commitment from state.
+// A valid state must return root commitment equal to the StateCommitment from the anchor
+func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
+	var ret trie.VCommitment
+	err := panicutil.CatchAllButDBError(func() {
 		ret = trie.RootCommitment(ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
@@ -223,4 +259,30 @@ func (ctx *ViewContext) GetRootCommitment() (ret trie.VCommitment, err error) {
 		ret = nil
 	}
 	return ret, err
+}
+
+// GetContractStateCommitment returns commitment to the contract's state, if possible.
+// To be able to retrieve state commitment for the contract's state, the state must contain
+// values of contracts hname at its nil key. Otherwise, function returns error
+func (ctx *ViewContext) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitment, error) {
+	var retC trie.VCommitment
+	var retErr error
+
+	err := panicutil.CatchAllButDBError(func() {
+		proof := state.CommitmentModel.Proof(hn.Bytes(), ctx.stateReader.TrieNodeStore())
+		rootC := trie.RootCommitment(ctx.stateReader.TrieNodeStore())
+		retErr = proof.Validate(rootC, hn.Bytes())
+		if retErr != nil {
+			return
+		}
+		retC = proof.CommitmentToTheTerminalNode()
+	}, ctx.log, "GetMerkleProof: ")
+
+	if err != nil {
+		return nil, err
+	}
+	if retErr != nil {
+		return nil, retErr
+	}
+	return retC, nil
 }

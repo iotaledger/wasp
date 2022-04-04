@@ -158,7 +158,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	if fromStateIndex > toStateIndex {
 		// state commitments must be equal
 		calculatedPrevState.Commit()
-		finalStateCommitment := trie.RootCommitment(calculatedPrevState.TrieAccess())
+		finalStateCommitment := trie.RootCommitment(calculatedPrevState.TrieNodeStore())
 		finalCandidateCommitment := candidateAcc[len(candidateAcc)-1].getNextStateCommitment()
 		if !trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its commitment does not match last candidate expected state commitment: %s != %s",
@@ -183,7 +183,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		candidatePrevStateCommitment := stateCandidateBlock.getBlock().PreviousStateCommitment(state.CommitmentModel)
-		calculatedPrevStateCommitment := trie.RootCommitment(calculatedPrevState.TrieAccess())
+		calculatedPrevStateCommitment := trie.RootCommitment(calculatedPrevState.TrieNodeStore())
 		if !trie.EqualCommitments(candidatePrevStateCommitment, calculatedPrevStateCommitment) {
 			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state commitment does not match calculated state commitment: %s != %s",
 				fromStateIndex, toStateIndex, candidatePrevStateCommitment, calculatedPrevStateCommitment)

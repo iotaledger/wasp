@@ -97,7 +97,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieAccess())
+	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieNodeStore())
 	blockIndex := optimisticStateAccess.BlockIndex()
 	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
@@ -180,7 +180,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.virtualState.Commit()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
-	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieAccess())
+	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
 	timestamp := vmctx.virtualState.Timestamp()
 
 	return blockIndex, stateCommitment, timestamp, rotationAddr

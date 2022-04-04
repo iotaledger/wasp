@@ -9,19 +9,20 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo) {
-	rec := root.NewContractRecord(i, &iscp.NilAgentID)
-	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
-	mustStoreContractRecord(ctx, rec)
+func storeCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo) {
+	rec := root.ContractRecordFromContractInfo(i, &iscp.NilAgentID)
+	ctx.Log().Debugf("storeCoreContract: '%s', hname = %s", i.Name, i.Hname())
+	storeContractRecord(ctx, rec)
 }
 
-func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, params dict.Dict) {
-	mustStoreContract(ctx, i)
+func storeAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, params dict.Dict) {
+	storeCoreContract(ctx, i)
 	ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, params, nil)
 }
 
-func mustStoreContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord) {
-	hname := rec.Hname()
+func storeContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord) {
+	hname := iscp.Hn(rec.Name)
+	// storing contract record in the registry
 	contractRegistry := root.GetContractRegistry(ctx.State())
 	ctx.Requiref(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exists", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
