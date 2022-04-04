@@ -377,6 +377,12 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	return
 }
 
+func (e *evmContractInstance) callFnExpectError(opts []ethCallOptions, fnName string, args ...interface{}) error {
+	_, err := e.callFn(opts, fnName, args...)
+	require.Error(e.chain.t, err)
+	return err
+}
+
 func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
 	res, err := e.callFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)

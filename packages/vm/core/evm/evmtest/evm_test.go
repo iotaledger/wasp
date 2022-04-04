@@ -531,36 +531,26 @@ func TestRevert(t *testing.T) {
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
 	// mint some native tokens
-	evmChain.soloChain.MustDepositIotasToL2(10_000_0, nil) // for gas
-	_, _, err := evmChain.soloChain.NewFoundryParams(100000).
+	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	sn, _, err := evmChain.soloChain.NewFoundryParams(10000).
 		WithUser(evmChain.soloChain.OriginatorPrivateKey).
 		CreateFoundry()
 	require.NoError(t, err)
-
-	nft, _ := mintDummyNFT(t, evmChain.soloChain, evmChain.soloChain.OriginatorPrivateKey, evmChain.soloChain.OriginatorAddress)
-
+	err = evmChain.soloChain.MintTokens(sn, 10000, evmChain.soloChain.OriginatorPrivateKey)
 	require.NoError(t, err)
 
-	// test the getAllowanceNFT sandbox binding
-	nt := new(isccontract.ISCNFT)
-	iscTest.callFnExpectEvent([]ethCallOptions{{
+	err = iscTest.callFnExpectError([]ethCallOptions{{
 		iota: iotaCallOptions{
 			before: func(req *solo.CallParams) {
 				req.AddIotas(200000).
-					AddAllowance(iscp.NewAllowanceFungibleTokens(iscp.NewTokensIotas(10000)).AddNFTs(nft.ID)).
-					WithMaxAffordableGasBudget().
-					WithNFT(nft)
+					WithMaxAffordableGasBudget()
 			},
 		},
-	}}, "", &nt, "emitRevertVMError")
+	}}, "", nil, "emitRevertVMError")
 
-	issuer, err := nft.Issuer.Serialize(serializer.DeSeriModeNoValidation, nil)
-
-	require.NoError(t, err)
-
-	require.EqualValues(t, nft.ID, nt.ID)
-	require.EqualValues(t, issuer, nt.Issuer.Data)
-	require.EqualValues(t, nft.Metadata, nt.Metadata)
+	t.Log(err.Error())
+	require.Error(t, err)
+	require.EqualValues(t, err.Error(), "PostRequestSync failed: execution reverted: contractId: 07cb02c1, errorId: 62505")
 }
 
 func TestSend(t *testing.T) {
