@@ -4,14 +4,10 @@
 // TODO: Test connect/reconnect - start node conn, and later the hornet.
 // TODO: Test connect/reconnect - on a running node stop and later restart hornet.
 
-package nodeconn_test
+package tests
 
 import (
-	"context"
-	"os"
-	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -20,16 +16,15 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/stretchr/testify/require"
 )
 
-func createChain(t *testing.T, l1config nodeconn.L1Config) *iscp.ChainID {
+func createChain(t *testing.T) *iscp.ChainID {
 	originator := cryptolib.NewKeyPair()
-	layer1Client := nodeconn.NewL1Client(l1config, testlogger.NewLogger(t))
+	layer1Client := nodeconn.NewL1Client(ClustL1Config, testlogger.NewLogger(t))
 	layer1Client.RequestFunds(originator.Address())
 	utxoMap, err := layer1Client.OutputMap(originator.Address())
 	require.NoError(t, err)
@@ -59,13 +54,6 @@ func TestNodeConn(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peerCount := 1
-	ctx := context.Background()
-
-	//
-	// Start the private L1 tangle.
-	pt := privtangle.Start(ctx, filepath.Join(os.TempDir(), "wasp-hornet-TestNodeConn"), 16400, 2, t)
-	time.Sleep(3 * time.Second)
-	t.Logf("Private tangle created.")
 
 	//
 	// Start a peering network.
@@ -80,12 +68,7 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	l1config := nodeconn.L1Config{
-		Hostname:  "localhost",
-		APIPort:   pt.NodePortRestAPI(0),
-		FaucetKey: pt.FaucetKeyPair,
-	}
-	nc := nodeconn.New(l1config, log)
+	nc := nodeconn.New(ClustL1Config, log)
 
 	//
 	// Check milestone attach/detach.
@@ -98,7 +81,7 @@ func TestNodeConn(t *testing.T) {
 
 	//
 	// Check the chain operations.
-	chainID := createChain(t, l1config)
+	chainID := createChain(t)
 	chainOuts := make(map[iotago.OutputID]iotago.Output)
 	chainOICh := make(chan iotago.OutputID)
 	chainStateOuts := make(map[iotago.OutputID]iotago.Output)
@@ -114,7 +97,7 @@ func TestNodeConn(t *testing.T) {
 			chainOICh <- oi
 		})
 
-	client := nodeconn.NewL1Client(l1config, log)
+	client := nodeconn.NewL1Client(ClustL1Config, log)
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
 	err := client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)
