@@ -17,13 +17,43 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/stretchr/testify/require"
 )
+
+func createChain(t *testing.T, l1config nodeconn.L1Config) *iscp.ChainID {
+	originator := cryptolib.NewKeyPair()
+	layer1Client := nodeconn.NewL1Client(l1config, testlogger.NewLogger(t))
+	layer1Client.RequestFunds(originator.Address())
+	utxoMap, err := layer1Client.OutputMap(originator.Address())
+	require.NoError(t, err)
+
+	var utxoIDs iotago.OutputIDs
+	for id := range utxoMap {
+		utxoIDs = append(utxoIDs, id)
+	}
+
+	originTx, chainID, err := transaction.NewChainOriginTransaction(
+		originator,
+		originator.Address(),
+		originator.Address(),
+		0,
+		utxoMap,
+		utxoIDs,
+		layer1Client.L1Params(),
+	)
+	require.NoError(t, err)
+	err = layer1Client.PostTx(originTx)
+	require.NoError(t, err)
+
+	return chainID
+}
 
 func TestNodeConn(t *testing.T) {
 	log := testlogger.NewLogger(t)
@@ -50,13 +80,12 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	nc := nodeconn.New(
-		nodeconn.L1Config{
-			Hostname: "localhost",
-			APIPort:  pt.NodePortRestAPI(0),
-		},
-		log,
-	)
+	l1config := nodeconn.L1Config{
+		Hostname:  "localhost",
+		APIPort:   pt.NodePortRestAPI(0),
+		FaucetKey: pt.FaucetKeyPair,
+	}
+	nc := nodeconn.New(l1config, log)
 
 	//
 	// Check milestone attach/detach.
@@ -69,24 +98,25 @@ func TestNodeConn(t *testing.T) {
 
 	//
 	// Check the chain operations.
-	chainKeys := cryptolib.NewKeyPair()
-	chainAddr := chainKeys.GetPublicKey().AsEd25519Address()
-	chainOICh := make(chan iotago.OutputID)
+	chainID := createChain(t, l1config)
 	chainOuts := make(map[iotago.OutputID]iotago.Output)
-	nc.RegisterChain(chainAddr, func(oi iotago.OutputID, o iotago.Output) {
-		chainOuts[oi] = o
-		chainOICh <- oi
-	})
-
-	client := nodeconn.NewL1Client(
-		nodeconn.L1Config{
-			Hostname: "localhost",
-			APIPort:  pt.NodePortRestAPI(0),
+	chainOICh := make(chan iotago.OutputID)
+	chainStateOuts := make(map[iotago.OutputID]iotago.Output)
+	chainStateOutsICh := make(chan iotago.OutputID)
+	nc.RegisterChain(
+		chainID,
+		func(oi iotago.OutputID, o iotago.Output) {
+			chainStateOuts[oi] = o
+			chainStateOutsICh <- oi
 		},
-		log,
-	)
+		func(oi iotago.OutputID, o iotago.Output) {
+			chainOuts[oi] = o
+			chainOICh <- oi
+		})
+
+	client := nodeconn.NewL1Client(l1config, log)
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
-	err := client.RequestFunds(chainAddr)
+	err := client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via tangle...")
 	oid := <-chainOICh
@@ -94,16 +124,18 @@ func TestNodeConn(t *testing.T) {
 
 	// Post a TX via the NodeConn (e.g. alias output).
 	tiseCh := make(chan bool)
-	tise, err := nc.AttachTxInclusionStateEvents(chainAddr, func(txID iotago.TransactionID, inclusionState string) {
+	tise, err := nc.AttachTxInclusionStateEvents(chainID, func(txID iotago.TransactionID, inclusionState string) {
 		t.Logf("TX Inclusion state changed, txID=%v, state=%v", txID, inclusionState)
 		if inclusionState == "included" {
 			tiseCh <- true
 		}
 	})
 	require.NoError(t, err)
-	tx, err := nodeconn.MakeSimpleValueTX(client, chainKeys, chainAddr, 50000)
+	wallet := cryptolib.NewKeyPair()
+	client.RequestFunds(wallet.Address())
+	tx, err := nodeconn.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 50000)
 	require.NoError(t, err)
-	err = nc.PublishTransaction(chainAddr, uint32(0), tx)
+	err = nc.PublishTransaction(chainID, uint32(0), tx)
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh
@@ -112,8 +144,8 @@ func TestNodeConn(t *testing.T) {
 	<-tiseCh
 	t.Logf("Waiting for TX incusion event... Done")
 
-	nc.DetachTxInclusionStateEvents(chainAddr, tise)
-	nc.UnregisterChain(chainAddr)
+	nc.DetachTxInclusionStateEvents(chainID, tise)
+	nc.UnregisterChain(chainID)
 
 	//
 	// Cleanup.
