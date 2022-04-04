@@ -10,23 +10,32 @@ package fairauction
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Auction struct {
-	Color         wasmtypes.ScColor   // color of tokens for sale
-	Creator       wasmtypes.ScAgentID // issuer of start_auction transaction
-	Deposit       uint64              // deposit by auction owner to cover the SC fees
-	Description   string              // auction description
-	Duration      uint32              // auction duration in minutes
-	HighestBid    uint64              // the current highest bid amount
-	HighestBidder wasmtypes.ScAgentID // the current highest bidder
-	MinimumBid    uint64              // minimum bid amount
-	NumTokens     uint64              // number of tokens for sale
-	OwnerMargin   uint64              // auction owner's margin in promilles
-	WhenStarted   uint64              // timestamp when auction started
+	Creator       wasmtypes.ScAgentID
+	Deposit       uint64
+	Description   string
+	Duration      uint32
+	HighestBid    uint64
+	HighestBidder wasmtypes.ScAgentID
+	MinimumBid    uint64
+	NumTokens     uint64
+	OwnerMargin   uint64
+	Token         wasmtypes.ScTokenID // token of tokens for sale
+	// issuer of start_auction transaction
+	// deposit by auction owner to cover the SC fees
+	// auction description
+	// auction duration in minutes
+	// the current highest bid amount
+	// the current highest bidder
+	// minimum bid amount
+	// number of tokens for sale
+	// auction owner's margin in promilles
+	// timestamp when auction started
+	WhenStarted uint64
 }
 
 func NewAuctionFromBytes(buf []byte) *Auction {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Auction{}
-	data.Color = wasmtypes.ColorDecode(dec)
 	data.Creator = wasmtypes.AgentIDDecode(dec)
 	data.Deposit = wasmtypes.Uint64Decode(dec)
 	data.Description = wasmtypes.StringDecode(dec)
@@ -36,6 +45,7 @@ func NewAuctionFromBytes(buf []byte) *Auction {
 	data.MinimumBid = wasmtypes.Uint64Decode(dec)
 	data.NumTokens = wasmtypes.Uint64Decode(dec)
 	data.OwnerMargin = wasmtypes.Uint64Decode(dec)
+	data.Token = wasmtypes.TokenIDDecode(dec)
 	data.WhenStarted = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
@@ -43,7 +53,6 @@ func NewAuctionFromBytes(buf []byte) *Auction {
 
 func (o *Auction) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.ColorEncode(enc, o.Color)
 	wasmtypes.AgentIDEncode(enc, o.Creator)
 	wasmtypes.Uint64Encode(enc, o.Deposit)
 	wasmtypes.StringEncode(enc, o.Description)
@@ -53,6 +62,7 @@ func (o *Auction) Bytes() []byte {
 	wasmtypes.Uint64Encode(enc, o.MinimumBid)
 	wasmtypes.Uint64Encode(enc, o.NumTokens)
 	wasmtypes.Uint64Encode(enc, o.OwnerMargin)
+	wasmtypes.TokenIDEncode(enc, o.Token)
 	wasmtypes.Uint64Encode(enc, o.WhenStarted)
 	return enc.Buf()
 }
@@ -90,9 +100,11 @@ func (o MutableAuction) Value() *Auction {
 }
 
 type Bid struct {
-	Amount    uint64 // cumulative amount of bids from same bidder
-	Index     uint32 // index of bidder in bidder list
-	Timestamp uint64 // timestamp of most recent bid
+	Amount uint64 // cumulative amount of bids from same bidder
+	// index of bidder in bidder list
+	// timestamp of most recent bid
+	Index     uint32
+	Timestamp uint64
 }
 
 func NewBidFromBytes(buf []byte) *Bid {

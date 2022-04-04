@@ -99,9 +99,9 @@ func (wc *WasmContext) callFunction() error {
 	wc.gasBudget = wc.GasBudget()
 	wc.proc.vm.GasBudget(wc.gasBudget * wc.proc.gasFactor())
 	err := wc.proc.RunScFunction(wc.funcName)
-	if err == nil {
-		wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
-	}
+	// if err == nil {
+	wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
+	//}
 	wc.gasBurned = wc.gasBudget - wc.GasBudget()
 	wc.proc.currentContextID = saveID
 	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)

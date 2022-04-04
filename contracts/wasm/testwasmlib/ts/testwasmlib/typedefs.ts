@@ -248,66 +248,6 @@ export class MapChainIDToMutableChainID extends wasmtypes.ScProxy {
 export class MutableChainIDMap extends MapChainIDToMutableChainID {
 }
 
-export class ArrayOfImmutableColor extends wasmtypes.ScProxy {
-
-	length(): u32 {
-		return this.proxy.length();
-	}
-
-	getColor(index: u32): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.index(index));
-	}
-}
-
-export class ImmutableColorArray extends ArrayOfImmutableColor {
-}
-
-export class ArrayOfMutableColor extends wasmtypes.ScProxy {
-
-	appendColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.append());
-	}
-
-	clear(): void {
-		this.proxy.clearArray();
-	}
-
-	length(): u32 {
-		return this.proxy.length();
-	}
-
-	getColor(index: u32): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.index(index));
-	}
-}
-
-export class MutableColorArray extends ArrayOfMutableColor {
-}
-
-export class MapColorToImmutableColor extends wasmtypes.ScProxy {
-
-	getColor(key: wasmtypes.ScColor): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.key(wasmtypes.colorToBytes(key)));
-	}
-}
-
-export class ImmutableColorMap extends MapColorToImmutableColor {
-}
-
-export class MapColorToMutableColor extends wasmtypes.ScProxy {
-
-	clear(): void {
-		this.proxy.clearMap();
-	}
-
-	getColor(key: wasmtypes.ScColor): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.key(wasmtypes.colorToBytes(key)));
-	}
-}
-
-export class MutableColorMap extends MapColorToMutableColor {
-}
-
 export class ArrayOfImmutableHash extends wasmtypes.ScProxy {
 
 	length(): u32 {
@@ -690,6 +630,66 @@ export class MapStringToMutableString extends wasmtypes.ScProxy {
 }
 
 export class MutableStringMap extends MapStringToMutableString {
+}
+
+export class ArrayOfImmutableTokenID extends wasmtypes.ScProxy {
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getTokenID(index: u32): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.index(index));
+	}
+}
+
+export class ImmutableTokenIDArray extends ArrayOfImmutableTokenID {
+}
+
+export class ArrayOfMutableTokenID extends wasmtypes.ScProxy {
+
+	appendTokenID(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.append());
+	}
+
+	clear(): void {
+		this.proxy.clearArray();
+	}
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getTokenID(index: u32): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.index(index));
+	}
+}
+
+export class MutableTokenIDArray extends ArrayOfMutableTokenID {
+}
+
+export class MapTokenIDToImmutableTokenID extends wasmtypes.ScProxy {
+
+	getTokenID(key: wasmtypes.ScTokenID): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	}
+}
+
+export class ImmutableTokenIDMap extends MapTokenIDToImmutableTokenID {
+}
+
+export class MapTokenIDToMutableTokenID extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
+	}
+
+	getTokenID(key: wasmtypes.ScTokenID): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	}
+}
+
+export class MutableTokenIDMap extends MapTokenIDToMutableTokenID {
 }
 
 export class ArrayOfImmutableUint64 extends wasmtypes.ScProxy {

@@ -9,11 +9,9 @@ import * as wasmclient from "wasmclient"
 
 const ArgAgentID = "a";
 const ArgWithdrawAmount = "m";
-const ArgWithdrawColor = "c";
 
 const ResAccountNonce = "n";
 const ResAgents = "this";
-const ResBalances = "this";
 
 ///////////////////////////// deposit /////////////////////////////
 
@@ -36,10 +34,6 @@ export class HarvestFunc extends wasmclient.ClientFunc {
 	
 	public withdrawAmount(v: wasmclient.Int64): void {
 		this.args.set(ArgWithdrawAmount, this.args.fromInt64(v));
-	}
-	
-	public withdrawColor(v: wasmclient.Color): void {
-		this.args.set(ArgWithdrawColor, this.args.fromColor(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -78,34 +72,6 @@ export class AccountsResults extends wasmclient.Results {
 	}
 }
 
-///////////////////////////// balance /////////////////////////////
-
-export class BalanceView extends wasmclient.ClientView {
-	private args: wasmclient.Arguments = new wasmclient.Arguments();
-	
-	public agentID(v: wasmclient.AgentID): void {
-		this.args.set(ArgAgentID, this.args.fromAgentID(v));
-	}
-
-	public async call(): Promise<BalanceResults> {
-		this.args.mandatory(ArgAgentID);
-		const res = new BalanceResults();
-		await this.callView("balance", this.args, res);
-		return res;
-	}
-}
-
-export class BalanceResults extends wasmclient.Results {
-
-	balances(): Map<wasmclient.Color, wasmclient.Int64> {
-		const res = new Map<wasmclient.Color, wasmclient.Int64>();
-		this.forEach((key, val) => {
-			res.set(this.toColor(key), this.toInt64(val));
-		});
-		return res;
-	}
-}
-
 ///////////////////////////// getAccountNonce /////////////////////////////
 
 export class GetAccountNonceView extends wasmclient.ClientView {
@@ -127,28 +93,6 @@ export class GetAccountNonceResults extends wasmclient.Results {
 
 	accountNonce(): wasmclient.Int64 {
 		return this.toInt64(this.get(ResAccountNonce));
-	}
-}
-
-///////////////////////////// totalAssets /////////////////////////////
-
-export class TotalAssetsView extends wasmclient.ClientView {
-
-	public async call(): Promise<TotalAssetsResults> {
-		const res = new TotalAssetsResults();
-		await this.callView("totalAssets", null, res);
-		return res;
-	}
-}
-
-export class TotalAssetsResults extends wasmclient.Results {
-
-	balances(): Map<wasmclient.Color, wasmclient.Int64> {
-		const res = new Map<wasmclient.Color, wasmclient.Int64>();
-		this.forEach((key, val) => {
-			res.set(this.toColor(key), this.toInt64(val));
-		});
-		return res;
 	}
 }
 
@@ -176,15 +120,7 @@ export class CoreAccountsService extends wasmclient.Service {
 		return new AccountsView(this);
 	}
 
-	public balance(): BalanceView {
-		return new BalanceView(this);
-	}
-
 	public getAccountNonce(): GetAccountNonceView {
 		return new GetAccountNonceView(this);
-	}
-
-	public totalAssets(): TotalAssetsView {
-		return new TotalAssetsView(this);
 	}
 }

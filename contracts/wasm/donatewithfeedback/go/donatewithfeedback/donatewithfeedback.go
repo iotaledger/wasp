@@ -5,11 +5,10 @@ package donatewithfeedback
 
 import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
-	amount := ctx.Allowance().Balance(wasmtypes.IOTA)
+	amount := ctx.Allowance().Iotas()
 	transfer := wasmlib.NewScTransferIotas(amount)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	donation := &Donation{
@@ -34,7 +33,7 @@ func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 }
 
 func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
-	balance := ctx.Balances().Balance(wasmtypes.IOTA)
+	balance := ctx.Balances().Iotas()
 	amount := f.Params.Amount().Value()
 	if amount == 0 || amount > balance {
 		amount = balance

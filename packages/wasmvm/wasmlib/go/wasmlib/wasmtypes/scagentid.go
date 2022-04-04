@@ -52,7 +52,7 @@ func AgentIDDecode(dec *WasmDecoder) ScAgentID {
 
 func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
 	AddressEncode(enc, value.address)
-	if value.address.Bytes()[0] == ScAddressAlias {
+	if value.address.id[0] == ScAddressAlias {
 		HnameEncode(enc, value.hname)
 	}
 }

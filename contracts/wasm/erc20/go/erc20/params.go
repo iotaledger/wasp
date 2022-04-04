@@ -13,6 +13,8 @@ type ImmutableApproveParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// allowance value for delegated account
+// delegated account
 func (s ImmutableApproveParams) Amount() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamAmount))
 }
@@ -25,6 +27,8 @@ type MutableApproveParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// allowance value for delegated account
+// delegated account
 func (s MutableApproveParams) Amount() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamAmount))
 }
@@ -37,6 +41,8 @@ type ImmutableInitParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// creator/owner of the initial supply
+// initial token supply
 func (s ImmutableInitParams) Creator() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamCreator))
 }
@@ -49,6 +55,8 @@ type MutableInitParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// creator/owner of the initial supply
+// initial token supply
 func (s MutableInitParams) Creator() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamCreator))
 }
@@ -61,6 +69,8 @@ type ImmutableTransferParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// target account
+// amount of tokens to transfer
 func (s ImmutableTransferParams) Account() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -73,6 +83,8 @@ type MutableTransferParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// target account
+// amount of tokens to transfer
 func (s MutableTransferParams) Account() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -85,6 +97,9 @@ type ImmutableTransferFromParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// sender account
+// amount of tokens to transfer
+// recipient account
 func (s ImmutableTransferFromParams) Account() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -101,6 +116,9 @@ type MutableTransferFromParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// sender account
+// amount of tokens to transfer
+// recipient account
 func (s MutableTransferFromParams) Account() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -117,6 +135,8 @@ type ImmutableAllowanceParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// sender account
+// delegated account
 func (s ImmutableAllowanceParams) Account() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -129,6 +149,8 @@ type MutableAllowanceParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// sender account
+// delegated account
 func (s MutableAllowanceParams) Account() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -141,6 +163,7 @@ type ImmutableBalanceOfParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// sender account
 func (s ImmutableBalanceOfParams) Account() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
@@ -149,6 +172,7 @@ type MutableBalanceOfParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// sender account
 func (s MutableBalanceOfParams) Account() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }

@@ -38,7 +38,7 @@ export function chainIDDecode(dec: wasmtypes.WasmDecoder): ScChainID {
 }
 
 export function chainIDEncode(enc: wasmtypes.WasmEncoder, value: ScChainID): void {
-    enc.fixedBytes(value.toBytes(), ScChainIDLength);
+    enc.fixedBytes(value.id, ScChainIDLength);
 }
 
 export function chainIDFromBytes(buf: u8[]): ScChainID {

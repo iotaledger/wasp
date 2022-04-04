@@ -42,10 +42,6 @@ impl ImmutableHarvestParams {
     pub fn withdraw_amount(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
 	}
-
-    pub fn withdraw_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_WITHDRAW_COLOR))
-	}
 }
 
 #[derive(Clone)]
@@ -56,32 +52,6 @@ pub struct MutableHarvestParams {
 impl MutableHarvestParams {
     pub fn withdraw_amount(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
-	}
-
-    pub fn withdraw_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_WITHDRAW_COLOR))
-	}
-}
-
-#[derive(Clone)]
-pub struct ImmutableBalanceParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableBalanceParams {
-    pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableBalanceParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableBalanceParams {
-    pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 

@@ -2,11 +2,11 @@ name: DonateWithFeedback
 description: ""
 structs:
   Donation:
-    amount: Uint64 // amount donated
-    donator: AgentID // who donated
-    error: String // error to be reported to donator if anything goes wrong
-    feedback: String // the feedback for the person donated to
-    timestamp: Uint64 // when the donation took place
+    amount: Uint64 # amount donated
+    donator: AgentID # who donated
+    error: String # error to be reported to donator if anything goes wrong
+    feedback: String # the feedback for the person donated to
+    timestamp: Uint64 # when the donation took place
 typedefs: {}
 state:
   log: Donation[]
@@ -15,21 +15,21 @@ state:
 funcs:
   donate:
     params:
-      feedback: String? // feedback for the person you donate to
+      feedback: String? # feedback for the person you donate to
   withdraw:
-    access: creator // only SC creator can withdraw donated funds
+    access: creator # only SC creator can withdraw donated funds
     params:
-      amount: Uint64? // amount to withdraw
+      amount: Uint64? # amount to withdraw
 views:
   donation:
     params:
       nr: Uint32
     results:
-      amount: Uint64 // amount donated
-      donator: AgentID // who donated
-      error: String // error to be reported to donator if anything goes wrong
-      feedback: String // the feedback for the person donated to
-      timestamp: Uint64 // when the donation took place
+      amount: Uint64 # amount donated
+      donator: AgentID # who donated
+      error: String # error to be reported to donator if anything goes wrong
+      feedback: String # the feedback for the person donated to
+      timestamp: Uint64 # when the donation took place
   donationInfo:
     results:
       count: Uint32

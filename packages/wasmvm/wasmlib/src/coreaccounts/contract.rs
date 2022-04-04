@@ -29,21 +29,10 @@ pub struct AccountsCall {
 	pub results: ImmutableAccountsResults,
 }
 
-pub struct BalanceCall {
-	pub func: ScView,
-	pub params: MutableBalanceParams,
-	pub results: ImmutableBalanceResults,
-}
-
 pub struct GetAccountNonceCall {
 	pub func: ScView,
 	pub params: MutableGetAccountNonceParams,
 	pub results: ImmutableGetAccountNonceResults,
-}
-
-pub struct TotalAssetsCall {
-	pub func: ScView,
-	pub results: ImmutableTotalAssetsResults,
 }
 
 pub struct ScFuncs {
@@ -83,17 +72,6 @@ impl ScFuncs {
         f
     }
 
-    pub fn balance(_ctx: &dyn ScViewCallContext) -> BalanceCall {
-        let mut f = BalanceCall {
-            func: ScView::new(HSC_NAME, HVIEW_BALANCE),
-            params: MutableBalanceParams { proxy: Proxy::nil() },
-            results: ImmutableBalanceResults { proxy: Proxy::nil() },
-        };
-        ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
     pub fn get_account_nonce(_ctx: &dyn ScViewCallContext) -> GetAccountNonceCall {
         let mut f = GetAccountNonceCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_ACCOUNT_NONCE),
@@ -101,15 +79,6 @@ impl ScFuncs {
             results: ImmutableGetAccountNonceResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    pub fn total_assets(_ctx: &dyn ScViewCallContext) -> TotalAssetsCall {
-        let mut f = TotalAssetsCall {
-            func: ScView::new(HSC_NAME, HVIEW_TOTAL_ASSETS),
-            results: ImmutableTotalAssetsResults { proxy: Proxy::nil() },
-        };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }

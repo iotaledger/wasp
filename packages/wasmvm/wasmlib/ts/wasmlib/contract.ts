@@ -3,7 +3,7 @@
 
 import * as wasmrequests from "./wasmrequests"
 import * as wasmtypes from "./wasmtypes"
-import {ScAssets, ScTransfers} from "./assets";
+import {ScAssets, ScTransfer} from "./assets";
 import {ScDict} from "./dict";
 import {sandbox} from "./host";
 import {FnCall, FnPost, panic, ScSandbox} from "./sandbox";
@@ -51,10 +51,10 @@ export class ScView {
         this.callWithTransfer(null);
     }
 
-    protected callWithTransfer(transfer: ScAssets | null): void {
+    protected callWithTransfer(transfer: ScTransfer | null): void {
         //TODO new ScSandboxFunc().call(...)
         if (transfer === null) {
-            transfer = new ScAssets([]);
+            transfer = new ScTransfer();
         }
         const req = new wasmrequests.CallRequest();
         req.contract = this.hContract;
@@ -86,13 +86,13 @@ export class ScInitFunc extends ScView {
 
 export class ScFunc extends ScView {
     delaySeconds: u32 = 0;
-    transfers: ScAssets | null = null;
+    transferAssets: ScTransfer | null = null;
 
     call(): void {
         if (this.delaySeconds != 0) {
             return panic("cannot delay a call");
         }
-        this.callWithTransfer(this.transfers);
+        this.callWithTransfer(this.transferAssets);
     }
 
     delay(seconds: u32): ScFunc {
@@ -105,9 +105,9 @@ export class ScFunc extends ScView {
     }
 
     postToChain(chainID: wasmtypes.ScChainID): void {
-        let transfer = this.transfers;
+        let transfer = this.transferAssets;
         if (transfer === null) {
-            transfer = new ScAssets([]);
+            transfer = new ScTransfer();
         }
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
@@ -123,12 +123,12 @@ export class ScFunc extends ScView {
         }
     }
 
-    transfer(transfers: ScTransfers): ScFunc {
-        this.transfers = transfers;
+    transfer(transfer: ScTransfer): ScFunc {
+        this.transferAssets = transfer;
         return this;
     }
 
     transferIotas(amount: i64): ScFunc {
-        return this.transfer(ScTransfers.iotas(amount));
+        return this.transfer(ScTransfer.iotas(amount));
     }
 }

@@ -13,10 +13,6 @@ export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBidders));
 	}
 
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultColor));
-	}
-
 	creator(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultCreator));
 	}
@@ -53,6 +49,10 @@ export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultOwnerMargin));
 	}
 
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ResultToken));
+	}
+
 	whenStarted(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultWhenStarted));
 	}
@@ -61,10 +61,6 @@ export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
 export class MutableGetInfoResults extends wasmtypes.ScProxy {
 	bidders(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBidders));
-	}
-
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultColor));
 	}
 
 	creator(): wasmtypes.ScMutableAgentID {
@@ -101,6 +97,10 @@ export class MutableGetInfoResults extends wasmtypes.ScProxy {
 
 	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultOwnerMargin));
+	}
+
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ResultToken));
 	}
 
 	whenStarted(): wasmtypes.ScMutableUint64 {

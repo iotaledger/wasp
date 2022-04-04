@@ -21,10 +21,6 @@ impl ImmutableAddAllowedStateControllerAddressParams {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
 	}
 
-    pub fn fee_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_FEE_COLOR))
-	}
-
     pub fn state_controller_address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
@@ -38,10 +34,6 @@ pub struct MutableAddAllowedStateControllerAddressParams {
 impl MutableAddAllowedStateControllerAddressParams {
     pub fn chain_owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
-	}
-
-    pub fn fee_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_FEE_COLOR))
 	}
 
     pub fn state_controller_address(&self) -> ScMutableAddress {

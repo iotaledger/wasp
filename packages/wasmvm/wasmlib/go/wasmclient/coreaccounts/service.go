@@ -12,11 +12,9 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 const (
 	ArgAgentID        = "a"
 	ArgWithdrawAmount = "m"
-	ArgWithdrawColor  = "c"
 
 	ResAccountNonce = "n"
 	ResAgents       = "this"
-	ResBalances     = "this"
 )
 
 ///////////////////////////// deposit /////////////////////////////
@@ -43,10 +41,6 @@ type HarvestFunc struct {
 
 func (f *HarvestFunc) WithdrawAmount(v int64) {
 	f.args.Set(ArgWithdrawAmount, f.args.FromInt64(v))
-}
-
-func (f *HarvestFunc) WithdrawColor(v wasmclient.Color) {
-	f.args.Set(ArgWithdrawColor, f.args.FromColor(v))
 }
 
 func (f *HarvestFunc) Post() wasmclient.Request {
@@ -86,35 +80,6 @@ func (r *AccountsResults) Agents() map[wasmclient.AgentID][]byte {
 	return res
 }
 
-///////////////////////////// balance /////////////////////////////
-
-type BalanceView struct {
-	wasmclient.ClientView
-	args wasmclient.Arguments
-}
-
-func (f *BalanceView) AgentID(v wasmclient.AgentID) {
-	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
-}
-
-func (f *BalanceView) Call() BalanceResults {
-	f.args.Mandatory(ArgAgentID)
-	f.ClientView.Call("balance", &f.args)
-	return BalanceResults{res: f.Results()}
-}
-
-type BalanceResults struct {
-	res wasmclient.Results
-}
-
-func (r *BalanceResults) Balances() map[wasmclient.Color]int64 {
-	res := make(map[wasmclient.Color]int64)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToColor(key)] = r.res.ToInt64(val)
-	})
-	return res
-}
-
 ///////////////////////////// getAccountNonce /////////////////////////////
 
 type GetAccountNonceView struct {
@@ -138,29 +103,6 @@ type GetAccountNonceResults struct {
 
 func (r *GetAccountNonceResults) AccountNonce() int64 {
 	return r.res.ToInt64(r.res.Get(ResAccountNonce))
-}
-
-///////////////////////////// totalAssets /////////////////////////////
-
-type TotalAssetsView struct {
-	wasmclient.ClientView
-}
-
-func (f *TotalAssetsView) Call() TotalAssetsResults {
-	f.ClientView.Call("totalAssets", nil)
-	return TotalAssetsResults{res: f.Results()}
-}
-
-type TotalAssetsResults struct {
-	res wasmclient.Results
-}
-
-func (r *TotalAssetsResults) Balances() map[wasmclient.Color]int64 {
-	res := make(map[wasmclient.Color]int64)
-	r.res.ForEach(func(key []byte, val []byte) {
-		res[r.res.ToColor(key)] = r.res.ToInt64(val)
-	})
-	return res
 }
 
 ///////////////////////////// CoreAccountsService /////////////////////////////
@@ -191,14 +133,6 @@ func (s *CoreAccountsService) Accounts() AccountsView {
 	return AccountsView{ClientView: s.AsClientView()}
 }
 
-func (s *CoreAccountsService) Balance() BalanceView {
-	return BalanceView{ClientView: s.AsClientView()}
-}
-
 func (s *CoreAccountsService) GetAccountNonce() GetAccountNonceView {
 	return GetAccountNonceView{ClientView: s.AsClientView()}
-}
-
-func (s *CoreAccountsService) TotalAssets() TotalAssetsView {
-	return TotalAssetsView{ClientView: s.AsClientView()}
 }

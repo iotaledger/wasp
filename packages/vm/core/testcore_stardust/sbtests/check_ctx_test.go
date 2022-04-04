@@ -23,7 +23,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID).
-		WithGasBudget(100_000)
+		WithGasBudget(120_000)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 }

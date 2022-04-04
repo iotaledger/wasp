@@ -32,7 +32,7 @@ func ChainIDDecode(dec *WasmDecoder) ScChainID {
 }
 
 func ChainIDEncode(enc *WasmEncoder, value ScChainID) {
-	enc.FixedBytes(value.Bytes(), ScChainIDLength)
+	enc.FixedBytes(value.id[:], ScChainIDLength)
 }
 
 func ChainIDFromBytes(buf []byte) ScChainID {

@@ -17,7 +17,6 @@ const (
 
 const (
 	ParamChainOwner             = "oi"
-	ParamFeeColor               = "fc"
 	ParamHname                  = "hn"
 	ParamMaxBlobSize            = "bs"
 	ParamMaxEventSize           = "es"
@@ -34,7 +33,6 @@ const (
 	ResultDefaultOwnerFee                 = "do"
 	ResultDefaultValidatorFee             = "dv"
 	ResultDescription                     = "d"
-	ResultFeeColor                        = "f"
 	ResultMaxBlobSize                     = "mb"
 	ResultMaxEventSize                    = "me"
 	ResultMaxEventsPerReq                 = "mr"

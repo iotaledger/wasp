@@ -77,8 +77,8 @@ fn withdraw_iota(ctx: &ScFuncContext) {
     ctx.require(creator == caller, "not authorised");
     ctx.require(caller.is_address(), "caller must be an address");
 
-    let bal = ctx.balances().balance(&ScColor::IOTA);
+    let bal = ctx.balances().iotas();
     if bal > 0 {
-        ctx.send(&caller.address(), &ScTransfers::iotas(bal))
+        ctx.send(&caller.address(), &ScTransfer::iotas(bal))
     }
 }

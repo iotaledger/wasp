@@ -97,10 +97,6 @@ impl ImmutableGetChainInfoResults {
 		ScImmutableString::new(self.proxy.root(RESULT_DESCRIPTION))
 	}
 
-    pub fn fee_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(RESULT_FEE_COLOR))
-	}
-
     pub fn max_blob_size(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
 	}
@@ -140,10 +136,6 @@ impl MutableGetChainInfoResults {
 		ScMutableString::new(self.proxy.root(RESULT_DESCRIPTION))
 	}
 
-    pub fn fee_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(RESULT_FEE_COLOR))
-	}
-
     pub fn max_blob_size(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
 	}
@@ -163,10 +155,6 @@ pub struct ImmutableGetFeeInfoResults {
 }
 
 impl ImmutableGetFeeInfoResults {
-    pub fn fee_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(RESULT_FEE_COLOR))
-	}
-
     pub fn owner_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(RESULT_OWNER_FEE))
 	}
@@ -182,10 +170,6 @@ pub struct MutableGetFeeInfoResults {
 }
 
 impl MutableGetFeeInfoResults {
-    pub fn fee_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(RESULT_FEE_COLOR))
-	}
-
     pub fn owner_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(RESULT_OWNER_FEE))
 	}

@@ -24,31 +24,11 @@ export class ImmutableHarvestParams extends wasmtypes.ScProxy {
 	withdrawAmount(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamWithdrawAmount));
 	}
-
-	withdrawColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamWithdrawColor));
-	}
 }
 
 export class MutableHarvestParams extends wasmtypes.ScProxy {
 	withdrawAmount(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamWithdrawAmount));
-	}
-
-	withdrawColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamWithdrawColor));
-	}
-}
-
-export class ImmutableBalanceParams extends wasmtypes.ScProxy {
-	agentID(): wasmtypes.ScImmutableAgentID {
-		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
-	}
-}
-
-export class MutableBalanceParams extends wasmtypes.ScProxy {
-	agentID(): wasmtypes.ScMutableAgentID {
-		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 

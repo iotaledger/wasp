@@ -34,36 +34,6 @@ impl MutableCallOnChainResults {
 }
 
 #[derive(Clone)]
-pub struct ImmutableGetMintedSupplyResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableGetMintedSupplyResults {
-    pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(RESULT_MINTED_COLOR))
-	}
-
-    pub fn minted_supply(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(RESULT_MINTED_SUPPLY))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableGetMintedSupplyResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableGetMintedSupplyResults {
-    pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(RESULT_MINTED_COLOR))
-	}
-
-    pub fn minted_supply(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(RESULT_MINTED_SUPPLY))
-	}
-}
-
-#[derive(Clone)]
 pub struct ImmutableRunRecursionResults {
 	pub(crate) proxy: Proxy,
 }

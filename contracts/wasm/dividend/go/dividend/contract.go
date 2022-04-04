@@ -43,6 +43,7 @@ type Funcs struct{}
 
 var ScFuncs Funcs
 
+// divide tokens over members
 func (sc Funcs) Divide(ctx wasmlib.ScFuncCallContext) *DivideCall {
 	return &DivideCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDivide)}
 }

@@ -13,10 +13,6 @@ export class ImmutableAddAllowedStateControllerAddressParams extends wasmtypes.S
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwner));
 	}
 
-	feeColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamFeeColor));
-	}
-
 	stateControllerAddress(): wasmtypes.ScImmutableAddress {
 		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
@@ -25,10 +21,6 @@ export class ImmutableAddAllowedStateControllerAddressParams extends wasmtypes.S
 export class MutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
 	chainOwner(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwner));
-	}
-
-	feeColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamFeeColor));
 	}
 
 	stateControllerAddress(): wasmtypes.ScMutableAddress {

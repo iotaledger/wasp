@@ -7,8 +7,8 @@ use crate::*;
 use crate::structs::*;
 
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
-    let amount = ctx.allowance().balance(&ScColor::IOTA);
-    let transfer = ScTransfers::iotas(amount);
+    let amount = ctx.allowance().iotas();
+    let transfer = ScTransfer::iotas(amount);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     let mut donation = Donation {
         amount: amount,
@@ -32,7 +32,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
 }
 
 pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
-    let balance = ctx.balances().balance(&ScColor::IOTA);
+    let balance = ctx.balances().iotas();
     let mut amount = f.params.amount().value();
     if amount == 0 || amount > balance {
         amount = balance;
@@ -43,7 +43,7 @@ pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
     }
 
     let sc_creator = ctx.contract_creator().address();
-    ctx.send(&sc_creator, &ScTransfers::iotas(amount));
+    ctx.send(&sc_creator, &ScTransfer::iotas(amount));
 }
 
 pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {

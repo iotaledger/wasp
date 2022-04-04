@@ -13,12 +13,20 @@ type ImmutableGetInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// nr of bidders
+// token of tokens for sale
+// issuer of start_auction transaction
+// deposit by auction owner to cover the SC fees
+// auction description
+// auction duration in minutes
+// the current highest bid amount
+// the current highest bidder
+// minimum bid amount
+// number of tokens for sale
+// auction owner's margin in promilles
+// timestamp when auction started
 func (s ImmutableGetInfoResults) Bidders() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBidders))
-}
-
-func (s ImmutableGetInfoResults) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultColor))
 }
 
 func (s ImmutableGetInfoResults) Creator() wasmtypes.ScImmutableAgentID {
@@ -57,6 +65,10 @@ func (s ImmutableGetInfoResults) OwnerMargin() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultOwnerMargin))
 }
 
+func (s ImmutableGetInfoResults) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ResultToken))
+}
+
 func (s ImmutableGetInfoResults) WhenStarted() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultWhenStarted))
 }
@@ -65,12 +77,20 @@ type MutableGetInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// nr of bidders
+// token of tokens for sale
+// issuer of start_auction transaction
+// deposit by auction owner to cover the SC fees
+// auction description
+// auction duration in minutes
+// the current highest bid amount
+// the current highest bidder
+// minimum bid amount
+// number of tokens for sale
+// auction owner's margin in promilles
+// timestamp when auction started
 func (s MutableGetInfoResults) Bidders() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBidders))
-}
-
-func (s MutableGetInfoResults) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultColor))
 }
 
 func (s MutableGetInfoResults) Creator() wasmtypes.ScMutableAgentID {
@@ -107,6 +127,10 @@ func (s MutableGetInfoResults) NumTokens() wasmtypes.ScMutableUint64 {
 
 func (s MutableGetInfoResults) OwnerMargin() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultOwnerMargin))
+}
+
+func (s MutableGetInfoResults) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ResultToken))
 }
 
 func (s MutableGetInfoResults) WhenStarted() wasmtypes.ScMutableUint64 {

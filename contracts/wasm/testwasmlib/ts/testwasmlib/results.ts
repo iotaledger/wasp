@@ -20,37 +20,109 @@ export class MutableTakeBalanceResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableArrayOfArraysLengthResults extends wasmtypes.ScProxy {
+export class ImmutableAddressMapOfAddressArrayLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class MutableArrayOfArraysLengthResults extends wasmtypes.ScProxy {
+export class MutableAddressMapOfAddressArrayLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class ImmutableArrayOfArraysValueResults extends wasmtypes.ScProxy {
+export class ImmutableAddressMapOfAddressArrayValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressArrayValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class ImmutableAddressMapOfAddressMapValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class MutableAddressMapOfAddressMapValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class ImmutableArrayOfAddressArrayLengthResults extends wasmtypes.ScProxy {
+	length(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
+	}
+}
+
+export class MutableArrayOfAddressArrayLengthResults extends wasmtypes.ScProxy {
+	length(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
+	}
+}
+
+export class ImmutableArrayOfAddressArrayValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class MutableArrayOfAddressArrayValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class ImmutableArrayOfAddressMapValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class MutableArrayOfAddressMapValueResults extends wasmtypes.ScProxy {
+	valueAddr(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultValueAddr));
+	}
+}
+
+export class ImmutableArrayOfStringArrayLengthResults extends wasmtypes.ScProxy {
+	length(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
+	}
+}
+
+export class MutableArrayOfStringArrayLengthResults extends wasmtypes.ScProxy {
+	length(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
+	}
+}
+
+export class ImmutableArrayOfStringArrayValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class MutableArrayOfArraysValueResults extends wasmtypes.ScProxy {
+export class MutableArrayOfStringArrayValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class ImmutableArrayOfMapsValueResults extends wasmtypes.ScProxy {
+export class ImmutableArrayOfStringMapValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class MutableArrayOfMapsValueResults extends wasmtypes.ScProxy {
+export class MutableArrayOfStringMapValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
 	}
@@ -104,37 +176,37 @@ export class MutableIotaBalanceResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableMapOfArraysLengthResults extends wasmtypes.ScProxy {
+export class ImmutableStringMapOfStringArrayLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class MutableMapOfArraysLengthResults extends wasmtypes.ScProxy {
+export class MutableStringMapOfStringArrayLengthResults extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class ImmutableMapOfArraysValueResults extends wasmtypes.ScProxy {
+export class ImmutableStringMapOfStringArrayValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class MutableMapOfArraysValueResults extends wasmtypes.ScProxy {
+export class MutableStringMapOfStringArrayValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class ImmutableMapOfMapsValueResults extends wasmtypes.ScProxy {
+export class ImmutableStringMapOfStringMapValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultValue));
 	}
 }
 
-export class MutableMapOfMapsValueResults extends wasmtypes.ScProxy {
+export class MutableStringMapOfStringMapValueResults extends wasmtypes.ScProxy {
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultValue));
 	}

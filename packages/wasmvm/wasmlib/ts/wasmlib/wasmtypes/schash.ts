@@ -33,7 +33,7 @@ export function hashDecode(dec: wasmtypes.WasmDecoder): ScHash {
 }
 
 export function hashEncode(enc: wasmtypes.WasmEncoder, value: ScHash): void {
-    enc.fixedBytes(value.toBytes(), ScHashLength);
+    enc.fixedBytes(value.id, ScHashLength);
 }
 
 export function hashFromBytes(buf: u8[]): ScHash {

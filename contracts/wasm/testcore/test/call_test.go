@@ -42,10 +42,10 @@ func TestCallFibonacci(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		n := fiboN
-		//if *wasmsolo.TsWasm {
-		//	// Typescript burns 600K gas per call
-		//	n = 3
-		//}
+		if *wasmsolo.TsWasm {
+			// Typescript burns 600K gas per call
+			n = 7
+		}
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
 		f.Params.IntValue().SetValue(n)
@@ -62,10 +62,9 @@ func TestCallFibonacciIndirect(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		n := fiboN
-		//if *wasmsolo.TsWasm {
-		//	// Typescript burns 600K per call
-		//	n = 3
-		//}
+		if *wasmsolo.TsWasm {
+			n = 7
+		}
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
 		f.Params.IntValue().SetValue(n)
@@ -90,15 +89,10 @@ func TestCallRecursive(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		// Rust/GO burn about 180K per unit
-		n := int64(27)
-		if *wasmsolo.TsWasm {
-			// Typescript burns 2400K per call
-			n = 2
-		}
+		depth := int64(27)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
-		f.Params.IntValue().SetValue(n)
+		f.Params.IntValue().SetValue(depth)
 		f.Params.HnameContract().SetValue(testcore.HScName)
 		f.Params.HnameEP().SetValue(testcore.HFuncRunRecursion)
 		f.Func.Post()
@@ -109,7 +103,7 @@ func TestCallRecursive(t *testing.T) {
 		require.NoError(t, ctx.Err)
 		counter := v.Results.Counter()
 		require.True(t, counter.Exists())
-		require.EqualValues(t, n+1, counter.Value())
+		require.EqualValues(t, depth+1, counter.Value())
 	})
 }
 

@@ -14,7 +14,6 @@ pub const SC_DESCRIPTION : &str = "Core governance contract";
 pub const HSC_NAME       : ScHname = ScHname(0x17cf909f);
 
 pub(crate) const PARAM_CHAIN_OWNER              : &str = "oi";
-pub(crate) const PARAM_FEE_COLOR                : &str = "fc";
 pub(crate) const PARAM_HNAME                    : &str = "hn";
 pub(crate) const PARAM_MAX_BLOB_SIZE            : &str = "bs";
 pub(crate) const PARAM_MAX_EVENT_SIZE           : &str = "es";
@@ -29,7 +28,6 @@ pub(crate) const RESULT_CHAIN_OWNER_ID                     : &str = "o";
 pub(crate) const RESULT_DEFAULT_OWNER_FEE                  : &str = "do";
 pub(crate) const RESULT_DEFAULT_VALIDATOR_FEE              : &str = "dv";
 pub(crate) const RESULT_DESCRIPTION                        : &str = "d";
-pub(crate) const RESULT_FEE_COLOR                          : &str = "f";
 pub(crate) const RESULT_MAX_BLOB_SIZE                      : &str = "mb";
 pub(crate) const RESULT_MAX_EVENT_SIZE                     : &str = "me";
 pub(crate) const RESULT_MAX_EVENTS_PER_REQ                 : &str = "mr";

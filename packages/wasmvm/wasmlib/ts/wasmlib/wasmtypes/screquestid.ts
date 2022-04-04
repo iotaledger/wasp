@@ -33,7 +33,7 @@ export function requestIDDecode(dec: wasmtypes.WasmDecoder): ScRequestID {
 }
 
 export function requestIDEncode(enc: wasmtypes.WasmEncoder, value: ScRequestID): void {
-    enc.fixedBytes(value.toBytes(), ScRequestIDLength);
+    enc.fixedBytes(value.id, ScRequestIDLength);
 }
 
 export function requestIDFromBytes(buf: u8[]): ScRequestID {

@@ -25,6 +25,7 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
 }
@@ -53,6 +54,7 @@ type MutableGetAllowedStateControllerAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
 }
@@ -81,10 +83,7 @@ func (s ImmutableGetChainInfoResults) Description() wasmtypes.ScImmutableString 
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s ImmutableGetChainInfoResults) FeeColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultFeeColor))
-}
-
+// feeColor=f: Color
 func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableInt32 {
 	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
@@ -121,10 +120,7 @@ func (s MutableGetChainInfoResults) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s MutableGetChainInfoResults) FeeColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultFeeColor))
-}
-
+// feeColor=f: Color
 func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableInt32 {
 	return wasmtypes.NewScMutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
@@ -141,10 +137,7 @@ type ImmutableGetFeeInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetFeeInfoResults) FeeColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultFeeColor))
-}
-
+// feeColor=f: Color
 func (s ImmutableGetFeeInfoResults) OwnerFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultOwnerFee))
 }
@@ -157,10 +150,7 @@ type MutableGetFeeInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetFeeInfoResults) FeeColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultFeeColor))
-}
-
+// feeColor=f: Color
 func (s MutableGetFeeInfoResults) OwnerFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultOwnerFee))
 }
