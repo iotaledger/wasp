@@ -181,7 +181,10 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 func (ncc *ncChain) subscribeToChainStateUpdates() {
 	//
 	// Subscribe to the new outputs first.
-	// TODO
+	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
+	if subInfo.Error() != nil {
+		ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+	}
 
 	//
 	// Then fetch all the existing unspent outputs owned by the chain.
@@ -193,7 +196,24 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 
 	//
 	// Then receive all the subscribed new outputs.
-	// TODO
+	for {
+		select {
+		case outResponse := <-eventsCh:
+			out, err := outResponse.Output()
+			if err != nil {
+				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
+				continue
+			}
+			tid, err := outResponse.TxID()
+			if err != nil {
+				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
+				continue
+			}
+			ncc.stateOutputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), out)
+		case <-ncc.nc.ctx.Done():
+			return
+		}
+	}
 }
 
 func (ncc *ncChain) run() {
