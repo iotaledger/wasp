@@ -13,56 +13,18 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ArrayOfImmutableInt64 {
-	pub(crate) proxy: Proxy,
-}
-
-impl ArrayOfImmutableInt64 {
-    pub fn length(&self) -> u32 {
-        self.proxy.length()
-    }
-
-    pub fn get_int64(&self, index: u32) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.proxy.index(index))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableSchemaCommentState {
 	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSchemaCommentState {
-    pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
+    pub fn test_state1(&self) -> ArrayOfImmutableInt64 {
+		ArrayOfImmutableInt64 { proxy: self.proxy.root(STATE_TEST_STATE1) }
 	}
 
-    pub fn test_state(&self) -> ArrayOfImmutableInt64 {
-		ArrayOfImmutableInt64 { proxy: self.proxy.root(STATE_TEST_STATE) }
+    pub fn test_state2(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(STATE_TEST_STATE2))
 	}
-}
-
-#[derive(Clone)]
-pub struct ArrayOfMutableInt64 {
-	pub(crate) proxy: Proxy,
-}
-
-impl ArrayOfMutableInt64 {
-	pub fn append_int64(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.append())
-	}
-
-	pub fn clear(&self) {
-        self.proxy.clear_array();
-    }
-
-    pub fn length(&self) -> u32 {
-        self.proxy.length()
-    }
-
-    pub fn get_int64(&self, index: u32) -> ScMutableInt64 {
-        ScMutableInt64::new(self.proxy.index(index))
-    }
 }
 
 #[derive(Clone)]
@@ -75,11 +37,11 @@ impl MutableSchemaCommentState {
 		ImmutableSchemaCommentState { proxy: self.proxy.root("") }
 	}
 
-    pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
+    pub fn test_state1(&self) -> ArrayOfMutableInt64 {
+		ArrayOfMutableInt64 { proxy: self.proxy.root(STATE_TEST_STATE1) }
 	}
 
-    pub fn test_state(&self) -> ArrayOfMutableInt64 {
-		ArrayOfMutableInt64 { proxy: self.proxy.root(STATE_TEST_STATE) }
+    pub fn test_state2(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(STATE_TEST_STATE2))
 	}
 }

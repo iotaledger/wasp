@@ -49,6 +49,7 @@ func (s ImmutableFairAuctionState) Bids() MapTokenIDToImmutableBids {
 	return MapTokenIDToImmutableBids{proxy: s.proxy.Root(StateBids)}
 }
 
+// default auction owner's margin in promilles
 func (s ImmutableFairAuctionState) OwnerMargin() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateOwnerMargin))
 }
@@ -109,6 +110,7 @@ func (s MutableFairAuctionState) Bids() MapTokenIDToMutableBids {
 	return MapTokenIDToMutableBids{proxy: s.proxy.Root(StateBids)}
 }
 
+// default auction owner's margin in promilles
 func (s MutableFairAuctionState) OwnerMargin() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateOwnerMargin))
 }

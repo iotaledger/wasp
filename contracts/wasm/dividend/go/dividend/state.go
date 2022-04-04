@@ -33,10 +33,14 @@ type ImmutableDividendState struct {
 	proxy wasmtypes.Proxy
 }
 
+// array with all the recipients of this dividend
 func (s ImmutableDividendState) MemberList() ArrayOfImmutableAddress {
 	return ArrayOfImmutableAddress{proxy: s.proxy.Root(StateMemberList)}
 }
 
+// map with all the recipient factors of this dividend
+// owner of contract, the only one who can call 'member' func
+// sum of all recipient factors
 func (s ImmutableDividendState) Members() MapAddressToImmutableUint64 {
 	return MapAddressToImmutableUint64{proxy: s.proxy.Root(StateMembers)}
 }
@@ -89,10 +93,14 @@ func (s MutableDividendState) AsImmutable() ImmutableDividendState {
 	return ImmutableDividendState(s)
 }
 
+// array with all the recipients of this dividend
 func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
 	return ArrayOfMutableAddress{proxy: s.proxy.Root(StateMemberList)}
 }
 
+// map with all the recipient factors of this dividend
+// owner of contract, the only one who can call 'member' func
+// sum of all recipient factors
 func (s MutableDividendState) Members() MapAddressToMutableUint64 {
 	return MapAddressToMutableUint64{proxy: s.proxy.Root(StateMembers)}
 }

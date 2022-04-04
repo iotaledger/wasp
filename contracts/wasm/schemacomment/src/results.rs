@@ -12,44 +12,44 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ImmutableStringMapOfStringArrayAppendResults {
+pub struct ImmutableTestFunc1Results {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableStringMapOfStringArrayAppendResults {
+impl ImmutableTestFunc1Results {
     pub fn length(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableStringMapOfStringArrayAppendResults {
+pub struct MutableTestFunc1Results {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableStringMapOfStringArrayAppendResults {
+impl MutableTestFunc1Results {
     pub fn length(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
 #[derive(Clone)]
-pub struct ImmutableStringMapOfStringArrayLengthResults {
+pub struct ImmutableTestView1Results {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableStringMapOfStringArrayLengthResults {
+impl ImmutableTestView1Results {
     pub fn length(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableStringMapOfStringArrayLengthResults {
+pub struct MutableTestView1Results {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableStringMapOfStringArrayLengthResults {
+impl MutableTestView1Results {
     pub fn length(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}

@@ -11,16 +11,17 @@ export const ScName        = "schemacomment";
 export const ScDescription = "demonstration of dumping comments in yaml file to schema definition";
 export const HScName       = new wasmtypes.ScHname(0xc8a14753);
 
+export const ParamArr   = "arr";
 export const ParamName  = "name";
 export const ParamValue = "value";
 
 export const ResultLength = "length";
 
-export const StateOwner     = "Owner";
-export const StateTestState = "TestState";
+export const StateTestState1 = "TestState1";
+export const StateTestState2 = "TestState2";
 
-export const FuncStringMapOfStringArrayAppend = "stringMapOfStringArrayAppend";
-export const ViewStringMapOfStringArrayLength = "stringMapOfStringArrayLength";
+export const FuncTestFunc1 = "testFunc1";
+export const ViewTestView1 = "testView1";
 
-export const HFuncStringMapOfStringArrayAppend = new wasmtypes.ScHname(0x414f806d);
-export const HViewStringMapOfStringArrayLength = new wasmtypes.ScHname(0x9f433699);
+export const HFuncTestFunc1 = new wasmtypes.ScHname(0xf73370b1);
+export const HViewTestView1 = new wasmtypes.ScHname(0xf0f3e6e8);

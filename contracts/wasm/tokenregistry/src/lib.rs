@@ -77,8 +77,6 @@ fn func_transfer_ownership_thunk(ctx: &ScFuncContext) {
 		params: ImmutableTransferOwnershipParams { proxy: params_proxy() },
 		state: MutableTokenRegistryState { proxy: state_proxy() },
 	};
-
-	// TODO the one who can transfer token ownership
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
@@ -97,8 +95,6 @@ fn func_update_metadata_thunk(ctx: &ScFuncContext) {
 		params: ImmutableUpdateMetadataParams { proxy: params_proxy() },
 		state: MutableTokenRegistryState { proxy: state_proxy() },
 	};
-
-	// TODO the one who can change the token info
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");

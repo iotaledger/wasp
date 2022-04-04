@@ -585,6 +585,7 @@ func (a ArrayOfImmutableString) GetString(index uint32) wasmtypes.ScImmutableStr
 	return wasmtypes.NewScImmutableString(a.proxy.Index(index))
 }
 
+//## Array
 type ImmutableStringArray = ArrayOfImmutableString
 
 type ArrayOfMutableString struct {
@@ -607,6 +608,7 @@ func (a ArrayOfMutableString) GetString(index uint32) wasmtypes.ScMutableString 
 	return wasmtypes.NewScMutableString(a.proxy.Index(index))
 }
 
+//## Array
 type MutableStringArray = ArrayOfMutableString
 
 type MapStringToImmutableString struct {
@@ -617,6 +619,7 @@ func (m MapStringToImmutableString) GetString(key string) wasmtypes.ScImmutableS
 	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
+//## Map
 type ImmutableStringMap = MapStringToImmutableString
 
 type MapStringToMutableString struct {
@@ -631,6 +634,7 @@ func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableStrin
 	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
+//## Map
 type MutableStringMap = MapStringToMutableString
 
 type ArrayOfImmutableTokenID struct {

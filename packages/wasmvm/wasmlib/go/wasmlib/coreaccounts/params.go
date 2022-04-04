@@ -13,6 +13,7 @@ type ImmutableDepositParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default is caller
 func (s ImmutableDepositParams) AgentID() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
@@ -21,6 +22,7 @@ type MutableDepositParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default is caller
 func (s MutableDepositParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
@@ -29,6 +31,8 @@ type ImmutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default (zero) means all
+// withdrawColor=c: Color? # defaults to colored.IOTA
 func (s ImmutableHarvestParams) WithdrawAmount() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamWithdrawAmount))
 }
@@ -37,6 +41,8 @@ type MutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default (zero) means all
+// withdrawColor=c: Color? # defaults to colored.IOTA
 func (s MutableHarvestParams) WithdrawAmount() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamWithdrawAmount))
 }

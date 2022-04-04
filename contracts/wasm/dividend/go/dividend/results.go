@@ -13,6 +13,7 @@ type ImmutableGetFactorResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// relative division factor
 func (s ImmutableGetFactorResults) Factor() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultFactor))
 }
@@ -21,6 +22,7 @@ type MutableGetFactorResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// relative division factor
 func (s MutableGetFactorResults) Factor() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultFactor))
 }
@@ -29,6 +31,7 @@ type ImmutableGetOwnerResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// current owner of this smart contract
 func (s ImmutableGetOwnerResults) Owner() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultOwner))
 }
@@ -37,6 +40,7 @@ type MutableGetOwnerResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// current owner of this smart contract
 func (s MutableGetOwnerResults) Owner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultOwner))
 }

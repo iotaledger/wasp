@@ -7,39 +7,39 @@
 
 import * as wasmtypes from "wasmlib/wasmtypes";
 
-export class TestStruct {
-	x : i32 = 0; 
-	y : i32 = 0; 
+export class TestStruct1 {
+	x1 : i32 = 0; // comment for x1
+	y1 : i32 = 0; // comment for y1
 
-	static fromBytes(buf: u8[]): TestStruct {
+	static fromBytes(buf: u8[]): TestStruct1 {
 		const dec = new wasmtypes.WasmDecoder(buf);
-		const data = new TestStruct();
-		data.x = wasmtypes.int32Decode(dec);
-		data.y = wasmtypes.int32Decode(dec);
+		const data = new TestStruct1();
+		data.x1 = wasmtypes.int32Decode(dec);
+		data.y1 = wasmtypes.int32Decode(dec);
 		dec.close();
 		return data;
 	}
 
 	bytes(): u8[] {
 		const enc = new wasmtypes.WasmEncoder();
-		wasmtypes.int32Encode(enc, this.x);
-		wasmtypes.int32Encode(enc, this.y);
+		wasmtypes.int32Encode(enc, this.x1);
+		wasmtypes.int32Encode(enc, this.y1);
 		return enc.buf();
 	}
 }
 
-export class ImmutableTestStruct extends wasmtypes.ScProxy {
+export class ImmutableTestStruct1 extends wasmtypes.ScProxy {
 
 	exists(): bool {
 		return this.proxy.exists();
 	}
 
-	value(): TestStruct {
-		return TestStruct.fromBytes(this.proxy.get());
+	value(): TestStruct1 {
+		return TestStruct1.fromBytes(this.proxy.get());
 	}
 }
 
-export class MutableTestStruct extends wasmtypes.ScProxy {
+export class MutableTestStruct1 extends wasmtypes.ScProxy {
 
 	delete(): void {
 		this.proxy.delete();
@@ -49,11 +49,62 @@ export class MutableTestStruct extends wasmtypes.ScProxy {
 		return this.proxy.exists();
 	}
 
-	setValue(value: TestStruct): void {
+	setValue(value: TestStruct1): void {
 		this.proxy.set(value.bytes());
 	}
 
-	value(): TestStruct {
-		return TestStruct.fromBytes(this.proxy.get());
+	value(): TestStruct1 {
+		return TestStruct1.fromBytes(this.proxy.get());
+	}
+}
+
+export class TestStruct2 {
+	x2 : i32 = 0; // comment for x2
+	y2 : i32 = 0; // comment for y2
+
+	static fromBytes(buf: u8[]): TestStruct2 {
+		const dec = new wasmtypes.WasmDecoder(buf);
+		const data = new TestStruct2();
+		data.x2 = wasmtypes.int32Decode(dec);
+		data.y2 = wasmtypes.int32Decode(dec);
+		dec.close();
+		return data;
+	}
+
+	bytes(): u8[] {
+		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.int32Encode(enc, this.x2);
+		wasmtypes.int32Encode(enc, this.y2);
+		return enc.buf();
+	}
+}
+
+export class ImmutableTestStruct2 extends wasmtypes.ScProxy {
+
+	exists(): bool {
+		return this.proxy.exists();
+	}
+
+	value(): TestStruct2 {
+		return TestStruct2.fromBytes(this.proxy.get());
+	}
+}
+
+export class MutableTestStruct2 extends wasmtypes.ScProxy {
+
+	delete(): void {
+		this.proxy.delete();
+	}
+
+	exists(): bool {
+		return this.proxy.exists();
+	}
+
+	setValue(value: TestStruct2): void {
+		this.proxy.set(value.bytes());
+	}
+
+	value(): TestStruct2 {
+		return TestStruct2.fromBytes(this.proxy.get());
 	}
 }

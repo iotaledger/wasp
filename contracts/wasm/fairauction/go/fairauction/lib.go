@@ -52,8 +52,6 @@ func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-
-	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
 	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
@@ -96,8 +94,6 @@ func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-
-	// only SC creator can set owner margin
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.OwnerMargin().Exists(), "missing mandatory ownerMargin")

@@ -68,8 +68,6 @@ fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 		params: ImmutableFinalizeAuctionParams { proxy: params_proxy() },
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
-
-	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
@@ -104,8 +102,6 @@ fn func_set_owner_margin_thunk(ctx: &ScFuncContext) {
 		params: ImmutableSetOwnerMarginParams { proxy: params_proxy() },
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
-
-	// only SC creator can set owner margin
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	ctx.require(f.params.owner_margin().exists(), "missing mandatory ownerMargin");

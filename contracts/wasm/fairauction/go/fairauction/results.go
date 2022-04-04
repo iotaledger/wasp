@@ -13,6 +13,18 @@ type ImmutableGetInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// nr of bidders
+// token of tokens for sale
+// issuer of start_auction transaction
+// deposit by auction owner to cover the SC fees
+// auction description
+// auction duration in minutes
+// the current highest bid amount
+// the current highest bidder
+// minimum bid amount
+// number of tokens for sale
+// auction owner's margin in promilles
+// timestamp when auction started
 func (s ImmutableGetInfoResults) Bidders() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBidders))
 }
@@ -65,6 +77,18 @@ type MutableGetInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// nr of bidders
+// token of tokens for sale
+// issuer of start_auction transaction
+// deposit by auction owner to cover the SC fees
+// auction description
+// auction duration in minutes
+// the current highest bid amount
+// the current highest bidder
+// minimum bid amount
+// number of tokens for sale
+// auction owner's margin in promilles
+// timestamp when auction started
 func (s MutableGetInfoResults) Bidders() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBidders))
 }

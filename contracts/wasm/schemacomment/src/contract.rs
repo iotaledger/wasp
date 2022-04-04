@@ -10,38 +10,38 @@
 use wasmlib::*;
 use crate::*;
 
-pub struct StringMapOfStringArrayAppendCall {
+pub struct TestFunc1Call {
 	pub func: ScFunc,
-	pub params: MutableStringMapOfStringArrayAppendParams,
-	pub results: ImmutableStringMapOfStringArrayAppendResults,
+	pub params: MutableTestFunc1Params,
+	pub results: ImmutableTestFunc1Results,
 }
 
-pub struct StringMapOfStringArrayLengthCall {
+pub struct TestView1Call {
 	pub func: ScView,
-	pub params: MutableStringMapOfStringArrayLengthParams,
-	pub results: ImmutableStringMapOfStringArrayLengthResults,
+	pub params: MutableTestView1Params,
+	pub results: ImmutableTestView1Results,
 }
 
 pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn string_map_of_string_array_append(_ctx: &dyn ScFuncCallContext) -> StringMapOfStringArrayAppendCall {
-        let mut f = StringMapOfStringArrayAppendCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_STRING_MAP_OF_STRING_ARRAY_APPEND),
-            params: MutableStringMapOfStringArrayAppendParams { proxy: Proxy::nil() },
-            results: ImmutableStringMapOfStringArrayAppendResults { proxy: Proxy::nil() },
+    pub fn test_func1(_ctx: &dyn ScFuncCallContext) -> TestFunc1Call {
+        let mut f = TestFunc1Call {
+            func: ScFunc::new(HSC_NAME, HFUNC_TEST_FUNC1),
+            params: MutableTestFunc1Params { proxy: Proxy::nil() },
+            results: ImmutableTestFunc1Results { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         ScFunc::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn string_map_of_string_array_length(_ctx: &dyn ScViewCallContext) -> StringMapOfStringArrayLengthCall {
-        let mut f = StringMapOfStringArrayLengthCall {
-            func: ScView::new(HSC_NAME, HVIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH),
-            params: MutableStringMapOfStringArrayLengthParams { proxy: Proxy::nil() },
-            results: ImmutableStringMapOfStringArrayLengthResults { proxy: Proxy::nil() },
+    pub fn test_view1(_ctx: &dyn ScViewCallContext) -> TestView1Call {
+        let mut f = TestView1Call {
+            func: ScView::new(HSC_NAME, HVIEW_TEST_VIEW1),
+            params: MutableTestView1Params { proxy: Proxy::nil() },
+            results: ImmutableTestView1Results { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

@@ -260,6 +260,7 @@ func (sc Funcs) ArrayOfAddressArrayAppend(ctx wasmlib.ScFuncCallContext) *ArrayO
 	return f
 }
 
+// Clear all the arrays of the array
 func (sc Funcs) ArrayOfAddressArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayOfAddressArrayClearCall {
 	return &ArrayOfAddressArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfAddressArrayClear)}
 }
@@ -286,6 +287,7 @@ func (sc Funcs) ArrayOfStringArrayAppend(ctx wasmlib.ScFuncCallContext) *ArrayOf
 	return f
 }
 
+// Clear all the arrays of the array
 func (sc Funcs) ArrayOfStringArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayOfStringArrayClearCall {
 	return &ArrayOfStringArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayOfStringArrayClear)}
 }

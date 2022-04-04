@@ -10,11 +10,15 @@ package donatewithfeedback
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Donation struct {
-	Amount    uint64              // amount donated
-	Donator   wasmtypes.ScAgentID // who donated
-	Error     string              // error to be reported to donator if anything goes wrong
-	Feedback  string              // the feedback for the person donated to
-	Timestamp uint64              // when the donation took place
+	Amount uint64 // amount donated
+	// who donated
+	// error to be reported to donator if anything goes wrong
+	// the feedback for the person donated to
+	// when the donation took place
+	Donator   wasmtypes.ScAgentID
+	Error     string
+	Feedback  string
+	Timestamp uint64
 }
 
 func NewDonationFromBytes(buf []byte) *Donation {

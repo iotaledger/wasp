@@ -5,8 +5,8 @@ use wasmlib::*;
 
 use crate::*;
 
-pub fn func_string_map_of_string_array_append(ctx: &ScFuncContext, f: &StringMapOfStringArrayAppendContext) {
+pub fn func_test_func1(ctx: &ScFuncContext, f: &TestFunc1Context) {
 }
 
-pub fn view_string_map_of_string_array_length(ctx: &ScViewContext, f: &StringMapOfStringArrayLengthContext) {
+pub fn view_test_view1(ctx: &ScViewContext, f: &TestView1Context) {
 }

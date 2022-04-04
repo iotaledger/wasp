@@ -13,16 +13,17 @@ pub const SC_NAME        : &str = "schemacomment";
 pub const SC_DESCRIPTION : &str = "demonstration of dumping comments in yaml file to schema definition";
 pub const HSC_NAME       : ScHname = ScHname(0xc8a14753);
 
+pub const PARAM_ARR   : &str = "arr";
 pub const PARAM_NAME  : &str = "name";
 pub const PARAM_VALUE : &str = "value";
 
 pub const RESULT_LENGTH : &str = "length";
 
-pub const STATE_OWNER      : &str = "Owner";
-pub const STATE_TEST_STATE : &str = "TestState";
+pub const STATE_TEST_STATE1 : &str = "TestState1";
+pub const STATE_TEST_STATE2 : &str = "TestState2";
 
-pub const FUNC_STRING_MAP_OF_STRING_ARRAY_APPEND : &str = "stringMapOfStringArrayAppend";
-pub const VIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH : &str = "stringMapOfStringArrayLength";
+pub const FUNC_TEST_FUNC1 : &str = "testFunc1";
+pub const VIEW_TEST_VIEW1 : &str = "testView1";
 
-pub const HFUNC_STRING_MAP_OF_STRING_ARRAY_APPEND : ScHname = ScHname(0x414f806d);
-pub const HVIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH : ScHname = ScHname(0x9f433699);
+pub const HFUNC_TEST_FUNC1 : ScHname = ScHname(0xf73370b1);
+pub const HVIEW_TEST_VIEW1 : ScHname = ScHname(0xf0f3e6e8);

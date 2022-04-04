@@ -32,14 +32,14 @@ mod schemacomment;
 
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
-    	FUNC_STRING_MAP_OF_STRING_ARRAY_APPEND,
-    	VIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH,
+    	FUNC_TEST_FUNC1,
+    	VIEW_TEST_VIEW1,
 	],
     funcs: &[
-    	func_string_map_of_string_array_append_thunk,
+    	func_test_func1_thunk,
 	],
     views: &[
-    	view_string_map_of_string_array_length_thunk,
+    	view_test_view1_thunk,
 	],
 };
 
@@ -53,47 +53,43 @@ fn on_load() {
     ScExports::export(&EXPORT_MAP);
 }
 
-pub struct StringMapOfStringArrayAppendContext {
+pub struct TestFunc1Context {
 	events:  SchemaCommentEvents,
-	params: ImmutableStringMapOfStringArrayAppendParams,
-	results: MutableStringMapOfStringArrayAppendResults,
+	params: ImmutableTestFunc1Params,
+	results: MutableTestFunc1Results,
 	state: MutableSchemaCommentState,
 }
 
-fn func_string_map_of_string_array_append_thunk(ctx: &ScFuncContext) {
-	ctx.log("schemacomment.funcStringMapOfStringArrayAppend");
-	let f = StringMapOfStringArrayAppendContext {
+fn func_test_func1_thunk(ctx: &ScFuncContext) {
+	ctx.log("schemacomment.funcTestFunc1");
+	let f = TestFunc1Context {
 		events:  SchemaCommentEvents {},
-		params: ImmutableStringMapOfStringArrayAppendParams { proxy: params_proxy() },
-		results: MutableStringMapOfStringArrayAppendResults { proxy: results_proxy() },
+		params: ImmutableTestFunc1Params { proxy: params_proxy() },
+		results: MutableTestFunc1Results { proxy: results_proxy() },
 		state: MutableSchemaCommentState { proxy: state_proxy() },
 	};
-	let access = f.state.owner();
-	ctx.require(access.exists(), "access not set: owner");
-	ctx.require(ctx.caller() == access.value(), "no permission");
-
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.value().exists(), "missing mandatory value");
-	func_string_map_of_string_array_append(ctx, &f);
+	func_test_func1(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("schemacomment.funcStringMapOfStringArrayAppend ok");
+	ctx.log("schemacomment.funcTestFunc1 ok");
 }
 
-pub struct StringMapOfStringArrayLengthContext {
-	params: ImmutableStringMapOfStringArrayLengthParams,
-	results: MutableStringMapOfStringArrayLengthResults,
+pub struct TestView1Context {
+	params: ImmutableTestView1Params,
+	results: MutableTestView1Results,
 	state: ImmutableSchemaCommentState,
 }
 
-fn view_string_map_of_string_array_length_thunk(ctx: &ScViewContext) {
-	ctx.log("schemacomment.viewStringMapOfStringArrayLength");
-	let f = StringMapOfStringArrayLengthContext {
-		params: ImmutableStringMapOfStringArrayLengthParams { proxy: params_proxy() },
-		results: MutableStringMapOfStringArrayLengthResults { proxy: results_proxy() },
+fn view_test_view1_thunk(ctx: &ScViewContext) {
+	ctx.log("schemacomment.viewTestView1");
+	let f = TestView1Context {
+		params: ImmutableTestView1Params { proxy: params_proxy() },
+		results: MutableTestView1Results { proxy: results_proxy() },
 		state: ImmutableSchemaCommentState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.name().exists(), "missing mandatory name");
-	view_string_map_of_string_array_length(ctx, &f);
+	view_test_view1(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("schemacomment.viewStringMapOfStringArrayLength ok");
+	ctx.log("schemacomment.viewTestView1 ok");
 }

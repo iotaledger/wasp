@@ -14,7 +14,13 @@ import (
 
 type FairRouletteEvents struct{}
 
-func (e FairRouletteEvents) Bet(address wasmtypes.ScAddress, amount uint64, number uint16) {
+func (e FairRouletteEvents) Bet(
+	address wasmtypes.ScAddress, // address of better
+	// amount of iotas to bet
+	// number to bet on
+	amount uint64,
+	number uint16,
+) {
 	evt := wasmlib.NewEventEncoder("fairroulette.bet")
 	evt.Encode(wasmtypes.AddressToString(address))
 	evt.Encode(wasmtypes.Uint64ToString(amount))
@@ -22,14 +28,20 @@ func (e FairRouletteEvents) Bet(address wasmtypes.ScAddress, amount uint64, numb
 	evt.Emit()
 }
 
-func (e FairRouletteEvents) Payout(address wasmtypes.ScAddress, amount uint64) {
+func (e FairRouletteEvents) Payout(
+	address wasmtypes.ScAddress, // address of winner
+	// amount of iotas won
+	amount uint64,
+) {
 	evt := wasmlib.NewEventEncoder("fairroulette.payout")
 	evt.Encode(wasmtypes.AddressToString(address))
 	evt.Encode(wasmtypes.Uint64ToString(amount))
 	evt.Emit()
 }
 
-func (e FairRouletteEvents) Round(number uint32) {
+func (e FairRouletteEvents) Round(
+	number uint32, // current betting round number
+) {
 	evt := wasmlib.NewEventEncoder("fairroulette.round")
 	evt.Encode(wasmtypes.Uint32ToString(number))
 	evt.Emit()
@@ -45,7 +57,9 @@ func (e FairRouletteEvents) Stop() {
 	evt.Emit()
 }
 
-func (e FairRouletteEvents) Winner(number uint16) {
+func (e FairRouletteEvents) Winner(
+	number uint16, // the winning number
+) {
 	evt := wasmlib.NewEventEncoder("fairroulette.winner")
 	evt.Encode(wasmtypes.Uint16ToString(number))
 	evt.Emit()

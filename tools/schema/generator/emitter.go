@@ -183,7 +183,7 @@ func (g *GenBase) emitEachField(fields []*model.Field, template string) {
 
 	for _, g.currentField = range fields {
 		g.log("currentField: " + g.currentField.Name)
-		fmt.Println("template: ", template)
+		//fmt.Println("template: ", template)
 		g.setFieldKeys(true, maxCamelLength, maxSnakeLength)
 		g.emit(template)
 	}

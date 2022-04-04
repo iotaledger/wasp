@@ -13,6 +13,8 @@ type ImmutableMintSupplyParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// description what minted token represents
+// any user defined text
 func (s ImmutableMintSupplyParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
@@ -25,6 +27,8 @@ type MutableMintSupplyParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// description what minted token represents
+// any user defined text
 func (s MutableMintSupplyParams) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
@@ -37,6 +41,7 @@ type ImmutableTransferOwnershipParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token of token to transfer ownership of
 func (s ImmutableTransferOwnershipParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -45,6 +50,7 @@ type MutableTransferOwnershipParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token of token to transfer ownership of
 func (s MutableTransferOwnershipParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -53,6 +59,7 @@ type ImmutableUpdateMetadataParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token of token to update metadata for
 func (s ImmutableUpdateMetadataParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -61,6 +68,7 @@ type MutableUpdateMetadataParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token of token to update metadata for
 func (s MutableUpdateMetadataParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -69,6 +77,7 @@ type ImmutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token of token to view registry info of
 func (s ImmutableGetInfoParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -77,6 +86,7 @@ type MutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token of token to view registry info of
 func (s MutableGetInfoParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }

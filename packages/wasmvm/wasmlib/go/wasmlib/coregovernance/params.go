@@ -17,6 +17,7 @@ func (s ImmutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwner))
 }
 
+// feeColor=fc: Color? # default colored.IOTA
 func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -29,6 +30,7 @@ func (s MutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.Sc
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwner))
 }
 
+// feeColor=fc: Color? # default colored.IOTA
 func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -85,6 +87,11 @@ type ImmutableSetChainInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default no change
+// default no change
+// default no change
+// default no change
+// default no change
 func (s ImmutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScImmutableInt32 {
 	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ParamMaxBlobSize))
 }
@@ -109,6 +116,11 @@ type MutableSetChainInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default no change
+// default no change
+// default no change
+// default no change
+// default no change
 func (s MutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScMutableInt32 {
 	return wasmtypes.NewScMutableInt32(s.proxy.Root(ParamMaxBlobSize))
 }
@@ -133,6 +145,9 @@ type ImmutableSetContractFeeParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// contract id
+// default 0 (no fee)
+// default 0 (no fee)
 func (s ImmutableSetContractFeeParams) Hname() wasmtypes.ScImmutableHname {
 	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
 }
@@ -149,6 +164,9 @@ type MutableSetContractFeeParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// contract id
+// default 0 (no fee)
+// default 0 (no fee)
 func (s MutableSetContractFeeParams) Hname() wasmtypes.ScMutableHname {
 	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
 }
@@ -165,6 +183,8 @@ type ImmutableSetDefaultFeeParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default -1 (not set)
+// default -1 (not set)
 func (s ImmutableSetDefaultFeeParams) OwnerFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
 }
@@ -177,6 +197,8 @@ type MutableSetDefaultFeeParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default -1 (not set)
+// default -1 (not set)
 func (s MutableSetDefaultFeeParams) OwnerFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
 }

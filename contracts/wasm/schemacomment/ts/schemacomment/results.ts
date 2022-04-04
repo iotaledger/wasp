@@ -8,25 +8,25 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableStringMapOfStringArrayAppendResults extends wasmtypes.ScProxy {
+export class ImmutableTestFunc1Results extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class MutableStringMapOfStringArrayAppendResults extends wasmtypes.ScProxy {
+export class MutableTestFunc1Results extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class ImmutableStringMapOfStringArrayLengthResults extends wasmtypes.ScProxy {
+export class ImmutableTestView1Results extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultLength));
 	}
 }
 
-export class MutableStringMapOfStringArrayLengthResults extends wasmtypes.ScProxy {
+export class MutableTestView1Results extends wasmtypes.ScProxy {
 	length(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultLength));
 	}

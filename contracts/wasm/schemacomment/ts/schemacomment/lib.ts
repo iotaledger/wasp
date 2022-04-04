@@ -10,14 +10,14 @@ import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
 	names: [
-		sc.FuncStringMapOfStringArrayAppend,
-		sc.ViewStringMapOfStringArrayLength,
+		sc.FuncTestFunc1,
+		sc.ViewTestView1,
 	],
 	funcs: [
-		funcStringMapOfStringArrayAppendThunk,
+		funcTestFunc1Thunk,
 	],
 	views: [
-		viewStringMapOfStringArrayLengthThunk,
+		viewTestView1Thunk,
 	],
 };
 
@@ -29,29 +29,25 @@ export function on_load(): void {
 	wasmlib.ScExports.export(exportMap);
 }
 
-function funcStringMapOfStringArrayAppendThunk(ctx: wasmlib.ScFuncContext): void {
-	ctx.log("schemacomment.funcStringMapOfStringArrayAppend");
-	let f = new sc.StringMapOfStringArrayAppendContext();
+function funcTestFunc1Thunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("schemacomment.funcTestFunc1");
+	let f = new sc.TestFunc1Context();
 	const results = new wasmlib.ScDict([]);
-	f.results = new sc.MutableStringMapOfStringArrayAppendResults(results.asProxy());
-	const access = f.state.owner();
-	ctx.require(access.exists(), "access not set: owner");
-	ctx.require(ctx.caller().equals(access.value()), "no permission");
-
+	f.results = new sc.MutableTestFunc1Results(results.asProxy());
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.value().exists(), "missing mandatory value");
-	sc.funcStringMapOfStringArrayAppend(ctx, f);
+	sc.funcTestFunc1(ctx, f);
 	ctx.results(results);
-	ctx.log("schemacomment.funcStringMapOfStringArrayAppend ok");
+	ctx.log("schemacomment.funcTestFunc1 ok");
 }
 
-function viewStringMapOfStringArrayLengthThunk(ctx: wasmlib.ScViewContext): void {
-	ctx.log("schemacomment.viewStringMapOfStringArrayLength");
-	let f = new sc.StringMapOfStringArrayLengthContext();
+function viewTestView1Thunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("schemacomment.viewTestView1");
+	let f = new sc.TestView1Context();
 	const results = new wasmlib.ScDict([]);
-	f.results = new sc.MutableStringMapOfStringArrayLengthResults(results.asProxy());
+	f.results = new sc.MutableTestView1Results(results.asProxy());
 	ctx.require(f.params.name().exists(), "missing mandatory name");
-	sc.viewStringMapOfStringArrayLength(ctx, f);
+	sc.viewTestView1(ctx, f);
 	ctx.results(results);
-	ctx.log("schemacomment.viewStringMapOfStringArrayLength ok");
+	ctx.log("schemacomment.viewTestView1 ok");
 }

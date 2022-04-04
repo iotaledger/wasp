@@ -7,7 +7,7 @@ funcs:
   addAllowedStateControllerAddress:
     params:
       chainOwner=oi: AgentID
-      # feeColor=fc: Color? // default colored.IOTA
+      # feeColor=fc: Color? # default colored.IOTA
       stateControllerAddress=S: Address
   claimChainOwnership: {}
   delegateChainOwnership:
@@ -21,24 +21,24 @@ funcs:
       stateControllerAddress=S: Address
   setChainInfo:
     params:
-      maxBlobSize=bs: Int32? // default no change
-      maxEventSize=es: Int16? // default no change
-      maxEventsPerReq=ne: Int16? // default no change
-      ownerFee=of: Int64? // default no change
-      validatorFee=vf: Int64? // default no change
+      maxBlobSize=bs: Int32? # default no change
+      maxEventSize=es: Int16? # default no change
+      maxEventsPerReq=ne: Int16? # default no change
+      ownerFee=of: Int64? # default no change
+      validatorFee=vf: Int64? # default no change
   setContractFee:
     params:
-      hname=hn: Hname // contract id
-      ownerFee=of: Int64? // default 0 (no fee)
-      validatorFee=vf: Int64? // default 0 (no fee)
+      hname=hn: Hname # contract id
+      ownerFee=of: Int64? # default 0 (no fee)
+      validatorFee=vf: Int64? # default 0 (no fee)
   setDefaultFee:
     params:
-      ownerFee=of: Int64? // default -1 (not set)
-      validatorFee=vf: Int64? // default -1 (not set)
+      ownerFee=of: Int64? # default -1 (not set)
+      validatorFee=vf: Int64? # default -1 (not set)
 views:
   getAllowedStateControllerAddresses:
     results:
-      allowedStateControllerAddresses=a: Bytes[] // native contract, so this is an Array16
+      allowedStateControllerAddresses=a: Bytes[] # native contract, so this is an Array16
   getChainInfo:
     results:
       chainID=c: ChainID

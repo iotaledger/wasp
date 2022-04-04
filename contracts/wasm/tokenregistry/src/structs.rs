@@ -12,13 +12,19 @@ use wasmlib::*;
 
 #[derive(Clone)]
 pub struct Token {
-    pub created      : u64,  // creation timestamp
-    pub description  : String,  // description what minted token represents
-    pub minted_by    : ScAgentID,  // original minter
-    pub owner        : ScAgentID,  // current owner
-    pub supply       : u64,  // amount of tokens originally minted
-    pub updated      : u64,  // last update timestamp
-    pub user_defined : String,  // any user defined text
+    pub created      : u64, // creation timestamp
+// description what minted token represents
+// original minter
+// current owner
+// amount of tokens originally minted
+// last update timestamp
+// any user defined text
+    pub description  : String, 
+    pub minted_by    : ScAgentID, 
+    pub owner        : ScAgentID, 
+    pub supply       : u64, 
+    pub updated      : u64, 
+    pub user_defined : String, 
 }
 
 impl Token {

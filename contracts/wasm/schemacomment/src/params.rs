@@ -12,11 +12,30 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ImmutableStringMapOfStringArrayAppendParams {
+pub struct ArrayOfImmutableInt64 {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableStringMapOfStringArrayAppendParams {
+impl ArrayOfImmutableInt64 {
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_int64(&self, index: u32) -> ScImmutableInt64 {
+        ScImmutableInt64::new(self.proxy.index(index))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableTestFunc1Params {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableTestFunc1Params {
+    pub fn arr(&self) -> ArrayOfImmutableInt64 {
+		ArrayOfImmutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
+	}
+
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
@@ -27,11 +46,38 @@ impl ImmutableStringMapOfStringArrayAppendParams {
 }
 
 #[derive(Clone)]
-pub struct MutableStringMapOfStringArrayAppendParams {
+pub struct ArrayOfMutableInt64 {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableStringMapOfStringArrayAppendParams {
+impl ArrayOfMutableInt64 {
+	pub fn append_int64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
+    }
+
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_int64(&self, index: u32) -> ScMutableInt64 {
+        ScMutableInt64::new(self.proxy.index(index))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableTestFunc1Params {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableTestFunc1Params {
+    pub fn arr(&self) -> ArrayOfMutableInt64 {
+		ArrayOfMutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
+	}
+
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
@@ -42,22 +88,30 @@ impl MutableStringMapOfStringArrayAppendParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableStringMapOfStringArrayLengthParams {
+pub struct ImmutableTestView1Params {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableStringMapOfStringArrayLengthParams {
+impl ImmutableTestView1Params {
+    pub fn arr(&self) -> ArrayOfImmutableInt64 {
+		ArrayOfImmutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
+	}
+
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableStringMapOfStringArrayLengthParams {
+pub struct MutableTestView1Params {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableStringMapOfStringArrayLengthParams {
+impl MutableTestView1Params {
+    pub fn arr(&self) -> ArrayOfMutableInt64 {
+		ArrayOfMutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
+	}
+
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}

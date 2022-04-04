@@ -13,6 +13,7 @@ type ImmutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token identifies the auction
 func (s ImmutableFinalizeAuctionParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -21,6 +22,7 @@ type MutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token identifies the auction
 func (s MutableFinalizeAuctionParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -29,6 +31,7 @@ type ImmutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token identifies the auction
 func (s ImmutablePlaceBidParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -37,6 +40,7 @@ type MutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token identifies the auction
 func (s MutablePlaceBidParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -45,6 +49,7 @@ type ImmutableSetOwnerMarginParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// new SC owner margin in promilles
 func (s ImmutableSetOwnerMarginParams) OwnerMargin() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamOwnerMargin))
 }
@@ -53,6 +58,7 @@ type MutableSetOwnerMarginParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// new SC owner margin in promilles
 func (s MutableSetOwnerMarginParams) OwnerMargin() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamOwnerMargin))
 }
@@ -73,6 +79,10 @@ func (s ImmutableStartAuctionParams) MinimumBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
+// token of the tokens being auctioned
+// description of the tokens being auctioned
+// duration of auction in minutes
+// minimum required amount for any bid
 func (s ImmutableStartAuctionParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -93,6 +103,10 @@ func (s MutableStartAuctionParams) MinimumBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
+// token of the tokens being auctioned
+// description of the tokens being auctioned
+// duration of auction in minutes
+// minimum required amount for any bid
 func (s MutableStartAuctionParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -101,6 +115,7 @@ type ImmutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token identifies the auction
 func (s ImmutableGetInfoParams) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
@@ -109,6 +124,7 @@ type MutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// token identifies the auction
 func (s MutableGetInfoParams) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }

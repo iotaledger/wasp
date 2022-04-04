@@ -174,7 +174,7 @@ funcs:
       int32: Int32?
       int64: Int64?
       nftID: NftID?
-      param=this: map[String]Bytes? // special hook to be able to pass key/values as raw bytes
+      param=this: map[String]Bytes? # special hook to be able to pass key/values as raw bytes
       requestID: RequestID?
       string: String?
       tokenID: TokenID?

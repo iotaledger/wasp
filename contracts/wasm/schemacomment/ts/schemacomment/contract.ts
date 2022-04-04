@@ -8,43 +8,43 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export class StringMapOfStringArrayAppendCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStringMapOfStringArrayAppend);
-	params: sc.MutableStringMapOfStringArrayAppendParams = new sc.MutableStringMapOfStringArrayAppendParams(wasmlib.ScView.nilProxy);
-	results: sc.ImmutableStringMapOfStringArrayAppendResults = new sc.ImmutableStringMapOfStringArrayAppendResults(wasmlib.ScView.nilProxy);
+export class TestFunc1Call {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestFunc1);
+	params: sc.MutableTestFunc1Params = new sc.MutableTestFunc1Params(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableTestFunc1Results = new sc.ImmutableTestFunc1Results(wasmlib.ScView.nilProxy);
 }
 
-export class StringMapOfStringArrayAppendContext {
+export class TestFunc1Context {
 	events: sc.SchemaCommentEvents = new sc.SchemaCommentEvents();
-	params: sc.ImmutableStringMapOfStringArrayAppendParams = new sc.ImmutableStringMapOfStringArrayAppendParams(wasmlib.paramsProxy());
-	results: sc.MutableStringMapOfStringArrayAppendResults = new sc.MutableStringMapOfStringArrayAppendResults(wasmlib.ScView.nilProxy);
+	params: sc.ImmutableTestFunc1Params = new sc.ImmutableTestFunc1Params(wasmlib.paramsProxy());
+	results: sc.MutableTestFunc1Results = new sc.MutableTestFunc1Results(wasmlib.ScView.nilProxy);
 	state: sc.MutableSchemaCommentState = new sc.MutableSchemaCommentState(wasmlib.ScState.proxy());
 }
 
-export class StringMapOfStringArrayLengthCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewStringMapOfStringArrayLength);
-	params: sc.MutableStringMapOfStringArrayLengthParams = new sc.MutableStringMapOfStringArrayLengthParams(wasmlib.ScView.nilProxy);
-	results: sc.ImmutableStringMapOfStringArrayLengthResults = new sc.ImmutableStringMapOfStringArrayLengthResults(wasmlib.ScView.nilProxy);
+export class TestView1Call {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTestView1);
+	params: sc.MutableTestView1Params = new sc.MutableTestView1Params(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableTestView1Results = new sc.ImmutableTestView1Results(wasmlib.ScView.nilProxy);
 }
 
-export class StringMapOfStringArrayLengthContext {
-	params: sc.ImmutableStringMapOfStringArrayLengthParams = new sc.ImmutableStringMapOfStringArrayLengthParams(wasmlib.paramsProxy());
-	results: sc.MutableStringMapOfStringArrayLengthResults = new sc.MutableStringMapOfStringArrayLengthResults(wasmlib.ScView.nilProxy);
+export class TestView1Context {
+	params: sc.ImmutableTestView1Params = new sc.ImmutableTestView1Params(wasmlib.paramsProxy());
+	results: sc.MutableTestView1Results = new sc.MutableTestView1Results(wasmlib.ScView.nilProxy);
 	state: sc.ImmutableSchemaCommentState = new sc.ImmutableSchemaCommentState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
-	static stringMapOfStringArrayAppend(_ctx: wasmlib.ScFuncCallContext): StringMapOfStringArrayAppendCall {
-		const f = new StringMapOfStringArrayAppendCall();
-		f.params = new sc.MutableStringMapOfStringArrayAppendParams(wasmlib.newCallParamsProxy(f.func));
-		f.results = new sc.ImmutableStringMapOfStringArrayAppendResults(wasmlib.newCallResultsProxy(f.func));
+	static testFunc1(_ctx: wasmlib.ScFuncCallContext): TestFunc1Call {
+		const f = new TestFunc1Call();
+		f.params = new sc.MutableTestFunc1Params(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableTestFunc1Results(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringArrayLength(_ctx: wasmlib.ScViewCallContext): StringMapOfStringArrayLengthCall {
-		const f = new StringMapOfStringArrayLengthCall();
-		f.params = new sc.MutableStringMapOfStringArrayLengthParams(wasmlib.newCallParamsProxy(f.func));
-		f.results = new sc.ImmutableStringMapOfStringArrayLengthResults(wasmlib.newCallResultsProxy(f.func));
+	static testView1(_ctx: wasmlib.ScViewCallContext): TestView1Call {
+		const f = new TestView1Call();
+		f.params = new sc.MutableTestView1Params(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableTestView1Results(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 }

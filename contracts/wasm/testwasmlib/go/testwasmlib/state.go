@@ -109,6 +109,7 @@ func (s ImmutableTestWasmLibState) AddressMapOfAddressMap() MapAddressToImmutabl
 	return MapAddressToImmutableAddressMap{proxy: s.proxy.Root(StateAddressMapOfAddressMap)}
 }
 
+// ISCP-specific datatypes, using Address
 func (s ImmutableTestWasmLibState) ArrayOfAddressArray() ArrayOfImmutableAddressArray {
 	return ArrayOfImmutableAddressArray{proxy: s.proxy.Root(StateArrayOfAddressArray)}
 }
@@ -117,6 +118,7 @@ func (s ImmutableTestWasmLibState) ArrayOfAddressMap() ArrayOfImmutableAddressMa
 	return ArrayOfImmutableAddressMap{proxy: s.proxy.Root(StateArrayOfAddressMap)}
 }
 
+// basic datatypes, using String
 func (s ImmutableTestWasmLibState) ArrayOfStringArray() ArrayOfImmutableStringArray {
 	return ArrayOfImmutableStringArray{proxy: s.proxy.Root(StateArrayOfStringArray)}
 }
@@ -129,6 +131,7 @@ func (s ImmutableTestWasmLibState) LatLong() MapInt32ToImmutableLongitude {
 	return MapInt32ToImmutableLongitude{proxy: s.proxy.Root(StateLatLong)}
 }
 
+// Other
 func (s ImmutableTestWasmLibState) Random() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateRandom))
 }
@@ -297,6 +300,7 @@ func (s MutableTestWasmLibState) AddressMapOfAddressMap() MapAddressToMutableAdd
 	return MapAddressToMutableAddressMap{proxy: s.proxy.Root(StateAddressMapOfAddressMap)}
 }
 
+// ISCP-specific datatypes, using Address
 func (s MutableTestWasmLibState) ArrayOfAddressArray() ArrayOfMutableAddressArray {
 	return ArrayOfMutableAddressArray{proxy: s.proxy.Root(StateArrayOfAddressArray)}
 }
@@ -305,6 +309,7 @@ func (s MutableTestWasmLibState) ArrayOfAddressMap() ArrayOfMutableAddressMap {
 	return ArrayOfMutableAddressMap{proxy: s.proxy.Root(StateArrayOfAddressMap)}
 }
 
+// basic datatypes, using String
 func (s MutableTestWasmLibState) ArrayOfStringArray() ArrayOfMutableStringArray {
 	return ArrayOfMutableStringArray{proxy: s.proxy.Root(StateArrayOfStringArray)}
 }
@@ -317,6 +322,7 @@ func (s MutableTestWasmLibState) LatLong() MapInt32ToMutableLongitude {
 	return MapInt32ToMutableLongitude{proxy: s.proxy.Root(StateLatLong)}
 }
 
+// Other
 func (s MutableTestWasmLibState) Random() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateRandom))
 }

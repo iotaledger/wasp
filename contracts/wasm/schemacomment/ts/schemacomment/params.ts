@@ -8,7 +8,22 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableStringMapOfStringArrayAppendParams extends wasmtypes.ScProxy {
+export class ArrayOfImmutableInt64 extends wasmtypes.ScProxy {
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getInt64(index: u32): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.index(index));
+	}
+}
+
+export class ImmutableTestFunc1Params extends wasmtypes.ScProxy {
+	arr(): sc.ArrayOfImmutableInt64 {
+		return new sc.ArrayOfImmutableInt64(this.proxy.root(sc.ParamArr));
+	}
+
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
@@ -18,7 +33,30 @@ export class ImmutableStringMapOfStringArrayAppendParams extends wasmtypes.ScPro
 	}
 }
 
-export class MutableStringMapOfStringArrayAppendParams extends wasmtypes.ScProxy {
+export class ArrayOfMutableInt64 extends wasmtypes.ScProxy {
+
+	appendInt64(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.append());
+	}
+
+	clear(): void {
+		this.proxy.clearArray();
+	}
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getInt64(index: u32): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.index(index));
+	}
+}
+
+export class MutableTestFunc1Params extends wasmtypes.ScProxy {
+	arr(): sc.ArrayOfMutableInt64 {
+		return new sc.ArrayOfMutableInt64(this.proxy.root(sc.ParamArr));
+	}
+
 	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
@@ -28,13 +66,21 @@ export class MutableStringMapOfStringArrayAppendParams extends wasmtypes.ScProxy
 	}
 }
 
-export class ImmutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
+export class ImmutableTestView1Params extends wasmtypes.ScProxy {
+	arr(): sc.ArrayOfImmutableInt64 {
+		return new sc.ArrayOfImmutableInt64(this.proxy.root(sc.ParamArr));
+	}
+
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
-export class MutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
+export class MutableTestView1Params extends wasmtypes.ScProxy {
+	arr(): sc.ArrayOfMutableInt64 {
+		return new sc.ArrayOfMutableInt64(this.proxy.root(sc.ParamArr));
+	}
+
 	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}

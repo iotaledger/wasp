@@ -38,8 +38,6 @@ export function on_load(): void {
 function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcFinalizeAuction");
 	let f = new sc.FinalizeAuctionContext();
-
-	// only SC itself can invoke this function
 	ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
@@ -58,8 +56,6 @@ function funcPlaceBidThunk(ctx: wasmlib.ScFuncContext): void {
 function funcSetOwnerMarginThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcSetOwnerMargin");
 	let f = new sc.SetOwnerMarginContext();
-
-	// only SC creator can set owner margin
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	ctx.require(f.params.ownerMargin().exists(), "missing mandatory ownerMargin");

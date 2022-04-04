@@ -21,6 +21,12 @@ type ImmutableAccountsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// bytes are always empty
+//  balance:
+//    params:
+//      agentID=a: AgentID
+//    results:
+//      balances=this: map[Color]Int64
 func (s ImmutableAccountsResults) Agents() MapAgentIDToImmutableBytes {
 	//nolint:gosimple
 	return MapAgentIDToImmutableBytes{proxy: s.proxy}
@@ -42,6 +48,12 @@ type MutableAccountsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// bytes are always empty
+//  balance:
+//    params:
+//      agentID=a: AgentID
+//    results:
+//      balances=this: map[Color]Int64
 func (s MutableAccountsResults) Agents() MapAgentIDToMutableBytes {
 	//nolint:gosimple
 	return MapAgentIDToMutableBytes{proxy: s.proxy}
@@ -51,6 +63,10 @@ type ImmutableGetAccountNonceResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// TODO should be Uint64
+//  totalAssets:
+//    results:
+//      balances=this: map[Color]Int64
 func (s ImmutableGetAccountNonceResults) AccountNonce() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultAccountNonce))
 }
@@ -59,6 +75,10 @@ type MutableGetAccountNonceResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// TODO should be Uint64
+//  totalAssets:
+//    results:
+//      balances=this: map[Color]Int64
 func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultAccountNonce))
 }

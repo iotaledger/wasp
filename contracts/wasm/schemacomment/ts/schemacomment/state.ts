@@ -8,43 +8,13 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableInt64 extends wasmtypes.ScProxy {
-
-	length(): u32 {
-		return this.proxy.length();
-	}
-
-	getInt64(index: u32): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.index(index));
-	}
-}
-
 export class ImmutableSchemaCommentState extends wasmtypes.ScProxy {
-	owner(): wasmtypes.ScImmutableAgentID {
-		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.StateOwner));
+	testState1(): sc.ArrayOfImmutableInt64 {
+		return new sc.ArrayOfImmutableInt64(this.proxy.root(sc.StateTestState1));
 	}
 
-	testState(): sc.ArrayOfImmutableInt64 {
-		return new sc.ArrayOfImmutableInt64(this.proxy.root(sc.StateTestState));
-	}
-}
-
-export class ArrayOfMutableInt64 extends wasmtypes.ScProxy {
-
-	appendInt64(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.append());
-	}
-
-	clear(): void {
-		this.proxy.clearArray();
-	}
-
-	length(): u32 {
-		return this.proxy.length();
-	}
-
-	getInt64(index: u32): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.index(index));
+	testState2(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.StateTestState2));
 	}
 }
 
@@ -53,11 +23,11 @@ export class MutableSchemaCommentState extends wasmtypes.ScProxy {
 		return new sc.ImmutableSchemaCommentState(this.proxy);
 	}
 
-	owner(): wasmtypes.ScMutableAgentID {
-		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.StateOwner));
+	testState1(): sc.ArrayOfMutableInt64 {
+		return new sc.ArrayOfMutableInt64(this.proxy.root(sc.StateTestState1));
 	}
 
-	testState(): sc.ArrayOfMutableInt64 {
-		return new sc.ArrayOfMutableInt64(this.proxy.root(sc.StateTestState));
+	testState2(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.StateTestState2));
 	}
 }
