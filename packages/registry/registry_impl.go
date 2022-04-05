@@ -139,7 +139,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite())
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {

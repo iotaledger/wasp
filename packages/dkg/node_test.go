@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -28,8 +27,8 @@ func TestBasic(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	timeout := 100 * time.Second
-	var threshold uint16 = 10
-	var peerCount uint16 = 10
+	var threshold uint16 = 3 // TODO: 10
+	var peerCount uint16 = 3 // TODO: 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
@@ -41,7 +40,7 @@ func TestBasic(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
+		registry := testutil.NewDkgRegistryProvider()
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -59,8 +58,8 @@ func TestBasic(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
 }
 
 // TestUnreliableNet checks, if DKG runs on an unreliable network.
@@ -92,7 +91,7 @@ func TestUnreliableNet(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
+		registry := testutil.NewDkgRegistryProvider()
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -110,8 +109,8 @@ func TestUnreliableNet(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
 }
 
 // TestLowN checks, if the DKG works with N=1 and other low values. N=1 is a special case.
@@ -135,7 +134,7 @@ func TestLowN(t *testing.T) {
 		// Initialize the DKG subsystem in each node.
 		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
-			registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
+			registry := testutil.NewDkgRegistryProvider()
 			dkgNode, err := dkg.NewNode(
 				peerIdentities[i], networkProviders[i], registry,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -153,7 +152,7 @@ func TestLowN(t *testing.T) {
 			timeout,
 		)
 		require.Nil(t, err)
-		require.NotNil(t, dkShare.Address)
-		require.NotNil(t, dkShare.SharedPublic)
+		require.NotNil(t, dkShare.GetAddress())
+		require.NotNil(t, dkShare.GetSharedPublic())
 	}
 }

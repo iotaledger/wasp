@@ -38,7 +38,7 @@ func NewMockedDKShare(env *MockedEnv, address iotago.Address, index, quorum uint
 		Index:        index,
 		T:            quorum,
 		NodePubKeys:  nodePubKeys,
-		PrivateShare: key.NewKeyPair(tcrypto.DefaultSuite()).Private,
+		PrivateShare: key.NewKeyPair(tcrypto.DefaultBlsSuite()).Private,
 		Log:          env.Log.Named("dks"),
 	}
 	ret.Log.Debugf("DKShare mocked, address: %s", ret.Address)
@@ -71,7 +71,7 @@ func (mdksT *mockedDKShare) SignShare(data []byte) (tbls.SigShare, error) {
 		I: int(*mdksT.GetIndex()),
 		V: mdksT.PrivateShare,
 	}
-	return tbls.Sign(tcrypto.DefaultSuite(), priShare, data)
+	return tbls.Sign(tcrypto.DefaultBlsSuite(), priShare, data)
 }
 
 func (mdksT *mockedDKShare) VerifySigShare(data []byte, sigshare tbls.SigShare) error {
