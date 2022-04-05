@@ -16,6 +16,7 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/dss"
+	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -28,6 +29,7 @@ type DKShareImpl struct {
 	index       *uint16 // nil, if the current node is not a member of a group sharing the key.
 	n           uint16
 	t           uint16
+	nodePrivKey *cryptolib.PrivateKey // Transient.
 	nodePubKeys []*cryptolib.PublicKey
 	//
 	// Shares for the Schnorr signatures (for L1).
@@ -52,6 +54,7 @@ func NewDKShare(
 	index uint16,
 	n uint16,
 	t uint16,
+	nodePrivKey *cryptolib.PrivateKey,
 	nodePubKeys []*cryptolib.PublicKey,
 	edSuite suites.Suite,
 	edSharedPublic kyber.Point,
@@ -79,6 +82,7 @@ func NewDKShare(
 		index:            &index,
 		n:                n,
 		t:                t,
+		nodePrivKey:      nodePrivKey,
 		nodePubKeys:      nodePubKeys,
 		edSuite:          edSuite,
 		edSharedPublic:   edSharedPublic,
@@ -99,6 +103,7 @@ func NewDKSharePublic(
 	sharedAddress iotago.Address,
 	n uint16,
 	t uint16,
+	nodePrivKey *cryptolib.PrivateKey,
 	nodePubKeys []*cryptolib.PublicKey,
 	edSuite suites.Suite,
 	edSharedPublic kyber.Point,
@@ -112,6 +117,7 @@ func NewDKSharePublic(
 		index:            nil, // Not meaningful in this case.
 		n:                n,
 		t:                t,
+		nodePrivKey:      nodePrivKey,
 		nodePubKeys:      nodePubKeys,
 		edSuite:          edSuite,
 		edSharedPublic:   edSharedPublic,
@@ -419,14 +425,18 @@ func (s *DKShareImpl) makeSigner(data []byte) (*dss.DSS, error) {
 		},
 		commitments: s.edPublicCommits,
 	}
+	nodePrivKey := eddsa.EdDSA{}
+	if err := nodePrivKey.UnmarshalBinary(s.nodePrivKey.AsBytes()); err != nil {
+		return nil, xerrors.Errorf("cannot convert node priv key to kyber scalar: %w", err)
+	}
 	participants := make([]kyber.Point, len(s.nodePubKeys))
 	for i := range s.nodePubKeys {
 		participants[i] = s.edSuite.Point()
 		if err := participants[i].UnmarshalBinary(s.nodePubKeys[i].AsBytes()); err != nil {
-			return nil, xerrors.Errorf("cannot converts node public key to kyber point: %w", err)
+			return nil, xerrors.Errorf("cannot convert node public key to kyber point: %w", err)
 		}
 	}
-	return dss.NewDSS(s.edSuite, s.edPrivateShare, participants, priKeyDKS, priKeyDKS, data, int(s.t))
+	return dss.NewDSS(s.edSuite, nodePrivKey.Secret, participants, priKeyDKS, priKeyDKS, data, int(s.t))
 }
 
 // SignShare signs the data with the own key share.
@@ -548,6 +558,16 @@ func (s *DKShareImpl) BlsRecoverMasterSignature(sigShares [][]byte, data []byte)
 // NOTE: Not used. // TODO: Has to be used.
 func (s *DKShareImpl) BlsVerifyMasterSignature(data, signature []byte) error {
 	return bdn.Verify(s.blsSuite, s.blsSharedPublic, data, signature)
+}
+
+// BlsSign considers partial key as a key and signs the specified message.
+func (s *DKShareImpl) BlsSign(data []byte) ([]byte, error) {
+	return bdn.Sign(s.blsSuite, s.blsPrivateShare, data)
+}
+
+// BlsVerify checks a signature made with BlsSign. It ignores the threshold sig aspects.
+func (s *DKShareImpl) BlsVerify(signer kyber.Point, data, signature []byte) error {
+	return bdn.Verify(s.blsSuite, signer, data, signature)
 }
 
 ///////////////////////// Test support functions.

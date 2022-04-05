@@ -21,8 +21,11 @@ func TestMarshaling(t *testing.T) {
 	randomness := random.New()
 
 	nodePubKeys := make([]*cryptolib.PublicKey, 10)
+	nodeSecKeys := make([]*cryptolib.PrivateKey, 10)
 	for i := range nodePubKeys {
-		nodePubKeys[i] = cryptolib.NewKeyPair().GetPublicKey()
+		keyPair := cryptolib.NewKeyPair()
+		nodePubKeys[i] = keyPair.GetPublicKey()
+		nodeSecKeys[i] = keyPair.GetPrivateKey()
 	}
 
 	edPts := make([]kyber.Point, 10)
@@ -42,6 +45,7 @@ func TestMarshaling(t *testing.T) {
 		index,                                   // index
 		10,                                      // n
 		7,                                       // t
+		nodeSecKeys[7],                          // nodePrivKey
 		nodePubKeys,                             // nodePubKeys
 		edSuite,                                 // edSuite
 		edSuite.Point().Pick(randomness),        // edSharedPublic

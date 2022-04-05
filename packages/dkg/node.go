@@ -16,10 +16,9 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
-	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/eddsa"
-	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
 )
 
 type NodeProvider func() *Node
@@ -225,36 +224,6 @@ func (n *Node) GenerateDistributedKey(
 		}
 		edPublicShares[i] = pubShareResponses[i].edPublicShare
 		blsPublicShares[i] = pubShareResponses[i].blsPublicShare
-		{ // Verify Ed25519 key signatures.
-			var edPubShareBytes []byte
-			if edPubShareBytes, err = pubShareResponses[i].edPublicShare.MarshalBinary(); err != nil {
-				return nil, err
-			}
-			err = schnorr.Verify(
-				n.edSuite,
-				pubShareResponses[i].edPublicShare,
-				edPubShareBytes,
-				pubShareResponses[i].edSignature,
-			)
-			if err != nil {
-				return nil, err
-			}
-		}
-		{ // Verify the BLS key signatures.
-			var blsPubShareBytes []byte
-			if blsPubShareBytes, err = pubShareResponses[i].blsPublicShare.MarshalBinary(); err != nil {
-				return nil, err
-			}
-			err = bdn.Verify(
-				n.blsSuite,
-				pubShareResponses[i].blsPublicShare,
-				blsPubShareBytes,
-				pubShareResponses[i].blsSignature,
-			)
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
 	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, edSharedPublic)
 	//
@@ -274,6 +243,7 @@ func (n *Node) GenerateDistributedKey(
 		sharedAddress,
 		peerCount,
 		threshold,
+		n.identity.GetPrivateKey(),
 		peerPubs,
 		n.edSuite,
 		edSharedPublic,
@@ -282,6 +252,37 @@ func (n *Node) GenerateDistributedKey(
 		blsSharedPublic,
 		blsPublicShares,
 	)
+	for i := range pubShareResponses {
+		// { // Verify Ed25519 key signatures. // TODO: XXX: Can we check the partial keys in this way?
+		// 	var edPubShareBytes []byte
+		// 	if edPubShareBytes, err = pubShareResponses[i].edPublicShare.MarshalBinary(); err != nil {
+		// 		return nil, err
+		// 	}
+		// 	err = schnorr.Verify(
+		// 		n.edSuite,
+		// 		pubShareResponses[i].edPublicShare,
+		// 		edPubShareBytes,
+		// 		pubShareResponses[i].edSignature,
+		// 	)
+		// 	if err != nil {
+		// 		return nil, xerrors.Errorf("failed to verify DSS signature: %w", err)
+		// 	}
+		// }
+		{ // Verify the BLS key signatures.
+			var blsPubShareBytes []byte
+			if blsPubShareBytes, err = pubShareResponses[i].blsPublicShare.MarshalBinary(); err != nil {
+				return nil, err
+			}
+			err = dkShare.BlsVerify(
+				pubShareResponses[i].blsPublicShare,
+				blsPubShareBytes,
+				pubShareResponses[i].blsSignature,
+			)
+			if err != nil {
+				return nil, xerrors.Errorf("failed to verify BLS signature: %w", err)
+			}
+		}
+	}
 	return dkShare, nil
 }
 
