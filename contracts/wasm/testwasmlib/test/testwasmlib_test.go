@@ -64,7 +64,7 @@ var (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	*wasmsolo.TsWasm = true
+	*wasmsolo.RsWasm = true
 	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 }
 

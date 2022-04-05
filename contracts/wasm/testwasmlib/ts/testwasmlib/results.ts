@@ -128,6 +128,66 @@ export class MutableArrayOfStringMapValueResults extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableBigIntAddResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntAddResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class ImmutableBigIntDivResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntDivResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class ImmutableBigIntModResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntModResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class ImmutableBigIntMulResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntMulResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class ImmutableBigIntSubResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntSubResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
 export class ImmutableBlockRecordResults extends wasmtypes.ScProxy {
 	record(): wasmtypes.ScImmutableBytes {
 		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultRecord));

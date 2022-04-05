@@ -66,6 +66,11 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_ARRAY_OF_STRING_ARRAY_LENGTH,
     	VIEW_ARRAY_OF_STRING_ARRAY_VALUE,
     	VIEW_ARRAY_OF_STRING_MAP_VALUE,
+    	VIEW_BIG_INT_ADD,
+    	VIEW_BIG_INT_DIV,
+    	VIEW_BIG_INT_MOD,
+    	VIEW_BIG_INT_MUL,
+    	VIEW_BIG_INT_SUB,
     	VIEW_BLOCK_RECORD,
     	VIEW_BLOCK_RECORDS,
     	VIEW_GET_RANDOM,
@@ -111,6 +116,11 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_array_of_string_array_length_thunk,
     	view_array_of_string_array_value_thunk,
     	view_array_of_string_map_value_thunk,
+    	view_big_int_add_thunk,
+    	view_big_int_div_thunk,
+    	view_big_int_mod_thunk,
+    	view_big_int_mul_thunk,
+    	view_big_int_sub_thunk,
     	view_block_record_thunk,
     	view_block_records_thunk,
     	view_get_random_thunk,
@@ -750,6 +760,106 @@ fn view_array_of_string_map_value_thunk(ctx: &ScViewContext) {
 	view_array_of_string_map_value(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testwasmlib.viewArrayOfStringMapValue ok");
+}
+
+pub struct BigIntAddContext {
+	params: ImmutableBigIntAddParams,
+	results: MutableBigIntAddResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_add_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntAdd");
+	let f = BigIntAddContext {
+		params: ImmutableBigIntAddParams { proxy: params_proxy() },
+		results: MutableBigIntAddResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	view_big_int_add(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntAdd ok");
+}
+
+pub struct BigIntDivContext {
+	params: ImmutableBigIntDivParams,
+	results: MutableBigIntDivResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_div_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntDiv");
+	let f = BigIntDivContext {
+		params: ImmutableBigIntDivParams { proxy: params_proxy() },
+		results: MutableBigIntDivResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	view_big_int_div(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntDiv ok");
+}
+
+pub struct BigIntModContext {
+	params: ImmutableBigIntModParams,
+	results: MutableBigIntModResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_mod_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntMod");
+	let f = BigIntModContext {
+		params: ImmutableBigIntModParams { proxy: params_proxy() },
+		results: MutableBigIntModResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	view_big_int_mod(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntMod ok");
+}
+
+pub struct BigIntMulContext {
+	params: ImmutableBigIntMulParams,
+	results: MutableBigIntMulResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_mul_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntMul");
+	let f = BigIntMulContext {
+		params: ImmutableBigIntMulParams { proxy: params_proxy() },
+		results: MutableBigIntMulResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	view_big_int_mul(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntMul ok");
+}
+
+pub struct BigIntSubContext {
+	params: ImmutableBigIntSubParams,
+	results: MutableBigIntSubResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_sub_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntSub");
+	let f = BigIntSubContext {
+		params: ImmutableBigIntSubParams { proxy: params_proxy() },
+		results: MutableBigIntSubResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	view_big_int_sub(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntSub ok");
 }
 
 pub struct BlockRecordContext {

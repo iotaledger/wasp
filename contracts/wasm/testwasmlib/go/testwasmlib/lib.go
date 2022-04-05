@@ -45,6 +45,11 @@ var exportMap = wasmlib.ScExportMap{
 		ViewArrayOfStringArrayLength,
 		ViewArrayOfStringArrayValue,
 		ViewArrayOfStringMapValue,
+		ViewBigIntAdd,
+		ViewBigIntDiv,
+		ViewBigIntMod,
+		ViewBigIntMul,
+		ViewBigIntSub,
 		ViewBlockRecord,
 		ViewBlockRecords,
 		ViewGetRandom,
@@ -90,6 +95,11 @@ var exportMap = wasmlib.ScExportMap{
 		viewArrayOfStringArrayLengthThunk,
 		viewArrayOfStringArrayValueThunk,
 		viewArrayOfStringMapValueThunk,
+		viewBigIntAddThunk,
+		viewBigIntDivThunk,
+		viewBigIntModThunk,
+		viewBigIntMulThunk,
+		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
 		viewGetRandomThunk,
@@ -851,6 +861,141 @@ func viewArrayOfStringMapValueThunk(ctx wasmlib.ScViewContext) {
 	viewArrayOfStringMapValue(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewArrayOfStringMapValue ok")
+}
+
+type BigIntAddContext struct {
+	Params  ImmutableBigIntAddParams
+	Results MutableBigIntAddResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntAddThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntAdd")
+	results := wasmlib.NewScDict()
+	f := &BigIntAddContext{
+		Params: ImmutableBigIntAddParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntAddResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Rhs().Exists(), "missing mandatory rhs")
+	viewBigIntAdd(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntAdd ok")
+}
+
+type BigIntDivContext struct {
+	Params  ImmutableBigIntDivParams
+	Results MutableBigIntDivResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntDivThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntDiv")
+	results := wasmlib.NewScDict()
+	f := &BigIntDivContext{
+		Params: ImmutableBigIntDivParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntDivResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Rhs().Exists(), "missing mandatory rhs")
+	viewBigIntDiv(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntDiv ok")
+}
+
+type BigIntModContext struct {
+	Params  ImmutableBigIntModParams
+	Results MutableBigIntModResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntModThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntMod")
+	results := wasmlib.NewScDict()
+	f := &BigIntModContext{
+		Params: ImmutableBigIntModParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntModResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Rhs().Exists(), "missing mandatory rhs")
+	viewBigIntMod(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntMod ok")
+}
+
+type BigIntMulContext struct {
+	Params  ImmutableBigIntMulParams
+	Results MutableBigIntMulResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntMulThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntMul")
+	results := wasmlib.NewScDict()
+	f := &BigIntMulContext{
+		Params: ImmutableBigIntMulParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntMulResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Rhs().Exists(), "missing mandatory rhs")
+	viewBigIntMul(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntMul ok")
+}
+
+type BigIntSubContext struct {
+	Params  ImmutableBigIntSubParams
+	Results MutableBigIntSubResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntSubThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntSub")
+	results := wasmlib.NewScDict()
+	f := &BigIntSubContext{
+		Params: ImmutableBigIntSubParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntSubResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Rhs().Exists(), "missing mandatory rhs")
+	viewBigIntSub(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntSub ok")
 }
 
 type BlockRecordContext struct {

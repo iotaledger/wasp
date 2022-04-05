@@ -99,7 +99,7 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
     f.results.int_value().set_value(ret_val);
 }
 
-pub fn func_send_to_address(ctx: &ScFuncContext, f: &SendToAddressContext) {
+pub fn func_send_to_address(_ctx: &ScFuncContext, _f: &SendToAddressContext) {
     // let balances = ScTransfers::from_balances(ctx.balances());
     // ctx.send(&f.params.address().value(), &balances);
 }
@@ -158,11 +158,6 @@ pub fn func_test_event_log_generic_data(ctx: &ScFuncContext, f: &TestEventLogGen
 pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext) {
     ctx.panic(MSG_FULL_PANIC);
 }
-
-// pub fn func_withdraw_to_chain(ctx: &ScFuncContext, f: &WithdrawToChainContext) {
-//     let xx = coreaccounts::ScFuncs::withdraw(ctx);
-//     xx.func.post_to_chain(f.params.chain_id().value());
-// }
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {
     ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
@@ -265,7 +260,7 @@ pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackConte
     ctx.send(&caller.address(), &transfer);
 }
 
-pub fn func_send_large_request(ctx: &ScFuncContext, f: &SendLargeRequestContext) {
+pub fn func_send_large_request(_ctx: &ScFuncContext, _f: &SendLargeRequestContext) {
 }
 
 pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
@@ -307,7 +302,7 @@ pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNative
     }
 }
 
-pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContext) {
+pub fn func_withdraw_from_chain(_ctx: &ScFuncContext, _f: &WithdrawFromChainContext) {
 }
 
 pub fn view_infinite_loop_view(_ctx: &ScViewContext, _f: &InfiniteLoopViewContext) {
