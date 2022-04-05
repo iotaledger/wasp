@@ -280,7 +280,7 @@ func WrapIotaAllowance(allowance iscp.Allowance) IotaAllowance {
 	nftIds := make([]IotaNFTID, 0)
 
 	for _, nft := range allowance.NFTs {
-		nftIds = append(nftIds, WrapISCNFTID(nft))
+		nftIds = append(nftIds, WrapIotaNFTID(nft))
 	}
 
 	ret := IotaAllowance{
