@@ -131,7 +131,7 @@ func (r *Impl) SaveDKShare(dkShare tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
+func (r *Impl) LoadDKShare(sharedAddress iotago.Address, nodePrivKey *cryptolib.PrivateKey) (tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
@@ -139,7 +139,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite())
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), nodePrivKey)
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {

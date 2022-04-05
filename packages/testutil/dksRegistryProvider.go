@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
@@ -32,10 +33,10 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
+func (p *DkgRegistryProvider) LoadDKShare(sharedAddress iotago.Address, nodePrivKey *cryptolib.PrivateKey) (tcrypto.DKShare, error) {
 	dkShareBytes := p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.String())
 	}
-	return tcrypto.DKShareFromBytes(dkShareBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite())
+	return tcrypto.DKShareFromBytes(dkShareBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), nodePrivKey)
 }

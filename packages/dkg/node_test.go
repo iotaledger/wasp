@@ -14,10 +14,13 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3/sign/dss"
 )
 
 // TestBasic checks if DKG procedure is executed successfully in a common case.
@@ -27,8 +30,8 @@ func TestBasic(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	timeout := 100 * time.Second
-	var threshold uint16 = 3 // TODO: 10
-	var peerCount uint16 = 3 // TODO: 10
+	var threshold uint16 = 10
+	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
@@ -39,10 +42,11 @@ func TestBasic(t *testing.T) {
 	//
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider()
+		registries[i] = testutil.NewDkgRegistryProvider()
 		dkgNode, err := dkg.NewNode(
-			peerIdentities[i], networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -60,6 +64,27 @@ func TestBasic(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, dkShare.GetAddress())
 	require.NotNil(t, dkShare.GetSharedPublic())
+	//
+	// Aggregate the signatures.
+	dataToSign := []byte{112, 117, 116, 105, 110, 32, 99, 104, 117, 105, 108, 111, 33}
+	require.NoError(t, err)
+	dssPartSigs := make([]*dss.PartialSig, len(peerNetIDs))
+	var aggrDks tcrypto.DKShare
+	for i, r := range registries {
+		dks, err := r.LoadDKShare(dkShare.GetAddress(), peerIdentities[i].GetPrivateKey())
+		if i == 0 {
+			aggrDks = dks
+		}
+		require.NoError(t, err)
+		dssPartSigs[i], err = dks.SignShare(dataToSign)
+		require.NoError(t, err)
+	}
+	aggrSig, err := aggrDks.RecoverMasterSignature(dssPartSigs, dataToSign)
+	require.NoError(t, err)
+	require.NotNil(t, aggrSig)
+	require.True(t, aggrDks.GetSharedPublicAsCryptoLib().Verify(dataToSign, aggrSig))
+
+	// TODO: XXX: Validate the BLS signature.
 }
 
 // TestUnreliableNet checks, if DKG runs on an unreliable network.
@@ -91,9 +116,9 @@ func TestUnreliableNet(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider()
+		dksReg := testutil.NewDkgRegistryProvider()
 		dkgNode, err := dkg.NewNode(
-			peerIdentities[i], networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], dksReg,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -134,9 +159,9 @@ func TestLowN(t *testing.T) {
 		// Initialize the DKG subsystem in each node.
 		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
-			registry := testutil.NewDkgRegistryProvider()
+			dksReg := testutil.NewDkgRegistryProvider()
 			dkgNode, err := dkg.NewNode(
-				peerIdentities[i], networkProviders[i], registry,
+				peerIdentities[i], networkProviders[i], dksReg,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 			)
 			require.NoError(t, err)

@@ -5,6 +5,7 @@ package registry
 
 import (
 	"errors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -22,7 +23,7 @@ type NodeIdentityProvider interface {
 // It should be implemented by registry.impl
 type DKShareRegistryProvider interface {
 	SaveDKShare(dkShare tcrypto.DKShare) error
-	LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error)
+	LoadDKShare(sharedAddress iotago.Address, nodePrivKey *cryptolib.PrivateKey) (tcrypto.DKShare, error)
 }
 
 var ErrDKShareNotFound = errors.New("dkShare not found")

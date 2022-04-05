@@ -60,7 +60,7 @@ func TestMarshaling(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite)
+	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodeSecKeys[7])
 	require.NoError(t, err)
 	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
 }

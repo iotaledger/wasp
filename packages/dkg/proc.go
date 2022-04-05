@@ -581,13 +581,13 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 			p.dkgLock.Unlock()
 			return nil, fmt.Errorf("DKG procedure is not finished")
 		}
-		var distKeyShareE *rabin_dkg.DistKeyShare
-		var distKeyShareB *rabin_dkg.DistKeyShare
-		if distKeyShareE, err = p.dkgImpl[keySetTypeEd25519].DistKeyShare(); err != nil {
+		var distKeyShareDSS *rabin_dkg.DistKeyShare
+		var distKeyShareBLS *rabin_dkg.DistKeyShare
+		if distKeyShareDSS, err = p.dkgImpl[keySetTypeEd25519].DistKeyShare(); err != nil {
 			p.dkgLock.Unlock()
 			return nil, err
 		}
-		if distKeyShareB, err = p.dkgImpl[keySetTypeBLS].DistKeyShare(); err != nil {
+		if distKeyShareBLS, err = p.dkgImpl[keySetTypeBLS].DistKeyShare(); err != nil {
 			p.dkgLock.Unlock()
 			return nil, err
 		}
@@ -595,11 +595,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 		//
 		// Save the needed info.
 		groupSize := uint16(len(p.netGroup.AllNodes()))
-		ownIndex := uint16(distKeyShareE.PriShare().I)
-		publicSharesE := make([]kyber.Point, groupSize)
-		publicSharesE[ownIndex] = p.node.edSuite.Point().Mul(distKeyShareE.PriShare().V, nil)
-		publicSharesB := make([]kyber.Point, groupSize)
-		publicSharesB[ownIndex] = p.node.blsSuite.Point().Mul(distKeyShareB.PriShare().V, nil)
+		ownIndex := uint16(distKeyShareDSS.PriShare().I)
+		publicSharesDSS := make([]kyber.Point, groupSize)
+		publicSharesDSS[ownIndex] = p.node.edSuite.Point().Mul(distKeyShareDSS.PriShare().V, nil)
+		publicSharesBLS := make([]kyber.Point, groupSize)
+		publicSharesBLS[ownIndex] = p.node.blsSuite.Point().Mul(distKeyShareBLS.PriShare().V, nil)
 		p.dkShare, err = tcrypto.NewDKShare(
 			ownIndex,                        // Index
 			groupSize,                       // N
@@ -607,15 +607,15 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 			p.node.identity.GetPrivateKey(), // NodePrivKey
 			p.nodePubKeys(),                 // NodePubKeys
 			p.node.edSuite,                  // Ed25519: Suite
-			distKeyShareE.Public(),          // Ed25519: SharedPublic
-			distKeyShareE.Commits,           // Ed25519: PublicCommits
-			publicSharesE,                   // Ed25519: PublicShares
-			distKeyShareE.PriShare().V,      // Ed25519: PrivateShare
+			distKeyShareDSS.Public(),        // Ed25519: SharedPublic
+			distKeyShareDSS.Commits,         // Ed25519: PublicCommits
+			publicSharesDSS,                 // Ed25519: PublicShares
+			distKeyShareDSS.PriShare().V,    // Ed25519: PrivateShare
 			p.node.blsSuite,                 // BLS: Suite
-			distKeyShareB.Public(),          // BLS: SharedPublic
-			distKeyShareB.Commits,           // BLS: PublicCommits
-			publicSharesB,                   // BLS: PublicShares
-			distKeyShareB.PriShare().V,      // BLS: PrivateShare
+			distKeyShareBLS.Public(),        // BLS: SharedPublic
+			distKeyShareBLS.Commits,         // BLS: PublicCommits
+			publicSharesBLS,                 // BLS: PublicShares
+			distKeyShareBLS.PriShare().V,    // BLS: PrivateShare
 		)
 		if err != nil {
 			return nil, err

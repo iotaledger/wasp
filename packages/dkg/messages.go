@@ -460,6 +460,8 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
+	//
+	// edPubShares
 	var arrLen uint16
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
@@ -471,6 +473,11 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.edPubShares: %w", err)
 		}
 	}
+	//
+	// blsPubShares
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
 	m.blsPubShares = make([]kyber.Point, arrLen)
 	for i := range m.blsPubShares {
 		m.blsPubShares[i] = m.blsSuite.Point()
@@ -481,7 +488,7 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorDoneMsg) fromBytes(buf []byte, edSuite kyber.Group, blsSuite kyber.Group) error {
+func (m *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.edSuite = edSuite
 	m.blsSuite = blsSuite
@@ -534,10 +541,10 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
+	if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
+		return err
+	}
 	{ // Ed25519 part.
-		if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
-			return err
-		}
 		if err = util.WriteMarshaled(w, m.edSharedPublic); err != nil {
 			return err
 		}
@@ -567,16 +574,18 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
+	//
+	// SharedAddress.
+	var sharedAddressBin []byte
+	var sharedAddress iotago.Address
+	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
+		return err
+	}
+	m.sharedAddress = sharedAddress
 	{ // Ed25519 part.
-		var sharedAddressBin []byte
-		var sharedAddress iotago.Address
-		if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
-			return err
-		}
-		m.sharedAddress = sharedAddress
 		m.edSharedPublic = m.edSuite.Point()
 		if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
 			return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)

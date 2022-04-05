@@ -134,9 +134,9 @@ func NewDKSharePublic(
 }
 
 // DKShareFromBytes reads DKShare from bytes.
-func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite) (*DKShareImpl, error) {
+func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePrivKey *cryptolib.PrivateKey) (*DKShareImpl, error) {
 	r := bytes.NewReader(buf)
-	s := DKShareImpl{edSuite: edSuite, blsSuite: blsSuite}
+	s := DKShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
 	if err := s.Read(r); err != nil {
 		return nil, err
 	}
@@ -406,6 +406,18 @@ func (s *DKShareImpl) SetPublicShares(edPublicShares, blsPublicShares []kyber.Po
 
 func (s *DKShareImpl) GetSharedPublic() kyber.Point {
 	return s.edSharedPublic
+}
+
+func (s *DKShareImpl) GetSharedPublicAsCryptoLib() *cryptolib.PublicKey {
+	pubKeyBytes, err := s.edSharedPublic.MarshalBinary()
+	if err != nil {
+		panic(xerrors.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to serialize: %w", err))
+	}
+	pubKeyCL, err := cryptolib.NewPublicKeyFromBytes(pubKeyBytes)
+	if err != nil {
+		panic(xerrors.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to deserialize: %w", err))
+	}
+	return pubKeyCL
 }
 
 func (s *DKShareImpl) GetPublicShares() []kyber.Point {

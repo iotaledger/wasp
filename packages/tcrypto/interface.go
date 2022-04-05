@@ -25,6 +25,7 @@ type DKShare interface {
 	//
 	// Schnorr based crypto (for L1 signatures).
 	GetSharedPublic() kyber.Point
+	GetSharedPublicAsCryptoLib() *cryptolib.PublicKey
 	GetPublicShares() []kyber.Point
 	// GetPrivateShare() kyber.Scalar // TODO: remove it.
 	SignShare(data []byte) (*dss.PartialSig, error)
