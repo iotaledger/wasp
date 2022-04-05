@@ -180,6 +180,36 @@ type ArrayOfStringMapValueCall struct {
 	Results ImmutableArrayOfStringMapValueResults
 }
 
+type BigIntAddCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntAddParams
+	Results ImmutableBigIntAddResults
+}
+
+type BigIntDivCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntDivParams
+	Results ImmutableBigIntDivResults
+}
+
+type BigIntModCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntModParams
+	Results ImmutableBigIntModResults
+}
+
+type BigIntMulCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntMulParams
+	Results ImmutableBigIntMulResults
+}
+
+type BigIntSubCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntSubParams
+	Results ImmutableBigIntSubResults
+}
+
 type BlockRecordCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableBlockRecordParams
@@ -420,6 +450,41 @@ func (sc Funcs) ArrayOfStringArrayValue(ctx wasmlib.ScViewCallContext) *ArrayOfS
 
 func (sc Funcs) ArrayOfStringMapValue(ctx wasmlib.ScViewCallContext) *ArrayOfStringMapValueCall {
 	f := &ArrayOfStringMapValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayOfStringMapValue)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntAdd(ctx wasmlib.ScViewCallContext) *BigIntAddCall {
+	f := &BigIntAddCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntAdd)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntDiv(ctx wasmlib.ScViewCallContext) *BigIntDivCall {
+	f := &BigIntDivCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntDiv)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntMod(ctx wasmlib.ScViewCallContext) *BigIntModCall {
+	f := &BigIntModCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntMod)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntMul(ctx wasmlib.ScViewCallContext) *BigIntMulCall {
+	f := &BigIntMulCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntMul)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntSub(ctx wasmlib.ScViewCallContext) *BigIntSubCall {
+	f := &BigIntSubCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntSub)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

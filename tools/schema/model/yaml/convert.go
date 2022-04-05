@@ -2,6 +2,7 @@ package yaml
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
@@ -76,7 +77,7 @@ func (n *Node) ToDefElt() *model.DefElt {
 func (n *Node) ToDefMap() model.DefMap {
 	defs := make(model.DefMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
@@ -95,7 +96,7 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 	defs := make(model.DefMapMap)
 	for _, yamlKey := range n.Contents {
 		// TODO better parsing
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
@@ -118,7 +119,8 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 func (n *Node) ToFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
@@ -140,7 +142,7 @@ func (n *Node) ToFuncDef() model.FuncDef {
 func (n *Node) ToFuncDefMap() model.FuncDefMap {
 	defs := make(model.FuncDefMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}

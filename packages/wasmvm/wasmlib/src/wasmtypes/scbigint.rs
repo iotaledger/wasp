@@ -82,6 +82,29 @@ impl ScBigInt {
     }
 
     pub fn div_mod(&self, rhs: &ScBigInt) -> (ScBigInt, ScBigInt) {
+        if rhs.is_zero() {
+            panic("divide by zero");
+        }
+        let cmp = self.cmp(rhs);
+        if cmp <= 0 {
+            if cmp < 0 {
+                // divide by larger value, quo = 0, rem = lhs
+                return (ScBigInt::new(), self.clone());
+            }
+            // divide equal values, quo = 1, rem = 0
+            return (ScBigInt::from_uint64(1), ScBigInt::new());
+        }
+        if self.is_uint64() {
+            // let standard uint64 type do the heavy lifting
+            let lhs64 = self.uint64();
+            let rhs64 = rhs.uint64();
+            let div = ScBigInt::from_uint64(lhs64 / rhs64);
+            return (div, ScBigInt::from_uint64(lhs64 % rhs64));
+        }
+        if rhs.bytes.len() == 1 && rhs.bytes[0] == 1 {
+            // divide by 1, quo = lhs, rem = 0
+            return (self.clone(), ScBigInt::new());
+        }
         panic("implement DivMod");
         (self.clone(), rhs.clone())
     }
@@ -105,6 +128,17 @@ impl ScBigInt {
         if lhs_len < rhs_len {
             // always multiply bigger value by smaller value
             return rhs.mul(self);
+        }
+        if lhs_len+rhs_len <= SC_UINT64_LENGTH {
+            return ScBigInt::from_uint64(self.uint64() * rhs.uint64());
+        }
+        if rhs_len == 0 {
+            // multiply by zero, result zero
+            return ScBigInt::new();
+        }
+        if rhs_len == 1 && rhs.bytes[0] == 1 {
+            // multiply by one, result lhs
+            return self.clone();
         }
         panic("implement Mul");
         self.clone()
@@ -193,10 +227,14 @@ pub fn big_int_to_bytes(value: &ScBigInt) -> Vec<u8> {
     value.bytes.to_vec()
 }
 
-pub fn big_int_to_string(_value: &ScBigInt) -> String {
-    // TODO standardize human readable string
-    panic("implement BigIntToString");
-    return "".to_string();
+pub fn big_int_to_string(value: &ScBigInt) -> String {
+    if value.is_uint64() {
+        return uint64_to_string(value.uint64());
+    }
+    let (div,modulo) = value.div_mod(&ScBigInt::from_uint64(1_000_000_000_000_000_000));
+    let digits = uint64_to_string(modulo.uint64());
+    let zeroes = &"000000000000000000"[..18-digits.len()];
+    return big_int_to_string(&div) + zeroes + &digits;
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

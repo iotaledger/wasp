@@ -73,7 +73,29 @@ func (o ScBigInt) Div(rhs ScBigInt) ScBigInt {
 }
 
 func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
-	panic("implement DivMod")
+	if rhs.IsZero() {
+		panic("divide by zero")
+	}
+	cmp := o.Cmp(rhs)
+	if cmp <= 0 {
+		if cmp < 0 {
+			// divide by larger value, quo = 0, rem = lhs
+			return NewScBigInt(), o
+		}
+		// divide equal values, quo = 1, rem = 0
+		return NewScBigInt(1), NewScBigInt()
+	}
+	if o.IsUint64() {
+		// let standard uint64 type do the heavy lifting
+		lhs64 := o.Uint64()
+		rhs64 := rhs.Uint64()
+		return NewScBigInt(lhs64 / rhs64), NewScBigInt(lhs64 % rhs64)
+	}
+	if len(rhs.bytes) == 1 && rhs.bytes[0] == 1 {
+		// divide by 1, quo = lhs, rem = 0
+		return o, NewScBigInt()
+	}
+	panic("implement rest of DivMod")
 	// return o, rhs
 }
 
@@ -97,7 +119,19 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 		// always multiply bigger value by smaller value
 		return rhs.Mul(o)
 	}
-	panic("implement Mul")
+	if lhsLen+rhsLen <= ScUint64Length {
+		return NewScBigInt(o.Uint64() * rhs.Uint64())
+	}
+	if rhsLen == 0 {
+		// multiply by zero, result zero
+		return NewScBigInt()
+	}
+	if rhsLen == 1 && rhs.bytes[0] == 1 {
+		// multiply by one, result lhs
+		return o
+	}
+	panic("implement rest of Mul")
+	// multiply uint32 chunks
 	// return o
 }
 
@@ -172,8 +206,13 @@ func BigIntToBytes(value ScBigInt) []byte {
 }
 
 func BigIntToString(value ScBigInt) string {
-	// TODO standardize human readable string
-	panic("implement BigIntToString")
+	if value.IsUint64() {
+		return Uint64ToString(value.Uint64())
+	}
+	div, modulo := value.DivMod(NewScBigInt(1_000_000_000_000_000_000))
+	digits := Uint64ToString(modulo.Uint64())
+	zeroes := "000000000000000000"[:18-len(digits)]
+	return BigIntToString(div) + zeroes + digits
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -956,6 +956,156 @@ impl MutableArrayOfStringMapValueParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBigIntAddParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntAddParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntAddParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntAddParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntDivParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntDivParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntDivParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntDivParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntModParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntModParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntModParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntModParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntMulParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntMulParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntMulParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntMulParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntSubParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntSubParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntSubParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntSubParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableBlockRecordParams {
 	pub(crate) proxy: Proxy,
 }

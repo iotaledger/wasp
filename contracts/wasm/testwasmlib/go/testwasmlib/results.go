@@ -169,6 +169,86 @@ func (s MutableArrayOfStringMapValueResults) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultValue))
 }
 
+type ImmutableBigIntAddResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntAddResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntAddResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntAddResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type ImmutableBigIntDivResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntDivResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntDivResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntDivResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type ImmutableBigIntModResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntModResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntModResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntModResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type ImmutableBigIntMulResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntMulResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntMulResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntMulResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type ImmutableBigIntSubResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntSubResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntSubResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntSubResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
 type ImmutableBlockRecordResults struct {
 	proxy wasmtypes.Proxy
 }

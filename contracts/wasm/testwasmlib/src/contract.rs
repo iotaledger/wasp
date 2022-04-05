@@ -181,6 +181,36 @@ pub struct ArrayOfStringMapValueCall {
 	pub results: ImmutableArrayOfStringMapValueResults,
 }
 
+pub struct BigIntAddCall {
+	pub func: ScView,
+	pub params: MutableBigIntAddParams,
+	pub results: ImmutableBigIntAddResults,
+}
+
+pub struct BigIntDivCall {
+	pub func: ScView,
+	pub params: MutableBigIntDivParams,
+	pub results: ImmutableBigIntDivResults,
+}
+
+pub struct BigIntModCall {
+	pub func: ScView,
+	pub params: MutableBigIntModParams,
+	pub results: ImmutableBigIntModResults,
+}
+
+pub struct BigIntMulCall {
+	pub func: ScView,
+	pub params: MutableBigIntMulParams,
+	pub results: ImmutableBigIntMulResults,
+}
+
+pub struct BigIntSubCall {
+	pub func: ScView,
+	pub params: MutableBigIntSubParams,
+	pub results: ImmutableBigIntSubResults,
+}
+
 pub struct BlockRecordCall {
 	pub func: ScView,
 	pub params: MutableBlockRecordParams,
@@ -521,6 +551,61 @@ impl ScFuncs {
             func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_STRING_MAP_VALUE),
             params: MutableArrayOfStringMapValueParams { proxy: Proxy::nil() },
             results: ImmutableArrayOfStringMapValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_add(_ctx: &dyn ScViewCallContext) -> BigIntAddCall {
+        let mut f = BigIntAddCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_ADD),
+            params: MutableBigIntAddParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntAddResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_div(_ctx: &dyn ScViewCallContext) -> BigIntDivCall {
+        let mut f = BigIntDivCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_DIV),
+            params: MutableBigIntDivParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntDivResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_mod(_ctx: &dyn ScViewCallContext) -> BigIntModCall {
+        let mut f = BigIntModCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_MOD),
+            params: MutableBigIntModParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntModResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_mul(_ctx: &dyn ScViewCallContext) -> BigIntMulCall {
+        let mut f = BigIntMulCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_MUL),
+            params: MutableBigIntMulParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntMulResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_sub(_ctx: &dyn ScViewCallContext) -> BigIntSubCall {
+        let mut f = BigIntSubCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_SUB),
+            params: MutableBigIntSubParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntSubResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

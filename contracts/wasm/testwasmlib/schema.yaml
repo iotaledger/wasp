@@ -275,6 +275,41 @@ views:
     results:
       valueAddr: Address
 
+  bigIntAdd:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntDiv:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntMod:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntMul:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntSub:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
   blockRecord:
     params:
       blockIndex: Uint32

@@ -33,12 +33,14 @@ const (
 	ParamInt8        = "int8"
 	ParamKey         = "key"
 	ParamKeyAddr     = "keyAddr"
+	ParamLhs         = "lhs"
 	ParamName        = "name"
 	ParamNameAddr    = "nameAddr"
 	ParamNftID       = "nftID"
 	ParamParam       = "this"
 	ParamRecordIndex = "recordIndex"
 	ParamRequestID   = "requestID"
+	ParamRhs         = "rhs"
 	ParamString      = "string"
 	ParamTokenID     = "tokenID"
 	ParamUint16      = "uint16"
@@ -55,6 +57,7 @@ const (
 	ResultLength    = "length"
 	ResultRandom    = "random"
 	ResultRecord    = "record"
+	ResultRes       = "res"
 	ResultValue     = "value"
 	ResultValueAddr = "valueAddr"
 )
@@ -107,6 +110,11 @@ const (
 	ViewArrayOfStringArrayLength       = "arrayOfStringArrayLength"
 	ViewArrayOfStringArrayValue        = "arrayOfStringArrayValue"
 	ViewArrayOfStringMapValue          = "arrayOfStringMapValue"
+	ViewBigIntAdd                      = "bigIntAdd"
+	ViewBigIntDiv                      = "bigIntDiv"
+	ViewBigIntMod                      = "bigIntMod"
+	ViewBigIntMul                      = "bigIntMul"
+	ViewBigIntSub                      = "bigIntSub"
 	ViewBlockRecord                    = "blockRecord"
 	ViewBlockRecords                   = "blockRecords"
 	ViewGetRandom                      = "getRandom"
@@ -151,6 +159,11 @@ const (
 	HViewArrayOfStringArrayLength       = wasmtypes.ScHname(0x3eb0d035)
 	HViewArrayOfStringArrayValue        = wasmtypes.ScHname(0xf2b0f6c8)
 	HViewArrayOfStringMapValue          = wasmtypes.ScHname(0x8b35543c)
+	HViewBigIntAdd                      = wasmtypes.ScHname(0x2b2c5e52)
+	HViewBigIntDiv                      = wasmtypes.ScHname(0x84b2dadd)
+	HViewBigIntMod                      = wasmtypes.ScHname(0x4bbefd01)
+	HViewBigIntMul                      = wasmtypes.ScHname(0x976cc699)
+	HViewBigIntSub                      = wasmtypes.ScHname(0xf3c8cd33)
 	HViewBlockRecord                    = wasmtypes.ScHname(0xad13b2f8)
 	HViewBlockRecords                   = wasmtypes.ScHname(0x16e249ea)
 	HViewGetRandom                      = wasmtypes.ScHname(0x46263045)
