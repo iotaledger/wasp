@@ -13,17 +13,15 @@ import (
 
 // DkgRegistryProvider stands for a mock for dkg.DKShareRegistryProvider.
 type DkgRegistryProvider struct {
-	DB    map[string][]byte
-	Suite tcrypto.Suite
+	DB map[string][]byte
 }
 
 var _ registry.DKShareRegistryProvider = &DkgRegistryProvider{}
 
 // NewDkgRegistryProvider creates new mocked DKG registry provider.
-func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider {
+func NewDkgRegistryProvider() *DkgRegistryProvider {
 	return &DkgRegistryProvider{
-		DB:    map[string][]byte{},
-		Suite: suite,
+		DB: map[string][]byte{},
 	}
 }
 
@@ -39,5 +37,5 @@ func (p *DkgRegistryProvider) LoadDKShare(sharedAddress iotago.Address) (tcrypto
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.String())
 	}
-	return tcrypto.DKShareFromBytes(dkShareBytes, p.Suite)
+	return tcrypto.DKShareFromBytes(dkShareBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite())
 }

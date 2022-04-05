@@ -15,7 +15,7 @@ import (
 )
 
 func TestCommitteeBasic(t *testing.T) {
-	suite := tcrypto.DefaultSuite()
+	suite := tcrypto.DefaultBlsSuite()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	nodeCount := 4
