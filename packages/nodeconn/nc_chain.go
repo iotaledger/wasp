@@ -87,7 +87,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 			}
 		}
 	}()
-
+	// TODO promote/re-attach logic is missing (cannot be blocking, like the PostTx func)
 	return nil
 }
 
@@ -100,7 +100,10 @@ func (ncc *ncChain) queryChainUTXOs() {
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
 	for _, query := range queries {
-		res, err := ncc.nc.indexerClient.Outputs(ncc.nc.ctx, query)
+		// TODO what should be an adequate timeout for each of these queries?
+		ctxWithTimeout, cancelContext := newCtx()
+		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
+		cancelContext()
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)
 			continue
@@ -185,7 +188,10 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 
 	//
 	// Then fetch all the existing unspent outputs owned by the chain.
-	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ncc.nc.ctx, *ncc.chainID.AsAliasID())
+	// TODO what should be an adequate timeout for this query?
+	ctxWithTimeout, cancelContext := newCtx()
+	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
+	cancelContext()
 	if err != nil {
 		ncc.log.Panicf("error while fetching chain state output: %v", err)
 	}

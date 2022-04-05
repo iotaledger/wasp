@@ -81,12 +81,12 @@ func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) 
 		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
 	}
 
-	mqttClient, err := nodeAPIClient.EventAPI(ctx)
+	mqttClient, err := nodeAPIClient.EventAPI(ctxWithTimeout)
 	if err != nil {
 		panic(xerrors.Errorf("error getting node event client: %w", err))
 	}
 
-	indexerClient, err := nodeAPIClient.Indexer(ctx)
+	indexerClient, err := nodeAPIClient.Indexer(ctxWithTimeout)
 	if err != nil {
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
