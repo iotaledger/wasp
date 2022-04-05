@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -58,24 +57,22 @@ func (ncc *ncChain) Close() {
 	// Nothing. The ncc.nc.ctx is used for that.
 }
 
-func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
+func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
+	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	defer cancelContext()
+
+	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
+	if err != nil {
+		return err
+	}
 	txID, err := tx.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to get a tx ID: %w", err)
-	}
-	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
-	if err != nil {
-		return xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = ncc.nc.nodeAPIClient.SubmitMessage(ncc.nc.ctx, txMsg, ncc.nc.l1params.DeSerializationParameters)
-	if err != nil {
-		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
 	txMsgID, err := txMsg.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to extract a tx message ID: %w", err)
 	}
-	ncc.log.Infof("Posted TX Message: messageID=%v", txMsgID)
 
 	//
 	// TODO: Move it to `nc_transaction.go`
@@ -91,7 +88,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 		}
 	}()
 
-	return ncc.nc.waitUntilConfirmed(ncc.nc.ctx, txMsg)
+	return nil
 }
 
 func (ncc *ncChain) queryChainUTXOs() {

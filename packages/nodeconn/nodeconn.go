@@ -205,6 +205,19 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nil
 }
 
+func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Message, error) {
+	// Build a message and post it.
+	txMsg, err := builder.NewMessageBuilder().Payload(tx).Build()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
+	}
+	txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, nc.l1params.DeSerializationParameters)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
+	}
+	return txMsg, nil
+}
+
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
 // waitUntilConfirmed waits until a given tx message is confirmed, it takes care of promotions/re-attachments for that message
