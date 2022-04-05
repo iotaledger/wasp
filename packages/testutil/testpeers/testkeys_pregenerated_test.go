@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 )
 
 func TestPregenerateDKS(t *testing.T) {
@@ -50,10 +49,10 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 		if i > 0 {
 			// Remove it here to make serialized object smaller.
 			// Will restore it from dks[0].
-			dki.PublicCommits = make([]kyber.Point, 0)
-			dki.PublicShares = make([]kyber.Point, 0)
+			dki.ClearCommonData()
 		}
-		dki.NodePubKeys = make([]*cryptolib.PublicKey, 0)
+		// NodePubKeys will be set in the tests again, so we remove them here to save space.
+		dki.AssignNodePubKeys(make([]*cryptolib.PublicKey, 0))
 		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}
