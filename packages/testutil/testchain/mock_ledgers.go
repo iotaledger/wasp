@@ -1,6 +1,7 @@
 package testchain
 
 import (
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -16,6 +17,7 @@ type MockedLedgers struct {
 	stateAddress iotago.Address
 	milestones   *events.Event
 	log          *logger.Logger
+	mutex        sync.Mutex
 }
 
 func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLedgers {
@@ -33,6 +35,9 @@ func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLe
 }
 
 func (mlT *MockedLedgers) GetLedger(chainID *iscp.ChainID) *MockedLedger {
+	mlT.mutex.Lock()
+	defer mlT.mutex.Unlock()
+
 	result, ok := mlT.ledgers[chainID.Key()]
 	if !ok {
 		mlT.log.Debugf("New ledger for chain address %s created", chainID)
@@ -68,6 +73,9 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 }
 
 func (mlT *MockedLedgers) SetPushOutputToNodesNeeded(flag bool) {
+	mlT.mutex.Lock()
+	defer mlT.mutex.Unlock()
+
 	for _, ledger := range mlT.ledgers {
 		ledger.SetPushOutputToNodesNeeded(flag)
 	}
