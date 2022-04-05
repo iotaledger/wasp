@@ -25,6 +25,7 @@ type DKShare interface {
 	//
 	// Schnorr based crypto (for L1 signatures).
 	GetSharedPublic() kyber.Point
+	GetSharedPublicAsCryptoLib() *cryptolib.PublicKey
 	GetPublicShares() []kyber.Point
 	// GetPrivateShare() kyber.Scalar // TODO: remove it.
 	SignShare(data []byte) (*dss.PartialSig, error)
@@ -39,6 +40,8 @@ type DKShare interface {
 	BlsVerifySigShare(data []byte, sigshare tbls.SigShare) error
 	BlsRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error)
 	BlsVerifyMasterSignature(data, signature []byte) error
+	BlsSign(data []byte) ([]byte, error)                        // Non-threshold variant.
+	BlsVerify(signer kyber.Point, data, signature []byte) error // Non-threshold variant.
 	//
 	// For tests only.
 	AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey)

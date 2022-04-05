@@ -51,7 +51,8 @@ const (
 	rabinSecretCommitsMsgType      byte = rabinMsgFrom + 3
 	rabinComplaintCommitsMsgType   byte = rabinMsgFrom + 4
 	rabinReconstructCommitsMsgType byte = rabinMsgFrom + 5
-	rabinMsgTill                   byte = rabinMsgFrom + 6 // Just a placeholder for first unallocated message type.
+	rabinMultiKeySetMsgType        byte = rabinMsgFrom + 6 // TODO: Maybe we only need this one?
+	rabinMsgTill                   byte = rabinMsgFrom + 7 // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol, messages repeatedly sent
 	// in response to duplicated messages from other peers. They should be treated
@@ -459,6 +460,8 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
+	//
+	// edPubShares
 	var arrLen uint16
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
@@ -470,6 +473,11 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.edPubShares: %w", err)
 		}
 	}
+	//
+	// blsPubShares
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
 	m.blsPubShares = make([]kyber.Point, arrLen)
 	for i := range m.blsPubShares {
 		m.blsPubShares[i] = m.blsSuite.Point()
@@ -480,7 +488,7 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorDoneMsg) fromBytes(buf []byte, edSuite kyber.Group, blsSuite kyber.Group) error {
+func (m *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.edSuite = edSuite
 	m.blsSuite = blsSuite
@@ -533,10 +541,10 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
+	if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
+		return err
+	}
 	{ // Ed25519 part.
-		if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
-			return err
-		}
 		if err = util.WriteMarshaled(w, m.edSharedPublic); err != nil {
 			return err
 		}
@@ -566,16 +574,18 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
+	//
+	// SharedAddress.
+	var sharedAddressBin []byte
+	var sharedAddress iotago.Address
+	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
+		return err
+	}
+	m.sharedAddress = sharedAddress
 	{ // Ed25519 part.
-		var sharedAddressBin []byte
-		var sharedAddress iotago.Address
-		if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
-			return err
-		}
-		m.sharedAddress = sharedAddress
 		m.edSharedPublic = m.edSuite.Point()
 		if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
 			return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
@@ -1197,6 +1207,134 @@ func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
+}
+
+// multiKeySetMsg wraps messages of different protocol instances (for different key set types).
+// It is needed to cope with the round synchronization.
+type multiKeySetMsg struct {
+	step      byte
+	edMsg     *peering.PeerMessageData
+	blsMsg    *peering.PeerMessageData
+	peeringID peering.PeeringID // Transient.
+	receiver  byte              // Transient.
+	msgType   byte              // Transient.
+}
+
+func (m *multiKeySetMsg) MsgType() byte {
+	return m.msgType
+}
+
+func (m *multiKeySetMsg) Step() byte {
+	return m.step
+}
+
+func (m *multiKeySetMsg) SetStep(step byte) {
+	m.step = step
+}
+
+func (m *multiKeySetMsg) Write(w io.Writer) error {
+	if err := util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, m.edMsg.MsgData); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, m.blsMsg.MsgData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *multiKeySetMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	m.edMsg = &peering.PeerMessageData{
+		PeeringID:   m.peeringID,
+		MsgReceiver: m.receiver,
+		MsgType:     m.msgType,
+		MsgData:     nil, // Assigned below.
+	}
+	if m.edMsg.MsgData, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	m.blsMsg = &peering.PeerMessageData{
+		PeeringID:   m.peeringID,
+		MsgReceiver: m.receiver,
+		MsgType:     m.msgType,
+		MsgData:     nil, // Assigned below.
+	}
+	if m.blsMsg.MsgData, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, receiver, msgType byte) error {
+	rdr := bytes.NewReader(buf)
+	m.peeringID = peeringID
+	m.receiver = receiver
+	m.msgType = msgType
+	return m.Read(rdr)
+}
+
+func (m *multiKeySetMsg) mustDataBytes() []byte {
+	buf := bytes.Buffer{}
+	if err := m.Write(&buf); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
+}
+
+type multiKeySetMsgs map[uint16]*multiKeySetMsg
+
+func (m multiKeySetMsgs) GetEdMsgs() map[uint16]*peering.PeerMessageData {
+	res := make(map[uint16]*peering.PeerMessageData)
+	for i := range m {
+		res[i] = m[i].edMsg
+	}
+	return res
+}
+
+func (m multiKeySetMsgs) GetBlsMsgs() map[uint16]*peering.PeerMessageData {
+	res := make(map[uint16]*peering.PeerMessageData)
+	for i := range m {
+		res[i] = m[i].blsMsg
+	}
+	return res
+}
+
+func (m multiKeySetMsgs) AddEdMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
+	for i := range msgs {
+		if msg, ok := m[i]; ok {
+			msg.edMsg = msgs[i]
+		} else {
+			m[i] = &multiKeySetMsg{
+				step:      step,
+				peeringID: msgs[i].PeeringID,
+				receiver:  msgs[i].MsgReceiver,
+				msgType:   msgs[i].MsgType,
+				edMsg:     msgs[i],
+			}
+		}
+	}
+}
+
+func (m multiKeySetMsgs) AddBlsMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
+	for i := range msgs {
+		if msg, ok := m[i]; ok {
+			msg.blsMsg = msgs[i]
+		} else {
+			m[i] = &multiKeySetMsg{
+				step:      step,
+				peeringID: msgs[i].PeeringID,
+				receiver:  msgs[i].MsgReceiver,
+				msgType:   msgs[i].MsgType,
+				blsMsg:    msgs[i],
+			}
+		}
+	}
 }
 
 //
