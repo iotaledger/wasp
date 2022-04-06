@@ -32,11 +32,11 @@ type ImmutableMemberParams struct {
 }
 
 // address of dividend recipient
-// relative division factor
 func (s ImmutableMemberParams) Address() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
+// relative division factor
 func (s ImmutableMemberParams) Factor() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamFactor))
 }
@@ -46,11 +46,11 @@ type MutableMemberParams struct {
 }
 
 // address of dividend recipient
-// relative division factor
 func (s MutableMemberParams) Address() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }
 
+// relative division factor
 func (s MutableMemberParams) Factor() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamFactor))
 }

@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package yaml
 
 import (
@@ -6,11 +9,11 @@ import (
 
 func Parse(in []byte) *Node {
 	var root Node
-	var path []*Node = []*Node{&root} // Nodes in each hierarchy
-	var indentList []int = []int{0}   // the list of indent space numbers in the current code block
+	path := []*Node{&root} // Nodes in each hierarchy
+	indentList := []int{0} // the list of indent space numbers in the current code block
 	lines := strings.Split(strings.ReplaceAll(string(in), "\r\n", "\n"), "\n")
 
-	var prevIndent, curIndent int = -1, 0
+	prevIndent, curIndent := -1, 0
 	var comment string
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
@@ -97,9 +100,8 @@ func getComment(line string) (string, string) {
 	idx := strings.Index(line, "#")
 	if idx != -1 {
 		return line[:idx], line[idx:]
-	} else {
-		return line, ""
 	}
+	return line, ""
 }
 
 func getLevel(indent int, path []int) int {

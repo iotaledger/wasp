@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package yaml
 
 import (
@@ -124,7 +127,6 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 func (n *Node) ToFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	for _, yamlKey := range n.Contents {
-
 		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue

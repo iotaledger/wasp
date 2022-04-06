@@ -14,26 +14,26 @@ type ImmutableDonationResults struct {
 }
 
 // amount donated
-// who donated
-// error to be reported to donator if anything goes wrong
-// the feedback for the person donated to
-// when the donation took place
 func (s ImmutableDonationResults) Amount() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAmount))
 }
 
+// who donated
 func (s ImmutableDonationResults) Donator() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultDonator))
 }
 
+// error to be reported to donator if anything goes wrong
 func (s ImmutableDonationResults) Error() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultError))
 }
 
+// the feedback for the person donated to
 func (s ImmutableDonationResults) Feedback() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultFeedback))
 }
 
+// when the donation took place
 func (s ImmutableDonationResults) Timestamp() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultTimestamp))
 }
@@ -43,26 +43,26 @@ type MutableDonationResults struct {
 }
 
 // amount donated
-// who donated
-// error to be reported to donator if anything goes wrong
-// the feedback for the person donated to
-// when the donation took place
 func (s MutableDonationResults) Amount() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAmount))
 }
 
+// who donated
 func (s MutableDonationResults) Donator() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultDonator))
 }
 
+// error to be reported to donator if anything goes wrong
 func (s MutableDonationResults) Error() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultError))
 }
 
+// the feedback for the person donated to
 func (s MutableDonationResults) Feedback() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultFeedback))
 }
 
+// when the donation took place
 func (s MutableDonationResults) Timestamp() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultTimestamp))
 }

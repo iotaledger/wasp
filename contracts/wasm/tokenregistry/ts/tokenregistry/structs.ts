@@ -9,18 +9,12 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Token {
 	created     : u64 = 0; // creation timestamp
-// description what minted token represents
-// original minter
-// current owner
-// amount of tokens originally minted
-// last update timestamp
-// any user defined text
-	description : string = ""; 
-	mintedBy    : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
-	owner       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
-	supply      : u64 = 0; 
-	updated     : u64 = 0; 
-	userDefined : string = ""; 
+	description : string = ""; // description what minted token represents
+	mintedBy    : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); // original minter
+	owner       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); // current owner
+	supply      : u64 = 0; // amount of tokens originally minted
+	updated     : u64 = 0; // last update timestamp
+	userDefined : string = ""; // any user defined text
 
 	static fromBytes(buf: u8[]): Token {
 		const dec = new wasmtypes.WasmDecoder(buf);

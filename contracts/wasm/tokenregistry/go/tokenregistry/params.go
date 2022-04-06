@@ -14,11 +14,11 @@ type ImmutableMintSupplyParams struct {
 }
 
 // description what minted token represents
-// any user defined text
 func (s ImmutableMintSupplyParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
 
+// any user defined text
 func (s ImmutableMintSupplyParams) UserDefined() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamUserDefined))
 }
@@ -28,11 +28,11 @@ type MutableMintSupplyParams struct {
 }
 
 // description what minted token represents
-// any user defined text
 func (s MutableMintSupplyParams) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
 
+// any user defined text
 func (s MutableMintSupplyParams) UserDefined() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamUserDefined))
 }
