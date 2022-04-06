@@ -45,5 +45,6 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: latest
+          version: 1.44.2
           args: --timeout 5m0s
+          #skip-cache: true
