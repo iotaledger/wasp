@@ -26,9 +26,9 @@ import (
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	log         *logger.Logger
-	store       kvstore.KVStore
-	nodePrivKey *cryptolib.PrivateKey
+	log          *logger.Logger
+	store        kvstore.KVStore
+	nodeIdentity *cryptolib.KeyPair
 }
 
 var _ NodeIdentityProvider = &Impl{}
@@ -36,12 +36,33 @@ var _ DKShareRegistryProvider = &Impl{}
 var _ ChainRecordRegistryProvider = &Impl{}
 
 // New creates new instance of the registry implementation.
-func NewRegistry(log *logger.Logger, store kvstore.KVStore, nodePrivKey *cryptolib.PrivateKey) *Impl {
-	return &Impl{
-		log:         log.Named("registry"),
-		store:       store,
-		nodePrivKey: nodePrivKey,
+func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
+	result := &Impl{
+		log:   log.Named("registry"),
+		store: store,
 	}
+	// Read or create node identity - private/public key pair
+	dbKey := dbKeyForNodeIdentity()
+	exists, _ := result.store.Has(dbKey)
+	if !exists {
+		result.nodeIdentity = cryptolib.NewKeyPair()
+		data := result.nodeIdentity.GetPrivateKey().AsBytes()
+		result.log.Info("Node identity key pair generated.")
+		if err := result.store.Set(dbKey, data); err != nil {
+			result.log.Error("Generated node identity cannot be stored: %v", err)
+		}
+	}
+	data, err := result.store.Get(dbKey)
+	if err != nil {
+		result.log.Panicf("Cannot read node identity: %v", err)
+	}
+	privateKey, err := cryptolib.NewPrivateKeyFromBytes(data)
+	if err != nil {
+		result.log.Panicf("Cannot read create private key from read node identity: %v", err)
+	}
+	result.nodeIdentity = cryptolib.NewKeyPairFromPrivateKey(privateKey)
+
+	return result
 }
 
 // endregion ////////////////////////////////////////////////////////
@@ -145,7 +166,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), r.nodePrivKey)
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), r.nodeIdentity.GetPrivateKey())
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
@@ -288,41 +309,13 @@ func (r *Impl) HasBlob(h hashing.HashValue) (bool, error) {
 // region NodeIdentity //////////////////////////////////////////
 
 // GetNodeIdentity implements NodeIdentityProvider.
-func (r *Impl) GetNodeIdentity() (*cryptolib.KeyPair, error) {
-	var err error
-	var pair *cryptolib.KeyPair
-	dbKey := dbKeyForNodeIdentity()
-	var exists bool
-	var data []byte
-	exists, _ = r.store.Has(dbKey)
-	if !exists {
-		pair = cryptolib.NewKeyPair()
-		data = pair.GetPrivateKey().AsBytes()
-		if err := r.store.Set(dbKey, data); err != nil {
-			return nil, err
-		}
-		r.log.Info("Node identity key pair generated.")
-		return pair, nil
-	}
-	if data, err = r.store.Get(dbKey); err != nil {
-		return nil, err
-	}
-	privateKey, err := cryptolib.NewPrivateKeyFromBytes(data)
-	if err != nil {
-		return nil, err
-	}
-	pair = cryptolib.NewKeyPairFromPrivateKey(privateKey)
-	return pair, nil
+func (r *Impl) GetNodeIdentity() *cryptolib.KeyPair {
+	return r.nodeIdentity
 }
 
 // GetNodePublicKey implements NodeIdentityProvider.
-func (r *Impl) GetNodePublicKey() (*cryptolib.PublicKey, error) {
-	var err error
-	var pair *cryptolib.KeyPair
-	if pair, err = r.GetNodeIdentity(); err != nil {
-		return pair.GetPublicKey(), err // cannot be nil
-	}
-	return pair.GetPublicKey(), nil
+func (r *Impl) GetNodePublicKey() *cryptolib.PublicKey {
+	return r.GetNodeIdentity().GetPublicKey()
 }
 
 func dbKeyForNodeIdentity() []byte {
