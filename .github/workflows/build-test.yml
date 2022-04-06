@@ -13,7 +13,7 @@ jobs:
         run: sudo apt-get install libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev
 
       - name: Set up Go 1.x
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v2
         with:
           go-version: 1.16
         id: go
@@ -34,7 +34,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v2
         with:
           go-version: 1.16
         id: go
