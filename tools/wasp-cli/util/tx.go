@@ -26,7 +26,7 @@ func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*iscp.OffLedgerReques
 func WithSCTransaction(chainID *iscp.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
 	tx, err := f()
 	log.Check(err)
-	logTx(tx, chainID)
+	logTx(tx)
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
@@ -36,22 +36,21 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*iotago.Transaction, err
 	return tx
 }
 
-func logTx(tx *iotago.Transaction, chainID *iscp.ChainID) {
-	panic("TODO implement")
-	// var reqs []iscp.RequestID
-	// if chainID != nil {
-	// 	reqs = request.RequestsInTransaction(chainID, tx)
-	// }
-	// if len(reqs) == 0 {
-	// 	log.Printf("Posted on-ledger transaction %s\n", tx.ID().Base58())
-	// } else {
-	// 	plural := ""
-	// 	if len(reqs) != 1 {
-	// 		plural = "s"
-	// 	}
-	// 	log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", tx.ID().Base58(), len(reqs), plural)
-	// 	for i, reqID := range reqs {
-	// 		log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], reqID.Base58())
-	// 	}
-	// }
+func logTx(tx *iotago.Transaction) {
+	reqs, err := iscp.RequestsInTransaction(tx)
+	log.Check(err)
+	txid, err := tx.ID()
+	log.Check(err)
+	if len(reqs) == 0 {
+		log.Printf("Posted on-ledger transaction %s\n", txid)
+	} else {
+		plural := ""
+		if len(reqs) != 1 {
+			plural = "s"
+		}
+		log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", txid, len(reqs), plural)
+		for i, reqID := range reqs {
+			log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], reqID)
+		}
+	}
 }

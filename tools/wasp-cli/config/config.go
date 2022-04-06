@@ -80,6 +80,10 @@ func L1Client() nodeconn.L1Client {
 	)
 }
 
+func L1NetworkPrefix() iotago.NetworkPrefix {
+	return L1Client().L1Params().Bech32Prefix
+}
+
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())
@@ -176,24 +180,4 @@ func defaultWaspPort(kind string, i int) int {
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
 	log.Check(viper.WriteConfig())
-}
-
-func TrySCAddress(scAlias string) iotago.Address {
-	panic("TODO implement")
-	// b58 := viper.GetString("sc." + scAlias + ".address")
-	// if b58 == "" {
-	// 	return nil
-	// }
-	// address, err := iotago.AddressFromBase58EncodedString(b58)
-	// log.Check(err)
-	// return address
-}
-
-func GetSCAddress(scAlias string) iotago.Address {
-	panic("TODO implement")
-	// address := TrySCAddress(scAlias)
-	// if address == nil {
-	// 	log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
-	// }
-	// return address
 }
