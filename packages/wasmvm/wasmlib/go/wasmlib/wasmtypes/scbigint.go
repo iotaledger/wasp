@@ -11,9 +11,14 @@ func NewScBigInt(value ...uint64) ScBigInt {
 	if len(value) == 0 {
 		return ScBigInt{}
 	}
-	o := ScBigInt{}
-	o.SetUint64(value[0])
-	return o
+	return normalize(Uint64ToBytes(value[0]))
+}
+
+func normalize(buf []byte) ScBigInt {
+	bufLen := len(buf)
+	for ; bufLen > 0 && buf[bufLen-1] == 0; bufLen-- {
+	}
+	return ScBigInt{bytes: buf[:bufLen]}
 }
 
 func (o ScBigInt) Add(rhs ScBigInt) ScBigInt {
@@ -24,21 +29,22 @@ func (o ScBigInt) Add(rhs ScBigInt) ScBigInt {
 		return rhs.Add(o)
 	}
 
+	buf := make([]byte, lhsLen)
 	carry := uint16(0)
 	for i := 0; i < rhsLen; i++ {
 		carry += uint16(o.bytes[i]) + uint16(rhs.bytes[i])
-		o.bytes[i] = byte(carry)
+		buf[i] = byte(carry)
 		carry >>= 8
 	}
 	for i := rhsLen; carry != 0 && i < lhsLen; i++ {
 		carry += uint16(o.bytes[i])
-		o.bytes[i] = byte(carry)
+		buf[i] = byte(carry)
 		carry >>= 8
 	}
 	if carry != 0 {
-		o.bytes = append(o.bytes, 1)
+		buf = append(buf, 1)
 	}
-	return o
+	return normalize(buf)
 }
 
 func (o ScBigInt) Bytes() []byte {
@@ -95,6 +101,7 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 		// divide by 1, quo = lhs, rem = 0
 		return o, NewScBigInt()
 	}
+	// TODO
 	panic("implement rest of DivMod")
 	// return o, rhs
 }
@@ -130,22 +137,19 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 		// multiply by one, result lhs
 		return o
 	}
-	panic("implement rest of Mul")
-	// multiply uint32 chunks
-	// return o
-}
 
-func (o *ScBigInt) normalize() {
-	buf := o.bytes
-	bufLen := len(buf)
-	for ; bufLen > 0 && buf[bufLen-1] == 0; bufLen-- {
+	// TODO optimize by using u32 words instead of u8 words
+	buf := make([]byte, lhsLen+rhsLen)
+	for r := 0; r < rhsLen; r++ {
+		carry := uint16(0)
+		for l := 0; l < lhsLen; l++ {
+			carry += uint16(buf[l+r]) + uint16(o.bytes[l])*uint16(rhs.bytes[r])
+			buf[l+r] = byte(carry)
+			carry >>= 8
+		}
+		buf[r+lhsLen] = byte(carry)
 	}
-	o.bytes = buf[:bufLen]
-}
-
-func (o *ScBigInt) SetUint64(value uint64) {
-	o.bytes = Uint64ToBytes(value)
-	o.normalize()
+	return normalize(buf)
 }
 
 func (o ScBigInt) String() string {
@@ -163,19 +167,19 @@ func (o ScBigInt) Sub(rhs ScBigInt) ScBigInt {
 	lhsLen := len(o.bytes)
 	rhsLen := len(rhs.bytes)
 
+	buf := make([]byte, lhsLen)
 	borrow := uint16(0)
 	for i := 0; i < rhsLen; i++ {
 		borrow += uint16(o.bytes[i]) - uint16(rhs.bytes[i])
-		o.bytes[i] = byte(borrow)
+		buf[i] = byte(borrow)
 		borrow >>= 8
 	}
-	for i := rhsLen; borrow != 0 && i < lhsLen; i++ {
+	for i := rhsLen; i < lhsLen; i++ {
 		borrow += uint16(o.bytes[i])
-		o.bytes[i] = byte(borrow)
+		buf[i] = byte(borrow)
 		borrow >>= 8
 	}
-	o.normalize()
-	return o
+	return normalize(buf)
 }
 
 func (o ScBigInt) Uint64() uint64 {

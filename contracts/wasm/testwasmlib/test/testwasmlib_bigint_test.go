@@ -22,7 +22,7 @@ func TestBigAdd(t *testing.T) {
 	require.False(t, res.IsZero())
 	require.EqualValues(t, "2", res.String())
 
-	for lhs := 3; lhs < 1000000; lhs = lhs*2 + 1 {
+	for lhs := 3; lhs < 10_000_000; lhs = lhs*2 + 1 {
 		for rhs := 1; rhs < lhs; rhs = rhs*2 + 1 {
 			bigAdd64(t, ctx, uint64(lhs), uint64(rhs))
 		}
@@ -39,7 +39,7 @@ func TestBigSub(t *testing.T) {
 	require.True(t, res.IsZero())
 	require.EqualValues(t, "0", res.String())
 
-	for lhs := 3; lhs < 1000000; lhs = lhs*2 + 1 {
+	for lhs := 3; lhs < 10_000_000; lhs = lhs*2 + 1 {
 		for rhs := 1; rhs < lhs; rhs = rhs*2 + 1 {
 			bigSub64(t, ctx, uint64(lhs), uint64(rhs))
 		}
@@ -56,7 +56,7 @@ func TestBigMul(t *testing.T) {
 	require.False(t, res.IsZero())
 	require.EqualValues(t, "1", res.String())
 
-	for lhs := 3; lhs < 1000000; lhs = lhs*2 + 1 {
+	for lhs := 3; lhs < 10_000_000; lhs = lhs*2 + 1 {
 		for rhs := 1; rhs < lhs; rhs = rhs*2 + 1 {
 			bigMul64(t, ctx, uint64(lhs), uint64(rhs))
 		}
@@ -73,7 +73,7 @@ func TestBigDiv(t *testing.T) {
 	require.False(t, res.IsZero())
 	require.EqualValues(t, "1", res.String())
 
-	for lhs := 3; lhs < 1000000; lhs = lhs*2 + 1 {
+	for lhs := 3; lhs < 10_000_000; lhs = lhs*2 + 1 {
 		for rhs := 1; rhs < lhs; rhs = rhs*2 + 1 {
 			bigDiv64(t, ctx, uint64(lhs), uint64(rhs))
 		}
@@ -90,7 +90,7 @@ func TestBigMod(t *testing.T) {
 	require.True(t, res.IsZero())
 	require.EqualValues(t, "0", res.String())
 
-	for lhs := 3; lhs < 1000000; lhs = lhs*2 + 1 {
+	for lhs := 3; lhs < 10_000_000; lhs = lhs*2 + 1 {
 		for rhs := 1; rhs < lhs; rhs = rhs*2 + 1 {
 			bigMod64(t, ctx, uint64(lhs), uint64(rhs))
 		}
