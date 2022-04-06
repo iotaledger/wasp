@@ -104,7 +104,7 @@ func NewCommonSubset(
 		ID:         uint64(ownIndex),
 		Nodes:      nodes,
 		BatchSize:  0, // Unused in ACS.
-		CommonCoin: commoncoin.NewBlsCommonCoin(dkShare, salt[:], allRandom),
+		CommonCoin: commoncoin.NewBLSCommonCoin(dkShare, salt[:], allRandom),
 	}
 	cs := CommonSubset{
 		impl:               hbbft.NewACS(acsCfg),
@@ -522,7 +522,7 @@ func (b *msgBatch) Write(w io.Writer) error {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].epoch: %w", i, err)
 				}
 			case *hbbft.CCRequest:
-				coinMsg := abaMsgPayload.Payload.(*commoncoin.BlsCommonCoinMsg)
+				coinMsg := abaMsgPayload.Payload.(*commoncoin.BLSCommonCoinMsg)
 				if err = util.WriteByte(w, acsMsgTypeAbaCCRequest); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].type: %w", i, err)
 				}
@@ -685,7 +685,7 @@ func (b *msgBatch) Read(r io.Reader) error {
 			if err = util.ReadUint16(r, &epoch); err != nil {
 				return xerrors.Errorf("failed to read msgBatch.msgs[%v].epoch: %w", mi, err)
 			}
-			var ccReq commoncoin.BlsCommonCoinMsg
+			var ccReq commoncoin.BLSCommonCoinMsg
 			if err = ccReq.Read(r); err != nil {
 				return xerrors.Errorf("failed to read msgBatch.msgs[%v].Payload: %w", mi, err)
 			}

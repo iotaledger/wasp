@@ -20,6 +20,8 @@ PATHS=(\
     "packages/evm/jsonrpc/jsonrpctest" \
     "packages/dashboard" \
     "packages/nodeconn" \
+    "packages/tcrypto/..." \
+    "packages/dkg/..." \
     "packages/testutil/privtangle" \
 )
 WD=$PWD

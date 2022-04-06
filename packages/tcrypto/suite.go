@@ -20,6 +20,6 @@ func DefaultEd25519Suite() suites.Suite {
 	return suites.MustFind("Ed25519")
 }
 
-func DefaultBlsSuite() Suite {
+func DefaultBLSSuite() Suite {
 	return pairing.NewSuiteBn256()
 }

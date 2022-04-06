@@ -44,7 +44,7 @@ func TestBasic(t *testing.T) {
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registries[i] = testutil.NewDkgRegistryProvider()
+		registries[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -72,28 +72,28 @@ func TestBasic(t *testing.T) {
 	blsPartSigs := make([][]byte, len(peerNetIDs))
 	var aggrDks tcrypto.DKShare
 	for i, r := range registries {
-		dks, err := r.LoadDKShare(dkShare.GetAddress(), peerIdentities[i].GetPrivateKey())
+		dks, err := r.LoadDKShare(dkShare.GetAddress())
 		if i == 0 {
 			aggrDks = dks
 		}
 		require.NoError(t, err)
-		dssPartSigs[i], err = dks.SignShare(dataToSign)
+		dssPartSigs[i], err = dks.DSSSignShare(dataToSign)
 		require.NoError(t, err)
-		blsPartSigs[i], err = dks.BlsSignShare(dataToSign)
+		blsPartSigs[i], err = dks.BLSSignShare(dataToSign)
 		require.NoError(t, err)
 	}
 	//
 	// Aggregate the signatures: check the DSS signature.
-	dssAggrSig, err := aggrDks.RecoverMasterSignature(dssPartSigs, dataToSign)
+	dssAggrSig, err := aggrDks.DSSRecoverMasterSignature(dssPartSigs, dataToSign)
 	require.NoError(t, err)
 	require.NotNil(t, dssAggrSig)
-	require.True(t, aggrDks.GetSharedPublicAsCryptoLib().Verify(dataToSign, dssAggrSig))
+	require.True(t, aggrDks.GetSharedPublic().Verify(dataToSign, dssAggrSig))
 	//
 	// Aggregate the signatures: check the BLS signature.
-	blsAggrSig, err := aggrDks.BlsRecoverMasterSignature(blsPartSigs, dataToSign)
+	blsAggrSig, err := aggrDks.BLSRecoverMasterSignature(blsPartSigs, dataToSign)
 	require.NoError(t, err)
 	require.NotNil(t, blsAggrSig)
-	require.NoError(t, aggrDks.BlsVerifyMasterSignature(dataToSign, blsAggrSig.Signature[:]))
+	require.NoError(t, aggrDks.BLSVerifyMasterSignature(dataToSign, blsAggrSig.Signature[:]))
 }
 
 // TestUnreliableNet checks, if DKG runs on an unreliable network.
@@ -125,7 +125,7 @@ func TestUnreliableNet(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		dksReg := testutil.NewDkgRegistryProvider()
+		dksReg := testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], dksReg,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -168,7 +168,7 @@ func TestLowN(t *testing.T) {
 		// Initialize the DKG subsystem in each node.
 		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
-			dksReg := testutil.NewDkgRegistryProvider()
+			dksReg := testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 			dkgNode, err := dkg.NewNode(
 				peerIdentities[i], networkProviders[i], dksReg,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),

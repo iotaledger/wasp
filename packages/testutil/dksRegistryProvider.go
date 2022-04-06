@@ -40,5 +40,5 @@ func (p *DkgRegistryProvider) LoadDKShare(sharedAddress iotago.Address) (tcrypto
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.String())
 	}
-	return tcrypto.DKShareFromBytes(dkShareBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), p.nodePrivKey)
+	return tcrypto.DKShareFromBytes(dkShareBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), p.nodePrivKey)
 }
