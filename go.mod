@@ -20,8 +20,8 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/iotaledger/hive.go v0.0.0-20220323112142-b879f04276bd
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220401090040-5d344ed99192
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220406082310-fa38df493f6b
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220406103521-d6b913603253
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect
 	github.com/klauspost/cpuid v1.3.1 // indirect
