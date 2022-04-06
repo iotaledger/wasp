@@ -1,7 +1,6 @@
 package util
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,21 +12,24 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
 )
-
-// TODO: address is currently being encoded in HEX, should it be bech32? if so, where should the prefix come from?
 
 //nolint:funlen
 func ValueFromString(vtype, s string) []byte {
 	switch vtype {
 	case "address":
-		bytes, err := hex.DecodeString(s)
+		prefix, addr, err := iotago.ParseBech32(s)
 		log.Check(err)
-		return bytes
+		l1Prefix := config.L1NetworkPrefix()
+		if prefix != l1Prefix {
+			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
+		}
+		return iscp.BytesFromAddress(addr)
 	case "agentid":
-		agentid, err := iscp.NewAgentIDFromString(s)
+		agentid, err := iscp.NewAgentIDFromString(s, config.L1NetworkPrefix())
 		log.Check(err)
 		return agentid.Bytes()
 	case "bool":
@@ -101,11 +103,11 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		return addr.String()
+		return addr.Bech32(config.L1NetworkPrefix())
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
-		return aid.String()
+		return aid.String(config.L1NetworkPrefix())
 	case "bool":
 		b, err := codec.DecodeBool(v)
 		log.Check(err)
