@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -51,6 +52,7 @@ type ChainRequests interface {
 	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
 	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
 	DetachFromRequestProcessed(attachID *events.Closure)
+	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 }
 
 type ChainMetrics interface {
@@ -85,23 +87,24 @@ type (
 	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
 	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
 	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
-	NodeConnectionMilestonesHandlerFun      func(*iotagox.MilestonePointer)
+	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestonePointer)
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output))
-	UnregisterChain(chainAddr iotago.Address)
+	RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
+	UnregisterChain(chainID *iscp.ChainID)
 	//----------delimeter to appease linter
-	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
-	PullLatestOutput(chainAddr iotago.Address)
-	PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID)
-	PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput)
+	PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
+	PullLatestOutput(chainID *iscp.ChainID)
+	PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID)
+	PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
 	//----------delimeter to appease linter
-	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
+	AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
+	DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 	//----------delimeter to appease linter
+	L1Params() *parameters.L1
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
 }
@@ -115,6 +118,7 @@ type ChainNodeConnection interface {
 	DetachFromTxInclusionState()
 	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
 	DetachFromMilestones()
+	L1Params() *parameters.L1
 	Close()
 	//----------delimeter to appease linter
 	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error

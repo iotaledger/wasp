@@ -115,7 +115,11 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 	c.log.Debugf("handleAliasOutput: stateHash is %s", sh)
 
 	if (c.lastSeenOutputStateIndex == nil) || (*c.lastSeenOutputStateIndex < msgStateIndex) {
-		c.log.Debugf("handleAliasOutput: received newer output than the known one with index %v", *c.lastSeenOutputStateIndex)
+		if c.lastSeenOutputStateIndex == nil {
+			c.log.Debugf("handleAliasOutput: received initial state output")
+		} else {
+			c.log.Debugf("handleAliasOutput: received newer output than the known one with index %v", *c.lastSeenOutputStateIndex)
+		}
 		cmt := c.getCommittee()
 		if cmt != nil {
 			err = c.rotateCommitteeIfNeeded(msg, cmt)
@@ -170,6 +174,8 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus failed: %v", err)
 		}
 		c.log.Infof("RECREATED COMMITTEE for the state address %s", anchorOutputAddress)
+	} else {
+		c.log.Warnf("DKShare is nil, committee not created")
 	}
 	return nil
 }
@@ -180,6 +186,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID)
 	dkShare, err := c.getChainDKShare(anchorOutputAddress)
 	if err != nil {
 		if errors.Is(err, registry.ErrDKShareNotFound) {
+			c.log.Warnf("DKShare not found, committee not created")
 			return nil
 		}
 		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
@@ -190,6 +197,8 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID)
 			return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus failed %w", err)
 		}
 		c.log.Infof("CREATED COMMITTEE for the state address %s", anchorOutputAddress)
+	} else {
+		c.log.Warnf("DKShare is nil, committee not created")
 	}
 	return nil
 }

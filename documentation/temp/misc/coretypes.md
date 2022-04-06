@@ -53,7 +53,7 @@ and _hname_ of the contract (resulting in a 37 byte long value):
 <contract ID> = <chain ID> || <contract hname>
 ```
 
-The user-friendly representation of the contract ID is `<chain ID (base58)>::<hname (hex)>`.
+The user-friendly representation of the contract ID is `<chain ID (hex)>::<hname (hex)>`.
 For example: `2AxoLpidnriXtSif5NnXSWdt28fUb6VwVRjULdDoe6pZVw::cebf5908`.
 
 

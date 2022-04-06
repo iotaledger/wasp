@@ -7,6 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"golang.org/x/xerrors"
 )
@@ -74,7 +75,9 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	for _, f := range txb.invokedFoundries {
 		if f.requiresInput() {
 			ret.TotalIotasInDustDeposit += f.in.Amount
-			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).Set(f.in.CirculatingSupply)
+			simpleTokenScheme := util.MustTokenScheme(f.in.TokenScheme)
+			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).
+				Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
@@ -108,7 +111,8 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 			ret.TotalIotasInDustDeposit += f.out.Amount
 			id := f.out.MustNativeTokenID()
 			ret.TokenCirculatingSupplies[id] = big.NewInt(0)
-			ret.TokenCirculatingSupplies[id].Set(f.out.CirculatingSupply)
+			simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
+			ret.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 		}
 	}
 	for _, o := range txb.postedOutputs {

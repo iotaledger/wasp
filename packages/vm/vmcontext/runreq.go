@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"errors"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -17,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"

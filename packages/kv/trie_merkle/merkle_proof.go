@@ -2,11 +2,12 @@ package trie_merkle
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"io"
 )
 
 type Proof struct {
@@ -123,7 +124,7 @@ func (p *Proof) MustIsProofOfAbsence() bool {
 	return r == nil
 }
 
-// Validate check the proof agains the provided root commitments
+// Validate check the proof against the provided root commitments
 // if 'value' is specified, checks if commitment to that value is the terminal of the last element in path
 func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 	if len(p.Path) == 0 {
@@ -337,5 +338,4 @@ func (e *ProofElement) Read(r io.Reader) error {
 		}
 	}
 	return nil
-
 }

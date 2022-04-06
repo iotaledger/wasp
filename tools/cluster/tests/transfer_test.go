@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -31,11 +30,11 @@ func TestDepositWithdraw(t *testing.T) {
 		t.Fail()
 	}
 	if !e.clu.AssertAddressBalances(chain.OriginatorAddress(),
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-ledgerstate.DustThresholdAliasOutputIOTA-1-chainNodeCount)) {
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-1-chainNodeCount)) {
 		t.Fail()
 	}
 	if !e.clu.AssertAddressBalances(chain.ChainAddress(),
-		iscp.NewTokensIotas(ledgerstate.DustThresholdAliasOutputIOTA+1+chainNodeCount)) {
+		iscp.NewTokensIotas(someIotas+1+chainNodeCount)) {
 		t.Fail()
 	}
 	chEnv.checkLedger()

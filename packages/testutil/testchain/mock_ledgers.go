@@ -1,28 +1,29 @@
 package testchain
 
 import (
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type MockedLedgers struct {
-	ledgers      map[string]*MockedLedger
-	stateAddress iotago.Address
-	milestones   *events.Event
-	log          *logger.Logger
+	ledgers    map[string]*MockedLedger
+	milestones *events.Event
+	log        *logger.Logger
+	mutex      sync.Mutex
 }
 
-func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLedgers {
+func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	result := &MockedLedgers{
-		ledgers:      make(map[string]*MockedLedger),
-		stateAddress: stateAddress,
+		ledgers: make(map[string]*MockedLedger),
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*iotagox.MilestonePointer))
+			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
 		log: log.Named("mls"),
 	}
@@ -31,12 +32,20 @@ func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLe
 	return result
 }
 
-func (mlT *MockedLedgers) GetLedger(chainAddr iotago.Address) *MockedLedger {
-	result, ok := mlT.ledgers[chainAddr.Key()]
+func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) *iscp.ChainID {
+	ledger, chainID := NewMockedLedger(stateAddress, mlT.log)
+	mlT.ledgers[chainID.Key()] = ledger
+	mlT.log.Debugf("New ledger for chain address %s ID %s created", stateAddress, chainID)
+	return chainID
+}
+
+func (mlT *MockedLedgers) GetLedger(chainID *iscp.ChainID) *MockedLedger {
+	mlT.mutex.Lock()
+	defer mlT.mutex.Unlock()
+
+	result, ok := mlT.ledgers[chainID.Key()]
 	if !ok {
-		mlT.log.Debugf("New ledger for chain address %s created", chainAddr)
-		result = NewMockedLedger(chainAddr, mlT.stateAddress, mlT.log)
-		mlT.ledgers[chainAddr.Key()] = result
+		mlT.log.Errorf("Ledger for chain ID %s not found", chainID)
 	}
 	return result
 }
@@ -58,7 +67,7 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 			mlT.log.Debugf("Milestone %v reached", milestone)
 		}
 		time.Sleep(100 * time.Millisecond)
-		mlT.milestones.Trigger(&iotagox.MilestonePointer{
+		mlT.milestones.Trigger(&nodeclient.MilestonePointer{
 			Index:     milestone,
 			Timestamp: uint64(time.Now().UnixNano()),
 		})
@@ -67,6 +76,9 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 }
 
 func (mlT *MockedLedgers) SetPushOutputToNodesNeeded(flag bool) {
+	mlT.mutex.Lock()
+	defer mlT.mutex.Unlock()
+
 	for _, ledger := range mlT.ledgers {
 		ledger.SetPushOutputToNodesNeeded(flag)
 	}

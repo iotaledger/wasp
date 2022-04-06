@@ -51,13 +51,12 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
 	creator := stateAnchor.Sender
 
-	initConditionsCorrect :=
-		stateAnchor.IsOrigin &&
-			state.MustGet(root.StateVarStateInitialized) == nil &&
-			ctx.Caller().Hname() == 0 &&
-			creator != nil &&
-			creator.Equal(ctx.Caller().Address()) &&
-			contractRegistry.MustLen() == 0
+	initConditionsCorrect := stateAnchor.IsOrigin &&
+		state.MustGet(root.StateVarStateInitialized) == nil &&
+		ctx.Caller().Hname() == 0 &&
+		creator != nil &&
+		creator.Equal(ctx.Caller().Address()) &&
+		contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
 	assetsOnStateAnchor := iscp.NewFungibleTokens(stateAnchor.Deposit, nil)

@@ -2,9 +2,10 @@ package trie
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 )
 
 type CommitmentBase interface {

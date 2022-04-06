@@ -5,6 +5,7 @@ package consensus
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"fmt"
 	"sort"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 )
@@ -303,10 +305,11 @@ func (c *consensus) checkQuorum() {
 	if !quorumReached {
 		return
 	}
-	sigSharesToAggregate := make([][]byte, len(contributors))
+	sigSharesToAggregate := make([]*dss.PartialSig, len(contributors))
 	invalidSignatures := false
+	// TODO: can dss sig shares be verified sepparatelly?
 	for i, idx := range contributors {
-		msg, err := c.resultTxEssence.SigningMessage()
+		/*msg, err := c.resultTxEssence.SigningMessage()
 		if err != nil {
 			c.log.Errorf("checkQuorum: cannot retrieve message to be signed: %v", err)
 			return
@@ -318,9 +321,9 @@ func (c *consensus) checkQuorum() {
 			//  of the BLS signature means the node is misbehaving and should be punished.
 			c.log.Warnf("checkQuorum: INVALID SIGNATURE from peer #%d: %v", i, err)
 			invalidSignatures = true
-		} else {
-			sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
-		}
+		} else {*/
+		sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
+		//}
 	}
 	if invalidSignatures {
 		c.log.Errorf("checkQuorum: some signatures were invalid. Reset workflow")
@@ -447,7 +450,7 @@ func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
 	feeDestination := iscp.NewAgentID(c.chain.ID().AsAddress(), 0)
 	// sign state output ID. It will be used to produce unpredictable entropy in consensus
 	outputID := c.stateOutput.OutputID()
-	sigShare, err := c.committee.DKShare().SignShare(outputID[:])
+	sigShare, err := c.committee.DKShare().BlsSignShare(outputID[:])
 	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", iscp.OID(c.stateOutput.ID())))
 
 	ret := &BatchProposal{
@@ -617,14 +620,14 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 	}
 }
 
-func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.Transaction, *iscp.AliasOutputWithID, error) {
+func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) (*iotago.Transaction, *iscp.AliasOutputWithID, error) {
 	signingBytes, err := c.resultTxEssence.SigningMessage()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("finalizeTransaction creating signing message failed: %v", err)
+		return nil, nil, xerrors.Errorf("creating signing message failed: %v", err)
 	}
-	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, signingBytes)
+	signature, err := c.committee.DKShare().RecoverMasterSignature(sigSharesToAggregate, signingBytes)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
+		return nil, nil, xerrors.Errorf("RecoverMasterSignature fail: %w", err)
 	}
 
 	// check consistency ---------------- check if chain inputs were consumed
@@ -641,22 +644,23 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*iotago.
 	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// check consistency ---------------- end
 
-	signature := &iotago.Ed25519Signature{
-		PublicKey: hashing.HashData(signatureWithPK.PublicKey.Bytes()),
-		Signature: signatureWithPK.Signature,
+	publicKey := c.committee.DKShare().GetSharedPublicAsCryptoLib()
+	var signatureArray [ed25519.SignatureSize]byte
+	copy(signatureArray[:], signature)
+	signatureForUnlock := &iotago.Ed25519Signature{
+		PublicKey: hashing.HashData(publicKey.AsBytes()),
+		Signature: signatureArray,
 	}
 	tx := &iotago.Transaction{
 		Essence:      c.resultTxEssence,
-		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(c.resultTxEssence.Inputs), signature),
+		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(c.resultTxEssence.Inputs), signatureForUnlock),
 	}
 	chained, err := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
 	if err != nil {
-		c.log.Errorf("finalizeTransaction failed: cannot get alias output: %v", err)
 		return nil, nil, err
 	}
 	txID, err := tx.ID()
 	if err != nil {
-		c.log.Errorf("finalizeTransaction failed: cannot calculate transaction ID: %v", err)
 		return nil, nil, err
 	}
 	c.log.Debugf("finalizeTransaction: transaction %v finalized; approving output ID: %v", iscp.TxID(txID), iscp.OID(chained.ID()))
@@ -761,7 +765,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
-	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(iscp.NetworkPrefix))
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(c.nodeConn.L1Params().Bech32Prefix))
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(
@@ -778,7 +782,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotag
 func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
-			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
+			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare.Signature[:], msg.SigShare.Signature[:]) {
 			c.log.Errorf("receiveSignedResult: conflicting signed result from peer %d", msg.SenderIndex)
 		} else {
 			c.log.Debugf("receiveSignedResult: duplicated signed result from peer %d", msg.SenderIndex)
@@ -795,9 +799,8 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 			msg.SenderIndex, iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
 		return
 	}
-	idx, err := msg.SigShare.Index()
-	if err != nil ||
-		uint16(idx) >= c.committee.Size() ||
+	idx := msg.SigShare.Partial.I
+	if uint16(idx) >= c.committee.Size() ||
 		uint16(idx) == c.committee.OwnPeerIndex() ||
 		uint16(idx) != msg.SenderIndex {
 		c.log.Errorf("receiveSignedResult: wrong sig share from peer %d", msg.SenderIndex)

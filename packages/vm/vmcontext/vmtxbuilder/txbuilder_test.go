@@ -1,11 +1,13 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"math/big"
 	"math/rand"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -723,7 +725,11 @@ func TestFoundries(t *testing.T) {
 	}
 	createNFoundries := func(n int) {
 		for i := 0; i < n; i++ {
-			sn, _ := txb.CreateNewFoundry(&iotago.SimpleTokenScheme{}, iotago.TokenTag{}, big.NewInt(10_000_000), nil)
+			sn, _ := txb.CreateNewFoundry(
+				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(10_000_000), MeltedTokens: util.Big0, MintedTokens: util.Big0},
+				iotago.TokenTag{},
+				nil,
+			)
 			require.EqualValues(t, i+1, int(sn))
 
 			tin, tout, err := txb.Totals()
@@ -791,14 +797,16 @@ func TestSerDe(t *testing.T) {
 			Conditions: iotago.UnlockConditions{
 				&iotago.ImmutableAliasUnlockCondition{Address: tpkg.RandAliasAddress()},
 			},
-			Amount:            1337,
-			NativeTokens:      nil,
-			SerialNumber:      5,
-			TokenTag:          iotago.TokenTag{},
-			CirculatingSupply: big.NewInt(200),
-			MaximumSupply:     big.NewInt(2000),
-			TokenScheme:       &iotago.SimpleTokenScheme{},
-			Blocks:            nil,
+			Amount:       1337,
+			NativeTokens: nil,
+			SerialNumber: 5,
+			TokenTag:     iotago.TokenTag{},
+			TokenScheme: &iotago.SimpleTokenScheme{
+				MintedTokens:  big.NewInt(200),
+				MeltedTokens:  big.NewInt(0),
+				MaximumSupply: big.NewInt(2000),
+			},
+			Blocks: nil,
 		}
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

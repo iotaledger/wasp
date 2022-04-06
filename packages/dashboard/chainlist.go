@@ -45,11 +45,11 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		rootInfo, err := d.fetchRootInfo(cr.ChainID)
+		rootInfo, err := d.fetchRootInfo(&cr.ChainID)
 		if err != nil {
 			return nil, err
 		}
-		cmtInfo, err := d.wasp.GetChainCommitteeInfo(cr.ChainID)
+		cmtInfo, err := d.wasp.GetChainCommitteeInfo(&cr.ChainID)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 			cmtSize = len(cmtInfo.PeerStatus)
 		}
 		r[i] = &ChainOverview{
-			ChainID:       cr.ChainID,
+			ChainID:       &cr.ChainID,
 			Active:        cr.Active,
 			RootInfo:      rootInfo,
 			CommitteeSize: cmtSize,

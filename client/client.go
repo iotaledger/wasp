@@ -48,6 +48,7 @@ func processResponse(res *http.Response, decodeTo interface{}) error {
 		errRes.Message = http.StatusText(res.StatusCode)
 	}
 	errRes.StatusCode = res.StatusCode
+	errRes.Message = string(resBody)
 	return errRes
 }
 

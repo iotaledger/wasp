@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -126,7 +126,7 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	ret.nodeConn.AttachToMilestones(func(milestonePointer *iotagox.MilestonePointer) {
+	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestonePointer) {
 		ret.timeData = &iscp.TimeData{
 			MilestoneIndex: milestonePointer.Index,
 			Time:           time.Unix(0, int64(milestonePointer.Timestamp)),

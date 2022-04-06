@@ -39,13 +39,11 @@ func (e *StateErrorCollectionWriter) Get(errorID uint16) (*iscp.VMErrorTemplate,
 	errorIdKey := codec.EncodeUint16(errorID)
 
 	errorBytes, err := errorMap.GetAt(errorIdKey)
-
 	if err != nil {
 		return nil, err
 	}
 
 	template, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
-
 	if err != nil {
 		return nil, err
 	}
@@ -103,13 +101,11 @@ func (e *StateErrorCollectionReader) Get(errorID uint16) (*iscp.VMErrorTemplate,
 	errorIdKey := codec.EncodeUint16(errorID)
 
 	errorBytes, err := errorMap.GetAt(errorIdKey)
-
 	if err != nil {
 		return nil, err
 	}
 
 	template, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
-
 	if err != nil {
 		return nil, err
 	}

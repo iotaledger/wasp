@@ -11,7 +11,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	iotagox "github.com/iotaledger/iota.go/v3/x"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -20,39 +19,46 @@ import (
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
-	nc              *nodeConn
-	chainAddr       iotago.Address
-	msgs            map[hashing.HashValue]*ncTransaction
-	outputHandler   func(iotago.OutputID, iotago.Output)
-	inclusionStates *events.Event
-	log             *logger.Logger
+	nc                 *nodeConn
+	chainID            *iscp.ChainID
+	msgs               map[hashing.HashValue]*ncTransaction
+	outputHandler      func(iotago.OutputID, iotago.Output)
+	stateOutputHandler func(iotago.OutputID, iotago.Output)
+	inclusionStates    *events.Event
+	log                *logger.Logger
 }
 
-func newNCChain(nc *nodeConn, chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output)) *ncChain {
+func newNCChain(
+	nc *nodeConn,
+	chainID *iscp.ChainID,
+	stateOutputHandler,
+	outputHandler func(iotago.OutputID, iotago.Output),
+) *ncChain {
 	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
 		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
 	})
 	ncc := ncChain{
-		nc:              nc,
-		chainAddr:       chainAddr,
-		msgs:            make(map[hashing.HashValue]*ncTransaction),
-		outputHandler:   outputHandler,
-		inclusionStates: inclusionStates,
-		log:             nc.log.Named(chainAddr.String()[:6]),
+		nc:                 nc,
+		chainID:            chainID,
+		msgs:               make(map[hashing.HashValue]*ncTransaction),
+		outputHandler:      outputHandler,
+		stateOutputHandler: stateOutputHandler,
+		inclusionStates:    inclusionStates,
+		log:                nc.log.Named(chainID.String()[:6]),
 	}
-	go ncc.run()
+	ncc.run()
 	return &ncc
 }
 
 func (ncc *ncChain) Key() string {
-	return ncc.chainAddr.Key()
+	return ncc.chainID.Key()
 }
 
 func (ncc *ncChain) Close() {
 	// Nothing. The ncc.nc.ctx is used for that.
 }
 
-func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 	txID, err := tx.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to get a tx ID: %w", err)
@@ -61,7 +67,7 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 	if err != nil {
 		return xerrors.Errorf("failed to build a tx message: %w", err)
 	}
-	txMsg, err = ncc.nc.nodeClient.SubmitMessage(ncc.nc.ctx, txMsg)
+	txMsg, err = ncc.nc.nodeAPIClient.SubmitMessage(ncc.nc.ctx, txMsg, ncc.nc.l1params.DeSerializationParameters)
 	if err != nil {
 		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
@@ -73,7 +79,10 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 
 	//
 	// TODO: Move it to `nc_transaction.go`
-	msgMetaChanges := ncc.nc.nodeEvents.MessageMetadataChange(*txMsgID)
+	msgMetaChanges, subInfo := ncc.nc.mqttClient.MessageMetadataChange(*txMsgID)
+	if subInfo.Error() != nil {
+		return xerrors.Errorf("failed to subscribe: %w", subInfo.Error())
+	}
 	go func() {
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != nil {
@@ -82,50 +91,72 @@ func (ncc *ncChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction
 		}
 	}()
 
-	return nil
+	return ncc.nc.waitUntilConfirmed(ncc.nc.ctx, txMsg)
 }
 
-func (ncc *ncChain) run() {
-	init := true
-	for {
-		if init {
-			init = false
-		} else {
-			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainAddr.String())
-			time.Sleep(500 * time.Millisecond) // Delay between retries.
-		}
-
-		//
-		// Subscribe to the new outputs first.
-		eventsCh := ncc.nc.nodeEvents.OutputsByUnlockConditionAndAddress(
-			ncc.chainAddr,
-			iscp.NetworkPrefix,
-			iotagox.UnlockConditionAny,
-		)
-
-		//
-		// Then fetch all the existing unspent outputs.
-		res, err := ncc.nc.nodeClient.Indexer().Outputs(ncc.nc.ctx, &nodeclient.OutputsQuery{
-			AddressBech32: ncc.chainAddr.Bech32(iscp.NetworkPrefix),
-		})
+func (ncc *ncChain) queryChainUTXOs() {
+	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Bech32Prefix)
+	queries := []nodeclient.IndexerQuery{
+		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
+		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
+	}
+	for _, query := range queries {
+		res, err := ncc.nc.indexerClient.Outputs(ncc.nc.ctx, query)
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)
 			continue
 		}
+
 		for res.Next() {
+			if res.Error != nil {
+				ncc.log.Warnf("error iterating indexer results: %v", err)
+			}
 			outs, err := res.Outputs()
 			if err != nil {
 				ncc.log.Warnf("failed to fetch address outputs: %v", err)
+				continue
 			}
-			oids := res.Response.Items.MustOutputIDs()
+			oids, err := res.Response.Items.OutputIDs()
+			if err != nil {
+				ncc.log.Warnf("failed to get outputIDs from response items: %v", err)
+				continue
+			}
 			for i, out := range outs {
 				oid := oids[i]
 				ncc.outputHandler(oid, out)
 			}
 		}
+	}
+}
+
+func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
+	init := true
+	for {
+		if init {
+			init = false
+		} else {
+			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainID.String())
+			time.Sleep(500 * time.Millisecond) // Delay between retries.
+		}
 
 		//
-		// Then receive all the subscrived new outputs.
+		// Subscribe to the new outputs first.
+		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
+			ncc.chainID.AsAddress(),
+			ncc.nc.l1params.Bech32Prefix,
+			nodeclient.UnlockConditionAny,
+		)
+		if subInfo.Error() != nil {
+			ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+		}
+		//
+		// Then fetch all the existing unspent outputs owned by the chain.
+		ncc.queryChainUTXOs()
+
+		//
+		// Then receive all the subscribed new outputs.
 		for {
 			select {
 			case outResponse := <-eventsCh:
@@ -145,4 +176,27 @@ func (ncc *ncChain) run() {
 			}
 		}
 	}
+}
+
+func (ncc *ncChain) subscribeToChainStateUpdates() {
+	//
+	// Subscribe to the new outputs first.
+	// TODO
+
+	//
+	// Then fetch all the existing unspent outputs owned by the chain.
+	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ncc.nc.ctx, *ncc.chainID.AsAliasID())
+	if err != nil {
+		ncc.log.Panicf("error while fetching chain state output: %v", err)
+	}
+	ncc.stateOutputHandler(*stateOutputID, stateOutput)
+
+	//
+	// Then receive all the subscribed new outputs.
+	// TODO
+}
+
+func (ncc *ncChain) run() {
+	go ncc.subscribeToChainStateUpdates()
+	go ncc.subscribeToChainOwnedUTXOs()
 }

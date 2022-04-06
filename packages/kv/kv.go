@@ -3,10 +3,11 @@ package kv
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 	"io"
 	"os"
+
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 // Key represents a key in the KVStore, to avoid unnecessary conversions
