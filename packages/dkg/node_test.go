@@ -65,10 +65,11 @@ func TestBasic(t *testing.T) {
 	require.NotNil(t, dkShare.GetAddress())
 	require.NotNil(t, dkShare.GetSharedPublic())
 	//
-	// Aggregate the signatures.
+	// Aggregate the signatures: generate signature shares.
 	dataToSign := []byte{112, 117, 116, 105, 110, 32, 99, 104, 117, 105, 108, 111, 33}
 	require.NoError(t, err)
 	dssPartSigs := make([]*dss.PartialSig, len(peerNetIDs))
+	blsPartSigs := make([][]byte, len(peerNetIDs))
 	var aggrDks tcrypto.DKShare
 	for i, r := range registries {
 		dks, err := r.LoadDKShare(dkShare.GetAddress(), peerIdentities[i].GetPrivateKey())
@@ -78,13 +79,21 @@ func TestBasic(t *testing.T) {
 		require.NoError(t, err)
 		dssPartSigs[i], err = dks.SignShare(dataToSign)
 		require.NoError(t, err)
+		blsPartSigs[i], err = dks.BlsSignShare(dataToSign)
+		require.NoError(t, err)
 	}
-	aggrSig, err := aggrDks.RecoverMasterSignature(dssPartSigs, dataToSign)
+	//
+	// Aggregate the signatures: check the DSS signature.
+	dssAggrSig, err := aggrDks.RecoverMasterSignature(dssPartSigs, dataToSign)
 	require.NoError(t, err)
-	require.NotNil(t, aggrSig)
-	require.True(t, aggrDks.GetSharedPublicAsCryptoLib().Verify(dataToSign, aggrSig))
-
-	// TODO: XXX: Validate the BLS signature.
+	require.NotNil(t, dssAggrSig)
+	require.True(t, aggrDks.GetSharedPublicAsCryptoLib().Verify(dataToSign, dssAggrSig))
+	//
+	// Aggregate the signatures: check the BLS signature.
+	blsAggrSig, err := aggrDks.BlsRecoverMasterSignature(blsPartSigs, dataToSign)
+	require.NoError(t, err)
+	require.NotNil(t, blsAggrSig)
+	require.NoError(t, aggrDks.BlsVerifyMasterSignature(dataToSign, blsAggrSig.Signature[:]))
 }
 
 // TestUnreliableNet checks, if DKG runs on an unreliable network.
