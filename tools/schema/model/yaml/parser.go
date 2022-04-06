@@ -8,48 +8,34 @@ func Parse(in []byte) *Node {
 	var root Node
 	var path []*Node = []*Node{&root} // Nodes in each hierarchy
 	var indentList []int = []int{0}   // the list of indent space numbers in the current code block
-	var commentNode *Node             // the Node that the current comments block first meets
-	cur := &Node{}
 	lines := strings.Split(strings.ReplaceAll(string(in), "\r\n", "\n"), "\n")
 
 	var prevIndent, curIndent int = -1, 0
 	var comment string
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
+			comment = ""
 			continue
 		}
 		lineNum := i + 1
-		next := &Node{}
+		cur := &Node{}
 
-		var val string
-		vals, comments := getComments(lines[i : i+2])
-		if strings.TrimSpace(comments[0]) != "" {
-			if commentNode == nil {
-				commentNode = cur
+		val, oriComment := getComment(line)
+		if strings.TrimSpace(val) != "" {
+			if comment != "" {
+				cur.HeadComment = comment
+			} else if strings.TrimSpace(oriComment) != "" {
+				cur.LineComment = ("//" + oriComment[1:] + "\n")
 			}
-			comment += ("//" + comments[0][1:] + "\n")
-
-			if commentNode.Line == 0 {
-				if strings.TrimSpace(vals[0]) != "" {
-					commentNode = cur
-				} else if strings.TrimSpace(vals[1]) != "" {
-					commentNode = next
-				}
-			}
-
-			if strings.TrimSpace(comments[1]) == "" {
-				// the next line is end of comment block
-				commentNode.Comment = comment
+			comment = ""
+		} else {
+			comment += ("//" + oriComment[1:] + "\n")
+			if strings.TrimSpace(oriComment) == "" {
 				comment = ""
-				commentNode = nil
 			}
-
-			if strings.TrimSpace(vals[0]) == "" {
-				goto end
-			}
+			continue
 		}
 
-		val = vals[0]
 		cur.Line = lineNum
 		curIndent = len(val) - len(strings.TrimLeft(val, " "))
 		val = strings.TrimSpace(val)
@@ -102,31 +88,18 @@ func Parse(in []byte) *Node {
 		}
 
 		prevIndent = curIndent
-	end:
-		cur = next
 	}
 
 	return &root
 }
 
-func getComments(lines []string) ([]string, []string) {
-	val := make([]string, 2)
-	comment := make([]string, 2)
-	line0 := lines[0]
-	idx := strings.Index(line0, "#")
+func getComment(line string) (string, string) {
+	idx := strings.Index(line, "#")
 	if idx != -1 {
-		val[0], comment[0] = line0[:idx], line0[idx:]
+		return line[:idx], line[idx:]
 	} else {
-		val[0], comment[0] = line0, ""
+		return line, ""
 	}
-	line1 := lines[1]
-	idx = strings.Index(line1, "#")
-	if idx != -1 {
-		val[1], comment[1] = line1[:idx], line1[idx:]
-	} else {
-		val[1], comment[1] = line1, ""
-	}
-	return val, comment
 }
 
 func getLevel(indent int, path []int) int {

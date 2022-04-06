@@ -39,18 +39,18 @@ func TestConvert(t *testing.T) {
 							Line: 2,
 						},
 						Events: model.DefMapMap{
-							model.DefElt{Val: "TestEvent1", Line: 7}: &model.DefMap{
-								model.DefElt{Val: "eventParam11", Line: 8}: &model.DefElt{
+							model.DefElt{Val: "TestEvent1", Line: 7, Comment: "// line comment for TestEvent1"}: &model.DefMap{
+								model.DefElt{Val: "eventParam11", Line: 8, Comment: "// line comment for eventParam11"}: &model.DefElt{
 									Val:  "String",
 									Line: 8,
 								},
 							},
-							model.DefElt{Val: "TestEvent2", Line: 9}: &model.DefMap{
-								model.DefElt{Val: "eventParam21", Line: 10}: &model.DefElt{
+							model.DefElt{Val: "TestEvent2", Line: 9, Comment: "// line comment for TestEvent2"}: &model.DefMap{
+								model.DefElt{Val: "eventParam21", Line: 10, Comment: "// line comment for eventParam21"}: &model.DefElt{
 									Val:  "String",
 									Line: 10,
 								},
-								model.DefElt{Val: "eventParam22", Line: 11}: &model.DefElt{
+								model.DefElt{Val: "eventParam22", Line: 11, Comment: "// line comment for eventParam22"}: &model.DefElt{
 									Val:  "String",
 									Line: 11,
 								},
@@ -67,8 +67,8 @@ func TestConvert(t *testing.T) {
 									Line: 18,
 								},
 							},
-							model.DefElt{Val: "TestStruct2", Line: 20, Comment: "// comment for TestStruct2 1\n// comment for TestStruct2 2"}: &model.DefMap{
-								model.DefElt{Val: "x2", Line: 21}: &model.DefElt{
+							model.DefElt{Val: "TestStruct2", Line: 20, Comment: "// comment for TestStruct2"}: &model.DefMap{
+								model.DefElt{Val: "x2", Line: 21, Comment: "// comment for x2"}: &model.DefElt{
 									Val:  "Int32",
 									Line: 21,
 								},
@@ -98,22 +98,22 @@ func TestConvert(t *testing.T) {
 							Line: 2,
 						},
 						Events: model.DefMapMap{
-							model.DefElt{Val: "TestEvent1", Line: 15, Comment: "// header comment for TestEvent1 1\n// header comment for TestEvent1 2\n// line comment for TestEvent1 1\n// line comment for TestEvent1 2\n// line comment for TestEvent1 3\n// line comment for TestEvent1 4"}: &model.DefMap{
-								model.DefElt{Val: "eventParam1", Line: 22, Comment: "// header comment for eventParam1 1\n// header comment for eventParam1 2\n// line comment for eventParam1 1\n// line comment for eventParam1 2\n// line comment for eventParam1 3\n// line comment for eventParam1 4"}: &model.DefElt{
+							model.DefElt{Val: "TestEvent1", Line: 15, Comment: "// header comment for TestEvent1 1\n// header comment for TestEvent1 2"}: &model.DefMap{
+								model.DefElt{Val: "eventParam1", Line: 22, Comment: "// header comment for eventParam1 1\n// header comment for eventParam1 2"}: &model.DefElt{
 									Val:  "String",
 									Line: 22,
 								},
 							},
 							model.DefElt{Val: "TestEvent2", Line: 34, Comment: "// line comment for TestEvent2 1"}: &model.DefMap{
-								model.DefElt{Val: "eventParam2", Line: 38, Comment: "// header comment for eventParam2 1\n// header comment for eventParam2 2\n// line comment for eventParam2 1\n// line comment for eventParam2 2\n// line comment for eventParam2 3\n// line comment for eventParam2 4\n// line comment for eventParam2 5\n// line comment for eventParam2 6\n// \n// line comment for eventParam2 7"}: &model.DefElt{
+								model.DefElt{Val: "eventParam2", Line: 38, Comment: "// header comment for eventParam2 1\n// header comment for eventParam2 2"}: &model.DefElt{
 									Val:  "String",
 									Line: 41,
 								},
 							},
 						},
 						Structs: model.DefMapMap{
-							model.DefElt{Val: "TestStruct", Line: 49, Comment: "// comment for TestStruct 1\n// comment for TestStruct 2\n// comment for TestStruct 3"}: &model.DefMap{
-								model.DefElt{Val: "x", Line: 54, Comment: "// comment for x 1\n// comment for x 2\n// comment for x 3"}: &model.DefElt{
+							model.DefElt{Val: "TestStruct", Line: 49, Comment: "// comment for TestStruct 1"}: &model.DefMap{
+								model.DefElt{Val: "x", Line: 54, Comment: "// comment for x 1\n// comment for x 2"}: &model.DefElt{
 									Val:  "Int32",
 									Line: 54,
 								},
@@ -179,7 +179,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						Funcs: model.FuncDefMap{
-							model.DefElt{Val: "TestFunc1"}: &model.FuncDef{
+							model.DefElt{Val: "TestFunc1", Line: 25}: &model.FuncDef{
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 26,
@@ -201,7 +201,7 @@ func TestConvert(t *testing.T) {
 									},
 								},
 							},
-							model.DefElt{Val: "TestFunc2"}: &model.FuncDef{
+							model.DefElt{Val: "TestFunc2", Line: 32}: &model.FuncDef{
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 33,
@@ -225,7 +225,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						Views: model.FuncDefMap{
-							model.DefElt{Val: "TestView1"}: &model.FuncDef{
+							model.DefElt{Val: "TestView1", Line: 42}: &model.FuncDef{
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 43,
@@ -247,7 +247,7 @@ func TestConvert(t *testing.T) {
 									},
 								},
 							},
-							model.DefElt{Val: "TestView2"}: &model.FuncDef{
+							model.DefElt{Val: "TestView2", Line: 49}: &model.FuncDef{
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 50,
@@ -302,7 +302,14 @@ func TestConvert(t *testing.T) {
 			assert.NotNil(t, root)
 			err = yaml.Convert(root, def)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wants.out, def)
+			assert.Equal(t, tt.wants.out.Name, def.Name)
+			assert.Equal(t, tt.wants.out.Description, def.Description)
+			assert.Equal(t, tt.wants.out.Events, def.Events)
+			assert.Equal(t, tt.wants.out.Structs, def.Structs)
+			assert.Equal(t, tt.wants.out.Typedefs, def.Typedefs)
+			assert.Equal(t, tt.wants.out.State, def.State)
+			assert.Equal(t, tt.wants.out.Funcs, def.Funcs)
+			assert.Equal(t, tt.wants.out.Views, def.Views)
 		})
 	}
 }
