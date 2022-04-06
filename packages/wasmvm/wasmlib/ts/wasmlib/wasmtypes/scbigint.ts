@@ -34,7 +34,7 @@ export class ScBigInt {
             return rhs.add(this);
         }
 
-        const buf: u8[] = new Array(lhsLen)
+        const buf: u8[] = new Array(lhsLen);
         let carry: u16 = 0;
         for (let i = 0; i < rhsLen; i++) {
             carry += (this.bytes[i] as u16) + (rhs.bytes[i] as u16);
@@ -98,13 +98,29 @@ export class ScBigInt {
             const div = ScBigInt.fromUint64(lhs64 / rhs64);
             return [div, ScBigInt.fromUint64(lhs64 % rhs64)];
         }
-        if (rhs.bytes.length == 1 && rhs.bytes[0] == 1) {
-            // divide by 1, quo = lhs, rem = 0
-            return [this, new ScBigInt()];
+        if (rhs.bytes.length == 1) {
+            if (rhs.bytes[0] == 1) {
+                // divide by 1, quo = lhs, rem = 0
+                return [this, new ScBigInt()];
+            }
+            return this.divModSimple(rhs.bytes[0]);
         }
         //TODO
         panic("implement rest of DivMod");
         return [this, rhs];
+    }
+
+    private divModSimple(value: u8): ScBigInt[] {
+        const lhsLen = this.bytes.length;
+        const buf: u8[] = new Array(lhsLen);
+        let remain: u16 = 0;
+        const rhs = value as u16;
+        for (let i = lhsLen - 1; i >= 0; i--) {
+            remain = (remain << 8) + (this.bytes[i] as u16);
+            buf[i] = (remain / rhs) as u8;
+            remain %= rhs;
+        }
+        return [ScBigInt.normalize(buf), ScBigInt.normalize([remain as u8])];
     }
 
     public equals(rhs: ScBigInt): bool {
@@ -153,7 +169,7 @@ export class ScBigInt {
             }
             buf[r + lhsLen] = carry as u8;
         }
-        return ScBigInt.normalize(buf)
+        return ScBigInt.normalize(buf);
     }
 
     public sub(rhs: ScBigInt): ScBigInt {
@@ -167,7 +183,7 @@ export class ScBigInt {
         const lhsLen = this.bytes.length;
         const rhsLen = rhs.bytes.length;
 
-        const buf: u8[] = new Array(lhsLen)
+        const buf: u8[] = new Array(lhsLen);
         let borrow: u16 = 0;
         for (let i = 0; i < rhsLen; i++) {
             borrow += (this.bytes[i] as u16) - (rhs.bytes[i] as u16);
@@ -179,7 +195,7 @@ export class ScBigInt {
             buf[i] = borrow as u8;
             borrow >>= 8;
         }
-        return ScBigInt.normalize(buf)
+        return ScBigInt.normalize(buf);
     }
 
     // convert to byte array representation

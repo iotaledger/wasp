@@ -97,13 +97,29 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 		rhs64 := rhs.Uint64()
 		return NewScBigInt(lhs64 / rhs64), NewScBigInt(lhs64 % rhs64)
 	}
-	if len(rhs.bytes) == 1 && rhs.bytes[0] == 1 {
-		// divide by 1, quo = lhs, rem = 0
-		return o, NewScBigInt()
+	if len(rhs.bytes) == 1 {
+		if rhs.bytes[0] == 1 {
+			// divide by 1, quo = lhs, rem = 0
+			return o, NewScBigInt()
+		}
+		return o.divModSimple(rhs.bytes[0])
 	}
 	// TODO
 	panic("implement rest of DivMod")
 	// return o, rhs
+}
+
+func (o ScBigInt) divModSimple(value byte) (ScBigInt, ScBigInt) {
+	lhsLen := len(o.bytes)
+	buf := make([]byte, lhsLen)
+	remain := uint16(0)
+	rhs := uint16(value)
+	for i := lhsLen - 1; i >= 0; i-- {
+		remain = (remain << 8) + uint16(o.bytes[i])
+		buf[i] = byte(remain / rhs)
+		remain %= rhs
+	}
+	return normalize(buf), normalize([]byte{byte(remain)})
 }
 
 func (o ScBigInt) IsUint64() bool {

@@ -107,13 +107,29 @@ impl ScBigInt {
             let div = ScBigInt::from_uint64(lhs64 / rhs64);
             return (div, ScBigInt::from_uint64(lhs64 % rhs64));
         }
-        if rhs.bytes.len() == 1 && rhs.bytes[0] == 1 {
-            // divide by 1, quo = lhs, rem = 0
-            return (self.clone(), ScBigInt::new());
+        if rhs.bytes.len() == 1 {
+            if rhs.bytes[0] == 1 {
+                // divide by 1, quo = lhs, rem = 0
+                return (self.clone(), ScBigInt::new());
+            }
+            return self.div_mod_simple(rhs.bytes[0]);
         }
         //TODO
         panic("implement DivMod");
         (self.clone(), rhs.clone())
+    }
+
+    fn div_mod_simple(&self, value: u8) -> (ScBigInt, ScBigInt) {
+        let lhs_len = self.bytes.len();
+        let mut buf: Vec<u8> = vec![0; lhs_len];
+        let mut remain: u16 = 0;
+        let rhs = value as u16;
+        for i in (0..lhs_len).rev() {
+            remain = (remain << 8) + (self.bytes[i] as u16);
+            buf[i] = (remain / rhs) as u8;
+            remain %= rhs;
+        }
+        (ScBigInt::normalize(&buf), ScBigInt::normalize(&[remain as u8]))
     }
 
     pub fn is_uint64(&self) -> bool {
