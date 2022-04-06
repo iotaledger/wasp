@@ -91,14 +91,9 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
-	// Build a message and post it.
-	txMsg, err := builder.NewMessageBuilder().Payload(tx).Build()
+	txMsg, err := nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
-		return xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = nc.nodeAPIClient.SubmitMessage(ctxWithTimeout, txMsg, nc.l1params.DeSerializationParameters)
-	if err != nil {
-		return xerrors.Errorf("failed to submit a tx message: %w", err)
+		return err
 	}
 
 	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)

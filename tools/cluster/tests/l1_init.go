@@ -23,6 +23,8 @@ var (
 )
 var ClustL1Config nodeconn.L1Config
 
+var PrivTangle *privtangle.PrivTangle
+
 const pvtTangleAPIPort = 16500
 
 // init sets up a private tangle to run the cluster tests, in case no L1 host was provided via cli
@@ -33,13 +35,16 @@ func init() {
 		ClustL1Config.FaucetPort = *layer1FaucetPort
 		return
 	}
+	StartPrivTangle()
+}
 
+func StartPrivTangle() {
 	// start private tangle if no L1 parameters were provided
 	l1DirPath := path.Join(os.TempDir(), "l1")
 	ctx := context.Background()
-	pt := privtangle.Start(ctx, l1DirPath, pvtTangleAPIPort, *pvtTangleNnodes, nil)
+	PrivTangle = privtangle.Start(ctx, l1DirPath, pvtTangleAPIPort, *pvtTangleNnodes, nil)
 	ClustL1Config.Hostname = "localhost"
-	ClustL1Config.APIPort = pt.NodePortRestAPI(0)
-	ClustL1Config.FaucetPort = pt.NodePortFaucet(0)
-	ClustL1Config.FaucetKey = pt.FaucetKeyPair
+	ClustL1Config.APIPort = PrivTangle.NodePortRestAPI(0)
+	ClustL1Config.FaucetPort = PrivTangle.NodePortFaucet(0)
+	ClustL1Config.FaucetKey = PrivTangle.FaucetKeyPair
 }

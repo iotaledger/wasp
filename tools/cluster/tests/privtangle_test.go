@@ -19,7 +19,7 @@ import (
 )
 
 func TestHornetStartup(t *testing.T) {
-	if ClustL1Config.FaucetKey == nil {
+	if PrivTangle == nil {
 		t.Skip("tests running against live network, skipping pvt tangle tests")
 	}
 	// pvt tangle is already stated by the cluster l1_init

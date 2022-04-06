@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	iotagob "github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -58,24 +57,22 @@ func (ncc *ncChain) Close() {
 	// Nothing. The ncc.nc.ctx is used for that.
 }
 
-func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
+func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
+	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	defer cancelContext()
+
+	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
+	if err != nil {
+		return err
+	}
 	txID, err := tx.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to get a tx ID: %w", err)
-	}
-	txMsg, err := iotagob.NewMessageBuilder().Payload(tx).Build()
-	if err != nil {
-		return xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = ncc.nc.nodeAPIClient.SubmitMessage(ncc.nc.ctx, txMsg, ncc.nc.l1params.DeSerializationParameters)
-	if err != nil {
-		return xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
 	txMsgID, err := txMsg.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to extract a tx message ID: %w", err)
 	}
-	ncc.log.Infof("Posted TX Message: messageID=%v", txMsgID)
 
 	//
 	// TODO: Move it to `nc_transaction.go`
@@ -90,8 +87,8 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction) error {
 			}
 		}
 	}()
-
-	return ncc.nc.waitUntilConfirmed(ncc.nc.ctx, txMsg)
+	// TODO promote/re-attach logic is missing (cannot be blocking, like the PostTx func)
+	return nil
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
@@ -103,7 +100,10 @@ func (ncc *ncChain) queryChainUTXOs() {
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
 	for _, query := range queries {
-		res, err := ncc.nc.indexerClient.Outputs(ncc.nc.ctx, query)
+		// TODO what should be an adequate timeout for each of these queries?
+		ctxWithTimeout, cancelContext := newCtx()
+		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
+		cancelContext()
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)
 			continue
@@ -181,11 +181,17 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 func (ncc *ncChain) subscribeToChainStateUpdates() {
 	//
 	// Subscribe to the new outputs first.
-	// TODO
+	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
+	if subInfo.Error() != nil {
+		ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+	}
 
 	//
 	// Then fetch all the existing unspent outputs owned by the chain.
-	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ncc.nc.ctx, *ncc.chainID.AsAliasID())
+	// TODO what should be an adequate timeout for this query?
+	ctxWithTimeout, cancelContext := newCtx()
+	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
+	cancelContext()
 	if err != nil {
 		ncc.log.Panicf("error while fetching chain state output: %v", err)
 	}
@@ -193,7 +199,24 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 
 	//
 	// Then receive all the subscribed new outputs.
-	// TODO
+	for {
+		select {
+		case outResponse := <-eventsCh:
+			out, err := outResponse.Output()
+			if err != nil {
+				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
+				continue
+			}
+			tid, err := outResponse.TxID()
+			if err != nil {
+				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
+				continue
+			}
+			ncc.stateOutputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), out)
+		case <-ncc.nc.ctx.Done():
+			return
+		}
+	}
 }
 
 func (ncc *ncChain) run() {

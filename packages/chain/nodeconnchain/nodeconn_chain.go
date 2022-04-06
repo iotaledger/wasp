@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // nodeconnChain is responsible for maintaining the information related to a single chain.
@@ -78,12 +79,11 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 		nccT.log.Panicf("unexpected output ID %v type %T received as state update to chain ID %s; alias output expected",
 			outputIDstring, output, nccT.chainID)
 	}
-	if aliasOutput.AliasID.Empty() {
-		if aliasOutput.StateIndex != 0 {
-			nccT.log.Panicf("unexpected output ID %v index %v with emtpy alias ID received as state update to chain ID %s; alias ID may be empty for initial alias output only",
-				outputIDstring, aliasOutput.StateIndex, nccT.chainID)
-		}
-	} else if !aliasOutput.AliasID.ToAddress().Equal(nccT.chainID.AsAddress()) {
+	if aliasOutput.AliasID.Empty() && aliasOutput.StateIndex != 0 {
+		nccT.log.Panicf("unexpected output ID %v index %v with empty alias ID received as state update to chain ID %s; alias ID may be empty for initial alias output only",
+			outputIDstring, aliasOutput.StateIndex, nccT.chainID)
+	}
+	if !util.AliasIDFromAliasOutput(aliasOutput, outputID).ToAddress().Equal(nccT.chainID.AsAddress()) {
 		nccT.log.Panicf("unexpected output ID %v address %s index %v received as state update to chain ID %s, address %s",
 			outputIDstring, aliasOutput.AliasID.ToAddress(), aliasOutput.StateIndex, nccT.chainID, nccT.chainID.AsAddress())
 	}
