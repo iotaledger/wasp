@@ -50,8 +50,8 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) *MockedEnv {
 	}
 
 	ret.StateKeyPair = cryptolib.NewKeyPair()
-	ret.ChainID = iscp.RandomChainID()
-	ret.Ledgers = testchain.NewMockedLedgers(ret.StateKeyPair.GetPublicKey().AsEd25519Address(), log)
+	ret.Ledgers = testchain.NewMockedLedgers(log)
+	ret.ChainID = ret.Ledgers.InitLedger(ret.StateKeyPair.GetPublicKey().AsEd25519Address())
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 

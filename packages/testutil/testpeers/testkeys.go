@@ -47,14 +47,14 @@ func SetupDkg(
 	suite tcrypto.Suite,
 	log *logger.Logger,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
-	timeout := 100 * time.Second
+	timeout := 300 * time.Second
 	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registries[i] = testutil.NewDkgRegistryProvider(suite)
+		registries[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelError, false),
@@ -82,31 +82,28 @@ func SetupDkgPregenerated(
 	t *testing.T,
 	threshold uint16,
 	identities []*cryptolib.KeyPair,
-	suite tcrypto.Suite,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
 	var err error
-	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(identities)), threshold)
+	serializedDks := pregeneratedDksRead(uint16(len(identities)), threshold)
 	nodePubKeys := make([]*cryptolib.PublicKey, len(identities))
 	for i := range nodePubKeys {
 		nodePubKeys[i] = identities[i].GetPublicKey()
 	}
-	dks := make([]*tcrypto.DKShareImpl, len(serializedDks))
+	dks := make([]tcrypto.DKShare, len(serializedDks))
 	registries := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
-		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], suite)
-		dks[i].NodePubKeys = nodePubKeys
-		if i > 0 {
-			// It was removed to decrease the serialized size.
-			dks[i].PublicCommits = dks[0].PublicCommits
-			dks[i].PublicShares = dks[0].PublicShares
-		}
+		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), identities[i].GetPrivateKey())
 		require.Nil(t, err)
-		registries[i] = testutil.NewDkgRegistryProvider(suite)
+		if i > 0 {
+			dks[i].AssignCommonData(dks[0])
+		}
+		dks[i].AssignNodePubKeys(nodePubKeys)
+		registries[i] = testutil.NewDkgRegistryProvider(identities[i].GetPrivateKey())
 		require.Nil(t, registries[i].SaveDKShare(dks[i]))
 	}
-	require.Equal(t, dks[0].N, uint16(len(identities)), "dks was pregenerated for different node count (N=%v)", dks[0].N)
-	require.Equal(t, dks[0].T, threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].T)
-	return dks[0].Address, registries
+	require.Equal(t, dks[0].GetN(), uint16(len(identities)), "dks was pregenerated for different node count (N=%v)", dks[0].GetN())
+	require.Equal(t, dks[0].GetT(), threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].GetT())
+	return dks[0].GetAddress(), registries
 }
 
 func SetupNet(

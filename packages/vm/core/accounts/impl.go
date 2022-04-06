@@ -185,6 +185,9 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 
 	tokenScheme := ctx.Params().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
+	ts := util.MustTokenScheme(tokenScheme)
+	ts.MeltedTokens = util.Big0
+	ts.MintedTokens = util.Big0
 	tokenTag := ctx.Params().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
 
 	// create UTXO

@@ -76,6 +76,10 @@ func (chid *ChainID) Bytes() []byte {
 	return chid[:]
 }
 
+func (chid *ChainID) Key() string {
+	return chid.AsAliasID().String()
+}
+
 // Equals for using
 func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	if chid == chid1 {

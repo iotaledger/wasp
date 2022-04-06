@@ -52,7 +52,7 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
-	indexerClient, err := nc.nodeClient.Indexer(ctxWithTimeout)
+	indexerClient, err := nc.nodeAPIClient.Indexer(ctxWithTimeout)
 	if err != nil {
 		return nil, xerrors.Errorf("failed getting the indexer client: %w", err)
 	}
@@ -91,14 +91,9 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
-	// Build a message and post it.
-	txMsg, err := builder.NewMessageBuilder().Payload(tx).Build()
+	txMsg, err := nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
-		return xerrors.Errorf("failed to build a tx message: %w", err)
-	}
-	txMsg, err = nc.nodeClient.SubmitMessage(ctxWithTimeout, txMsg, nc.l1params.DeSerializationParameters)
-	if err != nil {
-		return xerrors.Errorf("failed to submit a tx message: %w", err)
+		return err
 	}
 
 	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
@@ -208,5 +203,5 @@ func (nc *nodeConn) Health(timeout ...time.Duration) (bool, error) {
 	ctxWithTimeout, cancelContext := newCtx(timeout...)
 	defer cancelContext()
 
-	return nc.nodeClient.Health(ctxWithTimeout)
+	return nc.nodeAPIClient.Health(ctxWithTimeout)
 }

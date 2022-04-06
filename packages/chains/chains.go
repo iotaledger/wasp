@@ -163,7 +163,7 @@ func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 		return nil
 	}
 	ch.Dismiss("deactivate")
-	c.nodeConn.UnregisterChain(chr.ChainID.AsAddress())
+	c.nodeConn.UnregisterChain(&chr.ChainID)
 	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil
 }

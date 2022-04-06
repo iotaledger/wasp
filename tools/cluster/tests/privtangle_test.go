@@ -1,13 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package privtangle_test
+package tests
 
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,25 +13,24 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
-	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
 
-// TODO privtangle tests might conflict with cluster tests when running in parallel, check..
-
 func TestHornetStartup(t *testing.T) {
+	if PrivTangle == nil {
+		t.Skip("tests running against live network, skipping pvt tangle tests")
+	}
+	// pvt tangle is already stated by the cluster l1_init
 	ctx := context.Background()
-	tempDir := filepath.Join(os.TempDir(), "wasp-hornet-private_tangle")
-	pt := privtangle.Start(ctx, tempDir, 16500, 3, t)
 
 	//
 	// Try call the faucet.
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nc := nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(0)))
+	nc := nodeclient.New(fmt.Sprintf("http://%s:%d", ClustL1Config.Hostname, ClustL1Config.APIPort))
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
@@ -43,7 +40,7 @@ func TestHornetStartup(t *testing.T) {
 	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
-	client := nodeconn.NewL1Client(pt.L1Config(), log)
+	client := nodeconn.NewL1Client(ClustL1Config, log)
 
 	initialOutputCount := mustOutputCount(client, myAddress)
 	//
@@ -62,7 +59,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	tx, err := nodeconn.MakeSimpleValueTX(client, pt.FaucetKeyPair, myAddress, 50000)
+	tx, err := nodeconn.MakeSimpleValueTX(client, ClustL1Config.FaucetKey, myAddress, 50000)
 	require.NoError(t, err)
 	err = client.PostTx(tx)
 	require.NoError(t, err)

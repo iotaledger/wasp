@@ -12,7 +12,7 @@ import (
 func TestTrustedPeer(t *testing.T) {
 	// var err error
 	log := testlogger.NewLogger(t)
-	reg := NewRegistry(log, mapdb.NewMapDB())
+	reg := NewRegistry(log, mapdb.NewMapDB(), cryptolib.NewKeyPair().GetPrivateKey())
 
 	tpList, err := reg.TrustedPeers()
 	require.Nil(t, err)

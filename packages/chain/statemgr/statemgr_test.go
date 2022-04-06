@@ -70,7 +70,7 @@ func TestGetInitialState(t *testing.T) {
 	manager := node.StateManager.(*stateManager)
 
 	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
-	originOutput := env.Ledgers.GetLedger(env.ChainID.AsAddress()).GetOriginOutput().GetAliasOutput()
+	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
 	require.True(t, iscp.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.True(t, trie.EqualCommitments(state.OriginStateCommitment(), trie.RootCommitment(manager.solidState.TrieAccess())))
@@ -80,7 +80,7 @@ func TestGetInitialState(t *testing.T) {
 
 func TestGetNextState(t *testing.T) {
 	env := NewMockedEnv(1, t, false)
-	originOutput := env.Ledgers.GetLedger(env.ChainID.AsAddress()).GetOriginOutput().GetAliasOutput()
+	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
 	timers := NewStateManagerTimers()
 	timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
 	node := NewMockedNode(env, 0, timers)

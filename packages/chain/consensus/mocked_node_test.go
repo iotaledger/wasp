@@ -92,7 +92,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	require.Equal(env.T, uint32(0), originState.BlockIndex())
 	require.True(env.T, ret.addNewState(originState))
 
-	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID.AsAddress(), ret.NodeConn, log)
+	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
 	require.NoError(env.T, err)
 	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
@@ -112,7 +112,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		go func() {
 			var output *iotago.AliasOutput
 			getOutputFun := func() *iotago.AliasOutput {
-				return env.Ledgers.GetLedger(env.ChainID.AsAddress()).GetOutputByID(approvingOutputID)
+				return env.Ledgers.GetLedger(env.ChainID).GetOutputByID(approvingOutputID)
 			}
 			for output = getOutputFun(); output == nil; output = getOutputFun() {
 				ret.Log.Debugf("State manager mock (OnStateCandidate): transaction index %v has not been published yet", newState.BlockIndex())
@@ -221,7 +221,7 @@ func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newState
 func (n *mockedNode) pullStateLoop() { // State manager mock: when node is behind and tries to catchup using state output from L1 and blocks (virtual states in mocke environment) from other nodes
 	for {
 		time.Sleep(200 * time.Millisecond)
-		stateOutput := n.Env.Ledgers.GetLedger(n.Env.ChainID.AsAddress()).GetLatestOutput()
+		stateOutput := n.Env.Ledgers.GetLedger(n.Env.ChainID).GetLatestOutput()
 		stateIndex := stateOutput.GetStateIndex()
 		if stateOutput != nil && (stateIndex > n.StateOutput.GetStateIndex()) {
 			n.Log.Debugf("State manager mock (pullStateLoop): new state output received: index %v, id %v",

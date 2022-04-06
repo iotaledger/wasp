@@ -26,15 +26,21 @@ import (
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	log   *logger.Logger
-	store kvstore.KVStore
+	log         *logger.Logger
+	store       kvstore.KVStore
+	nodePrivKey *cryptolib.PrivateKey
 }
 
+var _ NodeIdentityProvider = &Impl{}
+var _ DKShareRegistryProvider = &Impl{}
+var _ ChainRecordRegistryProvider = &Impl{}
+
 // New creates new instance of the registry implementation.
-func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
+func NewRegistry(log *logger.Logger, store kvstore.KVStore, nodePrivKey *cryptolib.PrivateKey) *Impl {
 	return &Impl{
-		log:   log.Named("registry"),
-		store: store,
+		log:         log.Named("registry"),
+		store:       store,
+		nodePrivKey: nodePrivKey,
 	}
 }
 
@@ -139,7 +145,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), r.nodePrivKey)
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {

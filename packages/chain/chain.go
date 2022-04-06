@@ -92,16 +92,16 @@ type (
 )
 
 type NodeConnection interface {
-	RegisterChain(chainAddr iotago.Address, outputHandler func(iotago.OutputID, iotago.Output))
-	UnregisterChain(chainAddr iotago.Address)
+	RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
+	UnregisterChain(chainID *iscp.ChainID)
 	//----------delimeter to appease linter
-	PublishTransaction(chainAddr iotago.Address, stateIndex uint32, tx *iotago.Transaction) error
-	PullLatestOutput(chainAddr iotago.Address)
-	PullTxInclusionState(chainAddr iotago.Address, txid iotago.TransactionID)
-	PullOutputByID(chainAddr iotago.Address, id *iotago.UTXOInput)
+	PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
+	PullLatestOutput(chainID *iscp.ChainID)
+	PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID)
+	PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
 	//----------delimeter to appease linter
-	AttachTxInclusionStateEvents(chainAddr iotago.Address, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	DetachTxInclusionStateEvents(chainAddr iotago.Address, closure *events.Closure) error
+	AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
+	DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 	//----------delimeter to appease linter
