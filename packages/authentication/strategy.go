@@ -15,6 +15,7 @@ const (
 	AuthJWT         = "jwt"
 	AuthBasic       = "basic"
 	AuthIPWhitelist = "ip"
+	AuthNone        = "none"
 )
 
 type AuthConfiguration struct {
@@ -42,6 +43,23 @@ type WebAPI interface {
 	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	Use(middleware ...echo.MiddlewareFunc)
+}
+
+func AddNoneAuth(webAPI WebAPI) {
+	// Adds a middleware to set the authContext to authenticated.
+	// All routes will be open to everyone, so use it in private environments only.
+	// Handle with care!
+	noneFunc := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authContext := c.Get("auth").(*AuthContext)
+
+			authContext.isAuthenticated = true
+
+			return next(c)
+		}
+	}
+
+	webAPI.Use(noneFunc)
 }
 
 func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, claimValidator ClaimValidator) {
@@ -76,6 +94,10 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 
 	case AuthIPWhitelist:
 		AddIPWhiteListAuth(webAPI, config.IPWhitelistConfig)
+
+	case AuthNone:
+		AddNoneAuth(webAPI)
+
 	default:
 		panic(fmt.Sprintf("Unknown auth scheme %s", config.Scheme))
 	}

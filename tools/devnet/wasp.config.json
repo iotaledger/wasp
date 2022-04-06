@@ -36,11 +36,10 @@
         "username": "wasp"
       },
       "ip": {
-        "whitelist": ["127.0.0.1"],
-        "adminWhitelistDisabled": true
+        "whitelist": ["127.0.0.1"]
       },
-      "addRoutes": true,
-      "scheme": "ip"
+      "addRoutes": false,
+      "scheme": "none"
     },
     "bindAddress": "0.0.0.0:9090"
   },
