@@ -46,7 +46,7 @@ You can change the token name `ExampleERC20Token` and the token symbol `EET`.
 
 Go to the second tab and compile your smart contract with the "Compile ERC20.sol" button.
 
-![Compile ERC20.sol](img/evm/examples/compile.png)
+![Compile ERC20.sol](/img/evm/examples/compile.png)
 
 ## 3. Deploy
 Go to the next tab and select `Injected Web3` as your environment. Ensure that your MetaMask is installed and setup correctly.
@@ -55,22 +55,22 @@ Choose your ´ExampleERC20Token´ smart contract in the contract dropdown.
 
 Press the "Deploy" button - then your MetaMask will popup and you need to accept the deployment. 
 
-![Deploy ERC20.sol](img/evm/examples/deploy.png)
+![Deploy ERC20.sol](/img/evm/examples/deploy.png)
 
 Your MetaMask browser extension will open automatically - press confirm.
-![Confirm in MetaMask](img/evm/examples/deploy-metamask.png)
+![Confirm in MetaMask](/img/evm/examples/deploy-metamask.png)
 
 
 ## 4. Add Your Token to MetaMask
 
 Get the `contract address` from the transaction after successful deployment. You can click on the latest transaction in your MetaMask Activity tab. If your MetaMask is configured correctly, the [IOTA EVM Explorer](https://explorer.wasp.sc.iota.org/) opens the transaction. Copy the contract address and import your token into MetaMask.
 
-![Copy contract address](img/evm/examples/explorer-contract-address.png)
+![Copy contract address](/img/evm/examples/explorer-contract-address.png)
 
 ## 5. Have some Fun!
 
 Now you should see your token in MetaMask - send them to your friends without any fees or gas costs.
 
-![Copy contract address](img/evm/examples/erc20-balance.png)
+![Copy contract address](/img/evm/examples/erc20-balance.png)
 
 You also can ask in the [Discord Chat Server](https://discord.iota.org) to send them around and discover what the community is building on IOTA Smart Contracts.

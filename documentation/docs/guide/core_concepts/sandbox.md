@@ -15,7 +15,7 @@ The only way a smart contract can interact with the world (access the state, cal
 
 The Sandbox provides limited and deterministic access to the state through a key/value storage abstraction.
 
-![Sandbox](img/sandbox.png)
+![Sandbox](/img/sandbox.png)
 
 Besides reading and writing to the contract state, the Sandbox interface allows smart contracts to access:
 
