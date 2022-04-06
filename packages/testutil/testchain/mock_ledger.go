@@ -28,10 +28,9 @@ type MockedLedger struct {
 	log                            *logger.Logger
 }
 
-func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *logger.Logger) *MockedLedger {
+func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, *iscp.ChainID) {
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
-		AliasID:       *chainID.AsAliasID(),
 		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
@@ -44,6 +43,8 @@ func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *lo
 		},
 	}
 	outputID := getOriginOutputID()
+	chainID := iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(outputID.ID()))
+	originOutput.AliasID = *chainID.AsAliasID() // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
 	outputs := make(map[iotago.UTXOInput]*iotago.AliasOutput)
 	outputs[*outputID] = originOutput
 	ret := &MockedLedger{
@@ -60,7 +61,7 @@ func NewMockedLedger(chainID *iscp.ChainID, stateAddress iotago.Address, log *lo
 	ret.SetPullTxInclusionStateAllowed(true)
 	ret.SetPullOutputByIDAllowed(true)
 	ret.SetPushOutputToNodesNeeded(true)
-	return ret
+	return ret, &chainID
 }
 
 func (mlT *MockedLedger) Register(nodeID string, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {

@@ -54,7 +54,7 @@ func SetupDkg(
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registries[i] = testutil.NewDkgRegistryProvider()
+		registries[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelError, false),
@@ -82,7 +82,6 @@ func SetupDkgPregenerated(
 	t *testing.T,
 	threshold uint16,
 	identities []*cryptolib.KeyPair,
-	suite tcrypto.Suite,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
 	var err error
 	serializedDks := pregeneratedDksRead(uint16(len(identities)), threshold)
@@ -91,15 +90,15 @@ func SetupDkgPregenerated(
 		nodePubKeys[i] = identities[i].GetPublicKey()
 	}
 	dks := make([]*tcrypto.DKShareImpl, len(serializedDks))
-	dks[0].AssignNodePubKeys(nodePubKeys)
 	registries := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
 		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), identities[i].GetPrivateKey())
+		require.Nil(t, err)
 		if i > 0 {
 			dks[i].AssignCommonData(dks[0])
 		}
-		require.Nil(t, err)
-		registries[i] = testutil.NewDkgRegistryProvider()
+		dks[i].AssignNodePubKeys(nodePubKeys)
+		registries[i] = testutil.NewDkgRegistryProvider(identities[i].GetPrivateKey())
 		require.Nil(t, registries[i].SaveDKShare(dks[i]))
 	}
 	require.Equal(t, dks[0].GetN(), uint16(len(identities)), "dks was pregenerated for different node count (N=%v)", dks[0].GetN())

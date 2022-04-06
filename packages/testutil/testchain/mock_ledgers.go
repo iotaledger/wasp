@@ -13,17 +13,15 @@ import (
 )
 
 type MockedLedgers struct {
-	ledgers      map[string]*MockedLedger
-	stateAddress iotago.Address
-	milestones   *events.Event
-	log          *logger.Logger
-	mutex        sync.Mutex
+	ledgers    map[string]*MockedLedger
+	milestones *events.Event
+	log        *logger.Logger
+	mutex      sync.Mutex
 }
 
-func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLedgers {
+func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	result := &MockedLedgers{
-		ledgers:      make(map[string]*MockedLedger),
-		stateAddress: stateAddress,
+		ledgers: make(map[string]*MockedLedger),
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
@@ -34,15 +32,20 @@ func NewMockedLedgers(stateAddress iotago.Address, log *logger.Logger) *MockedLe
 	return result
 }
 
+func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) *iscp.ChainID {
+	ledger, chainID := NewMockedLedger(stateAddress, mlT.log)
+	mlT.ledgers[chainID.Key()] = ledger
+	mlT.log.Debugf("New ledger for chain address %s ID %s created", stateAddress, chainID)
+	return chainID
+}
+
 func (mlT *MockedLedgers) GetLedger(chainID *iscp.ChainID) *MockedLedger {
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 
 	result, ok := mlT.ledgers[chainID.Key()]
 	if !ok {
-		mlT.log.Debugf("New ledger for chain address %s created", chainID)
-		result = NewMockedLedger(chainID, mlT.stateAddress, mlT.log)
-		mlT.ledgers[chainID.Key()] = result
+		mlT.log.Errorf("Ledger for chain ID %s not found", chainID)
 	}
 	return result
 }

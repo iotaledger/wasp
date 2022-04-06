@@ -114,7 +114,7 @@ func (cce *blsCommonCoinEpoch) startCoinFlip() (*bool, []interface{}, error) {
 	// Make the coin share.
 	var err error
 	var sigShare tbls.SigShare
-	if sigShare, err = cce.cc.dkShare.SignShare(cce.sid); err != nil {
+	if sigShare, err = cce.cc.dkShare.BlsSignShare(cce.sid); err != nil {
 		return nil, nil, xerrors.Errorf("failed to sign our share: %w", err)
 	}
 	if err = cce.acceptShare(sigShare); err != nil && err.Error() != "threshold not reached" {
@@ -158,7 +158,7 @@ func (cce *blsCommonCoinEpoch) acceptShare(share tbls.SigShare) error {
 		receivedShares = append(receivedShares, share)
 	}
 	var sig *bls.SignatureWithPublicKey
-	if sig, err = dkShare.RecoverFullSignature(receivedShares, cce.sid); err != nil {
+	if sig, err = dkShare.BlsRecoverMasterSignature(receivedShares, cce.sid); err != nil {
 		return xerrors.Errorf("unable to reconstruct the signature: %w", err)
 	}
 	value := sig.Signature.Bytes()

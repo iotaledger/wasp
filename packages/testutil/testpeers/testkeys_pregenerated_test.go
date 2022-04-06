@@ -43,7 +43,7 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	for i := range dksRegistries {
 		var dki *tcrypto.DKShareImpl
 		var dkb []byte
-		dkiInt, err := dksRegistries[i].LoadDKShare(dksAddr, identities[i].GetPrivateKey())
+		dkiInt, err := dksRegistries[i].LoadDKShare(dksAddr)
 		dki = dkiInt.(*tcrypto.DKShareImpl)
 		require.Nil(t, err)
 		if i > 0 {
