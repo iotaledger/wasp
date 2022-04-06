@@ -145,7 +145,7 @@ By default, Wasp accepts any API request coming from `127.0.0.1`. The Dashboard 
 
 Both authentication methods allow any form of request and have therefore 'root' permissions.
 
-You can disable the authentication per endpoint by setting `scheme` to `none` on any `auth` parent block like [this](https://github.com/iotaledger/wasp/blob/6b9aa273917c865b0acc83df9a1935f49498e43d/docker_config.json#L58).
+You can disable the authentication per endpoint by setting `scheme` to `none` on any `auth` block such as `webapi.auth` or `dashboard.auth`. [Example configuration](https://github.com/iotaledger/wasp/blob/6b9aa273917c865b0acc83df9a1935f49498e43d/docker_config.json#L58).
 
 #### JWT
 
