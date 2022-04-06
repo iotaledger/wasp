@@ -101,7 +101,6 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 	}
 
 	addAuthenticationStatus(webAPI, config)
-
 }
 
 func addAuthContext(webAPI WebAPI, config AuthConfiguration) {
