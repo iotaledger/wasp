@@ -31,9 +31,11 @@ type Impl struct {
 	nodePrivKey *cryptolib.PrivateKey
 }
 
-var _ NodeIdentityProvider = &Impl{}
-var _ DKShareRegistryProvider = &Impl{}
-var _ ChainRecordRegistryProvider = &Impl{}
+var (
+	_ NodeIdentityProvider        = &Impl{}
+	_ DKShareRegistryProvider     = &Impl{}
+	_ ChainRecordRegistryProvider = &Impl{}
+)
 
 // New creates new instance of the registry implementation.
 func NewRegistry(log *logger.Logger, store kvstore.KVStore, nodePrivKey *cryptolib.PrivateKey) *Impl {
@@ -145,7 +147,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), r.nodePrivKey)
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), r.nodePrivKey)
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {

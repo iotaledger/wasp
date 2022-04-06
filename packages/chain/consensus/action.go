@@ -450,7 +450,7 @@ func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
 	feeDestination := iscp.NewAgentID(c.chain.ID().AsAddress(), 0)
 	// sign state output ID. It will be used to produce unpredictable entropy in consensus
 	outputID := c.stateOutput.OutputID()
-	sigShare, err := c.committee.DKShare().BlsSignShare(outputID[:])
+	sigShare, err := c.committee.DKShare().BLSSignShare(outputID[:])
 	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", iscp.OID(c.stateOutput.ID())))
 
 	ret := &BatchProposal{
@@ -625,7 +625,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 	if err != nil {
 		return nil, nil, xerrors.Errorf("creating signing message failed: %v", err)
 	}
-	signature, err := c.committee.DKShare().RecoverMasterSignature(sigSharesToAggregate, signingBytes)
+	signature, err := c.committee.DKShare().DSSRecoverMasterSignature(sigSharesToAggregate, signingBytes)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("RecoverMasterSignature fail: %w", err)
 	}
@@ -644,7 +644,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// check consistency ---------------- end
 
-	publicKey := c.committee.DKShare().GetSharedPublicAsCryptoLib()
+	publicKey := c.committee.DKShare().GetSharedPublic()
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)
 	signatureForUnlock := &iotago.Ed25519Signature{
@@ -747,7 +747,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	signingMsgHash := hashing.HashData(signingMsg)
 	c.log.Debugf("processVMResult: signing message: %s. rotate state controller: %v", signingMsgHash, rotation)
 
-	sigShare, err := c.committee.DKShare().SignShare(signingMsg)
+	sigShare, err := c.committee.DKShare().DSSSignShare(signingMsg)
 	c.assert.RequireNoError(err, "processVMResult: ")
 
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &messages.SignedResultMsgIn{

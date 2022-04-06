@@ -1297,7 +1297,7 @@ func (m multiKeySetMsgs) GetEdMsgs() map[uint16]*peering.PeerMessageData {
 	return res
 }
 
-func (m multiKeySetMsgs) GetBlsMsgs() map[uint16]*peering.PeerMessageData {
+func (m multiKeySetMsgs) GetBLSMsgs() map[uint16]*peering.PeerMessageData {
 	res := make(map[uint16]*peering.PeerMessageData)
 	for i := range m {
 		res[i] = m[i].blsMsg
@@ -1305,7 +1305,7 @@ func (m multiKeySetMsgs) GetBlsMsgs() map[uint16]*peering.PeerMessageData {
 	return res
 }
 
-func (m multiKeySetMsgs) AddEdMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
+func (m multiKeySetMsgs) AddDSSMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
 	for i := range msgs {
 		if msg, ok := m[i]; ok {
 			msg.edMsg = msgs[i]
@@ -1321,7 +1321,7 @@ func (m multiKeySetMsgs) AddEdMsgs(msgs map[uint16]*peering.PeerMessageData, ste
 	}
 }
 
-func (m multiKeySetMsgs) AddBlsMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
+func (m multiKeySetMsgs) AddBLSMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
 	for i := range msgs {
 		if msg, ok := m[i]; ok {
 			msg.blsMsg = msgs[i]

@@ -128,15 +128,15 @@ func (s *dkSharesService) handleDKSharesGet(c echo.Context) error {
 func makeDKSharesInfo(dkShare tcrypto.DKShare, networkPrefix iotago.NetworkPrefix) (*model.DKSharesInfo, error) {
 	var err error
 
-	b, err := dkShare.GetSharedPublic().MarshalBinary()
+	b, err := dkShare.DSSSharedPublic().MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
 	sharedPubKey := base64.StdEncoding.EncodeToString(b)
 
-	pubKeyShares := make([]string, len(dkShare.GetPublicShares()))
-	for i := range dkShare.GetPublicShares() {
-		b, err := dkShare.GetPublicShares()[i].MarshalBinary()
+	pubKeyShares := make([]string, len(dkShare.DSSPublicShares()))
+	for i := range dkShare.DSSPublicShares() {
+		b, err := dkShare.DSSPublicShares()[i].MarshalBinary()
 		if err != nil {
 			return nil, err
 		}
