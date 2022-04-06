@@ -17,14 +17,15 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/sign/eddsa"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
 
-// DKShareImpl stands for the information stored on
+// dkShareImpl stands for the information stored on
 // a node as a result of the DKG procedure.
-type DKShareImpl struct {
+type dkShareImpl struct {
 	address     iotago.Address
 	index       *uint16 // nil, if the current node is not a member of a group sharing the key.
 	n           uint16
@@ -47,7 +48,7 @@ type DKShareImpl struct {
 	blsPrivateShare  kyber.Scalar
 }
 
-var _ DKShare = &DKShareImpl{}
+var _ DKShare = &dkShareImpl{}
 
 // NewDKShare creates new share of the key.
 func NewDKShare(
@@ -73,11 +74,10 @@ func NewDKShare(
 	if err != nil {
 		return nil, err
 	}
-	// TODO this used to be BLS, is it okay to just replace with a normal ed25519 address?
 	sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
 	//
 	// Construct the DKShare.
-	dkShare := DKShareImpl{
+	dkShare := dkShareImpl{
 		address:          &sharedAddress,
 		index:            &index,
 		n:                n,
@@ -112,7 +112,7 @@ func NewDKSharePublic(
 	blsSharedPublic kyber.Point,
 	blsPublicShares []kyber.Point,
 ) DKShare {
-	dkShare := DKShareImpl{
+	s := dkShareImpl{
 		address:          sharedAddress,
 		index:            nil, // Not meaningful in this case.
 		n:                n,
@@ -130,13 +130,13 @@ func NewDKSharePublic(
 		blsPublicShares:  blsPublicShares,
 		blsPrivateShare:  nil, // Not meaningful in this case.
 	}
-	return &dkShare
+	return &s
 }
 
 // DKShareFromBytes reads DKShare from bytes.
-func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePrivKey *cryptolib.PrivateKey) (*DKShareImpl, error) {
+func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePrivKey *cryptolib.PrivateKey) (DKShare, error) {
 	r := bytes.NewReader(buf)
-	s := DKShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
+	s := dkShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
 	if err := s.Read(r); err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePriv
 }
 
 // Bytes returns byte representation of the share.
-func (s *DKShareImpl) Bytes() []byte {
+func (s *dkShareImpl) Bytes() []byte {
 	var buf bytes.Buffer
 	if err := s.Write(&buf); err != nil {
 		panic(xerrors.Errorf("DKShare.Bytes: %w", err))
@@ -153,7 +153,7 @@ func (s *DKShareImpl) Bytes() []byte {
 }
 
 // Write returns byte representation of this struct.
-func (s *DKShareImpl) Write(w io.Writer) error {
+func (s *dkShareImpl) Write(w io.Writer) error {
 	var err error
 	//
 	// Common attributes.
@@ -236,7 +236,7 @@ func (s *DKShareImpl) Write(w io.Writer) error {
 	return nil
 }
 
-func (s *DKShareImpl) Read(r io.Reader) error {
+func (s *dkShareImpl) Read(r io.Reader) error {
 	var err error
 	var arrLen uint16
 	//
@@ -285,20 +285,20 @@ func (s *DKShareImpl) Read(r io.Reader) error {
 		s.nodePubKeys[i] = nodePubKey
 	}
 	//
-	// Ed25519 shares.
-	if err := s.readEdAttrs(r); err != nil {
+	// DSS / Ed25519 shares.
+	if err := s.readDSSAttrs(r); err != nil {
 		return err
 	}
 	//
 	// BLS Shares.
-	if err := s.readBlsAttrs(r); err != nil {
+	if err := s.readBLSAttrs(r); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Read function was split just to make the linter happy.
-func (s *DKShareImpl) readEdAttrs(r io.Reader) error {
+func (s *dkShareImpl) readDSSAttrs(r io.Reader) error {
 	var arrLen uint16
 	s.edSharedPublic = s.edSuite.Point()
 	if err := util.ReadMarshaled(r, s.edSharedPublic); err != nil {
@@ -338,7 +338,7 @@ func (s *DKShareImpl) readEdAttrs(r io.Reader) error {
 }
 
 // Read function was split just to make the linter happy.
-func (s *DKShareImpl) readBlsAttrs(r io.Reader) error {
+func (s *dkShareImpl) readBLSAttrs(r io.Reader) error {
 	var arrLen uint16
 	s.blsSharedPublic = s.blsSuite.G2().Point()
 	if err := util.ReadMarshaled(r, s.blsSharedPublic); err != nil {
@@ -377,38 +377,38 @@ func (s *DKShareImpl) readBlsAttrs(r io.Reader) error {
 	return nil
 }
 
-func (s *DKShareImpl) GetAddress() iotago.Address {
+func (s *dkShareImpl) GetAddress() iotago.Address {
 	return s.address
 }
 
-func (s *DKShareImpl) GetIndex() *uint16 {
+func (s *dkShareImpl) GetIndex() *uint16 {
 	return s.index
 }
 
-func (s *DKShareImpl) GetN() uint16 {
+func (s *dkShareImpl) GetN() uint16 {
 	return s.n
 }
 
-func (s *DKShareImpl) GetT() uint16 {
+func (s *dkShareImpl) GetT() uint16 {
 	return s.t
 }
 
-func (s *DKShareImpl) GetNodePubKeys() []*cryptolib.PublicKey {
+func (s *dkShareImpl) GetNodePubKeys() []*cryptolib.PublicKey {
 	return s.nodePubKeys
 }
 
-func (s *DKShareImpl) SetPublicShares(edPublicShares, blsPublicShares []kyber.Point) {
+func (s *dkShareImpl) SetPublicShares(edPublicShares, blsPublicShares []kyber.Point) {
 	s.edPublicShares = edPublicShares
 	s.blsPublicShares = blsPublicShares
 }
 
 //////////////////// Schnorr based signatures.
 
-func (s *DKShareImpl) GetSharedPublic() kyber.Point {
+func (s *dkShareImpl) GetSharedPublic() kyber.Point {
 	return s.edSharedPublic
 }
 
-func (s *DKShareImpl) GetSharedPublicAsCryptoLib() *cryptolib.PublicKey {
+func (s *dkShareImpl) GetSharedPublicAsCryptoLib() *cryptolib.PublicKey {
 	pubKeyBytes, err := s.edSharedPublic.MarshalBinary()
 	if err != nil {
 		panic(xerrors.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to serialize: %w", err))
@@ -420,11 +420,82 @@ func (s *DKShareImpl) GetSharedPublicAsCryptoLib() *cryptolib.PublicKey {
 	return pubKeyCL
 }
 
-func (s *DKShareImpl) GetPublicShares() []kyber.Point {
+func (s *dkShareImpl) GetPublicShares() []kyber.Point {
 	return s.edPublicShares
 }
 
-func (s *DKShareImpl) makeSigner(data []byte) (*dss.DSS, error) {
+// SignShare signs the data with the own key share.
+// returns SigShare, which contains signature and the index
+func (s *dkShareImpl) SignShare(data []byte) (*dss.PartialSig, error) {
+	if s.n == 1 {
+		// Do not use the DSS in the case of a single node.
+		sig, err := schnorr.Sign(s.edSuite, s.edPrivateShare, data)
+		if err != nil {
+			return nil, err
+		}
+		partSig := dss.PartialSig{
+			Partial: &share.PriShare{ // TODO: Do not provide it to outside.
+				I: 0,
+				V: s.edSuite.Scalar(),
+			},
+			SessionID: []byte{},
+			Signature: sig,
+		}
+		return &partSig, nil
+	}
+	signer, err := s.makeSigner(data)
+	if err != nil {
+		return nil, err
+	}
+	psi, err := signer.PartialSig()
+	if err != nil {
+		return nil, err
+	}
+	// TODO: maybe we have to serialize it here, to avoid spreading the specific types everywhere?
+	return psi, nil
+}
+
+// VerifySigShare verifies the signature of a particular share.
+func (s *dkShareImpl) VerifySigShare(data []byte, sigshare *dss.PartialSig) error {
+	// TODO: Is that working?
+	return dss.Verify(s.edPublicShares[sigshare.Partial.I], data, sigshare.Signature)
+}
+
+// RecoverMasterSignature generates (recovers) master signature from partial sigshares.
+// returns signature as defined in the value Tangle
+func (s *dkShareImpl) RecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error) {
+	if s.n == 1 {
+		// Use a regular signature in the case of single node.
+		// The signature is stored in the share.
+		return sigShares[0].Signature, nil
+	}
+	signer, err := s.makeSigner(data)
+	if err != nil {
+		return nil, xerrors.Errorf("cannot create DSS object: %w", err)
+	}
+	for i := range sigShares {
+		err = signer.ProcessPartialSig(sigShares[i])
+		if err != nil {
+			return nil, xerrors.Errorf("cannot process partial signature: %w", err)
+		}
+	}
+	if !signer.EnoughPartialSig() {
+		return nil, xerrors.Errorf("not enough partial signatures")
+	}
+	aggregatedSig, err := signer.Signature()
+	if err != nil {
+		return nil, xerrors.Errorf("cannot aggregate signature: %w", err)
+	}
+	return aggregatedSig, nil
+}
+
+// VerifyMasterSignature checks signature against master public key
+// NOTE: Not used.
+func (s *dkShareImpl) VerifyMasterSignature(data, signature []byte) error {
+	return dss.Verify(s.edSharedPublic, data, signature)
+}
+
+func (s *dkShareImpl) makeSigner(data []byte) (*dss.DSS, error) {
 	//
 	// TODO: XXX: We are using Private Key as a random nonce.
 	// TODO: XXX: THAT IS TOTALLY INSECURE.
@@ -451,55 +522,6 @@ func (s *DKShareImpl) makeSigner(data []byte) (*dss.DSS, error) {
 	return dss.NewDSS(s.edSuite, nodePrivKey.Secret, participants, priKeyDKS, priKeyDKS, data, int(s.t))
 }
 
-// SignShare signs the data with the own key share.
-// returns SigShare, which contains signature and the index
-func (s *DKShareImpl) SignShare(data []byte) (*dss.PartialSig, error) {
-	signer, err := s.makeSigner(data)
-	if err != nil {
-		return nil, err
-	}
-	psi, err := signer.PartialSig()
-	if err != nil {
-		return nil, err
-	}
-	// TODO: maybe we have to serialize it here, to avoid spreading the specific types everywhere?
-	return psi, nil
-}
-
-// VerifySigShare verifies the signature of a particular share.
-func (s *DKShareImpl) VerifySigShare(data []byte, sigshare *dss.PartialSig) error {
-	return dss.Verify(s.edPublicShares[sigshare.Partial.I], data, sigshare.Signature)
-}
-
-// RecoverMasterSignature generates (recovers) master signature from partial sigshares.
-// returns signature as defined in the value Tangle
-func (s *DKShareImpl) RecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error) {
-	signer, err := s.makeSigner(data)
-	if err != nil {
-		return nil, xerrors.Errorf("cannot create DSS object: %w", err)
-	}
-	for i := range sigShares {
-		err = signer.ProcessPartialSig(sigShares[i])
-		if err != nil {
-			return nil, xerrors.Errorf("cannot process partial signature: %w", err)
-		}
-	}
-	if !signer.EnoughPartialSig() {
-		return nil, xerrors.Errorf("not enough partial signatures")
-	}
-	aggregatedSig, err := signer.Signature()
-	if err != nil {
-		return nil, xerrors.Errorf("cannot aggregate signature: %w", err)
-	}
-	return aggregatedSig, nil
-}
-
-// VerifyMasterSignature checks signature against master public key
-// NOTE: Not used.
-func (s *DKShareImpl) VerifyMasterSignature(data, signature []byte) error {
-	return dss.Verify(s.edSharedPublic, data, signature)
-}
-
 // DSSDistKeyShare is an implementation for dss.DistKeyShare.
 type DSSDistKeyShare struct {
 	priShare    *share.PriShare
@@ -516,17 +538,17 @@ func (d *DSSDistKeyShare) Commitments() []kyber.Point {
 
 ///////////////////////// BLS based signatures.
 
-func (s *DKShareImpl) BlsSharedPublic() kyber.Point {
+func (s *dkShareImpl) BlsSharedPublic() kyber.Point {
 	return s.blsSharedPublic
 }
 
-func (s *DKShareImpl) BlsPublicShares() []kyber.Point {
+func (s *dkShareImpl) BlsPublicShares() []kyber.Point {
 	return s.blsPublicShares
 }
 
 // BlsSignShare signs the data with the own key share.
 // returns SigShare, which contains signature and the index
-func (s *DKShareImpl) BlsSignShare(data []byte) (tbls.SigShare, error) {
+func (s *dkShareImpl) BlsSignShare(data []byte) (tbls.SigShare, error) {
 	priShare := share.PriShare{
 		I: int(*s.index),
 		V: s.blsPrivateShare,
@@ -535,7 +557,7 @@ func (s *DKShareImpl) BlsSignShare(data []byte) (tbls.SigShare, error) {
 }
 
 // BlsVerifySigShare verifies the signature of a particular share.
-func (s *DKShareImpl) BlsVerifySigShare(data []byte, sigshare tbls.SigShare) error {
+func (s *dkShareImpl) BlsVerifySigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || idx >= int(s.n) || idx < 0 {
 		return err
@@ -545,7 +567,7 @@ func (s *DKShareImpl) BlsVerifySigShare(data []byte, sigshare tbls.SigShare) err
 
 // BlsRecoverFullSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
-func (s *DKShareImpl) BlsRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
+func (s *dkShareImpl) BlsRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var err error
 	var recoveredSignatureBin []byte
 	if s.n > 1 {
@@ -568,28 +590,28 @@ func (s *DKShareImpl) BlsRecoverMasterSignature(sigShares [][]byte, data []byte)
 
 // BlsVerifyMasterSignature checks signature against master public key
 // NOTE: Not used. // TODO: Has to be used.
-func (s *DKShareImpl) BlsVerifyMasterSignature(data, signature []byte) error {
+func (s *dkShareImpl) BlsVerifyMasterSignature(data, signature []byte) error {
 	return bdn.Verify(s.blsSuite, s.blsSharedPublic, data, signature)
 }
 
 // BlsSign considers partial key as a key and signs the specified message.
-func (s *DKShareImpl) BlsSign(data []byte) ([]byte, error) {
+func (s *dkShareImpl) BlsSign(data []byte) ([]byte, error) {
 	return bdn.Sign(s.blsSuite, s.blsPrivateShare, data)
 }
 
 // BlsVerify checks a signature made with BlsSign. It ignores the threshold sig aspects.
-func (s *DKShareImpl) BlsVerify(signer kyber.Point, data, signature []byte) error {
+func (s *dkShareImpl) BlsVerify(signer kyber.Point, data, signature []byte) error {
 	return bdn.Verify(s.blsSuite, signer, data, signature)
 }
 
 ///////////////////////// Test support functions.
 
-func (s *DKShareImpl) AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey) {
+func (s *dkShareImpl) AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey) {
 	s.nodePubKeys = nodePubKeys
 }
 
-func (s *DKShareImpl) AssignCommonData(dks DKShare) {
-	src := dks.(*DKShareImpl)
+func (s *dkShareImpl) AssignCommonData(dks DKShare) {
+	src := dks.(*dkShareImpl)
 	s.edPublicCommits = src.edPublicCommits
 	s.edPublicShares = src.edPublicShares
 	s.blsPublicCommits = src.blsPublicCommits
@@ -597,7 +619,7 @@ func (s *DKShareImpl) AssignCommonData(dks DKShare) {
 	s.nodePubKeys = src.nodePubKeys
 }
 
-func (s *DKShareImpl) ClearCommonData() {
+func (s *dkShareImpl) ClearCommonData() {
 	s.edPublicCommits = make([]kyber.Point, 0)
 	s.edPublicShares = make([]kyber.Point, 0)
 	s.blsPublicCommits = make([]kyber.Point, 0)

@@ -47,7 +47,7 @@ func SetupDkg(
 	suite tcrypto.Suite,
 	log *logger.Logger,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
-	timeout := 100 * time.Second
+	timeout := 300 * time.Second
 	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
 	// Initialize the DKG subsystem in each node.
@@ -90,7 +90,7 @@ func SetupDkgPregenerated(
 	for i := range nodePubKeys {
 		nodePubKeys[i] = identities[i].GetPublicKey()
 	}
-	dks := make([]*tcrypto.DKShareImpl, len(serializedDks))
+	dks := make([]tcrypto.DKShare, len(serializedDks))
 	dks[0].AssignNodePubKeys(nodePubKeys)
 	registries := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
