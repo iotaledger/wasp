@@ -87,10 +87,8 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
 		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, userMap, claimValidator)
 
-		if config.AddRoutes {
-			authHandler := &AuthHandler{Jwt: jwtAuth, Users: userMap}
-			webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
-		}
+		authHandler := &AuthHandler{Jwt: jwtAuth, Users: userMap}
+		webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
 
 	case AuthIPWhitelist:
 		AddIPWhiteListAuth(webAPI, config.IPWhitelistConfig)
@@ -102,9 +100,8 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 		panic(fmt.Sprintf("Unknown auth scheme %s", config.Scheme))
 	}
 
-	if config.AddRoutes {
-		addAuthenticationStatus(webAPI, config)
-	}
+	addAuthenticationStatus(webAPI, config)
+
 }
 
 func addAuthContext(webAPI WebAPI, config AuthConfiguration) {
