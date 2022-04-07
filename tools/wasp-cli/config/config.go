@@ -80,6 +80,10 @@ func L1Client() nodeconn.L1Client {
 	)
 }
 
+func L1NetworkPrefix() iotago.NetworkPrefix {
+	return L1Client().L1Params().Bech32Prefix
+}
+
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())

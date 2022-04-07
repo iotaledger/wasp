@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ var listAccountsCmd = &cobra.Command{
 		for k := range ret {
 			agentID, err := codec.DecodeAgentID([]byte(k))
 			log.Check(err)
-			rows[i] = []string{agentID.String()}
+			rows[i] = []string{agentID.String(config.L1Client().L1Params().Bech32Prefix)}
 			i++
 		}
 		log.PrintTable(header, rows)
@@ -44,7 +45,7 @@ var balanceCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// panic("TODO implement")
-		agentID, err := iscp.NewAgentIDFromString(args[0])
+		agentID, err := iscp.NewAgentIDFromString(args[0], config.L1Client().L1Params().Bech32Prefix)
 		log.Check(err)
 
 		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name,

@@ -585,3 +585,7 @@ func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.Fu
 func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
 	return clu.l1.OutputMap(addr)
 }
+
+func (clu *Cluster) GetL1NetworkPrefix() iotago.NetworkPrefix {
+	return clu.l1.L1Params().Bech32Prefix
+}

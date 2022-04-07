@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_lpp "github.com/iotaledger/wasp/packages/peering/lpp"
@@ -28,19 +27,11 @@ var (
 func Init() *node.Plugin {
 	configure := func(_ *node.Plugin) {
 		log = logger.NewLogger(pluginName)
-		var err error
-		var nodeKeyPair *cryptolib.KeyPair
-		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
-			panic(err)
-		}
-		if err != nil {
-			log.Panicf("Init.peering: %v", err)
-		}
 		netID := parameters.GetString(parameters.PeeringMyNetID)
 		netImpl, tnmImpl, err := peering_lpp.NewNetworkProvider(
 			netID,
 			parameters.GetInt(parameters.PeeringPort),
-			nodeKeyPair,
+			registry.DefaultRegistry().GetNodeIdentity(),
 			registry.DefaultRegistry(),
 			log,
 		)

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
 )
@@ -27,7 +28,7 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return bytes
 	case "agentid":
-		agentid, err := iscp.NewAgentIDFromString(s)
+		agentid, err := iscp.NewAgentIDFromString(s, config.L1NetworkPrefix())
 		log.Check(err)
 		return agentid.Bytes()
 	case "bool":
@@ -105,7 +106,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
-		return aid.String()
+		return aid.String(config.L1NetworkPrefix())
 	case "bool":
 		b, err := codec.DecodeBool(v)
 		log.Check(err)

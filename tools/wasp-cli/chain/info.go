@@ -71,12 +71,12 @@ var infoCmd = &cobra.Command{
 
 			ownerID, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 			log.Check(err)
-			log.Printf("Owner: %s\n", ownerID.String())
+			log.Printf("Owner: %s\n", ownerID.String(config.L1Client().L1Params().Bech32Prefix))
 
 			if info.MustHas(governance.VarChainOwnerIDDelegated) {
 				delegated, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
 				log.Check(err)
-				log.Printf("Delegated owner: %s\n", delegated.String())
+				log.Printf("Delegated owner: %s\n", delegated.String(config.L1Client().L1Params().Bech32Prefix))
 			}
 
 			// TODO fees will be changed

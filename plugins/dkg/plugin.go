@@ -6,7 +6,6 @@ package dkg
 import (
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -25,12 +24,8 @@ func Init() *hive_node.Plugin {
 		registry := registry.DefaultRegistry()
 		peeringProvider := peering.DefaultNetworkProvider()
 		var err error
-		var nodeIdentity *cryptolib.KeyPair
-		if nodeIdentity, err = registry.GetNodeIdentity(); err != nil {
-			panic("cannot get the node key")
-		}
 		defaultNode, err = dkg_pkg.NewNode(
-			nodeIdentity,
+			registry.GetNodeIdentity(),
 			peeringProvider,
 			registry,
 			log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
