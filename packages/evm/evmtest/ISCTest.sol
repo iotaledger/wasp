@@ -96,6 +96,14 @@ contract ISCTest {
 		}
 	}
 
+	event AllowanceNFTEvent(ISCNFT nft);
+	function emitAllowanceNFTs() public {
+		uint16 n = isc.getAllowanceNFTsLen();
+		for (uint16 i = 0;i < n;i++) {
+			emit AllowanceNFTEvent(isc.getAllowanceNFT(i));
+		}
+	}
+
 	event AllowanceAvailableNFTEvent(ISCNFT nft);
 	function emitAllowanceAvailableNFTs() public {
 		uint16 n = isc.getAllowanceAvailableNFTsLen();

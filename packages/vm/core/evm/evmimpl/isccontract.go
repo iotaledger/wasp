@@ -105,6 +105,12 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		i := args[0].(uint16)
 		outs = []interface{}{isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])}
 
+	case "getAllowanceNFT":
+		i := args[0].(uint16)
+		nftID := isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])
+		nft := c.ctx.GetNFTData(nftID.Unwrap())
+		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
+
 	case "getCaller":
 		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Caller())}
 

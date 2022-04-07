@@ -134,6 +134,8 @@ interface ISC {
 	function getAllowanceAvailableIotas() external view returns (uint64);
 	function getAllowanceAvailableNativeToken(uint16 i) external view returns (IotaNativeToken memory);
 	function getAllowanceAvailableNativeTokensLen() external view returns (uint16);
+	function getAllowanceNFTsLen() external view returns (uint16);
+	function getAllowanceNFT(uint16 i) external view returns (ISCNFT memory);
 	function getAllowanceAvailableNFTsLen() external view returns (uint16);
 	function getAllowanceAvailableNFT(uint16 i) external view returns (ISCNFT memory);
 
