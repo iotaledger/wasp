@@ -125,6 +125,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 			}
 			for i, out := range outs {
 				oid := oids[i]
+				ncc.log.Debugf("received UTXO, outputID: %s", oid.ToHex())
 				ncc.outputHandler(oid, out)
 			}
 		}
@@ -170,7 +171,9 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
 					continue
 				}
-				ncc.outputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), out)
+				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+				ncc.log.Debugf("received UTXO, outputID: %s", outID.ToHex())
+				ncc.outputHandler(outID, out)
 			case <-ncc.nc.ctx.Done():
 				return
 			}
@@ -195,6 +198,7 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 	if err != nil {
 		ncc.log.Panicf("error while fetching chain state output: %v", err)
 	}
+	ncc.log.Debugf("received chain state update, outputID: %s", stateOutputID.ToHex())
 	ncc.stateOutputHandler(*stateOutputID, stateOutput)
 
 	//
@@ -212,7 +216,9 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
 				continue
 			}
-			ncc.stateOutputHandler(iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex), out)
+			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+			ncc.log.Debugf("received chain state update, outputID: %s", outID.ToHex())
+			ncc.stateOutputHandler(outID, out)
 		case <-ncc.nc.ctx.Done():
 			return
 		}

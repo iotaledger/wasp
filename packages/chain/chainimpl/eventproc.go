@@ -186,7 +186,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID)
 	dkShare, err := c.getChainDKShare(anchorOutputAddress)
 	if err != nil {
 		if errors.Is(err, registry.ErrDKShareNotFound) {
-			c.log.Warnf("DKShare not found, committee not created")
+			c.log.Warnf("DKShare not found, committee not created, node will not participate in consensus")
 			return nil
 		}
 		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
