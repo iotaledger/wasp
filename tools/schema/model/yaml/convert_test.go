@@ -82,6 +82,29 @@ func TestConvert(t *testing.T) {
 								},
 							},
 						},
+						Views: model.FuncDefMap{
+							model.DefElt{Val: "TestView1", Line: 29, Comment: "// comment for TestView1"}: &model.FuncDef{
+								Line:    29,
+								Comment: "// comment for TestView1",
+								Access: model.DefElt{
+									Val:     "owner",
+									Line:    30,
+									Comment: "// comment for access",
+								},
+								Params: model.DefMap{
+									model.DefElt{Val: "name", Line: 32, Comment: "// comment for name"}: &model.DefElt{
+										Val:  "String",
+										Line: 32,
+									},
+								},
+								Results: model.DefMap{
+									model.DefElt{Val: "length", Line: 34, Comment: "// comment for length"}: &model.DefElt{
+										Val:  "Uint32",
+										Line: 34,
+									},
+								},
+							},
+						},
 					},
 				},
 			}

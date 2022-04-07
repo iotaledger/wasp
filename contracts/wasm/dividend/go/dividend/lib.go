@@ -5,28 +5,29 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package dividend
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncDivide,
-		FuncInit,
-		FuncMember,
-		FuncSetOwner,
-		ViewGetFactor,
-		ViewGetOwner,
+    	FuncDivide,
+    	FuncInit,
+    	FuncMember,
+    	FuncSetOwner,
+    	ViewGetFactor,
+    	ViewGetOwner,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcDivideThunk,
-		funcInitThunk,
-		funcMemberThunk,
-		funcSetOwnerThunk,
+    	funcDivideThunk,
+    	funcInitThunk,
+    	funcMemberThunk,
+    	funcSetOwnerThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewGetFactorThunk,
-		viewGetOwnerThunk,
+    	viewGetFactorThunk,
+    	viewGetOwnerThunk,
 	},
 }
 
@@ -40,7 +41,7 @@ func OnLoad(index int32) {
 }
 
 type DivideContext struct {
-	State MutableDividendState
+	State   MutableDividendState
 }
 
 func funcDivideThunk(ctx wasmlib.ScFuncContext) {
@@ -55,8 +56,8 @@ func funcDivideThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type InitContext struct {
-	Params ImmutableInitParams
-	State  MutableDividendState
+	Params  ImmutableInitParams
+	State   MutableDividendState
 }
 
 func funcInitThunk(ctx wasmlib.ScFuncContext) {
@@ -74,8 +75,8 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type MemberContext struct {
-	Params ImmutableMemberParams
-	State  MutableDividendState
+	Params  ImmutableMemberParams
+	State   MutableDividendState
 }
 
 func funcMemberThunk(ctx wasmlib.ScFuncContext) {
@@ -88,6 +89,8 @@ func funcMemberThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+
+	// only defined owner of contract can add members
 	access := f.State.Owner()
 	ctx.Require(access.Exists(), "access not set: owner")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
@@ -99,8 +102,8 @@ func funcMemberThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type SetOwnerContext struct {
-	Params ImmutableSetOwnerParams
-	State  MutableDividendState
+	Params  ImmutableSetOwnerParams
+	State   MutableDividendState
 }
 
 func funcSetOwnerThunk(ctx wasmlib.ScFuncContext) {
@@ -113,6 +116,8 @@ func funcSetOwnerThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+
+	// only defined owner of contract can change owner
 	access := f.State.Owner()
 	ctx.Require(access.Exists(), "access not set: owner")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")

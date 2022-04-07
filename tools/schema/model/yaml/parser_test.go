@@ -169,6 +169,66 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
+							&yaml.Node{
+								Val:  "views",
+								Line: 28,
+								Contents: []*yaml.Node{
+									{
+										Val:         "TestView1",
+										Line:        29,
+										LineComment: "// comment for TestView1\n",
+										Contents: []*yaml.Node{
+											{
+												Val:         "access",
+												Line:        30,
+												LineComment: "// comment for access\n",
+												Contents: []*yaml.Node{
+													{
+														Val:  "owner",
+														Line: 30,
+													},
+												},
+											},
+											{
+												Val:         "params",
+												Line:        31,
+												LineComment: "// comment for params\n",
+												Contents: []*yaml.Node{
+													{
+														Val:         "name",
+														Line:        32,
+														LineComment: "// comment for name\n",
+														Contents: []*yaml.Node{
+															{
+																Val:  "String",
+																Line: 32,
+															},
+														},
+													},
+												},
+											},
+											{
+												Val:         "results",
+												Line:        33,
+												LineComment: "// comment for results\n",
+												Contents: []*yaml.Node{
+													{
+														Val:         "length",
+														Line:        34,
+														LineComment: "// comment for length\n",
+														Contents: []*yaml.Node{
+															{
+																Val:  "Uint32",
+																Line: 34,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
