@@ -46,7 +46,7 @@ func (ch *Chain) L2Ledger() map[string]*iscp.FungibleTokens {
 	accs := ch.L2Accounts()
 	ret := make(map[string]*iscp.FungibleTokens)
 	for i := range accs {
-		ret[accs[i].String()] = ch.L2Assets(accs[i])
+		ret[accs[i].Key()] = ch.L2Assets(accs[i])
 	}
 	return ret
 }
@@ -161,11 +161,10 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 }
 
 type foundryParams struct {
-	ch        *Chain
-	user      *cryptolib.KeyPair
-	sch       iotago.TokenScheme
-	tag       *iotago.TokenTag
-	maxSupply *big.Int
+	ch   *Chain
+	user *cryptolib.KeyPair
+	sch  iotago.TokenScheme
+	tag  *iotago.TokenTag
 }
 
 // CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and ftokens for the call
@@ -177,8 +176,12 @@ const (
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
 	ret := &foundryParams{
-		ch:        ch,
-		maxSupply: util.ToBigInt(maxSupply),
+		ch: ch,
+		sch: &iotago.SimpleTokenScheme{
+			MaximumSupply: util.ToBigInt(maxSupply),
+			MeltedTokens:  big.NewInt(0),
+			MintedTokens:  big.NewInt(0),
+		},
 	}
 	return ret
 }
@@ -210,9 +213,6 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	}
 	if fp.tag != nil {
 		par.Set(accounts.ParamTokenTag, codec.EncodeTokenTag(*fp.tag))
-	}
-	if fp.maxSupply != nil {
-		par.Set(accounts.ParamMaxSupply, codec.EncodeBigIntAbs(fp.maxSupply))
 	}
 	user := fp.ch.OriginatorPrivateKey
 	if fp.user != nil {

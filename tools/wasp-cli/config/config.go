@@ -3,8 +3,10 @@ package config
 import (
 	"fmt"
 
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -51,30 +53,35 @@ func Read() {
 	_ = viper.ReadInConfig()
 }
 
-func GoshimmerAPIConfigVar() string {
-	return "goshimmer." + HostKindAPI
+func L1Host() string {
+	return viper.GetString("l1.host")
 }
 
-func GoshimmerAPI() string {
-	r := viper.GetString(GoshimmerAPIConfigVar())
-	if r != "" {
-		return r
-	}
-	return "127.0.0.1:8080"
+func L1APIPort() int {
+	return viper.GetInt("l1.api")
 }
 
-func GoshimmerFaucetPoWTarget() int {
-	key := "goshimmer.faucetPoWTarget"
-	if !viper.IsSet(key) {
-		return -1
-	}
-	return viper.GetInt(key)
+func L1FaucetPort() int {
+	return viper.GetInt("l1.faucet")
 }
 
-func GoshimmerClient() interface{} {
-	panic("TODO implement")
-	// log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerAPI(), GoshimmerFaucetPoWTarget())
-	// return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
+func L1Client() nodeconn.L1Client {
+	log.Verbosef("using L1 host %s\n", L1Host())
+
+	// TODO this will fail with "global loger not initialized", not sure what should be done here...
+
+	return nodeconn.NewL1Client(
+		nodeconn.L1Config{
+			Hostname:   L1Host(),
+			APIPort:    L1APIPort(),
+			FaucetPort: L1FaucetPort(),
+		},
+		logger.NewLogger("l1client"),
+	)
+}
+
+func L1NetworkPrefix() iotago.NetworkPrefix {
+	return L1Client().L1Params().Bech32Prefix
 }
 
 func WaspClient() *client.WaspClient {
@@ -173,24 +180,4 @@ func defaultWaspPort(kind string, i int) int {
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
 	log.Check(viper.WriteConfig())
-}
-
-func TrySCAddress(scAlias string) iotago.Address {
-	panic("TODO implement")
-	// b58 := viper.GetString("sc." + scAlias + ".address")
-	// if b58 == "" {
-	// 	return nil
-	// }
-	// address, err := iotago.AddressFromBase58EncodedString(b58)
-	// log.Check(err)
-	// return address
-}
-
-func GetSCAddress(scAlias string) iotago.Address {
-	panic("TODO implement")
-	// address := TrySCAddress(scAlias)
-	// if address == nil {
-	// 	log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
-	// }
-	// return address
 }

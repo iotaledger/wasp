@@ -47,6 +47,10 @@ func (aowiT *AliasOutputWithID) GetStateAddress() iotago.Address {
 	return aowiT.output.StateController()
 }
 
+func (aowiT *AliasOutputWithID) GetAliasID() iotago.AliasID {
+	return aowiT.output.AliasID
+}
+
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 	if ao1 == nil {
 		return ao2 == nil

@@ -4,6 +4,7 @@
 package group_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/peering"
@@ -21,7 +22,7 @@ func TestGroupProvider(t *testing.T) {
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 
 	//

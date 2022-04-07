@@ -11,6 +11,7 @@
 package peering
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"time"
@@ -35,7 +36,7 @@ const (
 // NetworkProvider stands for the peer-to-peer network, as seen
 // from the viewpoint of a single participant.
 type NetworkProvider interface {
-	Run(stopCh <-chan struct{})
+	Run(ctx context.Context)
 	Self() PeerSender
 	PeerGroup(peeringID PeeringID, peerPubKeys []*cryptolib.PublicKey) (GroupProvider, error)
 	PeerDomain(peeringID PeeringID, peerAddrs []*cryptolib.PublicKey) (PeerDomainProvider, error)

@@ -5,7 +5,6 @@ package consensus
 
 import (
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -42,7 +42,6 @@ type mockedNode struct {
 	StateOutput         *iscp.AliasOutputWithID             // State manager mock
 	Log                 *logger.Logger
 	stateSync           coreutil.ChainStateSync // Chain mock
-	mutex               sync.Mutex
 }
 
 func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNode { //nolint:revive
@@ -53,7 +52,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		NodeIndex:   nodeIndex,
 		NodePubKey:  env.NodePubKeys[nodeIndex],
 		Env:         env,
-		NodeConn:    testchain.NewMockedNodeConnection("Node_"+nodeID, env.Ledger, log),
+		NodeConn:    testchain.NewMockedNodeConnection("Node_"+nodeID, env.Ledgers, log),
 		ChainCore:   testchain.NewMockedChainCore(env.T, env.ChainID, log),
 		SolidStates: make(map[uint32]state.VirtualStateAccess),
 		Log:         log,
@@ -93,7 +92,9 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	require.Equal(env.T, uint32(0), originState.BlockIndex())
 	require.True(env.T, ret.addNewState(originState))
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, ret.NodeConn, true, metrics.DefaultChainMetrics(), wal.NewDefault(), timers)
+	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
+	require.NoError(env.T, err)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
@@ -110,7 +111,10 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 
 		go func() {
 			var output *iotago.AliasOutput
-			for output = env.Ledger.PullConfirmedOutput(approvingOutputID); output == nil; output = env.Ledger.PullConfirmedOutput(approvingOutputID) {
+			getOutputFun := func() *iotago.AliasOutput {
+				return env.Ledgers.GetLedger(env.ChainID).GetOutputByID(approvingOutputID)
+			}
+			for output = getOutputFun(); output == nil; output = getOutputFun() {
 				ret.Log.Debugf("State manager mock (OnStateCandidate): transaction index %v has not been published yet", newState.BlockIndex())
 				time.Sleep(50 * time.Millisecond)
 			}
@@ -217,7 +221,7 @@ func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newState
 func (n *mockedNode) pullStateLoop() { // State manager mock: when node is behind and tries to catchup using state output from L1 and blocks (virtual states in mocke environment) from other nodes
 	for {
 		time.Sleep(200 * time.Millisecond)
-		stateOutput := n.Env.Ledger.PullState()
+		stateOutput := n.Env.Ledgers.GetLedger(n.Env.ChainID).GetLatestOutput()
 		stateIndex := stateOutput.GetStateIndex()
 		if stateOutput != nil && (stateIndex > n.StateOutput.GetStateIndex()) {
 			n.Log.Debugf("State manager mock (pullStateLoop): new state output received: index %v, id %v",

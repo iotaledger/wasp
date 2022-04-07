@@ -334,7 +334,6 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 }
 
 func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
-
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(ctx.State(), prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])

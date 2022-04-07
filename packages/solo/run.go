@@ -6,8 +6,8 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"strings"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -133,7 +133,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
 
-	chain.PublishStateTransition(ch.ChainID, anchor.OutputID, stateOutput, len(reqids))
+	chain.PublishStateTransition(ch.ChainID, iscp.NewAliasOutputWithID(stateOutput, anchor.OutputID.UTXOInput()), len(reqids))
 	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",

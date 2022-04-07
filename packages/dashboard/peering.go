@@ -5,9 +5,10 @@ package dashboard
 
 import (
 	_ "embed"
+	"net/http"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
 //go:embed templates/peering.tmpl

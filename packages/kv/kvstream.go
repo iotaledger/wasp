@@ -2,9 +2,10 @@ package kv
 
 import (
 	"errors"
-	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"os"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // Interfaces for writing/reading persistent streams of key/values

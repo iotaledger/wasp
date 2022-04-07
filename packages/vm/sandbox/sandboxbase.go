@@ -9,6 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -19,6 +20,10 @@ type SandboxBase struct {
 }
 
 var _ iscp.SandboxBase = &SandboxBase{}
+
+func (s *SandboxBase) L1Params() *parameters.L1 {
+	return s.Ctx.L1Params()
+}
 
 func (s *SandboxBase) assert() *assert.Assert {
 	if s.assertObj == nil {

@@ -25,7 +25,7 @@ func TestTutorial6(t *testing.T) {
  userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
  userAgentID := iscp.NewAgentID(userAddress, 0)
 
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty on-chain
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)     // empty on-chain
 
@@ -35,7 +35,7 @@ func TestTutorial6(t *testing.T) {
 
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 42)
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-42)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-42)
 }
 ```
 

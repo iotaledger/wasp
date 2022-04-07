@@ -2,23 +2,24 @@ package tests
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	testOwner = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress = ledgerstate.NewED25519Address(testOwner.PublicKey)
+	myAddress = testOwner.Address()
 )
 
 func setupBlobTest(t *testing.T) *chainEnv {
@@ -38,9 +39,8 @@ func setupBlobTest(t *testing.T) *chainEnv {
 
 	e.requestFunds(myAddress, "myAddress")
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo,
-		colored.NewBalancesForIotas(solo.Saldo),
-		"myAddress after request funds") {
+	if !e.clu.AssertAddressBalances(myAddress,
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
 		t.Fail()
 	}
 	return chEnv
@@ -90,7 +90,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
@@ -131,7 +131,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
 
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)

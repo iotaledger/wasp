@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
@@ -42,7 +43,7 @@ func test2Chains(t *testing.T, w bool) {
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := iscp.NewAgentID(userAddress, 0)
-	env.AssertL1Iotas(userAddress, solo.Saldo)
+	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount)
 
 	chain1CommonAccountIotas := chain1.L2Iotas(chain1.CommonAccount())
 	chain2CommonAccountIotas := chain2.L2Iotas(chain2.CommonAccount())
@@ -73,7 +74,7 @@ func test2Chains(t *testing.T, w bool) {
 
 	receipt1 := chain1.LastReceipt()
 
-	env.AssertL1Iotas(userAddress, solo.Saldo-iotasToSend)
+	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-iotasToSend)
 	chain1.AssertL2Iotas(userAgentID, iotasToSend-iotasCreditedToSc2OnChain1-receipt1.GasFeeCharged)
 	chain1.AssertL2Iotas(contractAgentID, iotasCreditedToSc2OnChain1)
 	chain1.AssertL2Iotas(chain1.CommonAccount(), chain1CommonAccountIotas+receipt1.GasFeeCharged)
@@ -124,7 +125,7 @@ func test2Chains(t *testing.T, w bool) {
 	require.Equal(t, chain1WithdrawalReceipt.Request.CallTarget().EntryPoint, accounts.FuncWithdraw.Hname())
 	require.Nil(t, chain1WithdrawalReceipt.Error)
 
-	env.AssertL1Iotas(userAddress, solo.Saldo-2*iotasToSend)
+	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-2*iotasToSend)
 
 	chain1.AssertL2Iotas(userAgentID, iotasToSend-iotasCreditedToSc2OnChain1-receipt1.GasFeeCharged)
 	chain1.AssertL2Iotas(contractAgentID, reqAllowance-chain1WithdrawalReceipt.GasFeeCharged) // amount of iotas sent from chain2 to chain1 in order to call the "withdrawal" request

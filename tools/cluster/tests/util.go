@@ -2,9 +2,11 @@ package tests
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -49,32 +50,32 @@ func (e *chainEnv) checkCoreContracts() {
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		require.NoError(e.t, err)
 		for _, rec := range corecontracts.All {
-			cr := contractRegistry[rec.Contract.Hname()]
-			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Contract.Name, rec.Contract.Hname())
+			cr := contractRegistry[rec.Hname()]
+			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
 
-			require.EqualValues(e.t, rec.Contract.ProgramHash, cr.ProgramHash)
-			require.EqualValues(e.t, rec.Contract.Description, cr.Description)
-			require.EqualValues(e.t, rec.Contract.Name, cr.Name)
+			require.EqualValues(e.t, rec.ProgramHash, cr.ProgramHash)
+			require.EqualValues(e.t, rec.Description, cr.Description)
+			require.EqualValues(e.t, rec.Name, cr.Name)
 		}
 	}
 }
 
 func (e *chainEnv) checkRootsOutside() {
 	for _, rec := range corecontracts.All {
-		recBack, err := e.findContract(rec.Contract.Name)
+		recBack, err := e.findContract(rec.Name)
 		require.NoError(e.t, err)
 		require.NotNil(e.t, recBack)
-		require.EqualValues(e.t, rec.Contract.Name, recBack.Name)
-		require.EqualValues(e.t, rec.Contract.ProgramHash, recBack.ProgramHash)
-		require.EqualValues(e.t, rec.Contract.Description, recBack.Description)
+		require.EqualValues(e.t, rec.Name, recBack.Name)
+		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
+		require.EqualValues(e.t, rec.Description, recBack.Description)
 		require.True(e.t, recBack.Creator.IsNil())
 	}
 }
 
 func (e *env) requestFunds(addr iotago.Address, who string) {
-	err := e.clu.GoshimmerClient().RequestFunds(addr)
+	err := e.clu.RequestFunds(addr)
 	require.NoError(e.t, err)
-	if !e.clu.VerifyAddressBalances(addr, solo.Saldo, iscp.NewFungibleTokens(solo.Saldo, nil), "requested funds for "+who) {
+	if !e.clu.AssertAddressBalances(addr, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
 		e.t.Logf("unexpected requested amount")
 		e.t.FailNow()
 	}
@@ -94,7 +95,7 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, node
 		return 0
 	}
 
-	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID[:])), 0)
+	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID)), 0)
 	require.NoError(e.t, err)
 
 	return actual
@@ -154,7 +155,7 @@ func (e *chainEnv) printAccounts(title string) {
 	allBalances := e.getBalancesOnChain()
 	s := fmt.Sprintf("------------------------------------- %s\n", title)
 	for aid, bals := range allBalances {
-		s += fmt.Sprintf("     %s\n", aid.String())
+		s += fmt.Sprintf("     %s\n", aid.String(e.clu.GetL1NetworkPrefix()))
 		s += fmt.Sprintf("%s\n", bals.String())
 	}
 	fmt.Println(s)

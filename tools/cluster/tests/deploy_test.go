@@ -8,13 +8,13 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDeployChain(t *testing.T) {
-	e := setupWithNoChain(t)
+	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
 
 	counter1, err := e.clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
@@ -36,7 +36,7 @@ func TestDeployChain(t *testing.T) {
 	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
-	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.clu.GetL1NetworkPrefix()))
 
 	chEnv.checkCoreContracts()
 	chEnv.checkRootsOutside()
@@ -83,9 +83,11 @@ func TestDeployContractOnly(t *testing.T) {
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(tx.ID(), 0))
+		txID, err := tx.ID()
 		require.NoError(t, err)
-		require.Empty(t, rec.ErrorStr)
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(*txID, 0))
+		require.NoError(t, err)
+		require.Nil(t, rec.Error)
 	}
 }
 

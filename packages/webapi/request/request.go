@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -116,14 +117,13 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	if assets.IsEmpty() {
 		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
 	}
-	panic("TODO implement")
-	// ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-	// 	OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-	// 		ChainID: ch.ID(),
-	// 		Req:     offLedgerReq,
-	// 	},
-	// 	SenderPubKey: o.nodePubKey,
-	// })
+	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
+		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
+			ChainID: ch.ID(),
+			Req:     offLedgerReq,
+		},
+		SenderPubKey: o.nodePubKey,
+	})
 
 	return c.NoContent(http.StatusAccepted)
 }

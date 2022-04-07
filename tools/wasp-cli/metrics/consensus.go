@@ -21,7 +21,7 @@ var consensusMetricsCmd = &cobra.Command{
 		client := config.WaspClient()
 		_, chainAddress, err := iotago.ParseBech32(chainIDStr)
 		log.Check(err)
-		chid := iscp.ChainIDFromAddress(chainAddress.(*iotago.Ed25519Address))
+		chid := iscp.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
 		workflowStatus, err := client.GetChainConsensusWorkflowStatus(&chid)
 		log.Check(err)
 		header := []string{"Flag name", "Value", "Last time set"}

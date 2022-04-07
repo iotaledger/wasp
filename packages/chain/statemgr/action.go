@@ -41,6 +41,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	sm.notifiedAnchorOutputID = sm.stateOutput.ID()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
+	//TODO
 	/*gu := ""
 	if sm.stateOutput.GetIsGovernanceUpdated() {
 		gu = " (rotation) "
@@ -72,11 +73,10 @@ func (sm *stateManager) isSynced() bool {
 func (sm *stateManager) pullStateIfNeeded() {
 	currentTime := time.Now()
 	if currentTime.After(sm.pullStateRetryTime) {
-		chainAliasAddress := sm.chain.ID().AsAliasAddress()
-		sm.nodeConn.PullState()
+		sm.nodeConn.PullLatestOutput()
 		sm.pullStateRetryTime = currentTime.Add(sm.timers.PullStateRetry)
-		sm.log.Debugf("pullState: pulling state for address %v. Next pull in: %v",
-			chainAliasAddress.Bech32(iscp.Bech32Prefix), sm.pullStateRetryTime.Sub(currentTime))
+		sm.log.Debugf("pullState: pulling state for address %s. Next pull in: %v",
+			sm.chain.ID().AsAddress(), sm.pullStateRetryTime.Sub(currentTime))
 	} else {
 		if sm.stateOutput == nil {
 			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(currentTime))
@@ -135,7 +135,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", iscp.OID(block.ApprovingOutputID()))
-		sm.nodeConn.PullConfirmedOutput(block.ApprovingOutputID())
+		sm.nodeConn.PullOutputByID(block.ApprovingOutputID())
 	}
 	return true
 }

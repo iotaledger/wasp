@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"bytes"
 	"encoding/hex"
 	"math/big"
 	"strings"
@@ -76,7 +75,7 @@ func parseAssets(args []string) *iscp.FungibleTokens {
 			log.Fatalf("error parsing token amount")
 		}
 
-		if bytes.Equal(assetIDBytes, iscp.IotaTokenID) {
+		if iscp.IsIota(assetIDBytes) {
 			assets.AddIotas(amount.Uint64())
 			continue
 		}

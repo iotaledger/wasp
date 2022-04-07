@@ -3,6 +3,7 @@ package wallet
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,7 @@ var addressCmd = &cobra.Command{
 		log.Printf("Address index %d\n", addressIndex)
 		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().AsString())
 		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().AsString())
-		log.Printf("  Address:     %s\n", wallet.Address().Bech32(iscp.Bech32Prefix))
+		log.Printf("  Address:     %s\n", wallet.Address().Bech32(config.L1NetworkPrefix()))
 	},
 }
 
@@ -25,42 +26,35 @@ var balanceCmd = &cobra.Command{
 	Short: "Show the wallet balance",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		panic("TODO implement")
-		// wallet := Load()
-		// address := wallet.Address()
+		wallet := Load()
+		address := wallet.Address()
 
-		// outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
-		// log.Check(err)
+		outs, err := config.L1Client().OutputMap(address)
+		log.Check(err)
 
-		// log.Printf("Address index %d\n", addressIndex)
-		// log.Printf("  Address: %s\n", address.Bech32(iscp.Bech32Prefix))
-		// log.Printf("  Balance:\n")
-		// var total uint64
-		// if log.VerboseFlag {
-		// 	total = printOutputsByOutputID(outs)
-		// } else {
-		// 	total = printOutputsByAsset(outs)
-		// }
-		// log.Printf("    ------\n")
-		// log.Printf("    Total: %d\n", total)
+		log.Printf("Address index %d\n", addressIndex)
+		log.Printf("  Address: %s\n", address.Bech32(config.L1NetworkPrefix()))
+		log.Printf("  Balance:\n")
+		if log.VerboseFlag {
+			printOutputsByOutputID(outs)
+		} else {
+			printOutputsByAsset(outs)
+		}
 	},
 }
 
-func printOutputsByAsset(outs []iotago.Output) uint64 {
-	panic("TODO implement")
-	// byColor, total := colored.OutputBalancesByColor(outs)
-	// for col, val := range byColor {
-	// 	log.Printf("    %s: %d\n", col.String(), val)
-	// }
-	// return total
+func printOutputsByAsset(outs map[iotago.OutputID]iotago.Output) {
+	balance := iscp.FungibleTokensFromOutputMap(outs)
+	log.Printf("    iota: %d\n", balance.Iotas)
+	for _, nt := range balance.Tokens {
+		log.Printf("    %s: %s\n", nt.ID, nt.Amount)
+	}
 }
 
-func printOutputsByOutputID(outs []iotago.Output) uint64 {
-	var total uint64
+func printOutputsByOutputID(outs map[iotago.OutputID]iotago.Output) {
 	for i, out := range outs {
 		log.Printf("    output index %d:\n", i)
 		assets := iscp.FungibleTokensFromOutput(out)
 		log.Printf("%s\n", assets.String())
 	}
-	return total
 }

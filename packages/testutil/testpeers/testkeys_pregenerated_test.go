@@ -15,9 +15,12 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 )
 
+// To update the pregenerated keys uncomment the t.Skip temporarily and run:
+// ```
+// go test ./packages/testutil/testpeers/ --run TestPregenerateDKS --timeout 45m
+// ```
 func TestPregenerateDKS(t *testing.T) {
 	t.Skip("This test was used only to pre-generate the keys once.") // Comment that temporarily, if you need to regenerate the keys.
 	t.Run("N=1/F=0", func(t *testing.T) { testPregenerateDKS(t, 1, 0) })
@@ -38,22 +41,21 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	threshold := n - f
 	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
 	netIDs, identities := testpeers.SetupKeys(n)
-	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, netIDs, identities, tcrypto.DefaultSuite(), log.Named("dkg"))
+	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, netIDs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
 	var buf bytes.Buffer
 	util.WriteUint16(&buf, uint16(len(dksRegistries)))
 	for i := range dksRegistries {
-		var dki *tcrypto.DKShareImpl
+		var dki tcrypto.DKShare
 		var dkb []byte
-		dkiInt, err := dksRegistries[i].LoadDKShare(dksAddr)
-		dki = dkiInt.(*tcrypto.DKShareImpl)
+		dki, err := dksRegistries[i].LoadDKShare(dksAddr)
 		require.Nil(t, err)
 		if i > 0 {
 			// Remove it here to make serialized object smaller.
 			// Will restore it from dks[0].
-			dki.PublicCommits = make([]kyber.Point, 0)
-			dki.PublicShares = make([]kyber.Point, 0)
+			dki.ClearCommonData()
 		}
-		dki.NodePubKeys = make([]*cryptolib.PublicKey, 0)
+		// NodePubKeys will be set in the tests again, so we remove them here to save space.
+		dki.AssignNodePubKeys(make([]*cryptolib.PublicKey, 0))
 		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}

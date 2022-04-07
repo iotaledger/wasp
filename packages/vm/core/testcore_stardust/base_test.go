@@ -24,7 +24,7 @@ import (
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
-	env.AssertL1Iotas(userAddr, solo.Saldo)
+	env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
 	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
 	_ = ch.Log().Sync()
 
@@ -46,7 +46,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	defer ch.Log().Sync()
 	ch.AssertControlAddresses()
 	t.Logf("originator address iotas: %d (spent %d)",
-		env.L1Iotas(ch.OriginatorAddress), solo.Saldo-env.L1Iotas(ch.OriginatorAddress))
+		env.L1Iotas(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1Iotas(ch.OriginatorAddress))
 
 	// get all native tokens. Must be empty
 	nativeTokenIDs := ch.GetOnChainTokenIDs()
@@ -60,7 +60,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	t.Logf("total on chain: dust deposit: %d, total iotas on chain: %d, total spent: %d",
 		totalIotasInfo.TotalDustDeposit, totalIotasOnChain, totalSpent)
 	// what has left on L1 address
-	env.AssertL1Iotas(ch.OriginatorAddress, solo.Saldo-totalSpent)
+	env.AssertL1Iotas(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-totalSpent)
 
 	// let's analise dust deposit on origin and init transactions
 	vByteCostInit := transaction.GetVByteCosts(initTx, env.RentStructure())[0]
@@ -135,7 +135,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
 		originatorsL1IotasBefore := env.L1Iotas(ch.OriginatorAddress)
-		env.AssertL1Iotas(senderAddr, solo.Saldo)
+		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
@@ -155,7 +155,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator on L1 does not change
 		env.AssertL1Iotas(ch.OriginatorAddress, originatorsL1IotasBefore)
 		// user on L1 is charged with dust deposit
-		env.AssertL1Iotas(senderAddr, solo.Saldo-reqDustDeposit)
+		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount-reqDustDeposit)
 		// originator account does not change
 		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
 		// user is charged with gas fee on L2
@@ -205,7 +205,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
 		originatorsL1IotasBefore := env.L1Iotas(ch.OriginatorAddress)
-		env.AssertL1Iotas(senderAddr, solo.Saldo)
+		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
@@ -224,7 +224,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator on L1 does not change
 		env.AssertL1Iotas(ch.OriginatorAddress, originatorsL1IotasBefore)
 		// user on L1 is charged with dust deposit
-		env.AssertL1Iotas(senderAddr, solo.Saldo-reqDustDeposit)
+		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount-reqDustDeposit)
 		// originator account does not change
 		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
 		// user is charged with gas fee on L2

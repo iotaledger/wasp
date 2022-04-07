@@ -1,11 +1,9 @@
 package cryptolib
 
 import (
-	"crypto"
 	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
-	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -46,12 +44,16 @@ func (pkT *PrivateKey) AsString() string {
 	return hex.EncodeToString(pkT.key)
 }
 
+func (pkT *PrivateKey) AsStdKey() ed25519.PrivateKey {
+	return pkT.key
+}
+
 func (pkT *PrivateKey) Public() *PublicKey {
 	return newPublicKeyFromCrypto(pkT.key.Public().(ed25519.PublicKey))
 }
 
-func (pkT *PrivateKey) Sign(rand io.Reader, message []byte, opts crypto.SignerOpts) ([]byte, error) {
-	return pkT.key.Sign(rand, message, opts)
+func (pkT *PrivateKey) Sign(message []byte) []byte {
+	return ed25519.Sign(pkT.key, message)
 }
 
 func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {

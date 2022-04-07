@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
@@ -157,7 +158,7 @@ func testPingIotas1(t *testing.T, w bool) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	const expectedBack = 1_000
-	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
+	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddIotas(expectedBack + 10_000). // add extra iotas besides allowance in order to estimate the gas fees
@@ -177,9 +178,9 @@ func testPingIotas1(t *testing.T, w bool) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-receipt.GasFeeCharged)
+	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged)
 	require.EqualValues(t, int(commonBefore.Iotas+receipt.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, solo.Saldo-receipt.GasFeeCharged, userFundsAfter.AssetsL1.Iotas)
+	require.EqualValues(t, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.AssetsL1.Iotas)
 	require.Zero(t, userFundsAfter.AssetsL2.Iotas)
 }
 

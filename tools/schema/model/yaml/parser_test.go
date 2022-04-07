@@ -34,7 +34,7 @@ func TestParse(t *testing.T) {
 				wants: wants{
 					&yaml.Node{
 						Contents: []*yaml.Node{
-							&yaml.Node{
+							{
 								Val:  "name",
 								Line: 1,
 								Contents: []*yaml.Node{
@@ -44,7 +44,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "description",
 								Line: 2,
 								Contents: []*yaml.Node{
@@ -54,7 +54,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:         "events",
 								Line:        6,
 								HeadComment: "// header comment for event 1 \"this comment block will be ignored in yaml.Convert()\"\n// header comment for event 2\n",
@@ -108,7 +108,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "structs",
 								Line: 15,
 								Contents: []*yaml.Node{
@@ -182,7 +182,7 @@ func TestParse(t *testing.T) {
 				wants: wants{
 					&yaml.Node{
 						Contents: []*yaml.Node{
-							&yaml.Node{
+							{
 								Val:  "name",
 								Line: 1,
 								Contents: []*yaml.Node{
@@ -192,7 +192,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "description",
 								Line: 2,
 								Contents: []*yaml.Node{
@@ -202,7 +202,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:         "events",
 								Line:        8,
 								HeadComment: "// header comment for event 1 \"this comment block will be ignored in yaml.Convert()\"\n// header comment for event 2\n",
@@ -246,7 +246,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "structs",
 								Line: 47,
 								Contents: []*yaml.Node{
@@ -294,7 +294,7 @@ func TestParse(t *testing.T) {
 				wants: wants{
 					&yaml.Node{
 						Contents: []*yaml.Node{
-							&yaml.Node{
+							{
 								Val:  "name",
 								Line: 1,
 								Contents: []*yaml.Node{
@@ -304,7 +304,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "description",
 								Line: 2,
 								Contents: []*yaml.Node{
@@ -314,7 +314,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "events",
 								Line: 6,
 								Contents: []*yaml.Node{
@@ -362,7 +362,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "structs",
 								Line: 15,
 								Contents: []*yaml.Node{
@@ -410,7 +410,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "funcs",
 								Line: 24,
 								Contents: []*yaml.Node{
@@ -532,7 +532,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "views",
 								Line: 41,
 								Contents: []*yaml.Node{
@@ -654,7 +654,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "typedefs",
 								Line: 57,
 								Contents: []*yaml.Node{
@@ -670,7 +670,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "state",
 								Line: 62,
 								Contents: []*yaml.Node{

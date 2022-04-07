@@ -1,10 +1,11 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm"
 	"math/big"
 	"sort"
+
+	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
@@ -15,9 +16,11 @@ import (
 func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	scheme iotago.TokenScheme,
 	tag iotago.TokenTag,
-	maxSupply *big.Int,
 	metadata []byte,
 ) (uint32, uint64) {
+	// TODO does it make sense to keep these max supply checks?
+	simpleTokenScheme := util.MustTokenScheme(scheme)
+	maxSupply := simpleTokenScheme.MaximumSupply
 	if maxSupply.Cmp(util.Big0) <= 0 {
 		panic(vm.ErrCreateFoundryMaxSupplyMustBePositive)
 	}
@@ -26,13 +29,11 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	}
 
 	f := &iotago.FoundryOutput{
-		Amount:            0,
-		NativeTokens:      nil,
-		SerialNumber:      txb.nextFoundrySerialNumber(),
-		TokenTag:          tag,
-		CirculatingSupply: big.NewInt(0),
-		MaximumSupply:     maxSupply,
-		TokenScheme:       scheme,
+		Amount:       0,
+		NativeTokens: nil,
+		SerialNumber: txb.nextFoundrySerialNumber(),
+		TokenTag:     tag,
+		TokenScheme:  scheme,
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
 		},
@@ -75,15 +76,25 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
+	simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
+
 	// check the supply bounds
-	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
-	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
+	var newMinted, newMelted *big.Int
+	if delta.Cmp(util.Big0) >= 0 {
+		newMinted = big.NewInt(0).Add(simpleTokenScheme.MintedTokens, delta)
+		newMelted = simpleTokenScheme.MeltedTokens
+	} else {
+		newMinted = simpleTokenScheme.MintedTokens
+		newMelted = big.NewInt(0).Sub(simpleTokenScheme.MeltedTokens, delta)
+	}
+	if newMinted.Cmp(util.Big0) < 0 || newMinted.Cmp(simpleTokenScheme.MaximumSupply) > 0 {
 		panic(vm.ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
 	adjustment := txb.addNativeTokenBalanceDelta(tokenID, delta)
 	// update the supply and foundry record in the builder
-	f.out.CirculatingSupply = newSupply
+	simpleTokenScheme.MintedTokens = newMinted
+	simpleTokenScheme.MeltedTokens = newMelted
 	txb.invokedFoundries[sn] = f
 
 	adjustment += int64(f.in.Amount) - int64(f.out.Amount)
@@ -225,24 +236,30 @@ func cloneFoundryOutput(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 
 // identicalFoundries assumes use case and does consistency checks
 func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
+	if f1 == nil || f2 == nil {
+		return false
+	}
+	simpleTokenSchemeF1 := util.MustTokenScheme(f1.TokenScheme)
+	simpleTokenSchemeF2 := util.MustTokenScheme(f2.TokenScheme)
+
 	switch {
 	case f1 == f2:
 		return true
-	case f1 == nil || f2 == nil:
-		return false
 	case f1.SerialNumber != f2.SerialNumber:
 		return false
-	case f1.CirculatingSupply.Cmp(f2.CirculatingSupply) != 0:
+	case simpleTokenSchemeF1.MintedTokens.Cmp(simpleTokenSchemeF2.MintedTokens) != 0:
+		return false
+	case simpleTokenSchemeF1.MeltedTokens.Cmp(simpleTokenSchemeF2.MeltedTokens) != 0:
 		return false
 	case f1.Amount != f2.Amount:
 		panic("identicalFoundries: inconsistency, amount is assumed immutable")
 	case len(f1.NativeTokens) > 0 || len(f2.NativeTokens) > 0:
 		panic("identicalFoundries: inconsistency, foundry is not expected not contain native tokens")
-	case f1.MaximumSupply.Cmp(f2.MaximumSupply) != 0:
+	case simpleTokenSchemeF1.MaximumSupply.Cmp(simpleTokenSchemeF2.MaximumSupply) != 0:
 		panic("identicalFoundries: inconsistency, maximum supply is immutable")
 	case !f1.Ident().Equal(f2.Ident()):
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
-	case f1.TokenScheme != f2.TokenScheme:
+	case !equalTokenScheme(simpleTokenSchemeF1, simpleTokenSchemeF2):
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
 	case f1.TokenTag != f2.TokenTag:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token tags must be equal")
@@ -250,4 +267,10 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true
+}
+
+func equalTokenScheme(a, b *iotago.SimpleTokenScheme) bool {
+	return a.MintedTokens.Cmp(b.MintedTokens) == 0 &&
+		a.MeltedTokens.Cmp(b.MeltedTokens) == 0 &&
+		a.MaximumSupply.Cmp(b.MaximumSupply) == 0
 }

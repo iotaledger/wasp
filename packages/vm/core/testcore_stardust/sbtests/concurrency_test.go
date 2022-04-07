@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -129,7 +130,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	for i := range users {
 		expectedBalance := uint64(repeats[i]) * (iotasSentPerRequest - predictedGasFee)
 		chain.AssertL2Iotas(iscp.NewAgentID(userAddr[i], 0), expectedBalance)
-		chain.Env.AssertL1Iotas(userAddr[i], solo.Saldo-uint64(repeats[i])*iotasSentPerRequest)
+		chain.Env.AssertL1Iotas(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*iotasSentPerRequest)
 	}
 
 	commonAccountFinalBalance := chain.L2Iotas(chain.CommonAccount())

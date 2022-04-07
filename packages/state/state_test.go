@@ -2,6 +2,11 @@ package state
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -12,10 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
-	"math"
-	"math/rand"
-	"testing"
-	"time"
 )
 
 func TestOriginHashes(t *testing.T) {
@@ -103,7 +104,7 @@ func TestStateWithDB(t *testing.T) {
 
 		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
-		//require.EqualValues(t, newBlock().Bytes(), data)
+		// require.EqualValues(t, newBlock().Bytes(), data)
 
 		data, err = LoadBlockBytes(store, 1)
 		require.NoError(t, err)
@@ -305,7 +306,7 @@ func TestRnd(t *testing.T) {
 	//		blk.(*blockImpl).stateUpdate.mutations.Dels)
 	//}
 
-	//blocks := genBlocks(2, numBlocks)
+	// blocks := genBlocks(2, numBlocks)
 	t.Logf("num blocks: %d", len(blocks))
 	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), testmisc.RandVectorCommitment())
 	var exists bool
@@ -318,11 +319,10 @@ func TestRnd(t *testing.T) {
 			rndCommits[i][j] = rng.Intn(1000) < 100
 		}
 	}
-	//var badBlock int
-	//var badKey kv.Key
+	// var badBlock int
+	// var badKey kv.Key
 	var round int
 	for round = 0; round < numRepeat; round++ {
-
 		t.Logf("------------------ round: %d", round)
 		store[round] = mapdb.NewMapDB()
 		vs, err := CreateOriginState(store[round], chainID)
@@ -339,7 +339,7 @@ func TestRnd(t *testing.T) {
 			err = vs.ApplyBlock(b)
 			require.NoError(t, err)
 			if rndCommits[round][bn] {
-				//t.Logf("           commit at block: #%d", bn)
+				// t.Logf("           commit at block: #%d", bn)
 				err = vs.Save()
 				require.NoError(t, err)
 				c1 := trie.RootCommitment(vs.TrieNodeStore())

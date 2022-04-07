@@ -72,8 +72,16 @@ func formatTimestampOrNever(t time.Time) string {
 	return formatTimestamp(t)
 }
 
-func exploreAddressURL(baseURL string) func(address iotago.Address) string {
+func exploreAddressURL(baseURL string, networkPrefix iotago.NetworkPrefix) func(address iotago.Address) string {
 	return func(address iotago.Address) string {
-		return baseURL + "/" + address.Bech32(iscp.Bech32Prefix)
+		return baseURL + "/" + address.Bech32(networkPrefix)
 	}
+}
+
+func (d *Dashboard) addressToString(a iotago.Address) string {
+	return a.Bech32(d.wasp.L1Params().Bech32Prefix)
+}
+
+func (d *Dashboard) agentIDToString(a *iscp.AgentID) string {
+	return a.String(d.wasp.L1Params().Bech32Prefix)
 }

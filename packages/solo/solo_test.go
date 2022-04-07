@@ -3,7 +3,7 @@ package solo
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 func TestSoloBasic1(t *testing.T) {

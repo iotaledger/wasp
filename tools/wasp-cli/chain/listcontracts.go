@@ -3,6 +3,7 @@ package chain
 import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -18,50 +19,33 @@ var listContractsCmd = &cobra.Command{
 		log.Check(err)
 
 		log.Printf("Total %d contracts in chain %s\n", len(contracts), GetCurrentChainID())
-		panic("TODO implement")
 
-		// header := []string{
-		// 	"hname",
-		// 	"name",
-		// 	"description",
-		// 	"proghash",
-		// 	"creator",
-		// 	"owner fee",
-		// 	"validator fee",
-		// }
-		// rows := make([][]string, len(contracts))
-		// i := 0
-		// for hname, c := range contracts {
-		// 	creator := ""
-		// 	if c.HasCreator() {
-		// 		creator = c.Creator.String()
-		// 	}
+		header := []string{
+			"hname",
+			"name",
+			"description",
+			"proghash",
+			"creator",
+			"owner fee",
+			"validator fee",
+		}
+		rows := make([][]string, len(contracts))
+		i := 0
+		for hname, c := range contracts {
+			creator := ""
+			if c.HasCreator() {
+				creator = c.Creator.String(config.L1NetworkPrefix())
+			}
 
-		// 	fees, err := SCClient(governance.Contract.Hname()).CallView(governance.FuncGetFeeInfo.Name, dict.Dict{
-		// 		governance.ParamHname: c.Hname().Bytes(),
-		// 	})
-		// 	log.Check(err)
-
-		// ownerFee, err := codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
-		// log.Check(err)
-
-		// validatorFee, err := codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
-		// log.Check(err)
-
-		// feeColor, err := codec.DecodeColor(fees.MustGet(governance.VarFeeColor), colored.IOTA)
-		// log.Check(err)
-
-		// rows[i] = []string{
-		// 	hname.String(),
-		// 	c.Name,
-		// 	c.Description,
-		// 	c.ProgramHash.String(),
-		// 	creator,
-		// 	fmt.Sprintf("%d %s", ownerFee, feeColor),
-		// 	fmt.Sprintf("%d %s", validatorFee, feeColor),
-		// }
-		// 	i++
-		// }
-		// log.PrintTable(header, rows)
+			rows[i] = []string{
+				hname.String(),
+				c.Name,
+				c.Description,
+				c.ProgramHash.String(),
+				creator,
+			}
+			i++
+		}
+		log.PrintTable(header, rows)
 	},
 }

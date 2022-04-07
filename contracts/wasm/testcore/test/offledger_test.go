@@ -15,7 +15,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 
 		// note: create agent without depositing into L2
 		user := wasmsolo.NewSoloAgent(ctx.Chain.Env)
-		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
 		bal := ctx.Balances(user)
 
