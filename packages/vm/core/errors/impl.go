@@ -14,6 +14,10 @@ var Processor = Contract.Processor(initialize,
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+
 	ctx.Log().Debugf("errors.initialize.success hname = %s", Contract.Hname().String())
 	return nil
 }

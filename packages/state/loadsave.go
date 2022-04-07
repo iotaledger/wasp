@@ -36,11 +36,11 @@ func (k *mustKVStoreBatch) Del(key kv.Key) {
 	}
 }
 
-// Save saves updates collected in the virtual state to DB together with the provided blocks in one transaction
-// Mutations must be non-empty otherwise it is NOP
+// Save saves all updates collected in the virtual state together with the provided blocks (if any) in one transaction
 func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
+		vs.trie.ClearCache() // clear trie cache
 		return nil
 	}
 	vs.Commit()
@@ -89,7 +89,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 	if !chID.Equals(chainID) {
 		return nil, false, xerrors.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
 	}
-	ret := newVirtualState(store)
+	ret := NewVirtualState(store)
 
 	// explicit use of merkle trie model. Asserting that the chainID is committed by the root at the key ''
 	merkleProof := CommitmentModel.Proof(nil, ret.trie)

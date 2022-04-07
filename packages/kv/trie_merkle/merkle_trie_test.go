@@ -9,6 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvtest"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNode(t *testing.T) {
@@ -1020,13 +1026,13 @@ func TestGenTrie(t *testing.T) {
 			store.Set(kv.Key(s), []byte("abcdefghijklmnoprstquwxyz"))
 		}
 		t.Logf("num records = %d", len(data))
-		n, err := kv.DumpToFile(store, filename+".bin")
+		n, err := kvtest.DumpToFile(store, filename+".bin")
 		require.NoError(t, err)
 		t.Logf("wrote %d bytes to '%s'", n, filename+".bin")
 	})
 	t.Run("gen trie", func(t *testing.T) {
 		store := dict.New()
-		n, err := kv.UnDumpFromFile(store, filename+".bin")
+		n, err := kvtest.UnDumpFromFile(store, filename+".bin")
 		require.NoError(t, err)
 		t.Logf("read %d bytes to '%s'", n, filename+".bin")
 
@@ -1036,7 +1042,7 @@ func TestGenTrie(t *testing.T) {
 		tr.Commit()
 		tr.PersistMutations(store)
 		t.Logf("trie len = %d", len(store))
-		n, err = kv.DumpToFile(store, filename+".trie")
+		n, err = kvtest.DumpToFile(store, filename+".trie")
 		require.NoError(t, err)
 		t.Logf("dumped trie size = %d", n)
 	})

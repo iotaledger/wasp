@@ -1,6 +1,8 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
@@ -12,13 +14,15 @@ import (
 // VirtualStateAccess is a virtualized access interface to the chain's database
 // It consists of state reader and the buffer to collect mutations to key values
 type VirtualStateAccess interface {
+	ChainID() *iscp.ChainID
 	BlockIndex() uint32
 	Timestamp() time.Time
-	TrieAccess() trie.NodeStore
+	TrieNodeStore() trie.NodeStore
 	PreviousStateCommitment() trie.VCommitment
 	Commit()
 	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
+	OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader
 	ApplyStateUpdate(Update)
 	ApplyBlock(Block) error
 	ProofGeneric(key []byte) *trie.ProofGeneric
@@ -30,6 +34,7 @@ type VirtualStateAccess interface {
 }
 
 type OptimisticStateReader interface {
+	ChainID() (*iscp.ChainID, error)
 	BlockIndex() (uint32, error)
 	Timestamp() (time.Time, error)
 	KVStoreReader() kv.KVStoreReader

@@ -155,7 +155,7 @@ func (sm *stateManager) initLoadState() {
 		sm.solidState = solidState
 		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State commitment: %s",
-			solidState.BlockIndex(), trie.RootCommitment(solidState.TrieAccess()))
+			solidState.BlockIndex(), trie.RootCommitment(solidState.TrieNodeStore()))
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
 		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))

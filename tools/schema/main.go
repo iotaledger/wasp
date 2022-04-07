@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,8 +40,7 @@ func init() {
 func main() {
 	err := generator.FindModulePath()
 	if err != nil && *flagGo {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	if *flagCore {
@@ -55,12 +55,11 @@ func main() {
 	if err == nil {
 		defer file.Close()
 		if *flagInit != "" {
-			fmt.Println("schema definition file already exists")
-			return
+			log.Fatal("schema definition file already exists")
 		}
 		err = generateSchema(file)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
 		return
 	}
@@ -68,7 +67,7 @@ func main() {
 	if *flagInit != "" {
 		err = generateSchemaNew()
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
 		return
 	}
@@ -93,7 +92,7 @@ func generateCoreInterfaces() {
 		return generateSchema(file)
 	})
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
 
