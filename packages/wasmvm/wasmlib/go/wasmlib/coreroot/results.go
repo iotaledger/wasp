@@ -14,11 +14,11 @@ type ImmutableFindContractResults struct {
 }
 
 // encoded contract record
-// encoded contract record
 func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractFound))
 }
 
+// encoded contract record
 func (s ImmutableFindContractResults) ContractRecData() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractRecData))
 }
@@ -28,11 +28,11 @@ type MutableFindContractResults struct {
 }
 
 // encoded contract record
-// encoded contract record
 func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractFound))
 }
 
+// encoded contract record
 func (s MutableFindContractResults) ContractRecData() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractRecData))
 }

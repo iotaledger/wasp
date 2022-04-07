@@ -212,7 +212,7 @@ export function base58Encode(buf: u8[]): string {
 }
 
 export function zeroes(count: u32): u8[] {
-    let buf: u8[] = new Array(count);
+    const buf: u8[] = new Array(count);
     buf.fill(0);
     return buf;
 }

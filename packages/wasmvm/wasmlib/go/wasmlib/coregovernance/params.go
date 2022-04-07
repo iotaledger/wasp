@@ -88,26 +88,26 @@ type ImmutableSetChainInfoParams struct {
 }
 
 // default no change
-// default no change
-// default no change
-// default no change
-// default no change
 func (s ImmutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScImmutableInt32 {
 	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ParamMaxBlobSize))
 }
 
+// default no change
 func (s ImmutableSetChainInfoParams) MaxEventSize() wasmtypes.ScImmutableInt16 {
 	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ParamMaxEventSize))
 }
 
+// default no change
 func (s ImmutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScImmutableInt16 {
 	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ParamMaxEventsPerReq))
 }
 
+// default no change
 func (s ImmutableSetChainInfoParams) OwnerFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
 }
 
+// default no change
 func (s ImmutableSetChainInfoParams) ValidatorFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamValidatorFee))
 }
@@ -117,26 +117,26 @@ type MutableSetChainInfoParams struct {
 }
 
 // default no change
-// default no change
-// default no change
-// default no change
-// default no change
 func (s MutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScMutableInt32 {
 	return wasmtypes.NewScMutableInt32(s.proxy.Root(ParamMaxBlobSize))
 }
 
+// default no change
 func (s MutableSetChainInfoParams) MaxEventSize() wasmtypes.ScMutableInt16 {
 	return wasmtypes.NewScMutableInt16(s.proxy.Root(ParamMaxEventSize))
 }
 
+// default no change
 func (s MutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScMutableInt16 {
 	return wasmtypes.NewScMutableInt16(s.proxy.Root(ParamMaxEventsPerReq))
 }
 
+// default no change
 func (s MutableSetChainInfoParams) OwnerFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
 }
 
+// default no change
 func (s MutableSetChainInfoParams) ValidatorFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamValidatorFee))
 }
@@ -146,16 +146,16 @@ type ImmutableSetContractFeeParams struct {
 }
 
 // contract id
-// default 0 (no fee)
-// default 0 (no fee)
 func (s ImmutableSetContractFeeParams) Hname() wasmtypes.ScImmutableHname {
 	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
 }
 
+// default 0 (no fee)
 func (s ImmutableSetContractFeeParams) OwnerFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
 }
 
+// default 0 (no fee)
 func (s ImmutableSetContractFeeParams) ValidatorFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamValidatorFee))
 }
@@ -165,16 +165,16 @@ type MutableSetContractFeeParams struct {
 }
 
 // contract id
-// default 0 (no fee)
-// default 0 (no fee)
 func (s MutableSetContractFeeParams) Hname() wasmtypes.ScMutableHname {
 	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
 }
 
+// default 0 (no fee)
 func (s MutableSetContractFeeParams) OwnerFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
 }
 
+// default 0 (no fee)
 func (s MutableSetContractFeeParams) ValidatorFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamValidatorFee))
 }
@@ -184,11 +184,11 @@ type ImmutableSetDefaultFeeParams struct {
 }
 
 // default -1 (not set)
-// default -1 (not set)
 func (s ImmutableSetDefaultFeeParams) OwnerFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
 }
 
+// default -1 (not set)
 func (s ImmutableSetDefaultFeeParams) ValidatorFee() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamValidatorFee))
 }
@@ -198,11 +198,11 @@ type MutableSetDefaultFeeParams struct {
 }
 
 // default -1 (not set)
-// default -1 (not set)
 func (s MutableSetDefaultFeeParams) OwnerFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
 }
 
+// default -1 (not set)
 func (s MutableSetDefaultFeeParams) ValidatorFee() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamValidatorFee))
 }

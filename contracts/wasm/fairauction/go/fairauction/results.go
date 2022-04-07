@@ -14,61 +14,61 @@ type ImmutableGetInfoResults struct {
 }
 
 // nr of bidders
-// token of tokens for sale
-// issuer of start_auction transaction
-// deposit by auction owner to cover the SC fees
-// auction description
-// auction duration in minutes
-// the current highest bid amount
-// the current highest bidder
-// minimum bid amount
-// number of tokens for sale
-// auction owner's margin in promilles
-// timestamp when auction started
 func (s ImmutableGetInfoResults) Bidders() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBidders))
 }
 
+// issuer of start_auction transaction
 func (s ImmutableGetInfoResults) Creator() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultCreator))
 }
 
+// deposit by auction owner to cover the SC fees
 func (s ImmutableGetInfoResults) Deposit() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultDeposit))
 }
 
+// auction description
 func (s ImmutableGetInfoResults) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
 }
 
+// auction duration in minutes
 func (s ImmutableGetInfoResults) Duration() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultDuration))
 }
 
+// the current highest bid amount
 func (s ImmutableGetInfoResults) HighestBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultHighestBid))
 }
 
+// the current highest bidder
 func (s ImmutableGetInfoResults) HighestBidder() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultHighestBidder))
 }
 
+// minimum bid amount
 func (s ImmutableGetInfoResults) MinimumBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultMinimumBid))
 }
 
+// number of tokens for sale
 func (s ImmutableGetInfoResults) NumTokens() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultNumTokens))
 }
 
+// auction owner's margin in promilles
 func (s ImmutableGetInfoResults) OwnerMargin() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultOwnerMargin))
 }
 
+// token of tokens for sale
 func (s ImmutableGetInfoResults) Token() wasmtypes.ScImmutableTokenID {
 	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ResultToken))
 }
 
+// timestamp when auction started
 func (s ImmutableGetInfoResults) WhenStarted() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultWhenStarted))
 }
@@ -78,61 +78,61 @@ type MutableGetInfoResults struct {
 }
 
 // nr of bidders
-// token of tokens for sale
-// issuer of start_auction transaction
-// deposit by auction owner to cover the SC fees
-// auction description
-// auction duration in minutes
-// the current highest bid amount
-// the current highest bidder
-// minimum bid amount
-// number of tokens for sale
-// auction owner's margin in promilles
-// timestamp when auction started
 func (s MutableGetInfoResults) Bidders() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBidders))
 }
 
+// issuer of start_auction transaction
 func (s MutableGetInfoResults) Creator() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultCreator))
 }
 
+// deposit by auction owner to cover the SC fees
 func (s MutableGetInfoResults) Deposit() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultDeposit))
 }
 
+// auction description
 func (s MutableGetInfoResults) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
 }
 
+// auction duration in minutes
 func (s MutableGetInfoResults) Duration() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultDuration))
 }
 
+// the current highest bid amount
 func (s MutableGetInfoResults) HighestBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultHighestBid))
 }
 
+// the current highest bidder
 func (s MutableGetInfoResults) HighestBidder() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultHighestBidder))
 }
 
+// minimum bid amount
 func (s MutableGetInfoResults) MinimumBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultMinimumBid))
 }
 
+// number of tokens for sale
 func (s MutableGetInfoResults) NumTokens() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultNumTokens))
 }
 
+// auction owner's margin in promilles
 func (s MutableGetInfoResults) OwnerMargin() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultOwnerMargin))
 }
 
+// token of tokens for sale
 func (s MutableGetInfoResults) Token() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ResultToken))
 }
 
+// timestamp when auction started
 func (s MutableGetInfoResults) WhenStarted() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultWhenStarted))
 }

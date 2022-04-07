@@ -32,7 +32,6 @@ type ImmutableHarvestParams struct {
 }
 
 // default (zero) means all
-// withdrawColor=c: Color? # defaults to colored.IOTA
 func (s ImmutableHarvestParams) WithdrawAmount() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamWithdrawAmount))
 }
@@ -42,7 +41,6 @@ type MutableHarvestParams struct {
 }
 
 // default (zero) means all
-// withdrawColor=c: Color? # defaults to colored.IOTA
 func (s MutableHarvestParams) WithdrawAmount() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamWithdrawAmount))
 }

@@ -10,27 +10,17 @@ package fairauction
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Auction struct {
-	Creator       wasmtypes.ScAgentID
-	Deposit       uint64
-	Description   string
-	Duration      uint32
-	HighestBid    uint64
-	HighestBidder wasmtypes.ScAgentID
-	MinimumBid    uint64
-	NumTokens     uint64
-	OwnerMargin   uint64
+	Creator       wasmtypes.ScAgentID // issuer of start_auction transaction
+	Deposit       uint64              // deposit by auction owner to cover the SC fees
+	Description   string              // auction description
+	Duration      uint32              // auction duration in minutes
+	HighestBid    uint64              // the current highest bid amount
+	HighestBidder wasmtypes.ScAgentID // the current highest bidder
+	MinimumBid    uint64              // minimum bid amount
+	NumTokens     uint64              // number of tokens for sale
+	OwnerMargin   uint64              // auction owner's margin in promilles
 	Token         wasmtypes.ScTokenID // token of tokens for sale
-	// issuer of start_auction transaction
-	// deposit by auction owner to cover the SC fees
-	// auction description
-	// auction duration in minutes
-	// the current highest bid amount
-	// the current highest bidder
-	// minimum bid amount
-	// number of tokens for sale
-	// auction owner's margin in promilles
-	// timestamp when auction started
-	WhenStarted uint64
+	WhenStarted   uint64              // timestamp when auction started
 }
 
 func NewAuctionFromBytes(buf []byte) *Auction {
@@ -100,11 +90,9 @@ func (o MutableAuction) Value() *Auction {
 }
 
 type Bid struct {
-	Amount uint64 // cumulative amount of bids from same bidder
-	// index of bidder in bidder list
-	// timestamp of most recent bid
-	Index     uint32
-	Timestamp uint64
+	Amount    uint64 // cumulative amount of bids from same bidder
+	Index     uint32 // index of bidder in bidder list
+	Timestamp uint64 // timestamp of most recent bid
 }
 
 func NewBidFromBytes(buf []byte) *Bid {
