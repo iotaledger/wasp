@@ -29,37 +29,37 @@ export class MutableMintSupplyParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableTransferOwnershipParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableTransferOwnershipParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutableUpdateMetadataParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableUpdateMetadataParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }

@@ -6,21 +6,21 @@ state: {}
 funcs:
   storeBlob:
     params:
-      blobs=this: map[String]Bytes // set of named blobs
+      blobs=this: map[String]Bytes # set of named blobs
     results:
-      hash: Hash // calculated hash of blob set
+      hash: Hash # calculated hash of blob set
 views:
   getBlobField:
     params:
-      field: String // blob name
-      hash: Hash // blob set
+      field: String # blob name
+      hash: Hash # blob set
     results:
-      bytes: Bytes // blob data
+      bytes: Bytes # blob data
   getBlobInfo:
     params:
-      hash: Hash // blob set
+      hash: Hash # blob set
     results:
-      blobSizes=this: map[String]Int32 // size for each named blob
+      blobSizes=this: map[String]Int32 # size for each named blob
   listBlobs:
     results:
-      blobSizes=this: map[Hash]Int32 // total size for each blob set
+      blobSizes=this: map[Hash]Int32 # total size for each blob set

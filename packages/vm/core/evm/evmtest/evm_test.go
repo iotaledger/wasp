@@ -8,11 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -482,52 +480,18 @@ func TestISCGetAllowanceNativeTokens(t *testing.T) {
 	require.EqualValues(t, 42, nt.Amount.Uint64())
 }
 
-func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner iotago.Address) (*iscp.NFT, *solo.NFTMintedInfo) {
-	nftMetadata := []byte("foobar")
-	nftInfo, err := ch.Env.MintNFTL1(issuer, owner, nftMetadata)
-	require.NoError(t, err)
-	return &iscp.NFT{
-		ID:       nftInfo.NFTID,
-		Issuer:   owner,
-		Metadata: nftMetadata,
-	}, nftInfo
-}
-
-func TestISCGetAllowanceNFTs(t *testing.T) {
+func TestISCGetAllowanceAvailableIotas(t *testing.T) {
 	evmChain := initEVM(t)
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
-	// mint some native tokens
-	evmChain.soloChain.MustDepositIotasToL2(10_000_0, nil) // for gas
-	_, _, err := evmChain.soloChain.NewFoundryParams(100000).
-		WithUser(evmChain.soloChain.OriginatorPrivateKey).
-		CreateFoundry()
-	require.NoError(t, err)
-
-	nft, _ := mintDummyNFT(t, evmChain.soloChain, evmChain.soloChain.OriginatorPrivateKey, evmChain.soloChain.OriginatorAddress)
-
-	require.NoError(t, err)
-
-	// test the getAllowanceNFT sandbox binding
-	nt := new(isccontract.ISCNFT)
-	iscTest.callFnExpectEvent([]ethCallOptions{{
-		iota: iotaCallOptions{
-			before: func(req *solo.CallParams) {
-				req.AddIotas(200000).
-					AddAllowance(iscp.NewAllowanceFungibleTokens(iscp.NewTokensIotas(10000)).AddNFTs(nft.ID)).
-					WithMaxAffordableGasBudget().
-					WithNFT(nft)
-			},
+	var iotasAvailable uint64
+	iscTest.callFnExpectEvent([]ethCallOptions{{iota: iotaCallOptions{
+		before: func(cp *solo.CallParams) {
+			cp.AddAllowanceIotas(42)
 		},
-	}}, "AllowanceNFTEvent", &nt, "emitAllowanceNFTs")
+	}}}, "AllowanceAvailableIotasEvent", &iotasAvailable, "emitAllowanceAvailableIotas")
 
-	issuer, err := nft.Issuer.Serialize(serializer.DeSeriModeNoValidation, nil)
-
-	require.NoError(t, err)
-
-	require.EqualValues(t, nft.ID, nt.ID)
-	require.EqualValues(t, issuer, nt.Issuer.Data)
-	require.EqualValues(t, nft.Metadata, nt.Metadata)
+	require.EqualValues(t, 42, iotasAvailable)
 }
 
 func TestRevert(t *testing.T) {
@@ -566,12 +530,73 @@ func TestSend(t *testing.T) {
 		before: func(req *solo.CallParams) {
 			req.AddAllowanceIotas(42)
 		},
-	}}}, "SendEvent", &iotas, "emitSend")
+	}}}, "SendEvent", nil, "emitSend")
 
 	require.EqualValues(t, 42, iotas)
-  
+
 }
 
+func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	// mint some native tokens
+	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gaz
+	sn, tokenID, err := evmChain.soloChain.NewFoundryParams(10000).
+		WithUser(evmChain.soloChain.OriginatorPrivateKey).
+		CreateFoundry()
+	require.NoError(t, err)
+	err = evmChain.soloChain.MintTokens(sn, 10000, evmChain.soloChain.OriginatorPrivateKey)
+	require.NoError(t, err)
+
+	nt := new(isccontract.IotaNativeToken)
+	iscTest.callFnExpectEvent([]ethCallOptions{{
+		iota: iotaCallOptions{
+			before: func(cp *solo.CallParams) {
+				cp.AddAllowanceNativeTokens(&tokenID, 42)
+			},
+		},
+	}}, "AllowanceAvailableNativeTokenEvent", &nt, "emitAllowanceAvailableNativeTokens")
+
+	require.EqualValues(t, tokenID[:], nt.ID.Data)
+	require.EqualValues(t, 42, nt.Amount.Uint64())
+}
+
+func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
+	evmChain := initEVM(t)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	// mint an NFT and send to chain
+	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	issuerWallet, issuerAddress := evmChain.solo.NewKeyPairWithFunds()
+	metadata := []byte("foobar")
+	nftInfo, err := evmChain.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
+	require.NoError(t, err)
+
+	nft := new(isccontract.ISCNFT)
+	iscTest.callFnExpectEvent([]ethCallOptions{{
+		iota: iotaCallOptions{
+			wallet: issuerWallet,
+			before: func(cp *solo.CallParams) {
+				cp.AddIotas(10000).
+					WithNFT(&iscp.NFT{
+						ID:       nftInfo.NFTID,
+						Issuer:   issuerAddress,
+						Metadata: metadata,
+					}).
+					WithAllowance(&iscp.Allowance{
+						Assets: &iscp.FungibleTokens{Iotas: 1000},
+						NFTs:   []iotago.NFTID{nftInfo.NFTID},
+					}).
+					WithGasBudget(1000000)
+			},
+		},
+	}}, "AllowanceAvailableNFTEvent", &nft, "emitAllowanceAvailableNFTs")
+
+	require.EqualValues(t, nftInfo.NFTID, nft.MustUnwrap().ID)
+	require.True(t, issuerAddress.Equal(nft.MustUnwrap().Issuer))
+	require.EqualValues(t, metadata, nft.MustUnwrap().Metadata)
+}
 func TestISCCall(t *testing.T) {
 	evmChain := initEVM(t, inccounter.Processor)
 	err := evmChain.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)

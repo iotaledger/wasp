@@ -6,16 +6,16 @@ import * as sc from "./index";
 
 export function funcMintSupply(ctx: wasmlib.ScFuncContext, f: sc.MintSupplyContext): void {
     let minted = ctx.minted();
-    let mintedColors = minted.colors();
-    ctx.require(mintedColors.length == 1, "need single minted color");
-    let mintedColor = mintedColors[0];
+    let mintedTokens = minted.tokenIDs();
+    ctx.require(mintedTokens.length == 1, "need single minted color");
+    let mintedColor = mintedTokens[0];
     let currentToken = f.state.registry().getToken(mintedColor);
     if (currentToken.exists()) {
         // should never happen, because transaction id is unique
         ctx.panic("TokenRegistry: registry for color already exists");
     }
     let token = new sc.Token();
-    token.supply = minted.balance(mintedColor);
+    token.supply = minted.balance(mintedColor).uint64();
     token.mintedBy = ctx.caller();
     token.owner = ctx.caller();
     token.created = ctx.timestamp();
@@ -26,8 +26,8 @@ export function funcMintSupply(ctx: wasmlib.ScFuncContext, f: sc.MintSupplyConte
         token.description = "no dscr";
     }
     currentToken.setValue(token);
-    let colorList = f.state.colorList();
-    colorList.appendColor().setValue(mintedColor);
+    let colorList = f.state.tokenList();
+    colorList.appendTokenID().setValue(mintedColor);
 }
 
 export function funcTransferOwnership(ctx: wasmlib.ScFuncContext, f: sc.TransferOwnershipContext): void {

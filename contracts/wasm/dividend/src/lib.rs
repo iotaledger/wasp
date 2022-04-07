@@ -94,8 +94,6 @@ fn func_member_thunk(ctx: &ScFuncContext) {
 		params: ImmutableMemberParams { proxy: params_proxy() },
 		state: MutableDividendState { proxy: state_proxy() },
 	};
-
-	// only defined owner of contract can add members
 	let access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller() == access.value(), "no permission");
@@ -117,8 +115,6 @@ fn func_set_owner_thunk(ctx: &ScFuncContext) {
 		params: ImmutableSetOwnerParams { proxy: params_proxy() },
 		state: MutableDividendState { proxy: state_proxy() },
 	};
-
-	// only defined owner of contract can change owner
 	let access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller() == access.value(), "no permission");

@@ -13,6 +13,7 @@ type ImmutableDonateParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// feedback for the person you donate to
 func (s ImmutableDonateParams) Feedback() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamFeedback))
 }
@@ -21,6 +22,7 @@ type MutableDonateParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// feedback for the person you donate to
 func (s MutableDonateParams) Feedback() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamFeedback))
 }
@@ -29,6 +31,7 @@ type ImmutableWithdrawParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// amount to withdraw
 func (s ImmutableWithdrawParams) Amount() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamAmount))
 }
@@ -37,6 +40,7 @@ type MutableWithdrawParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// amount to withdraw
 func (s MutableWithdrawParams) Amount() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamAmount))
 }

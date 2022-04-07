@@ -5,23 +5,28 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
 )
 
 const (
 	DEBUG           = false
-	FORCE_SKIP_WASM = true
+	FORCE_SKIP_WASM = false
+	FORCE_RUST_WASM = true
 )
 
 const (
 	ScName           = "testcore"
 	HScName          = iscp.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
+	//WasmFileTestcore = "../../../../../contracts/wasm/testcore/go/pkg/testcore_go.wasm"
+	//WasmFileTestcore = "../../../../../contracts/wasm/testcore/ts/pkg/testcore_ts.wasm"
 )
 
 func init() {
@@ -70,14 +75,33 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	})
 }
 
+func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
+	if FORCE_SKIP_WASM || !runWasm {
+		// run core version of testcore
+		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
+	}
+
+	if FORCE_RUST_WASM {
+		// run Rust Wasm version of testcore
+		return chain.DeployWasmContract(user, ScName, WasmFileTestcore)
+	}
+
+	// run non-Wasm go version of testcore
+	wasmhost.GoWasmVM = func() wasmhost.WasmVM {
+		return wasmhost.NewWasmGoVM(ScName, testcore.OnLoad)
+	}
+	hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
+	if err != nil {
+		return err
+	}
+	err = chain.DeployContract(user, ScName, hProg)
+	wasmhost.GoWasmVM = nil
+	return err
+}
+
 // WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) *iscp.AgentID {
-	var err error
-	if !FORCE_SKIP_WASM && runWasm {
-		err = chain.DeployWasmContract(user, ScName, WasmFileTestcore)
-	} else {
-		err = chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
-	}
+	err := deployContract(t, chain, user, runWasm)
 	require.NoError(t, err)
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)

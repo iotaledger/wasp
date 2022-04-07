@@ -88,8 +88,6 @@ func funcMemberThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-
-	// only defined owner of contract can add members
 	access := f.State.Owner()
 	ctx.Require(access.Exists(), "access not set: owner")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
@@ -115,8 +113,6 @@ func funcSetOwnerThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-
-	// only defined owner of contract can change owner
 	access := f.State.Owner()
 	ctx.Require(access.Exists(), "access not set: owner")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")

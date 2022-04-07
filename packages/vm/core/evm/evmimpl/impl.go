@@ -104,7 +104,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 		emu = getEmulatorInBlockContext(ctx)
 	}
 
-	receipt, gasUsed, err, revertError := emu.SendTransaction(tx, gasBudget)
+	receipt, gasUsed, err, result := emu.SendTransaction(tx, gasBudget)
 
 	// burn gas even on error
 	ctx.Gas().Burn(gas.BurnCodeEVM1P, evm.EVMGasToISC(gasUsed, gasRatio))
@@ -112,7 +112,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 
 	// if EVM execution was reverted we must revert the ISC request as well
-	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, revertError.Error())
+	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, emulator.DecodeRevertError(result, ctx.Contract()).Error())
 
 	return nil
 }

@@ -21,6 +21,7 @@ type ImmutableStoreBlobParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// set of named blobs
 func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
 	//nolint:gosimple
 	return MapStringToImmutableBytes{proxy: s.proxy}
@@ -42,6 +43,7 @@ type MutableStoreBlobParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// set of named blobs
 func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
 	//nolint:gosimple
 	return MapStringToMutableBytes{proxy: s.proxy}
@@ -51,6 +53,8 @@ type ImmutableGetBlobFieldParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// blob name
+// blob set
 func (s ImmutableGetBlobFieldParams) Field() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamField))
 }
@@ -63,6 +67,8 @@ type MutableGetBlobFieldParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// blob name
+// blob set
 func (s MutableGetBlobFieldParams) Field() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamField))
 }
@@ -75,6 +81,7 @@ type ImmutableGetBlobInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// blob set
 func (s ImmutableGetBlobInfoParams) Hash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
@@ -83,6 +90,7 @@ type MutableGetBlobInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// blob set
 func (s MutableGetBlobInfoParams) Hash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }

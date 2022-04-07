@@ -71,10 +71,6 @@ export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-	feeColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultFeeColor));
-	}
-
 	maxBlobSize(): wasmtypes.ScImmutableInt32 {
 		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
@@ -109,10 +105,6 @@ export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-	feeColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultFeeColor));
-	}
-
 	maxBlobSize(): wasmtypes.ScMutableInt32 {
 		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
@@ -127,10 +119,6 @@ export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetFeeInfoResults extends wasmtypes.ScProxy {
-	feeColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultFeeColor));
-	}
-
 	ownerFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultOwnerFee));
 	}
@@ -141,10 +129,6 @@ export class ImmutableGetFeeInfoResults extends wasmtypes.ScProxy {
 }
 
 export class MutableGetFeeInfoResults extends wasmtypes.ScProxy {
-	feeColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultFeeColor));
-	}
-
 	ownerFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultOwnerFee));
 	}

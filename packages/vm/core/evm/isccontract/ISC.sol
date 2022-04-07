@@ -126,13 +126,16 @@ interface ISC {
 	function getAllowanceIotas() external view returns (uint64);
 	function getAllowanceNativeTokensLen() external view returns (uint16);
 	function getAllowanceNativeToken(uint16 i) external view returns (IotaNativeToken memory);
-  function getAllowanceNFTsLen() external view returns (uint16);
-  function getAllowanceNFTID(uint16 i) external view returns (IotaNFTID);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
 	function send(ISCRequestParameters memory params) external view;
 	function registerError(string memory s) external view returns (ISCError);
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
+	function getAllowanceAvailableIotas() external view returns (uint64);
+	function getAllowanceAvailableNativeToken(uint16 i) external view returns (IotaNativeToken memory);
+	function getAllowanceAvailableNativeTokensLen() external view returns (uint16);
+	function getAllowanceAvailableNFTsLen() external view returns (uint16);
+	function getAllowanceAvailableNFT(uint16 i) external view returns (ISCNFT memory);
 
 	// ----- SandboxView -----
 

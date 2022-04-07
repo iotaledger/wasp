@@ -99,11 +99,11 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
 
 	case "getAllowanceNFTsLen":
-		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().NFTs))}
+		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().NFTs))}
 
 	case "getAllowanceNFTID":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapISCNFTID(c.ctx.AllowanceAvailable().NFTs[i])}
+		outs = []interface{}{isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])}
 
 	case "getCaller":
 		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Caller())}
@@ -117,6 +117,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		params := isccontract.ISCRequestParameters{}
 		err := method.Inputs.Copy(&params, args)
 		fmt.Printf(err.Error())
+		outs = []interface{}{}
 	//	c.ctx.Send(params)
 
 	case "call":
@@ -136,6 +137,24 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		)
 		outs = []interface{}{isccontract.WrapISCDict(callRet)}
 
+	case "getAllowanceAvailableIotas":
+		outs = []interface{}{c.ctx.AllowanceAvailable().Assets.Iotas}
+
+	case "getAllowanceAvailableNativeToken":
+		i := args[0].(uint16)
+		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.AllowanceAvailable().Assets.Tokens[i])}
+
+	case "getAllowanceAvailableNativeTokensLen":
+		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().Assets.Tokens))}
+
+	case "getAllowanceAvailableNFTsLen":
+		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().NFTs))}
+
+	case "getAllowanceAvailableNFT":
+		i := args[0].(uint16)
+		nftID := isccontract.WrapIotaNFTID(c.ctx.AllowanceAvailable().NFTs[i])
+		nft := c.ctx.GetNFTData(nftID.Unwrap())
+		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
 
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))

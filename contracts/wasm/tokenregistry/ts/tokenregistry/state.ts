@@ -8,38 +8,49 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableColor extends wasmtypes.ScProxy {
+export class MapTokenIDToImmutableToken extends wasmtypes.ScProxy {
+
+	getToken(key: wasmtypes.ScTokenID): sc.ImmutableToken {
+		return new sc.ImmutableToken(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	}
+}
+
+export class ArrayOfImmutableTokenID extends wasmtypes.ScProxy {
 
 	length(): u32 {
 		return this.proxy.length();
 	}
 
-	getColor(index: u32): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.index(index));
-	}
-}
-
-export class MapColorToImmutableToken extends wasmtypes.ScProxy {
-
-	getToken(key: wasmtypes.ScColor): sc.ImmutableToken {
-		return new sc.ImmutableToken(this.proxy.key(wasmtypes.colorToBytes(key)));
+	getTokenID(index: u32): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.index(index));
 	}
 }
 
 export class ImmutableTokenRegistryState extends wasmtypes.ScProxy {
-	colorList(): sc.ArrayOfImmutableColor {
-		return new sc.ArrayOfImmutableColor(this.proxy.root(sc.StateColorList));
+	registry(): sc.MapTokenIDToImmutableToken {
+		return new sc.MapTokenIDToImmutableToken(this.proxy.root(sc.StateRegistry));
 	}
 
-	registry(): sc.MapColorToImmutableToken {
-		return new sc.MapColorToImmutableToken(this.proxy.root(sc.StateRegistry));
+	tokenList(): sc.ArrayOfImmutableTokenID {
+		return new sc.ArrayOfImmutableTokenID(this.proxy.root(sc.StateTokenList));
 	}
 }
 
-export class ArrayOfMutableColor extends wasmtypes.ScProxy {
+export class MapTokenIDToMutableToken extends wasmtypes.ScProxy {
 
-	appendColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.append());
+	clear(): void {
+		this.proxy.clearMap();
+	}
+
+	getToken(key: wasmtypes.ScTokenID): sc.MutableToken {
+		return new sc.MutableToken(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	}
+}
+
+export class ArrayOfMutableTokenID extends wasmtypes.ScProxy {
+
+	appendTokenID(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.append());
 	}
 
 	clear(): void {
@@ -50,19 +61,8 @@ export class ArrayOfMutableColor extends wasmtypes.ScProxy {
 		return this.proxy.length();
 	}
 
-	getColor(index: u32): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.index(index));
-	}
-}
-
-export class MapColorToMutableToken extends wasmtypes.ScProxy {
-
-	clear(): void {
-		this.proxy.clearMap();
-	}
-
-	getToken(key: wasmtypes.ScColor): sc.MutableToken {
-		return new sc.MutableToken(this.proxy.key(wasmtypes.colorToBytes(key)));
+	getTokenID(index: u32): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.index(index));
 	}
 }
 
@@ -71,11 +71,11 @@ export class MutableTokenRegistryState extends wasmtypes.ScProxy {
 		return new sc.ImmutableTokenRegistryState(this.proxy);
 	}
 
-	colorList(): sc.ArrayOfMutableColor {
-		return new sc.ArrayOfMutableColor(this.proxy.root(sc.StateColorList));
+	registry(): sc.MapTokenIDToMutableToken {
+		return new sc.MapTokenIDToMutableToken(this.proxy.root(sc.StateRegistry));
 	}
 
-	registry(): sc.MapColorToMutableToken {
-		return new sc.MapColorToMutableToken(this.proxy.root(sc.StateRegistry));
+	tokenList(): sc.ArrayOfMutableTokenID {
+		return new sc.ArrayOfMutableTokenID(this.proxy.root(sc.StateTokenList));
 	}
 }

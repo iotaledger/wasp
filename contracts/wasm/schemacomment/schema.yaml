@@ -1,0 +1,117 @@
+name: SchemaComment
+description: demonstration of dumping comments in yaml file to schema definition
+
+# ##################################
+
+# header comment for event 1
+# header comment for event 2
+events: # line comment for event 1
+        # line comment for event 2
+# line comment for event 3
+# line comment for event 4
+
+  # header comment for TestEvent 1
+  # header comment for TestEvent 2
+  TestEvent: # line comment for TestEvent 1
+             # line comment for TestEvent 2
+             # line comment for TestEvent 3
+             # line comment for TestEvent 4
+
+    # header comment for eventParam1 1
+    # header comment for eventParam1 2
+    eventParam1: String # line comment for eventParam1 1
+                        # line comment for eventParam1 2
+                        # line comment for eventParam1 3
+                        # line comment for eventParam1 4
+    
+    # header comment for eventParam2 1
+    # header comment for eventParam2 2
+    eventParam2: # line comment for eventParam2 1
+                 # line comment for eventParam2 2
+                 # line comment for eventParam2 3
+      String     # line comment for eventParam2 4
+                 # line comment for eventParam2 5
+                 # line comment for eventParam2 6
+                 # line comment for eventParam2 7
+
+    ######################INVALID CASE######################
+    # # header comment for eventParam2 1
+    # # header comment for eventParam2 2
+    # eventParam3: # line comment for eventParam2 1
+    #   # line comment for eventParam2 2
+    #   # line comment for eventParam2 3
+    #
+    #   # line comment for eventParam2 4
+    #   String     # line comment for eventParam2 5
+    # # line comment for eventParam2 6
+    # # line comment for eventParam2 7
+
+# ##################################
+
+structs:
+  # comment for TestStruct1
+  TestStruct1:
+    # comment for x1
+    x1: Int32
+    # comment for y1
+    y1: Int32
+  # comment for TestStruct2
+  TestStruct2:
+    # comment for x2
+    x2: Int32
+    # comment for y2
+    y2: Int32
+
+# ##################################
+
+typedefs:
+  # comment for TestTypedef
+  TestTypedef: String[]
+
+# ##################################
+
+state:
+  TestState1: Int64[] # comment for TestState1
+
+  TestState2: AgentID # comment for TestState2
+
+# ##################################
+
+funcs: # comment for funcs
+
+  # comment for TestFunc1 1
+  TestFunc1: # comment for TestFunc1 2
+  
+    # comment for params
+    params: 
+      # comment for name
+      name: String 
+      # comment for value
+      value: String 
+      # comment for arr
+      arr: Int64[]
+    # comment for results  
+    results: 
+      # comment for length
+      length: Uint32 
+        
+    
+# ##################################
+
+views: # comment for views
+
+  # comment for TestView1
+  TestView1: 
+    # comment for params
+    params: 
+      # comment for name
+      name: String 
+      # comment for arr
+      arr: Int64[]
+    # comment for results  
+    results: 
+      # comment for length
+      length: Uint32 
+
+
+

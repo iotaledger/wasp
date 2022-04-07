@@ -10,52 +10,75 @@
 use wasmlib::*;
 use crate::*;
 
-pub struct ArrayOfArraysAppendCall {
+pub struct AddressMapOfAddressArrayAppendCall {
 	pub func: ScFunc,
-	pub params: MutableArrayOfArraysAppendParams,
+	pub params: MutableAddressMapOfAddressArrayAppendParams,
 }
 
-pub struct ArrayOfArraysClearCall {
+pub struct AddressMapOfAddressArrayClearCall {
+	pub func: ScFunc,
+	pub params: MutableAddressMapOfAddressArrayClearParams,
+}
+
+pub struct AddressMapOfAddressArraySetCall {
+	pub func: ScFunc,
+	pub params: MutableAddressMapOfAddressArraySetParams,
+}
+
+pub struct AddressMapOfAddressMapClearCall {
+	pub func: ScFunc,
+	pub params: MutableAddressMapOfAddressMapClearParams,
+}
+
+pub struct AddressMapOfAddressMapSetCall {
+	pub func: ScFunc,
+	pub params: MutableAddressMapOfAddressMapSetParams,
+}
+
+pub struct ArrayOfAddressArrayAppendCall {
+	pub func: ScFunc,
+	pub params: MutableArrayOfAddressArrayAppendParams,
+}
+
+pub struct ArrayOfAddressArrayClearCall {
 	pub func: ScFunc,
 }
 
-pub struct ArrayOfArraysSetCall {
+pub struct ArrayOfAddressArraySetCall {
 	pub func: ScFunc,
-	pub params: MutableArrayOfArraysSetParams,
+	pub params: MutableArrayOfAddressArraySetParams,
 }
 
-pub struct ArrayOfMapsClearCall {
+pub struct ArrayOfAddressMapClearCall {
 	pub func: ScFunc,
 }
 
-pub struct ArrayOfMapsSetCall {
+pub struct ArrayOfAddressMapSetCall {
 	pub func: ScFunc,
-	pub params: MutableArrayOfMapsSetParams,
+	pub params: MutableArrayOfAddressMapSetParams,
 }
 
-pub struct MapOfArraysAppendCall {
+pub struct ArrayOfStringArrayAppendCall {
 	pub func: ScFunc,
-	pub params: MutableMapOfArraysAppendParams,
+	pub params: MutableArrayOfStringArrayAppendParams,
 }
 
-pub struct MapOfArraysClearCall {
+pub struct ArrayOfStringArrayClearCall {
 	pub func: ScFunc,
-	pub params: MutableMapOfArraysClearParams,
 }
 
-pub struct MapOfArraysSetCall {
+pub struct ArrayOfStringArraySetCall {
 	pub func: ScFunc,
-	pub params: MutableMapOfArraysSetParams,
+	pub params: MutableArrayOfStringArraySetParams,
 }
 
-pub struct MapOfMapsClearCall {
+pub struct ArrayOfStringMapClearCall {
 	pub func: ScFunc,
-	pub params: MutableMapOfMapsClearParams,
 }
 
-pub struct MapOfMapsSetCall {
+pub struct ArrayOfStringMapSetCall {
 	pub func: ScFunc,
-	pub params: MutableMapOfMapsSetParams,
+	pub params: MutableArrayOfStringMapSetParams,
 }
 
 pub struct ParamTypesCall {
@@ -65,6 +88,31 @@ pub struct ParamTypesCall {
 
 pub struct RandomCall {
 	pub func: ScFunc,
+}
+
+pub struct StringMapOfStringArrayAppendCall {
+	pub func: ScFunc,
+	pub params: MutableStringMapOfStringArrayAppendParams,
+}
+
+pub struct StringMapOfStringArrayClearCall {
+	pub func: ScFunc,
+	pub params: MutableStringMapOfStringArrayClearParams,
+}
+
+pub struct StringMapOfStringArraySetCall {
+	pub func: ScFunc,
+	pub params: MutableStringMapOfStringArraySetParams,
+}
+
+pub struct StringMapOfStringMapClearCall {
+	pub func: ScFunc,
+	pub params: MutableStringMapOfStringMapClearParams,
+}
+
+pub struct StringMapOfStringMapSetCall {
+	pub func: ScFunc,
+	pub params: MutableStringMapOfStringMapSetParams,
 }
 
 pub struct TakeAllowanceCall {
@@ -81,21 +129,56 @@ pub struct TriggerEventCall {
 	pub params: MutableTriggerEventParams,
 }
 
-pub struct ArrayOfArraysLengthCall {
+pub struct AddressMapOfAddressArrayLengthCall {
 	pub func: ScView,
-	pub results: ImmutableArrayOfArraysLengthResults,
+	pub params: MutableAddressMapOfAddressArrayLengthParams,
+	pub results: ImmutableAddressMapOfAddressArrayLengthResults,
 }
 
-pub struct ArrayOfArraysValueCall {
+pub struct AddressMapOfAddressArrayValueCall {
 	pub func: ScView,
-	pub params: MutableArrayOfArraysValueParams,
-	pub results: ImmutableArrayOfArraysValueResults,
+	pub params: MutableAddressMapOfAddressArrayValueParams,
+	pub results: ImmutableAddressMapOfAddressArrayValueResults,
 }
 
-pub struct ArrayOfMapsValueCall {
+pub struct AddressMapOfAddressMapValueCall {
 	pub func: ScView,
-	pub params: MutableArrayOfMapsValueParams,
-	pub results: ImmutableArrayOfMapsValueResults,
+	pub params: MutableAddressMapOfAddressMapValueParams,
+	pub results: ImmutableAddressMapOfAddressMapValueResults,
+}
+
+pub struct ArrayOfAddressArrayLengthCall {
+	pub func: ScView,
+	pub results: ImmutableArrayOfAddressArrayLengthResults,
+}
+
+pub struct ArrayOfAddressArrayValueCall {
+	pub func: ScView,
+	pub params: MutableArrayOfAddressArrayValueParams,
+	pub results: ImmutableArrayOfAddressArrayValueResults,
+}
+
+pub struct ArrayOfAddressMapValueCall {
+	pub func: ScView,
+	pub params: MutableArrayOfAddressMapValueParams,
+	pub results: ImmutableArrayOfAddressMapValueResults,
+}
+
+pub struct ArrayOfStringArrayLengthCall {
+	pub func: ScView,
+	pub results: ImmutableArrayOfStringArrayLengthResults,
+}
+
+pub struct ArrayOfStringArrayValueCall {
+	pub func: ScView,
+	pub params: MutableArrayOfStringArrayValueParams,
+	pub results: ImmutableArrayOfStringArrayValueResults,
+}
+
+pub struct ArrayOfStringMapValueCall {
+	pub func: ScView,
+	pub params: MutableArrayOfStringMapValueParams,
+	pub results: ImmutableArrayOfStringMapValueResults,
 }
 
 pub struct BlockRecordCall {
@@ -120,107 +203,146 @@ pub struct IotaBalanceCall {
 	pub results: ImmutableIotaBalanceResults,
 }
 
-pub struct MapOfArraysLengthCall {
+pub struct StringMapOfStringArrayLengthCall {
 	pub func: ScView,
-	pub params: MutableMapOfArraysLengthParams,
-	pub results: ImmutableMapOfArraysLengthResults,
+	pub params: MutableStringMapOfStringArrayLengthParams,
+	pub results: ImmutableStringMapOfStringArrayLengthResults,
 }
 
-pub struct MapOfArraysValueCall {
+pub struct StringMapOfStringArrayValueCall {
 	pub func: ScView,
-	pub params: MutableMapOfArraysValueParams,
-	pub results: ImmutableMapOfArraysValueResults,
+	pub params: MutableStringMapOfStringArrayValueParams,
+	pub results: ImmutableStringMapOfStringArrayValueResults,
 }
 
-pub struct MapOfMapsValueCall {
+pub struct StringMapOfStringMapValueCall {
 	pub func: ScView,
-	pub params: MutableMapOfMapsValueParams,
-	pub results: ImmutableMapOfMapsValueResults,
+	pub params: MutableStringMapOfStringMapValueParams,
+	pub results: ImmutableStringMapOfStringMapValueResults,
 }
 
 pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn array_of_arrays_append(_ctx: &dyn ScFuncCallContext) -> ArrayOfArraysAppendCall {
-        let mut f = ArrayOfArraysAppendCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ARRAYS_APPEND),
-            params: MutableArrayOfArraysAppendParams { proxy: Proxy::nil() },
+    pub fn address_map_of_address_array_append(_ctx: &dyn ScFuncCallContext) -> AddressMapOfAddressArrayAppendCall {
+        let mut f = AddressMapOfAddressArrayAppendCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ADDRESS_MAP_OF_ADDRESS_ARRAY_APPEND),
+            params: MutableAddressMapOfAddressArrayAppendParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn array_of_arrays_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfArraysClearCall {
-        ArrayOfArraysClearCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ARRAYS_CLEAR),
+    pub fn address_map_of_address_array_clear(_ctx: &dyn ScFuncCallContext) -> AddressMapOfAddressArrayClearCall {
+        let mut f = AddressMapOfAddressArrayClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ADDRESS_MAP_OF_ADDRESS_ARRAY_CLEAR),
+            params: MutableAddressMapOfAddressArrayClearParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn address_map_of_address_array_set(_ctx: &dyn ScFuncCallContext) -> AddressMapOfAddressArraySetCall {
+        let mut f = AddressMapOfAddressArraySetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ADDRESS_MAP_OF_ADDRESS_ARRAY_SET),
+            params: MutableAddressMapOfAddressArraySetParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn address_map_of_address_map_clear(_ctx: &dyn ScFuncCallContext) -> AddressMapOfAddressMapClearCall {
+        let mut f = AddressMapOfAddressMapClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ADDRESS_MAP_OF_ADDRESS_MAP_CLEAR),
+            params: MutableAddressMapOfAddressMapClearParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn address_map_of_address_map_set(_ctx: &dyn ScFuncCallContext) -> AddressMapOfAddressMapSetCall {
+        let mut f = AddressMapOfAddressMapSetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ADDRESS_MAP_OF_ADDRESS_MAP_SET),
+            params: MutableAddressMapOfAddressMapSetParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_address_array_append(_ctx: &dyn ScFuncCallContext) -> ArrayOfAddressArrayAppendCall {
+        let mut f = ArrayOfAddressArrayAppendCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ADDRESS_ARRAY_APPEND),
+            params: MutableArrayOfAddressArrayAppendParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_address_array_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfAddressArrayClearCall {
+        ArrayOfAddressArrayClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ADDRESS_ARRAY_CLEAR),
         }
     }
 
-    pub fn array_of_arrays_set(_ctx: &dyn ScFuncCallContext) -> ArrayOfArraysSetCall {
-        let mut f = ArrayOfArraysSetCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ARRAYS_SET),
-            params: MutableArrayOfArraysSetParams { proxy: Proxy::nil() },
+    pub fn array_of_address_array_set(_ctx: &dyn ScFuncCallContext) -> ArrayOfAddressArraySetCall {
+        let mut f = ArrayOfAddressArraySetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ADDRESS_ARRAY_SET),
+            params: MutableArrayOfAddressArraySetParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn array_of_maps_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfMapsClearCall {
-        ArrayOfMapsClearCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_MAPS_CLEAR),
+    pub fn array_of_address_map_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfAddressMapClearCall {
+        ArrayOfAddressMapClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ADDRESS_MAP_CLEAR),
         }
     }
 
-    pub fn array_of_maps_set(_ctx: &dyn ScFuncCallContext) -> ArrayOfMapsSetCall {
-        let mut f = ArrayOfMapsSetCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_MAPS_SET),
-            params: MutableArrayOfMapsSetParams { proxy: Proxy::nil() },
+    pub fn array_of_address_map_set(_ctx: &dyn ScFuncCallContext) -> ArrayOfAddressMapSetCall {
+        let mut f = ArrayOfAddressMapSetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ADDRESS_MAP_SET),
+            params: MutableArrayOfAddressMapSetParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn map_of_arrays_append(_ctx: &dyn ScFuncCallContext) -> MapOfArraysAppendCall {
-        let mut f = MapOfArraysAppendCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_MAP_OF_ARRAYS_APPEND),
-            params: MutableMapOfArraysAppendParams { proxy: Proxy::nil() },
+    pub fn array_of_string_array_append(_ctx: &dyn ScFuncCallContext) -> ArrayOfStringArrayAppendCall {
+        let mut f = ArrayOfStringArrayAppendCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_STRING_ARRAY_APPEND),
+            params: MutableArrayOfStringArrayAppendParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn map_of_arrays_clear(_ctx: &dyn ScFuncCallContext) -> MapOfArraysClearCall {
-        let mut f = MapOfArraysClearCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_MAP_OF_ARRAYS_CLEAR),
-            params: MutableMapOfArraysClearParams { proxy: Proxy::nil() },
+    pub fn array_of_string_array_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfStringArrayClearCall {
+        ArrayOfStringArrayClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_STRING_ARRAY_CLEAR),
+        }
+    }
+
+    pub fn array_of_string_array_set(_ctx: &dyn ScFuncCallContext) -> ArrayOfStringArraySetCall {
+        let mut f = ArrayOfStringArraySetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_STRING_ARRAY_SET),
+            params: MutableArrayOfStringArraySetParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn map_of_arrays_set(_ctx: &dyn ScFuncCallContext) -> MapOfArraysSetCall {
-        let mut f = MapOfArraysSetCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_MAP_OF_ARRAYS_SET),
-            params: MutableMapOfArraysSetParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
+    pub fn array_of_string_map_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfStringMapClearCall {
+        ArrayOfStringMapClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_STRING_MAP_CLEAR),
+        }
     }
 
-    pub fn map_of_maps_clear(_ctx: &dyn ScFuncCallContext) -> MapOfMapsClearCall {
-        let mut f = MapOfMapsClearCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_MAP_OF_MAPS_CLEAR),
-            params: MutableMapOfMapsClearParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
-    }
-
-    pub fn map_of_maps_set(_ctx: &dyn ScFuncCallContext) -> MapOfMapsSetCall {
-        let mut f = MapOfMapsSetCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_MAP_OF_MAPS_SET),
-            params: MutableMapOfMapsSetParams { proxy: Proxy::nil() },
+    pub fn array_of_string_map_set(_ctx: &dyn ScFuncCallContext) -> ArrayOfStringMapSetCall {
+        let mut f = ArrayOfStringMapSetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_STRING_MAP_SET),
+            params: MutableArrayOfStringMapSetParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
@@ -239,6 +361,51 @@ impl ScFuncs {
         RandomCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
         }
+    }
+
+    pub fn string_map_of_string_array_append(_ctx: &dyn ScFuncCallContext) -> StringMapOfStringArrayAppendCall {
+        let mut f = StringMapOfStringArrayAppendCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_STRING_MAP_OF_STRING_ARRAY_APPEND),
+            params: MutableStringMapOfStringArrayAppendParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn string_map_of_string_array_clear(_ctx: &dyn ScFuncCallContext) -> StringMapOfStringArrayClearCall {
+        let mut f = StringMapOfStringArrayClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_STRING_MAP_OF_STRING_ARRAY_CLEAR),
+            params: MutableStringMapOfStringArrayClearParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn string_map_of_string_array_set(_ctx: &dyn ScFuncCallContext) -> StringMapOfStringArraySetCall {
+        let mut f = StringMapOfStringArraySetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_STRING_MAP_OF_STRING_ARRAY_SET),
+            params: MutableStringMapOfStringArraySetParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn string_map_of_string_map_clear(_ctx: &dyn ScFuncCallContext) -> StringMapOfStringMapClearCall {
+        let mut f = StringMapOfStringMapClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_STRING_MAP_OF_STRING_MAP_CLEAR),
+            params: MutableStringMapOfStringMapClearParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn string_map_of_string_map_set(_ctx: &dyn ScFuncCallContext) -> StringMapOfStringMapSetCall {
+        let mut f = StringMapOfStringMapSetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_STRING_MAP_OF_STRING_MAP_SET),
+            params: MutableStringMapOfStringMapSetParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
     }
 
     pub fn take_allowance(_ctx: &dyn ScFuncCallContext) -> TakeAllowanceCall {
@@ -265,31 +432,95 @@ impl ScFuncs {
         f
     }
 
-    pub fn array_of_arrays_length(_ctx: &dyn ScViewCallContext) -> ArrayOfArraysLengthCall {
-        let mut f = ArrayOfArraysLengthCall {
-            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_ARRAYS_LENGTH),
-            results: ImmutableArrayOfArraysLengthResults { proxy: Proxy::nil() },
-        };
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    pub fn array_of_arrays_value(_ctx: &dyn ScViewCallContext) -> ArrayOfArraysValueCall {
-        let mut f = ArrayOfArraysValueCall {
-            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_ARRAYS_VALUE),
-            params: MutableArrayOfArraysValueParams { proxy: Proxy::nil() },
-            results: ImmutableArrayOfArraysValueResults { proxy: Proxy::nil() },
+    pub fn address_map_of_address_array_length(_ctx: &dyn ScViewCallContext) -> AddressMapOfAddressArrayLengthCall {
+        let mut f = AddressMapOfAddressArrayLengthCall {
+            func: ScView::new(HSC_NAME, HVIEW_ADDRESS_MAP_OF_ADDRESS_ARRAY_LENGTH),
+            params: MutableAddressMapOfAddressArrayLengthParams { proxy: Proxy::nil() },
+            results: ImmutableAddressMapOfAddressArrayLengthResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn array_of_maps_value(_ctx: &dyn ScViewCallContext) -> ArrayOfMapsValueCall {
-        let mut f = ArrayOfMapsValueCall {
-            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_MAPS_VALUE),
-            params: MutableArrayOfMapsValueParams { proxy: Proxy::nil() },
-            results: ImmutableArrayOfMapsValueResults { proxy: Proxy::nil() },
+    pub fn address_map_of_address_array_value(_ctx: &dyn ScViewCallContext) -> AddressMapOfAddressArrayValueCall {
+        let mut f = AddressMapOfAddressArrayValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_ADDRESS_MAP_OF_ADDRESS_ARRAY_VALUE),
+            params: MutableAddressMapOfAddressArrayValueParams { proxy: Proxy::nil() },
+            results: ImmutableAddressMapOfAddressArrayValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn address_map_of_address_map_value(_ctx: &dyn ScViewCallContext) -> AddressMapOfAddressMapValueCall {
+        let mut f = AddressMapOfAddressMapValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_ADDRESS_MAP_OF_ADDRESS_MAP_VALUE),
+            params: MutableAddressMapOfAddressMapValueParams { proxy: Proxy::nil() },
+            results: ImmutableAddressMapOfAddressMapValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_address_array_length(_ctx: &dyn ScViewCallContext) -> ArrayOfAddressArrayLengthCall {
+        let mut f = ArrayOfAddressArrayLengthCall {
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_ADDRESS_ARRAY_LENGTH),
+            results: ImmutableArrayOfAddressArrayLengthResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_address_array_value(_ctx: &dyn ScViewCallContext) -> ArrayOfAddressArrayValueCall {
+        let mut f = ArrayOfAddressArrayValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_ADDRESS_ARRAY_VALUE),
+            params: MutableArrayOfAddressArrayValueParams { proxy: Proxy::nil() },
+            results: ImmutableArrayOfAddressArrayValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_address_map_value(_ctx: &dyn ScViewCallContext) -> ArrayOfAddressMapValueCall {
+        let mut f = ArrayOfAddressMapValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_ADDRESS_MAP_VALUE),
+            params: MutableArrayOfAddressMapValueParams { proxy: Proxy::nil() },
+            results: ImmutableArrayOfAddressMapValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_string_array_length(_ctx: &dyn ScViewCallContext) -> ArrayOfStringArrayLengthCall {
+        let mut f = ArrayOfStringArrayLengthCall {
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_STRING_ARRAY_LENGTH),
+            results: ImmutableArrayOfStringArrayLengthResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_string_array_value(_ctx: &dyn ScViewCallContext) -> ArrayOfStringArrayValueCall {
+        let mut f = ArrayOfStringArrayValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_STRING_ARRAY_VALUE),
+            params: MutableArrayOfStringArrayValueParams { proxy: Proxy::nil() },
+            results: ImmutableArrayOfStringArrayValueResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn array_of_string_map_value(_ctx: &dyn ScViewCallContext) -> ArrayOfStringMapValueCall {
+        let mut f = ArrayOfStringMapValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_OF_STRING_MAP_VALUE),
+            params: MutableArrayOfStringMapValueParams { proxy: Proxy::nil() },
+            results: ImmutableArrayOfStringMapValueResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
@@ -336,33 +567,33 @@ impl ScFuncs {
         f
     }
 
-    pub fn map_of_arrays_length(_ctx: &dyn ScViewCallContext) -> MapOfArraysLengthCall {
-        let mut f = MapOfArraysLengthCall {
-            func: ScView::new(HSC_NAME, HVIEW_MAP_OF_ARRAYS_LENGTH),
-            params: MutableMapOfArraysLengthParams { proxy: Proxy::nil() },
-            results: ImmutableMapOfArraysLengthResults { proxy: Proxy::nil() },
+    pub fn string_map_of_string_array_length(_ctx: &dyn ScViewCallContext) -> StringMapOfStringArrayLengthCall {
+        let mut f = StringMapOfStringArrayLengthCall {
+            func: ScView::new(HSC_NAME, HVIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH),
+            params: MutableStringMapOfStringArrayLengthParams { proxy: Proxy::nil() },
+            results: ImmutableStringMapOfStringArrayLengthResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn map_of_arrays_value(_ctx: &dyn ScViewCallContext) -> MapOfArraysValueCall {
-        let mut f = MapOfArraysValueCall {
-            func: ScView::new(HSC_NAME, HVIEW_MAP_OF_ARRAYS_VALUE),
-            params: MutableMapOfArraysValueParams { proxy: Proxy::nil() },
-            results: ImmutableMapOfArraysValueResults { proxy: Proxy::nil() },
+    pub fn string_map_of_string_array_value(_ctx: &dyn ScViewCallContext) -> StringMapOfStringArrayValueCall {
+        let mut f = StringMapOfStringArrayValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_STRING_MAP_OF_STRING_ARRAY_VALUE),
+            params: MutableStringMapOfStringArrayValueParams { proxy: Proxy::nil() },
+            results: ImmutableStringMapOfStringArrayValueResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn map_of_maps_value(_ctx: &dyn ScViewCallContext) -> MapOfMapsValueCall {
-        let mut f = MapOfMapsValueCall {
-            func: ScView::new(HSC_NAME, HVIEW_MAP_OF_MAPS_VALUE),
-            params: MutableMapOfMapsValueParams { proxy: Proxy::nil() },
-            results: ImmutableMapOfMapsValueResults { proxy: Proxy::nil() },
+    pub fn string_map_of_string_map_value(_ctx: &dyn ScViewCallContext) -> StringMapOfStringMapValueCall {
+        let mut f = StringMapOfStringMapValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_STRING_MAP_OF_STRING_MAP_VALUE),
+            params: MutableStringMapOfStringMapValueParams { proxy: Proxy::nil() },
+            results: ImmutableStringMapOfStringMapValueResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

@@ -14,36 +14,36 @@ typedefs:
   AllowancesForAgent: map[AgentID]Uint64
 state:
   allAllowances=a: map[AgentID]AllowancesForAgent
-  balances=b: map[AgentID]Uint64 // balances per account
-  supply=s: Uint64 // total supply of the token
+  balances=b: map[AgentID]Uint64 # balances per account
+  supply=s: Uint64 # total supply of the token
 funcs:
   approve:
     params:
-      amount=am: Uint64 // allowance value for delegated account
-      delegation=d: AgentID // delegated account
+      amount=am: Uint64 # allowance value for delegated account
+      delegation=d: AgentID # delegated account
   init:
     params:
-      creator=c: AgentID // creator/owner of the initial supply
-      supply=s: Uint64 // initial token supply
+      creator=c: AgentID # creator/owner of the initial supply
+      supply=s: Uint64 # initial token supply
   transfer:
     params:
-      account=ac: AgentID // target account
-      amount=am: Uint64 // amount of tokens to transfer
+      account=ac: AgentID # target account
+      amount=am: Uint64 # amount of tokens to transfer
   transferFrom:
     params:
-      account=ac: AgentID // sender account
-      amount=am: Uint64 // amount of tokens to transfer
-      recipient=r: AgentID // recipient account
+      account=ac: AgentID # sender account
+      amount=am: Uint64 # amount of tokens to transfer
+      recipient=r: AgentID # recipient account
 views:
   allowance:
     params:
-      account=ac: AgentID // sender account
-      delegation=d: AgentID // delegated account
+      account=ac: AgentID # sender account
+      delegation=d: AgentID # delegated account
     results:
       amount=am: Uint64
   balanceOf:
     params:
-      account=ac: AgentID // sender account
+      account=ac: AgentID # sender account
     results:
       amount=am: Uint64
   totalSupply:

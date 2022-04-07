@@ -69,8 +69,6 @@ func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-
-	// only SC creator can withdraw donated funds
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcWithdraw(ctx, f)

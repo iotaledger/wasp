@@ -27,7 +27,7 @@ const (
 
 var (
 	// DisableWasmTimeout can be used to disable the annoying timeout during debugging
-	DisableWasmTimeout = false
+	DisableWasmTimeout = true
 
 	// HostTracing turns on debug tracing for ScHost calls
 	HostTracing = false

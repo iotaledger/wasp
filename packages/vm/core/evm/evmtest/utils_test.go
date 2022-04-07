@@ -296,9 +296,9 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	_, fee2, err := e.soloChain.EstimateGasOnLedger(depositGasFeeReq, nil, true)
 	require.NoError(e.t, e.resolveError(err))
 	_, err = e.soloChain.PostRequestSync(depositGasFeeReq.AddIotas(iscpGasFee+fee2), nil)
+
 	// send EVM tx
 	_, err = e.soloChain.PostRequestOffLedger(req, nil)
-	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{
 		chain:         e,
@@ -388,7 +388,10 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	require.NoError(e.chain.t, err)
 	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 	require.Len(e.chain.t, res.evmReceipt.Logs, 1)
-	err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+	if v != nil {
+		err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+
+	}
 	require.NoError(e.chain.t, err)
 }
 

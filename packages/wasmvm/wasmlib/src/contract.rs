@@ -48,7 +48,7 @@ impl ScView {
         self.call_with_transfer(None);
     }
 
-    fn call_with_transfer(&self, transfer: Option<ScAssets>) {
+    fn call_with_transfer(&self, transfer: Option<ScTransfer>) {
         let mut req = wasmrequests::CallRequest {
             contract: self.h_contract,
             function: self.h_function,
@@ -108,7 +108,7 @@ impl ScInitFunc {
 pub struct ScFunc {
     pub view: ScView,
     delay: u32,
-    transfer: ScAssets,
+    transfer: ScTransfer,
 }
 
 impl ScFunc {
@@ -116,7 +116,7 @@ impl ScFunc {
         ScFunc {
             view: ScView::new(h_contract, h_function),
             delay: 0,
-            transfer: ScAssets::new(&[]),
+            transfer: ScTransfer::new(),
         }
     }
 
@@ -151,26 +151,30 @@ impl ScFunc {
         self.post_to_chain(ScFuncContext {}.chain_id())
     }
 
-    pub fn post_to_chain(&self, chain_id: ScChainID) {
-        let req = wasmrequests::PostRequest {
+    pub(crate) fn post_request(&self, chain_id: ScChainID) -> wasmrequests::PostRequest {
+        wasmrequests::PostRequest {
             chain_id: chain_id,
             contract: self.view.h_contract,
             function: self.view.h_function,
             params: self.view.params.to_bytes(),
             transfer: self.transfer.to_bytes(),
             delay: self.delay,
-        };
+        }
+    }
+
+    pub fn post_to_chain(&self, chain_id: ScChainID) {
+        let req = self.post_request(chain_id);
         let res = sandbox(FN_POST, &req.to_bytes());
         self.view.results.copy(&res);
     }
 
-    pub fn transfer(&self, transfer: ScTransfers) -> ScFunc {
+    pub fn transfer(&self, transfer: ScTransfer) -> ScFunc {
         let mut ret = self.clone();
-        ret.transfer = transfer.as_assets();
+        ret.transfer = transfer.clone();
         ret
     }
 
     pub fn transfer_iotas(&self, amount: u64) -> ScFunc {
-        self.transfer(ScTransfers::iotas(amount))
+        self.transfer(ScTransfer::iotas(amount))
     }
 }

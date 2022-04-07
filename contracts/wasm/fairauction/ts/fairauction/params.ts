@@ -9,26 +9,26 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutablePlaceBidParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutablePlaceBidParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
@@ -45,10 +45,6 @@ export class MutableSetOwnerMarginParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
-	}
-
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
@@ -60,13 +56,13 @@ export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
 	minimumBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
+
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
+	}
 }
 
 export class MutableStartAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
-	}
-
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
@@ -78,16 +74,20 @@ export class MutableStartAuctionParams extends wasmtypes.ScProxy {
 	minimumBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
+
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
+	}
 }
 
 export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }

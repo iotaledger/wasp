@@ -239,13 +239,13 @@ func (d ISCDict) Unwrap() dict.Dict {
 	return ret
 }
 
-type IotaFungibleTokens struct {
+type ISCFungibleTokens struct {
 	Iotas  uint64
 	Tokens []IotaNativeToken
 }
 
-func WrapIotaFungibleTokens(fungibleTokens iscp.FungibleTokens) IotaFungibleTokens {
-	ret := IotaFungibleTokens{
+func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens {
+	ret := ISCFungibleTokens{
 		Iotas:  fungibleTokens.Iotas,
 		Tokens: make([]IotaNativeToken, len(fungibleTokens.Tokens)),
 	}
@@ -258,7 +258,7 @@ func WrapIotaFungibleTokens(fungibleTokens iscp.FungibleTokens) IotaFungibleToke
 	return ret
 }
 
-func (t IotaFungibleTokens) Unwrap() *iscp.FungibleTokens {
+func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
 	ret := iscp.FungibleTokens{
 		Iotas: t.Iotas,
 	}
@@ -272,7 +272,7 @@ func (t IotaFungibleTokens) Unwrap() *iscp.FungibleTokens {
 }
 
 type IotaAllowance struct {
-	Assets IotaFungibleTokens
+	Assets ISCFungibleTokens
 	NFTs   []IotaNFTID
 }
 
@@ -285,7 +285,7 @@ func WrapIotaAllowance(allowance iscp.Allowance) IotaAllowance {
 
 	ret := IotaAllowance{
 		NFTs:   nftIds,
-		Assets: WrapIotaFungibleTokens(*allowance.Assets),
+		Assets: WrapISCFungibleTokens(*allowance.Assets),
 	}
 
 	return ret
@@ -414,7 +414,7 @@ func (i *ISCSendOptions) Unwrap() iscp.SendOptions {
 
 type ISCRequestParameters struct {
 	TargetAddress            IotaAddress
-	FungibleTokens           IotaFungibleTokens
+	FungibleTokens           ISCFungibleTokens
 	AdjustMinimumDustDeposit bool
 	Metadata                 ISCSendMetadata
 	SendOptions              ISCSendOptions
@@ -423,7 +423,7 @@ type ISCRequestParameters struct {
 func WrapISCRequestParameters(parameters iscp.RequestParameters) ISCRequestParameters {
 	ret := ISCRequestParameters{
 		TargetAddress:            WrapIotaAddress(parameters.TargetAddress),
-		FungibleTokens:           WrapIotaFungibleTokens(*parameters.FungibleTokens),
+		FungibleTokens:           WrapISCFungibleTokens(*parameters.FungibleTokens),
 		AdjustMinimumDustDeposit: parameters.AdjustToMinimumDustDeposit,
 		Metadata:                 WrapISCSendMetadata(*parameters.Metadata),
 		SendOptions:              WrapISCSendOptions(parameters.Options),

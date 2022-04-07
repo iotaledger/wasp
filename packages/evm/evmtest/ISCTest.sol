@@ -51,27 +51,6 @@ contract ISCTest {
 		emit SenderAddressEvent(sender);
 	}
 
-	event AllowanceIotasEvent(uint64 iotas);
-	function emitAllowanceIotas() public {
-		emit AllowanceIotasEvent(isc.getAllowanceIotas());
-	}
-
-	event AllowanceNativeTokenEvent(IotaNativeToken token);
-	function emitAllowanceNativeTokens() public {
-		uint16 n = isc.getAllowanceNativeTokensLen();
-		for (uint16 i = 0; i < n; i++) {
-			emit AllowanceNativeTokenEvent(isc.getAllowanceNativeToken(i));
-		}
-	}
-
-	event AllowanceNFTEvent(ISCNFT token);
-	function emitAllowanceNFTs() public {
-	  uint16 n = isc.getAllowanceNFTsLen();
-	  for (uint16 i = 0; i < n; i++) {
-		  emit AllowanceNFTEvent(isc.getNFTData(isc.getAllowanceNFTID(i)));
-	  }
-	}
-
 	event SendEvent();
 	function emitSend() public {
 		// WIP
@@ -90,7 +69,41 @@ contract ISCTest {
 	function emitRevertVMError() public view {
 		revert VMError(test);
 	}
-  
+
+	event AllowanceIotasEvent(uint64 iotas);
+	function emitAllowanceIotas() public {
+		emit AllowanceIotasEvent(isc.getAllowanceIotas());
+	}
+
+	event AllowanceNativeTokenEvent(IotaNativeToken token);
+	function emitAllowanceNativeTokens() public {
+		uint16 n = isc.getAllowanceNativeTokensLen();
+		for (uint16 i = 0; i < n; i++) {
+			emit AllowanceNativeTokenEvent(isc.getAllowanceNativeToken(i));
+		}
+	}
+
+	event AllowanceAvailableIotasEvent(uint64 iotas);
+	function emitAllowanceAvailableIotas() public {
+		emit AllowanceAvailableIotasEvent(isc.getAllowanceAvailableIotas());
+	}
+
+	event AllowanceAvailableNativeTokenEvent(IotaNativeToken token);
+	function emitAllowanceAvailableNativeTokens() public {
+		uint16 n = isc.getAllowanceAvailableNativeTokensLen();
+		for (uint16 i = 0; i < n;i++) {
+			emit AllowanceAvailableNativeTokenEvent(isc.getAllowanceAvailableNativeToken(i));
+		}
+	}
+
+	event AllowanceAvailableNFTEvent(ISCNFT nft);
+	function emitAllowanceAvailableNFTs() public {
+		uint16 n = isc.getAllowanceAvailableNFTsLen();
+		for (uint16 i = 0;i < n;i++) {
+			emit AllowanceAvailableNFTEvent(isc.getAllowanceAvailableNFT(i));
+		}
+	}
+
 	function callInccounter() public {
 		ISCDict memory params = ISCDict(new ISCDictItem[](1));
 		bytes memory int64Encoded42 = hex"2A00000000000000";

@@ -24,7 +24,7 @@ func callOnChain(ctx iscp.Sandbox) dict.Dict {
 	counter := state.MustGetInt64(VarCounter, 0)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
 
-	ctx.Log().Infof("param IN = %d, hnameContract = %s hnameEP = %s counter = %d",
+	ctx.Log().Infof("param IN = %d, hnameContract = %s, hnameEP = %s, counter = %d",
 		paramIn, hnameContract, hnameEP, counter)
 
 	return ctx.Call(hnameContract, hnameEP, codec.MakeDict(map[string]interface{}{

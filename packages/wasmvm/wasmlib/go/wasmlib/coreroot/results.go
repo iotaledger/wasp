@@ -13,6 +13,8 @@ type ImmutableFindContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// encoded contract record
+// encoded contract record
 func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractFound))
 }
@@ -25,6 +27,8 @@ type MutableFindContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// encoded contract record
+// encoded contract record
 func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractFound))
 }
@@ -45,6 +49,7 @@ type ImmutableGetContractRecordsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// contract records
 func (s ImmutableGetContractRecordsResults) ContractRegistry() MapHnameToImmutableBytes {
 	return MapHnameToImmutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
 }
@@ -65,6 +70,7 @@ type MutableGetContractRecordsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// contract records
 func (s MutableGetContractRecordsResults) ContractRegistry() MapHnameToMutableBytes {
 	return MapHnameToMutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
 }

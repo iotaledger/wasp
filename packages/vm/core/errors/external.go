@@ -19,20 +19,6 @@ func GetMessageFormat(code iscp.VMErrorCode, callView ViewCaller) (string, error
 	return codec.DecodeString(ret.MustGet(ParamErrorMessageFormat))
 }
 
-func ResolveErrorCode(e *iscp.VMErrorCode, callView ViewCaller) (*iscp.VMErrorTemplate, error) {
-	if e == nil {
-		return nil, nil
-	}
-
-	messageFormat, err := GetMessageFormat(*e, callView)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return iscp.NewVMErrorTemplate(*e, messageFormat), nil
-}
-
 func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, error) {
 	if e == nil {
 		return nil, nil

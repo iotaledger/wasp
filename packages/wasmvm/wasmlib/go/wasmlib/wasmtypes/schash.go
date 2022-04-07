@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//nolint:dupl
 package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -26,7 +27,7 @@ func HashDecode(dec *WasmDecoder) ScHash {
 }
 
 func HashEncode(enc *WasmEncoder, value ScHash) {
-	enc.FixedBytes(value.Bytes(), ScHashLength)
+	enc.FixedBytes(value.id[:], ScHashLength)
 }
 
 func HashFromBytes(buf []byte) ScHash {

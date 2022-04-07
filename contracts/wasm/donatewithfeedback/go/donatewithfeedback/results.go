@@ -13,6 +13,11 @@ type ImmutableDonationResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// amount donated
+// who donated
+// error to be reported to donator if anything goes wrong
+// the feedback for the person donated to
+// when the donation took place
 func (s ImmutableDonationResults) Amount() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAmount))
 }
@@ -37,6 +42,11 @@ type MutableDonationResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// amount donated
+// who donated
+// error to be reported to donator if anything goes wrong
+// the feedback for the person donated to
+// when the donation took place
 func (s MutableDonationResults) Amount() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAmount))
 }
