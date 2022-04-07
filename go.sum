@@ -574,14 +574,10 @@ github.com/influxdata/tdigest v0.0.0-20181121200506-bf2b5ad3c0a9/go.mod h1:Js0mq
 github.com/influxdata/usage-client v0.0.0-20160829180054-6d3895376368/go.mod h1:Wbbw6tYNvwa5dlB6304Sd+82Z3f7PmVZHVKU637d4po=
 github.com/iotaledger/hive.go v0.0.0-20220323112142-b879f04276bd h1:01aNzEn67EUaRs02bI4ZKLRqtJbCtK0cWar3x9TimM0=
 github.com/iotaledger/hive.go v0.0.0-20220323112142-b879f04276bd/go.mod h1:YKe8Y/+kiF1oZWnu6p67QEzofFNxNsAMpP6MpcvbnNM=
-github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4 h1:OayOb1hDkItzIoNl49dh1pAxuKxPWcT9K91ONwYOd3g=
-github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220209164443-53ca2b8201b4/go.mod h1:Aw7fS+UjhMBj4hxTBxSG8Ti/5ifp1SWFpyapGZFuzdc=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220406082310-fa38df493f6b h1:mqrzjajY0gyIPPiA715TNlZMt7YF6NWtMePSF+SXa/4=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220406082310-fa38df493f6b/go.mod h1:O18k+0+qtbHfk8AYI+dgMOoDBDKy9vwXk2ocyD7MyRI=
 github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8GoXY=
 github.com/iotaledger/iota.go v1.0.0/go.mod h1:RiKYwDyY7aCD1L0YRzHSjOsJ5mUR9yvQpvhZncNcGQI=
-github.com/iotaledger/iota.go/v3 v3.0.0-20220401090040-5d344ed99192 h1:jzfKN5q40X112yPOGQX1mnHJC+fgtAOOivsCuTmJj14=
-github.com/iotaledger/iota.go/v3 v3.0.0-20220401090040-5d344ed99192/go.mod h1:PBTo6WPkg6nx1UeFSW0dso4763m3y4ggtT/GYzeXRZI=
 github.com/iotaledger/iota.go/v3 v3.0.0-20220406103521-d6b913603253 h1:FyGW6Fnbi+ylrLy5GrXue7R2hW3zcYiSSTVYoZ9R56c=
 github.com/iotaledger/iota.go/v3 v3.0.0-20220406103521-d6b913603253/go.mod h1:5pRqKqJ6T4lJHJxOs8IvlRh2CN5qlXYoSPC1fs2L7DA=
 github.com/ipfs/go-cid v0.0.2/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
