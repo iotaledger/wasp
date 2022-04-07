@@ -73,4 +73,8 @@ $#emit goPackage
 
 $#emit importWasmLib
 `,
+	// *******************************
+	"_fldComment": `
+$fldComment
+`,
 }

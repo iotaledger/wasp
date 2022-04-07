@@ -26,8 +26,8 @@ func NewTestStruct1FromBytes(buf []byte) *TestStruct1 {
 
 func (o *TestStruct1) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Int32Encode(enc, o.X1)
-	wasmtypes.Int32Encode(enc, o.Y1)
+		wasmtypes.Int32Encode(enc, o.X1)
+		wasmtypes.Int32Encode(enc, o.Y1)
 	return enc.Buf()
 }
 
@@ -80,8 +80,8 @@ func NewTestStruct2FromBytes(buf []byte) *TestStruct2 {
 
 func (o *TestStruct2) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Int32Encode(enc, o.X2)
-	wasmtypes.Int32Encode(enc, o.Y2)
+		wasmtypes.Int32Encode(enc, o.X2)
+		wasmtypes.Int32Encode(enc, o.Y2)
 	return enc.Buf()
 }
 

@@ -207,6 +207,7 @@ func TestConvert(t *testing.T) {
 						},
 						Funcs: model.FuncDefMap{
 							model.DefElt{Val: "TestFunc1", Line: 25}: &model.FuncDef{
+								Line: 25,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 26,
@@ -229,6 +230,7 @@ func TestConvert(t *testing.T) {
 								},
 							},
 							model.DefElt{Val: "TestFunc2", Line: 32}: &model.FuncDef{
+								Line: 32,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 33,
@@ -253,6 +255,7 @@ func TestConvert(t *testing.T) {
 						},
 						Views: model.FuncDefMap{
 							model.DefElt{Val: "TestView1", Line: 42}: &model.FuncDef{
+								Line: 42,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 43,
@@ -275,6 +278,7 @@ func TestConvert(t *testing.T) {
 								},
 							},
 							model.DefElt{Val: "TestView2", Line: 49}: &model.FuncDef{
+								Line: 49,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 50,
