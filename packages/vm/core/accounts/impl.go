@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"math"
+	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -187,11 +188,13 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 
 	tokenScheme := ctx.Params().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
+	ts := util.MustTokenScheme(tokenScheme)
+	ts.MeltedTokens = util.Big0
+	ts.MintedTokens = util.Big0
 	tokenTag := ctx.Params().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
-	tokenMaxSupply := ctx.Params().MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, nil)
 	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
 	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
 	debitIotasFromAllowance(ctx, dustConsumed)
@@ -212,7 +215,8 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(util.IsZeroBigInt(out.CirculatingSupply), "can't destroy foundry with positive circulating supply")
+	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
+	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)), "can't destroy foundry with positive circulating supply")
 
 	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 

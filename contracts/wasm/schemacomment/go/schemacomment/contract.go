@@ -26,7 +26,6 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 // comment for TestFunc1 1
-// comment for TestFunc1 2
 func (sc Funcs) TestFunc1(ctx wasmlib.ScFuncCallContext) *TestFunc1Call {
 	f := &TestFunc1Call{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestFunc1)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)

@@ -13,24 +13,22 @@ import (
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID *iscp.ChainID
+	ChainID iscp.ChainID
 	Active  bool
 }
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
-	panic("TODO implement")
-	// ret := &ChainRecord{}
-	// aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// ret.ChainID = iscp.NewChainID(aliasAddr)
-	
-	// ret.Active, err = mu.ReadBool()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return ret, nil
+	ret := &ChainRecord{}
+	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	ret.ChainID = *chainID
+	ret.Active, err = mu.ReadBool()
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 // CommitteeRecordFromBytes

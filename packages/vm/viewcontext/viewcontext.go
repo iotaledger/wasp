@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -40,6 +41,7 @@ type ViewContext struct {
 	gasBurnLog  *gas.BurnLog
 	gasBudget   uint64
 	callStack   []*callContext
+	l1Params    *parameters.L1
 }
 
 var _ execution.WaspContext = &ViewContext{}
@@ -50,6 +52,7 @@ func New(ch chain.ChainCore) *ViewContext {
 		stateReader: ch.GetStateReader(),
 		chainID:     ch.ID(),
 		log:         ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		l1Params:    ch.L1Params(),
 	}
 }
 
@@ -254,11 +257,14 @@ func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
 	err := panicutil.CatchAllButDBError(func() {
 		ret = trie.RootCommitment(ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
-
 	if err != nil {
 		ret = nil
 	}
 	return ret, err
+}
+
+func (ctx *ViewContext) L1Params() *parameters.L1 {
+	return ctx.l1Params
 }
 
 // GetContractStateCommitment returns commitment to the contract's state, if possible.
@@ -277,7 +283,6 @@ func (ctx *ViewContext) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitm
 		}
 		retC = proof.CommitmentToTheTerminalNode()
 	}, ctx.log, "GetMerkleProof: ")
-
 	if err != nil {
 		return nil, err
 	}

@@ -232,6 +232,116 @@ impl MutableArrayOfStringMapValueResults {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBigIntAddResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntAddResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntAddResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntAddResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntDivResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntDivResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntDivResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntDivResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntModResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntModResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntModResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntModResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntMulResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntMulResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntMulResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntMulResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntSubResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntSubResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntSubResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntSubResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableBlockRecordResults {
 	pub(crate) proxy: Proxy,
 }

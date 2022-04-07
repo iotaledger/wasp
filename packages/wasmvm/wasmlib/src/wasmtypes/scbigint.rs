@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ZERO_U64: [u8;SC_UINT64_LENGTH] = [0;SC_UINT64_LENGTH];
+const ZERO_U64: [u8; SC_UINT64_LENGTH] = [0; SC_UINT64_LENGTH];
 
 #[derive(PartialEq, Clone, Eq, Hash)]
 pub struct ScBigInt {
@@ -20,9 +20,15 @@ impl ScBigInt {
     }
 
     pub fn from_uint64(value: u64) -> ScBigInt {
-        let mut big_int = ScBigInt::new();
-        big_int.set_uint64(value);
-        big_int
+        ScBigInt::normalize(&uint64_to_bytes(value))
+    }
+
+    fn normalize(buf: &[u8]) -> ScBigInt {
+        let mut buf_len = buf.len();
+        while buf_len > 0 && buf[buf_len - 1] == 0 {
+            buf_len -= 1;
+        }
+        big_int_from_bytes(&buf[..buf_len])
     }
 
     pub fn add(&self, rhs: &ScBigInt) -> ScBigInt {
@@ -33,25 +39,25 @@ impl ScBigInt {
             return rhs.add(self);
         }
 
-        let mut res = big_int_from_bytes(&self.bytes);
+        let mut buf: Vec<u8> = vec![0; lhs_len];
         let mut carry: u16 = 0;
         for i in 0..rhs_len {
-            carry += res.bytes[i] as u16 + rhs.bytes[i] as u16;
-            res.bytes[i] = carry as u8;
+            carry += (self.bytes[i] as u16) + (rhs.bytes[i] as u16);
+            buf[i] = carry as u8;
+            carry >>= 8;
+        }
+        for i in rhs_len..lhs_len {
+            if carry == 0 {
+                break;
+            }
+            carry += self.bytes[i] as u16;
+            buf[i] = carry as u8;
             carry >>= 8;
         }
         if carry != 0 {
-            for i in rhs_len..lhs_len {
-                carry += res.bytes[i] as u16;
-                res.bytes[i] = carry as u8;
-                carry >>= 8;
-                if carry == 0 {
-                    return res;
-                }
-            }
-            res.bytes.push(1);
+            buf.push(1);
         }
-        res
+        ScBigInt::normalize(&buf)
     }
 
     pub fn cmp(&self, rhs: &ScBigInt) -> i8 {
@@ -82,8 +88,48 @@ impl ScBigInt {
     }
 
     pub fn div_mod(&self, rhs: &ScBigInt) -> (ScBigInt, ScBigInt) {
+        if rhs.is_zero() {
+            panic("divide by zero");
+        }
+        let cmp = self.cmp(rhs);
+        if cmp <= 0 {
+            if cmp < 0 {
+                // divide by larger value, quo = 0, rem = lhs
+                return (ScBigInt::new(), self.clone());
+            }
+            // divide equal values, quo = 1, rem = 0
+            return (ScBigInt::from_uint64(1), ScBigInt::new());
+        }
+        if self.is_uint64() {
+            // let standard uint64 type do the heavy lifting
+            let lhs64 = self.uint64();
+            let rhs64 = rhs.uint64();
+            let div = ScBigInt::from_uint64(lhs64 / rhs64);
+            return (div, ScBigInt::from_uint64(lhs64 % rhs64));
+        }
+        if rhs.bytes.len() == 1 {
+            if rhs.bytes[0] == 1 {
+                // divide by 1, quo = lhs, rem = 0
+                return (self.clone(), ScBigInt::new());
+            }
+            return self.div_mod_simple(rhs.bytes[0]);
+        }
+        //TODO
         panic("implement DivMod");
         (self.clone(), rhs.clone())
+    }
+
+    fn div_mod_simple(&self, value: u8) -> (ScBigInt, ScBigInt) {
+        let lhs_len = self.bytes.len();
+        let mut buf: Vec<u8> = vec![0; lhs_len];
+        let mut remain: u16 = 0;
+        let rhs = value as u16;
+        for i in (0..lhs_len).rev() {
+            remain = (remain << 8) + (self.bytes[i] as u16);
+            buf[i] = (remain / rhs) as u8;
+            remain %= rhs;
+        }
+        (ScBigInt::normalize(&buf), ScBigInt::normalize(&[remain as u8]))
     }
 
     pub fn is_uint64(&self) -> bool {
@@ -106,21 +152,30 @@ impl ScBigInt {
             // always multiply bigger value by smaller value
             return rhs.mul(self);
         }
-        panic("implement Mul");
-        self.clone()
-    }
-
-    fn normalize(&mut self) {
-        let mut buf_len = self.bytes.len();
-        while buf_len > 0 && self.bytes[buf_len - 1] == 0 {
-            buf_len -= 1;
+        if lhs_len + rhs_len <= SC_UINT64_LENGTH {
+            return ScBigInt::from_uint64(self.uint64() * rhs.uint64());
         }
-        self.bytes.truncate(buf_len);
-    }
+        if rhs_len == 0 {
+            // multiply by zero, result zero
+            return ScBigInt::new();
+        }
+        if rhs_len == 1 && rhs.bytes[0] == 1 {
+            // multiply by one, result lhs
+            return self.clone();
+        }
 
-    pub fn set_uint64(&mut self, value: u64) {
-        self.bytes = uint64_to_bytes(value);
-        self.normalize();
+        //TODO optimize by using u32 words instead of u8 words
+        let mut buf: Vec<u8> = vec![0; lhs_len + rhs_len];
+        for r in 0..rhs_len {
+            let mut carry: u16 = 0;
+            for l in 0..lhs_len {
+                carry += (buf[l + r] as u16) + (self.bytes[l] as u16) * (rhs.bytes[r] as u16);
+                buf[l + r] = carry as u8;
+                carry >>= 8;
+            }
+            buf[r + lhs_len] = carry as u8;
+        }
+        ScBigInt::normalize(&buf)
     }
 
     pub fn sub(&self, rhs: &ScBigInt) -> ScBigInt {
@@ -134,26 +189,19 @@ impl ScBigInt {
         let lhs_len = self.bytes.len();
         let rhs_len = rhs.bytes.len();
 
-        let mut res = big_int_from_bytes(&self.bytes);
+        let mut buf: Vec<u8> = vec![0; lhs_len];
         let mut borrow: u16 = 0;
         for i in 0..rhs_len {
-            borrow += res.bytes[i] as u16 - rhs.bytes[i] as u16;
-            res.bytes[i] = borrow as u8;
+            borrow += (self.bytes[i] as u16) - (rhs.bytes[i] as u16);
+            buf[i] = borrow as u8;
             borrow >>= 8;
         }
-        if borrow != 0 {
-            for i in rhs_len..lhs_len {
-                borrow += res.bytes[i] as u16;
-                res.bytes[i] = borrow as u8;
-                borrow >>= 8;
-                if borrow == 0 {
-                    res.normalize();
-                    return res;
-                }
-            }
+        for i in rhs_len..lhs_len {
+            borrow += self.bytes[i] as u16;
+            buf[i] = borrow as u8;
+            borrow >>= 8;
         }
-        res.normalize();
-        res
+        ScBigInt::normalize(&buf)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -165,7 +213,7 @@ impl ScBigInt {
     }
 
     pub fn uint64(&self) -> u64 {
-        let zeroes = SC_UINT64_LENGTH-self.bytes.len();
+        let zeroes = SC_UINT64_LENGTH - self.bytes.len();
         if zeroes > SC_UINT64_LENGTH {
             panic("value exceeds Uint64");
         }
@@ -193,10 +241,14 @@ pub fn big_int_to_bytes(value: &ScBigInt) -> Vec<u8> {
     value.bytes.to_vec()
 }
 
-pub fn big_int_to_string(_value: &ScBigInt) -> String {
-    // TODO standardize human readable string
-    panic("implement BigIntToString");
-    return "".to_string();
+pub fn big_int_to_string(value: &ScBigInt) -> String {
+    if value.is_uint64() {
+        return uint64_to_string(value.uint64());
+    }
+    let (div, modulo) = value.div_mod(&ScBigInt::from_uint64(1_000_000_000_000_000_000));
+    let digits = uint64_to_string(modulo.uint64());
+    let zeroes = &"000000000000000000"[..18 - digits.len()];
+    return big_int_to_string(&div) + zeroes + &digits;
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

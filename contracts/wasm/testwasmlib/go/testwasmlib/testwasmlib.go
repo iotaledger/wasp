@@ -400,3 +400,38 @@ func viewAddressMapOfAddressMapValue(ctx wasmlib.ScViewContext, f *AddressMapOfA
 	key := f.Params.KeyAddr().Value()
 	f.Results.ValueAddr().SetValue(myMap.GetAddress(key).Value())
 }
+
+func viewBigIntAdd(ctx wasmlib.ScViewContext, f *BigIntAddContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Add(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntDiv(ctx wasmlib.ScViewContext, f *BigIntDivContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Div(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntMod(ctx wasmlib.ScViewContext, f *BigIntModContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Modulo(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntMul(ctx wasmlib.ScViewContext, f *BigIntMulContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Mul(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntSub(ctx wasmlib.ScViewContext, f *BigIntSubContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Sub(rhs)
+	f.Results.Res().SetValue(res)
+}

@@ -2,7 +2,6 @@ package iscp
 
 import (
 	"bytes"
-	"crypto"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -65,7 +64,6 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
-		publicKey:  cryptolib.NewKeyPair().GetPublicKey(),
 		nonce:      nonce,
 	}
 }
@@ -218,7 +216,7 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 // Sign signs essence
 func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
 	r.publicKey = key.GetPublicKey()
-	r.signature, _ = key.GetPrivateKey().Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
+	r.signature = key.GetPrivateKey().Sign(r.essenceBytes())
 }
 
 // FungibleTokens is attached assets to the UTXO. Nil for off-ledger
@@ -230,7 +228,7 @@ func (r *OffLedgerRequestData) NFT() *NFT {
 	return nil
 }
 
-// Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
+// Allowance from the sender's account to the target smart contract. Nil mean no Allowance
 func (r *OffLedgerRequestData) Allowance() *Allowance {
 	return r.allowance
 }
@@ -599,6 +597,8 @@ type RequestID iotago.UTXOInput
 
 const RequestIDDigestLen = 6
 
+const RequestIDSeparator = "-"
+
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
 // within one block, however it may collide globally. Used for quick checking for most requests
 // if it was never seen
@@ -630,7 +630,7 @@ func RequestIDFromBytes(data []byte) (RequestID, error) {
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
-	split := strings.Split(s, "/")
+	split := strings.Split(s, RequestIDSeparator)
 	if len(split) != 2 {
 		return ret, fmt.Errorf("error parsing requestID")
 	}
@@ -672,17 +672,17 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return OID(rid.UTXOInput())
+	return OID(rid.UTXOInput()) // CHANGE THIS = the "0/format" is fucking things up
 }
 
 func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
 	txid := TxID(&oid.TransactionID)
-	return fmt.Sprintf("%d/%s", oid.TransactionOutputIndex, txid[:6]+"..")
+	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
 }
 
 func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("%d/%s", o.TransactionOutputIndex, TxID(&o.TransactionID))
+	return fmt.Sprintf("%d%s%s", o.TransactionOutputIndex, RequestIDSeparator, TxID(&o.TransactionID))
 }
 
 func TxID(txID *iotago.TransactionID) string {

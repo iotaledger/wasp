@@ -289,17 +289,24 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 }
 
 func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.AliasOutputWithID, error) {
+	txID, err := tx.ID()
+	if err != nil {
+		return nil, err
+	}
 	for index, o := range tx.Essence.Outputs {
-		if out, ok := o.(*iotago.AliasOutput); ok {
-			if out.StateController().Equal(aliasAddr) {
-				txID, err := tx.ID()
-				if err != nil {
-					return nil, err
-				}
-				oid := &iotago.UTXOInput{
-					TransactionID:          *txID,
-					TransactionOutputIndex: uint16(index),
-				}
+		if out, ok := o.(*iotago.AliasOutput); ok { //nolint:gocritic // reducing nesting would damage readability
+			aliasID := out.AliasID
+			oid := &iotago.UTXOInput{
+				TransactionID:          *txID,
+				TransactionOutputIndex: uint16(index),
+			}
+			var found bool
+			if aliasID.Empty() {
+				found = iotago.AliasIDFromOutputID(oid.ID()).ToAddress().Equal(aliasAddr)
+			} else {
+				found = aliasID.ToAddress().Equal(aliasAddr)
+			}
+			if found {
 				return iscp.NewAliasOutputWithID(out, oid), nil
 			}
 		}

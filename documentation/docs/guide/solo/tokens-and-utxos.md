@@ -41,7 +41,7 @@ func TestTutorial2(t *testing.T) {
 	t.Logf("address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.GetAddressBalance(userAddress, colored.IOTA) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 }
 ```
 

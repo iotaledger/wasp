@@ -1,3 +1,7 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+//nolint:dupl,unparam
 package yaml_test
 
 import (
@@ -30,7 +34,7 @@ func TestParse(t *testing.T) {
 				wants: wants{
 					&yaml.Node{
 						Contents: []*yaml.Node{
-							&yaml.Node{
+							{
 								Val:  "name",
 								Line: 1,
 								Contents: []*yaml.Node{
@@ -40,7 +44,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "description",
 								Line: 2,
 								Contents: []*yaml.Node{
@@ -50,18 +54,20 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
-								Val:     "events",
-								Line:    6,
-								Comment: "// header comment for event 1 \"this comment block will be ignored in yaml.Convert()\"\n// header comment for event 2\n// line comment for event\n// line comment for TestEvent1\n// line comment for eventParam11\n// line comment for TestEvent2\n// line comment for eventParam21\n// line comment for eventParam21\n",
+							{
+								Val:         "events",
+								Line:        6,
+								HeadComment: "// header comment for event 1 \"this comment block will be ignored in yaml.Convert()\"\n// header comment for event 2\n",
 								Contents: []*yaml.Node{
 									{
-										Val:  "TestEvent1",
-										Line: 7,
+										Val:         "TestEvent1",
+										Line:        7,
+										LineComment: "// line comment for TestEvent1\n",
 										Contents: []*yaml.Node{
 											{
-												Val:  "eventParam11",
-												Line: 8,
+												Val:         "eventParam11",
+												Line:        8,
+												LineComment: "// line comment for eventParam11\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "String",
@@ -72,12 +78,14 @@ func TestParse(t *testing.T) {
 										},
 									},
 									{
-										Val:  "TestEvent2",
-										Line: 9,
+										Val:         "TestEvent2",
+										Line:        9,
+										LineComment: "// line comment for TestEvent2\n",
 										Contents: []*yaml.Node{
 											{
-												Val:  "eventParam21",
-												Line: 10,
+												Val:         "eventParam21",
+												Line:        10,
+												LineComment: "// line comment for eventParam21\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "String",
@@ -86,8 +94,9 @@ func TestParse(t *testing.T) {
 												},
 											},
 											{
-												Val:  "eventParam22",
-												Line: 11,
+												Val:         "eventParam22",
+												Line:        11,
+												LineComment: "// line comment for eventParam22\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "String",
@@ -99,7 +108,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "structs",
 								Line: 15,
 								Contents: []*yaml.Node{
@@ -130,13 +139,14 @@ func TestParse(t *testing.T) {
 										},
 									},
 									{
-										Val:     "TestStruct2",
-										Line:    20,
-										Comment: "// comment for TestStruct2 1\n// comment for TestStruct2 2\n",
+										Val:         "TestStruct2",
+										Line:        20,
+										LineComment: "// comment for TestStruct2\n",
 										Contents: []*yaml.Node{
 											{
-												Val:  "x2",
-												Line: 21,
+												Val:         "x2",
+												Line:        21,
+												LineComment: "// comment for x2\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "Int32",
@@ -145,9 +155,9 @@ func TestParse(t *testing.T) {
 												},
 											},
 											{
-												Val:     "y2",
-												Line:    25,
-												Comment: "// comment for y2 1\n// comment for y2 2\n",
+												Val:         "y2",
+												Line:        25,
+												HeadComment: "// comment for y2 1\n// comment for y2 2\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "Int32",
@@ -172,7 +182,7 @@ func TestParse(t *testing.T) {
 				wants: wants{
 					&yaml.Node{
 						Contents: []*yaml.Node{
-							&yaml.Node{
+							{
 								Val:  "name",
 								Line: 1,
 								Contents: []*yaml.Node{
@@ -182,7 +192,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "description",
 								Line: 2,
 								Contents: []*yaml.Node{
@@ -192,20 +202,20 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
-								Val:     "events",
-								Line:    8,
-								Comment: "// header comment for event 1 \"this comment block will be ignored in yaml.Convert()\"\n// header comment for event 2\n// line comment for event 1\n// line comment for event 2\n// line comment for event 3\n// line comment for event 4\n",
+							{
+								Val:         "events",
+								Line:        8,
+								HeadComment: "// header comment for event 1 \"this comment block will be ignored in yaml.Convert()\"\n// header comment for event 2\n",
 								Contents: []*yaml.Node{
 									{
-										Val:     "TestEvent1",
-										Line:    15,
-										Comment: "// header comment for TestEvent1 1\n// header comment for TestEvent1 2\n// line comment for TestEvent1 1\n// line comment for TestEvent1 2\n// line comment for TestEvent1 3\n// line comment for TestEvent1 4\n",
+										Val:         "TestEvent1",
+										Line:        15,
+										HeadComment: "// header comment for TestEvent1 1\n// header comment for TestEvent1 2\n",
 										Contents: []*yaml.Node{
 											{
-												Val:     "eventParam1",
-												Line:    22,
-												Comment: "// header comment for eventParam1 1\n// header comment for eventParam1 2\n// line comment for eventParam1 1\n// line comment for eventParam1 2\n// line comment for eventParam1 3\n// line comment for eventParam1 4\n",
+												Val:         "eventParam1",
+												Line:        22,
+												HeadComment: "// header comment for eventParam1 1\n// header comment for eventParam1 2\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "String",
@@ -216,18 +226,19 @@ func TestParse(t *testing.T) {
 										},
 									},
 									{
-										Val:     "TestEvent2",
-										Line:    34,
-										Comment: "// line comment for TestEvent2 1\n",
+										Val:         "TestEvent2",
+										Line:        34,
+										LineComment: "// line comment for TestEvent2 1\n",
 										Contents: []*yaml.Node{
 											{
-												Val:     "eventParam2",
-												Line:    38,
-												Comment: "// header comment for eventParam2 1\n// header comment for eventParam2 2\n// line comment for eventParam2 1\n// line comment for eventParam2 2\n// line comment for eventParam2 3\n// line comment for eventParam2 4\n// line comment for eventParam2 5\n// line comment for eventParam2 6\n// \n// line comment for eventParam2 7\n",
+												Val:         "eventParam2",
+												Line:        38,
+												HeadComment: "// header comment for eventParam2 1\n// header comment for eventParam2 2\n",
 												Contents: []*yaml.Node{
 													{
-														Val:  "String",
-														Line: 41,
+														Val:         "String",
+														Line:        41,
+														HeadComment: "// line comment for eventParam2 2\n// line comment for eventParam2 3\n",
 													},
 												},
 											},
@@ -235,19 +246,19 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "structs",
 								Line: 47,
 								Contents: []*yaml.Node{
 									{
-										Val:     "TestStruct",
-										Line:    49,
-										Comment: "// comment for TestStruct 1\n// comment for TestStruct 2\n// comment for TestStruct 3\n",
+										Val:         "TestStruct",
+										Line:        49,
+										HeadComment: "// comment for TestStruct 1\n",
 										Contents: []*yaml.Node{
 											{
-												Val:     "x",
-												Line:    54,
-												Comment: "// comment for x 1\n// comment for x 2\n// comment for x 3\n",
+												Val:         "x",
+												Line:        54,
+												HeadComment: "// comment for x 1\n// comment for x 2\n",
 												Contents: []*yaml.Node{
 													{
 														Val:  "Int32",
@@ -260,9 +271,9 @@ func TestParse(t *testing.T) {
 												Line: 57,
 												Contents: []*yaml.Node{
 													{
-														Val:     "Int32",
-														Line:    58,
-														Comment: "// comment for y 1\n",
+														Val:         "Int32",
+														Line:        58,
+														LineComment: "// comment for y 1\n",
 													},
 												},
 											},
@@ -283,7 +294,7 @@ func TestParse(t *testing.T) {
 				wants: wants{
 					&yaml.Node{
 						Contents: []*yaml.Node{
-							&yaml.Node{
+							{
 								Val:  "name",
 								Line: 1,
 								Contents: []*yaml.Node{
@@ -293,7 +304,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "description",
 								Line: 2,
 								Contents: []*yaml.Node{
@@ -303,7 +314,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "events",
 								Line: 6,
 								Contents: []*yaml.Node{
@@ -351,7 +362,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "structs",
 								Line: 15,
 								Contents: []*yaml.Node{
@@ -399,7 +410,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "funcs",
 								Line: 24,
 								Contents: []*yaml.Node{
@@ -521,7 +532,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "views",
 								Line: 41,
 								Contents: []*yaml.Node{
@@ -643,7 +654,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "typedefs",
 								Line: 57,
 								Contents: []*yaml.Node{
@@ -659,7 +670,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "state",
 								Line: 62,
 								Contents: []*yaml.Node{

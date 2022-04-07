@@ -88,7 +88,7 @@ func NewNetworkProvider(
 		return nil, nil, xerrors.Errorf("unable to convert the private key: %w", err)
 	}
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	lppHost, err := libp2p.New(ctx,
+	lppHost, err := libp2p.New(
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(
 			fmt.Sprintf("/ip4/0.0.0.0/udp/%v/quic", port),
@@ -299,13 +299,13 @@ func (n *netImpl) eventHandler(handler interface{}, params ...interface{}) {
 }
 
 // Run starts listening and communicating with the network.
-func (n *netImpl) Run(shutdownSignal <-chan struct{}) {
+func (n *netImpl) Run(ctx context.Context) {
 	queueRecvStopCh := make(chan bool)
 	receiveStopCh := make(chan bool)
 	maintenanceStopCh := make(chan bool)
 	go n.maintenanceLoop(maintenanceStopCh)
 
-	<-shutdownSignal
+	<-ctx.Done()
 	n.ctxCancel()
 	close(maintenanceStopCh)
 	close(receiveStopCh)

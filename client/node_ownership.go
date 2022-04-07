@@ -13,10 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func (c *WaspClient) NodeOwnershipCertificate(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) (governance.NodeOwnershipCertificate, error) {
+func (c *WaspClient) NodeOwnershipCertificate(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address, networkPrefix iotago.NetworkPrefix) (governance.NodeOwnershipCertificate, error) {
 	req := model.NodeOwnerCertificateRequest{
 		NodePubKey:   model.NewBytes(nodePubKey.AsBytes()),
-		OwnerAddress: model.NewAddress(ownerAddress),
+		OwnerAddress: model.NewAddress(ownerAddress, networkPrefix),
 	}
 	res := model.NodeOwnerCertificateResponse{}
 	if err := c.do(http.MethodPost, routes.AdmNodeOwnerCertificate(), req, &res); err != nil {

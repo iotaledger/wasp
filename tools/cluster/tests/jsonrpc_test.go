@@ -52,7 +52,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	require.NoError(t, err)
 
 	backend := jsonrpc.NewWaspClientBackend(chain.Client(signer))
-	evmChain := jsonrpc.NewEVMChain(backend, chainID, evm.Contract.Name)
+	evmChain := jsonrpc.NewEVMChain(backend, chainID)
 
 	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
 

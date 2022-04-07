@@ -391,3 +391,38 @@ pub fn view_address_map_of_address_map_value(_ctx: &ScViewContext, f: &AddressMa
     let key = f.params.key_addr().value();
     f.results.value_addr().set_value(&my_map.get_address(&key).value());
 }
+
+pub fn view_big_int_add(_ctx: &ScViewContext, f: &BigIntAddContext) {
+    let lhs = f.params.lhs().value();
+    let rhs = f.params.rhs().value();
+    let res = lhs.add(&rhs);
+    f.results.res().set_value(&res);
+}
+
+pub fn view_big_int_div(_ctx: &ScViewContext, f: &BigIntDivContext) {
+    let lhs = f.params.lhs().value();
+    let rhs = f.params.rhs().value();
+    let res = lhs.div(&rhs);
+    f.results.res().set_value(&res);
+}
+
+pub fn view_big_int_mod(_ctx: &ScViewContext, f: &BigIntModContext) {
+    let lhs = f.params.lhs().value();
+    let rhs = f.params.rhs().value();
+    let res = lhs.modulo(&rhs);
+    f.results.res().set_value(&res);
+}
+
+pub fn view_big_int_mul(_ctx: &ScViewContext, f: &BigIntMulContext) {
+    let lhs = f.params.lhs().value();
+    let rhs = f.params.rhs().value();
+    let res = lhs.mul(&rhs);
+    f.results.res().set_value(&res);
+}
+
+pub fn view_big_int_sub(_ctx: &ScViewContext, f: &BigIntSubContext) {
+    let lhs = f.params.lhs().value();
+    let rhs = f.params.rhs().value();
+    let res = lhs.sub(&rhs);
+    f.results.res().set_value(&res);
+}

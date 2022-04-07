@@ -14,7 +14,7 @@ import (
 // GetChainRecord fetches ChainInfo by address
 func (c *WaspClient) GetChainInfo(chID *iscp.ChainID) (*model.ChainInfo, error) {
 	res := &model.ChainInfo{}
-	if err := c.do(http.MethodGet, routes.GetChainInfo(chID.AsAddress().Bech32(iscp.Bech32Prefix)), nil, res); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainInfo(chID.String()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil

@@ -3,24 +3,23 @@
 {{define "body"}}
 	{{ $chainid := .ChainID }}
 
-	{{ $rootinfo := .RootInfo }}
-	{{ $desc := trim 50 $rootinfo.Description }}
+	{{ $chainInfo := .ChainInfo }}
+	{{ $desc := trim 50 $chainInfo.Description }}
 
 	<div class="card fluid">
-		<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <code>{{$chainid.Base58}}</code>{{end}}</h2>
+		<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <code>{{$chainid}}</code>{{end}}</h2>
 
 		<dl>
-			<dt>ChainID</dt><dd><code>{{.Record.ChainID.Base58}}</code></dd>
+			<dt>ChainID</dt><dd><code>{{.Record.ChainID}}</code></dd>
 			<dt>Active</dt><dd><code>{{.Record.Active}}</code></dd>
 			{{if .Record.Active}}
-				<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
-				<dt>Delegated Owner ID</dt><dd>
-					{{- if $rootinfo.OwnerIDDelegated -}}
-						{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
-					{{- end -}}
-				</dd>
-				<dt>Default owner fee</dt><dd><code>{{$rootinfo.DefaultOwnerFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
-				<dt>Default validator fee</dt><dd><code>{{$rootinfo.DefaultValidatorFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
+				<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $chainInfo.ChainOwnerID)}}</dd>
+				<dt>Gas fee token ID</dt><dd><code>{{$chainInfo.GasFeePolicy.GasFeeTokenID}}</code></dd>
+				<dt>Gas per token</dt><dd><code>{{$chainInfo.GasFeePolicy.GasPerToken}}</code></dd>
+				<dt>Validator fee share</dt><dd><code>{{$chainInfo.GasFeePolicy.ValidatorFeeShare}}</code></dd>
+				<dt>Max blob size</dt><dd><code>{{$chainInfo.MaxBlobSize}}</code></dd>
+				<dt>Max event size</dt><dd><code>{{$chainInfo.MaxEventSize}}</code></dd>
+				<dt>Max events per request</dt><dd><code>{{$chainInfo.MaxEventsPerReq}}</code></dd>
 			{{end}}
 		</dl>
 	</div>
@@ -29,8 +28,8 @@
 		<div class="card fluid">
 			<h3 class="section">Contracts</h3>
 			<dl>
-			{{range $_, $c := $rootinfo.Contracts}}
-				<dt><a href="{{ uri "chainContract" $chainid.Base58 $c.Hname }}"><code>{{trim 30 $c.Name}}</code></a></dt>
+			{{range $_, $c := $chainInfo.Contracts}}
+				<dt><a href="{{ uri "chainContract" $chainid $c.Hname }}"><code>{{trim 30 $c.Name}}</code></a></dt>
 				<dd><code>{{trim 50 $c.Description}}</code></dd>
 			{{end}}
 			</dl>
@@ -68,7 +67,7 @@
 				<tbody>
 				{{range $hash, $size := .Blobs}}
 					<tr>
-						<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid.Base58 (hashref $hash) }}"><code>{{ hashref $hash }}</code></a></td>
+						<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid (hashref $hash) }}"><code>{{ hashref $hash }}</code></a></td>
 						<td>{{ $size }}</td>
 					</tr>
 				{{end}}
@@ -79,7 +78,7 @@
 		<div class="card fluid">
 			<h3 class="section">Latest block</h3>
 			<dl>
-				<dt>Block index</dt><dd><code>{{.LatestBlock.Index}}</code> <a href="{{ uri "chainBlock" $chainid.Base58 .LatestBlock.Index }}">View block</a></dd>
+				<dt>Block index</dt><dd><code>{{.LatestBlock.Index}}</code> <a href="{{ uri "chainBlock" $chainid .LatestBlock.Index }}">View block</a></dd>
 				<dt>Last updated</dt><dd><code>{{formatTimestamp .LatestBlock.Info.Timestamp}}</code></dd>
 			</dl>
 		</div>

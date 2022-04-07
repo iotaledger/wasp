@@ -62,7 +62,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 			return err
 		}
 
-		result.RootInfo, err = d.fetchRootInfo(chainID)
+		result.ChainInfo, err = d.fetchChainInfo(chainID)
 		if err != nil {
 			return err
 		}
@@ -147,7 +147,7 @@ type ChainTemplateParams struct {
 
 	Record      *registry.ChainRecord
 	LatestBlock *LatestBlock
-	RootInfo    RootInfo
+	ChainInfo   *ChainInfo
 	Accounts    []*iscp.AgentID
 	TotalAssets *iscp.FungibleTokens
 	Blobs       map[hashing.HashValue]uint32

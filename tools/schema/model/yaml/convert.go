@@ -1,7 +1,11 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package yaml
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
@@ -62,9 +66,12 @@ func Convert(root *Node, def *model.SchemaDef) error {
 
 func (n *Node) ToDefElt() *model.DefElt {
 	comment := ""
-	if len(n.Comment) > 0 {
+	if len(n.HeadComment) > 0 {
 		// remove trailing '\n'
-		comment = n.Comment[:len(n.Comment)-1]
+		comment = n.HeadComment[:len(n.HeadComment)-1]
+	} else if len(n.LineComment) > 0 {
+		// remove trailing '\n'
+		comment = n.LineComment[:len(n.LineComment)-1]
 	}
 	return &model.DefElt{
 		Val:     n.Val,
@@ -76,16 +83,16 @@ func (n *Node) ToDefElt() *model.DefElt {
 func (n *Node) ToDefMap() model.DefMap {
 	defs := make(model.DefMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
 		key := *yamlKey.ToDefElt()
 		val := yamlKey.Contents[0].ToDefElt()
-		if val.Comment != "" {
+		if val.Comment != "" && key.Comment == "" {
 			key.Comment = val.Comment
-			val.Comment = ""
 		}
+		val.Comment = ""
 		defs[key] = val
 	}
 	return defs
@@ -95,13 +102,15 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 	defs := make(model.DefMapMap)
 	for _, yamlKey := range n.Contents {
 		// TODO better parsing
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
 		comment := ""
-		if len(yamlKey.Comment) > 0 {
-			comment = yamlKey.Comment[:len(yamlKey.Comment)-1] // remove trailing '\n'
+		if len(yamlKey.HeadComment) > 0 {
+			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+		} else if len(yamlKey.LineComment) > 0 {
+			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
 		}
 
 		key := model.DefElt{
@@ -118,7 +127,7 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 func (n *Node) ToFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
@@ -132,7 +141,13 @@ func (n *Node) ToFuncDef() model.FuncDef {
 		default:
 			return model.FuncDef{}
 		}
-		def.Comment = yamlKey.Comment
+		comment := ""
+		if len(yamlKey.HeadComment) > 0 {
+			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+		} else if len(yamlKey.LineComment) > 0 {
+			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+		}
+		def.Comment = comment
 	}
 	return def
 }
@@ -140,13 +155,15 @@ func (n *Node) ToFuncDef() model.FuncDef {
 func (n *Node) ToFuncDefMap() model.FuncDefMap {
 	defs := make(model.FuncDefMap)
 	for _, yamlKey := range n.Contents {
-		if yamlKey.Val == "{}" || yamlKey.Val == "{ }" {
+		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
 		comment := ""
-		if len(yamlKey.Comment) > 0 {
-			comment = yamlKey.Comment[:len(yamlKey.Comment)-1] // remove trailing '\n'
+		if len(yamlKey.HeadComment) > 0 {
+			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+		} else if len(yamlKey.LineComment) > 0 {
+			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
 		}
 		key := model.DefElt{
 			Val:     yamlKey.Val,

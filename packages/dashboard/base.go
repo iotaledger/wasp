@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/labstack/echo/v4"
@@ -38,6 +39,7 @@ type BaseTemplateParams struct {
 }
 
 type WaspServices interface {
+	L1Params() *parameters.L1
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	PeeringStats() (*PeeringStats, error)
@@ -100,7 +102,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
 		"formatTimestampOrNever": formatTimestampOrNever,
-		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL()),
+		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL(), d.wasp.L1Params().Bech32Prefix),
 		"args":                   args,
 		"hashref":                hashref,
 		"assedID":                assetID,
@@ -108,6 +110,8 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"incUint32":              incUint32,
 		"decUint32":              decUint32,
 		"bytesToString":          bytesToString,
+		"addressToString":        d.addressToString,
+		"agentIDToString":        d.agentIDToString,
 		"keyToString":            keyToString,
 		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,

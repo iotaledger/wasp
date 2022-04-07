@@ -2,14 +2,15 @@
 package kvtest
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 	"io"
 	"math"
 	"math/rand"
 	"os"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 const nilprefix = ""

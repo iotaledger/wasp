@@ -50,6 +50,7 @@ func (sc Funcs) Harvest(ctx wasmlib.ScFuncCallContext) *HarvestCall {
 	return f
 }
 
+// withdrawColor=c: Color? # defaults to colored.IOTA
 func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	return &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 }
@@ -60,6 +61,11 @@ func (sc Funcs) Accounts(ctx wasmlib.ScViewCallContext) *AccountsCall {
 	return f
 }
 
+//  balance:
+//    params:
+//      agentID=a: AgentID
+//    results:
+//      balances=this: map[Color]Int64
 func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceCall {
 	f := &GetAccountNonceCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAccountNonce)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)

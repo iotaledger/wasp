@@ -8,7 +8,7 @@ events: # line comment for event
     eventParam11: String # line comment for eventParam11
   TestEvent2: # line comment for TestEvent2
     eventParam21: String # line comment for eventParam21
-    eventParam22: String # line comment for eventParam21
+    eventParam22: String # line comment for eventParam22
 
 # ##################################
 
@@ -17,8 +17,8 @@ structs:
     x1: Int32
     y1: Int32
 
-  TestStruct2:  # comment for TestStruct2 1
-    x2: Int32   # comment for TestStruct2 2
+  TestStruct2:  # comment for TestStruct2
+    x2: Int32   # comment for x2
 
     # comment for y2 1
     # comment for y2 2

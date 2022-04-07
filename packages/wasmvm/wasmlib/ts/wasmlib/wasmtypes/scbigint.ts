@@ -13,54 +13,59 @@ export class ScBigInt {
     }
 
     public static fromUint64(value: u64): ScBigInt {
-        let bigInt = new ScBigInt();
-        bigInt.setUint64(value);
-        return bigInt;
+        return ScBigInt.normalize(wasmtypes.uint64ToBytes(value));
+    }
+
+    private static normalize(buf: u8[]): ScBigInt {
+        let bufLen = buf.length;
+        while (bufLen > 0 && buf[bufLen - 1] == 0) {
+            bufLen--;
+        }
+        const res = new ScBigInt();
+        res.bytes = buf.slice(0, bufLen);
+        return res;
     }
 
     public add(rhs: ScBigInt): ScBigInt {
-        let lhs_len = this.bytes.length;
-        let rhs_len = rhs.bytes.length;
-        if (lhs_len < rhs_len) {
+        const lhsLen = this.bytes.length;
+        const rhsLen = rhs.bytes.length;
+        if (lhsLen < rhsLen) {
             // always add shorter value to longer value
             return rhs.add(this);
         }
 
-        let res = bigIntFromBytes(this.bytes)
+        const buf: u8[] = new Array(lhsLen);
         let carry: u16 = 0;
-        for (let i = 0; i < rhs_len; i++) {
-            carry += res.bytes[i] as u16 + rhs.bytes[i] as u16;
-            res.bytes[i] = carry as u8;
+        for (let i = 0; i < rhsLen; i++) {
+            carry += (this.bytes[i] as u16) + (rhs.bytes[i] as u16);
+            buf[i] = carry as u8;
+            carry >>= 8;
+        }
+        for (let i = rhsLen; carry != 0 && i < lhsLen; i++) {
+            carry += this.bytes[i] as u16;
+            buf[i] = carry as u8;
             carry >>= 8;
         }
         if (carry != 0) {
-            for (let i = rhs_len; i < lhs_len; i++) {
-                carry += res.bytes[i] as u16;
-                res.bytes[i] = carry as u8;
-                carry >>= 8;
-                if (carry == 0) {
-                    return res;
-                }
-            }
-            res.bytes.push(1);
+            buf.push(1);
         }
-        return res;
+        return ScBigInt.normalize(buf);
     }
 
     public cmp(rhs: ScBigInt): number {
-        let lhs_len = this.bytes.length;
-        let rhs_len = rhs.bytes.length;
-        if (lhs_len != rhs_len) {
-            if (lhs_len > rhs_len) {
+        const lhsLen = this.bytes.length;
+        const rhsLen = rhs.bytes.length;
+        if (lhsLen != rhsLen) {
+            if (lhsLen > rhsLen) {
                 return 1;
             }
             return -1;
         }
-        for (let i = lhs_len-1; i >= 0; i--) {
-            let lhs_byte = this.bytes[i];
-            let rhs_byte = rhs.bytes[i];
-            if (lhs_byte != rhs_byte) {
-                if (lhs_byte > rhs_byte) {
+        for (let i = lhsLen - 1; i >= 0; i--) {
+            const lhsByte = this.bytes[i];
+            const rhsByte = rhs.bytes[i];
+            if (lhsByte != rhsByte) {
+                if (lhsByte > rhsByte) {
                     return 1;
                 }
                 return -1;
@@ -70,12 +75,56 @@ export class ScBigInt {
     }
 
     public div(rhs: ScBigInt): ScBigInt {
-        panic("implement Div");
-        return rhs;
+        return this.divMod(rhs)[0];
     }
 
-    public equals(other: ScBigInt): bool {
-        return wasmtypes.bytesCompare(this.bytes, other.bytes) == 0;
+    public divMod(rhs: ScBigInt): ScBigInt[] {
+        if (rhs.isZero()) {
+            panic("divide by zero");
+        }
+        const cmp = this.cmp(rhs);
+        if (cmp <= 0) {
+            if (cmp < 0) {
+                // divide by larger value, quo = 0, rem = lhs
+                return [new ScBigInt(), this];
+            }
+            // divide equal values, quo = 1, rem = 0
+            return [ScBigInt.fromUint64(1), new ScBigInt()];
+        }
+        if (this.isUint64()) {
+            // let standard uint64 type do the heavy lifting
+            const lhs64 = this.uint64();
+            const rhs64 = rhs.uint64();
+            const div = ScBigInt.fromUint64(lhs64 / rhs64);
+            return [div, ScBigInt.fromUint64(lhs64 % rhs64)];
+        }
+        if (rhs.bytes.length == 1) {
+            if (rhs.bytes[0] == 1) {
+                // divide by 1, quo = lhs, rem = 0
+                return [this, new ScBigInt()];
+            }
+            return this.divModSimple(rhs.bytes[0]);
+        }
+        //TODO
+        panic("implement rest of DivMod");
+        return [this, rhs];
+    }
+
+    private divModSimple(value: u8): ScBigInt[] {
+        const lhsLen = this.bytes.length;
+        const buf: u8[] = new Array(lhsLen);
+        let remain: u16 = 0;
+        const rhs = value as u16;
+        for (let i = lhsLen - 1; i >= 0; i--) {
+            remain = (remain << 8) + (this.bytes[i] as u16);
+            buf[i] = (remain / rhs) as u8;
+            remain %= rhs;
+        }
+        return [ScBigInt.normalize(buf), ScBigInt.normalize([remain as u8])];
+    }
+
+    public equals(rhs: ScBigInt): bool {
+        return this.cmp(rhs) == 0;
     }
 
     public isUint64(): bool {
@@ -87,65 +136,66 @@ export class ScBigInt {
     }
 
     public modulo(rhs: ScBigInt): ScBigInt {
-        panic("implement Modulo");
-        return rhs;
+        return this.divMod(rhs)[1];
     }
 
     public mul(rhs: ScBigInt): ScBigInt {
-        let lhs_len = this.bytes.length;
-        let rhs_len = rhs.bytes.length;
-        if (lhs_len < rhs_len) {
+        const lhsLen = this.bytes.length;
+        const rhsLen = rhs.bytes.length;
+        if (lhsLen < rhsLen) {
             // always multiply bigger value by smaller value
             return rhs.mul(this);
         }
-        panic("implement Mul");
-        return rhs;
-    }
-
-    private normalize(): void {
-        let buf_len = this.bytes.length;
-        while (buf_len > 0 && this.bytes[buf_len - 1] == 0) {
-            buf_len--;
+        if (lhsLen + rhsLen <= wasmtypes.ScUint64Length) {
+            return ScBigInt.fromUint64(this.uint64() * rhs.uint64());
         }
-        this.bytes = this.bytes.slice(0, buf_len);
-    }
+        if (rhsLen == 0) {
+            // multiply by zero, result zero
+            return new ScBigInt();
+        }
+        if (rhsLen == 1 && rhs.bytes[0] == 1) {
+            // multiply by one, result lhs
+            return this;
+        }
 
-    public setUint64(value: u64): void {
-        this.bytes = wasmtypes.uint64ToBytes(value);
-        this.normalize();
+        //TODO optimize by using u32 words instead of u8 words
+        const buf = wasmtypes.zeroes(lhsLen + rhsLen);
+        for (let r = 0; r < rhsLen; r++) {
+            let carry: u16 = 0;
+            for (let l = 0; l < lhsLen; l++) {
+                carry += (buf[l + r] as u16) + (this.bytes[l] as u16) * (rhs.bytes[r] as u16);
+                buf[l + r] = carry as u8;
+                carry >>= 8;
+            }
+            buf[r + lhsLen] = carry as u8;
+        }
+        return ScBigInt.normalize(buf);
     }
 
     public sub(rhs: ScBigInt): ScBigInt {
-        let cmp = this.cmp(rhs);
+        const cmp = this.cmp(rhs);
         if (cmp <= 0) {
             if (cmp < 0) {
                 panic("subtraction underflow");
             }
             return new ScBigInt();
         }
-        let lhs_len = this.bytes.length;
-        let rhs_len = rhs.bytes.length;
+        const lhsLen = this.bytes.length;
+        const rhsLen = rhs.bytes.length;
 
-        let res = bigIntFromBytes(this.bytes)
+        const buf: u8[] = new Array(lhsLen);
         let borrow: u16 = 0;
-        for (let i = 0; i < rhs_len; i++) {
-            borrow += res.bytes[i] as u16 - rhs.bytes[i] as u16;
-            res.bytes[i] = borrow as u8;
+        for (let i = 0; i < rhsLen; i++) {
+            borrow += (this.bytes[i] as u16) - (rhs.bytes[i] as u16);
+            buf[i] = borrow as u8;
             borrow >>= 8;
         }
-        if (borrow != 0) {
-            for (let i = rhs_len; i < lhs_len; i++) {
-                borrow += res.bytes[i] as u16;
-                res.bytes[i] = borrow as u8;
-                borrow >>= 8;
-                if (borrow == 0) {
-                    res.normalize();
-                    return res;
-                }
-            }
+        for (let i = rhsLen; i < lhsLen; i++) {
+            borrow += this.bytes[i] as u16;
+            buf[i] = borrow as u8;
+            borrow >>= 8;
         }
-        res.normalize();
-        return res;
+        return ScBigInt.normalize(buf);
     }
 
     // convert to byte array representation
@@ -160,11 +210,11 @@ export class ScBigInt {
     }
 
     public uint64(): u64 {
-        let zeroes = wasmtypes.ScUint64Length-this.bytes.length;
+        const zeroes = wasmtypes.ScUint64Length - this.bytes.length;
         if (zeroes > wasmtypes.ScUint64Length) {
             panic("value exceeds Uint64");
         }
-        let buf = bigIntToBytes(this).concat(wasmtypes.zeroes(zeroes));
+        const buf = bigIntToBytes(this).concat(wasmtypes.zeroes(zeroes));
         return wasmtypes.uint64FromBytes(buf);
     }
 }
@@ -191,12 +241,17 @@ export function bigIntToBytes(value: ScBigInt): u8[] {
 }
 
 export function bigIntToString(value: ScBigInt): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.bytes);
+    if (value.isUint64()) {
+        return wasmtypes.uint64ToString(value.uint64());
+    }
+    const divMod = value.divMod(ScBigInt.fromUint64(1_000_000_000_000_000_000));
+    const digits = wasmtypes.uint64ToString(divMod[1].uint64());
+    const zeroes = wasmtypes.zeroes(18 - digits.length);
+    return bigIntToString(divMod[0]) + zeroes + digits;
 }
 
 function bigIntFromBytesUnchecked(buf: u8[]): ScBigInt {
-    let o = new ScBigInt();
+    const o = new ScBigInt();
     o.bytes = buf.slice(0);
     return o;
 }

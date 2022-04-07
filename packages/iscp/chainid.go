@@ -34,15 +34,11 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 }
 
 func ChainIDFromString(s string) (*ChainID, error) {
-	data, err := hex.DecodeString(s)
+	bytes, err := hex.DecodeString(s)
 	if err != nil {
-		return &ChainID{}, err
+		return nil, err
 	}
-	ret, err := ChainIDFromBytes(data)
-	if err != nil {
-		return &ChainID{}, err
-	}
-	return ret, nil
+	return ChainIDFromBytes(bytes)
 }
 
 // ChainIDFromMarshalUtil reads from Marshalutil
@@ -80,6 +76,10 @@ func (chid *ChainID) Bytes() []byte {
 	return chid[:]
 }
 
+func (chid *ChainID) Key() string {
+	return chid.AsAliasID().String()
+}
+
 // Equals for using
 func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	if chid == chid1 {
@@ -91,7 +91,7 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return *chid == *chid1
 }
 
-// String human readable form (bech32)
+// String human readable form (hex)
 func (chid *ChainID) String() string {
 	return hex.EncodeToString(chid.Bytes())
 }

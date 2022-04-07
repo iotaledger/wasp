@@ -401,3 +401,38 @@ export function viewAddressMapOfAddressMapValue(ctx: wasmlib.ScViewContext, f: s
     const key = f.params.keyAddr().value();
     f.results.valueAddr().setValue(myMap.getAddress(key).value());
 }
+
+export function viewBigIntAdd(ctx: wasmlib.ScViewContext, f: sc.BigIntAddContext): void {
+    const lhs = f.params.lhs().value();
+    const rhs = f.params.rhs().value();
+    const res = lhs.add(rhs);
+    f.results.res().setValue(res);
+}
+
+export function viewBigIntDiv(ctx: wasmlib.ScViewContext, f: sc.BigIntDivContext): void {
+    const lhs = f.params.lhs().value();
+    const rhs = f.params.rhs().value();
+    const res = lhs.div(rhs);
+    f.results.res().setValue(res);
+}
+
+export function viewBigIntMod(ctx: wasmlib.ScViewContext, f: sc.BigIntModContext): void {
+    const lhs = f.params.lhs().value();
+    const rhs = f.params.rhs().value();
+    const res = lhs.modulo(rhs);
+    f.results.res().setValue(res);
+}
+
+export function viewBigIntMul(ctx: wasmlib.ScViewContext, f: sc.BigIntMulContext): void {
+    const lhs = f.params.lhs().value();
+    const rhs = f.params.rhs().value();
+    const res = lhs.mul(rhs);
+    f.results.res().setValue(res);
+}
+
+export function viewBigIntSub(ctx: wasmlib.ScViewContext, f: sc.BigIntSubContext): void {
+    const lhs = f.params.lhs().value();
+    const rhs = f.params.rhs().value();
+    const res = lhs.sub(rhs);
+    f.results.res().setValue(res);
+}

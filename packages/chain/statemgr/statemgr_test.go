@@ -20,7 +20,7 @@ import (
 //---------------------------------------------
 //Tests if state manager is started and initialized correctly
 func TestEnv(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, false)
+	env := NewMockedEnv(2, t, false)
 	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
 
@@ -57,7 +57,7 @@ func TestEnv(t *testing.T) {
 }
 
 func TestGetInitialState(t *testing.T) {
-	env, originOutput := NewMockedEnv(1, t, false)
+	env := NewMockedEnv(1, t, false)
 	node := NewMockedNode(env, 0, NewStateManagerTimers())
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
@@ -70,6 +70,7 @@ func TestGetInitialState(t *testing.T) {
 	manager := node.StateManager.(*stateManager)
 
 	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
+	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
 	require.True(t, iscp.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.True(t, trie.EqualCommitments(state.OriginStateCommitment(), trie.RootCommitment(manager.solidState.TrieNodeStore())))
@@ -78,7 +79,8 @@ func TestGetInitialState(t *testing.T) {
 }
 
 func TestGetNextState(t *testing.T) {
-	env, originOutput := NewMockedEnv(1, t, false)
+	env := NewMockedEnv(1, t, false)
+	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
 	timers := NewStateManagerTimers()
 	timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
 	node := NewMockedNode(env, 0, timers)
@@ -129,7 +131,7 @@ func TestManyStateTransitionsNoPush(t *testing.T) {
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
-	env, _ := NewMockedEnv(1, t, false)
+	env := NewMockedEnv(1, t, false)
 	env.SetPushStateToNodesOption(pushStateToNodes)
 
 	timers := NewStateManagerTimers()
@@ -151,7 +153,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func TestManyStateTransitionsSeveralNodes(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, true)
+	env := NewMockedEnv(2, t, false)
 	env.SetPushStateToNodesOption(true)
 
 	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
@@ -178,7 +180,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 
 func TestManyStateTransitionsManyNodes(t *testing.T) {
 	numberOfCatchingPeers := 10
-	env, _ := NewMockedEnv(numberOfCatchingPeers+1, t, true)
+	env := NewMockedEnv(numberOfCatchingPeers+1, t, false)
 	env.SetPushStateToNodesOption(true)
 
 	allPubKeys := make([]*cryptolib.PublicKey, 0)
@@ -219,7 +221,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 // Call to MsgGetConfirmetOutput does not return anything. Synchronization must
 // be done using stateOutput only.
 func TestCatchUpNoConfirmedOutput(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, true)
+	env := NewMockedEnv(2, t, false)
 	env.SetPushStateToNodesOption(true)
 
 	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
@@ -230,7 +232,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 
 	const targetBlockIndex = 10
 	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	node0.NodeConn.SetPullConfirmedOutputAllowed(false)
+	node0.NodeConn.SetPullOutputByIDAllowed(false)
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
 	node1 := NewMockedNode(env, 1, NewStateManagerTimers())
@@ -245,7 +247,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 
 func TestNodeDisconnected(t *testing.T) {
 	numberOfConnectedPeers := 5
-	env, _ := NewMockedEnv(numberOfConnectedPeers+1, t, true)
+	env := NewMockedEnv(numberOfConnectedPeers+1, t, false)
 	env.SetPushStateToNodesOption(false)
 
 	createNodeFun := func(nodeIndex int) *MockedNode {
@@ -325,7 +327,7 @@ func TestCruelWorld(t *testing.T) {
 	}
 
 	numberOfPeers := 10
-	env, _ := NewMockedEnv(numberOfPeers, t, true)
+	env := NewMockedEnv(numberOfPeers, t, false)
 	env.NetworkBehaviour.
 		WithLosingChannel(nil, 80).
 		WithRepeatingChannel(nil, 25).

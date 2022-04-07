@@ -14,7 +14,7 @@ import (
 )
 
 func TestWriteToWAL(t *testing.T) {
-	e := setupWithNoChain(t, 1)
+	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
 
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestWriteToWAL(t *testing.T) {
 
 	require.EqualValues(t, blockInfo.BlockIndex, block.BlockIndex())
 	require.EqualValues(t, blockInfo.Timestamp, block.Timestamp())
-	require.EqualValues(t, blockInfo.PreviousStateCommitment.Bytes(), block.PreviousStateCommitment().Bytes())
+	require.EqualValues(t, blockInfo.PreviousStateCommitment.Bytes(), block.PreviousStateCommitment(state.CommitmentModel).Bytes())
 }
 
 func walDirectoryCreated(walDir string) bool {

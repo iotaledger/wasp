@@ -14,11 +14,11 @@ type ImmutableApproveParams struct {
 }
 
 // target account, clear approval when not present
-// token ID
 func (s ImmutableApproveParams) Approved() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamApproved))
 }
 
+// token ID
 func (s ImmutableApproveParams) TokenID() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamTokenID))
 }
@@ -28,11 +28,11 @@ type MutableApproveParams struct {
 }
 
 // target account, clear approval when not present
-// token ID
 func (s MutableApproveParams) Approved() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamApproved))
 }
 
+// token ID
 func (s MutableApproveParams) TokenID() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamTokenID))
 }
@@ -60,11 +60,11 @@ type ImmutableInitParams struct {
 }
 
 // creator/owner of the initial supply
-// initial token supply
 func (s ImmutableInitParams) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
+// initial token supply
 func (s ImmutableInitParams) Symbol() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamSymbol))
 }
@@ -74,11 +74,11 @@ type MutableInitParams struct {
 }
 
 // creator/owner of the initial supply
-// initial token supply
 func (s MutableInitParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
+// initial token supply
 func (s MutableInitParams) Symbol() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamSymbol))
 }
@@ -88,11 +88,11 @@ type ImmutableMintParams struct {
 }
 
 // New token id
-// Optional token URI that overrides default
 func (s ImmutableMintParams) TokenID() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamTokenID))
 }
 
+// Optional token URI that overrides default
 func (s ImmutableMintParams) TokenURI() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamTokenURI))
 }
@@ -102,11 +102,11 @@ type MutableMintParams struct {
 }
 
 // New token id
-// Optional token URI that overrides default
 func (s MutableMintParams) TokenID() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamTokenID))
 }
 
+// Optional token URI that overrides default
 func (s MutableMintParams) TokenURI() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamTokenURI))
 }
@@ -115,22 +115,22 @@ type ImmutableSafeTransferFromParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// extra data to pass to SC
 func (s ImmutableSafeTransferFromParams) Data() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamData))
 }
 
 // from account
-// to account, which is SC
-// token ID
-// extra data to pass to SC
 func (s ImmutableSafeTransferFromParams) From() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamFrom))
 }
 
+// to account, which is SC
 func (s ImmutableSafeTransferFromParams) To() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamTo))
 }
 
+// token ID
 func (s ImmutableSafeTransferFromParams) TokenID() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamTokenID))
 }
@@ -139,22 +139,22 @@ type MutableSafeTransferFromParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// extra data to pass to SC
 func (s MutableSafeTransferFromParams) Data() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamData))
 }
 
 // from account
-// to account, which is SC
-// token ID
-// extra data to pass to SC
 func (s MutableSafeTransferFromParams) From() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamFrom))
 }
 
+// to account, which is SC
 func (s MutableSafeTransferFromParams) To() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamTo))
 }
 
+// token ID
 func (s MutableSafeTransferFromParams) TokenID() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamTokenID))
 }
@@ -190,16 +190,16 @@ type ImmutableTransferFromParams struct {
 }
 
 // from account
-// to account
-// token ID
 func (s ImmutableTransferFromParams) From() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamFrom))
 }
 
+// to account
 func (s ImmutableTransferFromParams) To() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamTo))
 }
 
+// token ID
 func (s ImmutableTransferFromParams) TokenID() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamTokenID))
 }
@@ -209,16 +209,16 @@ type MutableTransferFromParams struct {
 }
 
 // from account
-// to account
-// token ID
 func (s MutableTransferFromParams) From() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamFrom))
 }
 
+// to account
 func (s MutableTransferFromParams) To() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamTo))
 }
 
+// token ID
 func (s MutableTransferFromParams) TokenID() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamTokenID))
 }

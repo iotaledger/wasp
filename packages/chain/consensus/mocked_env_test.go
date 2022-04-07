@@ -16,12 +16,13 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -29,7 +30,7 @@ type MockedEnv struct {
 	T                *testing.T
 	Quorum           uint16
 	Log              *logger.Logger
-	Ledger           *testchain.MockedLedger
+	Ledgers          *testchain.MockedLedgers
 	StateAddress     iotago.Address
 	Nodes            []*mockedNode
 	NodeIDs          []string
@@ -82,34 +83,21 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	for i := range nodeIdentities {
 		ret.NodePubKeys[i] = nodeIdentities[i].GetPublicKey()
 	}
-	// ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())	// TODO: return to normal DKS usage after refactor
-	ret.ChainID = iscp.RandomChainID()
-	ret.StateAddress = ret.ChainID.AsAddress()
-	pubKeys := make([]*cryptolib.PublicKey, len(nodeIdentities))
-	for i := range nodeIdentities {
-		pubKeys[i] = nodeIdentities[i].GetPublicKey()
-	}
-	ret.DKShares = make([]tcrypto.DKShare, len(nodeIdentities))
-	for i := range ret.DKShares {
-		ret.DKShares[i] = NewMockedDKShare(ret, ret.StateAddress, uint16(i), quorum, pubKeys)
+	var err error
+	var dksRegistries []registry.DKShareRegistryProvider
+	ret.StateAddress, dksRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities)
+	ret.DKShares = make([]tcrypto.DKShare, len(dksRegistries))
+	for i := range dksRegistries {
+		ret.DKShares[i], err = dksRegistries[i].LoadDKShare(ret.StateAddress)
+		require.NoError(t, err)
 	}
 	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
-	output := &iotago.AliasOutput{
-		Amount:        iotago.TokenSupply,
-		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: ret.StateAddress},
-			&iotago.GovernorAddressUnlockCondition{Address: ret.StateAddress},
-		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
-				Address: ret.StateAddress,
-			},
-		},
-	}
-	ret.Ledger = testchain.NewMockedLedger(output, log)
-	ret.InitStateOutput = ret.Ledger.PullState()
+	ret.Ledgers = testchain.NewMockedLedgers(log)
+	ret.ChainID = ret.Ledgers.InitLedger(ret.StateAddress)
+	ret.InitStateOutput = ret.Ledgers.GetLedger(ret.ChainID).GetLatestOutput()
+
+	ret.Log.Infof("Testing environment is ready")
 
 	return ret
 }
@@ -207,6 +195,7 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 		ii := uint16(i)
 		d.Set("c", []byte{byte(ii % 256), byte(ii / 256)})
 		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64())
+		reqs[i].Sign(cryptolib.NewKeyPair())
 	}
 	rnd := len(randomize) > 0 && randomize[0]
 	for _, n := range env.Nodes {

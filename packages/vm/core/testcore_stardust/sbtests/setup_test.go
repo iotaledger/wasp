@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
@@ -43,14 +44,14 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
-	err := chain.SendFromL1ToL2AccountIotas(1000, solo.Saldo/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
+	err := chain.SendFromL1ToL2AccountIotas(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
 }
 
 func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
-	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
+	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
 
 	err := ch.DepositIotasToL2(10_000, user)
 	require.NoError(t, err)

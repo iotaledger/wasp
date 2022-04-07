@@ -54,11 +54,11 @@ type ImmutableGetBlobFieldParams struct {
 }
 
 // blob name
-// blob set
 func (s ImmutableGetBlobFieldParams) Field() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamField))
 }
 
+// blob set
 func (s ImmutableGetBlobFieldParams) Hash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
@@ -68,11 +68,11 @@ type MutableGetBlobFieldParams struct {
 }
 
 // blob name
-// blob set
 func (s MutableGetBlobFieldParams) Field() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamField))
 }
 
+// blob set
 func (s MutableGetBlobFieldParams) Hash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }

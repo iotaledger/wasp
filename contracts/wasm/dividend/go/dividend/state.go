@@ -39,16 +39,16 @@ func (s ImmutableDividendState) MemberList() ArrayOfImmutableAddress {
 }
 
 // map with all the recipient factors of this dividend
-// owner of contract, the only one who can call 'member' func
-// sum of all recipient factors
 func (s ImmutableDividendState) Members() MapAddressToImmutableUint64 {
 	return MapAddressToImmutableUint64{proxy: s.proxy.Root(StateMembers)}
 }
 
+// owner of contract, the only one who can call 'member' func
 func (s ImmutableDividendState) Owner() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateOwner))
 }
 
+// sum of all recipient factors
 func (s ImmutableDividendState) TotalFactor() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateTotalFactor))
 }
@@ -99,16 +99,16 @@ func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
 }
 
 // map with all the recipient factors of this dividend
-// owner of contract, the only one who can call 'member' func
-// sum of all recipient factors
 func (s MutableDividendState) Members() MapAddressToMutableUint64 {
 	return MapAddressToMutableUint64{proxy: s.proxy.Root(StateMembers)}
 }
 
+// owner of contract, the only one who can call 'member' func
 func (s MutableDividendState) Owner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateOwner))
 }
 
+// sum of all recipient factors
 func (s MutableDividendState) TotalFactor() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateTotalFactor))
 }

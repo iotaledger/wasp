@@ -6,12 +6,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/state"
 	"io"
 	"math"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
@@ -469,10 +470,10 @@ func (ca *ControlAddresses) Bytes() []byte {
 func (ca *ControlAddresses) String() string {
 	var ret string
 	if ca.StateAddress.Equal(ca.GoverningAddress) {
-		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(iscp.Bech32Prefix), ca.SinceBlockIndex)
+		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress, ca.SinceBlockIndex)
 	} else {
 		ret = fmt.Sprintf("ControlAddresses(%s, %s), block: %d",
-			ca.StateAddress.Bech32(iscp.Bech32Prefix), ca.GoverningAddress.Bech32(iscp.Bech32Prefix), ca.SinceBlockIndex)
+			ca.StateAddress, ca.GoverningAddress, ca.SinceBlockIndex)
 	}
 	return ret
 }
