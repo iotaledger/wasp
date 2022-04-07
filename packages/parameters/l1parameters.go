@@ -5,11 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 )
 
-// Parameters needed for interaction with layer1
-
-// TODO  - get the max tx size from iotago somehow
-// const MaxTransactionSize = iotago.Transaction.
-
 // L1 describes parameters coming from the L1 node
 type L1 struct {
 	NetworkName               string

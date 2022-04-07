@@ -57,7 +57,7 @@ func NewNode(
 		identity:     identity,
 		secKey:       kyberEdDSSA.Secret,
 		pubKey:       kyberEdDSSA.Public,
-		blsSuite:     tcrypto.DefaultBlsSuite(),
+		blsSuite:     tcrypto.DefaultBLSSuite(),
 		edSuite:      edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider:  netProvider,
 		registry:     reg,
@@ -273,7 +273,7 @@ func (n *Node) GenerateDistributedKey(
 			if blsPubShareBytes, err = pubShareResponses[i].blsPublicShare.MarshalBinary(); err != nil {
 				return nil, err
 			}
-			err = dkShare.BlsVerify(
+			err = dkShare.BLSVerify(
 				pubShareResponses[i].blsPublicShare,
 				blsPubShareBytes,
 				pubShareResponses[i].blsSignature,

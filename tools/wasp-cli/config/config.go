@@ -181,23 +181,3 @@ func Set(key string, value interface{}) {
 	viper.Set(key, value)
 	log.Check(viper.WriteConfig())
 }
-
-func TrySCAddress(scAlias string) iotago.Address {
-	panic("TODO implement")
-	// b58 := viper.GetString("sc." + scAlias + ".address")
-	// if b58 == "" {
-	// 	return nil
-	// }
-	// address, err := iotago.AddressFromBase58EncodedString(b58)
-	// log.Check(err)
-	// return address
-}
-
-func GetSCAddress(scAlias string) iotago.Address {
-	panic("TODO implement")
-	// address := TrySCAddress(scAlias)
-	// if address == nil {
-	// 	log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
-	// }
-	// return address
-}

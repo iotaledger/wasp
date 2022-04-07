@@ -21,27 +21,26 @@ type DKShare interface {
 	GetN() uint16
 	GetT() uint16
 	GetNodePubKeys() []*cryptolib.PublicKey
+	GetSharedPublic() *cryptolib.PublicKey
 	SetPublicShares(edPublicShares []kyber.Point, blsPublicShares []kyber.Point)
 	//
 	// Schnorr based crypto (for L1 signatures).
-	GetSharedPublic() kyber.Point
-	GetSharedPublicAsCryptoLib() *cryptolib.PublicKey
-	GetPublicShares() []kyber.Point
-	// GetPrivateShare() kyber.Scalar // TODO: remove it.
-	SignShare(data []byte) (*dss.PartialSig, error)
-	VerifySigShare(data []byte, sigshare *dss.PartialSig) error
-	RecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error)
-	VerifyMasterSignature(data, signature []byte) error
+	DSSPublicShares() []kyber.Point
+	DSSSharedPublic() kyber.Point
+	DSSSignShare(data []byte) (*dss.PartialSig, error)
+	DSSVerifySigShare(data []byte, sigshare *dss.PartialSig) error
+	DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error)
+	DSSVerifyMasterSignature(data, signature []byte) error
 	//
 	// BLS based crypto (for randomness only.)
-	BlsSharedPublic() kyber.Point
-	BlsPublicShares() []kyber.Point
-	BlsSignShare(data []byte) (tbls.SigShare, error)
-	BlsVerifySigShare(data []byte, sigshare tbls.SigShare) error
-	BlsRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error)
-	BlsVerifyMasterSignature(data, signature []byte) error
-	BlsSign(data []byte) ([]byte, error)                        // Non-threshold variant.
-	BlsVerify(signer kyber.Point, data, signature []byte) error // Non-threshold variant.
+	BLSSharedPublic() kyber.Point
+	BLSPublicShares() []kyber.Point
+	BLSSignShare(data []byte) (tbls.SigShare, error)
+	BLSVerifySigShare(data []byte, sigshare tbls.SigShare) error
+	BLSRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error)
+	BLSVerifyMasterSignature(data, signature []byte) error
+	BLSSign(data []byte) ([]byte, error)                        // Non-threshold variant.
+	BLSVerify(signer kyber.Point, data, signature []byte) error // Non-threshold variant.
 	//
 	// For tests only.
 	AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey)

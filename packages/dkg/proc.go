@@ -551,8 +551,8 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 			if err := peerReconstructCommitsMsgEd.fromBytes(recvMsg.edMsg.MsgData); err != nil {
 				return nil, err
 			}
-			peerReconstructCommitsMsgBls := rabinReconstructCommitsMsg{}
-			if err := peerReconstructCommitsMsgBls.fromBytes(recvMsg.blsMsg.MsgData); err != nil {
+			peerReconstructCommitsMsgBLS := rabinReconstructCommitsMsg{}
+			if err := peerReconstructCommitsMsgBLS.fromBytes(recvMsg.blsMsg.MsgData); err != nil {
 				return nil, err
 			}
 			p.dkgLock.Lock()
@@ -562,7 +562,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 					return nil, err
 				}
 			}
-			for _, rc := range peerReconstructCommitsMsgBls.reconstructCommits {
+			for _, rc := range peerReconstructCommitsMsgBLS.reconstructCommits {
 				if err = p.dkgImpl[keySetTypeBLS].ProcessReconstructCommits(rc); err != nil {
 					p.dkgLock.Unlock()
 					return nil, err
@@ -674,29 +674,29 @@ func (p *proc) nodeInQUAL(kst keySetType, nodeIdx uint16) bool {
 func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error) {
 	var err error
 	var dssPublicShareBytes []byte
-	if dssPublicShareBytes, err = p.dkShare.GetPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
+	if dssPublicShareBytes, err = p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
 		return nil, err
 	}
 	var blsPublicShareBytes []byte
-	if blsPublicShareBytes, err = p.dkShare.BlsPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
+	if blsPublicShareBytes, err = p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
 		return nil, err
 	}
 	var dssSignature *dss.PartialSig
-	if dssSignature, err = p.dkShare.SignShare(dssPublicShareBytes); err != nil {
+	if dssSignature, err = p.dkShare.DSSSignShare(dssPublicShareBytes); err != nil {
 		return nil, err
 	}
 	var blsSignature []byte
-	if blsSignature, err = p.dkShare.BlsSign(blsPublicShareBytes); err != nil {
+	if blsSignature, err = p.dkShare.BLSSign(blsPublicShareBytes); err != nil {
 		return nil, err
 	}
 	return &initiatorPubShareMsg{
 		step:            step,
 		sharedAddress:   p.dkShare.GetAddress(),
-		edSharedPublic:  p.dkShare.GetSharedPublic(),
-		edPublicShare:   p.dkShare.GetPublicShares()[*p.dkShare.GetIndex()],
+		edSharedPublic:  p.dkShare.DSSSharedPublic(),
+		edPublicShare:   p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()],
 		edSignature:     dssSignature.Signature,
-		blsSharedPublic: p.dkShare.BlsSharedPublic(),
-		blsPublicShare:  p.dkShare.BlsPublicShares()[*p.dkShare.GetIndex()],
+		blsSharedPublic: p.dkShare.BLSSharedPublic(),
+		blsPublicShare:  p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()],
 		blsSignature:    blsSignature,
 	}, nil
 }
@@ -834,13 +834,13 @@ func (s *procStep) run() {
 						// s.sentMsgs[keySetTypeEd25519] = make(map[uint16]*peering.PeerMessageData) // TODO: No messages will be sent on error.
 						s.markDone(makePeerMessage(s.proc.dkgID, peering.PeerMessageReceiverDkg, s.step, &initiatorStatusMsg{error: err}))
 					}
-					if blsSentMsgs, err = s.makeSent(s.step, keySetTypeBLS, s.initRecv, s.prevMsgs.GetBlsMsgs()); err != nil {
+					if blsSentMsgs, err = s.makeSent(s.step, keySetTypeBLS, s.initRecv, s.prevMsgs.GetBLSMsgs()); err != nil {
 						s.log.Errorf("Step %v failed to make round messages, reason=%v", s.step, err)
 						// s.sentMsgs[keySetTypeBLS] = make(map[uint16]*peering.PeerMessageData) // TODO: No messages will be sent on error.
 						s.markDone(makePeerMessage(s.proc.dkgID, peering.PeerMessageReceiverDkg, s.step, &initiatorStatusMsg{error: err}))
 					}
-					s.sentMsgs.AddEdMsgs(edSentMsgs, s.step)
-					s.sentMsgs.AddBlsMsgs(blsSentMsgs, s.step)
+					s.sentMsgs.AddDSSMsgs(edSentMsgs, s.step)
+					s.sentMsgs.AddBLSMsgs(blsSentMsgs, s.step)
 					for i := range s.sentMsgs {
 						sentMsg := s.sentMsgs[i]
 						pubKey, _ := s.proc.netGroup.PubKeyByIndex(i)

@@ -175,14 +175,14 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	sigSharesToAggregate := make([][]byte, len(props))
 	oid := c.stateOutput.OutputID()
 	for i, prop := range props {
-		err := c.committee.DKShare().BlsVerifySigShare(oid[:], prop.SigShareOfStateOutputID)
+		err := c.committee.DKShare().BLSVerifySigShare(oid[:], prop.SigShareOfStateOutputID)
 		if err != nil {
 			return nil, xerrors.Errorf("INVALID SIGNATURE in ACS from peer #%d: %v", prop.ValidatorIndex, err)
 		}
 		sigSharesToAggregate[i] = prop.SigShareOfStateOutputID
 	}
 	// aggregate signatures for use as unpredictable entropy
-	signatureWithPK, err := c.committee.DKShare().BlsRecoverMasterSignature(sigSharesToAggregate, oid[:])
+	signatureWithPK, err := c.committee.DKShare().BLSRecoverMasterSignature(sigSharesToAggregate, oid[:])
 	if err != nil {
 		return nil, xerrors.Errorf("recovering signature from ACS: %v", err)
 	}

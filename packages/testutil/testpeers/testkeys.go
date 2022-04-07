@@ -92,7 +92,7 @@ func SetupDkgPregenerated(
 	dks := make([]tcrypto.DKShare, len(serializedDks))
 	registries := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
-		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBlsSuite(), identities[i].GetPrivateKey())
+		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), identities[i].GetPrivateKey())
 		require.Nil(t, err)
 		if i > 0 {
 			dks[i].AssignCommonData(dks[0])

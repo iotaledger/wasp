@@ -90,7 +90,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
-		{K: "Sender", V: req.SenderAccount().String(config.L1Client().L1Params().Bech32Prefix)},
+		{K: "Sender", V: req.SenderAccount().String(config.L1NetworkPrefix())},
 		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
 		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
 		{K: "Arguments", V: argsTree},
