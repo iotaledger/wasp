@@ -506,7 +506,6 @@ func TestSend(t *testing.T) {
 	}}}, "SendEvent", nil, "emitSend")
 
 	require.EqualValues(t, 42, iotas)
-
 }
 
 func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {

@@ -390,7 +390,6 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	require.Len(e.chain.t, res.evmReceipt.Logs, 1)
 	if v != nil {
 		err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
-
 	}
 	require.NoError(e.chain.t, err)
 }
