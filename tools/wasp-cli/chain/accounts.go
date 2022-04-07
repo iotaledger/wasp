@@ -47,8 +47,8 @@ var balanceCmd = &cobra.Command{
 		log.Check(err)
 
 		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name, dict.Dict{
-			accounts.ParamAgentID: agentID.Bytes(),
-		})
+				accounts.ParamAgentID: agentID.Bytes(),
+			})
 		log.Check(err)
 
 		header := []string{"token", "amount"}

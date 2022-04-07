@@ -49,10 +49,7 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 	reqOwnerAddress := req.OwnerAddress.Address()
 	reqNodePubKeyBytes := req.NodePubKey.Bytes()
 
-	nodeIdentity, err := registryProvider().GetNodeIdentity()
-	if err != nil {
-		return err
-	}
+	nodeIdentity := registryProvider().GetNodeIdentity()
 
 	//
 	// Check, if supplied node PubKey matches.
