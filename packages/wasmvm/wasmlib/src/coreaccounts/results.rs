@@ -60,54 +60,6 @@ impl MutableAccountsResults {
 }
 
 #[derive(Clone)]
-pub struct MapColorToImmutableInt64 {
-	pub(crate) proxy: Proxy,
-}
-
-impl MapColorToImmutableInt64 {
-    pub fn get_int64(&self, key: &ScColor) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.proxy.key(&color_to_bytes(key)))
-    }
-}
-
-#[derive(Clone)]
-pub struct ImmutableBalanceResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableBalanceResults {
-    pub fn balances(&self) -> MapColorToImmutableInt64 {
-		MapColorToImmutableInt64 { proxy: self.proxy.clone() }
-	}
-}
-
-#[derive(Clone)]
-pub struct MapColorToMutableInt64 {
-	pub(crate) proxy: Proxy,
-}
-
-impl MapColorToMutableInt64 {
-    pub fn clear(&self) {
-        self.proxy.clear_map();
-    }
-
-    pub fn get_int64(&self, key: &ScColor) -> ScMutableInt64 {
-        ScMutableInt64::new(self.proxy.key(&color_to_bytes(key)))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableBalanceResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableBalanceResults {
-    pub fn balances(&self) -> MapColorToMutableInt64 {
-		MapColorToMutableInt64 { proxy: self.proxy.clone() }
-	}
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetAccountNonceResults {
 	pub(crate) proxy: Proxy,
 }
@@ -126,27 +78,5 @@ pub struct MutableGetAccountNonceResults {
 impl MutableGetAccountNonceResults {
     pub fn account_nonce(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
-	}
-}
-
-#[derive(Clone)]
-pub struct ImmutableTotalAssetsResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableTotalAssetsResults {
-    pub fn balances(&self) -> MapColorToImmutableInt64 {
-		MapColorToImmutableInt64 { proxy: self.proxy.clone() }
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableTotalAssetsResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableTotalAssetsResults {
-    pub fn balances(&self) -> MapColorToMutableInt64 {
-		MapColorToMutableInt64 { proxy: self.proxy.clone() }
 	}
 }

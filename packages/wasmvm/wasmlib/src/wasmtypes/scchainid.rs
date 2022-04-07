@@ -36,7 +36,7 @@ pub fn chain_id_decode(dec: &mut WasmDecoder) -> ScChainID {
 }
 
 pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID) {
-    enc.fixed_bytes(&value.to_bytes(), SC_CHAIN_ID_LENGTH);
+    enc.fixed_bytes(&value.id, SC_CHAIN_ID_LENGTH);
 }
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {

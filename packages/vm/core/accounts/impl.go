@@ -82,7 +82,7 @@ func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 }
 
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
-const ConstDepositFeeTmp = uint64(500)
+const ConstDepositFeeTmp = uint64(1000)
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request

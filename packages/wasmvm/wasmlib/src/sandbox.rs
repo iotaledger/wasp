@@ -44,6 +44,7 @@ pub const FN_UTILS_HASH_BLAKE2B    : i32 = -34;
 pub const FN_UTILS_HASH_NAME       : i32 = -35;
 pub const FN_UTILS_HASH_SHA3       : i32 = -36;
 pub const FN_TRANSFER_ALLOWED      : i32 = -37;
+pub const FN_ESTIMATE_DUST         : i32 = -38;
 // @formatter:on
 
 // Direct logging of informational text to host log
@@ -80,8 +81,8 @@ pub trait ScSandbox {
         agent_id_from_bytes(&sandbox(FN_ACCOUNT_ID, &[]))
     }
 
-    fn balance(&self, color: ScColor) -> u64 {
-        uint64_from_bytes(&sandbox(FN_BALANCE, &color.to_bytes()))
+    fn balance(&self, token_id: ScTokenID) -> u64 {
+        uint64_from_bytes(&sandbox(FN_BALANCE, &token_id.to_bytes()))
     }
 
     // access the current balances for all assets
@@ -90,7 +91,7 @@ pub trait ScSandbox {
     }
 
     // calls a smart contract function
-    fn call_with_transfer(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfers>) -> ScImmutableDict {
+    fn call_with_transfer(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfer>) -> ScImmutableDict {
         let mut req = wasmrequests::CallRequest {
             contract: h_contract,
             function: h_function,
@@ -193,7 +194,7 @@ pub trait ScSandboxFunc: ScSandbox {
     //}
 
     // calls a smart contract func or view
-    fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfers>) -> ScImmutableDict {
+    fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfer>) -> ScImmutableDict {
         return self.call_with_transfer(h_contract, h_function, params, transfer);
     }
 
@@ -221,6 +222,11 @@ pub trait ScSandboxFunc: ScSandbox {
         return hash_from_bytes(&sandbox(FN_ENTROPY, &[]));
     }
 
+    fn estimate_dust(&self, f: &ScFunc) -> u64 {
+        let req = f.post_request(ScFuncContext {}.chain_id());
+        uint64_from_bytes(&sandbox(FN_ESTIMATE_DUST, &req.to_bytes()))
+    }
+
     // signals an event on the node that external entities can subscribe to
     fn event(&self, msg: &str) {
         sandbox(FN_EVENT, &string_to_bytes(msg));
@@ -233,7 +239,7 @@ pub trait ScSandboxFunc: ScSandbox {
     }
 
     // (delayed) posts a smart contract function request
-    fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, transfer: ScTransfers, delay: u32) {
+    fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, transfer: ScTransfer, delay: u32) {
         let req = wasmrequests::PostRequest {
             chain_id,
             contract: h_contract,
@@ -284,7 +290,7 @@ pub trait ScSandboxFunc: ScSandbox {
     }
 
     // transfer assets to the specified Tangle ledger address
-    fn send(&self, address: &ScAddress, transfer: &ScTransfers) {
+    fn send(&self, address: &ScAddress, transfer: &ScTransfer) {
         // we need some assets to send
         if transfer.is_empty() {
             return;
@@ -302,7 +308,7 @@ pub trait ScSandboxFunc: ScSandbox {
     //}
 
     // transfer assets to the specified Tangle ledger address
-    fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfers, create: bool) {
+    fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfer, create: bool) {
         // we need some assets to send
         if transfer.is_empty() {
             return;

@@ -14,6 +14,7 @@ import (
 )
 
 type SoloAgent struct {
+	Cvt     wasmhost.WasmConvertor
 	Env     *solo.Solo
 	Pair    *cryptolib.KeyPair
 	address iotago.Address
@@ -27,7 +28,7 @@ func NewSoloAgent(env *solo.Solo) *SoloAgent {
 }
 
 func (a *SoloAgent) ScAddress() wasmtypes.ScAddress {
-	return wasmhost.WasmConvertor{}.ScAddress(a.address)
+	return a.Cvt.ScAddress(a.address)
 }
 
 func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
@@ -38,12 +39,12 @@ func (a *SoloAgent) AgentID() *iscp.AgentID {
 	return iscp.NewAgentID(a.address, a.hname)
 }
 
-func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
+func (a *SoloAgent) Balance(color ...wasmtypes.ScTokenID) uint64 {
 	switch len(color) {
 	case 0:
 		return a.Env.L1Iotas(a.address)
 	case 1:
-		token := wasmhost.WasmConvertor{}.IscpColor(&color[0])
+		token := a.Cvt.IscpTokenID(&color[0])
 		return a.Env.L1NativeTokens(a.address, token).Uint64()
 	default:
 		require.Fail(a.Env.T, "too many color arguments")
@@ -51,7 +52,7 @@ func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
 	}
 }
 
-func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScColor, error) {
+func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScTokenID, error) {
 	token, err := a.Env.MintTokens(a.Pair, amount)
-	return wasmhost.WasmConvertor{}.ScColor(&token), err
+	return a.Cvt.ScTokenID(&token), err
 }

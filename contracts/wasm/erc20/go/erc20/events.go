@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:gocritic
 package erc20
 
 import (
@@ -15,7 +14,11 @@ import (
 
 type Erc20Events struct{}
 
-func (e Erc20Events) Approval(amount uint64, owner wasmtypes.ScAgentID, spender wasmtypes.ScAgentID) {
+func (e Erc20Events) Approval(
+	amount uint64,
+	owner wasmtypes.ScAgentID,
+	spender wasmtypes.ScAgentID,
+) {
 	evt := wasmlib.NewEventEncoder("erc20.approval")
 	evt.Encode(wasmtypes.Uint64ToString(amount))
 	evt.Encode(wasmtypes.AgentIDToString(owner))
@@ -23,7 +26,11 @@ func (e Erc20Events) Approval(amount uint64, owner wasmtypes.ScAgentID, spender 
 	evt.Emit()
 }
 
-func (e Erc20Events) Transfer(amount uint64, from wasmtypes.ScAgentID, to wasmtypes.ScAgentID) {
+func (e Erc20Events) Transfer(
+	amount uint64,
+	from wasmtypes.ScAgentID,
+	to wasmtypes.ScAgentID,
+) {
 	evt := wasmlib.NewEventEncoder("erc20.transfer")
 	evt.Encode(wasmtypes.Uint64ToString(amount))
 	evt.Encode(wasmtypes.AgentIDToString(from))

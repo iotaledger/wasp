@@ -11,12 +11,12 @@ export const ScName        = "tokenregistry";
 export const ScDescription = "";
 export const HScName       = new wasmtypes.ScHname(0xe1ba0c78);
 
-export const ParamColor       = "color";
 export const ParamDescription = "description";
+export const ParamToken       = "token";
 export const ParamUserDefined = "userDefined";
 
-export const StateColorList = "colorList";
 export const StateRegistry  = "registry";
+export const StateTokenList = "tokenList";
 
 export const FuncMintSupply        = "mintSupply";
 export const FuncTransferOwnership = "transferOwnership";

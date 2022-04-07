@@ -13,6 +13,7 @@ type ImmutableBalanceOfResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// amount of tokens owned by owner
 func (s ImmutableBalanceOfResults) Amount() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAmount))
 }
@@ -21,6 +22,7 @@ type MutableBalanceOfResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// amount of tokens owned by owner
 func (s MutableBalanceOfResults) Amount() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAmount))
 }

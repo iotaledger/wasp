@@ -54,7 +54,7 @@ const (
 
 type SoloContext struct {
 	Chain       *solo.Chain
-	Convertor   wasmhost.WasmConvertor
+	Cvt         wasmhost.WasmConvertor
 	creator     *SoloAgent
 	Dust        uint64
 	Err         error
@@ -252,24 +252,20 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
-// The optional color parameter can be used to retrieve the balance for the specific color.
-// When color is omitted, wasmlib.IOTA is assumed.
-func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) uint64 {
+// The optional tokenID parameter can be used to retrieve the balance for the specific token.
+// When color is omitted, the iota balance is assumed.
+func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
 	account := iscp.NewAgentID(agent.address, agent.hname)
-	switch len(color) {
+	switch len(tokenID) {
 	case 0:
 		iotas := ctx.Chain.L2Iotas(account)
 		return iotas
 	case 1:
-		if color[0] == wasmtypes.IOTA {
-			iotas := ctx.Chain.L2Iotas(account)
-			return iotas
-		}
-		token := ctx.Convertor.IscpColor(&color[0])
+		token := ctx.Cvt.IscpTokenID(&tokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:
-		require.Fail(ctx.Chain.Env.T, "too many color arguments")
+		require.Fail(ctx.Chain.Env.T, "too many tokenID arguments")
 		return 0
 	}
 }
@@ -292,11 +288,11 @@ func (ctx *SoloContext) ChainAccount() *SoloAgent {
 }
 
 func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
-	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
+	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
-	return ctx.Convertor.ScAgentID(ctx.Chain.OriginatorAgentID)
+	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
 func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
@@ -361,20 +357,20 @@ func (ctx *SoloContext) InitFuncCallContext() {
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = wasmhost.Connect(ctx.wc)
-	return ctx.Convertor.ScHname(iscp.Hn(ctx.scName))
+	return ctx.Cvt.ScHname(iscp.Hn(ctx.scName))
 }
 
 // Minted returns the color and amount of newly minted tokens
-func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
+func (ctx *SoloContext) Minted() (wasmtypes.ScTokenID, uint64) {
 	panic("fixme: soloContext.Minted")
 	//t := ctx.Chain.Env.T
 	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
 	//require.Len(t, mintedAmounts, 1)
-	//var mintedColor wasmtypes.ScColor
+	//var mintedColor wasmtypes.ScTokenID
 	//var mintedAmount uint64
 	//for c := range mintedAmounts {
-	//	mintedColor = ctx.Convertor.ScColor(c)
+	//	mintedColor = ctx.Cvt.ScTokenID(c)
 	//	mintedAmount = mintedAmounts[c]
 	//	break
 	//}
@@ -417,9 +413,9 @@ func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad w
 	return ctxCore
 }
 
-// Transfer creates a new ScTransfers proxy
-func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
-	return wasmlib.NewScTransfers()
+// Transfer creates a new ScTransfer proxy
+func (ctx *SoloContext) Transfer() *wasmlib.ScTransfer {
+	return wasmlib.NewScTransfer()
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {

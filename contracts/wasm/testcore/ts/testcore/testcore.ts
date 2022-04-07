@@ -53,15 +53,15 @@ export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext
     ctx.log("doing nothing...");
 }
 
-export function funcGetMintedSupply(ctx: wasmlib.ScFuncContext, f: sc.GetMintedSupplyContext): void {
-    let minted = ctx.minted();
-    let mintedColors = minted.colors();
-    ctx.require(mintedColors.length == 1, "test only supports one minted color");
-    let color = mintedColors[0];
-    let amount = minted.balance(color);
-    f.results.mintedSupply().setValue(amount);
-    f.results.mintedColor().setValue(color);
-}
+// export function funcGetMintedSupply(ctx: wasmlib.ScFuncContext, f: sc.GetMintedSupplyContext): void {
+//     let minted = ctx.minted();
+//     let mintedColors = minted.colors();
+//     ctx.require(mintedColors.length == 1, "test only supports one minted color");
+//     let color = mintedColors[0];
+//     let amount = minted.balance(color);
+//     f.results.mintedSupply().setValue(amount);
+//     f.results.mintedColor().setValue(color);
+// }
 
 export function funcIncCounter(ctx: wasmlib.ScFuncContext, f: sc.IncCounterContext): void {
     let counter = f.state.counter();
@@ -100,8 +100,8 @@ export function funcRunRecursion(ctx: wasmlib.ScFuncContext, f: sc.RunRecursionC
 }
 
 export function funcSendToAddress(ctx: wasmlib.ScFuncContext, f: sc.SendToAddressContext): void {
-    let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
-    ctx.send(f.params.address().value(), transfer);
+    // let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
+    // ctx.send(f.params.address().value(), transfer);
 }
 
 export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): void {
@@ -109,9 +109,10 @@ export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): voi
 }
 
 export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void {
+    let programHash = f.params.progHash().value();
     let spawnName = sc.ScName + "_spawned";
     let spawnDescr = "spawned contract description";
-    ctx.deployContract(f.params.progHash().value(), spawnName, spawnDescr, null);
+    ctx.deployContract(programHash, spawnName, spawnDescr, null);
 
     let spawnHname = ctx.utility().hname(spawnName);
     for (let i = 0; i < 5; i++) {
@@ -158,10 +159,10 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
     ctx.panic(MSG_FULL_PANIC);
 }
 
-export function funcWithdrawToChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawToChainContext): void {
-    let xx = coreaccounts.ScFuncs.withdraw(ctx);
-    xx.func.postToChain(f.params.chainID().value());
-}
+// export function funcWithdrawToChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawToChainContext): void {
+//     let xx = coreaccounts.ScFuncs.withdraw(ctx);
+//     xx.func.postToChain(f.params.chainID().value());
+// }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
@@ -235,4 +236,83 @@ export function viewTestSandboxCall(ctx: wasmlib.ScViewContext, f: sc.TestSandbo
     let getChainInfo = coregovernance.ScFuncs.getChainInfo(ctx);
     getChainInfo.func.call();
     f.results.sandboxCall().setValue(getChainInfo.results.description().value());
+}
+
+export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
+    let allowance = ctx.allowance();
+    let transfer = wasmlib.ScTransfer.fromBalances(allowance);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+}
+
+export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
+    const provided = ctx.allowance().iotas();
+    let dummy = sc.ScFuncs.estimateMinDust(ctx);
+    const required = ctx.estimateDust(dummy.func);
+    ctx.require(provided >= required, "not enough funds");
+}
+
+export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopContext): void {
+    for (; ;) {
+        // do nothing, just waste gas
+    }
+}
+
+export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllowanceBackContext): void {
+    const caller = ctx.caller();
+    ctx.require(caller.isAddress(), "pingAllowanceBack: caller expected to be a L1 address");
+    const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance());
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.send(caller.address(), transfer);
+}
+
+export function funcSendLargeRequest(ctx: wasmlib.ScFuncContext, f: sc.SendLargeRequestContext): void {
+}
+
+export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackContext): void {
+    let address = ctx.caller().address();
+    let allowance = ctx.allowance();
+    let transfer = wasmlib.ScTransfer.fromBalances(allowance);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    const nftIDs = allowance.nftIDs();
+    for (let i = 0; i < nftIDs.length; i++) {
+        let transfer = wasmlib.ScTransfer.nft(nftIDs[i]);
+        ctx.send(address, transfer);
+    }
+}
+
+export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
+    let iotas = ctx.allowance().iotas();
+    const address = ctx.caller().address();
+    const transfer = wasmlib.ScTransfer.iotas(200);
+    for (; iotas >= 200; iotas -= 200) {
+        ctx.transferAllowed(ctx.accountID(), transfer, false);
+        ctx.send(address, transfer);
+    }
+}
+
+export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
+    let iotas = ctx.allowance().iotas();
+    const address = ctx.caller().address();
+    let transfer = wasmlib.ScTransfer.iotas(iotas);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    const tokenIDs = ctx.allowance().tokenIDs();
+    const one = wasmtypes.ScBigInt.fromUint64(1);
+    for (let i = 0; i < tokenIDs.length; i++) {
+        const token = tokenIDs[i];
+        transfer = wasmlib.ScTransfer.tokens(token, one);
+        let tokens = ctx.allowance().balance(token);
+        for (; tokens.cmp(one) >= 0; tokens = tokens.sub(one)) {
+            ctx.transferAllowed(ctx.accountID(), transfer, false);
+            ctx.send(address, transfer);
+        }
+    }
+}
+
+export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
+}
+
+export function viewInfiniteLoopView(ctx: wasmlib.ScViewContext, f: sc.InfiniteLoopViewContext): void {
+    for (; ;) {
+        // do nothing, just waste gas
+    }
 }

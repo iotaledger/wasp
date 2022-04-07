@@ -21,10 +21,6 @@ impl ImmutableGetInfoResults {
 		ScImmutableUint32::new(self.proxy.root(RESULT_BIDDERS))
 	}
 
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(RESULT_COLOR))
-	}
-
     pub fn creator(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(RESULT_CREATOR))
 	}
@@ -61,6 +57,10 @@ impl ImmutableGetInfoResults {
 		ScImmutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
 	}
 
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(RESULT_TOKEN))
+	}
+
     pub fn when_started(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_WHEN_STARTED))
 	}
@@ -74,10 +74,6 @@ pub struct MutableGetInfoResults {
 impl MutableGetInfoResults {
     pub fn bidders(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_BIDDERS))
-	}
-
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(RESULT_COLOR))
 	}
 
     pub fn creator(&self) -> ScMutableAgentID {
@@ -114,6 +110,10 @@ impl MutableGetInfoResults {
 
     pub fn owner_margin(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
+	}
+
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(RESULT_TOKEN))
 	}
 
     pub fn when_started(&self) -> ScMutableUint64 {

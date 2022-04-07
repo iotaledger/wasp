@@ -8,7 +8,6 @@
 import * as wasmclient from "wasmclient"
 
 const ArgChainOwner = "oi";
-const ArgFeeColor = "fc";
 const ArgHname = "hn";
 const ArgMaxBlobSize = "bs";
 const ArgMaxEventSize = "es";
@@ -23,7 +22,6 @@ const ResChainOwnerID = "o";
 const ResDefaultOwnerFee = "do";
 const ResDefaultValidatorFee = "dv";
 const ResDescription = "d";
-const ResFeeColor = "f";
 const ResMaxBlobSize = "mb";
 const ResMaxEventSize = "me";
 const ResMaxEventsPerReq = "mr";
@@ -37,10 +35,6 @@ export class AddAllowedStateControllerAddressFunc extends wasmclient.ClientFunc 
 	
 	public chainOwner(v: wasmclient.AgentID): void {
 		this.args.set(ArgChainOwner, this.args.fromAgentID(v));
-	}
-	
-	public feeColor(v: wasmclient.Color): void {
-		this.args.set(ArgFeeColor, this.args.fromColor(v));
 	}
 	
 	public stateControllerAddress(v: wasmclient.Address): void {
@@ -230,10 +224,6 @@ export class GetChainInfoResults extends wasmclient.Results {
 		return this.toString(this.get(ResDescription));
 	}
 
-	feeColor(): wasmclient.Color {
-		return this.toColor(this.get(ResFeeColor));
-	}
-
 	maxBlobSize(): wasmclient.Int32 {
 		return this.toInt32(this.get(ResMaxBlobSize));
 	}
@@ -265,10 +255,6 @@ export class GetFeeInfoView extends wasmclient.ClientView {
 }
 
 export class GetFeeInfoResults extends wasmclient.Results {
-
-	feeColor(): wasmclient.Color {
-		return this.toColor(this.get(ResFeeColor));
-	}
 
 	ownerFee(): wasmclient.Int64 {
 		return this.toInt64(this.get(ResOwnerFee));

@@ -13,6 +13,7 @@ type ImmutableIncrementWithDelayParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// delay in seconds
 func (s ImmutableIncrementWithDelayParams) Delay() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamDelay))
 }
@@ -21,6 +22,7 @@ type MutableIncrementWithDelayParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// delay in seconds
 func (s MutableIncrementWithDelayParams) Delay() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamDelay))
 }
@@ -29,6 +31,7 @@ type ImmutableInitParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// value to initialize state counter with
 func (s ImmutableInitParams) Counter() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamCounter))
 }
@@ -37,6 +40,7 @@ type MutableInitParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// value to initialize state counter with
 func (s MutableInitParams) Counter() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamCounter))
 }
@@ -45,6 +49,7 @@ type ImmutableRepeatManyParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// number of times to recursively call myself
 func (s ImmutableRepeatManyParams) NumRepeats() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamNumRepeats))
 }
@@ -53,6 +58,7 @@ type MutableRepeatManyParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// number of times to recursively call myself
 func (s MutableRepeatManyParams) NumRepeats() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamNumRepeats))
 }
@@ -61,6 +67,7 @@ type ImmutableWhenMustIncrementParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// dummy param to prevent 'duplicate outputs not allowed'
 func (s ImmutableWhenMustIncrementParams) Dummy() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamDummy))
 }
@@ -69,6 +76,7 @@ type MutableWhenMustIncrementParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// dummy param to prevent 'duplicate outputs not allowed'
 func (s MutableWhenMustIncrementParams) Dummy() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamDummy))
 }

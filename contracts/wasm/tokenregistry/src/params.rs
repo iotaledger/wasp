@@ -47,8 +47,8 @@ pub struct ImmutableTransferOwnershipParams {
 }
 
 impl ImmutableTransferOwnershipParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -58,8 +58,8 @@ pub struct MutableTransferOwnershipParams {
 }
 
 impl MutableTransferOwnershipParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -69,8 +69,8 @@ pub struct ImmutableUpdateMetadataParams {
 }
 
 impl ImmutableUpdateMetadataParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -80,8 +80,8 @@ pub struct MutableUpdateMetadataParams {
 }
 
 impl MutableUpdateMetadataParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -91,8 +91,8 @@ pub struct ImmutableGetInfoParams {
 }
 
 impl ImmutableGetInfoParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -102,7 +102,7 @@ pub struct MutableGetInfoParams {
 }
 
 impl MutableGetInfoParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }

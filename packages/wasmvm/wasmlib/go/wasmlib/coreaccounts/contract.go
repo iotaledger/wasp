@@ -28,21 +28,10 @@ type AccountsCall struct {
 	Results ImmutableAccountsResults
 }
 
-type BalanceCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableBalanceParams
-	Results ImmutableBalanceResults
-}
-
 type GetAccountNonceCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetAccountNonceParams
 	Results ImmutableGetAccountNonceResults
-}
-
-type TotalAssetsCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableTotalAssetsResults
 }
 
 type Funcs struct{}
@@ -61,6 +50,7 @@ func (sc Funcs) Harvest(ctx wasmlib.ScFuncCallContext) *HarvestCall {
 	return f
 }
 
+// withdrawColor=c: Color? # defaults to colored.IOTA
 func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	return &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 }
@@ -71,22 +61,14 @@ func (sc Funcs) Accounts(ctx wasmlib.ScViewCallContext) *AccountsCall {
 	return f
 }
 
-func (sc Funcs) Balance(ctx wasmlib.ScViewCallContext) *BalanceCall {
-	f := &BalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalance)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
-	return f
-}
-
+//  balance:
+//    params:
+//      agentID=a: AgentID
+//    results:
+//      balances=this: map[Color]Int64
 func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceCall {
 	f := &GetAccountNonceCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAccountNonce)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
-	return f
-}
-
-func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
-	f := &TotalAssetsCall{Func: wasmlib.NewScView(ctx, HScName, HViewTotalAssets)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
@@ -97,9 +79,7 @@ var exportMap = wasmlib.ScExportMap{
 		FuncHarvest,
 		FuncWithdraw,
 		ViewAccounts,
-		ViewBalance,
 		ViewGetAccountNonce,
-		ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,
@@ -107,8 +87,6 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 	},

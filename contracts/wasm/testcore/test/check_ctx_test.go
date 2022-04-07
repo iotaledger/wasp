@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,28 +38,28 @@ func TestMainCallsFromViewEP(t *testing.T) {
 	})
 }
 
-func TestMintedSupplyOk(t *testing.T) {
-	// TODO no minting yet
-	t.SkipNow()
-	run2(t, func(t *testing.T, w bool) {
-		ctx := deployTestCore(t, w, true)
-		user := ctx.Creator()
-
-		f := testcore.ScFuncs.GetMintedSupply(ctx.Sign(user, 42))
-		f.Func.Post()
-		require.NoError(t, ctx.Err)
-
-		mintedColor, mintedAmount := ctx.Minted()
-
-		requests := int64(2)
-		if w {
-			requests++
-		}
-
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount-42-requests, user.Balance())
-		require.EqualValues(t, 42, user.Balance(mintedColor))
-
-		require.EqualValues(t, mintedColor, f.Results.MintedColor().Value())
-		require.EqualValues(t, mintedAmount, f.Results.MintedSupply().Value())
-	})
-}
+//func TestMintedSupplyOk(t *testing.T) {
+//	// TODO no minting yet
+//	t.SkipNow()
+//	run2(t, func(t *testing.T, w bool) {
+//		ctx := deployTestCore(t, w, true)
+//		user := ctx.Creator()
+//
+//		f := testcore.ScFuncs.GetMintedSupply(ctx.Sign(user, 42))
+//		f.Func.Post()
+//		require.NoError(t, ctx.Err)
+//
+//		mintedColor, mintedAmount := ctx.Minted()
+//
+//		requests := int64(2)
+//		if w {
+//			requests++
+//		}
+//
+//		require.EqualValues(t, solo.Saldo-42-requests, user.Balance())
+//		require.EqualValues(t, 42, user.Balance(mintedColor))
+//
+//		require.EqualValues(t, mintedColor, f.Results.MintedColor().Value())
+//		require.EqualValues(t, mintedAmount, f.Results.MintedSupply().Value())
+//	})
+//}

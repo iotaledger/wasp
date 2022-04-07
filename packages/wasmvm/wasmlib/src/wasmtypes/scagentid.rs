@@ -63,7 +63,7 @@ pub fn agent_id_decode(dec: &mut WasmDecoder) -> ScAgentID {
 
 pub fn agent_id_encode(enc: &mut WasmEncoder, value: &ScAgentID) {
     address_encode(enc, &value.address());
-    if value.address.to_bytes()[0] == SC_ADDRESS_ALIAS {
+    if value.address.id[0] == SC_ADDRESS_ALIAS {
         hname_encode(enc, value.hname());
     }
 }

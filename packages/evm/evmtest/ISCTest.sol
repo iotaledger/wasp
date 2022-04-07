@@ -56,6 +56,27 @@ contract ISCTest {
 		}
 	}
 
+    event AllowanceAvailableIotasEvent(uint64 iotas);
+	function emitAllowanceAvailableIotas() public {
+		emit AllowanceAvailableIotasEvent(isc.getAllowanceAvailableIotas());
+	}
+
+    event AllowanceAvailableNativeTokenEvent(IotaNativeToken token);
+    function emitAllowanceAvailableNativeTokens() public {
+        uint16 n = isc.getAllowanceAvailableNativeTokensLen();
+        for (uint16 i = 0; i < n;i++) {
+            emit AllowanceAvailableNativeTokenEvent(isc.getAllowanceAvailableNativeToken(i));
+        }
+    } 
+
+    event AllowanceAvailableNFTEvent(ISCNFT nft);
+    function emitAllowanceAvailableNFTs() public {
+        uint16 n = isc.getAllowanceAvailableNFTsLen();
+        for (uint16 i = 0;i < n;i++) {
+            emit AllowanceAvailableNFTEvent(isc.getAllowanceAvailableNFT(i));
+        }
+    }
+
 	function callInccounter() public {
 		ISCDict memory params = ISCDict(new ISCDictItem[](1));
         bytes memory int64Encoded42 = hex"2A00000000000000";

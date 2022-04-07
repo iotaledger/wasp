@@ -13,12 +13,12 @@ pub const SC_NAME        : &str = "tokenregistry";
 pub const SC_DESCRIPTION : &str = "";
 pub const HSC_NAME       : ScHname = ScHname(0xe1ba0c78);
 
-pub const PARAM_COLOR        : &str = "color";
 pub const PARAM_DESCRIPTION  : &str = "description";
+pub const PARAM_TOKEN        : &str = "token";
 pub const PARAM_USER_DEFINED : &str = "userDefined";
 
-pub const STATE_COLOR_LIST : &str = "colorList";
 pub const STATE_REGISTRY   : &str = "registry";
+pub const STATE_TOKEN_LIST : &str = "tokenList";
 
 pub const FUNC_MINT_SUPPLY        : &str = "mintSupply";
 pub const FUNC_TRANSFER_OWNERSHIP : &str = "transferOwnership";

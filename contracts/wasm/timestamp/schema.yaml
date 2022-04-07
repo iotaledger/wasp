@@ -8,4 +8,4 @@ funcs:
 views:
   getTimestamp:
     results:
-      timestamp: Uint64 // last official timestamp generated
+      timestamp: Uint64 # last official timestamp generated

@@ -4,7 +4,7 @@
 // encapsulates standard host entities into a simple interface
 
 import * as wasmtypes from "./wasmtypes"
-import {ScBalances, ScTransfers} from "./assets";
+import {ScBalances, ScTransfer} from "./assets";
 import {ScFuncCallContext, ScViewCallContext} from "./contract";
 import {panic, ScSandboxFunc, ScSandboxView} from "./sandbox";
 
