@@ -96,3 +96,13 @@ func DecodeRevertError(result *core.ExecutionResult, contractID iscp.Hname) erro
 		reason: hexutil.Encode(result.Revert()),
 	}
 }
+
+func GetRevertErrorMessage(result *core.ExecutionResult, contractID iscp.Hname) string {
+	err := DecodeRevertError(result, contractID)
+
+	if err == nil {
+		return ""
+	}
+
+	return err.Error()
+}

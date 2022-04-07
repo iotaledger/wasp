@@ -112,7 +112,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 
 	// if EVM execution was reverted we must revert the ISC request as well
-	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, emulator.DecodeRevertError(result, ctx.Contract()).Error())
+	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, emulator.GetRevertErrorMessage(result, ctx.Contract()))
 
 	return nil
 }

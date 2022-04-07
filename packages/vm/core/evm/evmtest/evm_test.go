@@ -514,7 +514,7 @@ func TestRevert(t *testing.T) {
 					WithMaxAffordableGasBudget()
 			},
 		},
-	}}, "", nil, "emitRevertVMError")
+	}}, "emitRevertVMError")
 
 	t.Log(err.Error())
 	require.Error(t, err)
