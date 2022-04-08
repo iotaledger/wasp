@@ -26,8 +26,8 @@ import (
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	log         *logger.Logger
-	store       kvstore.KVStore
+	log          *logger.Logger
+	store        kvstore.KVStore
 	nodeIdentity *cryptolib.KeyPair
 }
 
@@ -40,8 +40,8 @@ var (
 // New creates new instance of the registry implementation.
 func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
 	result := &Impl{
-		log:         log.Named("registry"),
-		store:       store,
+		log:   log.Named("registry"),
+		store: store,
 	}
 	// Read or create node identity - private/public key pair
 	dbKey := dbKeyForNodeIdentity()
@@ -149,6 +149,8 @@ func (r *Impl) SaveDKShare(dkShare tcrypto.DKShare) error {
 	var err error
 	var exists bool
 	dbKey := dbKeyForDKShare(dkShare.GetAddress())
+
+	r.log.Infof("Saving DKShare for address=%v as key %v", dkShare.GetAddress().String(), dbKey)
 
 	if exists, err = r.store.Has(dbKey); err != nil {
 		return err
