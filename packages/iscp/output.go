@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type AliasOutputWithID struct {
@@ -23,32 +24,32 @@ func NewAliasOutputWithID(output *iotago.AliasOutput, id *iotago.UTXOInput) *Ali
 	}
 }
 
-func (aowiT *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {
-	return aowiT.output
+func (a *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {
+	return a.output
 }
 
-func (aowiT *AliasOutputWithID) ID() *iotago.UTXOInput {
-	return aowiT.id
+func (a *AliasOutputWithID) ID() *iotago.UTXOInput {
+	return a.id
 }
 
-func (aowiT *AliasOutputWithID) OutputID() iotago.OutputID {
-	return aowiT.id.ID()
+func (a *AliasOutputWithID) OutputID() iotago.OutputID {
+	return a.id.ID()
 }
 
-func (aowiT *AliasOutputWithID) GetStateIndex() uint32 {
-	return aowiT.output.StateIndex
+func (a *AliasOutputWithID) GetStateIndex() uint32 {
+	return a.output.StateIndex
 }
 
-func (aowiT *AliasOutputWithID) GetStateMetadata() []byte {
-	return aowiT.output.StateMetadata
+func (a *AliasOutputWithID) GetStateMetadata() []byte {
+	return a.output.StateMetadata
 }
 
-func (aowiT *AliasOutputWithID) GetStateAddress() iotago.Address {
-	return aowiT.output.StateController()
+func (a *AliasOutputWithID) GetStateAddress() iotago.Address {
+	return a.output.StateController()
 }
 
-func (aowiT *AliasOutputWithID) GetAliasID() iotago.AliasID {
-	return aowiT.output.AliasID
+func (a *AliasOutputWithID) GetAliasID() iotago.AliasID {
+	return util.AliasIDFromAliasOutput(a.output, a.id.ID())
 }
 
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
