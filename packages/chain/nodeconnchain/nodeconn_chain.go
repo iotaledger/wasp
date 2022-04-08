@@ -18,9 +18,9 @@ import (
 
 // nodeconnChain is responsible for maintaining the information related to a single chain.
 type nodeconnChain struct {
-	nc        chain.NodeConnection
+	nc      chain.NodeConnection
 	chainID *iscp.ChainID
-	log       *logger.Logger
+	log     *logger.Logger
 
 	aliasOutputIsHandled       bool
 	aliasOutputCh              chan *iscp.AliasOutputWithID
@@ -56,7 +56,7 @@ func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log 
 		onLedgerRequestStopCh:  make(chan bool),
 		txInclusionStateCh:     make(chan *txInclusionStateMsg),
 		txInclusionStateStopCh: make(chan bool),
-		metrics:                nc.GetMetrics().NewMessagesMetrics(chainAddr),
+		metrics:                nc.GetMetrics().NewMessagesMetrics(chainID),
 	}
 	result.nc.RegisterChain(result.chainID, result.stateOutputHandler, result.outputHandler)
 	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainID, result.txInclusionStateHandler)
@@ -97,9 +97,9 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 			outputIDstring, aliasOutput.AliasID.ToAddress(), aliasOutput.StateIndex, nccT.chainID, nccT.chainID.AsAddress())
 	}
 	nccT.log.Debugf("handling state output ID %v: writing alias output to channel", outputIDstring)
-		nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
+	nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
 	nccT.log.Debugf("handling state output ID %v: alias output handled", outputIDstring)
-	}
+}
 
 func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
 	outputIDUTXO := outputID.UTXOInput()

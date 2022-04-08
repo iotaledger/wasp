@@ -31,17 +31,17 @@ import (
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConn struct {
-	ctx        context.Context
-	ctxCancel  context.CancelFunc
-	chains     map[string]*ncChain // key = iotago.Address.Key()
-	chainsLock sync.RWMutex
+	ctx           context.Context
+	ctxCancel     context.CancelFunc
+	chains        map[string]*ncChain // key = iotago.Address.Key()
+	chainsLock    sync.RWMutex
 	nodeAPIClient *nodeclient.Client
 	mqttClient    *nodeclient.EventAPIClient
 	indexerClient nodeclient.IndexerClient
-	milestones *events.Event
+	milestones    *events.Event
 	l1params      *parameters.L1
-	metrics    nodeconnmetrics.NodeConnectionMetrics
-	log        *logger.Logger
+	metrics       nodeconnmetrics.NodeConnectionMetrics
+	log           *logger.Logger
 	config        L1Config
 }
 
@@ -67,8 +67,8 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 	return context.WithTimeout(ctx, t)
 }
 
-func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	return newNodeConn(config, log, timeout...)
+func New(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
+	return newNodeConn(config, metrics, log, timeout...)
 }
 
 func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) *nodeConn {
@@ -92,10 +92,10 @@ func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics,
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
 	nc := nodeConn{
-		ctx:        ctx,
-		ctxCancel:  ctxCancel,
-		chains:     make(map[string]*ncChain),
-		chainsLock: sync.RWMutex{},
+		ctx:           ctx,
+		ctxCancel:     ctxCancel,
+		chains:        make(map[string]*ncChain),
+		chainsLock:    sync.RWMutex{},
 		nodeAPIClient: nodeAPIClient,
 		mqttClient:    mqttClient,
 		indexerClient: indexerClient,
@@ -103,8 +103,8 @@ func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics,
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
 		l1params: L1ParamsFromInfoResp(l1Info),
-		metrics: metrics,
-		log: log.Named("nc"),
+		metrics:  metrics,
+		log:      log.Named("nc"),
 		config:   config,
 	}
 	go nc.run()
@@ -121,7 +121,7 @@ func (nc *nodeConn) RegisterChain(
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
 ) {
-	nc.metrics.SetRegistered(chainAddr)
+	nc.metrics.SetRegistered(chainID)
 	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -131,7 +131,7 @@ func (nc *nodeConn) RegisterChain(
 
 // UnregisterChain implements chain.NodeConnection.
 func (nc *nodeConn) UnregisterChain(chainID *iscp.ChainID) {
-	nc.metrics.SetUnregistered(chainAddr)
+	nc.metrics.SetUnregistered(chainID)
 	nccKey := chainID.Key()
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()

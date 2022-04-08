@@ -3,7 +3,7 @@ package nodeconnmetrics
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/atomic"
 )
@@ -18,10 +18,10 @@ type nodeConnectionMessageSimpleMetrics struct {
 
 var _ NodeConnectionMessageMetrics = &nodeConnectionMessageSimpleMetrics{}
 
-func newNodeConnectionMessageSimpleMetrics(ncmi *nodeConnectionMetricsImpl, chainAddr iotago.Address, msgType string) NodeConnectionMessageMetrics {
+func newNodeConnectionMessageSimpleMetrics(ncmi *nodeConnectionMetricsImpl, chainID *iscp.ChainID, msgType string) NodeConnectionMessageMetrics {
 	return &nodeConnectionMessageSimpleMetrics{
 		nodeConnMetrics: ncmi,
-		metricsLabel:    getMetricsLabel(chainAddr, msgType),
+		metricsLabel:    getMetricsLabel(chainID, msgType),
 	}
 }
 

@@ -2,7 +2,7 @@ package nodeconnmetrics
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -11,7 +11,7 @@ type nodeConnectionMetricsImpl struct {
 	log                 *logger.Logger
 	messageTotalCounter *prometheus.CounterVec
 	lastEventTimeGauge  *prometheus.GaugeVec
-	registered          []iotago.Address
+	registered          []*iscp.ChainID
 	inMilestoneMetrics  NodeConnectionMessageMetrics
 }
 
@@ -20,7 +20,7 @@ var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 func New(log *logger.Logger) NodeConnectionMetrics {
 	ret := &nodeConnectionMetricsImpl{
 		log:        log.Named("nodeconn"),
-		registered: make([]iotago.Address, 0),
+		registered: make([]*iscp.ChainID, 0),
 	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
 	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics(ret, nil, "in_milestone")
@@ -42,27 +42,27 @@ func (ncmiT *nodeConnectionMetricsImpl) RegisterMetrics() {
 	ncmiT.log.Info("Registering nodeconnection metrics to prometheus... Done")
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainAddr iotago.Address) NodeConnectionMessagesMetrics {
-	return newNodeConnectionMessagesMetrics(ncmiT, chainAddr)
+func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+	return newNodeConnectionMessagesMetrics(ncmiT, chainID)
 }
 
 // TODO: connect registered to Prometheus
-func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(address iotago.Address) {
-	ncmiT.registered = append(ncmiT.registered, address)
+func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID *iscp.ChainID) {
+	ncmiT.registered = append(ncmiT.registered, chainID)
 }
 
 // TODO: connect registered to Prometheus
-func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(address iotago.Address) {
+func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *iscp.ChainID) {
 	var i int
 	for i = 0; i < len(ncmiT.registered); i++ {
-		if ncmiT.registered[i] == address {
+		if ncmiT.registered[i] == chainID {
 			ncmiT.registered = append(ncmiT.registered[:i], ncmiT.registered[i+1:]...)
 			return
 		}
 	}
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []iotago.Address {
+func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []*iscp.ChainID {
 	return ncmiT.registered
 }
 

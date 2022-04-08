@@ -6,7 +6,6 @@ package nodeconnmetrics
 import (
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -14,53 +13,53 @@ import (
 
 func TestRegister(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	address1 := iscp.RandomChainID().AsAddress()
-	address2 := iscp.RandomChainID().AsAddress()
-	address3 := iscp.RandomChainID().AsAddress()
+	chainID1 := iscp.RandomChainID()
+	chainID2 := iscp.RandomChainID()
+	chainID3 := iscp.RandomChainID()
 	ncm := New(log)
 
-	require.Equal(t, []iotago.Address{}, ncm.GetRegistered())
+	require.Equal(t, []*iscp.ChainID{}, ncm.GetRegistered())
 
-	ncm.SetRegistered(address1)
-	require.Equal(t, []iotago.Address{address1}, ncm.GetRegistered())
+	ncm.SetRegistered(chainID1)
+	require.Equal(t, []*iscp.ChainID{chainID1}, ncm.GetRegistered())
 
-	ncm.SetRegistered(address2)
+	ncm.SetRegistered(chainID2)
 	registered := ncm.GetRegistered()
 	require.Equal(t, 2, len(registered))
-	require.Contains(t, registered, address1)
-	require.Contains(t, registered, address2)
+	require.Contains(t, registered, chainID1)
+	require.Contains(t, registered, chainID2)
 
-	ncm.SetUnregistered(address1)
-	require.Equal(t, []iotago.Address{address2}, ncm.GetRegistered())
+	ncm.SetUnregistered(chainID1)
+	require.Equal(t, []*iscp.ChainID{chainID2}, ncm.GetRegistered())
 
-	ncm.SetRegistered(address3)
+	ncm.SetRegistered(chainID3)
 	registered = ncm.GetRegistered()
 	require.Equal(t, 2, len(registered))
-	require.Contains(t, registered, address2)
-	require.Contains(t, registered, address3)
+	require.Contains(t, registered, chainID2)
+	require.Contains(t, registered, chainID3)
 
-	ncm.SetUnregistered(address3)
-	require.Equal(t, []iotago.Address{address2}, ncm.GetRegistered())
+	ncm.SetUnregistered(chainID3)
+	require.Equal(t, []*iscp.ChainID{chainID2}, ncm.GetRegistered())
 
-	ncm.SetRegistered(address1)
+	ncm.SetRegistered(chainID1)
 	registered = ncm.GetRegistered()
 	require.Equal(t, 2, len(registered))
-	require.Contains(t, registered, address1)
-	require.Contains(t, registered, address2)
+	require.Contains(t, registered, chainID1)
+	require.Contains(t, registered, chainID2)
 
-	ncm.SetRegistered(address3)
+	ncm.SetRegistered(chainID3)
 	registered = ncm.GetRegistered()
 	require.Equal(t, 3, len(registered))
-	require.Contains(t, registered, address1)
-	require.Contains(t, registered, address2)
-	require.Contains(t, registered, address3)
+	require.Contains(t, registered, chainID1)
+	require.Contains(t, registered, chainID2)
+	require.Contains(t, registered, chainID3)
 }
 
 func TestMessageMetrics(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	ncm := New(log)
-	cncm1 := ncm.NewMessagesMetrics(iscp.RandomChainID().AsAddress())
-	cncm2 := ncm.NewMessagesMetrics(iscp.RandomChainID().AsAddress())
+	cncm1 := ncm.NewMessagesMetrics(iscp.RandomChainID())
+	cncm2 := ncm.NewMessagesMetrics(iscp.RandomChainID())
 	ncm.RegisterMetrics()
 
 	// IN Output
