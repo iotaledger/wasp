@@ -290,6 +290,26 @@ func TestConvert(t *testing.T) {
 				},
 			}
 		},
+		"successfully test4": func(t *testing.T) test {
+			return test{
+				args: args{
+					path: "testdata/test4.yaml",
+				},
+				wants: wants{
+					out: &model.SchemaDef{
+						Copyright: "// This is the testing copyright message\n// copyright message is the comment block\n// ahead of copyright yaml tag.\n// No other yaml item should exist ahead of\n// the copyright message, and the value of\n// copyright tag should leave empty.",
+						Name: model.DefElt{
+							Val:  "SchemaComment",
+							Line: 8,
+						},
+						Description: model.DefElt{
+							Val:  "test description",
+							Line: 9,
+						},
+					},
+				},
+			}
+		},
 	}
 
 	for name, fn := range tests {

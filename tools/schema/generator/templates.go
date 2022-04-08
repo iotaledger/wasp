@@ -19,9 +19,17 @@ var commonTemplates = model.StringMap{
 	// *******************************
 	"copyright": `
 $#emit initGlobals
+$#if copyrightMessage _copyrightMessage
+$#if copyrightMessage else defaultCopyrightMessage
+`,
+	// *******************************
+	"_copyrightMessage": `
+$copyrightMessage
+`,
+	// *******************************
+	"defaultCopyrightMessage": `
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-
 `,
 	// *******************************
 	"warning": `
