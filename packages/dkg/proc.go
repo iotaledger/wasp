@@ -5,8 +5,6 @@ package dkg
 
 // TODO: [KP] Check, if error responses are considered gracefully at the initiator.
 
-// TODO: XXX: KP: Review all uses of suites (BLS vs ED).
-
 import (
 	"errors"
 	"fmt"
