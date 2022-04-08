@@ -205,6 +205,18 @@ pub struct BigIntMulCall {
 	pub results: ImmutableBigIntMulResults,
 }
 
+pub struct BigIntShlCall {
+	pub func: ScView,
+	pub params: MutableBigIntShlParams,
+	pub results: ImmutableBigIntShlResults,
+}
+
+pub struct BigIntShrCall {
+	pub func: ScView,
+	pub params: MutableBigIntShrParams,
+	pub results: ImmutableBigIntShrResults,
+}
+
 pub struct BigIntSubCall {
 	pub func: ScView,
 	pub params: MutableBigIntSubParams,
@@ -595,6 +607,28 @@ impl ScFuncs {
             func: ScView::new(HSC_NAME, HVIEW_BIG_INT_MUL),
             params: MutableBigIntMulParams { proxy: Proxy::nil() },
             results: ImmutableBigIntMulResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_shl(_ctx: &dyn ScViewCallContext) -> BigIntShlCall {
+        let mut f = BigIntShlCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_SHL),
+            params: MutableBigIntShlParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntShlResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_shr(_ctx: &dyn ScViewCallContext) -> BigIntShrCall {
+        let mut f = BigIntShrCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_SHR),
+            params: MutableBigIntShrParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntShrResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

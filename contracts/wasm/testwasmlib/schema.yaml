@@ -1,3 +1,7 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+#copyright: ""
+
 name: TestWasmLib
 description: Exercise several aspects of WasmLib
 
@@ -300,6 +304,20 @@ views:
     params:
       lhs: BigInt
       rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntShl:
+    params:
+      lhs: BigInt
+      shift: Uint32
+    results:
+      res: BigInt
+
+  bigIntShr:
+    params:
+      lhs: BigInt
+      shift: Uint32
     results:
       res: BigInt
 

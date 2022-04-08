@@ -435,3 +435,17 @@ func viewBigIntSub(ctx wasmlib.ScViewContext, f *BigIntSubContext) {
 	res := lhs.Sub(rhs)
 	f.Results.Res().SetValue(res)
 }
+
+func viewBigIntShl(ctx wasmlib.ScViewContext, f *BigIntShlContext) {
+	lhs := f.Params.Lhs().Value()
+	shift := f.Params.Shift().Value()
+	res := lhs.Shl(shift)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntShr(ctx wasmlib.ScViewContext, f *BigIntShrContext) {
+	lhs := f.Params.Lhs().Value()
+	shift := f.Params.Shift().Value()
+	res := lhs.Shr(shift)
+	f.Results.Res().SetValue(res)
+}

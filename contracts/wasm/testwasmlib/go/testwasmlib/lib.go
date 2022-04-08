@@ -49,6 +49,8 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBigIntDiv,
 		ViewBigIntMod,
 		ViewBigIntMul,
+		ViewBigIntShl,
+		ViewBigIntShr,
 		ViewBigIntSub,
 		ViewBlockRecord,
 		ViewBlockRecords,
@@ -99,6 +101,8 @@ var exportMap = wasmlib.ScExportMap{
 		viewBigIntDivThunk,
 		viewBigIntModThunk,
 		viewBigIntMulThunk,
+		viewBigIntShlThunk,
+		viewBigIntShrThunk,
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
@@ -969,6 +973,60 @@ func viewBigIntMulThunk(ctx wasmlib.ScViewContext) {
 	viewBigIntMul(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewBigIntMul ok")
+}
+
+type BigIntShlContext struct {
+	Params  ImmutableBigIntShlParams
+	Results MutableBigIntShlResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntShlThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntShl")
+	results := wasmlib.NewScDict()
+	f := &BigIntShlContext{
+		Params: ImmutableBigIntShlParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntShlResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Shift().Exists(), "missing mandatory shift")
+	viewBigIntShl(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntShl ok")
+}
+
+type BigIntShrContext struct {
+	Params  ImmutableBigIntShrParams
+	Results MutableBigIntShrResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntShrThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntShr")
+	results := wasmlib.NewScDict()
+	f := &BigIntShrContext{
+		Params: ImmutableBigIntShrParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntShrResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Shift().Exists(), "missing mandatory shift")
+	viewBigIntShr(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntShr ok")
 }
 
 type BigIntSubContext struct {

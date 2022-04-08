@@ -204,6 +204,18 @@ type BigIntMulCall struct {
 	Results ImmutableBigIntMulResults
 }
 
+type BigIntShlCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntShlParams
+	Results ImmutableBigIntShlResults
+}
+
+type BigIntShrCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntShrParams
+	Results ImmutableBigIntShrResults
+}
+
 type BigIntSubCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableBigIntSubParams
@@ -478,6 +490,20 @@ func (sc Funcs) BigIntMod(ctx wasmlib.ScViewCallContext) *BigIntModCall {
 
 func (sc Funcs) BigIntMul(ctx wasmlib.ScViewCallContext) *BigIntMulCall {
 	f := &BigIntMulCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntMul)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntShl(ctx wasmlib.ScViewCallContext) *BigIntShlCall {
+	f := &BigIntShlCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntShl)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntShr(ctx wasmlib.ScViewCallContext) *BigIntShrCall {
+	f := &BigIntShrCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntShr)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

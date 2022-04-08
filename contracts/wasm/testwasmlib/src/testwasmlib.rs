@@ -426,3 +426,9 @@ pub fn view_big_int_sub(_ctx: &ScViewContext, f: &BigIntSubContext) {
     let res = lhs.sub(&rhs);
     f.results.res().set_value(&res);
 }
+
+pub fn view_big_int_shl(ctx: &ScViewContext, f: &BigIntShlContext) {
+}
+
+pub fn view_big_int_shr(ctx: &ScViewContext, f: &BigIntShrContext) {
+}
