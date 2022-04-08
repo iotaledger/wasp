@@ -4,11 +4,12 @@
 package solo
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"math/big"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/trie"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -42,12 +43,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Saldo is the default amount of tokens returned by the UTXODB faucet
+// utxodb.FundsFromFaucetAmount is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
-	Saldo              = utxodb.FundsFromFaucetAmount
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
+	NetworkPrefix      = "solo"
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -195,7 +196,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 
 // NewChain deploys new chain instance.
 //
-// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
+// If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (=1337) iotas are loaded from the UTXODB faucet.
 // ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
@@ -246,12 +247,12 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1Iotas(originatorAddr, Saldo-anchor.Deposit)
+	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(iscp.Bech32Prefix))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(iscp.Bech32Prefix))
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(iscp.Bech32Prefix))
+		name, chainID.String(), stateAddr.Bech32(NetworkPrefix))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(NetworkPrefix))
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(NetworkPrefix))
 
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
@@ -511,6 +512,10 @@ func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
 }
 
 func (ch *Chain) EnqueueDismissChain(reason string) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) EnqueueAliasOutput(_ *iscp.AliasOutputWithID) {
 	// not used, just to implement ChainCore interface
 }
 

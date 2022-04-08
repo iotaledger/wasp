@@ -124,7 +124,7 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
 		minus++
 	}
-	ctx.Chain.Env.AssertL1Iotas(ctx.Chain.OriginatorAddress, solo.Saldo-minus)
+	ctx.Chain.Env.AssertL1Iotas(ctx.Chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-minus)
 }
 
 func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount uint64) {

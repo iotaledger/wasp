@@ -7,17 +7,9 @@ import (
 	"path"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
-
-type GoshimmerConfig struct {
-	TxStreamPort    int
-	APIPort         int
-	UseProvidedNode bool
-	FaucetPoWTarget int
-	Hostname        string
-}
 
 type WaspConfig struct {
 	NumNodes int
@@ -32,9 +24,8 @@ type WaspConfig struct {
 }
 
 type ClusterConfig struct {
-	Wasp                  WaspConfig
-	Goshimmer             GoshimmerConfig
-	BlockedGoshimmerNodes map[int]bool
+	Wasp WaspConfig
+	L1   nodeconn.L1Config
 }
 
 func DefaultConfig() *ClusterConfig {
@@ -48,14 +39,11 @@ func DefaultConfig() *ClusterConfig {
 			FirstProfilingPort: 6060,
 			FirstMetricsPort:   2112,
 		},
-		Goshimmer: GoshimmerConfig{
-			TxStreamPort:    5000,
-			APIPort:         8080,
-			UseProvidedNode: false,
-			FaucetPoWTarget: 0,
-			Hostname:        "127.0.0.1",
+		L1: nodeconn.L1Config{
+			Hostname:   "127.0.0.1",
+			APIPort:    8080,
+			FaucetPort: 8091,
 		},
-		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
 
@@ -86,7 +74,7 @@ func configPath(dataPath string) string {
 }
 
 func (c *ClusterConfig) goshimmerAPIHost() string {
-	return fmt.Sprintf("%s:%d", c.Goshimmer.Hostname, c.Goshimmer.APIPort)
+	return fmt.Sprintf("%s:%d", c.L1.Hostname, c.L1.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
@@ -160,18 +148,12 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
-	if c.BlockedGoshimmerNodes[nodeIndex] {
-		return 0
-	}
-	return c.Goshimmer.TxStreamPort
+func (c *ClusterConfig) L1Host(nodeIndex int) string {
+	return c.L1.Hostname
 }
 
-func (c *ClusterConfig) TxStreamHost(nodeIndex int) string {
-	if c.BlockedGoshimmerNodes[nodeIndex] {
-		return ""
-	}
-	return c.Goshimmer.Hostname
+func (c *ClusterConfig) L1Port(nodeIndex int) int {
+	return c.L1.APIPort
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
@@ -182,17 +164,17 @@ func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
 	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
-func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address) *templates.WaspConfigParams {
+func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address, networkPrefix iotago.NetworkPrefix) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
 		DashboardPort:                c.DashboardPort(i),
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
-		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
-		TxStreamHost:                 c.TxStreamHost(i),
+		L1Host:                       c.L1Host(i),
+		L1Port:                       c.L1Port(i),
 		MetricsPort:                  c.PrometheusPort(i),
-		OwnerAddress:                 ownerAddress.Bech32(iscp.Bech32Prefix),
+		OwnerAddress:                 ownerAddress.Bech32(networkPrefix),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

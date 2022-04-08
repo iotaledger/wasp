@@ -45,7 +45,7 @@ func Test2Chains(t *testing.T) {
 		//require.True(t, ctx1.WaitForPendingRequests(1))
 		//require.True(t, ctx2.WaitForPendingRequests(1))
 		//
-		//require.EqualValues(t, solo.Saldo-42-1, user.Balance())
+		//require.EqualValues(t, utxodb.FundsFromFaucetAmount-42-1, user.Balance())
 		//
 		//t.Logf("dump chain1 accounts:\n%s", ctx1.Chain.DumpAccounts())
 		//require.EqualValues(t, 0, ctx1.Balance(user))

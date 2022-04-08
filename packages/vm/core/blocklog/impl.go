@@ -1,7 +1,6 @@
 package blocklog
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
 	"math"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 var Processor = Contract.Processor(initialize,

@@ -5,34 +5,8 @@
 package chainimpl
 
 import (
-	"time"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
-
-func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
-	c.log.Debugf("ReceiveTransaction: %s", iscp.TxID(tx.ID()))
-	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
-	if err != nil {
-		c.log.Warnf("failed to parse transaction %s: %v", iscp.TxID(tx.ID()), err)
-		return
-	}
-	for _, req := range reqs {
-		c.mempool.ReceiveRequest(req)
-	}
-	if chainOut := transaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
-		c.ReceiveState(chainOut, tx.Essence().Timestamp())
-	}
-}
-
-func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
-	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
-		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.EnqueueLedgerState(stateOutput, timestamp)
-}
 
 func (c *chainObj) Dismiss(reason string) {
 	c.log.Infof("Dismiss chain. Reason: '%s'", reason)
@@ -40,8 +14,8 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 		c.chainPeers.Detach(c.receiveChainPeerMessagesAttachID)
-		c.nodeConn.DetachFromUnspentAliasOutputReceived()
-		c.nodeConn.DetachFromTransactionReceived()
+		c.nodeConn.DetachFromOnLedgerRequest()
+		c.nodeConn.DetachFromAliasOutput()
 		c.eventChainTransition.Detach(c.eventChainTransitionClosure)
 
 		c.mempool.Close()
@@ -61,7 +35,7 @@ func (c *chainObj) Dismiss(reason string) {
 		c.nodeConn.Close()
 
 		c.dismissChainMsgPipe.Close()
-		c.stateMsgPipe.Close()
+		c.aliasOutputPipe.Close()
 		c.offLedgerRequestPeerMsgPipe.Close()
 		c.requestAckPeerMsgPipe.Close()
 		c.missingRequestIDsPeerMsgPipe.Close()
@@ -69,7 +43,7 @@ func (c *chainObj) Dismiss(reason string) {
 		c.timerTickMsgPipe.Close()
 	})
 
-	publisher.Publish("dismissed_chain", c.chainID.Base58())
+	publisher.Publish("dismissed_chain", c.chainID.String())
 	c.log.Debug("Chain dismissed")
 }
 

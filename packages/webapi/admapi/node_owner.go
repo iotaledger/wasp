@@ -49,14 +49,11 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 	reqOwnerAddress := req.OwnerAddress.Address()
 	reqNodePubKeyBytes := req.NodePubKey.Bytes()
 
-	nodeIdentity, err := registryProvider().GetNodeIdentity()
-	if err != nil {
-		return err
-	}
+	nodeIdentity := registryProvider().GetNodeIdentity()
 
 	//
 	// Check, if supplied node PubKey matches.
-	if !bytes.Equal(nodeIdentity.PublicKey, reqNodePubKeyBytes) {
+	if !bytes.Equal(nodeIdentity.GetPublicKey().AsBytes(), reqNodePubKeyBytes) {
 		return &httperrors.HTTPError{Code: 400, Message: "Wrong NodePubKey"}
 	}
 

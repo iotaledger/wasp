@@ -5,7 +5,6 @@ package testchain
 
 import (
 	"testing"
-	"time"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -36,7 +36,7 @@ type MockedChainCore struct {
 	onSendPeerMsg           func(netID string, msgReceiver byte, msgType byte, msgData []byte)
 	onStateCandidate        func(state state.VirtualStateAccess, outputID *iotago.UTXOInput)
 	onDismissChain          func(reason string)
-	onLedgerState           func(chainOutput *iotago.AliasOutput, timestamp time.Time)
+	onAliasOutput           func(chainOutput *iscp.AliasOutputWithID)
 	onOffLedgerRequest      func(msg *messages.OffLedgerRequestMsgIn)
 	onRequestAck            func(msg *messages.RequestAckMsgIn)
 	onMissingRequestIDs     func(msg *messages.MissingRequestIDsMsgIn)
@@ -56,7 +56,7 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(coreprocessors.Config().WithNativeContracts(inccounter.Processor)),
-		log:        log.Named("chain"),
+		log:        log.Named("mc-" + chainID.AsAddress().String()[2:8]),
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
 			return []string{}
@@ -77,8 +77,8 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 			t.Fatalf("Receiving state candidate not implemented, outputID=%v", iscp.OID(outputID))
 		},
 		onDismissChain: func(reason string) { t.Fatalf("Dismissing chain not implemented, reason=%v", reason) },
-		onLedgerState: func(chainOutput *iotago.AliasOutput, timestamp time.Time) {
-			t.Fatalf("Receiving ledger state not implemented, chain output=%v", chainOutput)
+		onAliasOutput: func(chainOutput *iscp.AliasOutputWithID) {
+			t.Fatalf("Receiving alias output not implemented, chain output ID=%v", iscp.OID(chainOutput.ID()))
 		},
 		onOffLedgerRequest:  func(msg *messages.OffLedgerRequestMsgIn) { receiveFailFun("*messages.OffLedgerRequestMsgIn", msg) },
 		onRequestAck:        func(msg *messages.RequestAckMsgIn) { receiveFailFun("*messages.RequestAckMsgIn", msg) },
@@ -96,6 +96,10 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		ret.onEventRequestProcessed(id)
 	}))
 	return ret
+}
+
+func (m *MockedChainCore) L1Params() *parameters.L1 {
+	return parameters.L1ForTesting()
 }
 
 func (m *MockedChainCore) Log() *logger.Logger {
@@ -126,8 +130,8 @@ func (m *MockedChainCore) EnqueueDismissChain(reason string) {
 	m.onDismissChain(reason)
 }
 
-func (m *MockedChainCore) EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time) {
-	m.onLedgerState(chainOutput, timestamp)
+func (m *MockedChainCore) EnqueueAliasOutput(chainOutput *iscp.AliasOutputWithID) {
+	m.onAliasOutput(chainOutput)
 }
 
 func (m *MockedChainCore) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
@@ -186,8 +190,8 @@ func (m *MockedChainCore) OnDismissChain(fun func(reason string)) {
 	m.onDismissChain = fun
 }
 
-func (m *MockedChainCore) OnLedgerState(fun func(chainOutput *iotago.AliasOutput, timestamp time.Time)) {
-	m.onLedgerState = fun
+func (m *MockedChainCore) OnAliasOutput(fun func(chainOutput *iscp.AliasOutputWithID)) {
+	m.onAliasOutput = fun
 }
 
 func (m *MockedChainCore) OnOffLedgerRequest(fun func(msg *messages.OffLedgerRequestMsgIn)) {

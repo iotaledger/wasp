@@ -33,7 +33,7 @@ func TestTutorial7(t *testing.T) {
  userAgentID := iscp.NewAgentID(userAddress, 0)
 
  // we start with these balances on address and on chain
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)     // empty
 
@@ -43,7 +43,7 @@ func TestTutorial7(t *testing.T) {
  require.Error(t, err)
 
  // assert balances didn't change on address and on chain
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // still empty
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)     // still empty
 }

@@ -91,7 +91,6 @@ func TestBasicMap(t *testing.T) {
 	v, err := m.GetAt(k4)
 	assert.NoError(t, err)
 	assert.Nil(t, v)
-
 }
 
 func TestIterate(t *testing.T) {

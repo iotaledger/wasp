@@ -31,7 +31,7 @@ type blsCommonCoin struct {
 	epochs    map[uint32]*blsCommonCoinEpoch
 }
 
-func NewBlsCommonCoin(dkShare tcrypto.DKShare, salt []byte, allRandom bool) hbbft.CommonCoin {
+func NewBLSCommonCoin(dkShare tcrypto.DKShare, salt []byte, allRandom bool) hbbft.CommonCoin {
 	cc := blsCommonCoin{
 		dkShare:   dkShare,
 		allRandom: allRandom,
@@ -114,13 +114,13 @@ func (cce *blsCommonCoinEpoch) startCoinFlip() (*bool, []interface{}, error) {
 	// Make the coin share.
 	var err error
 	var sigShare tbls.SigShare
-	if sigShare, err = cce.cc.dkShare.SignShare(cce.sid); err != nil {
+	if sigShare, err = cce.cc.dkShare.BLSSignShare(cce.sid); err != nil {
 		return nil, nil, xerrors.Errorf("failed to sign our share: %w", err)
 	}
 	if err = cce.acceptShare(sigShare); err != nil && err.Error() != "threshold not reached" {
 		return nil, nil, xerrors.Errorf("failed to accept our share: %v", err)
 	}
-	broadcastMsg := BlsCommonCoinMsg{coinShare: sigShare}
+	broadcastMsg := BLSCommonCoinMsg{coinShare: sigShare}
 	return cce.coin, []interface{}{&broadcastMsg}, nil
 }
 
@@ -128,7 +128,7 @@ func (cce *blsCommonCoinEpoch) handleRequest(payload interface{}) (*bool, []inte
 	if cce.coin != nil {
 		return cce.coin, []interface{}{}, nil
 	}
-	sigShare := payload.(*BlsCommonCoinMsg).coinShare
+	sigShare := payload.(*BLSCommonCoinMsg).coinShare
 	if err := cce.acceptShare(sigShare); err != nil && err.Error() != "threshold not reached" {
 		return nil, nil, xerrors.Errorf("failed to accept share: %v", err)
 	}
@@ -158,11 +158,11 @@ func (cce *blsCommonCoinEpoch) acceptShare(share tbls.SigShare) error {
 		receivedShares = append(receivedShares, share)
 	}
 	var sig *bls.SignatureWithPublicKey
-	if sig, err = dkShare.RecoverFullSignature(receivedShares, cce.sid); err != nil {
+	if sig, err = dkShare.BLSRecoverMasterSignature(receivedShares, cce.sid); err != nil {
 		return xerrors.Errorf("unable to reconstruct the signature: %w", err)
 	}
 	value := sig.Signature.Bytes()
-	if err = dkShare.VerifyMasterSignature(cce.sid, value); err != nil {
+	if err = dkShare.BLSVerifyMasterSignature(cce.sid, value); err != nil {
 		return xerrors.Errorf("unable to verify the master signature: %w", err)
 	}
 	coin := value[len(value)-1]%2 == 1
@@ -172,34 +172,34 @@ func (cce *blsCommonCoinEpoch) acceptShare(share tbls.SigShare) error {
 
 // endregion ///////////////////////////////////////////////////////////////////
 
-// region BlsCommonCoinMsg /////////////////////////////////////////////////////
+// region BLSCommonCoinMsg /////////////////////////////////////////////////////
 
-type BlsCommonCoinMsg struct {
+type BLSCommonCoinMsg struct {
 	coinShare tbls.SigShare
 }
 
-func (m *BlsCommonCoinMsg) Write(w io.Writer) error {
+func (m *BLSCommonCoinMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteBytes16(w, m.coinShare); err != nil {
-		return xerrors.Errorf("failed to write BlsCommonCoinMsg.coinShare: %w", err)
+		return xerrors.Errorf("failed to write BLSCommonCoinMsg.coinShare: %w", err)
 	}
 	return nil
 }
 
-func (m *BlsCommonCoinMsg) Read(r io.Reader) error {
+func (m *BLSCommonCoinMsg) Read(r io.Reader) error {
 	var err error
 	if m.coinShare, err = util.ReadBytes16(r); err != nil {
-		return xerrors.Errorf("failed to read BlsCommonCoinMsg.coinShare: %w", err)
+		return xerrors.Errorf("failed to read BLSCommonCoinMsg.coinShare: %w", err)
 	}
 	return nil
 }
 
-func (m *BlsCommonCoinMsg) FromBytes(buf []byte) error {
+func (m *BLSCommonCoinMsg) FromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
 
-func (m *BlsCommonCoinMsg) Bytes() []byte {
+func (m *BLSCommonCoinMsg) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = m.Write(&buf)
 	return buf.Bytes()

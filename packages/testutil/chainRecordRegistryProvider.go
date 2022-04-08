@@ -21,7 +21,7 @@ func NewChainRecordRegistryProvider() *ChainRecordRegistryProvider {
 }
 
 func (p *ChainRecordRegistryProvider) SaveChainRecord(chainRecord *registry.ChainRecord) error {
-	p.DB[*chainRecord.ChainID] = chainRecord
+	p.DB[chainRecord.ChainID] = chainRecord
 	return nil
 }
 

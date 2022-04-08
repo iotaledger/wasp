@@ -29,7 +29,7 @@ const (
 )
 
 func TestIncSoloInc(t *testing.T) {
-	al := solo.New(t, false, false)
+	al := solo.New(t)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestIncSoloInc(t *testing.T) {
 }
 
 func TestIncSoloRepeatMany(t *testing.T) {
-	al := solo.New(t, false, false)
+	al := solo.New(t)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)

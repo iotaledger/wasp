@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -23,7 +22,7 @@ import (
 type MockedEnv struct {
 	T                 *testing.T
 	Log               *logger.Logger
-	Ledger            *testchain.MockedLedger
+	Ledgers           *testchain.MockedLedgers
 	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
 	StateKeyPair      *cryptolib.KeyPair
@@ -36,7 +35,7 @@ type MockedEnv struct {
 	Nodes             map[cryptolib.PublicKeyKey]*MockedNode
 }
 
-func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.AliasOutput) {
+func NewMockedEnv(nodeCount int, t *testing.T, debug bool) *MockedEnv {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -51,23 +50,8 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 	}
 
 	ret.StateKeyPair = cryptolib.NewKeyPair()
-	addr := ret.StateKeyPair.GetPublicKey().AsEd25519Address()
-
-	originOutput := &iotago.AliasOutput{
-		Amount:        iotago.TokenSupply,
-		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: addr},
-			&iotago.GovernorAddressUnlockCondition{Address: addr},
-		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
-				Address: addr,
-			},
-		},
-	}
-	ret.ChainID = iscp.RandomChainID()
-	ret.Ledger = testchain.NewMockedLedger(originOutput, log)
+	ret.Ledgers = testchain.NewMockedLedgers(log)
+	ret.ChainID = ret.Ledgers.InitLedger(ret.StateKeyPair.GetPublicKey().AsEd25519Address())
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
@@ -78,11 +62,11 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 
 	log.Infof("Testing environment is ready")
 
-	return ret, originOutput
+	return ret
 }
 
 func (env *MockedEnv) SetPushStateToNodesOption(push bool) {
-	env.Ledger.SetPushTransactionToNodesNeeded(push)
+	env.Ledgers.SetPushOutputToNodesNeeded(push)
 }
 
 func (env *MockedEnv) AddNode(node *MockedNode) {

@@ -27,7 +27,7 @@ func usage(flags *pflag.FlagSet) {
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 
-	templatesPath := commonFlags.StringP("templates-path", "t", ".", "Where to find alternative wasp & goshimmer config.json templates (optional)")
+	templatesPath := commonFlags.StringP("templates-path", "t", ".", "Where to find alternative wasp & layer1 config.json templates (optional)")
 
 	config := cluster.DefaultConfig()
 
@@ -36,11 +36,8 @@ func main() {
 	commonFlags.IntVarP(&config.Wasp.FirstPeeringPort, "first-peering-port", "p", config.Wasp.FirstPeeringPort, "First wasp Peering port")
 	commonFlags.IntVarP(&config.Wasp.FirstNanomsgPort, "first-nanomsg-port", "u", config.Wasp.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
 	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
-	commonFlags.IntVarP(&config.Goshimmer.APIPort, "goshimmer-api-port", "i", config.Goshimmer.APIPort, "Goshimmer API port")
-	commonFlags.BoolVarP(&config.Goshimmer.UseProvidedNode, "goshimmer-use-provided-node", "g", config.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
-	commonFlags.IntVarP(&config.Goshimmer.TxStreamPort, "goshimmer-txport", "P", config.Goshimmer.TxStreamPort, "Goshimmer port")
-	commonFlags.StringVarP(&config.Goshimmer.Hostname, "goshimmer-hostname", "H", config.Goshimmer.Hostname, "Goshimmer hostname")
-	commonFlags.IntVarP(&config.Goshimmer.FaucetPoWTarget, "goshimmer-faucet-pow", "w", 0, "Faucet PoW target (default = -1 if -g is set, else 0)")
+	commonFlags.IntVarP(&config.L1.APIPort, "layer1-api-port", "i", config.L1.APIPort, "layer1 API port")
+	commonFlags.StringVarP(&config.L1.Hostname, "layer1-hostname", "H", config.L1.Hostname, "layer1 hostname")
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)
@@ -49,9 +46,6 @@ func main() {
 	parseFlags := func(flags *pflag.FlagSet) {
 		err := flags.Parse(os.Args[2:])
 		check(err)
-		if !flags.Changed("goshimmer-faucet-pow") && config.Goshimmer.UseProvidedNode {
-			config.Goshimmer.FaucetPoWTarget = -1
-		}
 	}
 
 	switch os.Args[1] {
@@ -68,7 +62,7 @@ func main() {
 		}
 
 		dataPath := flags.Arg(0)
-		err := cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
+		err := cluster.New("cluster", config, nil).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
 		check(err)
 
 	case "start":
@@ -107,7 +101,7 @@ func main() {
 			check(err)
 		}
 
-		clu := cluster.New("wasp-cluster", config)
+		clu := cluster.New("wasp-cluster", config, nil)
 
 		if *disposable {
 			check(clu.InitDataPath(*templatesPath, dataPath, true, nil))

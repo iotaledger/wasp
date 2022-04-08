@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -128,17 +128,16 @@ func TestIncrementWithTransfer(t *testing.T) {
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
-	if !e.clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-42,
-		colored.NewBalancesForIotas(solo.Saldo-42),
-		"owner after") {
+	if !e.clu.AssertAddressBalances(scOwnerAddr,
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42)) {
 		t.Fail()
 	}
 	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	actual := e.getBalanceOnChain(agentID, colored.IOTA)
+	actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)
 	require.EqualValues(t, 42, actual)
 
 	agentID = iscp.NewAgentID(scOwnerAddr, 0)
-	actual = e.getBalanceOnChain(agentID, colored.IOTA)
+	actual = e.getBalanceOnChain(agentID, iscp.IotaTokenID)
 	require.EqualValues(t, 0, actual)
 
 	e.checkCounter(1)

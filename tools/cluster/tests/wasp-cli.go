@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -115,7 +116,7 @@ func (w *WaspCLITest) CommitteeConfig() (string, string) {
 func (w *WaspCLITest) Address() iotago.Address {
 	out := w.Run("address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
-	addr, err := iotago.AddressFromBase58EncodedString(s)
+	_, addr, err := iotago.ParseBech32(s)
 	require.NoError(w.T, err)
 	return addr
 }

@@ -99,3 +99,7 @@ func readString(mu *marshalutil.MarshalUtil) (string, error) {
 func (p *ContractRecord) HasCreator() bool {
 	return p.Creator != nil
 }
+
+func (p *ContractRecord) Hname() iscp.Hname {
+	return iscp.Hn(p.Name)
+}

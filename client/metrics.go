@@ -20,7 +20,7 @@ func (c *WaspClient) GetNodeConnectionMetrics() (*model.NodeConnectionMetrics, e
 // GetNodeConnectionMetrics fetches a connection to L1 metrics by address
 func (c *WaspClient) GetChainNodeConnectionMetrics(chID *iscp.ChainID) (*model.NodeConnectionMessagesMetrics, error) {
 	ncmm := &model.NodeConnectionMessagesMetrics{}
-	if err := c.do(http.MethodGet, routes.GetChainNodeConnectionMetrics(chID.AsAddress().Bech32(iscp.Bech32Prefix)), nil, ncmm); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainNodeConnectionMetrics(chID.String()), nil, ncmm); err != nil {
 		return nil, err
 	}
 	return ncmm, nil
@@ -29,7 +29,7 @@ func (c *WaspClient) GetChainNodeConnectionMetrics(chID *iscp.ChainID) (*model.N
 // GetNodeConnectionMetrics fetches a consensus workflow status by address
 func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *iscp.ChainID) (*model.ConsensusWorkflowStatus, error) {
 	ncmm := &model.ConsensusWorkflowStatus{}
-	if err := c.do(http.MethodGet, routes.GetChainConsensusWorkflowStatus(chID.AsAddress().Bech32(iscp.Bech32Prefix)), nil, ncmm); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainConsensusWorkflowStatus(chID.String()), nil, ncmm); err != nil {
 		return nil, err
 	}
 	return ncmm, nil
