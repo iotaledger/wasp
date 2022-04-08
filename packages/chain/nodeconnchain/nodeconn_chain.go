@@ -73,7 +73,7 @@ func (nccT *nodeconnChain) L1Params() *parameters.L1 {
 }
 
 func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output iotago.Output) {
-	nccT.metrics.GetInOutput().CountLastMessage(struct {
+	nccT.metrics.GetInStateOutput().CountLastMessage(struct {
 		OutputID iotago.OutputID
 		Output   iotago.Output
 	}{
@@ -102,6 +102,13 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 }
 
 func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
+	nccT.metrics.GetInOutput().CountLastMessage(struct {
+		OutputID iotago.OutputID
+		Output   iotago.Output
+	}{
+		OutputID: outputID,
+		Output:   output,
+	})
 	outputIDUTXO := outputID.UTXOInput()
 	outputIDstring := iscp.OID(outputIDUTXO)
 	nccT.log.Debugf("handling output ID %v", outputIDstring)

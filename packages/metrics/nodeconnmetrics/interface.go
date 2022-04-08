@@ -18,8 +18,9 @@ type NodeConnectionMessagesMetrics interface {
 	GetOutPullLatestOutput() NodeConnectionMessageMetrics
 	GetOutPullTxInclusionState() NodeConnectionMessageMetrics
 	GetOutPullOutputByID() NodeConnectionMessageMetrics
-	GetInOutput() NodeConnectionMessageMetrics
+	GetInStateOutput() NodeConnectionMessageMetrics
 	GetInAliasOutput() NodeConnectionMessageMetrics
+	GetInOutput() NodeConnectionMessageMetrics
 	GetInOnLedgerRequest() NodeConnectionMessageMetrics
 	GetInTxInclusionState() NodeConnectionMessageMetrics
 }

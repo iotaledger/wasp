@@ -26,11 +26,15 @@ func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullOutputByID() NodeCon
 	return encmmT.emptyMessageMetrics
 }
 
-func (encmmT *emptyNodeConnectionMessagesMetrics) GetInOutput() NodeConnectionMessageMetrics {
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInStateOutput() NodeConnectionMessageMetrics {
 	return encmmT.emptyMessageMetrics
 }
 
 func (encmmT *emptyNodeConnectionMessagesMetrics) GetInAliasOutput() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
+}
+
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInOutput() NodeConnectionMessageMetrics {
 	return encmmT.emptyMessageMetrics
 }
 

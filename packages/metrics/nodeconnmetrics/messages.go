@@ -10,8 +10,9 @@ type nodeConnectionMessagesMetricsImpl struct {
 	outPullTxInclusionStateMetrics NodeConnectionMessageMetrics
 	outPullOutputByIDMetrics       NodeConnectionMessageMetrics
 
-	inOutputMetrics           NodeConnectionMessageMetrics
+	inStateOutputMetrics      NodeConnectionMessageMetrics
 	inAliasOutputMetrics      NodeConnectionMessageMetrics
+	inOutputMetrics           NodeConnectionMessageMetrics
 	inOnLedgerRequestMetrics  NodeConnectionMessageMetrics
 	inTxInclusionStateMetrics NodeConnectionMessageMetrics
 }
@@ -32,8 +33,9 @@ func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *
 		outPullTxInclusionStateMetrics: createMessageMetricsFun("out_pull_tx_inclusion_state", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullTxInclusionState() }),
 		outPullOutputByIDMetrics:       createMessageMetricsFun("out_pull_output_by_id", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullOutputByID() }),
 
-		inOutputMetrics:           createMessageMetricsFun("in_output", func() NodeConnectionMessageMetrics { return ncmi.GetInOutput() }),
+		inStateOutputMetrics:      createMessageMetricsFun("in_state_output", func() NodeConnectionMessageMetrics { return ncmi.GetInStateOutput() }),
 		inAliasOutputMetrics:      createMessageMetricsFun("in_alias_output", func() NodeConnectionMessageMetrics { return ncmi.GetInAliasOutput() }),
+		inOutputMetrics:           createMessageMetricsFun("in_output", func() NodeConnectionMessageMetrics { return ncmi.GetInOutput() }),
 		inOnLedgerRequestMetrics:  createMessageMetricsFun("in_on_ledger_request", func() NodeConnectionMessageMetrics { return ncmi.GetInOnLedgerRequest() }),
 		inTxInclusionStateMetrics: createMessageMetricsFun("in_tx_inclusion_state", func() NodeConnectionMessageMetrics { return ncmi.GetInTxInclusionState() }),
 	}
@@ -55,12 +57,16 @@ func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullOutputByID() NodeConn
 	return ncmmiT.outPullOutputByIDMetrics
 }
 
-func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInOutput() NodeConnectionMessageMetrics {
-	return ncmmiT.inOutputMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInStateOutput() NodeConnectionMessageMetrics {
+	return ncmmiT.inStateOutputMetrics
 }
 
 func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInAliasOutput() NodeConnectionMessageMetrics {
 	return ncmmiT.inAliasOutputMetrics
+}
+
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInOutput() NodeConnectionMessageMetrics {
+	return ncmmiT.inOutputMetrics
 }
 
 func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInOnLedgerRequest() NodeConnectionMessageMetrics {

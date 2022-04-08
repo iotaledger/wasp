@@ -47,15 +47,20 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 			LastEvent:   time.Now().Add(100 * time.Second),
 			LastMessage: "Last sent PullOutputByID message structure",
 		},
-		InOutput: &model.NodeConnectionMessageMetrics{
+		InStateOutput: &model.NodeConnectionMessageMetrics{
 			Total:       101,
 			LastEvent:   time.Now().Add(-8 * time.Second),
-			LastMessage: "Last received Output message structure",
+			LastMessage: "Last received State output message structure",
 		},
 		InAliasOutput: &model.NodeConnectionMessageMetrics{
 			Total:       203,
 			LastEvent:   time.Now().Add(-123 * time.Millisecond),
 			LastMessage: "Last received AliasOutput message structure",
+		},
+		InOutput: &model.NodeConnectionMessageMetrics{
+			Total:       101,
+			LastEvent:   time.Now().Add(-8 * time.Second),
+			LastMessage: "Last received Output message structure",
 		},
 		InOnLedgerRequest: &model.NodeConnectionMessageMetrics{
 			Total:       85,

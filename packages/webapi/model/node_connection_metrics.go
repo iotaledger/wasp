@@ -20,8 +20,9 @@ type NodeConnectionMessagesMetrics struct {
 	OutPullTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullTxInclusionState messages)"`
 	OutPullOutputByID       *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullOutputByID messages)"`
 
-	InOutput           *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Output messages)"`
+	InStateOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received State output messages)"`
 	InAliasOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received AliasOutput messages)"`
+	InOutput           *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Output messages)"`
 	InOnLedgerRequest  *NodeConnectionMessageMetrics `swagger:"desc(Stats of received OnLedgerRequest messages)"`
 	InTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of received TxInclusionState messages)"`
 }
@@ -53,8 +54,9 @@ func NewNodeConnectionMessagesMetrics(metrics nodeconnmetrics.NodeConnectionMess
 		OutPullTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetOutPullTxInclusionState()),
 		OutPullOutputByID:       NewNodeConnectionMessageMetrics(metrics.GetOutPullOutputByID()),
 
-		InOutput:           NewNodeConnectionMessageMetrics(metrics.GetInOutput()),
+		InStateOutput:      NewNodeConnectionMessageMetrics(metrics.GetInStateOutput()),
 		InAliasOutput:      NewNodeConnectionMessageMetrics(metrics.GetInAliasOutput()),
+		InOutput:           NewNodeConnectionMessageMetrics(metrics.GetInOutput()),
 		InOnLedgerRequest:  NewNodeConnectionMessageMetrics(metrics.GetInOnLedgerRequest()),
 		InTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetInTxInclusionState()),
 	}

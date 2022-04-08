@@ -42,17 +42,18 @@ var nodeconnMetricsCmd = &cobra.Command{
 
 func printMessagesMetrics(msgsMetrics *model.NodeConnectionMessagesMetrics, additionalRows [][]string) {
 	header := []string{"Message name", "", "Total", "Last time", "Last message"}
-	table := make([][]string, 8+len(additionalRows))
+	table := make([][]string, 9+len(additionalRows))
 	table[0] = makeMessagesMetricsTableRow("Publish transaction", false, msgsMetrics.OutPublishTransaction)
 	table[1] = makeMessagesMetricsTableRow("Pull latest output", false, msgsMetrics.OutPullLatestOutput)
 	table[2] = makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTxInclusionState)
 	table[3] = makeMessagesMetricsTableRow("Pull output by ID", false, msgsMetrics.OutPullOutputByID)
-	table[4] = makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput)
+	table[4] = makeMessagesMetricsTableRow("State output", true, msgsMetrics.InStateOutput)
 	table[5] = makeMessagesMetricsTableRow("Alias output", true, msgsMetrics.InAliasOutput)
-	table[6] = makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest)
-	table[7] = makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState)
+	table[6] = makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput)
+	table[7] = makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest)
+	table[8] = makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState)
 	for i := range additionalRows {
-		table[8+i] = additionalRows[i]
+		table[9+i] = additionalRows[i]
 	}
 	log.PrintTable(header, table)
 }
