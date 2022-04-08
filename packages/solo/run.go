@@ -7,8 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
-
 	"github.com/iotaledger/wasp/packages/kv/trie"
 
 	iotago "github.com/iotaledger/iota.go/v3"

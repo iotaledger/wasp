@@ -14,7 +14,7 @@ import (
 func TestBasic(t *testing.T) {
 	p := MustNew(NewConfig())
 
-	rec := root.NewContractRecord(root.Contract, &iscp.NilAgentID)
+	rec := root.ContractRecordFromContractInfo(root.Contract, &iscp.NilAgentID)
 	rootproc, err := p.GetOrCreateProcessor(
 		rec,
 		func(hashing.HashValue) (string, []byte, error) { return vmtypes.Core, nil, nil },

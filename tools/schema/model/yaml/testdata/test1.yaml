@@ -1,0 +1,26 @@
+name: SchemaComment
+description: test description
+
+# header comment for event 1 "this comment block will be ignored in yaml.Convert()"
+# header comment for event 2
+events: # line comment for event
+  TestEvent1: # line comment for TestEvent1
+    eventParam11: String # line comment for eventParam11
+  TestEvent2: # line comment for TestEvent2
+    eventParam21: String # line comment for eventParam21
+    eventParam22: String # line comment for eventParam22
+
+# ##################################
+
+structs:
+  TestStruct1:
+    x1: Int32
+    y1: Int32
+
+  TestStruct2:  # comment for TestStruct2
+    x2: Int32   # comment for x2
+
+    # comment for y2 1
+    # comment for y2 2
+    y2: 
+      Int32

@@ -3,8 +3,6 @@ package kv
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -127,6 +125,8 @@ func Concat(fragments ...interface{}) []byte {
 			buf.WriteString(v)
 		case []byte:
 			buf.Write(v)
+		case Key:
+			buf.Write([]byte(v))
 		case byte:
 			buf.WriteByte(v)
 		case uint16:
@@ -142,80 +142,4 @@ func Concat(fragments ...interface{}) []byte {
 		}
 	}
 	return buf.Bytes()
-}
-
-const nilprefix = ""
-
-func ByteSize(s KVStoreReader) int {
-	accLen := 0
-	err := s.Iterate(nilprefix, func(k Key, v []byte) bool {
-		accLen += len([]byte(k)) + len(v)
-		return true
-	})
-	if err != nil {
-		return 0
-	}
-	return accLen
-}
-
-func DumpToFile(r KVStoreReader, fname string) (int, error) {
-	file, err := os.Create(fname)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	var bytesTotal int
-	err = r.Iterate("", func(k Key, v []byte) bool {
-		n, errw := writeKV(file, []byte(k), v)
-		if errw != nil {
-			err = errw
-			return false
-		}
-		bytesTotal += n
-		return true
-	})
-	return bytesTotal, err
-}
-
-func UnDumpFromFile(w KVWriter, fname string) (int, error) {
-	file, err := os.Open(fname)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	var k, v []byte
-	var exit bool
-	n := 0
-	for {
-		if k, v, exit = readKV(file); exit {
-			break
-		}
-		n += len(k) + len(v) + 6
-		w.Set(Key(k), v)
-	}
-	return n, nil
-}
-
-func writeKV(w io.Writer, k, v []byte) (int, error) {
-	if err := util.WriteBytes16(w, k); err != nil {
-		return 0, err
-	}
-	if err := util.WriteBytes32(w, v); err != nil {
-		return len(k) + 2, err
-	}
-	return len(k) + len(v) + 6, nil
-}
-
-func readKV(r io.Reader) ([]byte, []byte, bool) {
-	k, err := util.ReadBytes16(r)
-	if xerrors.Is(err, io.EOF) {
-		return nil, nil, true
-	}
-	v, err := util.ReadBytes32(r)
-	if err != nil {
-		panic(err)
-	}
-	return k, v, false
 }

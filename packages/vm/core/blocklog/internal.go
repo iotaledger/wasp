@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"io"
+	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"golang.org/x/xerrors"
 )
 
@@ -364,10 +364,9 @@ func GetUTXOInput(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16)
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
 func getBlockIndexParams(ctx iscp.SandboxView) uint32 {
-	params := kvdecoder.New(ctx.Params())
-
-	if ctx.Params().MustHas(ParamBlockIndex) {
-		return params.MustGetUint32(ParamBlockIndex)
+	ret := ctx.Params().MustGetUint32(ParamBlockIndex, math.MaxUint32)
+	if ret != math.MaxUint32 {
+		return ret
 	}
 	registry := collections.NewArray32ReadOnly(ctx.State(), prefixBlockRegistry)
 	return registry.MustLen() - 1

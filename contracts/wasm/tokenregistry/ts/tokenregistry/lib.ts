@@ -43,11 +43,9 @@ function funcMintSupplyThunk(ctx: wasmlib.ScFuncContext): void {
 function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcTransferOwnership");
 	let f = new sc.TransferOwnershipContext();
-
-	// TODO the one who can transfer token ownership
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	sc.funcTransferOwnership(ctx, f);
 	ctx.log("tokenregistry.funcTransferOwnership ok");
 }
@@ -55,11 +53,9 @@ function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 function funcUpdateMetadataThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcUpdateMetadata");
 	let f = new sc.UpdateMetadataContext();
-
-	// TODO the one who can change the token info
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	sc.funcUpdateMetadata(ctx, f);
 	ctx.log("tokenregistry.funcUpdateMetadata ok");
 }
@@ -67,7 +63,7 @@ function funcUpdateMetadataThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetInfoThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("tokenregistry.viewGetInfo");
 	let f = new sc.GetInfoContext();
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	sc.viewGetInfo(ctx, f);
 	ctx.log("tokenregistry.viewGetInfo ok");
 }

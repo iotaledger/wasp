@@ -16,16 +16,15 @@ const (
 )
 
 const (
-	ParamColor       = "color"
 	ParamDescription = "description"
 	ParamDuration    = "duration"
 	ParamMinimumBid  = "minimumBid"
 	ParamOwnerMargin = "ownerMargin"
+	ParamToken       = "token"
 )
 
 const (
 	ResultBidders       = "bidders"
-	ResultColor         = "color"
 	ResultCreator       = "creator"
 	ResultDeposit       = "deposit"
 	ResultDescription   = "description"
@@ -35,6 +34,7 @@ const (
 	ResultMinimumBid    = "minimumBid"
 	ResultNumTokens     = "numTokens"
 	ResultOwnerMargin   = "ownerMargin"
+	ResultToken         = "token"
 	ResultWhenStarted   = "whenStarted"
 )
 

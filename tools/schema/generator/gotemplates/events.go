@@ -21,17 +21,16 @@ $#set separator
 $#set params 
 $#each event eventParam
 
-func (e $TypeName) $EvtName($params) {
+$eventComment
+func (e $TypeName) $EvtName(
+$params) {
 	evt := wasmlib.NewEventEncoder("$package.$evtName")
 $#each event eventEmit
 	evt.Emit()
 }
 `,
 	// *******************************
-	"eventParam": `
-$#set params $params$separator$fldName $fldLangType
-$#set separator , 
-`,
+	"eventParam": "\n$#set params $params$fldName $fldLangType, $fldComment\r\n",
 	// *******************************
 	"eventEmit": `
 	evt.Encode(wasmtypes.$FldType$+ToString($fldName))

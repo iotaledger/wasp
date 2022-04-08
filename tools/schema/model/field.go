@@ -18,18 +18,20 @@ var (
 var FieldTypes = map[string]bool{
 	"Address":   true,
 	"AgentID":   true,
+	"BigInt":    true,
 	"Bool":      true,
 	"Bytes":     true,
 	"ChainID":   true,
-	"Color":     true,
 	"Hash":      true,
 	"Hname":     true,
 	"Int8":      true,
 	"Int16":     true,
 	"Int32":     true,
 	"Int64":     true,
+	"NftID":     true,
 	"RequestID": true,
 	"String":    true,
+	"TokenID":   true,
 	"Uint8":     true,
 	"Uint16":    true,
 	"Uint32":    true,
@@ -37,38 +39,42 @@ var FieldTypes = map[string]bool{
 }
 
 type Field struct {
-	Name     string // external name for this field
-	Alias    string // internal name alias, can be different from Name
-	Array    bool
-	Comment  string
-	MapKey   string
-	Optional bool
-	Type     string
-	BaseType bool
+	Name       string // external name for this field
+	Alias      string // internal name alias, can be different from Name
+	Array      bool
+	FldComment string
+	MapKey     string
+	Optional   bool
+	Type       string
+	BaseType   bool
+	Comment    string
+	Line       int // the line number originally in yaml/json file
 }
 
-func (f *Field) Compile(s *Schema, fldName, fldType string) error {
-	fldName = strings.TrimSpace(fldName)
+func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
+	fldName := strings.TrimSpace(fldNameDef.Val)
 	f.Name = fldName
 	f.Alias = fldName
+	f.Line = fldNameDef.Line
+	f.Comment = fldNameDef.Comment
 	index := strings.Index(fldName, "=")
 	if index >= 0 {
 		f.Name = strings.TrimSpace(fldName[:index])
 		f.Alias = strings.TrimSpace(fldName[index+1:])
 	}
 	if !fldNameRegexp.MatchString(f.Name) {
-		return fmt.Errorf("invalid field name: %s", f.Name)
+		return fmt.Errorf("invalid field name: %s at %d", f.Name, fldNameDef.Line)
 	}
 	if !fldAliasRegexp.MatchString(f.Alias) {
-		return fmt.Errorf("invalid field alias: %s", f.Alias)
+		return fmt.Errorf("invalid field alias: %s at %d", f.Alias, fldNameDef.Line)
 	}
 
-	fldType = strings.TrimSpace(fldType)
+	fldType := strings.TrimSpace(fldTypeDef.Val)
 
 	// remove // comment
 	index = strings.Index(fldType, "//")
 	if index >= 0 {
-		f.Comment = " " + fldType[index:]
+		f.FldComment = " " + fldType[index:]
 		fldType = strings.TrimSpace(fldType[:index])
 	}
 
@@ -90,21 +96,21 @@ func (f *Field) Compile(s *Schema, fldName, fldType string) error {
 		if index > 5 {
 			f.MapKey = strings.TrimSpace(fldType[4:index])
 			if !fldTypeRegexp.MatchString(f.MapKey) || f.MapKey == "Bool" {
-				return fmt.Errorf("invalid key field type: %s", f.MapKey)
+				return fmt.Errorf("invalid key field type: %s at %d", f.MapKey, fldTypeDef.Line)
 			}
 			fldType = strings.TrimSpace(fldType[index+1:])
 		}
 	}
 	f.Type = fldType
 	if !fldTypeRegexp.MatchString(f.Type) {
-		return fmt.Errorf("invalid field type: %s", f.Type)
+		return fmt.Errorf("invalid field type: %s at %d", f.Type, fldTypeDef.Line)
 	}
 	f.BaseType = FieldTypes[f.Type]
 	if f.BaseType {
 		return nil
 	}
 	for _, typeDef := range s.Structs {
-		if f.Type == typeDef.Name {
+		if f.Type == typeDef.Name.Val {
 			return nil
 		}
 	}
@@ -113,5 +119,5 @@ func (f *Field) Compile(s *Schema, fldName, fldType string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid field type: %s", f.Type)
+	return fmt.Errorf("invalid field type: %s at %d", f.Type, fldTypeDef.Line)
 }

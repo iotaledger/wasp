@@ -138,10 +138,10 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	// Create an ScBalances map proxy to the account balances for this
 	// smart contract. Note that ScBalances wraps an ScImmutableMap of
 	// token color/amount combinations in a simpler to use interface.
-	var allowance wasmlib.ScBalances = ctx.Allowance()
+	var allowance *wasmlib.ScBalances = ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	var amount uint64 = allowance.Balance(wasmtypes.IOTA)
+	var amount uint64 = allowance.Iotas()
 
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
@@ -169,19 +169,19 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 
 		// Is there anything to disperse to this member?
 		if share > 0 {
-			// Yes, so let's set up an ScTransfers map proxy that transfers the
-			// calculated amount of iotas. Note that ScTransfers wraps an
+			// Yes, so let's set up an ScTransfer map proxy that transfers the
+			// calculated amount of iotas. Note that ScTransfer wraps an
 			// ScMutableMap of token color/amount combinations in a simpler to use
 			// interface. The constructor we use here creates and initializes a
 			// single token color transfer in a single statement. The actual color
 			// and amount values passed in will be stored in a new map on the host.
-			var transfers wasmlib.ScTransfers = wasmlib.NewScTransferIotas(share)
+			var transfer *wasmlib.ScTransfer = wasmlib.NewScTransferIotas(share)
 
 			// Perform the actual transfer of tokens from the smart contract to the
 			// member address. The transfer_to_address() method receives the address
 			// value and the proxy to the new transfers map on the host, and will
 			// call the corresponding host sandbox function with these values.
-			ctx.TransferAllowed(address.AsAgentID(), transfers, true)
+			ctx.TransferAllowed(address.AsAgentID(), transfer, true)
 		}
 	}
 }

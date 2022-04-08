@@ -58,3 +58,17 @@ func CatchAllButDBError(f func(), log *logger.Logger, prefix ...string) (err err
 	}()
 	return err
 }
+
+func CatchPanic(f func()) (err error) {
+	func() {
+		defer func() {
+			r := recover()
+			if r == nil {
+				return
+			}
+			err = xerrors.Errorf("v", r)
+		}()
+		f()
+	}()
+	return err
+}

@@ -15,8 +15,8 @@ import (
 type Provider func() *Impl
 
 type NodeIdentityProvider interface {
-	GetNodeIdentity() (*cryptolib.KeyPair, error)
-	GetNodePublicKey() (*cryptolib.PublicKey, error)
+	GetNodeIdentity() *cryptolib.KeyPair
+	GetNodePublicKey() *cryptolib.PublicKey
 }
 
 // DKShareRegistryProvider stands for a partial registry interface, needed for this package.

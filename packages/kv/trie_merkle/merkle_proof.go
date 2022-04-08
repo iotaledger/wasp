@@ -151,6 +151,18 @@ func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 	return nil
 }
 
+// CommitmentToTheTerminalNode returns hash of the last node in the proof
+// If it is a valid proof, it s always contains terminal commitment
+// It is useful to get commitment to the substate. It must contain some value
+// at its nil postfix
+func (p *Proof) CommitmentToTheTerminalNode() trie.VCommitment {
+	if len(p.Path) == 0 {
+		return nil
+	}
+	ret := p.Path[len(p.Path)-1].hashIt(nil)
+	return (*vectorCommitment)(&ret)
+}
+
 func (p *Proof) verify(pathIdx, keyIdx int) ([32]byte, error) {
 	assert(pathIdx < len(p.Path), "assertion: pathIdx < lenPlus1(p.Path)")
 	assert(keyIdx <= len(p.Key), "assertion: keyIdx <= lenPlus1(p.Key)")

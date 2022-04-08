@@ -135,6 +135,7 @@ const (
 	ParamHnameEP           = "hnameEP"
 	ParamVarName           = "varName"
 	ParamSize              = "size"
+	ParamProgHash          = "progHash"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="

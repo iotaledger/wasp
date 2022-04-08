@@ -20,26 +20,6 @@ export class MutableCallOnChainResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class ImmutableGetMintedSupplyResults extends wasmtypes.ScProxy {
-	mintedColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultMintedColor));
-	}
-
-	mintedSupply(): wasmtypes.ScImmutableUint64 {
-		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMintedSupply));
-	}
-}
-
-export class MutableGetMintedSupplyResults extends wasmtypes.ScProxy {
-	mintedColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultMintedColor));
-	}
-
-	mintedSupply(): wasmtypes.ScMutableUint64 {
-		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMintedSupply));
-	}
-}
-
 export class ImmutableRunRecursionResults extends wasmtypes.ScProxy {
 	intValue(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));

@@ -13,28 +13,28 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ArrayOfImmutableColor {
+pub struct MapTokenIDToImmutableToken {
 	pub(crate) proxy: Proxy,
 }
 
-impl ArrayOfImmutableColor {
-    pub fn length(&self) -> u32 {
-        self.proxy.length()
-    }
-
-    pub fn get_color(&self, index: u32) -> ScImmutableColor {
-        ScImmutableColor::new(self.proxy.index(index))
+impl MapTokenIDToImmutableToken {
+    pub fn get_token(&self, key: &ScTokenID) -> ImmutableToken {
+        ImmutableToken { proxy: self.proxy.key(&token_id_to_bytes(key)) }
     }
 }
 
 #[derive(Clone)]
-pub struct MapColorToImmutableToken {
+pub struct ArrayOfImmutableTokenID {
 	pub(crate) proxy: Proxy,
 }
 
-impl MapColorToImmutableToken {
-    pub fn get_token(&self, key: &ScColor) -> ImmutableToken {
-        ImmutableToken { proxy: self.proxy.key(&color_to_bytes(key)) }
+impl ArrayOfImmutableTokenID {
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_token_id(&self, index: u32) -> ScImmutableTokenID {
+        ScImmutableTokenID::new(self.proxy.index(index))
     }
 }
 
@@ -44,23 +44,38 @@ pub struct ImmutableTokenRegistryState {
 }
 
 impl ImmutableTokenRegistryState {
-    pub fn color_list(&self) -> ArrayOfImmutableColor {
-		ArrayOfImmutableColor { proxy: self.proxy.root(STATE_COLOR_LIST) }
+    pub fn registry(&self) -> MapTokenIDToImmutableToken {
+		MapTokenIDToImmutableToken { proxy: self.proxy.root(STATE_REGISTRY) }
 	}
 
-    pub fn registry(&self) -> MapColorToImmutableToken {
-		MapColorToImmutableToken { proxy: self.proxy.root(STATE_REGISTRY) }
+    pub fn token_list(&self) -> ArrayOfImmutableTokenID {
+		ArrayOfImmutableTokenID { proxy: self.proxy.root(STATE_TOKEN_LIST) }
 	}
 }
 
 #[derive(Clone)]
-pub struct ArrayOfMutableColor {
+pub struct MapTokenIDToMutableToken {
 	pub(crate) proxy: Proxy,
 }
 
-impl ArrayOfMutableColor {
-	pub fn append_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.append())
+impl MapTokenIDToMutableToken {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_token(&self, key: &ScTokenID) -> MutableToken {
+        MutableToken { proxy: self.proxy.key(&token_id_to_bytes(key)) }
+    }
+}
+
+#[derive(Clone)]
+pub struct ArrayOfMutableTokenID {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfMutableTokenID {
+	pub fn append_token_id(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.append())
 	}
 
 	pub fn clear(&self) {
@@ -71,23 +86,8 @@ impl ArrayOfMutableColor {
         self.proxy.length()
     }
 
-    pub fn get_color(&self, index: u32) -> ScMutableColor {
-        ScMutableColor::new(self.proxy.index(index))
-    }
-}
-
-#[derive(Clone)]
-pub struct MapColorToMutableToken {
-	pub(crate) proxy: Proxy,
-}
-
-impl MapColorToMutableToken {
-    pub fn clear(&self) {
-        self.proxy.clear_map();
-    }
-
-    pub fn get_token(&self, key: &ScColor) -> MutableToken {
-        MutableToken { proxy: self.proxy.key(&color_to_bytes(key)) }
+    pub fn get_token_id(&self, index: u32) -> ScMutableTokenID {
+        ScMutableTokenID::new(self.proxy.index(index))
     }
 }
 
@@ -101,11 +101,11 @@ impl MutableTokenRegistryState {
 		ImmutableTokenRegistryState { proxy: self.proxy.root("") }
 	}
 
-    pub fn color_list(&self) -> ArrayOfMutableColor {
-		ArrayOfMutableColor { proxy: self.proxy.root(STATE_COLOR_LIST) }
+    pub fn registry(&self) -> MapTokenIDToMutableToken {
+		MapTokenIDToMutableToken { proxy: self.proxy.root(STATE_REGISTRY) }
 	}
 
-    pub fn registry(&self) -> MapColorToMutableToken {
-		MapColorToMutableToken { proxy: self.proxy.root(STATE_REGISTRY) }
+    pub fn token_list(&self) -> ArrayOfMutableTokenID {
+		ArrayOfMutableTokenID { proxy: self.proxy.root(STATE_TOKEN_LIST) }
 	}
 }

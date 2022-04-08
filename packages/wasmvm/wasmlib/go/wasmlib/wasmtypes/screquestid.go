@@ -26,7 +26,7 @@ func RequestIDDecode(dec *WasmDecoder) ScRequestID {
 }
 
 func RequestIDEncode(enc *WasmEncoder, value ScRequestID) {
-	enc.FixedBytes(value.Bytes(), ScRequestIDLength)
+	enc.FixedBytes(value.id[:], ScRequestIDLength)
 }
 
 func RequestIDFromBytes(buf []byte) ScRequestID {

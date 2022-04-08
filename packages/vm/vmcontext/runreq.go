@@ -23,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"golang.org/x/xerrors"
 )
 
 // RunTheRequest processes each iscp.Request in the batch
@@ -338,14 +337,14 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(xerrors.Errorf("%v: contract = %s", vm.ErrTargetContractNotFound, contractHname))
+		panic(vm.ErrContractNotFound.Create(contractHname))
 	}
 	return ret
 }
 
 func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
 	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
-		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
+		return root.ContractRecordFromContractInfo(root.Contract, &iscp.NilAgentID)
 	}
 	return vmctx.GetContractRecord(contractHname)
 }

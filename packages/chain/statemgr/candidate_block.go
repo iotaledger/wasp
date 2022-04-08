@@ -27,7 +27,7 @@ func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualState
 		stateCommitment = nil
 	} else {
 		local = true
-		stateCommitment = trie.RootCommitment(nextStateIfProvided.TrieAccess())
+		stateCommitment = trie.RootCommitment(nextStateIfProvided.TrieNodeStore())
 	}
 	return &candidateBlock{
 		block:               block,

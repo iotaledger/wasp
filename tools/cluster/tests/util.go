@@ -155,7 +155,7 @@ func (e *chainEnv) printAccounts(title string) {
 	allBalances := e.getBalancesOnChain()
 	s := fmt.Sprintf("------------------------------------- %s\n", title)
 	for aid, bals := range allBalances {
-		s += fmt.Sprintf("     %s\n", aid.String())
+		s += fmt.Sprintf("     %s\n", aid.String(e.clu.GetL1NetworkPrefix()))
 		s += fmt.Sprintf("%s\n", bals.String())
 	}
 	fmt.Println(s)

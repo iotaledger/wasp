@@ -148,7 +148,7 @@ func (c *consensus) runVMIfNeeded() {
 				return
 			}
 			c.log.Debugf("runVM result: responding by state index: %d state commitment: %s",
-				vmTask.VirtualStateAccess.BlockIndex(), trie.RootCommitment(vmTask.VirtualStateAccess.TrieAccess()))
+				vmTask.VirtualStateAccess.BlockIndex(), trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()))
 			c.EnqueueVMResultMsg(&messages.VMResultMsg{
 				Task: vmTask,
 			})
@@ -697,7 +697,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		r = " (rotate) "
 	}*/
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), trie.RootCommitment(msg.State.TrieAccess()))
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), trie.RootCommitment(msg.State.TrieNodeStore()))
 	c.resetWorkflow()
 	return true
 }

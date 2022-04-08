@@ -26,9 +26,7 @@ export class Encoder {
 
     fromBool(val: boolean): Buffer {
         const bytes = Buffer.alloc(1);
-        if (val) {
-            bytes.writeUInt8(1, 0);
-        }
+        bytes.writeUInt8(val ? 0xff : 0x00, 0);
         return bytes;
     }
 

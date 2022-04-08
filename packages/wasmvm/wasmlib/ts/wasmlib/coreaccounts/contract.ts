@@ -27,21 +27,10 @@ export class AccountsCall {
 	results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults(wasmlib.ScView.nilProxy);
 }
 
-export class BalanceCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalance);
-	params: sc.MutableBalanceParams = new sc.MutableBalanceParams(wasmlib.ScView.nilProxy);
-	results: sc.ImmutableBalanceResults = new sc.ImmutableBalanceResults(wasmlib.ScView.nilProxy);
-}
-
 export class GetAccountNonceCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAccountNonce);
 	params: sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableGetAccountNonceResults = new sc.ImmutableGetAccountNonceResults(wasmlib.ScView.nilProxy);
-}
-
-export class TotalAssetsCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTotalAssets);
-	results: sc.ImmutableTotalAssetsResults = new sc.ImmutableTotalAssetsResults(wasmlib.ScView.nilProxy);
 }
 
 export class ScFuncs {
@@ -67,23 +56,10 @@ export class ScFuncs {
 		return f;
 	}
 
-	static balance(_ctx: wasmlib.ScViewCallContext): BalanceCall {
-		const f = new BalanceCall();
-		f.params = new sc.MutableBalanceParams(wasmlib.newCallParamsProxy(f.func));
-		f.results = new sc.ImmutableBalanceResults(wasmlib.newCallResultsProxy(f.func));
-		return f;
-	}
-
 	static getAccountNonce(_ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
 		const f = new GetAccountNonceCall();
 		f.params = new sc.MutableGetAccountNonceParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetAccountNonceResults(wasmlib.newCallResultsProxy(f.func));
-		return f;
-	}
-
-	static totalAssets(_ctx: wasmlib.ScViewCallContext): TotalAssetsCall {
-		const f = new TotalAssetsCall();
-		f.results = new sc.ImmutableTotalAssetsResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 }

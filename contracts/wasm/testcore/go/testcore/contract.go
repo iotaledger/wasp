@@ -20,16 +20,23 @@ type CheckContextFromFullEPCall struct {
 	Params MutableCheckContextFromFullEPParams
 }
 
+type ClaimAllowanceCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type DoNothingCall struct {
 	Func *wasmlib.ScFunc
 }
 
-type GetMintedSupplyCall struct {
-	Func    *wasmlib.ScFunc
-	Results ImmutableGetMintedSupplyResults
+type EstimateMinDustCall struct {
+	Func *wasmlib.ScFunc
 }
 
 type IncCounterCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type InfiniteLoopCall struct {
 	Func *wasmlib.ScFunc
 }
 
@@ -43,15 +50,26 @@ type PassTypesFullCall struct {
 	Params MutablePassTypesFullParams
 }
 
+type PingAllowanceBackCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type RunRecursionCall struct {
 	Func    *wasmlib.ScFunc
 	Params  MutableRunRecursionParams
 	Results ImmutableRunRecursionResults
 }
 
+type SendLargeRequestCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type SendNFTsBackCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type SendToAddressCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSendToAddressParams
+	Func *wasmlib.ScFunc
 }
 
 type SetIntCall struct {
@@ -62,6 +80,14 @@ type SetIntCall struct {
 type SpawnCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSpawnParams
+}
+
+type SplitFundsCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type SplitFundsNativeTokensCall struct {
+	Func *wasmlib.ScFunc
 }
 
 type TestBlockContext1Call struct {
@@ -102,9 +128,9 @@ type TestPanicFullEPCall struct {
 	Func *wasmlib.ScFunc
 }
 
-type WithdrawToChainCall struct {
+type WithdrawFromChainCall struct {
 	Func   *wasmlib.ScFunc
-	Params MutableWithdrawToChainParams
+	Params MutableWithdrawFromChainParams
 }
 
 type CheckContextFromViewEPCall struct {
@@ -133,6 +159,10 @@ type GetStringValueCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetStringValueParams
 	Results ImmutableGetStringValueResults
+}
+
+type InfiniteLoopViewCall struct {
+	Func *wasmlib.ScView
 }
 
 type JustViewCall struct {
@@ -179,18 +209,24 @@ func (sc Funcs) CheckContextFromFullEP(ctx wasmlib.ScFuncCallContext) *CheckCont
 	return f
 }
 
+func (sc Funcs) ClaimAllowance(ctx wasmlib.ScFuncCallContext) *ClaimAllowanceCall {
+	return &ClaimAllowanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncClaimAllowance)}
+}
+
 func (sc Funcs) DoNothing(ctx wasmlib.ScFuncCallContext) *DoNothingCall {
 	return &DoNothingCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDoNothing)}
 }
 
-func (sc Funcs) GetMintedSupply(ctx wasmlib.ScFuncCallContext) *GetMintedSupplyCall {
-	f := &GetMintedSupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncGetMintedSupply)}
-	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
-	return f
+func (sc Funcs) EstimateMinDust(ctx wasmlib.ScFuncCallContext) *EstimateMinDustCall {
+	return &EstimateMinDustCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncEstimateMinDust)}
 }
 
 func (sc Funcs) IncCounter(ctx wasmlib.ScFuncCallContext) *IncCounterCall {
 	return &IncCounterCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncIncCounter)}
+}
+
+func (sc Funcs) InfiniteLoop(ctx wasmlib.ScFuncCallContext) *InfiniteLoopCall {
+	return &InfiniteLoopCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncInfiniteLoop)}
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
@@ -205,6 +241,10 @@ func (sc Funcs) PassTypesFull(ctx wasmlib.ScFuncCallContext) *PassTypesFullCall 
 	return f
 }
 
+func (sc Funcs) PingAllowanceBack(ctx wasmlib.ScFuncCallContext) *PingAllowanceBackCall {
+	return &PingAllowanceBackCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPingAllowanceBack)}
+}
+
 func (sc Funcs) RunRecursion(ctx wasmlib.ScFuncCallContext) *RunRecursionCall {
 	f := &RunRecursionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRunRecursion)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -212,10 +252,16 @@ func (sc Funcs) RunRecursion(ctx wasmlib.ScFuncCallContext) *RunRecursionCall {
 	return f
 }
 
+func (sc Funcs) SendLargeRequest(ctx wasmlib.ScFuncCallContext) *SendLargeRequestCall {
+	return &SendLargeRequestCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSendLargeRequest)}
+}
+
+func (sc Funcs) SendNFTsBack(ctx wasmlib.ScFuncCallContext) *SendNFTsBackCall {
+	return &SendNFTsBackCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSendNFTsBack)}
+}
+
 func (sc Funcs) SendToAddress(ctx wasmlib.ScFuncCallContext) *SendToAddressCall {
-	f := &SendToAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSendToAddress)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	return f
+	return &SendToAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSendToAddress)}
 }
 
 func (sc Funcs) SetInt(ctx wasmlib.ScFuncCallContext) *SetIntCall {
@@ -228,6 +274,14 @@ func (sc Funcs) Spawn(ctx wasmlib.ScFuncCallContext) *SpawnCall {
 	f := &SpawnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSpawn)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
+}
+
+func (sc Funcs) SplitFunds(ctx wasmlib.ScFuncCallContext) *SplitFundsCall {
+	return &SplitFundsCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSplitFunds)}
+}
+
+func (sc Funcs) SplitFundsNativeTokens(ctx wasmlib.ScFuncCallContext) *SplitFundsNativeTokensCall {
+	return &SplitFundsNativeTokensCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSplitFundsNativeTokens)}
 }
 
 func (sc Funcs) TestBlockContext1(ctx wasmlib.ScFuncCallContext) *TestBlockContext1Call {
@@ -270,8 +324,8 @@ func (sc Funcs) TestPanicFullEP(ctx wasmlib.ScFuncCallContext) *TestPanicFullEPC
 	return &TestPanicFullEPCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestPanicFullEP)}
 }
 
-func (sc Funcs) WithdrawToChain(ctx wasmlib.ScFuncCallContext) *WithdrawToChainCall {
-	f := &WithdrawToChainCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdrawToChain)}
+func (sc Funcs) WithdrawFromChain(ctx wasmlib.ScFuncCallContext) *WithdrawFromChainCall {
+	f := &WithdrawFromChainCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdrawFromChain)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -307,6 +361,10 @@ func (sc Funcs) GetStringValue(ctx wasmlib.ScViewCallContext) *GetStringValueCal
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
+}
+
+func (sc Funcs) InfiniteLoopView(ctx wasmlib.ScViewCallContext) *InfiniteLoopViewCall {
+	return &InfiniteLoopViewCall{Func: wasmlib.NewScView(ctx, HScName, HViewInfiniteLoopView)}
 }
 
 func (sc Funcs) JustView(ctx wasmlib.ScViewCallContext) *JustViewCall {

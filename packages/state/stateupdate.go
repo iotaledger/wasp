@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"math"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -12,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -77,14 +75,11 @@ func (su *stateUpdateImpl) stateIndexMutation() (uint32, bool, error) {
 	if !ok {
 		return 0, false, nil
 	}
-	ret, err := util.Uint64From8Bytes(blockIndexBin)
+	ret, err := codec.DecodeUint32(blockIndexBin)
 	if err != nil {
 		return 0, false, err
 	}
-	if int(ret) > math.MaxUint32 {
-		return 0, false, xerrors.New("wrong state index")
-	}
-	return uint32(ret), true, nil
+	return ret, true, nil
 }
 
 func (su *stateUpdateImpl) timestampMutation() (time.Time, bool, error) {
@@ -182,7 +177,7 @@ func (su *stateUpdateImpl) setTimestampMutation(ts time.Time) {
 }
 
 func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint64To8Bytes(uint64(blockIndex)))
+	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(blockIndex))
 }
 
 func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VCommitment) {

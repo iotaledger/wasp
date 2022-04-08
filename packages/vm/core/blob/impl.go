@@ -10,12 +10,19 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-var Processor = Contract.Processor(nil,
+var Processor = Contract.Processor(initialize,
 	FuncStoreBlob.WithHandler(storeBlob),
 	FuncGetBlobInfo.WithHandler(getBlobInfo),
 	FuncGetBlobField.WithHandler(getBlobField),
 	FuncListBlobs.WithHandler(listBlobs),
 )
+
+func initialize(ctx iscp.Sandbox) dict.Dict {
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+	return nil
+}
 
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation

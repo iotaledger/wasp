@@ -76,8 +76,6 @@ fn func_force_payout_thunk(ctx: &ScFuncContext) {
 		events:  FairRouletteEvents {},
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
-
-	// only SC creator can restart the round forcefully
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	func_force_payout(ctx, &f);
@@ -95,8 +93,6 @@ fn func_force_reset_thunk(ctx: &ScFuncContext) {
 		events:  FairRouletteEvents {},
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
-
-	// only SC creator can restart the round forcefully
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	func_force_reset(ctx, &f);
@@ -114,8 +110,6 @@ fn func_pay_winners_thunk(ctx: &ScFuncContext) {
 		events:  FairRouletteEvents {},
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
-
-	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 	func_pay_winners(ctx, &f);
@@ -153,8 +147,6 @@ fn func_play_period_thunk(ctx: &ScFuncContext) {
 		params: ImmutablePlayPeriodParams { proxy: params_proxy() },
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
-
-	// only SC creator can update the play period
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	ctx.require(f.params.play_period().exists(), "missing mandatory playPeriod");

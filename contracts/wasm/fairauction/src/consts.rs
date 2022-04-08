@@ -13,14 +13,13 @@ pub const SC_NAME        : &str = "fairauction";
 pub const SC_DESCRIPTION : &str = "Decentralized auction to securely sell tokens to the highest bidder";
 pub const HSC_NAME       : ScHname = ScHname(0x1b5c43b1);
 
-pub const PARAM_COLOR        : &str = "color";
 pub const PARAM_DESCRIPTION  : &str = "description";
 pub const PARAM_DURATION     : &str = "duration";
 pub const PARAM_MINIMUM_BID  : &str = "minimumBid";
 pub const PARAM_OWNER_MARGIN : &str = "ownerMargin";
+pub const PARAM_TOKEN        : &str = "token";
 
 pub const RESULT_BIDDERS        : &str = "bidders";
-pub const RESULT_COLOR          : &str = "color";
 pub const RESULT_CREATOR        : &str = "creator";
 pub const RESULT_DEPOSIT        : &str = "deposit";
 pub const RESULT_DESCRIPTION    : &str = "description";
@@ -30,6 +29,7 @@ pub const RESULT_HIGHEST_BIDDER : &str = "highestBidder";
 pub const RESULT_MINIMUM_BID    : &str = "minimumBid";
 pub const RESULT_NUM_TOKENS     : &str = "numTokens";
 pub const RESULT_OWNER_MARGIN   : &str = "ownerMargin";
+pub const RESULT_TOKEN          : &str = "token";
 pub const RESULT_WHEN_STARTED   : &str = "whenStarted";
 
 pub const STATE_AUCTIONS     : &str = "auctions";

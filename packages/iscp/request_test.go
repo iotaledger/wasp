@@ -5,10 +5,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )

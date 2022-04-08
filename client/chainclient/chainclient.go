@@ -20,7 +20,7 @@ type Client struct {
 	WaspClient   *client.WaspClient
 	ChainID      *iscp.ChainID
 	KeyPair      *cryptolib.KeyPair
-	nonces       map[iotago.Address]uint64
+	nonces       map[string]uint64
 }
 
 // New creates a new chainclient.Client
@@ -35,7 +35,7 @@ func New(
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
-		nonces:       make(map[iotago.Address]uint64),
+		nonces:       make(map[string]uint64),
 	}
 }
 
@@ -112,8 +112,8 @@ func (c *Client) PostOffLedgerRequest(
 ) (*iscp.OffLedgerRequestData, error) {
 	par := defaultParams(params...)
 	if par.Nonce == 0 {
-		c.nonces[c.KeyPair.Address()]++
-		par.Nonce = c.nonces[c.KeyPair.Address()]
+		c.nonces[c.KeyPair.Address().Key()]++
+		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 	}
 	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
 	offledgerReq.WithNonce(par.Nonce)

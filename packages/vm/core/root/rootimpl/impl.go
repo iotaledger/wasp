@@ -4,6 +4,7 @@
 // - maintaining (setting, delegating) chain owner ID
 // - maintaining (granting, revoking) smart contract deployment rights
 // - deployment of smart contracts on the chain and maintenance of contract registry
+
 package rootimpl
 
 import (
@@ -63,24 +64,24 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
 	// store 'root' into the registry
-	mustStoreContract(ctx, root.Contract)
+	storeCoreContract(ctx, root.Contract)
 
 	// store 'blob' into the registry and run init
-	mustStoreAndInitCoreContract(ctx, blob.Contract, nil)
+	storeAndInitCoreContract(ctx, blob.Contract, nil)
 
 	// store 'accounts' into the registry and run init
-	mustStoreAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
+	storeAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
 		accounts.ParamDustDepositAssumptionsBin: ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin),
 	})
 
 	// store 'blocklog' into the registry and run init
-	mustStoreAndInitCoreContract(ctx, blocklog.Contract, nil)
+	storeAndInitCoreContract(ctx, blocklog.Contract, nil)
 
 	// store 'errors' into the registry and run init
-	mustStoreAndInitCoreContract(ctx, errors.Contract, nil)
+	storeAndInitCoreContract(ctx, errors.Contract, nil)
 
 	// store 'governance' into the registry and run init
-	mustStoreAndInitCoreContract(ctx, governance.Contract, dict.Dict{
+	storeAndInitCoreContract(ctx, governance.Contract, dict.Dict{
 		governance.ParamChainID: codec.EncodeChainID(ctx.ChainID()),
 		// chain owner is whoever creates origin and sends the 'init' request
 		governance.ParamChainOwner:     ctx.Caller().Bytes(),
@@ -92,10 +93,13 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// filter all params that have ParamEVM prefix, and remove the prefix
 	evmParams, err := dict.FromKVStore(subrealm.New(ctx.Params().Dict, root.ParamEVM("")))
 	ctx.RequireNoError(err)
-	mustStoreAndInitCoreContract(ctx, evm.Contract, evmParams)
+	storeAndInitCoreContract(ctx, evm.Contract, evmParams)
 
 	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
 	state.Set(root.StateVarStateInitialized, []byte{0xFF})
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
 
 	ctx.Log().Debugf("root.initialize.success")
 	return nil
@@ -132,7 +136,7 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
-	mustStoreContractRecord(ctx, &root.ContractRecord{
+	storeContractRecord(ctx, &root.ContractRecord{
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,

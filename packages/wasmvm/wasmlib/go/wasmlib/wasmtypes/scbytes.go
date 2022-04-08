@@ -17,8 +17,8 @@ func BytesFromBytes(buf []byte) []byte {
 	return buf
 }
 
-func BytesToBytes(buf []byte) []byte {
-	return buf
+func BytesToBytes(value []byte) []byte {
+	return value
 }
 
 func BytesToString(value []byte) string {

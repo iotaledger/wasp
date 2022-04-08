@@ -10,7 +10,6 @@ package fairauction
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Auction struct {
-	Color         wasmtypes.ScColor   // color of tokens for sale
 	Creator       wasmtypes.ScAgentID // issuer of start_auction transaction
 	Deposit       uint64              // deposit by auction owner to cover the SC fees
 	Description   string              // auction description
@@ -20,13 +19,13 @@ type Auction struct {
 	MinimumBid    uint64              // minimum bid amount
 	NumTokens     uint64              // number of tokens for sale
 	OwnerMargin   uint64              // auction owner's margin in promilles
+	Token         wasmtypes.ScTokenID // token of tokens for sale
 	WhenStarted   uint64              // timestamp when auction started
 }
 
 func NewAuctionFromBytes(buf []byte) *Auction {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Auction{}
-	data.Color = wasmtypes.ColorDecode(dec)
 	data.Creator = wasmtypes.AgentIDDecode(dec)
 	data.Deposit = wasmtypes.Uint64Decode(dec)
 	data.Description = wasmtypes.StringDecode(dec)
@@ -36,6 +35,7 @@ func NewAuctionFromBytes(buf []byte) *Auction {
 	data.MinimumBid = wasmtypes.Uint64Decode(dec)
 	data.NumTokens = wasmtypes.Uint64Decode(dec)
 	data.OwnerMargin = wasmtypes.Uint64Decode(dec)
+	data.Token = wasmtypes.TokenIDDecode(dec)
 	data.WhenStarted = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
@@ -43,7 +43,6 @@ func NewAuctionFromBytes(buf []byte) *Auction {
 
 func (o *Auction) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.ColorEncode(enc, o.Color)
 	wasmtypes.AgentIDEncode(enc, o.Creator)
 	wasmtypes.Uint64Encode(enc, o.Deposit)
 	wasmtypes.StringEncode(enc, o.Description)
@@ -53,6 +52,7 @@ func (o *Auction) Bytes() []byte {
 	wasmtypes.Uint64Encode(enc, o.MinimumBid)
 	wasmtypes.Uint64Encode(enc, o.NumTokens)
 	wasmtypes.Uint64Encode(enc, o.OwnerMargin)
+	wasmtypes.TokenIDEncode(enc, o.Token)
 	wasmtypes.Uint64Encode(enc, o.WhenStarted)
 	return enc.Buf()
 }

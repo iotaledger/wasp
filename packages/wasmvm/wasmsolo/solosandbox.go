@@ -61,6 +61,7 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnUtilsHashName,
 	(*SoloSandbox).fnUtilsHashSha3,
 	(*SoloSandbox).fnTransferAllowed,
+	(*SoloSandbox).fnEstimateDust,
 }
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
@@ -76,11 +77,11 @@ type SoloSandbox struct {
 }
 
 func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
-	panic("implement me")
+	panic("implement Burn")
 }
 
 func (s *SoloSandbox) Budget() uint64 {
-	panic("implement me")
+	panic("implement Budget")
 }
 
 var (
@@ -178,25 +179,27 @@ func (s *SoloSandbox) fnAccountID(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnAllowance(args []byte) []byte {
-	//// zero incoming balance
-	assets := new(iscp.FungibleTokens)
+	// zero incoming balance
+	assets := new(iscp.Allowance)
 	return s.cvt.ScBalances(assets).Bytes()
 }
 
 func (s *SoloSandbox) fnBalance(args []byte) []byte {
-	color := wasmtypes.ColorFromBytes(args)
+	color := wasmtypes.TokenIDFromBytes(args)
 	return codec.EncodeUint64(s.ctx.Balance(s.ctx.Account(), color))
 }
 
 func (s *SoloSandbox) fnBalances(args []byte) []byte {
 	agent := s.ctx.Account()
 	account := iscp.NewAgentID(agent.address, agent.hname)
-	assets := s.ctx.Chain.L2Assets(account)
-	return s.cvt.ScBalances(assets).Bytes()
+	balance := new(iscp.Allowance)
+	balance.Assets = s.ctx.Chain.L2Assets(account)
+	balance.NFTs = s.ctx.Chain.L2NFTs(account)
+	return s.cvt.ScBalances(balance).Bytes()
 }
 
 func (s *SoloSandbox) fnBlockContext(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnBlockContext")
 }
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
@@ -214,10 +217,10 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	s.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) != 0 {
-		assets := s.cvt.IscpAssets(scAssets)
-		return s.postSync(ctx.scName, funcName, params, assets)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	if !scAssets.IsEmpty() {
+		allowance := s.cvt.IscpAllowance(scAssets)
+		return s.postSync(ctx.scName, funcName, params, allowance)
 	}
 
 	_ = wasmhost.Connect(ctx.wasmHostOld)
@@ -251,16 +254,19 @@ func (s *SoloSandbox) fnContractCreator(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnDeployContract(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnDeployContract")
 }
 
 func (s *SoloSandbox) fnEntropy(args []byte) []byte {
 	return s.ctx.Chain.ChainID.Bytes()
 }
 
+func (s *SoloSandbox) fnEstimateDust(args []byte) []byte {
+	panic("implement fnEstimateDust")
+}
+
 func (s *SoloSandbox) fnEvent(args []byte) []byte {
-	s.Panicf("solo cannot send events")
-	return nil
+	panic("implement fnEvent")
 }
 
 func (s *SoloSandbox) fnLog(args []byte) []byte {
@@ -269,7 +275,7 @@ func (s *SoloSandbox) fnLog(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnMinted(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnMinted")
 }
 
 func (s *SoloSandbox) fnPanic(args []byte) []byte {
@@ -298,16 +304,16 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	s.Tracef("POST %s.%s", s.ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}
-	assets := s.cvt.IscpAssets(scAssets)
-	return s.postSync(s.ctx.scName, funcName, params, assets)
+	allowance := s.cvt.IscpAllowance(scAssets)
+	return s.postSync(s.ctx.scName, funcName, params, allowance)
 }
 
 func (s *SoloSandbox) fnRequest(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnRequest")
 }
 
 func (s *SoloSandbox) fnRequestID(args []byte) []byte {
@@ -315,16 +321,16 @@ func (s *SoloSandbox) fnRequestID(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnResults(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnResults")
 }
 
 // transfer tokens to L1 address
 func (s *SoloSandbox) fnSend(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnSend")
 }
 
 func (s *SoloSandbox) fnStateAnchor(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnStateAnchor")
 }
 
 func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
@@ -338,5 +344,5 @@ func (s *SoloSandbox) fnTrace(args []byte) []byte {
 
 // transfer allowed tokens to L2 agent
 func (s *SoloSandbox) fnTransferAllowed(args []byte) []byte {
-	panic("implement me")
+	panic("implement fnTransferAllowed")
 }

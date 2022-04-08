@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-	coreaccountsclient "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient/coreaccounts"
 	"github.com/stretchr/testify/require"
 )
 
@@ -124,25 +123,25 @@ func TestClientArray(t *testing.T) {
 	require.EqualValues(t, 0, res.Length())
 }
 
-func TestAccountBalance(t *testing.T) {
-	// for now skip client tests
-	t.SkipNow()
-
-	// we're testing against wasp-cluster, so defaults will do
-	svcClient := wasmclient.DefaultServiceClient()
-
-	// create the service for the testwasmlib smart contract
-	svc, err := coreaccountsclient.NewCoreAccountsService(svcClient, myChainID)
-	require.NoError(t, err)
-
-	// we'll use the first address in the seed to sign requests
-	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
-
-	bal := svc.Balance()
-	agendID := wasmclient.SeedToAgentID(mySeed, 0)
-	bal.AgentID(agendID)
-	res := bal.Call()
-	require.NoError(t, bal.Error())
-	balances := res.Balances()
-	fmt.Printf("Balances: %v\n", balances)
-}
+//func TestAccountBalance(t *testing.T) {
+//	// for now skip client tests
+//	t.SkipNow()
+//
+//	// we're testing against wasp-cluster, so defaults will do
+//	svcClient := wasmclient.DefaultServiceClient()
+//
+//	// create the service for the testwasmlib smart contract
+//	svc, err := coreaccountsclient.NewCoreAccountsService(svcClient, myChainID)
+//	require.NoError(t, err)
+//
+//	// we'll use the first address in the seed to sign requests
+//	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+//
+//	bal := svc.Balance()
+//	agendID := wasmclient.SeedToAgentID(mySeed, 0)
+//	bal.AgentID(agendID)
+//	res := bal.Call()
+//	require.NoError(t, bal.Error())
+//	balances := res.Balances()
+//	fmt.Printf("Balances: %v\n", balances)
+//}
