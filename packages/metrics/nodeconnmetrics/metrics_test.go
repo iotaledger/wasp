@@ -62,14 +62,14 @@ func TestMessageMetrics(t *testing.T) {
 	cncm2 := ncm.NewMessagesMetrics(iscp.RandomChainID())
 	ncm.RegisterMetrics()
 
-	// IN Output
-	cncm1.GetInOutput().CountLastMessage("InOutput1")
-	cncm2.GetInOutput().CountLastMessage("InOutput2")
-	ncm.GetInOutput().CountLastMessage("InOutput3")
+	// IN State output
+	cncm1.GetInStateOutput().CountLastMessage("InStateOutput1")
+	cncm1.GetInStateOutput().CountLastMessage("InStateOutput2")
+	cncm1.GetInStateOutput().CountLastMessage("InStateOutput3")
 
-	checkMetricsValues(t, 1, "InOutput1", cncm1.GetInOutput())
-	checkMetricsValues(t, 1, "InOutput2", cncm2.GetInOutput())
-	checkMetricsValues(t, 3, "InOutput3", ncm.GetInOutput())
+	checkMetricsValues(t, 3, "InStateOutput3", cncm1.GetInStateOutput())
+	checkMetricsValues(t, 0, "NIL", cncm2.GetInStateOutput())
+	checkMetricsValues(t, 3, "InStateOutput3", ncm.GetInStateOutput())
 
 	// IN Alias output
 	ncm.GetInAliasOutput().CountLastMessage("InAliasOutput1")
@@ -79,6 +79,15 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 2, "InAliasOutput3", cncm1.GetInAliasOutput())
 	checkMetricsValues(t, 0, "NIL", cncm2.GetInAliasOutput())
 	checkMetricsValues(t, 3, "InAliasOutput3", ncm.GetInAliasOutput())
+
+	// IN Output
+	cncm1.GetInOutput().CountLastMessage("InOutput1")
+	cncm2.GetInOutput().CountLastMessage("InOutput2")
+	ncm.GetInOutput().CountLastMessage("InOutput3")
+
+	checkMetricsValues(t, 1, "InOutput1", cncm1.GetInOutput())
+	checkMetricsValues(t, 1, "InOutput2", cncm2.GetInOutput())
+	checkMetricsValues(t, 3, "InOutput3", ncm.GetInOutput())
 
 	// IN Transaction inclusion state
 	cncm1.GetInTxInclusionState().CountLastMessage("InTxInclusionState1")
