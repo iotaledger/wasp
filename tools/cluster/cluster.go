@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
@@ -60,7 +61,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, logger.NewLogger("l1client")),
+		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), logger.NewLogger("l1client")),
 	}
 }
 

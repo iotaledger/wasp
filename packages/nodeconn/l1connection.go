@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"golang.org/x/xerrors"
@@ -42,8 +43,8 @@ type L1Client interface {
 
 var _ L1Client = &nodeConn{}
 
-func NewL1Client(config L1Config, log *logger.Logger, timeout ...time.Duration) L1Client {
-	return newNodeConn(config, log, timeout...)
+func NewL1Client(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) L1Client {
+	return newNodeConn(config, metrics, log, timeout...)
 }
 
 const defaultTimeout = 1 * time.Minute

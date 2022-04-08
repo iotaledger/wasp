@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -76,6 +77,7 @@ func L1Client() nodeconn.L1Client {
 			APIPort:    L1APIPort(),
 			FaucetPort: L1FaucetPort(),
 		},
+		nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		logger.NewLogger("l1client"),
 	)
 }
