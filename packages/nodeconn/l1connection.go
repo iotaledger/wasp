@@ -2,6 +2,7 @@ package nodeconn
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -49,7 +50,7 @@ const defaultTimeout = 1 * time.Minute
 
 // OutputMap implements L1Connection
 func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error) {
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
 	indexerClient, err := nc.nodeAPIClient.Indexer(ctxWithTimeout)
@@ -88,7 +89,7 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 // PostTx implements L1Connection
 // sends any tx to the L1 node, then waits until the tx is confirmed.
 func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) error {
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
 	txMsg, err := nc.doPostTx(ctxWithTimeout, tx)
@@ -110,7 +111,7 @@ func (nc *nodeConn) RequestFunds(addr iotago.Address, timeout ...time.Duration) 
 // PostFaucetRequest makes a faucet request.
 // Simple value TX is processed faster, and should be used in cases where we are using a private testnet and have the genesis key available.
 func (nc *nodeConn) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Duration) error {
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
 	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(nc.L1Params().Bech32Prefix))
@@ -200,7 +201,7 @@ func MakeSimpleValueTX(
 
 // Health implements L1Client
 func (nc *nodeConn) Health(timeout ...time.Duration) (bool, error) {
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(context.Background(), timeout...)
 	defer cancelContext()
 
 	return nc.nodeAPIClient.Health(ctxWithTimeout)

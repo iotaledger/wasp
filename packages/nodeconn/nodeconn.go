@@ -58,12 +58,12 @@ func L1ParamsFromInfoResp(info *nodeclient.InfoResponse) *parameters.L1 {
 	}
 }
 
-func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
+func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
-	return context.WithTimeout(context.Background(), t)
+	return context.WithTimeout(ctx, t)
 }
 
 func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
@@ -74,7 +74,7 @@ func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeAPIClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
 
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
 	l1Info, err := nodeAPIClient.Info(ctxWithTimeout)
 	if err != nil {
