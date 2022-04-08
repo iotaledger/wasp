@@ -1,4 +1,4 @@
-package emulator
+package evmimpl
 
 import (
 	"bytes"

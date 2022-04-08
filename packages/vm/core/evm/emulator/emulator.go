@@ -4,10 +4,6 @@
 package emulator
 
 import (
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-	"math/big"
-	"os"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -21,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"golang.org/x/xerrors"
+	"math/big"
 )
 
 type EVMEmulator struct {
@@ -91,13 +88,11 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContra
 		panic("must initialize genesis block first")
 	}
 
-	logger := logger.NewJSONLogger(&logger.Config{EnableReturnData: true, EnableMemory: true}, os.Stdout)
-
 	return &EVMEmulator{
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		vmConfig:    vm.Config{ISCContract: iscContract, Debug: true, Tracer: logger},
+		vmConfig:    vm.Config{ISCContract: iscContract},
 	}
 }
 
@@ -118,9 +113,6 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
 	res, err := e.callContract(call)
 	if err != nil {
 		return nil, err
-	}
-	if res.Err == vm.ErrExecutionReverted {
-		return nil, UnpackCommonRevertError(res)
 	}
 	return res.Return(), res.Err
 }
