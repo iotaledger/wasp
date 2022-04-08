@@ -6,6 +6,7 @@ package evmtest
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"math/big"
 	"strings"
 	"testing"
@@ -26,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
@@ -299,7 +299,6 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	// send EVM tx
 	_, err = e.soloChain.PostRequestOffLedger(req, nil)
-	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{
 		chain:         e,
@@ -378,12 +377,20 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	return
 }
 
+func (e *evmContractInstance) callFnExpectError(opts []ethCallOptions, fnName string, args ...interface{}) error {
+	_, err := e.callFn(opts, fnName, args...)
+	require.Error(e.chain.t, err)
+	return err
+}
+
 func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
 	res, err := e.callFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
 	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
 	require.Len(e.chain.t, res.evmReceipt.Logs, 1)
-	err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+	if v != nil {
+		err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+	}
 	require.NoError(e.chain.t, err)
 }
 

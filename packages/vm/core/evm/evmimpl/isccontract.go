@@ -98,6 +98,34 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		i := args[0].(uint16)
 		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
 
+	case "getAllowanceNFTsLen":
+		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().NFTs))}
+
+	case "getAllowanceNFTID":
+		i := args[0].(uint16)
+		outs = []interface{}{isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])}
+
+	case "getAllowanceNFT":
+		i := args[0].(uint16)
+		nftID := isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])
+		nft := c.ctx.GetNFTData(nftID.Unwrap())
+		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
+
+	case "getCaller":
+		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Caller())}
+
+	case "registerError":
+		errorMessage := args[0].(string)
+		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
+
+	case "send":
+
+		params := isccontract.ISCRequestParameters{}
+		err := method.Inputs.Copy(&params, args)
+		fmt.Printf(err.Error())
+		outs = []interface{}{}
+	//	c.ctx.Send(params)
+
 	case "call":
 		var callArgs struct {
 			ContractHname uint32
