@@ -25,7 +25,7 @@ import (
 
 func createChain(t *testing.T) *iscp.ChainID {
 	originator := cryptolib.NewKeyPair()
-	layer1Client := nodeconn.NewL1Client(ClustL1Config, testlogger.NewLogger(t))
+	layer1Client := nodeconn.NewL1Client(ClustL1Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), testlogger.NewLogger(t))
 	layer1Client.RequestFunds(originator.Address())
 	utxoMap, err := layer1Client.OutputMap(originator.Address())
 	require.NoError(t, err)
@@ -69,8 +69,7 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	nc := nodeconn.New("localhost", pt.NodePortRestAPI(0), networkProviders[0], nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
-	t.Cleanup(nc.Close)
+	nc := nodeconn.New(ClustL1Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
 
 	//
 	// Check milestone attach/detach.
@@ -95,11 +94,11 @@ func TestNodeConn(t *testing.T) {
 			chainStateOutsICh <- oi
 		},
 		func(oi iotago.OutputID, o iotago.Output) {
-		chainOuts[oi] = o
-		chainOICh <- oi
-	})
+			chainOuts[oi] = o
+			chainOICh <- oi
+		})
 
-	client := nodeconn.NewL1Client(ClustL1Config, log)
+	client := nodeconn.NewL1Client(ClustL1Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
 	err := client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)
