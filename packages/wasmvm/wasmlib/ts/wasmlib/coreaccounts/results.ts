@@ -38,36 +38,6 @@ export class MutableAccountsResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class MapColorToImmutableInt64 extends wasmtypes.ScProxy {
-
-	getInt64(key: wasmtypes.ScColor): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.key(wasmtypes.colorToBytes(key)));
-	}
-}
-
-export class ImmutableBalanceResults extends wasmtypes.ScProxy {
-	balances(): sc.MapColorToImmutableInt64 {
-		return new sc.MapColorToImmutableInt64(this.proxy);
-	}
-}
-
-export class MapColorToMutableInt64 extends wasmtypes.ScProxy {
-
-	clear(): void {
-		this.proxy.clearMap();
-	}
-
-	getInt64(key: wasmtypes.ScColor): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.key(wasmtypes.colorToBytes(key)));
-	}
-}
-
-export class MutableBalanceResults extends wasmtypes.ScProxy {
-	balances(): sc.MapColorToMutableInt64 {
-		return new sc.MapColorToMutableInt64(this.proxy);
-	}
-}
-
 export class ImmutableGetAccountNonceResults extends wasmtypes.ScProxy {
 	accountNonce(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultAccountNonce));
@@ -77,17 +47,5 @@ export class ImmutableGetAccountNonceResults extends wasmtypes.ScProxy {
 export class MutableGetAccountNonceResults extends wasmtypes.ScProxy {
 	accountNonce(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultAccountNonce));
-	}
-}
-
-export class ImmutableTotalAssetsResults extends wasmtypes.ScProxy {
-	balances(): sc.MapColorToImmutableInt64 {
-		return new sc.MapColorToImmutableInt64(this.proxy);
-	}
-}
-
-export class MutableTotalAssetsResults extends wasmtypes.ScProxy {
-	balances(): sc.MapColorToMutableInt64 {
-		return new sc.MapColorToMutableInt64(this.proxy);
 	}
 }

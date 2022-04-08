@@ -4,7 +4,6 @@
 package iscp
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -14,9 +13,6 @@ import (
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
-
-// TODO make this configurable
-const NetworkPrefix = iotago.PrefixTestnet
 
 const nilAgentID = 0xff
 
@@ -29,13 +25,6 @@ type AgentID struct {
 }
 
 var NilAgentID AgentID
-
-func init() {
-	NilAgentID = AgentID{
-		a: nil,
-		h: 0,
-	}
-}
 
 // NewAgentID makes new AgentID
 func NewAgentID(addr iotago.Address, hname Hname) *AgentID {
@@ -115,25 +104,36 @@ func AgentIDFromBytes(data []byte) (*AgentID, error) {
 }
 
 // NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (*AgentID, error) {
-	if !strings.HasPrefix(s, "A/") {
-		return nil, xerrors.New("NewAgentIDFromString: wrong prefix")
+func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (*AgentID, error) {
+	if s == "-" {
+		return &NilAgentID, nil
 	}
-	parts := strings.Split(s[2:], "::")
-	if len(parts) != 2 {
-		return nil, xerrors.New("NewAgentIDFromString: wrong format")
+	var hnamePart, addrPart string
+	{
+		parts := strings.Split(s, "@")
+		switch len(parts) {
+		case 1:
+			addrPart = parts[0]
+		case 2:
+			addrPart = parts[1]
+			hnamePart = parts[0]
+		default:
+			return nil, xerrors.New("NewAgentIDFromString: wrong format")
+		}
 	}
-	addrBytes, err := hex.DecodeString(parts[0])
+	prefix, addr, err := iotago.ParseBech32(addrPart)
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
-	addr, err := AddressFromMarshalUtil(marshalutil.New(addrBytes))
-	if err != nil {
-		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+	if prefix != networkPrefix {
+		return nil, xerrors.Errorf("NewAgentIDFromString: expected network prefix %s, got %s", networkPrefix, prefix)
 	}
-	hname, err := HnameFromString(parts[1])
-	if err != nil {
-		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+	var hname Hname
+	if hnamePart != "" {
+		hname, err = HnameFromString(hnamePart)
+		if err != nil {
+			return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+		}
 	}
 	return NewAgentID(addr, hname), nil
 }
@@ -158,6 +158,11 @@ func (a *AgentID) Address() iotago.Address {
 
 func (a *AgentID) Hname() Hname {
 	return a.h
+}
+
+// Key returns string(Bytes()), which can be used as a key in maps, etc.
+func (a *AgentID) Key() string {
+	return string(a.Bytes())
 }
 
 func (a *AgentID) Bytes() []byte {
@@ -195,12 +200,14 @@ func (a *AgentID) Equals(a1 *AgentID) bool {
 	return true
 }
 
-// String human readable string
-func (a *AgentID) String() string {
+func (a *AgentID) String(networkPrefix iotago.NetworkPrefix) string {
 	if a.IsNil() {
-		return "A/0::0"
+		return "-"
 	}
-	return "A/" + a.a.String() + "::" + a.h.String()
+	if a.h == 0 {
+		return a.a.Bech32(networkPrefix)
+	}
+	return a.h.String() + "@" + a.a.Bech32(networkPrefix)
 }
 
 func (a *AgentID) Base58() string {

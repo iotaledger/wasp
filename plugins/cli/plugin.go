@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/wasp"
 	flag "github.com/spf13/pflag"
+	"go.uber.org/dig"
 )
 
 // PluginName is the name of the CLI plugin.
@@ -27,7 +28,7 @@ func onAddPlugin(name string, status int) {
 	AddPluginStatus(node.GetPluginIdentifier(name), status)
 }
 
-func onInit(*node.Plugin) {
+func onInit(*node.Plugin, *dig.Container) {
 	for name, plugin := range node.GetPlugins() {
 		onAddPlugin(name, plugin.Status)
 	}

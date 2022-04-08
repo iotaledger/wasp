@@ -17,6 +17,7 @@ func (m MapAgentIDToImmutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.Sc
 	return wasmtypes.NewScImmutableBool(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
+// approval status of each operator
 type ImmutableOperators = MapAgentIDToImmutableBool
 
 type MapAgentIDToMutableBool struct {
@@ -31,4 +32,5 @@ func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMu
 	return wasmtypes.NewScMutableBool(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
+// approval status of each operator
 type MutableOperators = MapAgentIDToMutableBool

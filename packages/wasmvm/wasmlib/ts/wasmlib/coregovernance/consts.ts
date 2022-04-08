@@ -12,7 +12,6 @@ export const ScDescription = "Core governance contract";
 export const HScName       = new wasmtypes.ScHname(0x17cf909f);
 
 export const ParamChainOwner             = "oi";
-export const ParamFeeColor               = "fc";
 export const ParamHname                  = "hn";
 export const ParamMaxBlobSize            = "bs";
 export const ParamMaxEventSize           = "es";
@@ -27,7 +26,6 @@ export const ResultChainOwnerID                    = "o";
 export const ResultDefaultOwnerFee                 = "do";
 export const ResultDefaultValidatorFee             = "dv";
 export const ResultDescription                     = "d";
-export const ResultFeeColor                        = "f";
 export const ResultMaxBlobSize                     = "mb";
 export const ResultMaxEventSize                    = "me";
 export const ResultMaxEventsPerReq                 = "mr";

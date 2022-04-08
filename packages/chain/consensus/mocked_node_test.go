@@ -92,7 +92,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	require.Equal(env.T, uint32(0), originState.BlockIndex())
 	require.True(env.T, ret.addNewState(originState))
 
-	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID.AsAddress(), ret.NodeConn, log)
+	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
 	require.NoError(env.T, err)
 	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
@@ -101,7 +101,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	ret.doStateApproved(originState, env.InitStateOutput)
 
 	ret.ChainCore.OnStateCandidate(func(newState state.VirtualStateAccess, approvingOutputID *iotago.UTXOInput) { // State manager mock: state candidate received and is approved by checking that L1 has approving output
-		nsCommitment := trie.RootCommitment(newState.TrieAccess())
+		nsCommitment := trie.RootCommitment(newState.TrieNodeStore())
 		ret.Log.Debugf("State manager mock (OnStateCandidate): received state candidate: index %v, commitment %v, approving output ID %v",
 			newState.BlockIndex(), nsCommitment, iscp.OID(approvingOutputID))
 
@@ -112,7 +112,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		go func() {
 			var output *iotago.AliasOutput
 			getOutputFun := func() *iotago.AliasOutput {
-				return env.Ledgers.GetLedger(env.ChainID.AsAddress()).GetOutputByID(approvingOutputID)
+				return env.Ledgers.GetLedger(env.ChainID).GetOutputByID(approvingOutputID)
 			}
 			for output = getOutputFun(); output == nil; output = getOutputFun() {
 				ret.Log.Debugf("State manager mock (OnStateCandidate): transaction index %v has not been published yet", newState.BlockIndex())
@@ -140,10 +140,10 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 
 func (n *mockedNode) addNewState(newState state.VirtualStateAccess) bool {
 	newStateIndex := newState.BlockIndex()
-	nsCommitment := trie.RootCommitment(newState.TrieAccess())
+	nsCommitment := trie.RootCommitment(newState.TrieNodeStore())
 	oldState, ok := n.SolidStates[newStateIndex]
 	if ok {
-		osCommitment := trie.RootCommitment(oldState.TrieAccess())
+		osCommitment := trie.RootCommitment(oldState.TrieNodeStore())
 		if trie.EqualCommitments(osCommitment, nsCommitment) {
 			n.Log.Debugf("State manager mock: duplicating state candidate index %v commitment %s received; ignoring", newStateIndex, nsCommitment)
 		} else {
@@ -171,7 +171,7 @@ func (n *mockedNode) getState(index uint32) state.VirtualStateAccess {
 		n.Log.Debugf("State manager mock: node doesn't contain state index %v", index)
 		return nil
 	}
-	n.Log.Debugf("State manager mock: state index %v found, commitment %s", index, trie.RootCommitment(result.TrieAccess()))
+	n.Log.Debugf("State manager mock: state index %v found, commitment %s", index, trie.RootCommitment(result.TrieNodeStore()))
 	return result
 }
 
@@ -215,13 +215,13 @@ func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newState
 	n.stateSync.SetSolidIndex(n.StateOutput.GetStateIndex())
 	n.Consensus.EnqueueStateTransitionMsg(newState, n.StateOutput, time.Now())
 	n.Log.Debugf("State manager mock: new state %v approved, commitment %v, state output ID %v",
-		n.StateOutput.GetStateIndex(), trie.RootCommitment(newState.TrieAccess()), iscp.OID(n.StateOutput.ID()))
+		n.StateOutput.GetStateIndex(), trie.RootCommitment(newState.TrieNodeStore()), iscp.OID(n.StateOutput.ID()))
 }
 
 func (n *mockedNode) pullStateLoop() { // State manager mock: when node is behind and tries to catchup using state output from L1 and blocks (virtual states in mocke environment) from other nodes
 	for {
 		time.Sleep(200 * time.Millisecond)
-		stateOutput := n.Env.Ledgers.GetLedger(n.Env.ChainID.AsAddress()).GetLatestOutput()
+		stateOutput := n.Env.Ledgers.GetLedger(n.Env.ChainID).GetLatestOutput()
 		stateIndex := stateOutput.GetStateIndex()
 		if stateOutput != nil && (stateIndex > n.StateOutput.GetStateIndex()) {
 			n.Log.Debugf("State manager mock (pullStateLoop): new state output received: index %v, id %v",

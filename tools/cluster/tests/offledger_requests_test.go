@@ -130,7 +130,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
 	const clusterSize = 10
-	clu := newCluster(t, clusterSize)
+	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 
 	cmt := []int{0, 1, 2, 3}
 

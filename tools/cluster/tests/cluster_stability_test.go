@@ -27,7 +27,7 @@ type SabotageEnv struct {
 
 func InitializeStabilityTest(t *testing.T, numValidators, clusterSize int) *SabotageEnv {
 	progHash := inccounter.Contract.ProgramHash
-	env := setupWithChain(t, clusterSize)
+	env := setupWithChain(t, waspClusterOpts{nNodes: clusterSize})
 	_, _, err := env.clu.InitDKG(numValidators)
 
 	require.NoError(t, err)

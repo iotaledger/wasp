@@ -61,7 +61,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = allowance.balance(&ScColor::IOTA);
+    let amount: u64 = allowance.iotas();
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");
@@ -206,7 +206,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
             // in a simpler to use interface. The constructor we use here creates and initializes
             // a single token color transfer in a single statement. The actual color and amount
             // values passed in will be stored in a new map on the host.
-            let transfers: ScTransfers = ScTransfers::iotas(payout);
+            let transfers: ScTransfer = ScTransfer::iotas(payout);
 
             // Perform the actual transfer of tokens from the smart contract to the address
             // of the winner. The transfer_to_address() method receives the address value and
@@ -224,7 +224,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     let remainder: u64 = total_bet_amount - total_payout;
     if remainder != 0 {
         // We have a remainder. First create a transfer for the remainder.
-        let transfers: ScTransfers = ScTransfers::iotas(remainder);
+        let transfers: ScTransfer = ScTransfer::iotas(remainder);
 
         // Send the remainder to the contract creator.
         ctx.send(&ctx.contract_creator().address(), &transfers);

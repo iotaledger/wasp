@@ -12,12 +12,14 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // nodeconnChain is responsible for maintaining the information related to a single chain.
 type nodeconnChain struct {
 	nc        chain.NodeConnection
-	chainAddr iotago.Address
+	chainID *iscp.ChainID
 	log       *logger.Logger
 
 	aliasOutputIsHandled       bool
@@ -42,12 +44,12 @@ type txInclusionStateMsg struct {
 
 var _ chain.ChainNodeConnection = &nodeconnChain{}
 
-func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
+func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
 	var err error
 	result := nodeconnChain{
 		nc:                     nc,
-		chainAddr:              chainAddr,
-		log:                    log.Named("ncc-" + chainAddr.String()[2:8]),
+		chainID:                chainID,
+		log:                    log.Named("ncc-" + chainID.String()[2:8]),
 		aliasOutputCh:          make(chan *iscp.AliasOutputWithID),
 		aliasOutputStopCh:      make(chan bool),
 		onLedgerRequestCh:      make(chan *iscp.OnLedgerRequestData),
@@ -56,8 +58,8 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 		txInclusionStateStopCh: make(chan bool),
 		metrics:                nc.GetMetrics().NewMessagesMetrics(chainAddr),
 	}
-	result.nc.RegisterChain(result.chainAddr, result.outputHandler)
-	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainAddr, result.txInclusionStateHandler)
+	result.nc.RegisterChain(result.chainID, result.stateOutputHandler, result.outputHandler)
+	result.txInclusionStateHandlerRef, err = result.nc.AttachTxInclusionStateEvents(result.chainID, result.txInclusionStateHandler)
 	if err != nil {
 		result.log.Errorf("cannot create chain nodeconnection: %v", err)
 		return nil, err
@@ -66,7 +68,11 @@ func NewChainNodeConnection(chainAddr iotago.Address, nc chain.NodeConnection, l
 	return &result, nil
 }
 
-func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
+func (nccT *nodeconnChain) L1Params() *parameters.L1 {
+	return nccT.nc.L1Params()
+}
+
+func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output iotago.Output) {
 	nccT.metrics.GetInOutput().CountLastMessage(struct {
 		OutputID iotago.OutputID
 		Output   iotago.Output
@@ -76,14 +82,29 @@ func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago
 	})
 	outputIDUTXO := outputID.UTXOInput()
 	outputIDstring := iscp.OID(outputIDUTXO)
-	nccT.log.Debugf("handling output ID %v", outputIDstring)
+	nccT.log.Debugf("handling state output ID %v", outputIDstring)
 	aliasOutput, ok := output.(*iotago.AliasOutput)
-	if ok {
-		nccT.log.Debugf("handling output ID %v: writing alias output to channel", outputIDstring)
-		nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
-		nccT.log.Debugf("handling output ID %v: alias output handled", outputIDstring)
-		return
+	if !ok {
+		nccT.log.Panicf("unexpected output ID %v type %T received as state update to chain ID %s; alias output expected",
+			outputIDstring, output, nccT.chainID)
 	}
+	if aliasOutput.AliasID.Empty() && aliasOutput.StateIndex != 0 {
+		nccT.log.Panicf("unexpected output ID %v index %v with empty alias ID received as state update to chain ID %s; alias ID may be empty for initial alias output only",
+			outputIDstring, aliasOutput.StateIndex, nccT.chainID)
+	}
+	if !util.AliasIDFromAliasOutput(aliasOutput, outputID).ToAddress().Equal(nccT.chainID.AsAddress()) {
+		nccT.log.Panicf("unexpected output ID %v address %s index %v received as state update to chain ID %s, address %s",
+			outputIDstring, aliasOutput.AliasID.ToAddress(), aliasOutput.StateIndex, nccT.chainID, nccT.chainID.AsAddress())
+	}
+	nccT.log.Debugf("handling state output ID %v: writing alias output to channel", outputIDstring)
+		nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
+	nccT.log.Debugf("handling state output ID %v: alias output handled", outputIDstring)
+	}
+
+func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago.Output) {
+	outputIDUTXO := outputID.UTXOInput()
+	outputIDstring := iscp.OID(outputIDUTXO)
+	nccT.log.Debugf("handling output ID %v", outputIDstring)
 	onLedgerRequest, err := iscp.OnLedgerFromUTXO(output, outputIDUTXO)
 	if err != nil {
 		nccT.log.Warnf("handling output ID %v: unknown output type; ignoring it", outputIDstring)
@@ -228,22 +249,22 @@ func (nccT *nodeconnChain) PublishTransaction(stateIndex uint32, tx *iotago.Tran
 		StateIndex:  stateIndex,
 		Transaction: tx,
 	})
-	return nccT.nc.PublishTransaction(nccT.chainAddr, stateIndex, tx)
+	return nccT.nc.PublishTransaction(nccT.chainID, stateIndex, tx)
 }
 
 func (nccT *nodeconnChain) PullLatestOutput() {
 	nccT.metrics.GetOutPullLatestOutput().CountLastMessage(nil)
-	nccT.nc.PullLatestOutput(nccT.chainAddr)
+	nccT.nc.PullLatestOutput(nccT.chainID)
 }
 
 func (nccT *nodeconnChain) PullTxInclusionState(txID iotago.TransactionID) {
 	nccT.metrics.GetOutPullTxInclusionState().CountLastMessage(txID)
-	nccT.nc.PullTxInclusionState(nccT.chainAddr, txID)
+	nccT.nc.PullTxInclusionState(nccT.chainID, txID)
 }
 
 func (nccT *nodeconnChain) PullOutputByID(outputID *iotago.UTXOInput) {
 	nccT.metrics.GetOutPullOutputByID().CountLastMessage(outputID)
-	nccT.nc.PullOutputByID(nccT.chainAddr, outputID)
+	nccT.nc.PullOutputByID(nccT.chainID, outputID)
 }
 
 func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
@@ -252,7 +273,7 @@ func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMe
 
 func (nccT *nodeconnChain) Close() {
 	nccT.DetachFromMilestones()
-	_ = nccT.nc.DetachTxInclusionStateEvents(nccT.chainAddr, nccT.txInclusionStateHandlerRef)
-	nccT.nc.UnregisterChain(nccT.chainAddr)
+	_ = nccT.nc.DetachTxInclusionStateEvents(nccT.chainID, nccT.txInclusionStateHandlerRef)
+	nccT.nc.UnregisterChain(nccT.chainID)
 	nccT.log.Debugf("chain nodeconnection closed")
 }

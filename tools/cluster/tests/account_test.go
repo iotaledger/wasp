@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/utxodb"
 
@@ -17,6 +16,8 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
+
+const someIotas = 1000
 
 func TestBasicAccounts(t *testing.T) {
 	e := setupWithNoChain(t)
@@ -95,7 +96,7 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	}
 
 	if !e.clu.AssertAddressBalances(e.chain.ChainID.AsAddress(),
-		iscp.NewTokensIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+chainNodeCount)) {
+		iscp.NewTokensIotas(someIotas+2+chainNodeCount)) {
 		e.t.Fail()
 	}
 
@@ -122,7 +123,7 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	}
 
 	if !e.clu.AssertAddressBalances(e.chain.ChainID.AsAddress(),
-		iscp.NewTokensIotas(ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2+chainNodeCount)) {
+		iscp.NewTokensIotas(someIotas+transferIotas+2+chainNodeCount)) {
 		e.t.Fail()
 	}
 	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
@@ -185,7 +186,7 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 
 	if !e.clu.AssertAddressBalances(chain.ChainID.AsAddress(),
-		iscp.NewTokensIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+chainNodeCount)) {
+		iscp.NewTokensIotas(someIotas+2+chainNodeCount)) {
 		t.Fail()
 	}
 
@@ -193,7 +194,7 @@ func TestBasic2Accounts(t *testing.T) {
 	originatorAddress := chain.OriginatorAddress()
 
 	if !e.clu.AssertAddressBalances(originatorAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-ledgerstate.DustThresholdAliasOutputIOTA-2-chainNodeCount)) {
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-2-chainNodeCount)) {
 		t.Fail()
 	}
 	chEnv.checkLedger()
@@ -220,14 +221,14 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, 43, counterValue)
 	}
 	if !e.clu.AssertAddressBalances(originatorAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-ledgerstate.DustThresholdAliasOutputIOTA-2-chainNodeCount)) {
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-2-chainNodeCount)) {
 		t.Fail()
 	}
 	if !e.clu.AssertAddressBalances(myWalletAddr, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
 		t.Fail()
 	}
 	if !e.clu.AssertAddressBalances(chain.ChainID.AsAddress(),
-		iscp.NewTokensIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas+chainNodeCount)) {
+		iscp.NewTokensIotas(someIotas+2+transferIotas+chainNodeCount)) {
 		t.Fail()
 	}
 	// verify and print chain accounts
@@ -238,7 +239,7 @@ func TestBasic2Accounts(t *testing.T) {
 	chEnv.printAccounts("withdraw before")
 
 	// withdraw back 2 iotas to originator address
-	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(iscp.NetworkPrefix))
+	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.clu.L1Client().L1Params().Bech32Prefix))
 	originatorClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	reqTx2, err := originatorClient.Post1Request(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname())
 	require.NoError(t, err)
@@ -256,7 +257,7 @@ func TestBasic2Accounts(t *testing.T) {
 	require.EqualValues(t, 0, actual)
 
 	if !e.clu.AssertAddressBalances(originatorAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-ledgerstate.DustThresholdAliasOutputIOTA-3-chainNodeCount)) {
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-3-chainNodeCount)) {
 		t.Fail()
 	}
 }

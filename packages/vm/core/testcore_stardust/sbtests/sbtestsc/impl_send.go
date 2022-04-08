@@ -81,7 +81,7 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 	provided := ctx.AllowanceAvailable().Assets.Iotas
 
 	requestParams := iscp.RequestParameters{
-		TargetAddress: tpkg.RandEd25519Address(),
+		TargetAddress: ctx.Caller().Address(),
 		Metadata: &iscp.SendMetadata{
 			EntryPoint:     iscp.Hn("foo"),
 			TargetContract: iscp.Hn("bar"),
@@ -90,9 +90,7 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 	}
 
 	required := ctx.EstimateRequiredDustDeposit(requestParams)
-	if provided < required {
-		panic("not enough funds")
-	}
+	ctx.Requiref(provided >= required, "not enough funds")
 	return nil
 }
 

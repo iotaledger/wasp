@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
@@ -288,10 +289,16 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(e.t, e.resolveError(err))
-	req.WithGasBudget(iscpGas).AddIotas(iscpGasFee)
+	req.WithGasBudget(iscpGas)
+
+	// deposit gas fee
+	depositGasFeeReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
+	_, fee2, err := e.soloChain.EstimateGasOnLedger(depositGasFeeReq, nil, true)
+	require.NoError(e.t, e.resolveError(err))
+	_, err = e.soloChain.PostRequestSync(depositGasFeeReq.AddIotas(iscpGasFee+fee2), nil)
 
 	// send EVM tx
-	_, err = e.soloChain.PostRequestSync(req, nil)
+	_, err = e.soloChain.PostRequestOffLedger(req, nil)
 	require.NoError(e.t, e.resolveError(err))
 
 	return &evmContractInstance{
@@ -371,6 +378,15 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	return
 }
 
+func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
+	res, err := e.callFn(opts, fnName, args...)
+	require.NoError(e.chain.t, err)
+	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+	require.Len(e.chain.t, res.evmReceipt.Logs, 1)
+	err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+	require.NoError(e.chain.t, err)
+}
+
 func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, args []interface{}, v interface{}) {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
@@ -404,10 +420,6 @@ func (i *iscTestContractInstance) triggerEvent(s string) (res callFnResult, err 
 
 func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res callFnResult, err error) {
 	return i.callFn(opts, "triggerEventFail", s)
-}
-
-func (i *iscTestContractInstance) emitEntropy() (res callFnResult, err error) {
-	return i.callFn(nil, "emitEntropy")
 }
 
 func (s *storageContractInstance) retrieve() uint32 {

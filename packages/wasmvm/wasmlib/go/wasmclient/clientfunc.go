@@ -3,9 +3,7 @@
 
 package wasmclient
 
-import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
-)
+import "github.com/iotaledger/wasp/packages/cryptolib"
 
 type ClientFunc struct {
 	svc      *Service

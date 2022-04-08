@@ -13,6 +13,7 @@ type ImmutableDepositParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default is caller
 func (s ImmutableDepositParams) AgentID() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
@@ -21,6 +22,7 @@ type MutableDepositParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default is caller
 func (s MutableDepositParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
@@ -29,40 +31,18 @@ type ImmutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default (zero) means all
 func (s ImmutableHarvestParams) WithdrawAmount() wasmtypes.ScImmutableInt64 {
 	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamWithdrawAmount))
-}
-
-func (s ImmutableHarvestParams) WithdrawColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamWithdrawColor))
 }
 
 type MutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default (zero) means all
 func (s MutableHarvestParams) WithdrawAmount() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamWithdrawAmount))
-}
-
-func (s MutableHarvestParams) WithdrawColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamWithdrawColor))
-}
-
-type ImmutableBalanceParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableBalanceParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
-}
-
-type MutableBalanceParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableBalanceParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type ImmutableGetAccountNonceParams struct {

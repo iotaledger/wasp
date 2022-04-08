@@ -24,11 +24,10 @@ func (c Encoder) FromAgentID(value AgentID) []byte {
 }
 
 func (c Encoder) FromBool(value bool) []byte {
-	bytes := []byte{0}
 	if value {
-		bytes[0] = 1
+		return []byte{0xff}
 	}
-	return bytes
+	return []byte{0x00}
 }
 
 func (c Encoder) FromBytes(value []byte) []byte {

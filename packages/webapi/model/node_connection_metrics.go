@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
@@ -19,7 +20,7 @@ type NodeConnectionMessagesMetrics struct {
 	OutPullTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullTxInclusionState messages)"`
 	OutPullOutputByID       *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullOutputByID messages)"`
 
-	InOutput           *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Output messages)"`
+	InOutput             *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Output messages)"`
 	InAliasOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received AliasOutput messages)"`
 	InOnLedgerRequest  *NodeConnectionMessageMetrics `swagger:"desc(Stats of received OnLedgerRequest messages)"`
 	InTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of received TxInclusionState messages)"`
@@ -31,12 +32,12 @@ type NodeConnectionMetrics struct {
 	Registered  []Address                     `swagger:"desc(Addresses of the chains registered to receiving L1 events)"`
 }
 
-func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) *NodeConnectionMetrics {
+func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics, networkPrefix iotago.NetworkPrefix) *NodeConnectionMetrics {
 	ncmm := NewNodeConnectionMessagesMetrics(metrics)
 	registered := metrics.GetRegistered()
 	r := make([]Address, len(registered))
 	for i := range r {
-		r[i] = NewAddress(registered[i])
+		r[i] = NewAddress(registered[i], networkPrefix)
 	}
 	return &NodeConnectionMetrics{
 		NodeConnectionMessagesMetrics: *ncmm,
@@ -52,7 +53,7 @@ func NewNodeConnectionMessagesMetrics(metrics nodeconnmetrics.NodeConnectionMess
 		OutPullTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetOutPullTxInclusionState()),
 		OutPullOutputByID:       NewNodeConnectionMessageMetrics(metrics.GetOutPullOutputByID()),
 
-		InOutput:           NewNodeConnectionMessageMetrics(metrics.GetInOutput()),
+		InOutput:             NewNodeConnectionMessageMetrics(metrics.GetInOutput()),
 		InAliasOutput:      NewNodeConnectionMessageMetrics(metrics.GetInAliasOutput()),
 		InOnLedgerRequest:  NewNodeConnectionMessageMetrics(metrics.GetInOnLedgerRequest()),
 		InTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetInTxInclusionState()),

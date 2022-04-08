@@ -1,7 +1,6 @@
 package blocklog
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
 	"math"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -33,13 +33,17 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 		PreviousStateCommitment: state.OriginStateCommitment(),
 	})
 	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
 	return nil
 }
 
 // viewGetBlockInfo returns blockInfo for a given block.
 // params:
-// ParamBlockIndex - index of the block (defaults to latest block)
+// ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx iscp.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
 	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)

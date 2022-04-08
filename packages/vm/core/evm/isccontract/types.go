@@ -4,8 +4,12 @@
 package isccontract
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // ISCChainID matches the type definition in ISC.sol
@@ -32,6 +36,40 @@ func (c ISCChainID) MustUnwrap() *iscp.ChainID {
 		panic(err)
 	}
 	return ret
+}
+
+// IotaNativeTokenID matches the struct definition in ISC.sol
+type IotaNativeTokenID struct {
+	Data []byte
+}
+
+func WrapIotaNativeTokenID(id *iotago.NativeTokenID) IotaNativeTokenID {
+	return IotaNativeTokenID{Data: id[:]}
+}
+
+func (a IotaNativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
+	copy(ret[:], a.Data)
+	return
+}
+
+// IotaNativeToken matches the struct definition in ISC.sol
+type IotaNativeToken struct {
+	ID     IotaNativeTokenID
+	Amount *big.Int
+}
+
+func WrapIotaNativeToken(nt *iotago.NativeToken) IotaNativeToken {
+	return IotaNativeToken{
+		ID:     WrapIotaNativeTokenID(&nt.ID),
+		Amount: nt.Amount,
+	}
+}
+
+func (nt IotaNativeToken) Unwrap() *iotago.NativeToken {
+	return &iotago.NativeToken{
+		ID:     nt.ID.Unwrap(),
+		Amount: nt.Amount,
+	}
 }
 
 // IotaAddress matches the struct definition in ISC.sol
@@ -94,13 +132,7 @@ func init() {
 	}
 }
 
-func IotaNFTIDFromUnpackedArg(arg interface{}) (ret IotaNFTID) {
-	b := arg.([iotago.NFTIDLength]byte)
-	copy(ret[:], b[:])
-	return
-}
-
-func WrapISCNFTID(c iotago.NFTID) (ret IotaNFTID) {
+func WrapIotaNFTID(c iotago.NFTID) (ret IotaNFTID) {
 	copy(ret[:], c[:])
 	return
 }
@@ -119,7 +151,7 @@ type ISCNFT struct {
 
 func WrapISCNFT(n *iscp.NFT) ISCNFT {
 	return ISCNFT{
-		ID:       WrapISCNFTID(n.ID),
+		ID:       WrapIotaNFTID(n.ID),
 		Issuer:   WrapIotaAddress(n.Issuer),
 		Metadata: n.Metadata,
 	}
@@ -141,6 +173,68 @@ func (a ISCNFT) MustUnwrap() *iscp.NFT {
 	ret, err := a.Unwrap()
 	if err != nil {
 		panic(err)
+	}
+	return ret
+}
+
+// ISCAllowance matches the struct definition in ISC.sol
+type ISCAllowance struct {
+	Iotas  uint64
+	Tokens []IotaNativeToken
+	NFTs   []IotaNFTID
+}
+
+func WrapISCAllowance(a *iscp.Allowance) ISCAllowance {
+	tokens := make([]IotaNativeToken, len(a.Assets.Tokens))
+	for i, t := range a.Assets.Tokens {
+		tokens[i] = WrapIotaNativeToken(t)
+	}
+	nfts := make([]IotaNFTID, len(a.NFTs))
+	for i, id := range a.NFTs {
+		nfts[i] = WrapIotaNFTID(id)
+	}
+	return ISCAllowance{
+		Iotas:  a.Assets.Iotas,
+		Tokens: tokens,
+		NFTs:   nfts,
+	}
+}
+
+func (a ISCAllowance) Unwrap() *iscp.Allowance {
+	tokens := make(iotago.NativeTokens, len(a.Tokens))
+	for i, t := range a.Tokens {
+		tokens[i] = t.Unwrap()
+	}
+	nfts := make([]iotago.NFTID, len(a.NFTs))
+	for i, id := range a.NFTs {
+		nfts[i] = id.Unwrap()
+	}
+	return iscp.NewAllowance(a.Iotas, tokens, nfts)
+}
+
+// ISCDictItem matches the struct definition in ISC.sol
+type ISCDictItem struct {
+	Key   []byte
+	Value []byte
+}
+
+// ISCDict matches the struct definition in ISC.sol
+type ISCDict struct {
+	Items []ISCDictItem
+}
+
+func WrapISCDict(d dict.Dict) ISCDict {
+	items := make([]ISCDictItem, 0, len(d))
+	for k, v := range d {
+		items = append(items, ISCDictItem{Key: []byte(k), Value: v})
+	}
+	return ISCDict{Items: items}
+}
+
+func (d ISCDict) Unwrap() dict.Dict {
+	ret := dict.Dict{}
+	for _, item := range d.Items {
+		ret[kv.Key(item.Key)] = item.Value
 	}
 	return ret
 }

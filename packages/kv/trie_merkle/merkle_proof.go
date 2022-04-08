@@ -2,11 +2,12 @@ package trie_merkle
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"io"
 )
 
 type Proof struct {
@@ -123,7 +124,7 @@ func (p *Proof) MustIsProofOfAbsence() bool {
 	return r == nil
 }
 
-// Validate check the proof agains the provided root commitments
+// Validate check the proof against the provided root commitments
 // if 'value' is specified, checks if commitment to that value is the terminal of the last element in path
 func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 	if len(p.Path) == 0 {
@@ -148,6 +149,18 @@ func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 		}
 	}
 	return nil
+}
+
+// CommitmentToTheTerminalNode returns hash of the last node in the proof
+// If it is a valid proof, it s always contains terminal commitment
+// It is useful to get commitment to the substate. It must contain some value
+// at its nil postfix
+func (p *Proof) CommitmentToTheTerminalNode() trie.VCommitment {
+	if len(p.Path) == 0 {
+		return nil
+	}
+	ret := p.Path[len(p.Path)-1].hashIt(nil)
+	return (*vectorCommitment)(&ret)
 }
 
 func (p *Proof) verify(pathIdx, keyIdx int) ([32]byte, error) {
@@ -337,5 +350,4 @@ func (e *ProofElement) Read(r io.Reader) error {
 		}
 	}
 	return nil
-
 }

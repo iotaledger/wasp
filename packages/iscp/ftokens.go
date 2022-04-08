@@ -79,6 +79,14 @@ func FungibleTokensFromNativeTokenSum(iotas uint64, tokens iotago.NativeTokenSum
 	return ret
 }
 
+func FungibleTokensFromOutputMap(outs map[iotago.OutputID]iotago.Output) *FungibleTokens {
+	ret := NewEmptyAssets()
+	for _, out := range outs {
+		ret.Add(FungibleTokensFromOutput(out))
+	}
+	return ret
+}
+
 func FungibleTokensFromOutput(o iotago.Output) *FungibleTokens {
 	ret := &FungibleTokens{
 		Iotas:  o.Deposit(),

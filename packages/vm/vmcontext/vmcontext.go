@@ -1,8 +1,10 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/parameters"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -97,7 +99,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieAccess())
+	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieNodeStore())
 	blockIndex := optimisticStateAccess.BlockIndex()
 	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
@@ -168,6 +170,10 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	return ret
 }
 
+func (vmctx *VMContext) L1Params() *parameters.L1 {
+	return vmctx.task.L1Params
+}
+
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, trie.VCommitment, time.Time, iotago.Address) {
@@ -180,7 +186,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.virtualState.Commit()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
-	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieAccess())
+	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
 	timestamp := vmctx.virtualState.Timestamp()
 
 	return blockIndex, stateCommitment, timestamp, rotationAddr

@@ -19,19 +19,19 @@ views:
     params:
       blockIndex=n: Uint32
     results:
-      event=e: Bytes[] // native contract, so this is an Array16
+      event=e: Bytes[] # native contract, so this is an Array16
   getEventsForContract:
     params:
       contractHname=h: Hname
       fromBlock=f: Uint32?
       toBlock=t: Uint32?
     results:
-      event=e: Bytes[] // native contract, so this is an Array16
+      event=e: Bytes[] # native contract, so this is an Array16
   getEventsForRequest:
     params:
       requestID=u: RequestID
     results:
-      event=e: Bytes[] // native contract, so this is an Array16
+      event=e: Bytes[] # native contract, so this is an Array16
   getLatestBlockInfo:
     results:
       blockIndex=n: Uint32
@@ -40,7 +40,7 @@ views:
     params:
       blockIndex=n: Uint32
     results:
-      requestID=u: RequestID[] // native contract, so this is an Array16
+      requestID=u: RequestID[] # native contract, so this is an Array16
   getRequestReceipt:
     params:
       requestID=u: RequestID
@@ -52,7 +52,7 @@ views:
     params:
       blockIndex=n: Uint32
     results:
-      requestRecord=d: Bytes[] // native contract, so this is an Array16
+      requestRecord=d: Bytes[] # native contract, so this is an Array16
   isRequestProcessed:
     params:
       requestID=u: RequestID

@@ -16,7 +16,8 @@ func TestSpawn(t *testing.T) {
 
 	ch.MustDepositIotasToL2(10_000, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncSpawn.Name).
+	req := solo.NewCallParams(ScName, sbtestsc.FuncSpawn.Name,
+		sbtestsc.ParamProgHash, sbtestsc.Contract.ProgramHash).
 		WithGasBudget(100_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)

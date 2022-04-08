@@ -14,29 +14,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBlsCommonCoin(t *testing.T) {
+func TestBLSCommonCoin(t *testing.T) {
 	var err error
 	netIDs, identities := testpeers.SetupKeys(10)
-	address, regProviders := testpeers.SetupDkgPregenerated(t, 7, identities, tcrypto.DefaultSuite())
+	address, regProviders := testpeers.SetupDkgPregenerated(t, 7, identities)
 
 	ccs := make([]hbbft.CommonCoin, len(netIDs))
 	salt := []byte{0, 1, 2, 3}
 	for i := range ccs {
-		var dkShare *tcrypto.DKShare
+		var dkShare tcrypto.DKShare
 		dkShare, err = regProviders[i].LoadDKShare(address)
 		require.NoError(t, err)
-		ccs[i] = commoncoin.NewBlsCommonCoin(dkShare, salt, true)
+		ccs[i] = commoncoin.NewBLSCommonCoin(dkShare, salt, true)
 	}
 
 	for epoch := uint32(0); epoch <= 10; epoch++ {
-		t.Run(fmt.Sprintf("TestBlsCommonCoin/epoch=%v", epoch), func(tt *testing.T) {
-			testBlsCommonCoin(tt, epoch, ccs)
+		t.Run(fmt.Sprintf("TestBLSCommonCoin/epoch=%v", epoch), func(tt *testing.T) {
+			testBLSCommonCoin(tt, epoch, ccs)
 		})
 	}
 }
 
 // Runs CC for a single epoch.
-func testBlsCommonCoin(t *testing.T, epoch uint32, ccs []hbbft.CommonCoin) {
+func testBLSCommonCoin(t *testing.T, epoch uint32, ccs []hbbft.CommonCoin) {
 	var err error
 	coins := make([]*bool, len(ccs))
 	msgs := make([]interface{}, 0)

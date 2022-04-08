@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -37,4 +38,5 @@ type WaspContext interface {
 	GasBudgetLeft() uint64
 	GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID
 	GetNFTData(nftID iotago.NFTID) iscp.NFT
+	L1Params() *parameters.L1
 }

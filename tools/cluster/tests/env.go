@@ -128,11 +128,11 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 	}
 }
 
-func setupWithNoChain(t *testing.T, opt ...interface{}) *env {
+func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *env {
 	return &env{t: t, clu: newCluster(t, opt...)}
 }
 
-func setupWithChain(t *testing.T, opt ...interface{}) *chainEnv {
+func setupWithChain(t *testing.T, opt ...waspClusterOpts) *chainEnv {
 	e := setupWithNoChain(t, opt...)
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)

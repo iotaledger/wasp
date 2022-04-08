@@ -55,10 +55,11 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnUtilsHashName,
 	(*WasmContextSandbox).fnUtilsHashSha3,
 	(*WasmContextSandbox).fnTransferAllowed,
+	(*WasmContextSandbox).fnEstimateDust,
 }
 
 // '$' prefix indicates a string param
-// '$' prefix indicates a bytes param
+// '#' prefix indicates a bytes param
 // otherwise there is no param
 // NOTE: These strings correspond to the Sandbox fnXxx constants in WasmLib
 var sandboxFuncNames = []string{
@@ -100,6 +101,7 @@ var sandboxFuncNames = []string{
 	"$FnUtilsHashName",
 	"#FnUtilsHashSha3",
 	"#FnTransferAllowed",
+	"#FnEstimateDust",
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
@@ -140,6 +142,48 @@ func (s *WasmContextSandbox) checkErr(err error) {
 	}
 }
 
+func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
+	req := wasmrequests.NewPostRequestFromBytes(args)
+	chainID := s.cvt.IscpChainID(&req.ChainID)
+	contract := s.cvt.IscpHname(req.Contract)
+	function := s.cvt.IscpHname(req.Function)
+	params, err := dict.FromBytes(req.Params)
+	s.checkErr(err)
+
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	allowance := s.cvt.IscpAllowance(scAssets)
+	assets := allowance
+	// Force a minimum transfer of 1000 iotas for dust and some gas
+	// excess can always be reclaimed from the chain account by the user
+	// This also removes the silly requirement to transfer 1 iota
+	if assets.Assets.Iotas < 1000 {
+		// assets are different from allowance, so clone allowance before modifying
+		assets = allowance.Clone()
+		assets.Assets.Iotas = 1000
+	}
+
+	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
+	sendReq := iscp.RequestParameters{
+		AdjustToMinimumDustDeposit: true,
+		TargetAddress:              chainID.AsAddress(),
+		FungibleTokens:             assets.Assets,
+		Metadata: &iscp.SendMetadata{
+			TargetContract: contract,
+			EntryPoint:     function,
+			Params:         params,
+			// TODO check, probably not correct
+			Allowance: allowance,
+			GasBudget: 500_000,
+		},
+	}
+	if req.Delay != 0 {
+		timeLock := time.Unix(0, s.ctx.Timestamp())
+		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
+		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
+	}
+	return sendReq
+}
+
 func (s *WasmContextSandbox) Panicf(format string, args ...interface{}) {
 	s.common.Log().Panicf(format, args...)
 }
@@ -156,23 +200,23 @@ func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
 	allowance := s.ctx.AllowanceAvailable()
-	// TODO check, allowance.FungibleTokens is wrong
-	return s.cvt.ScBalances(allowance.Assets).Bytes()
+	return s.cvt.ScBalances(allowance).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
-	color := wasmtypes.ColorFromBytes(args)
-	if color == wasmtypes.IOTA {
+	if len(args) == 0 {
 		return codec.EncodeUint64(s.common.BalanceIotas())
 	}
-	token := s.cvt.IscpColor(&color)
+	tokenID := wasmtypes.TokenIDFromBytes(args)
+	token := s.cvt.IscpTokenID(&tokenID)
 	return codec.EncodeUint64(s.common.BalanceNativeToken(token).Uint64())
 }
 
 func (s *WasmContextSandbox) fnBalances(args []byte) []byte {
-	assets := s.common.BalanceFungibleTokens()
-	balances := s.cvt.ScBalances(assets)
-	return balances.Bytes()
+	allowance := &iscp.Allowance{}
+	allowance.Assets = s.common.BalanceFungibleTokens()
+	allowance.NFTs = s.common.OwnedNFTs()
+	return s.cvt.ScBalances(allowance).Bytes()
 }
 
 func (s *WasmContextSandbox) fnBlockContext(args []byte) []byte {
@@ -185,10 +229,10 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	assets := s.cvt.IscpAssets(scAssets)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	allowance := s.cvt.IscpAllowance(scAssets)
 	// TODO check, probably not right
-	transfer := iscp.NewAllowanceFungibleTokens(assets.Assets)
+	transfer := iscp.NewAllowanceFungibleTokens(allowance.Assets)
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
 	results := s.callUnlocked(contract, function, params, transfer)
 	return results.Bytes()
@@ -246,6 +290,11 @@ func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
 	return s.cvt.ScHash(s.ctx.GetEntropy()).Bytes()
 }
 
+func (s *WasmContextSandbox) fnEstimateDust(args []byte) []byte {
+	dust := s.ctx.EstimateRequiredDustDeposit(s.makeRequest(args))
+	return codec.EncodeUint64(dust)
+}
+
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 	s.ctx.Event(string(args))
 	return nil
@@ -271,46 +320,7 @@ func (s *WasmContextSandbox) fnParams(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnPost(args []byte) []byte {
-	req := wasmrequests.NewPostRequestFromBytes(args)
-	chainID := s.cvt.IscpChainID(&req.ChainID)
-	contract := s.cvt.IscpHname(req.Contract)
-	function := s.cvt.IscpHname(req.Function)
-	params, err := dict.FromBytes(req.Params)
-	s.checkErr(err)
-
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	allowance := s.cvt.IscpAssets(scAssets)
-	assets := allowance
-	// Force a minimum transfer of 1000 iotas for dust and some gas
-	// excess can always be reclaimed from the chain account by the user
-	// This also removes the silly requirement to transfer 1 iota
-	if assets.Assets.Iotas < 1000 {
-		// assets are different from allowance, so clone allowance before modifying
-		assets = allowance.Clone()
-		assets.Assets.Iotas = 1000
-	}
-
-	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
-	sendReq := iscp.RequestParameters{
-		AdjustToMinimumDustDeposit: true,
-		TargetAddress:              chainID.AsAddress(),
-		FungibleTokens:             assets.Assets,
-		Metadata: &iscp.SendMetadata{
-			TargetContract: contract,
-			EntryPoint:     function,
-			Params:         params,
-			// TODO check, probably not correct
-			Allowance: allowance,
-			GasBudget: 1_000_000,
-		},
-	}
-	if req.Delay != 0 {
-		timeLock := time.Unix(0, s.ctx.Timestamp())
-		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
-		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
-	}
-
-	s.ctx.Send(sendReq)
+	s.ctx.Send(s.makeRequest(args))
 	return nil
 }
 
@@ -336,14 +346,19 @@ func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	req := wasmrequests.NewSendRequestFromBytes(args)
 	address := s.cvt.IscpAddress(&req.Address)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) != 0 {
-		allowance := s.cvt.IscpAssets(scAssets)
-		s.ctx.Send(iscp.RequestParameters{
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	if !scAssets.IsEmpty() {
+		allowance := s.cvt.IscpAllowance(scAssets)
+		metadata := iscp.RequestParameters{
 			AdjustToMinimumDustDeposit: true,
 			TargetAddress:              address,
 			FungibleTokens:             allowance.Assets,
-		})
+		}
+		if len(allowance.NFTs) == 0 {
+			s.ctx.Send(metadata)
+			return nil
+		}
+		s.ctx.SendAsNFT(metadata, allowance.NFTs[0])
 	}
 	return nil
 }
@@ -365,9 +380,9 @@ func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	req := wasmrequests.NewTransferRequestFromBytes(args)
 	agentID := s.cvt.IscpAgentID(&req.AgentID)
-	scAssets := wasmlib.NewScAssetsFromBytes(req.Transfer)
-	if len(scAssets) != 0 {
-		allowance := s.cvt.IscpAssets(scAssets)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	if !scAssets.IsEmpty() {
+		allowance := s.cvt.IscpAllowance(scAssets)
 		if req.Create {
 			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, allowance)
 		} else {

@@ -95,7 +95,7 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, node
 		return 0
 	}
 
-	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID[:])), 0)
+	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID)), 0)
 	require.NoError(e.t, err)
 
 	return actual
@@ -155,7 +155,7 @@ func (e *chainEnv) printAccounts(title string) {
 	allBalances := e.getBalancesOnChain()
 	s := fmt.Sprintf("------------------------------------- %s\n", title)
 	for aid, bals := range allBalances {
-		s += fmt.Sprintf("     %s\n", aid.String())
+		s += fmt.Sprintf("     %s\n", aid.String(e.clu.GetL1NetworkPrefix()))
 		s += fmt.Sprintf("%s\n", bals.String())
 	}
 	fmt.Println(s)

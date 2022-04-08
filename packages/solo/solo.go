@@ -48,6 +48,7 @@ import (
 const (
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
+	NetworkPrefix      = "solo"
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -249,21 +250,20 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(iscp.NetworkPrefix))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(iscp.NetworkPrefix))
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(iscp.NetworkPrefix))
+		name, chainID.String(), stateAddr.Bech32(NetworkPrefix))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(NetworkPrefix))
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(NetworkPrefix))
 
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieAccess()))
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieNodeStore()))
 
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
 	glbSync := coreutil.NewChainStateSync().SetSolidIndex(0)
-	srdr := state.NewOptimisticStateReader(store, glbSync)
 
 	ret := &Chain{
 		Env:                    env,
@@ -276,8 +276,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		State:                  vs,
-		StateReader:            srdr,
 		GlobalSync:             glbSync,
+		StateReader:            vs.OptimisticStateReader(glbSync),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 	}

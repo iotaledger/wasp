@@ -2,6 +2,7 @@ package trie
 
 import (
 	"bytes"
+
 	"github.com/iotaledger/wasp/packages/kv"
 )
 

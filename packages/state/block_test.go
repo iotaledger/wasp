@@ -1,11 +1,12 @@
 package state
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"testing"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"

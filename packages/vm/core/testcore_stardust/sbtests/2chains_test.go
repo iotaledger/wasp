@@ -24,6 +24,9 @@ import (
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
+	if w {
+		t.SkipNow()
+	}
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
@@ -54,7 +57,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain1TotalIotas := chain1.L2TotalIotas()
 	chain2TotalIotas := chain2.L2TotalIotas()
 
-	// send 42 iotas to contractAgentID (that is an entity of chain2) on chain1
+	// send iotas to contractAgentID (that is an entity of chain2) on chain1
 	iotasToSend := uint64(10000)
 	iotasCreditedToSc2OnChain1 := uint64(1321)
 	req := solo.NewCallParams(
@@ -85,7 +88,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertL2TotalIotas(chain2TotalIotas)
 
 	// make chain2 send a call to chain1 to withdraw iotas
-	reqAllowance := uint64(500)                               // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas
+	reqAllowance := accounts.ConstDepositFeeTmp   // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas
 	iotasToWithdrawalFromChain1 := iotasCreditedToSc2OnChain1 // try to withdraw all iotas deposited to chain1 on behalf of chain2's contract
 	// estimate gas cost of a withdrawal on chain1
 	estimatedWdGas, _, _ := chain1.EstimateGasOnLedger(

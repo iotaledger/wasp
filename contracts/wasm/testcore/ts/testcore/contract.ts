@@ -30,6 +30,14 @@ export class CheckContextFromFullEPContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
+export class ClaimAllowanceCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncClaimAllowance);
+}
+
+export class ClaimAllowanceContext {
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
 export class DoNothingCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDoNothing);
 }
@@ -38,13 +46,11 @@ export class DoNothingContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
-export class GetMintedSupplyCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncGetMintedSupply);
-	results: sc.ImmutableGetMintedSupplyResults = new sc.ImmutableGetMintedSupplyResults(wasmlib.ScView.nilProxy);
+export class EstimateMinDustCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncEstimateMinDust);
 }
 
-export class GetMintedSupplyContext {
-	results: sc.MutableGetMintedSupplyResults = new sc.MutableGetMintedSupplyResults(wasmlib.ScView.nilProxy);
+export class EstimateMinDustContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -53,6 +59,14 @@ export class IncCounterCall {
 }
 
 export class IncCounterContext {
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
+export class InfiniteLoopCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncInfiniteLoop);
+}
+
+export class InfiniteLoopContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -76,6 +90,14 @@ export class PassTypesFullContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
+export class PingAllowanceBackCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPingAllowanceBack);
+}
+
+export class PingAllowanceBackContext {
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
 export class RunRecursionCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRunRecursion);
 	params: sc.MutableRunRecursionParams = new sc.MutableRunRecursionParams(wasmlib.ScView.nilProxy);
@@ -88,13 +110,27 @@ export class RunRecursionContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
+export class SendLargeRequestCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSendLargeRequest);
+}
+
+export class SendLargeRequestContext {
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
+export class SendNFTsBackCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSendNFTsBack);
+}
+
+export class SendNFTsBackContext {
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
 export class SendToAddressCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSendToAddress);
-	params: sc.MutableSendToAddressParams = new sc.MutableSendToAddressParams(wasmlib.ScView.nilProxy);
 }
 
 export class SendToAddressContext {
-	params: sc.ImmutableSendToAddressParams = new sc.ImmutableSendToAddressParams(wasmlib.paramsProxy());
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -115,6 +151,22 @@ export class SpawnCall {
 
 export class SpawnContext {
 	params: sc.ImmutableSpawnParams = new sc.ImmutableSpawnParams(wasmlib.paramsProxy());
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
+export class SplitFundsCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSplitFunds);
+}
+
+export class SplitFundsContext {
+	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
+}
+
+export class SplitFundsNativeTokensCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSplitFundsNativeTokens);
+}
+
+export class SplitFundsNativeTokensContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -194,13 +246,13 @@ export class TestPanicFullEPContext {
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
-export class WithdrawToChainCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWithdrawToChain);
-	params: sc.MutableWithdrawToChainParams = new sc.MutableWithdrawToChainParams(wasmlib.ScView.nilProxy);
+export class WithdrawFromChainCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWithdrawFromChain);
+	params: sc.MutableWithdrawFromChainParams = new sc.MutableWithdrawFromChainParams(wasmlib.ScView.nilProxy);
 }
 
-export class WithdrawToChainContext {
-	params: sc.ImmutableWithdrawToChainParams = new sc.ImmutableWithdrawToChainParams(wasmlib.paramsProxy());
+export class WithdrawFromChainContext {
+	params: sc.ImmutableWithdrawFromChainParams = new sc.ImmutableWithdrawFromChainParams(wasmlib.paramsProxy());
 	state: sc.MutableTestCoreState = new sc.MutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -257,6 +309,14 @@ export class GetStringValueCall {
 export class GetStringValueContext {
 	params: sc.ImmutableGetStringValueParams = new sc.ImmutableGetStringValueParams(wasmlib.paramsProxy());
 	results: sc.MutableGetStringValueResults = new sc.MutableGetStringValueResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState(wasmlib.ScState.proxy());
+}
+
+export class InfiniteLoopViewCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewInfiniteLoopView);
+}
+
+export class InfiniteLoopViewContext {
 	state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState(wasmlib.ScState.proxy());
 }
 
@@ -328,18 +388,24 @@ export class ScFuncs {
 		return f;
 	}
 
+	static claimAllowance(_ctx: wasmlib.ScFuncCallContext): ClaimAllowanceCall {
+		return new ClaimAllowanceCall();
+	}
+
 	static doNothing(_ctx: wasmlib.ScFuncCallContext): DoNothingCall {
 		return new DoNothingCall();
 	}
 
-	static getMintedSupply(_ctx: wasmlib.ScFuncCallContext): GetMintedSupplyCall {
-		const f = new GetMintedSupplyCall();
-		f.results = new sc.ImmutableGetMintedSupplyResults(wasmlib.newCallResultsProxy(f.func));
-		return f;
+	static estimateMinDust(_ctx: wasmlib.ScFuncCallContext): EstimateMinDustCall {
+		return new EstimateMinDustCall();
 	}
 
 	static incCounter(_ctx: wasmlib.ScFuncCallContext): IncCounterCall {
 		return new IncCounterCall();
+	}
+
+	static infiniteLoop(_ctx: wasmlib.ScFuncCallContext): InfiniteLoopCall {
+		return new InfiniteLoopCall();
 	}
 
 	static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
@@ -354,6 +420,10 @@ export class ScFuncs {
 		return f;
 	}
 
+	static pingAllowanceBack(_ctx: wasmlib.ScFuncCallContext): PingAllowanceBackCall {
+		return new PingAllowanceBackCall();
+	}
+
 	static runRecursion(_ctx: wasmlib.ScFuncCallContext): RunRecursionCall {
 		const f = new RunRecursionCall();
 		f.params = new sc.MutableRunRecursionParams(wasmlib.newCallParamsProxy(f.func));
@@ -361,10 +431,16 @@ export class ScFuncs {
 		return f;
 	}
 
+	static sendLargeRequest(_ctx: wasmlib.ScFuncCallContext): SendLargeRequestCall {
+		return new SendLargeRequestCall();
+	}
+
+	static sendNFTsBack(_ctx: wasmlib.ScFuncCallContext): SendNFTsBackCall {
+		return new SendNFTsBackCall();
+	}
+
 	static sendToAddress(_ctx: wasmlib.ScFuncCallContext): SendToAddressCall {
-		const f = new SendToAddressCall();
-		f.params = new sc.MutableSendToAddressParams(wasmlib.newCallParamsProxy(f.func));
-		return f;
+		return new SendToAddressCall();
 	}
 
 	static setInt(_ctx: wasmlib.ScFuncCallContext): SetIntCall {
@@ -377,6 +453,14 @@ export class ScFuncs {
 		const f = new SpawnCall();
 		f.params = new sc.MutableSpawnParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
+	}
+
+	static splitFunds(_ctx: wasmlib.ScFuncCallContext): SplitFundsCall {
+		return new SplitFundsCall();
+	}
+
+	static splitFundsNativeTokens(_ctx: wasmlib.ScFuncCallContext): SplitFundsNativeTokensCall {
+		return new SplitFundsNativeTokensCall();
 	}
 
 	static testBlockContext1(_ctx: wasmlib.ScFuncCallContext): TestBlockContext1Call {
@@ -419,9 +503,9 @@ export class ScFuncs {
 		return new TestPanicFullEPCall();
 	}
 
-	static withdrawToChain(_ctx: wasmlib.ScFuncCallContext): WithdrawToChainCall {
-		const f = new WithdrawToChainCall();
-		f.params = new sc.MutableWithdrawToChainParams(wasmlib.newCallParamsProxy(f.func));
+	static withdrawFromChain(_ctx: wasmlib.ScFuncCallContext): WithdrawFromChainCall {
+		const f = new WithdrawFromChainCall();
+		f.params = new sc.MutableWithdrawFromChainParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
@@ -456,6 +540,10 @@ export class ScFuncs {
 		f.params = new sc.MutableGetStringValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetStringValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
+	}
+
+	static infiniteLoopView(_ctx: wasmlib.ScViewCallContext): InfiniteLoopViewCall {
+		return new InfiniteLoopViewCall();
 	}
 
 	static justView(_ctx: wasmlib.ScViewCallContext): JustViewCall {

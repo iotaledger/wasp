@@ -12,22 +12,22 @@ funcs:
   increment: {}
   incrementWithDelay:
     params:
-      delay: Uint32 // delay in seconds
+      delay: Uint32 # delay in seconds
   init:
     params:
-      counter: Int64? // value to initialize state counter with
+      counter: Int64? # value to initialize state counter with
   localStateInternalCall: {}
   localStatePost: {}
   localStateSandboxCall: {}
   postIncrement: {}
   repeatMany:
     params:
-      numRepeats: Int64? // number of times to recursively call myself
+      numRepeats: Int64? # number of times to recursively call myself
   testVliCodec: {}
   testVluCodec: {}
   whenMustIncrement:
     params:
-      dummy: Int64? // dummy param to prevent 'duplicate outputs not allowed'
+      dummy: Int64? # dummy param to prevent 'duplicate outputs not allowed'
 views:
   getCounter:
     results:

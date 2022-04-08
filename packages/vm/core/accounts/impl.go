@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"math"
+	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -41,6 +42,9 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
 	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
 
 	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
 	initialLoadIotas := iscp.NewFungibleTokens(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
@@ -78,7 +82,7 @@ func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 }
 
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
-const ConstDepositFeeTmp = uint64(500)
+const ConstDepositFeeTmp = uint64(1000)
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request
@@ -184,11 +188,13 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 
 	tokenScheme := ctx.Params().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
+	ts := util.MustTokenScheme(tokenScheme)
+	ts.MeltedTokens = util.Big0
+	ts.MintedTokens = util.Big0
 	tokenTag := ctx.Params().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
-	tokenMaxSupply := ctx.Params().MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, nil)
 	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
 	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
 	debitIotasFromAllowance(ctx, dustConsumed)
@@ -209,7 +215,8 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(util.IsZeroBigInt(out.CirculatingSupply), "can't destroy foundry with positive circulating supply")
+	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
+	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)), "can't destroy foundry with positive circulating supply")
 
 	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 

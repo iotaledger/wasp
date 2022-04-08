@@ -1,10 +1,11 @@
 package panicutil
 
 import (
+	"runtime/debug"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
-	"runtime/debug"
 )
 
 func CatchPanicReturnError(fun func(), catchErrors ...error) error {
@@ -52,6 +53,20 @@ func CatchAllButDBError(f func(), log *logger.Logger, prefix ...string) (err err
 			}
 			log.Debugf("%s%v", s, err)
 			log.Debugf(string(debug.Stack()))
+		}()
+		f()
+	}()
+	return err
+}
+
+func CatchPanic(f func()) (err error) {
+	func() {
+		defer func() {
+			r := recover()
+			if r == nil {
+				return
+			}
+			err = xerrors.Errorf("v", r)
 		}()
 		f()
 	}()

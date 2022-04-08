@@ -5,6 +5,7 @@ package registry
 
 import (
 	"errors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -14,8 +15,8 @@ import (
 type Provider func() *Impl
 
 type NodeIdentityProvider interface {
-	GetNodeIdentity() (*cryptolib.KeyPair, error)
-	GetNodePublicKey() (*cryptolib.PublicKey, error)
+	GetNodeIdentity() *cryptolib.KeyPair
+	GetNodePublicKey() *cryptolib.PublicKey
 }
 
 // DKShareRegistryProvider stands for a partial registry interface, needed for this package.

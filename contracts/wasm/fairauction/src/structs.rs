@@ -12,24 +12,23 @@ use wasmlib::*;
 
 #[derive(Clone)]
 pub struct Auction {
-    pub color          : ScColor,  // color of tokens for sale
-    pub creator        : ScAgentID,  // issuer of start_auction transaction
-    pub deposit        : u64,  // deposit by auction owner to cover the SC fees
-    pub description    : String,  // auction description
-    pub duration       : u32,  // auction duration in minutes
-    pub highest_bid    : u64,  // the current highest bid amount
-    pub highest_bidder : ScAgentID,  // the current highest bidder
-    pub minimum_bid    : u64,  // minimum bid amount
-    pub num_tokens     : u64,  // number of tokens for sale
-    pub owner_margin   : u64,  // auction owner's margin in promilles
-    pub when_started   : u64,  // timestamp when auction started
+    pub creator        : ScAgentID, // issuer of start_auction transaction
+    pub deposit        : u64, // deposit by auction owner to cover the SC fees
+    pub description    : String, // auction description
+    pub duration       : u32, // auction duration in minutes
+    pub highest_bid    : u64, // the current highest bid amount
+    pub highest_bidder : ScAgentID, // the current highest bidder
+    pub minimum_bid    : u64, // minimum bid amount
+    pub num_tokens     : u64, // number of tokens for sale
+    pub owner_margin   : u64, // auction owner's margin in promilles
+    pub token          : ScTokenID, // token of tokens for sale
+    pub when_started   : u64, // timestamp when auction started
 }
 
 impl Auction {
     pub fn from_bytes(bytes: &[u8]) -> Auction {
         let mut dec = WasmDecoder::new(bytes);
         Auction {
-            color          : color_decode(&mut dec),
             creator        : agent_id_decode(&mut dec),
             deposit        : uint64_decode(&mut dec),
             description    : string_decode(&mut dec),
@@ -39,13 +38,13 @@ impl Auction {
             minimum_bid    : uint64_decode(&mut dec),
             num_tokens     : uint64_decode(&mut dec),
             owner_margin   : uint64_decode(&mut dec),
+            token          : token_id_decode(&mut dec),
             when_started   : uint64_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
-		color_encode(&mut enc, &self.color);
 		agent_id_encode(&mut enc, &self.creator);
 		uint64_encode(&mut enc, self.deposit);
 		string_encode(&mut enc, &self.description);
@@ -55,6 +54,7 @@ impl Auction {
 		uint64_encode(&mut enc, self.minimum_bid);
 		uint64_encode(&mut enc, self.num_tokens);
 		uint64_encode(&mut enc, self.owner_margin);
+		token_id_encode(&mut enc, &self.token);
 		uint64_encode(&mut enc, self.when_started);
         enc.buf()
     }
@@ -100,9 +100,9 @@ impl MutableAuction {
 
 #[derive(Clone)]
 pub struct Bid {
-    pub amount    : u64,  // cumulative amount of bids from same bidder
-    pub index     : u32,  // index of bidder in bidder list
-    pub timestamp : u64,  // timestamp of most recent bid
+    pub amount    : u64, // cumulative amount of bids from same bidder
+    pub index     : u32, // index of bidder in bidder list
+    pub timestamp : u64, // timestamp of most recent bid
 }
 
 impl Bid {

@@ -71,3 +71,7 @@ func (pkT *PublicKey) Equals(other *PublicKey) bool {
 func (pkT *PublicKey) Verify(message, sig []byte) bool {
 	return ed25519.Verify(pkT.key, message, sig)
 }
+
+func (pkT *PublicKey) String() string {
+	return pkT.AsString()
+}

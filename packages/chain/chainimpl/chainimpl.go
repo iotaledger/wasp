@@ -141,7 +141,7 @@ func NewChain(
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
 		wal:                              wal,
 	}
-	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID.AsAddress(), nc, chainLog)
+	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID, nc, chainLog)
 	if err != nil {
 		ret.log.Errorf("NewChain: unable to create chain node connection: v", err)
 		return nil
@@ -249,8 +249,8 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	stateIndex := msg.VirtualState.BlockIndex()
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
-	rootCommitment := trie.RootCommitment(msg.VirtualState.TrieAccess())
-	//if !msg.ChainOutput.GetIsGovernanceUpdated() {	// TODO
+	rootCommitment := trie.RootCommitment(msg.VirtualState.TrieNodeStore())
+	// if !msg.ChainOutput.GetIsGovernanceUpdated() {	// TODO
 	c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
 		stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
 	// normal state update:
@@ -311,6 +311,9 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 			governance.FuncGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),
 		)
+		if err != nil {
+			c.log.Panicf("unable to read the governance contract state: %v", err)
+		}
 		govResponse := governance.NewGetChainNodesResponseFromDict(res)
 		govAccessNodes = govResponse.AccessNodes
 		govCandidateNodes = govResponse.AccessNodeCandidates

@@ -14,7 +14,7 @@ import (
 )
 
 func TestWriteToWAL(t *testing.T) {
-	e := setupWithNoChain(t, 1)
+	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
 
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)

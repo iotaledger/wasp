@@ -217,22 +217,6 @@ func (s MutableRunRecursionParams) IntValue() wasmtypes.ScMutableInt64 {
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
 }
 
-type ImmutableSendToAddressParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableSendToAddressParams) Address() wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
-}
-
-type MutableSendToAddressParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableSendToAddressParams) Address() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
-}
-
 type ImmutableSetIntParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -289,20 +273,36 @@ func (s MutableTestEventLogGenericDataParams) Counter() wasmtypes.ScMutableInt64
 	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamCounter))
 }
 
-type ImmutableWithdrawToChainParams struct {
+type ImmutableWithdrawFromChainParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableWithdrawToChainParams) ChainID() wasmtypes.ScImmutableChainID {
+func (s ImmutableWithdrawFromChainParams) ChainID() wasmtypes.ScImmutableChainID {
 	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ParamChainID))
 }
 
-type MutableWithdrawToChainParams struct {
+func (s ImmutableWithdrawFromChainParams) GasBudget() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamGasBudget))
+}
+
+func (s ImmutableWithdrawFromChainParams) IotasWithdrawal() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamIotasWithdrawal))
+}
+
+type MutableWithdrawFromChainParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableWithdrawToChainParams) ChainID() wasmtypes.ScMutableChainID {
+func (s MutableWithdrawFromChainParams) ChainID() wasmtypes.ScMutableChainID {
 	return wasmtypes.NewScMutableChainID(s.proxy.Root(ParamChainID))
+}
+
+func (s MutableWithdrawFromChainParams) GasBudget() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamGasBudget))
+}
+
+func (s MutableWithdrawFromChainParams) IotasWithdrawal() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamIotasWithdrawal))
 }
 
 type ImmutableCheckContextFromViewEPParams struct {

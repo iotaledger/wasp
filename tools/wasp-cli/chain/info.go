@@ -6,7 +6,6 @@ package chain
 import (
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -56,12 +55,12 @@ var infoCmd = &cobra.Command{
 			printNodes("Access nodes", chainInfo.AccessNodes)
 			printNodes("Candidate nodes", chainInfo.CandidateNodes)
 
-			info, err := SCClient(governance.Contract.Hname()).CallView(governance.FuncGetChainInfo.Name, nil)
+			ret, err := SCClient(governance.Contract.Hname()).CallView(governance.FuncGetChainInfo.Name, nil)
+			log.Check(err)
+			govInfo, err := governance.GetChainInfo(ret)
 			log.Check(err)
 
-			description, err := codec.DecodeString(info.MustGet(governance.VarDescription), "")
-			log.Check(err)
-			log.Printf("Description: %s\n", description)
+			log.Printf("Description: %s\n", govInfo.Description)
 
 			recs, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetContractRecords.Name, nil)
 			log.Check(err)
@@ -69,21 +68,20 @@ var infoCmd = &cobra.Command{
 			log.Check(err)
 			log.Printf("#Contracts: %d\n", len(contracts))
 
-			ownerID, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
-			log.Check(err)
-			log.Printf("Owner: %s\n", ownerID.String())
+			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String(config.L1NetworkPrefix()))
 
-			if info.MustHas(governance.VarChainOwnerIDDelegated) {
-				delegated, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
-				log.Check(err)
-				log.Printf("Delegated owner: %s\n", delegated.String())
+			if govInfo.GasFeePolicy != nil {
+				gasFeeToken := "iota"
+				if govInfo.GasFeePolicy.GasFeeTokenID != nil {
+					gasFeeToken = govInfo.GasFeePolicy.GasFeeTokenID.String()
+				}
+				log.Printf("Gas fee: 1 %s = %d gas units\n", gasFeeToken, govInfo.GasFeePolicy.GasPerToken)
+				log.Printf("Validator fee share: %d%%\n", govInfo.GasFeePolicy.ValidatorFeeShare)
 			}
 
-			// TODO fees will be changed
-			// feeColor, defaultOwnerFee, defaultValidatorFee, err := governance.GetDefaultFeeInfo(info)
-			// log.Check(err)
-			// log.Printf("Default owner fee: %d %s\n", defaultOwnerFee, feeColor.String())
-			// log.Printf("Default validator fee: %d %s\n", defaultValidatorFee, feeColor.String())
+			log.Printf("Maximum blob size: %d bytes\n", govInfo.MaxBlobSize)
+			log.Printf("Maximum event size: %d bytes\n", govInfo.MaxEventSize)
+			log.Printf("Maximum events per request: %d\n", govInfo.MaxEventsPerReq)
 		}
 	},
 }
