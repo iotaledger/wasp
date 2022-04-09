@@ -1,28 +1,36 @@
 package nodeconnmetrics
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type emptyNodeConnectionMetrics struct {
-	NodeConnectionMessagesMetrics
+	*emptyNodeConnectionMessagesMetrics
+	emptyMessageMetrics NodeConnectionMessageMetrics
 }
 
 var _ NodeConnectionMetrics = &emptyNodeConnectionMetrics{}
 
 func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 	return &emptyNodeConnectionMetrics{
-		NodeConnectionMessagesMetrics: NewEmptyNodeConnectionMessagesMetrics(),
+		emptyNodeConnectionMessagesMetrics: newEmptyNodeConnectionMessagesMetrics(),
+		emptyMessageMetrics:                newEmptyNodeConnectionMessageMetrics(),
 	}
 }
 
-func (ncmi *emptyNodeConnectionMetrics) RegisterMetrics() {}
-func (ncmi *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
-	return NewEmptyNodeConnectionMessagesMetrics()
+func (encmT *emptyNodeConnectionMetrics) RegisterMetrics() {}
+
+func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+	return newEmptyNodeConnectionMessagesMetrics()
 }
-func (ncmi *emptyNodeConnectionMetrics) SetSubscribed(address iotago.Address)   {}
-func (ncmi *emptyNodeConnectionMetrics) SetUnsubscribed(address iotago.Address) {}
-func (ncmi *emptyNodeConnectionMetrics) GetSubscribed() []iotago.Address {
-	return []iotago.Address{}
+
+func (encmT *emptyNodeConnectionMetrics) SetRegistered(*iscp.ChainID)   {}
+func (encmT *emptyNodeConnectionMetrics) SetUnregistered(*iscp.ChainID) {}
+
+func (encmT *emptyNodeConnectionMetrics) GetRegistered() []*iscp.ChainID {
+	return []*iscp.ChainID{}
+}
+
+func (encmT *emptyNodeConnectionMetrics) GetInMilestone() NodeConnectionMessageMetrics {
+	return encmT.emptyMessageMetrics
 }

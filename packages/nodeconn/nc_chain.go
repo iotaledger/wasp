@@ -4,6 +4,7 @@
 package nodeconn
 
 import (
+	"context"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -58,7 +59,7 @@ func (ncc *ncChain) Close() {
 }
 
 func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
 	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
@@ -99,11 +100,17 @@ func (ncc *ncChain) queryChainUTXOs() {
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
+
+	var ctxWithTimeout context.Context
+	var cancelContext context.CancelFunc
 	for _, query := range queries {
+		if ctxWithTimeout != nil && ctxWithTimeout.Err() == nil {
+			// cancel the ctx of the last query
+			cancelContext()
+		}
 		// TODO what should be an adequate timeout for each of these queries?
-		ctxWithTimeout, cancelContext := newCtx()
+		ctxWithTimeout, cancelContext = newCtx(ncc.nc.ctx)
 		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
-		cancelContext()
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)
 			continue
@@ -130,6 +137,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 			}
 		}
 	}
+	cancelContext()
 }
 
 func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
@@ -192,7 +200,7 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 	//
 	// Then fetch all the existing unspent outputs owned by the chain.
 	// TODO what should be an adequate timeout for this query?
-	ctxWithTimeout, cancelContext := newCtx()
+	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
 	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
 	cancelContext()
 	if err != nil {

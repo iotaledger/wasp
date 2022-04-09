@@ -35,7 +35,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	receipt, _, err := emu.SendTransaction(tx, tx.Gas())
+	receipt, _, err, _ := emu.SendTransaction(tx, tx.Gas())
 	require.NoError(t, err)
 	emu.MintBlock()
 
@@ -183,7 +183,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	receipt, _, err := emu.SendTransaction(tx, tx.Gas())
+	receipt, _, err, _ := emu.SendTransaction(tx, tx.Gas())
 	require.NoError(t, err)
 	emu.MintBlock()
 
@@ -470,7 +470,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 	b.ResetTimer()
 	for _, chunk := range chunks {
 		for _, tx := range chunk {
-			receipt, _, err := emu.SendTransaction(tx, tx.Gas())
+			receipt, _, err, _ := emu.SendTransaction(tx, tx.Gas())
 			require.NoError(b, err)
 			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
 		}

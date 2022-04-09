@@ -3,7 +3,6 @@ package nodeconnmetrics
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
@@ -15,21 +14,23 @@ type NodeConnectionMessageMetrics interface {
 }
 
 type NodeConnectionMessagesMetrics interface {
-	GetOutPullState() NodeConnectionMessageMetrics
-	GetOutPullTransactionInclusionState() NodeConnectionMessageMetrics
-	GetOutPullConfirmedOutput() NodeConnectionMessageMetrics
-	GetOutPostTransaction() NodeConnectionMessageMetrics
-	GetInTransaction() NodeConnectionMessageMetrics
-	GetInInclusionState() NodeConnectionMessageMetrics
+	GetOutPublishTransaction() NodeConnectionMessageMetrics
+	GetOutPullLatestOutput() NodeConnectionMessageMetrics
+	GetOutPullTxInclusionState() NodeConnectionMessageMetrics
+	GetOutPullOutputByID() NodeConnectionMessageMetrics
+	GetInStateOutput() NodeConnectionMessageMetrics
+	GetInAliasOutput() NodeConnectionMessageMetrics
 	GetInOutput() NodeConnectionMessageMetrics
-	GetInUnspentAliasOutput() NodeConnectionMessageMetrics
+	GetInOnLedgerRequest() NodeConnectionMessageMetrics
+	GetInTxInclusionState() NodeConnectionMessageMetrics
 }
 
 type NodeConnectionMetrics interface {
 	NodeConnectionMessagesMetrics
-	SetSubscribed(iotago.Address)
-	SetUnsubscribed(iotago.Address)
-	GetSubscribed() []iotago.Address
+	GetInMilestone() NodeConnectionMessageMetrics
+	SetRegistered(*iscp.ChainID)
+	SetUnregistered(*iscp.ChainID)
+	GetRegistered() []*iscp.ChainID
 	RegisterMetrics()
-	NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics
+	NewMessagesMetrics(*iscp.ChainID) NodeConnectionMessagesMetrics
 }

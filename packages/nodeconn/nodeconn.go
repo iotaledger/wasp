@@ -40,6 +40,7 @@ type nodeConn struct {
 	indexerClient nodeclient.IndexerClient
 	milestones    *events.Event
 	l1params      *parameters.L1
+	metrics       nodeconnmetrics.NodeConnectionMetrics
 	log           *logger.Logger
 	config        L1Config
 }
@@ -58,23 +59,23 @@ func L1ParamsFromInfoResp(info *nodeclient.InfoResponse) *parameters.L1 {
 	}
 }
 
-func newCtx(timeout ...time.Duration) (context.Context, context.CancelFunc) {
+func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
-	return context.WithTimeout(context.Background(), t)
+	return context.WithTimeout(ctx, t)
 }
 
-func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	return newNodeConn(config, log, timeout...)
+func New(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
+	return newNodeConn(config, metrics, log, timeout...)
 }
 
-func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
+func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeAPIClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
 
-	ctxWithTimeout, cancelContext := newCtx(timeout...)
+	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
 	l1Info, err := nodeAPIClient.Info(ctxWithTimeout)
 	if err != nil {
@@ -102,6 +103,7 @@ func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) 
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
 		}),
 		l1params: L1ParamsFromInfoResp(l1Info),
+		metrics:  metrics,
 		log:      log.Named("nc"),
 		config:   config,
 	}
@@ -119,6 +121,7 @@ func (nc *nodeConn) RegisterChain(
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
 ) {
+	nc.metrics.SetRegistered(chainID)
 	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -128,6 +131,7 @@ func (nc *nodeConn) RegisterChain(
 
 // UnregisterChain implements chain.NodeConnection.
 func (nc *nodeConn) UnregisterChain(chainID *iscp.ChainID) {
+	nc.metrics.SetUnregistered(chainID)
 	nccKey := chainID.Key()
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -201,8 +205,7 @@ func (nc *nodeConn) PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) 
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	// TODO
-	return nil
+	return nc.metrics
 }
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Message, error) {

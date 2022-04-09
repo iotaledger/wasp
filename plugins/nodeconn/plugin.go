@@ -8,9 +8,11 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chain"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/plugins/metrics"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -39,11 +41,16 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
+		var allMetrics *metricspkg.Metrics
+		if parameters.GetBool(parameters.MetricsEnabled) {
+			allMetrics = metrics.AllMetrics()
+		}
 		nc = nodeconn.New(
 			nodeconn.L1Config{
 				Hostname: parameters.GetString(parameters.L1Host),
 				APIPort:  parameters.GetInt(parameters.L1APIPort),
 			},
+			allMetrics.GetNodeConnectionMetrics(),
 			log,
 		)
 		defer nc.Close()

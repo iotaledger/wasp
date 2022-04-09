@@ -4,12 +4,12 @@
 package isccontract
 
 import (
-	"math/big"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"math/big"
+	"time"
 )
 
 // ISCChainID matches the type definition in ISC.sol
@@ -236,5 +236,210 @@ func (d ISCDict) Unwrap() dict.Dict {
 	for _, item := range d.Items {
 		ret[kv.Key(item.Key)] = item.Value
 	}
+	return ret
+}
+
+type ISCFungibleTokens struct {
+	Iotas  uint64
+	Tokens []IotaNativeToken
+}
+
+func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens {
+	ret := ISCFungibleTokens{
+		Iotas:  fungibleTokens.Iotas,
+		Tokens: make([]IotaNativeToken, len(fungibleTokens.Tokens)),
+	}
+
+	for i, v := range fungibleTokens.Tokens {
+		ret.Tokens[i].ID = WrapIotaNativeTokenID(&v.ID)
+		ret.Tokens[i].Amount = v.Amount
+	}
+
+	return ret
+}
+
+func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
+	ret := iscp.FungibleTokens{
+		Iotas: t.Iotas,
+	}
+
+	for i, v := range t.Tokens {
+		ret.Tokens[i].ID = v.ID.Unwrap()
+		ret.Tokens[i].Amount = v.Amount
+	}
+
+	return &ret
+}
+
+type IotaAllowance struct {
+	Assets ISCFungibleTokens
+	NFTs   []IotaNFTID
+}
+
+func WrapIotaAllowance(allowance iscp.Allowance) IotaAllowance {
+	nftIds := make([]IotaNFTID, 0)
+
+	for _, nft := range allowance.NFTs {
+		nftIds = append(nftIds, WrapIotaNFTID(nft))
+	}
+
+	ret := IotaAllowance{
+		NFTs:   nftIds,
+		Assets: WrapISCFungibleTokens(*allowance.Assets),
+	}
+
+	return ret
+}
+
+func (a IotaAllowance) Unwrap() *iscp.Allowance {
+	nftIDs := make([]iotago.NFTID, 0)
+
+	for _, nftID := range a.NFTs {
+		nftIDs = append(nftIDs, nftID.Unwrap())
+	}
+
+	ret := iscp.Allowance{
+		Assets: a.Assets.Unwrap(),
+		NFTs:   nftIDs,
+	}
+
+	return &ret
+}
+
+type ISCSendMetadata struct {
+	TargetContract iscp.Hname
+	Entrypoint     iscp.Hname
+	// TODO: Params
+	Allowance IotaAllowance
+	GasBudget uint64
+}
+
+func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
+	ret := ISCSendMetadata{
+		GasBudget:      metadata.GasBudget,
+		Entrypoint:     metadata.EntryPoint,
+		TargetContract: metadata.TargetContract,
+		Allowance:      WrapIotaAllowance(*metadata.Allowance),
+	}
+
+	return ret
+}
+
+func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
+	ret := iscp.SendMetadata{
+		TargetContract: i.TargetContract,
+		EntryPoint:     i.Entrypoint,
+		Params:         nil,
+		Allowance:      i.Allowance.Unwrap(),
+		GasBudget:      i.GasBudget,
+	}
+
+	return &ret
+}
+
+type ISCTimeData struct {
+	MilestoneIndex uint32
+	Time           int64
+}
+
+func WrapISCTimeData(data *iscp.TimeData) ISCTimeData {
+	ret := ISCTimeData{
+		MilestoneIndex: data.MilestoneIndex,
+		Time:           data.Time.UnixMilli(),
+	}
+
+	return ret
+}
+
+func (i ISCTimeData) Unwrap() *iscp.TimeData {
+	ret := iscp.TimeData{
+		MilestoneIndex: i.MilestoneIndex,
+		Time:           time.UnixMilli(i.Time),
+	}
+
+	return &ret
+}
+
+type ISCExpiration struct {
+	ISCTimeData
+	ReturnAddress IotaAddress
+}
+
+func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
+	ret := ISCExpiration{
+		ISCTimeData: ISCTimeData{
+			MilestoneIndex: data.MilestoneIndex,
+			Time:           data.Time.UnixMilli(),
+		},
+		ReturnAddress: WrapIotaAddress(data.ReturnAddress),
+	}
+
+	return ret
+}
+
+func (i ISCExpiration) Unwrap() *iscp.Expiration {
+	ret := iscp.Expiration{
+		ReturnAddress: i.ReturnAddress.MustUnwrap(),
+		TimeData: iscp.TimeData{
+			MilestoneIndex: i.MilestoneIndex,
+			Time:           time.UnixMilli(i.Time),
+		},
+	}
+
+	return &ret
+}
+
+type ISCSendOptions struct {
+	Timelock   ISCTimeData
+	Expiration ISCExpiration
+}
+
+func WrapISCSendOptions(options iscp.SendOptions) ISCSendOptions {
+	ret := ISCSendOptions{
+		Timelock:   WrapISCTimeData(options.Timelock),
+		Expiration: WrapISCExpiration(options.Expiration),
+	}
+
+	return ret
+}
+
+func (i *ISCSendOptions) Unwrap() iscp.SendOptions {
+	ret := iscp.SendOptions{
+		Timelock:   i.Timelock.Unwrap(),
+		Expiration: i.Expiration.Unwrap(),
+	}
+
+	return ret
+}
+
+type ISCRequestParameters struct {
+	TargetAddress            IotaAddress
+	FungibleTokens           ISCFungibleTokens
+	AdjustMinimumDustDeposit bool
+	Metadata                 ISCSendMetadata
+	SendOptions              ISCSendOptions
+}
+
+func WrapISCRequestParameters(parameters iscp.RequestParameters) ISCRequestParameters {
+	ret := ISCRequestParameters{
+		TargetAddress:            WrapIotaAddress(parameters.TargetAddress),
+		FungibleTokens:           WrapISCFungibleTokens(*parameters.FungibleTokens),
+		AdjustMinimumDustDeposit: parameters.AdjustToMinimumDustDeposit,
+		Metadata:                 WrapISCSendMetadata(*parameters.Metadata),
+		SendOptions:              WrapISCSendOptions(parameters.Options),
+	}
+
+	return ret
+}
+
+func (i *ISCRequestParameters) Unwrap() iscp.RequestParameters {
+	ret := iscp.RequestParameters{
+		TargetAddress:              i.TargetAddress.MustUnwrap(),
+		FungibleTokens:             i.FungibleTokens.Unwrap(),
+		AdjustToMinimumDustDeposit: i.AdjustMinimumDustDeposit,
+		Metadata:                   i.Metadata.Unwrap(),
+		Options:                    i.SendOptions.Unwrap(),
+	}
+
 	return ret
 }

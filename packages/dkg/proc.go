@@ -5,8 +5,6 @@ package dkg
 
 // TODO: [KP] Check, if error responses are considered gracefully at the initiator.
 
-// TODO: XXX: KP: Review all uses of suites (BLS vs ED).
-
 import (
 	"errors"
 	"fmt"
@@ -636,6 +634,10 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 // rabinStep7CommitAndTerminate
 //
 func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
+	return make(map[uint16]*peering.PeerMessageData), nil
+}
+
+func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
 	var err error
 	doneMsg := initiatorDoneMsg{}
 	if err = doneMsg.fromBytes(initRecv.MsgData, p.node.edSuite, p.node.blsSuite); err != nil {
@@ -649,10 +651,6 @@ func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, kst keySetType, i
 	if err := p.node.registry.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
-	return make(map[uint16]*peering.PeerMessageData), nil
-}
-
-func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
 }
 

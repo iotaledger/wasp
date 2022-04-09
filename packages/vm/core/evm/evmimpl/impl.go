@@ -103,14 +103,16 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 		// next block will be minted when the ISC block is closed
 		emu = getEmulatorInBlockContext(ctx)
 	}
-	receipt, gasUsed, err := emu.SendTransaction(tx, gasBudget)
+
+	receipt, gasUsed, err, result := emu.SendTransaction(tx, gasBudget)
 
 	// burn gas even on error
 	ctx.Gas().Burn(gas.BurnCodeEVM1P, evm.EVMGasToISC(gasUsed, gasRatio))
 
 	ctx.RequireNoError(err)
+
 	// if EVM execution was reverted we must revert the ISC request as well
-	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, "EVM execution reverted")
+	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, GetRevertErrorMessage(result, ctx.Contract()))
 
 	return nil
 }
