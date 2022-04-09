@@ -16,9 +16,9 @@ const (
 	ExhaustiveLimit = 2048
 	ExtremeLimit    = 66666
 	LogOp           = false
-	SkipWasm        = true
-	TestExhaustive  = true
-	TestExtreme     = true
+	SkipWasm        = false
+	TestExhaustive  = false
+	TestExtreme     = false
 	UpperLimit      = 1_000_000_000
 )
 
