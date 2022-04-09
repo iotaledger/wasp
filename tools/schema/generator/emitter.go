@@ -386,6 +386,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["scName"] = scName
 	g.keys["hscName"] = iscp.Hn(scName).String()
 	g.keys["scDesc"] = g.s.Description
+	g.keys["copyrightMessage"] = g.s.Copyright
 }
 
 func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {

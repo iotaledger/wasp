@@ -15,7 +15,6 @@ import (
 
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
-// TODO take copyright from schema?
 
 type GenBase struct {
 	currentEvent  *model.Struct

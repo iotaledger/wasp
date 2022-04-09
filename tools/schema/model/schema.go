@@ -30,6 +30,7 @@ type Struct struct {
 
 type Schema struct {
 	ContractName  string
+	Copyright     string
 	PackageName   string
 	Description   string
 	CoreContracts bool
@@ -52,6 +53,7 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	if s.ContractName == "" {
 		return fmt.Errorf("missing contract name")
 	}
+	s.Copyright = schemaDef.Copyright
 	s.PackageName = strings.ToLower(s.ContractName)
 	s.Description = strings.TrimSpace(schemaDef.Description.Val)
 
