@@ -70,6 +70,8 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_BIG_INT_DIV,
     	VIEW_BIG_INT_MOD,
     	VIEW_BIG_INT_MUL,
+    	VIEW_BIG_INT_SHL,
+    	VIEW_BIG_INT_SHR,
     	VIEW_BIG_INT_SUB,
     	VIEW_BLOCK_RECORD,
     	VIEW_BLOCK_RECORDS,
@@ -120,6 +122,8 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_big_int_div_thunk,
     	view_big_int_mod_thunk,
     	view_big_int_mul_thunk,
+    	view_big_int_shl_thunk,
+    	view_big_int_shr_thunk,
     	view_big_int_sub_thunk,
     	view_block_record_thunk,
     	view_block_records_thunk,
@@ -840,6 +844,46 @@ fn view_big_int_mul_thunk(ctx: &ScViewContext) {
 	view_big_int_mul(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testwasmlib.viewBigIntMul ok");
+}
+
+pub struct BigIntShlContext {
+	params: ImmutableBigIntShlParams,
+	results: MutableBigIntShlResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_shl_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntShl");
+	let f = BigIntShlContext {
+		params: ImmutableBigIntShlParams { proxy: params_proxy() },
+		results: MutableBigIntShlResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.shift().exists(), "missing mandatory shift");
+	view_big_int_shl(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntShl ok");
+}
+
+pub struct BigIntShrContext {
+	params: ImmutableBigIntShrParams,
+	results: MutableBigIntShrResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_shr_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntShr");
+	let f = BigIntShrContext {
+		params: ImmutableBigIntShrParams { proxy: params_proxy() },
+		results: MutableBigIntShrResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.shift().exists(), "missing mandatory shift");
+	view_big_int_shr(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntShr ok");
 }
 
 pub struct BigIntSubContext {

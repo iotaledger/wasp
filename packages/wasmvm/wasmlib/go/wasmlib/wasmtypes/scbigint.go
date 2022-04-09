@@ -36,7 +36,7 @@ func (o ScBigInt) Add(rhs ScBigInt) ScBigInt {
 		buf[i] = byte(carry)
 		carry >>= 8
 	}
-	for i := rhsLen; carry != 0 && i < lhsLen; i++ {
+	for i := rhsLen; i < lhsLen; i++ {
 		carry += uint16(o.bytes[i])
 		buf[i] = byte(carry)
 		carry >>= 8
@@ -104,9 +104,43 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 		}
 		return o.divModSimple(rhs.bytes[0])
 	}
-	// TODO
-	panic("implement rest of DivMod")
-	// return o, rhs
+	return o.divModEstimate(rhs)
+}
+
+func (o ScBigInt) divModEstimate(rhs ScBigInt) (ScBigInt, ScBigInt) {
+	// shift divisor MSB until the high order bit is set
+	rhsLen := len(rhs.bytes)
+	byte1 := rhs.bytes[rhsLen-1]
+	byte2 := rhs.bytes[rhsLen-2]
+	word := uint16(byte1)<<8 + uint16(byte2)
+	shift := uint32(0)
+	for ; (word & 0x8000) == 0; word <<= 1 {
+		shift++
+	}
+
+	// shift numerator by the same amount of bits
+	numerator := o.Shl(shift)
+
+	// now chop off LSBs on both sides such that only MSB of divisor remains
+	numerator.bytes = numerator.bytes[rhsLen-1:]
+	divisor := normalize([]byte{byte(word >> 8)})
+
+	// now we can use simple division by one byte to get a quotient estimate
+	// at worst case this will be 1 or 2 higher than the actual value
+	quotient, _ := numerator.divModSimple(divisor.bytes[0])
+
+	// calculate first product based on estimated quotient
+	product := rhs.Mul(quotient)
+
+	// as long as the product is too high,
+	// decrement the estimated quotient and adjust the product accordingly
+	for product.Cmp(o) > 0 {
+		quotient = quotient.Sub(NewScBigInt(1))
+		product = product.Sub(rhs)
+	}
+
+	// now that we found the actual quotient, the remainder is easy to calculate
+	return quotient, o.Sub(product)
 }
 
 func (o ScBigInt) divModSimple(value byte) (ScBigInt, ScBigInt) {
@@ -168,6 +202,52 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 	return normalize(buf)
 }
 
+func (o ScBigInt) Shl(shift uint32) ScBigInt {
+	if shift == 0 {
+		return o
+	}
+
+	wholeBytes := int(shift >> 3)
+	shift &= 0x07
+
+	lhsLen := len(o.bytes)
+	bufLen := lhsLen + wholeBytes + 1
+	buf := make([]byte, bufLen)
+	word := uint16(0)
+	for i := lhsLen; i > 0; i-- {
+		word = (word << 8) + uint16(o.bytes[i-1])
+		bufLen--
+		buf[bufLen] = byte(word >> (8 - shift))
+	}
+	buf[bufLen-1] = byte(word << shift)
+	return normalize(buf)
+}
+
+func (o ScBigInt) Shr(shift uint32) ScBigInt {
+	if shift == 0 {
+		return o
+	}
+
+	wholeBytes := int(shift >> 3)
+	shift &= 0x07
+
+	lhsLen := len(o.bytes)
+	if wholeBytes >= lhsLen {
+		return NewScBigInt()
+	}
+
+	bufLen := lhsLen - wholeBytes
+	buf := make([]byte, bufLen)
+	bytes := o.bytes[wholeBytes:]
+	word := uint16(bytes[0]) << 8
+	for i := 1; i < bufLen; i++ {
+		word = (word >> 8) + (uint16(bytes[i]) << 8)
+		buf[i-1] = byte(word >> shift)
+	}
+	buf[bufLen-1] = byte(word >> (8 + shift))
+	return normalize(buf)
+}
+
 func (o ScBigInt) String() string {
 	return BigIntToString(o)
 }
@@ -188,12 +268,12 @@ func (o ScBigInt) Sub(rhs ScBigInt) ScBigInt {
 	for i := 0; i < rhsLen; i++ {
 		borrow += uint16(o.bytes[i]) - uint16(rhs.bytes[i])
 		buf[i] = byte(borrow)
-		borrow >>= 8
+		borrow = uint16(int16(borrow) >> 8)
 	}
 	for i := rhsLen; i < lhsLen; i++ {
 		borrow += uint16(o.bytes[i])
 		buf[i] = byte(borrow)
-		borrow >>= 8
+		borrow = uint16(int16(borrow) >> 8)
 	}
 	return normalize(buf)
 }

@@ -41,6 +41,7 @@ const (
 	ParamRecordIndex = "recordIndex"
 	ParamRequestID   = "requestID"
 	ParamRhs         = "rhs"
+	ParamShift       = "shift"
 	ParamString      = "string"
 	ParamTokenID     = "tokenID"
 	ParamUint16      = "uint16"
@@ -114,6 +115,8 @@ const (
 	ViewBigIntDiv                      = "bigIntDiv"
 	ViewBigIntMod                      = "bigIntMod"
 	ViewBigIntMul                      = "bigIntMul"
+	ViewBigIntShl                      = "bigIntShl"
+	ViewBigIntShr                      = "bigIntShr"
 	ViewBigIntSub                      = "bigIntSub"
 	ViewBlockRecord                    = "blockRecord"
 	ViewBlockRecords                   = "blockRecords"
@@ -163,6 +166,8 @@ const (
 	HViewBigIntDiv                      = wasmtypes.ScHname(0x84b2dadd)
 	HViewBigIntMod                      = wasmtypes.ScHname(0x4bbefd01)
 	HViewBigIntMul                      = wasmtypes.ScHname(0x976cc699)
+	HViewBigIntShl                      = wasmtypes.ScHname(0x64677f67)
+	HViewBigIntShr                      = wasmtypes.ScHname(0xe5621518)
 	HViewBigIntSub                      = wasmtypes.ScHname(0xf3c8cd33)
 	HViewBlockRecord                    = wasmtypes.ScHname(0xad13b2f8)
 	HViewBlockRecords                   = wasmtypes.ScHname(0x16e249ea)

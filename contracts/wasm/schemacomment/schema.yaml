@@ -1,3 +1,6 @@
+# COPYRIGHT OF A TEST SCHEMA DEFINITION 1
+# COPYRIGHT OF A TEST SCHEMA DEFINITION 2
+copyright:
 name: SchemaComment
 description: demonstration of dumping comments in yaml file to schema definition
 

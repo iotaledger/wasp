@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/wasm/fairauction/go/fairauction"
-	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"

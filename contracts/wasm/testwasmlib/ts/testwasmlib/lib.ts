@@ -48,6 +48,8 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewBigIntDiv,
 		sc.ViewBigIntMod,
 		sc.ViewBigIntMul,
+		sc.ViewBigIntShl,
+		sc.ViewBigIntShr,
 		sc.ViewBigIntSub,
 		sc.ViewBlockRecord,
 		sc.ViewBlockRecords,
@@ -98,6 +100,8 @@ const exportMap: wasmlib.ScExportMap = {
 		viewBigIntDivThunk,
 		viewBigIntModThunk,
 		viewBigIntMulThunk,
+		viewBigIntShlThunk,
+		viewBigIntShrThunk,
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
@@ -480,6 +484,30 @@ function viewBigIntMulThunk(ctx: wasmlib.ScViewContext): void {
 	sc.viewBigIntMul(ctx, f);
 	ctx.results(results);
 	ctx.log("testwasmlib.viewBigIntMul ok");
+}
+
+function viewBigIntShlThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewBigIntShl");
+	let f = new sc.BigIntShlContext();
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableBigIntShlResults(results.asProxy());
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.shift().exists(), "missing mandatory shift");
+	sc.viewBigIntShl(ctx, f);
+	ctx.results(results);
+	ctx.log("testwasmlib.viewBigIntShl ok");
+}
+
+function viewBigIntShrThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewBigIntShr");
+	let f = new sc.BigIntShrContext();
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableBigIntShrResults(results.asProxy());
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.shift().exists(), "missing mandatory shift");
+	sc.viewBigIntShr(ctx, f);
+	ctx.results(results);
+	ctx.log("testwasmlib.viewBigIntShr ok");
 }
 
 function viewBigIntSubThunk(ctx: wasmlib.ScViewContext): void {

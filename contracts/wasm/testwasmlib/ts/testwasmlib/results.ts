@@ -176,6 +176,30 @@ export class MutableBigIntMulResults extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableBigIntShlResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntShlResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class ImmutableBigIntShrResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
+export class MutableBigIntShrResults extends wasmtypes.ScProxy {
+	res(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultRes));
+	}
+}
+
 export class ImmutableBigIntSubResults extends wasmtypes.ScProxy {
 	res(): wasmtypes.ScImmutableBigInt {
 		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultRes));

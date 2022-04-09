@@ -774,6 +774,46 @@ export class MutableBigIntMulParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableBigIntShlParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
+export class MutableBigIntShlParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
+export class ImmutableBigIntShrParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
+export class MutableBigIntShrParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
 export class ImmutableBigIntSubParams extends wasmtypes.ScProxy {
 	lhs(): wasmtypes.ScImmutableBigInt {
 		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));

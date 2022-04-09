@@ -233,6 +233,38 @@ func (s MutableBigIntMulResults) Res() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
 }
 
+type ImmutableBigIntShlResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntShlResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntShlResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntShlResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type ImmutableBigIntShrResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntShrResults) Res() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRes))
+}
+
+type MutableBigIntShrResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntShrResults) Res() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
+}
+
 type ImmutableBigIntSubResults struct {
 	proxy wasmtypes.Proxy
 }

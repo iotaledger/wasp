@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	KeyCopyright   string = "copyright"
 	KeyName        string = "name"
 	KeyDescription string = "description"
 	KeyEvents      string = "events"
@@ -31,6 +32,8 @@ func Convert(root *Node, def *model.SchemaDef) error {
 	var funcs, views model.FuncDefMap
 	for _, key := range root.Contents {
 		switch key.Val {
+		case KeyCopyright:
+			def.Copyright = key.HeadComment
 		case KeyName:
 			name.Val = key.Contents[0].Val
 			name.Line = key.Line

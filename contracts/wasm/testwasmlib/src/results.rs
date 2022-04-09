@@ -320,6 +320,50 @@ impl MutableBigIntMulResults {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBigIntShlResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntShlResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntShlResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntShlResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntShrResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntShrResults {
+    pub fn res(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntShrResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntShrResults {
+    pub fn res(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_RES))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableBigIntSubResults {
 	pub(crate) proxy: Proxy,
 }

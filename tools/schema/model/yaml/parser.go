@@ -4,6 +4,7 @@
 package yaml
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -27,6 +28,9 @@ func Parse(in []byte) *Node {
 		if strings.TrimSpace(val) != "" {
 			if comment != "" {
 				cur.HeadComment = comment
+				if strings.TrimSpace(oriComment) != "" {
+					fmt.Printf("warning: block and line comment for line %d, line comment was ignored.\n", lineNum)
+				}
 			} else if strings.TrimSpace(oriComment) != "" {
 				cur.LineComment = ("//" + oriComment[1:] + "\n")
 			}

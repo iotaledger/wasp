@@ -47,9 +47,6 @@ impl ScBigInt {
             carry >>= 8;
         }
         for i in rhs_len..lhs_len {
-            if carry == 0 {
-                break;
-            }
             carry += self.bytes[i] as u16;
             buf[i] = carry as u8;
             carry >>= 8;
@@ -114,9 +111,44 @@ impl ScBigInt {
             }
             return self.div_mod_simple(rhs.bytes[0]);
         }
-        //TODO
-        panic("implement DivMod");
-        (self.clone(), rhs.clone())
+        self.div_mod_estimate(&rhs)
+    }
+
+    fn div_mod_estimate(&self, rhs: &ScBigInt) -> (ScBigInt, ScBigInt) {
+        // shift divisor MSB until the high order bit is set
+        let rhs_len = rhs.bytes.len();
+        let byte1 = rhs.bytes[rhs_len - 1];
+        let byte2 = rhs.bytes[rhs_len - 2];
+        let mut word = (byte1 as u16) << 8 + (byte2 as u16);
+        let mut shift: u32 = 0;
+        while (word & 0x8000) == 0 {
+            shift += 1;
+            word <<= 1
+        }
+
+        // shift numerator by the same amount of bits
+        let mut numerator = self.shl(shift);
+
+        // now chop off LSBs on both sides such that only MSB of divisor remains
+        numerator.bytes = numerator.bytes[rhs_len - 1..].to_vec();
+        let divisor = ScBigInt::normalize(&[(word >> 8) as u8]);
+
+        // now we can use simple division by one byte to get a quotient estimate
+        // at worst case this will be 1 or 2 higher than the actual value
+        let (mut quotient, _remainder) = numerator.div_mod_simple(divisor.bytes[0]);
+
+        // calculate first product based on estimated quotient
+        let mut product = rhs.mul(&quotient);
+
+        // as long as the product is too high,
+        // decrement the estimated quotient and adjust the product accordingly
+        while product.cmp(self) > 0 {
+            quotient = quotient.sub(&ScBigInt::from_uint64(1));
+            product = product.sub(&rhs);
+        }
+
+        // now that we found the actual quotient, the remainder is easy to calculate
+        (quotient, self.sub(&product))
     }
 
     fn div_mod_simple(&self, value: u8) -> (ScBigInt, ScBigInt) {
@@ -178,6 +210,52 @@ impl ScBigInt {
         ScBigInt::normalize(&buf)
     }
 
+    pub fn shl(&self, shift: u32) -> ScBigInt {
+        if shift == 0 {
+            return self.clone();
+        }
+
+        let whole_bytes = (shift >> 3) as usize;
+        let shift = shift & 0x07;
+
+        let lhs_len = self.bytes.len();
+        let mut buf_len = lhs_len + whole_bytes + 1;
+        let mut buf: Vec<u8> = vec![0; buf_len];
+        let mut word: u16 = 0;
+        for i in (0..lhs_len).rev() {
+            word = (word << 8) + (self.bytes[i] as u16);
+            buf_len -= 1;
+            buf[buf_len] = (word >> (8 - shift)) as u8;
+        }
+        buf[buf_len - 1] = (word << shift) as u8;
+        ScBigInt::normalize(&buf)
+    }
+
+    pub fn shr(&self, shift: u32) -> ScBigInt {
+        if shift == 0 {
+            return self.clone();
+        }
+
+        let whole_bytes = (shift >> 3) as usize;
+        let shift = shift & 0x07;
+
+        let lhs_len = self.bytes.len();
+        if whole_bytes >= lhs_len {
+            return ScBigInt::new();
+        }
+
+        let buf_len = lhs_len - whole_bytes;
+        let mut buf: Vec<u8> = vec![0; buf_len];
+        let bytes = self.bytes[whole_bytes..].to_vec();
+        let mut word = (bytes[0] as u16) << 8;
+        for i in 1..buf_len {
+            word = (word >> 8) + ((bytes[i] as u16) << 8);
+            buf[i - 1] = (word >> shift) as u8;
+        }
+        buf[buf_len - 1] = (word >> (8 + shift)) as u8;
+        ScBigInt::normalize(&buf)
+    }
+
     pub fn sub(&self, rhs: &ScBigInt) -> ScBigInt {
         let cmp = self.cmp(rhs);
         if cmp <= 0 {
@@ -194,12 +272,12 @@ impl ScBigInt {
         for i in 0..rhs_len {
             borrow += (self.bytes[i] as u16) - (rhs.bytes[i] as u16);
             buf[i] = borrow as u8;
-            borrow >>= 8;
+            borrow = (borrow & 0xff00) | (borrow >> 8);
         }
         for i in rhs_len..lhs_len {
             borrow += self.bytes[i] as u16;
             buf[i] = borrow as u8;
-            borrow >>= 8;
+            borrow = (borrow & 0xff00) | (borrow >> 8);
         }
         ScBigInt::normalize(&buf)
     }
