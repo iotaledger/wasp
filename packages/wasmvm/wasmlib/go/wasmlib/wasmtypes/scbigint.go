@@ -91,12 +91,12 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 		// divide equal values, quo = 1, rem = 0
 		return NewScBigInt(1), NewScBigInt()
 	}
-	//if o.IsUint64() {
-	//	// let standard uint64 type do the heavy lifting
-	//	lhs64 := o.Uint64()
-	//	rhs64 := rhs.Uint64()
-	//	return NewScBigInt(lhs64 / rhs64), NewScBigInt(lhs64 % rhs64)
-	//}
+	if o.IsUint64() {
+		// let standard uint64 type do the heavy lifting
+		lhs64 := o.Uint64()
+		rhs64 := rhs.Uint64()
+		return NewScBigInt(lhs64 / rhs64), NewScBigInt(lhs64 % rhs64)
+	}
 	if len(rhs.bytes) == 1 {
 		if rhs.bytes[0] == 1 {
 			// divide by 1, quo = lhs, rem = 0
