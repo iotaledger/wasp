@@ -427,8 +427,16 @@ pub fn view_big_int_sub(_ctx: &ScViewContext, f: &BigIntSubContext) {
     f.results.res().set_value(&res);
 }
 
-pub fn view_big_int_shl(ctx: &ScViewContext, f: &BigIntShlContext) {
+pub fn view_big_int_shl(_ctx: &ScViewContext, f: &BigIntShlContext) {
+    let lhs = f.params.lhs().value();
+    let shift = f.params.shift().value();
+    let res = lhs.shl(shift);
+    f.results.res().set_value(&res);
 }
 
-pub fn view_big_int_shr(ctx: &ScViewContext, f: &BigIntShrContext) {
+pub fn view_big_int_shr(_ctx: &ScViewContext, f: &BigIntShrContext) {
+    let lhs = f.params.lhs().value();
+    let shift = f.params.shift().value();
+    let res = lhs.shr(shift);
+    f.results.res().set_value(&res);
 }

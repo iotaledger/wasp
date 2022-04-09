@@ -214,8 +214,8 @@ func (o ScBigInt) Shl(shift uint32) ScBigInt {
 	bufLen := lhsLen + wholeBytes + 1
 	buf := make([]byte, bufLen)
 	word := uint16(0)
-	for i := lhsLen - 1; i >= 0; i-- {
-		word = (word << 8) + uint16(o.bytes[i])
+	for i := lhsLen; i > 0; i-- {
+		word = (word << 8) + uint16(o.bytes[i-1])
 		bufLen--
 		buf[bufLen] = byte(word >> (8 - shift))
 	}
@@ -268,12 +268,12 @@ func (o ScBigInt) Sub(rhs ScBigInt) ScBigInt {
 	for i := 0; i < rhsLen; i++ {
 		borrow += uint16(o.bytes[i]) - uint16(rhs.bytes[i])
 		buf[i] = byte(borrow)
-		borrow = (borrow & 0xff00) | (borrow >> 8)
+		borrow = uint16(int16(borrow) >> 8)
 	}
 	for i := rhsLen; i < lhsLen; i++ {
 		borrow += uint16(o.bytes[i])
 		buf[i] = byte(borrow)
-		borrow = (borrow & 0xff00) | (borrow >> 8)
+		borrow = uint16(int16(borrow) >> 8)
 	}
 	return normalize(buf)
 }

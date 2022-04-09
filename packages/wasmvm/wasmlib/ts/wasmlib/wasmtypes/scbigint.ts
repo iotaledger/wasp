@@ -41,7 +41,7 @@ export class ScBigInt {
             buf[i] = carry as u8;
             carry >>= 8;
         }
-        for (let i = rhsLen; carry != 0 && i < lhsLen; i++) {
+        for (let i = rhsLen; i < lhsLen; i++) {
             carry += this.bytes[i] as u16;
             buf[i] = carry as u8;
             carry >>= 8;
@@ -86,7 +86,7 @@ export class ScBigInt {
         if (cmp <= 0) {
             if (cmp < 0) {
                 // divide by larger value, quo = 0, rem = lhs
-                return [new ScBigInt(), this];
+                return [new ScBigInt(), ScBigInt.normalize(this.bytes)];
             }
             // divide equal values, quo = 1, rem = 0
             return [ScBigInt.fromUint64(1), new ScBigInt()];
@@ -101,7 +101,7 @@ export class ScBigInt {
         if (rhs.bytes.length == 1) {
             if (rhs.bytes[0] == 1) {
                 // divide by 1, quo = lhs, rem = 0
-                return [this, new ScBigInt()];
+                return [ScBigInt.normalize(this.bytes), new ScBigInt()];
             }
             return this.divModSimple(rhs.bytes[0]);
         }
@@ -155,7 +155,7 @@ export class ScBigInt {
         }
         if (rhsLen == 1 && rhs.bytes[0] == 1) {
             // multiply by one, result lhs
-            return this;
+            return ScBigInt.normalize(this.bytes);
         }
 
         //TODO optimize by using u32 words instead of u8 words
@@ -169,6 +169,52 @@ export class ScBigInt {
             }
             buf[r + lhsLen] = carry as u8;
         }
+        return ScBigInt.normalize(buf);
+    }
+
+    public shl(shift32: u32): ScBigInt {
+        if (shift32 == 0) {
+            return ScBigInt.normalize(this.bytes);
+        }
+
+        let whole_bytes = shift32 >> 3;
+        let shift = (shift32 & 0x07) as u16;
+
+        let lhs_len = this.bytes.length;
+        let buf_len = lhs_len + whole_bytes + 1;
+        let buf: u8[] = new Array(buf_len);
+        let word: u16 = 0;
+        for (let i = lhs_len; i > 0; i--) {
+            word = (word << 8) + (this.bytes[i - 1] as u16);
+            buf_len -= 1;
+            buf[buf_len] = (word >> (8 - shift)) as u8;
+        }
+        buf[buf_len - 1] = (word << shift) as u8;
+        return ScBigInt.normalize(buf);
+    }
+
+    public shr(shift32: u32): ScBigInt {
+        if (shift32 == 0) {
+            return ScBigInt.normalize(this.bytes);
+        }
+
+        let whole_bytes = shift32 >> 3;
+        let shift = (shift32 & 0x07) as u16;
+
+        let lhs_len = this.bytes.length;
+        if (whole_bytes >= (lhs_len as u32)) {
+            return new ScBigInt();
+        }
+
+        let buf_len = lhs_len - whole_bytes;
+        let buf: u8[] = new Array(buf_len);
+        let bytes = this.bytes.slice(whole_bytes);
+        let word = (bytes[0] as u16) << 8;
+        for (let i = 1; i < buf_len; i++) {
+            word = (word >> 8) + ((bytes[i] as u16) << 8);
+            buf[i - 1] = (word >> shift) as u8;
+        }
+        buf[buf_len - 1] = (word >> (8 + shift)) as u8;
         return ScBigInt.normalize(buf);
     }
 
@@ -188,12 +234,12 @@ export class ScBigInt {
         for (let i = 0; i < rhsLen; i++) {
             borrow += (this.bytes[i] as u16) - (rhs.bytes[i] as u16);
             buf[i] = borrow as u8;
-            borrow >>= 8;
+            borrow = (borrow & 0xff00) | (borrow >> 8);
         }
         for (let i = rhsLen; i < lhsLen; i++) {
             borrow += this.bytes[i] as u16;
             buf[i] = borrow as u8;
-            borrow >>= 8;
+            borrow = (borrow & 0xff00) | (borrow >> 8);
         }
         return ScBigInt.normalize(buf);
     }

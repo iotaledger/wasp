@@ -438,7 +438,15 @@ export function viewBigIntSub(ctx: wasmlib.ScViewContext, f: sc.BigIntSubContext
 }
 
 export function viewBigIntShl(ctx: wasmlib.ScViewContext, f: sc.BigIntShlContext): void {
+    const lhs = f.params.lhs().value();
+    const shift = f.params.shift().value();
+    const res = lhs.shl(shift);
+    f.results.res().setValue(res);
 }
 
 export function viewBigIntShr(ctx: wasmlib.ScViewContext, f: sc.BigIntShrContext): void {
+    const lhs = f.params.lhs().value();
+    const shift = f.params.shift().value();
+    const res = lhs.shr(shift);
+    f.results.res().setValue(res);
 }
