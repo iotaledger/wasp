@@ -21,14 +21,17 @@ export class ArrayOfImmutableInt64 extends wasmtypes.ScProxy {
 }
 
 export class ImmutableTestFunc1Params extends wasmtypes.ScProxy {
+	// comment for arr
 	arr(): sc.ArrayOfImmutableInt64 {
 		return new sc.ArrayOfImmutableInt64(this.proxy.root(sc.ParamArr));
 	}
 
+	// comment for name
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
+	// comment for value
 	value(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamValue));
 	}
@@ -54,34 +57,41 @@ export class ArrayOfMutableInt64 extends wasmtypes.ScProxy {
 }
 
 export class MutableTestFunc1Params extends wasmtypes.ScProxy {
+	// comment for arr
 	arr(): sc.ArrayOfMutableInt64 {
 		return new sc.ArrayOfMutableInt64(this.proxy.root(sc.ParamArr));
 	}
 
+	// comment for name
 	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
+	// comment for value
 	value(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamValue));
 	}
 }
 
 export class ImmutableTestView1Params extends wasmtypes.ScProxy {
+	// comment for arr
 	arr(): sc.ArrayOfImmutableInt64 {
 		return new sc.ArrayOfImmutableInt64(this.proxy.root(sc.ParamArr));
 	}
 
+	// comment for name
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 }
 
 export class MutableTestView1Params extends wasmtypes.ScProxy {
+	// comment for arr
 	arr(): sc.ArrayOfMutableInt64 {
 		return new sc.ArrayOfMutableInt64(this.proxy.root(sc.ParamArr));
 	}
 
+	// comment for name
 	name(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}

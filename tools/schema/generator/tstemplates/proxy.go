@@ -13,6 +13,7 @@ $#if map typedefProxyMap
 	"proxyMethods": `
 $#if separator newline
 $#set separator $true
+	$fldComment
 $#if array proxyArray proxyMethods2
 `,
 	// *******************************
