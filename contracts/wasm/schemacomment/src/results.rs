@@ -18,6 +18,7 @@ pub struct ImmutableTestFunc1Results {
 }
 
 impl ImmutableTestFunc1Results {
+    // comment for length
     pub fn length(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
@@ -29,6 +30,7 @@ pub struct MutableTestFunc1Results {
 }
 
 impl MutableTestFunc1Results {
+    // comment for length
     pub fn length(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
@@ -40,6 +42,7 @@ pub struct ImmutableTestView1Results {
 }
 
 impl ImmutableTestView1Results {
+    // comment for length
     pub fn length(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
@@ -51,6 +54,7 @@ pub struct MutableTestView1Results {
 }
 
 impl MutableTestView1Results {
+    // comment for length
     pub fn length(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_LENGTH))
 	}
