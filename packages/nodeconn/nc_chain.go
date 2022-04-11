@@ -5,6 +5,7 @@ package nodeconn
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -84,12 +85,19 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	go func() {
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != nil {
+				str, err := json.Marshal(msgMetaChange)
+				if err != nil {
+					ncc.nc.log.Errorf("Unexpected error trying to marshal msgMetadataChange: %s", err)
+				} else {
+					ncc.nc.log.Debugf("msgMetadataChange: %s", str)
+				}
 				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
 			}
 		}
 	}()
-	// TODO promote/re-attach logic is missing (cannot be blocking, like the PostTx func)
-	return nil
+
+	// TODO should promote/re-attach logic not be blocking?
+	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
 }
 
 func (ncc *ncChain) queryChainUTXOs() {

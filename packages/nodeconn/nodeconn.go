@@ -218,6 +218,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
+	nc.log.Debugf("Posted transaction: %s", tx)
 	return txMsg, nil
 }
 
@@ -246,6 +247,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
+			nc.log.Debugf("promoting msgID: %s", msgID)
 			// create an empty message and the messageID as one of the parents
 			promotionMsg, err := builder.NewMessageBuilder().Parents([][]byte{msgID[:]}).Build()
 			if err != nil {
@@ -257,6 +259,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 			}
 		}
 		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
+			nc.log.Debugf("reattaching txMsg: %s", txMsg)
 			// remote PoW: Take the message, clear parents, clear nonce, send to node
 			txMsg.Parents = nil
 			txMsg.Nonce = 0
