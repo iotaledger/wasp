@@ -35,6 +35,7 @@ export class TestView1Context {
 }
 
 export class ScFuncs {
+	// comment for TestFunc1 1
 	static testFunc1(_ctx: wasmlib.ScFuncCallContext): TestFunc1Call {
 		const f = new TestFunc1Call();
 		f.params = new sc.MutableTestFunc1Params(wasmlib.newCallParamsProxy(f.func));
@@ -42,6 +43,7 @@ export class ScFuncs {
 		return f;
 	}
 
+	// comment for TestView1
 	static testView1(_ctx: wasmlib.ScViewCallContext): TestView1Call {
 		const f = new TestView1Call();
 		f.params = new sc.MutableTestView1Params(wasmlib.newCallParamsProxy(f.func));

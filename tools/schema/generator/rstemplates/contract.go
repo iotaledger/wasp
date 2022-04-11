@@ -43,6 +43,7 @@ $#if result ImmutableFuncNameResults
 $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
+	$funcComment
     pub fn $func_name(_ctx: &dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
     }

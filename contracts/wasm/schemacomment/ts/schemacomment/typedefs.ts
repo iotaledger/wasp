@@ -20,6 +20,7 @@ export class ArrayOfImmutableString extends wasmtypes.ScProxy {
 	}
 }
 
+// comment for TestTypedef
 export class ImmutableTestTypedef extends ArrayOfImmutableString {
 }
 
@@ -42,5 +43,6 @@ export class ArrayOfMutableString extends wasmtypes.ScProxy {
 	}
 }
 
+// comment for TestTypedef
 export class MutableTestTypedef extends ArrayOfMutableString {
 }

@@ -8,6 +8,7 @@
 
 import * as wasmtypes from "wasmlib/wasmtypes";
 
+// comment for TestStruct1
 export class TestStruct1 {
 	x1 : i32 = 0; // comment for x1
 	y1 : i32 = 0; // comment for y1
@@ -59,6 +60,7 @@ export class MutableTestStruct1 extends wasmtypes.ScProxy {
 	}
 }
 
+// comment for TestStruct2
 export class TestStruct2 {
 	x2 : i32 = 0; // comment for x2
 	y2 : i32 = 0; // comment for y2

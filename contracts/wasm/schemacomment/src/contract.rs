@@ -27,6 +27,7 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+	// comment for TestFunc1 1
     pub fn test_func1(_ctx: &dyn ScFuncCallContext) -> TestFunc1Call {
         let mut f = TestFunc1Call {
             func: ScFunc::new(HSC_NAME, HFUNC_TEST_FUNC1),
@@ -38,6 +39,7 @@ impl ScFuncs {
         f
     }
 
+	// comment for TestView1
     pub fn test_view1(_ctx: &dyn ScViewCallContext) -> TestView1Call {
         let mut f = TestView1Call {
             func: ScView::new(HSC_NAME, HVIEW_TEST_VIEW1),

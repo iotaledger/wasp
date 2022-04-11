@@ -25,6 +25,7 @@ $#set separator
 $#set params 
 $#each event eventParam
 
+$eventComment
 	pub fn $evt_name(&self$params) {
 		let mut evt = EventEncoder::new("$package.$evtName");
 $#each event eventEmit
