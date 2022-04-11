@@ -129,6 +129,13 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 
 func (n *Node) ToFuncDef() model.FuncDef {
 	def := model.FuncDef{}
+	def.Line = n.Line
+	if len(n.HeadComment) > 0 {
+		def.Comment = n.HeadComment[:len(n.HeadComment)-1] // remove trailing '\n'
+	} else if len(n.LineComment) > 0 {
+		def.Comment = n.LineComment[:len(n.LineComment)-1] // remove trailing '\n'
+	}
+
 	for _, yamlKey := range n.Contents {
 		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
@@ -137,6 +144,11 @@ func (n *Node) ToFuncDef() model.FuncDef {
 		switch yamlKey.Val {
 		case KeyAccess:
 			def.Access = *yamlKey.Contents[0].ToDefElt()
+			if len(yamlKey.HeadComment) > 0 {
+				def.Access.Comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+			} else if len(yamlKey.LineComment) > 0 {
+				def.Access.Comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+			}
 		case KeyParams:
 			def.Params = yamlKey.ToDefMap()
 		case KeyResults:
@@ -144,13 +156,6 @@ func (n *Node) ToFuncDef() model.FuncDef {
 		default:
 			return model.FuncDef{}
 		}
-		comment := ""
-		if len(yamlKey.HeadComment) > 0 {
-			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
-		} else if len(yamlKey.LineComment) > 0 {
-			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
-		}
-		def.Comment = comment
 	}
 	return def
 }

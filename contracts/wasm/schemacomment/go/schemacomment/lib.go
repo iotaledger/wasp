@@ -5,20 +5,21 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncTestFunc1,
-		ViewTestView1,
+    	FuncTestFunc1,
+    	ViewTestView1,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		funcTestFunc1Thunk,
+    	funcTestFunc1Thunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewTestView1Thunk,
+    	viewTestView1Thunk,
 	},
 }
 

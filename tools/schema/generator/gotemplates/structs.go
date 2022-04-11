@@ -14,7 +14,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
-$structComment
+$#if structComment _structComment
 type $StrName struct {
 $#each struct structField
 }
@@ -79,5 +79,9 @@ func (o $mut$StrName) Delete() {
 func (o $mut$StrName) SetValue(value *$StrName) {
 	o.proxy.Set(value.Bytes())
 }
+`,
+	// *******************************
+	"_structComment": `
+$structComment
 `,
 }
