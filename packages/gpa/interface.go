@@ -18,7 +18,7 @@ type Input interface{}
 type Output interface{}
 
 type GPA interface {
-	Input(in Input) []Message
+	Input(inp Input) []Message
 	Message(msg Message) []Message
 	Output() Output
 }

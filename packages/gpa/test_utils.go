@@ -15,7 +15,7 @@ func RunTestWithInputs(nodes map[NodeID]GPA, inputs map[NodeID]Input) {
 	for nid := range inputs {
 		nodeIDs = append(nodeIDs, nid)
 	}
-	rand.Shuffle(len(nodeIDs), func(i, j int) { nodeIDs[i], nodeIDs[j] = nodeIDs[j], nodeIDs[i] })
+	nodeIDs = ShuffleNodeIDs(nodeIDs)
 	for _, nid := range nodeIDs {
 		msgs = append(msgs, nodes[nid].Input(inputs[nid])...)
 	}
@@ -37,5 +37,10 @@ func MakeTestNodeIDs(prefix string, n int) []NodeID {
 	for i := range nodeIDs {
 		nodeIDs[i] = NodeID(fmt.Sprintf("%s-%03d", prefix, i))
 	}
+	return nodeIDs
+}
+
+func ShuffleNodeIDs(nodeIDs []NodeID) []NodeID {
+	rand.Shuffle(len(nodeIDs), func(i, j int) { nodeIDs[i], nodeIDs[j] = nodeIDs[j], nodeIDs[i] })
 	return nodeIDs
 }
