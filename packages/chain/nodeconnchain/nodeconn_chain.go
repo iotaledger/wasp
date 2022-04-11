@@ -129,6 +129,7 @@ func (nccT *nodeconnChain) txInclusionStateHandler(txID iotago.TransactionID, st
 		txID:  txID,
 		state: state,
 	}
+	nccT.log.Debugf("handling inclusion state of tx ID %v finished", txIDStr)
 }
 
 func (nccT *nodeconnChain) AttachToAliasOutput(handler chain.NodeConnectionAliasOutputHandlerFun) {
