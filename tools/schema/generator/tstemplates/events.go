@@ -16,12 +16,13 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
-$#set separator 
-$#set params 
-$#each event eventParam
+$#set endFunc ): void { 
+$#if event eventSetEndFunc
 
 $#if eventComment _eventComment
-	$evtName($params): void {
+	$evtName($endFunc
+$#each event eventParam
+$#if event eventEndFunc2
 		const evt = new wasmlib.EventEncoder("$package.$evtName");
 $#each event eventEmit
 		evt.emit();
@@ -29,11 +30,19 @@ $#each event eventEmit
 `,
 	// *******************************
 	"eventParam": `
-$#set params $params$separator$fldName: $fldLangType
-$#set separator , 
+$#if fldComment _eventParamComment
+		$fldName: $fldLangType,
 `,
 	// *******************************
 	"eventEmit": `
 		evt.encode(wasmtypes.$fldType$+ToString($fldName));
+`,
+	// *******************************
+	"eventSetEndFunc": `
+$#set endFunc 
+`,
+	// *******************************
+	"eventEndFunc2": `
+	): void {  
 `,
 }

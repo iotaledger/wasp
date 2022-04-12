@@ -21,12 +21,13 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
-$#set separator 
-$#set params 
-$#each event eventParam
+$#set endFunc ) { 
+$#if event eventSetEndFunc
 
 $#if eventComment _eventComment
-	pub fn $evt_name(&self$params) {
+	pub fn $evt_name(&self$endFunc
+$#each event eventParam
+$#if event eventEndFunc2
 		let mut evt = EventEncoder::new("$package.$evtName");
 $#each event eventEmit
 		evt.emit();
@@ -34,11 +35,19 @@ $#each event eventEmit
 `,
 	// *******************************
 	"eventParam": `
-$#set params $params, $fld_name: $fldRef$fldParamLangType
-$#set separator , 
+$#if fldComment _eventParamComment
+        $fld_name: $fldRef$fldParamLangType,
 `,
 	// *******************************
 	"eventEmit": `
 		evt.encode(&$fld_type$+_to_string($fldRef$fld_name));
+`,
+	// *******************************
+	"eventSetEndFunc": `
+$#set endFunc ,
+`,
+	// *******************************
+	"eventEndFunc2": `
+    ) {  
 `,
 }

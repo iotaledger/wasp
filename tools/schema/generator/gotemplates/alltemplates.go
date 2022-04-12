@@ -78,6 +78,10 @@ $#emit importWasmLib
 $eventComment
 `,
 	// *******************************
+	"_eventParamComment": `
+	$fldComment
+`,
+	// *******************************
 	"_fldComment": `
 $fldComment
 `,

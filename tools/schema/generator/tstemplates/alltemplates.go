@@ -101,6 +101,10 @@ import * as sc from "./index";
 	$eventComment
 `,
 	// *******************************
+	"_eventParamComment": `
+	$fldComment
+`,
+	// *******************************
 	"_fldComment": `
 	$fldComment
 `,

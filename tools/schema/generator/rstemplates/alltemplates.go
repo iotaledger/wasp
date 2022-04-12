@@ -116,6 +116,10 @@ use wasmlib::*;
     $eventComment
 `,
 	// *******************************
+	"_eventParamComment": `
+    $fldComment
+`,
+	// *******************************
 	"_fldComment": `
     $fldComment
 `,
