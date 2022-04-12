@@ -19,12 +19,12 @@ impl SchemaCommentEvents {
 // header comment for TestEvent 2
 	pub fn test_event(&self,
     // header comment for eventParam1 1
-// header comment for eventParam1 2
+    // header comment for eventParam1 2
         event_param1: &str,
     // header comment for eventParam2 1
-// header comment for eventParam2 2
+    // header comment for eventParam2 2
         event_param2: &str,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("schemacomment.testEvent");
 		evt.encode(&string_to_string(&event_param1));
 		evt.encode(&string_to_string(&event_param2));
@@ -33,7 +33,7 @@ impl SchemaCommentEvents {
 
     // header comment for TestEventNoParams 1
 // header comment for TestEventNoParams 2
-	pub fn test_event_no_params(&self) { 
+	pub fn test_event_no_params(&self) {
 		let mut evt = EventEncoder::new("schemacomment.testEventNoParams");
 		evt.emit();
 	}

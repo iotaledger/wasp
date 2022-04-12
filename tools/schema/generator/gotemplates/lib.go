@@ -33,7 +33,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportName": `
-    	$Kind$FuncName,
+		$Kind$FuncName,
 `,
 	// *******************************
 	"libExportFunc": `
@@ -41,7 +41,7 @@ $#if func libExportFuncThunk
 `,
 	// *******************************
 	"libExportFuncThunk": `
-    	$kind$FuncName$+Thunk,
+		$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libExportView": `
@@ -49,7 +49,7 @@ $#if view libExportViewThunk
 `,
 	// *******************************
 	"libExportViewThunk": `
-    	$kind$FuncName$+Thunk,
+		$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libThunk": `
