@@ -32,6 +32,7 @@ pub struct ImmutableGetAllowedStateControllerAddressesResults {
 }
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
+    // native contract, so this is an Array16
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES) }
 	}
@@ -66,6 +67,7 @@ pub struct MutableGetAllowedStateControllerAddressesResults {
 }
 
 impl MutableGetAllowedStateControllerAddressesResults {
+    // native contract, so this is an Array16
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES) }
 	}

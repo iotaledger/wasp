@@ -321,6 +321,7 @@ impl ScFuncs {
         f
     }
 
+    // Clear all the arrays of the array
     pub fn array_of_address_array_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfAddressArrayClearCall {
         ArrayOfAddressArrayClearCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_ADDRESS_ARRAY_CLEAR),
@@ -360,6 +361,7 @@ impl ScFuncs {
         f
     }
 
+    // Clear all the arrays of the array
     pub fn array_of_string_array_clear(_ctx: &dyn ScFuncCallContext) -> ArrayOfStringArrayClearCall {
         ArrayOfStringArrayClearCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_OF_STRING_ARRAY_CLEAR),

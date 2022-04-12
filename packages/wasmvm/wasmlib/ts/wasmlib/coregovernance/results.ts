@@ -20,6 +20,7 @@ export class ArrayOfImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	allowedStateControllerAddresses(): sc.ArrayOfImmutableBytes {
 		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
 	}
@@ -45,6 +46,7 @@ export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	allowedStateControllerAddresses(): sc.ArrayOfMutableBytes {
 		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
 	}

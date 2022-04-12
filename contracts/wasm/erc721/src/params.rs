@@ -17,10 +17,12 @@ pub struct ImmutableApproveParams {
 }
 
 impl ImmutableApproveParams {
+    // target account, clear approval when not present
     pub fn approved(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_APPROVED))
 	}
 
+    // token ID
     pub fn token_id(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -32,10 +34,12 @@ pub struct MutableApproveParams {
 }
 
 impl MutableApproveParams {
+    // target account, clear approval when not present
     pub fn approved(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_APPROVED))
 	}
 
+    // token ID
     pub fn token_id(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -47,6 +51,7 @@ pub struct ImmutableBurnParams {
 }
 
 impl ImmutableBurnParams {
+    // token ID
     pub fn token_id(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -58,6 +63,7 @@ pub struct MutableBurnParams {
 }
 
 impl MutableBurnParams {
+    // token ID
     pub fn token_id(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -69,10 +75,12 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
+    // creator/owner of the initial supply
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    // initial token supply
     pub fn symbol(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_SYMBOL))
 	}
@@ -84,10 +92,12 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
+    // creator/owner of the initial supply
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    // initial token supply
     pub fn symbol(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_SYMBOL))
 	}
@@ -99,10 +109,12 @@ pub struct ImmutableMintParams {
 }
 
 impl ImmutableMintParams {
+    // New token id
     pub fn token_id(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 
+    // Optional token URI that overrides default
     pub fn token_uri(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_TOKEN_URI))
 	}
@@ -114,10 +126,12 @@ pub struct MutableMintParams {
 }
 
 impl MutableMintParams {
+    // New token id
     pub fn token_id(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
 
+    // Optional token URI that overrides default
     pub fn token_uri(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_TOKEN_URI))
 	}
@@ -129,18 +143,22 @@ pub struct ImmutableSafeTransferFromParams {
 }
 
 impl ImmutableSafeTransferFromParams {
+    // extra data to pass to SC
     pub fn data(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.proxy.root(PARAM_DATA))
 	}
 
+    // from account
     pub fn from(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
+    // to account, which is SC
     pub fn to(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
+    // token ID
     pub fn token_id(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -152,18 +170,22 @@ pub struct MutableSafeTransferFromParams {
 }
 
 impl MutableSafeTransferFromParams {
+    // extra data to pass to SC
     pub fn data(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.proxy.root(PARAM_DATA))
 	}
 
+    // from account
     pub fn from(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
+    // to account, which is SC
     pub fn to(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
+    // token ID
     pub fn token_id(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -179,6 +201,7 @@ impl ImmutableSetApprovalForAllParams {
 		ScImmutableBool::new(self.proxy.root(PARAM_APPROVAL))
 	}
 
+    // target operator of account
     pub fn operator(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_OPERATOR))
 	}
@@ -194,6 +217,7 @@ impl MutableSetApprovalForAllParams {
 		ScMutableBool::new(self.proxy.root(PARAM_APPROVAL))
 	}
 
+    // target operator of account
     pub fn operator(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_OPERATOR))
 	}
@@ -205,14 +229,17 @@ pub struct ImmutableTransferFromParams {
 }
 
 impl ImmutableTransferFromParams {
+    // from account
     pub fn from(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
+    // to account
     pub fn to(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
+    // token ID
     pub fn token_id(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -224,14 +251,17 @@ pub struct MutableTransferFromParams {
 }
 
 impl MutableTransferFromParams {
+    // from account
     pub fn from(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_FROM))
 	}
 
+    // to account
     pub fn to(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_TO))
 	}
 
+    // token ID
     pub fn token_id(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_TOKEN_ID))
 	}
@@ -243,6 +273,7 @@ pub struct ImmutableBalanceOfParams {
 }
 
 impl ImmutableBalanceOfParams {
+    // account owner
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
@@ -254,6 +285,7 @@ pub struct MutableBalanceOfParams {
 }
 
 impl MutableBalanceOfParams {
+    // account owner
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}

@@ -17,6 +17,7 @@ pub struct ImmutableDeployContractParams {
 }
 
 impl ImmutableDeployContractParams {
+    // default 'N/A'
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
@@ -25,6 +26,7 @@ impl ImmutableDeployContractParams {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    //TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
@@ -36,6 +38,7 @@ pub struct MutableDeployContractParams {
 }
 
 impl MutableDeployContractParams {
+    // default 'N/A'
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
@@ -44,6 +47,7 @@ impl MutableDeployContractParams {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    //TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}

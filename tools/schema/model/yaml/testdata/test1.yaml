@@ -24,3 +24,11 @@ structs:
     # comment for y2 2
     y2: 
       Int32
+
+views:
+  TestView1: # comment for TestView1
+    access: owner # comment for access
+    params: # comment for params
+      name: String # comment for name
+    results: # comment for results
+      length: Uint32 # comment for length

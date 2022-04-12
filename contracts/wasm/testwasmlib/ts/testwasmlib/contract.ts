@@ -576,6 +576,7 @@ export class ScFuncs {
 		return f;
 	}
 
+	// Clear all the arrays of the array
 	static arrayOfAddressArrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArrayClearCall {
 		return new ArrayOfAddressArrayClearCall();
 	}
@@ -602,6 +603,7 @@ export class ScFuncs {
 		return f;
 	}
 
+	// Clear all the arrays of the array
 	static arrayOfStringArrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringArrayClearCall {
 		return new ArrayOfStringArrayClearCall();
 	}

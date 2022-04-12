@@ -28,6 +28,7 @@ pub struct ImmutableAccountsResults {
 }
 
 impl ImmutableAccountsResults {
+    // bytes are always empty
     pub fn agents(&self) -> MapAgentIDToImmutableBytes {
 		MapAgentIDToImmutableBytes { proxy: self.proxy.clone() }
 	}
@@ -54,6 +55,7 @@ pub struct MutableAccountsResults {
 }
 
 impl MutableAccountsResults {
+    // bytes are always empty
     pub fn agents(&self) -> MapAgentIDToMutableBytes {
 		MapAgentIDToMutableBytes { proxy: self.proxy.clone() }
 	}
@@ -65,6 +67,7 @@ pub struct ImmutableGetAccountNonceResults {
 }
 
 impl ImmutableGetAccountNonceResults {
+    // TODO should be Uint64
     pub fn account_nonce(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
 	}
@@ -76,6 +79,7 @@ pub struct MutableGetAccountNonceResults {
 }
 
 impl MutableGetAccountNonceResults {
+    // TODO should be Uint64
     pub fn account_nonce(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
 	}

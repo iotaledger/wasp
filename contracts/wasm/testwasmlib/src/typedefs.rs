@@ -703,6 +703,7 @@ impl ArrayOfImmutableString {
     }
 }
 
+//## Array
 pub type ImmutableStringArray = ArrayOfImmutableString;
 
 #[derive(Clone)]
@@ -728,6 +729,7 @@ impl ArrayOfMutableString {
     }
 }
 
+//## Array
 pub type MutableStringArray = ArrayOfMutableString;
 
 #[derive(Clone)]
@@ -741,6 +743,7 @@ impl MapStringToImmutableString {
     }
 }
 
+//## Map
 pub type ImmutableStringMap = MapStringToImmutableString;
 
 #[derive(Clone)]
@@ -758,6 +761,7 @@ impl MapStringToMutableString {
     }
 }
 
+//## Map
 pub type MutableStringMap = MapStringToMutableString;
 
 #[derive(Clone)]

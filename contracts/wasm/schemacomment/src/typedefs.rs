@@ -26,6 +26,7 @@ impl ArrayOfImmutableString {
     }
 }
 
+// comment for TestTypedef
 pub type ImmutableTestTypedef = ArrayOfImmutableString;
 
 #[derive(Clone)]
@@ -51,4 +52,5 @@ impl ArrayOfMutableString {
     }
 }
 
+// comment for TestTypedef
 pub type MutableTestTypedef = ArrayOfMutableString;

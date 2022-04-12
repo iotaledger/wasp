@@ -20,6 +20,7 @@ $#set separator
 $#set params 
 $#each event eventParam
 
+$#if eventComment _eventComment
 	$evtName($params): void {
 		const evt = new wasmlib.EventEncoder("$package.$evtName");
 $#each event eventEmit

@@ -33,14 +33,17 @@ pub struct ImmutableTestFunc1Params {
 }
 
 impl ImmutableTestFunc1Params {
+    // comment for arr
     pub fn arr(&self) -> ArrayOfImmutableInt64 {
 		ArrayOfImmutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
 	}
 
+    // comment for name
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    // comment for value
     pub fn value(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_VALUE))
 	}
@@ -75,14 +78,17 @@ pub struct MutableTestFunc1Params {
 }
 
 impl MutableTestFunc1Params {
+    // comment for arr
     pub fn arr(&self) -> ArrayOfMutableInt64 {
 		ArrayOfMutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
 	}
 
+    // comment for name
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    // comment for value
     pub fn value(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_VALUE))
 	}
@@ -94,10 +100,12 @@ pub struct ImmutableTestView1Params {
 }
 
 impl ImmutableTestView1Params {
+    // comment for arr
     pub fn arr(&self) -> ArrayOfImmutableInt64 {
 		ArrayOfImmutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
 	}
 
+    // comment for name
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
@@ -109,10 +117,12 @@ pub struct MutableTestView1Params {
 }
 
 impl MutableTestView1Params {
+    // comment for arr
     pub fn arr(&self) -> ArrayOfMutableInt64 {
 		ArrayOfMutableInt64 { proxy: self.proxy.root(PARAM_ARR) }
 	}
 
+    // comment for name
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}

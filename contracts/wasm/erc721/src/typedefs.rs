@@ -21,6 +21,7 @@ impl MapAgentIDToImmutableBool {
     }
 }
 
+// approval status of each operator
 pub type ImmutableOperators = MapAgentIDToImmutableBool;
 
 #[derive(Clone)]
@@ -38,4 +39,5 @@ impl MapAgentIDToMutableBool {
     }
 }
 
+// approval status of each operator
 pub type MutableOperators = MapAgentIDToMutableBool;

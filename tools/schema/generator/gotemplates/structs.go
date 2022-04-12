@@ -14,7 +14,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
-$structComment
+$#if structComment _structComment
 type $StrName struct {
 $#each struct structField
 }

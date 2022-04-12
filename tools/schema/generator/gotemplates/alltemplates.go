@@ -73,4 +73,24 @@ $#emit goPackage
 
 $#emit importWasmLib
 `,
+	// *******************************
+	"_eventComment": `
+$eventComment
+`,
+	// *******************************
+	"_fldComment": `
+$fldComment
+`,
+	// *******************************
+	"_funcComment": `
+$funcComment
+`,
+	// *******************************
+	"_structComment": `
+$structComment
+`,
+	// *******************************
+	"_typedefComment": `
+$fldComment
+`,
 }

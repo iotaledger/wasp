@@ -17,6 +17,7 @@ pub struct ImmutableGetFactorResults {
 }
 
 impl ImmutableGetFactorResults {
+    // relative division factor
     pub fn factor(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_FACTOR))
 	}
@@ -28,6 +29,7 @@ pub struct MutableGetFactorResults {
 }
 
 impl MutableGetFactorResults {
+    // relative division factor
     pub fn factor(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_FACTOR))
 	}
@@ -39,6 +41,7 @@ pub struct ImmutableGetOwnerResults {
 }
 
 impl ImmutableGetOwnerResults {
+    // current owner of this smart contract
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(RESULT_OWNER))
 	}
@@ -50,6 +53,7 @@ pub struct MutableGetOwnerResults {
 }
 
 impl MutableGetOwnerResults {
+    // current owner of this smart contract
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(RESULT_OWNER))
 	}

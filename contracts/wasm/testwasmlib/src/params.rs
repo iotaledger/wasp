@@ -438,6 +438,7 @@ impl ImmutableParamTypesParams {
 		ScImmutableNftID::new(self.proxy.root(PARAM_NFT_ID))
 	}
 
+    // special hook to be able to pass key/values as raw bytes
     pub fn param(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { proxy: self.proxy.clone() }
 	}
@@ -540,6 +541,7 @@ impl MutableParamTypesParams {
 		ScMutableNftID::new(self.proxy.root(PARAM_NFT_ID))
 	}
 
+    // special hook to be able to pass key/values as raw bytes
     pub fn param(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { proxy: self.proxy.clone() }
 	}

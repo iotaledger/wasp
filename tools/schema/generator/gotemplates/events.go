@@ -21,7 +21,7 @@ $#set separator
 $#set params 
 $#each event eventParam
 
-$eventComment
+$#if eventComment _eventComment
 func (e $TypeName) $EvtName(
 $params) {
 	evt := wasmlib.NewEventEncoder("$package.$evtName")
