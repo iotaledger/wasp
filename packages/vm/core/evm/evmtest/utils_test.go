@@ -6,7 +6,6 @@ package evmtest
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"math/big"
 	"strings"
 	"testing"
@@ -27,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"

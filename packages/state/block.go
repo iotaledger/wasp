@@ -3,16 +3,15 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 

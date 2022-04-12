@@ -4,6 +4,8 @@
 package emulator
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -17,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"golang.org/x/xerrors"
-	"math/big"
 )
 
 type EVMEmulator struct {

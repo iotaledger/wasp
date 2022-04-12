@@ -5,8 +5,6 @@ package state
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -17,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"golang.org/x/xerrors"
 )
 

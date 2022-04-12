@@ -49,7 +49,7 @@ func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
 	if !exists {
 		result.nodeIdentity = cryptolib.NewKeyPair()
 		data := result.nodeIdentity.GetPrivateKey().AsBytes()
-		result.log.Info("Node identity key pair generated.")
+		result.log.Infof("Node identity key pair generated. PublicKey: %s", result.nodeIdentity.GetPublicKey())
 		if err := result.store.Set(dbKey, data); err != nil {
 			result.log.Error("Generated node identity cannot be stored: %v", err)
 		}

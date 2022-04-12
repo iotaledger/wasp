@@ -88,7 +88,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertL2TotalIotas(chain2TotalIotas)
 
 	// make chain2 send a call to chain1 to withdraw iotas
-	reqAllowance := accounts.ConstDepositFeeTmp   // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas
+	reqAllowance := accounts.ConstDepositFeeTmp               // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas
 	iotasToWithdrawalFromChain1 := iotasCreditedToSc2OnChain1 // try to withdraw all iotas deposited to chain1 on behalf of chain2's contract
 	// estimate gas cost of a withdrawal on chain1
 	estimatedWdGas, _, _ := chain1.EstimateGasOnLedger(
