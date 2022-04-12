@@ -130,7 +130,8 @@ func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 // NewPostRequestParams simplifies encoding of request parameters
 func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	return &PostRequestParams{
-		Args: parseParams(p),
+		Args:     parseParams(p),
+		Transfer: iscp.NewFungibleTokens(0, nil),
 	}
 }
 
