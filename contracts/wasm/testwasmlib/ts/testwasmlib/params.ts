@@ -316,6 +316,7 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 
+	// special hook to be able to pass key/values as raw bytes
 	param(): sc.MapStringToImmutableBytes {
 		return new sc.MapStringToImmutableBytes(this.proxy);
 	}
@@ -409,6 +410,7 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 
+	// special hook to be able to pass key/values as raw bytes
 	param(): sc.MapStringToMutableBytes {
 		return new sc.MapStringToMutableBytes(this.proxy);
 	}

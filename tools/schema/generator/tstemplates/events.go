@@ -19,7 +19,8 @@ $#each events eventFunc
 $#set separator 
 $#set params 
 $#each event eventParam
-$eventComment
+
+$#if eventComment _eventComment
 	$evtName($params): void {
 		const evt = new wasmlib.EventEncoder("$package.$evtName");
 $#each event eventEmit

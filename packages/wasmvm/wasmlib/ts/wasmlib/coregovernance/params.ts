@@ -65,92 +65,112 @@ export class MutableRotateStateControllerParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableSetChainInfoParams extends wasmtypes.ScProxy {
+	// default no change
 	maxBlobSize(): wasmtypes.ScImmutableInt32 {
 		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ParamMaxBlobSize));
 	}
 
+	// default no change
 	maxEventSize(): wasmtypes.ScImmutableInt16 {
 		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ParamMaxEventSize));
 	}
 
+	// default no change
 	maxEventsPerReq(): wasmtypes.ScImmutableInt16 {
 		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ParamMaxEventsPerReq));
 	}
 
+	// default no change
 	ownerFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
+	// default no change
 	validatorFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
 export class MutableSetChainInfoParams extends wasmtypes.ScProxy {
+	// default no change
 	maxBlobSize(): wasmtypes.ScMutableInt32 {
 		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ParamMaxBlobSize));
 	}
 
+	// default no change
 	maxEventSize(): wasmtypes.ScMutableInt16 {
 		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ParamMaxEventSize));
 	}
 
+	// default no change
 	maxEventsPerReq(): wasmtypes.ScMutableInt16 {
 		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ParamMaxEventsPerReq));
 	}
 
+	// default no change
 	ownerFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
+	// default no change
 	validatorFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
 export class ImmutableSetContractFeeParams extends wasmtypes.ScProxy {
+	// contract id
 	hname(): wasmtypes.ScImmutableHname {
 		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHname));
 	}
 
+	// default 0 (no fee)
 	ownerFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
+	// default 0 (no fee)
 	validatorFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
 export class MutableSetContractFeeParams extends wasmtypes.ScProxy {
+	// contract id
 	hname(): wasmtypes.ScMutableHname {
 		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamHname));
 	}
 
+	// default 0 (no fee)
 	ownerFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
+	// default 0 (no fee)
 	validatorFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
 export class ImmutableSetDefaultFeeParams extends wasmtypes.ScProxy {
+	// default -1 (not set)
 	ownerFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
+	// default -1 (not set)
 	validatorFee(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
 export class MutableSetDefaultFeeParams extends wasmtypes.ScProxy {
+	// default -1 (not set)
 	ownerFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
+	// default -1 (not set)
 	validatorFee(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}

@@ -9,24 +9,28 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableDonateParams extends wasmtypes.ScProxy {
+	// feedback for the person you donate to
 	feedback(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamFeedback));
 	}
 }
 
 export class MutableDonateParams extends wasmtypes.ScProxy {
+	// feedback for the person you donate to
 	feedback(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamFeedback));
 	}
 }
 
 export class ImmutableWithdrawParams extends wasmtypes.ScProxy {
+	// amount to withdraw
 	amount(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 }
 
 export class MutableWithdrawParams extends wasmtypes.ScProxy {
+	// amount to withdraw
 	amount(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamAmount));
 	}

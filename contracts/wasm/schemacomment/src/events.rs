@@ -16,7 +16,7 @@ pub struct SchemaCommentEvents {
 
 impl SchemaCommentEvents {
 
-// header comment for TestEvent 1
+    // header comment for TestEvent 1
 // header comment for TestEvent 2
 	pub fn test_event(&self, event_param1: &str, event_param2: &str) {
 		let mut evt = EventEncoder::new("schemacomment.testEvent");

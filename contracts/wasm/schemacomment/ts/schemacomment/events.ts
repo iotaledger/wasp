@@ -10,7 +10,8 @@ import * as wasmlib from "wasmlib";
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class SchemaCommentEvents {
-// header comment for TestEvent 1
+
+	// header comment for TestEvent 1
 // header comment for TestEvent 2
 	testEvent(eventParam1: string, eventParam2: string): void {
 		const evt = new wasmlib.EventEncoder("schemacomment.testEvent");

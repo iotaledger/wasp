@@ -10,22 +10,22 @@ package dividend
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DivideCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type InitCall struct {
-	Func    *wasmlib.ScInitFunc
-	Params  MutableInitParams
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
 }
 
 type MemberCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableMemberParams
+	Func   *wasmlib.ScFunc
+	Params MutableMemberParams
 }
 
 type SetOwnerCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableSetOwnerParams
+	Func   *wasmlib.ScFunc
+	Params MutableSetOwnerParams
 }
 
 type GetFactorCall struct {

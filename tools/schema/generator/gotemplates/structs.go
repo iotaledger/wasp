@@ -80,8 +80,4 @@ func (o $mut$StrName) SetValue(value *$StrName) {
 	o.proxy.Set(value.Bytes())
 }
 `,
-	// *******************************
-	"_structComment": `
-$structComment
-`,
 }

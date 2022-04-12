@@ -26,7 +26,7 @@ $#if map typedefProxyAlias
 	// *******************************
 	"typedefProxyAlias": `
 
-$fldComment
+$#if fldComment _typedefComment
 export class $mut$FldName extends $proxy {
 }
 `,

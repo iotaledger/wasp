@@ -12,7 +12,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
-$structComment
+$#if structComment _structComment
 export class $StrName {
 $#each struct structField
 

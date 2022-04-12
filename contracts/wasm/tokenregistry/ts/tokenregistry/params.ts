@@ -9,56 +9,66 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableMintSupplyParams extends wasmtypes.ScProxy {
+	// description what minted token represents
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
 
+	// any user defined text
 	userDefined(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamUserDefined));
 	}
 }
 
 export class MutableMintSupplyParams extends wasmtypes.ScProxy {
+	// description what minted token represents
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
 
+	// any user defined text
 	userDefined(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamUserDefined));
 	}
 }
 
 export class ImmutableTransferOwnershipParams extends wasmtypes.ScProxy {
+	// token of token to transfer ownership of
 	token(): wasmtypes.ScImmutableTokenID {
 		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableTransferOwnershipParams extends wasmtypes.ScProxy {
+	// token of token to transfer ownership of
 	token(): wasmtypes.ScMutableTokenID {
 		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutableUpdateMetadataParams extends wasmtypes.ScProxy {
+	// token of token to update metadata for
 	token(): wasmtypes.ScImmutableTokenID {
 		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableUpdateMetadataParams extends wasmtypes.ScProxy {
+	// token of token to update metadata for
 	token(): wasmtypes.ScMutableTokenID {
 		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
+	// token of token to view registry info of
 	token(): wasmtypes.ScImmutableTokenID {
 		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableGetInfoParams extends wasmtypes.ScProxy {
+	// token of token to view registry info of
 	token(): wasmtypes.ScMutableTokenID {
 		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}

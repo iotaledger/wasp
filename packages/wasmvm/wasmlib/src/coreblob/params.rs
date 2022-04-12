@@ -28,6 +28,7 @@ pub struct ImmutableStoreBlobParams {
 }
 
 impl ImmutableStoreBlobParams {
+    // set of named blobs
     pub fn blobs(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { proxy: self.proxy.clone() }
 	}
@@ -54,6 +55,7 @@ pub struct MutableStoreBlobParams {
 }
 
 impl MutableStoreBlobParams {
+    // set of named blobs
     pub fn blobs(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { proxy: self.proxy.clone() }
 	}
@@ -65,10 +67,12 @@ pub struct ImmutableGetBlobFieldParams {
 }
 
 impl ImmutableGetBlobFieldParams {
+    // blob name
     pub fn field(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_FIELD))
 	}
 
+    // blob set
     pub fn hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
@@ -80,10 +84,12 @@ pub struct MutableGetBlobFieldParams {
 }
 
 impl MutableGetBlobFieldParams {
+    // blob name
     pub fn field(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_FIELD))
 	}
 
+    // blob set
     pub fn hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}
@@ -95,6 +101,7 @@ pub struct ImmutableGetBlobInfoParams {
 }
 
 impl ImmutableGetBlobInfoParams {
+    // blob set
     pub fn hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
@@ -106,6 +113,7 @@ pub struct MutableGetBlobInfoParams {
 }
 
 impl MutableGetBlobInfoParams {
+    // blob set
     pub fn hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}

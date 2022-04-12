@@ -17,6 +17,7 @@ pub struct ImmutableDepositParams {
 }
 
 impl ImmutableDepositParams {
+    // default is caller
     pub fn agent_id(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
@@ -28,6 +29,7 @@ pub struct MutableDepositParams {
 }
 
 impl MutableDepositParams {
+    // default is caller
     pub fn agent_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
@@ -39,6 +41,7 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
+    // default (zero) means all
     pub fn withdraw_amount(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
 	}
@@ -50,6 +53,7 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
+    // default (zero) means all
     pub fn withdraw_amount(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
 	}

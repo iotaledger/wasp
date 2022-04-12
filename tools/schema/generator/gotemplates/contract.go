@@ -123,8 +123,4 @@ $#if view coreExportViewThunk
 	"coreExportViewThunk": `
 		wasmlib.$Kind$+Error,
 `,
-	// *******************************
-	"_funcComment": `
-$funcComment
-`,
 }

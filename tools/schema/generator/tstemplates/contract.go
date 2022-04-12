@@ -74,7 +74,7 @@ $#if events PackageEventsExist
 $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
-	$funcComment
+$#if funcComment _funcComment
 	static $funcName(_ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
 	}
