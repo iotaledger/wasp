@@ -169,7 +169,7 @@ func TestParse(t *testing.T) {
 									},
 								},
 							},
-							&yaml.Node{
+							{
 								Val:  "views",
 								Line: 28,
 								Contents: []*yaml.Node{

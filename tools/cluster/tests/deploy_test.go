@@ -14,7 +14,7 @@ import (
 )
 
 func TestDeployChain(t *testing.T) {
-	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
+	e := setupWithNoChain(t)
 
 	counter1, err := e.clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
@@ -43,7 +43,7 @@ func TestDeployChain(t *testing.T) {
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 1, blockIndex)
+		require.Greater(t, blockIndex, uint32(1))
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)

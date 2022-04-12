@@ -208,7 +208,11 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *state.L1
 		Outputs:   txb.outputs(stateData),
 		Payload:   nil,
 	}
-	return essence, inputIDs.OrderedSet(inputs).MustCommitment()
+
+	inputsCommitment := inputIDs.OrderedSet(inputs).MustCommitment()
+	copy(essence.InputsCommitment[:], inputsCommitment)
+
+	return essence, inputsCommitment
 }
 
 // inputIDs generates a deterministic list of inputs for the transaction essence

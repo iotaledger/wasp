@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -59,7 +58,7 @@ func L1Host() string {
 }
 
 func L1APIPort() int {
-	return viper.GetInt("l1.api")
+	return viper.GetInt("l1.apiport")
 }
 
 func L1FaucetPort() int {
@@ -78,7 +77,7 @@ func L1Client() nodeconn.L1Client {
 			FaucetPort: L1FaucetPort(),
 		},
 		nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
-		logger.NewLogger("l1client"),
+		log.HiveLogger(),
 	)
 }
 

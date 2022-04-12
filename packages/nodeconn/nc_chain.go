@@ -5,6 +5,7 @@ package nodeconn
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -62,34 +63,45 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
+	txID, err := tx.ID()
+	if err != nil {
+		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
+	}
+	ncc.log.Debugf("publishing transaction %v...", iscp.TxID(txID))
 	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
 		return err
 	}
-	txID, err := tx.ID()
-	if err != nil {
-		return xerrors.Errorf("failed to get a tx ID: %w", err)
-	}
+	ncc.log.Debugf("publishing transaction %v: posted", iscp.TxID(txID))
+
 	txMsgID, err := txMsg.ID()
 	if err != nil {
-		return xerrors.Errorf("failed to extract a tx message ID: %w", err)
+		return xerrors.Errorf("publishing transaction %v: failed to extract a tx message ID: %w", iscp.TxID(txID), err)
 	}
-
 	//
 	// TODO: Move it to `nc_transaction.go`
 	msgMetaChanges, subInfo := ncc.nc.mqttClient.MessageMetadataChange(*txMsgID)
 	if subInfo.Error() != nil {
-		return xerrors.Errorf("failed to subscribe: %w", subInfo.Error())
+		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", iscp.TxID(txID), subInfo.Error())
 	}
 	go func() {
+		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", iscp.TxID(txID))
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != nil {
+				str, err := json.Marshal(msgMetaChange)
+				if err != nil {
+					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", iscp.TxID(txID), err)
+				} else {
+					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", iscp.TxID(txID), str)
+				}
 				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
 			}
 		}
+		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", iscp.TxID(txID))
 	}()
-	// TODO promote/re-attach logic is missing (cannot be blocking, like the PostTx func)
-	return nil
+
+	// TODO should promote/re-attach logic not be blocking?
+	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
 }
 
 func (ncc *ncChain) queryChainUTXOs() {

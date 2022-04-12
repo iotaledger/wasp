@@ -649,7 +649,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)
 	signatureForUnlock := &iotago.Ed25519Signature{
-		PublicKey: hashing.HashData(publicKey.AsBytes()),
+		PublicKey: publicKey.AsByteArray(),
 		Signature: signatureArray,
 	}
 	tx := &iotago.Transaction{
