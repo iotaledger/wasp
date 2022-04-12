@@ -113,22 +113,30 @@ use wasmlib::*;
 `,
 	// *******************************
 	"_eventComment": `
-    $eventComment
+    $nextLine
+`,
+	// *******************************
+	"_eventParamComment": `
+        $nextLine
 `,
 	// *******************************
 	"_fldComment": `
-    $fldComment
+    $nextLine
 `,
 	// *******************************
 	"_funcComment": `
-    $funcComment
+    $nextLine
+`,
+	// *******************************
+	"_funcAccessComment": `
+	$nextLine
 `,
 	// *******************************
 	"_structComment": `
-$structComment
+$nextLine
 `,
 	// *******************************
 	"_typedefComment": `
-$fldComment
+$nextLine
 `,
 }

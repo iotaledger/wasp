@@ -154,7 +154,19 @@ func (g *GenBase) emitEach(line string) {
 	case KeyTypeDef:
 		g.emitEachField(g.s.Typedefs, template)
 	default:
-		g.error(line)
+		// emit multi-line text
+		text, ok := g.keys[parts[1]]
+		if !ok {
+			g.error(line)
+			return
+		}
+		if text != "" {
+			lines := strings.Split(text, "\n")
+			for _, nextLine := range lines {
+				g.keys["nextLine"] = nextLine
+				g.emit(template)
+			}
+		}
 	}
 }
 

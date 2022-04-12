@@ -12,7 +12,7 @@ $#if map typedefProxyMap
 	// *******************************
 	"proxyMethods": `
 
-$#if fldComment _fldComment
+$#each fldComment _fldComment
 $#if array proxyArray proxyMethods2
 `,
 	// *******************************

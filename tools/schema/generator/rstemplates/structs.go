@@ -15,7 +15,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
-$#if structComment _structComment
+$#each structComment _structComment
 #[derive(Clone)]
 pub struct $StrName {
 $#each struct structField

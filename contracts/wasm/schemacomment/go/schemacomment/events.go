@@ -17,13 +17,22 @@ type SchemaCommentEvents struct{}
 // header comment for TestEvent 1
 // header comment for TestEvent 2
 func (e SchemaCommentEvents) TestEvent(
-	eventParam1 string, // header comment for eventParam1 1
+	// header comment for eventParam1 1
 	// header comment for eventParam1 2
-	eventParam2 string, // header comment for eventParam2 1
+	eventParam1 string,
+	// header comment for eventParam2 1
 	// header comment for eventParam2 2
+	eventParam2 string,
 ) {
 	evt := wasmlib.NewEventEncoder("schemacomment.testEvent")
 	evt.Encode(wasmtypes.StringToString(eventParam1))
 	evt.Encode(wasmtypes.StringToString(eventParam2))
+	evt.Emit()
+}
+
+// header comment for TestEventNoParams 1
+// header comment for TestEventNoParams 2
+func (e SchemaCommentEvents) TestEventNoParams() {
+	evt := wasmlib.NewEventEncoder("schemacomment.testEventNoParams")
 	evt.Emit()
 }

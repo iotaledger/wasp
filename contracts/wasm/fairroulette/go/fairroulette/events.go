@@ -15,9 +15,12 @@ import (
 type FairRouletteEvents struct{}
 
 func (e FairRouletteEvents) Bet(
-	address wasmtypes.ScAddress, // address of better
-	amount uint64, // amount of iotas to bet
-	number uint16, // number to bet on
+	// address of better
+	address wasmtypes.ScAddress,
+	// amount of iotas to bet
+	amount uint64,
+	// number to bet on
+	number uint16,
 ) {
 	evt := wasmlib.NewEventEncoder("fairroulette.bet")
 	evt.Encode(wasmtypes.AddressToString(address))
@@ -27,8 +30,10 @@ func (e FairRouletteEvents) Bet(
 }
 
 func (e FairRouletteEvents) Payout(
-	address wasmtypes.ScAddress, // address of winner
-	amount uint64, // amount of iotas won
+	// address of winner
+	address wasmtypes.ScAddress,
+	// amount of iotas won
+	amount uint64,
 ) {
 	evt := wasmlib.NewEventEncoder("fairroulette.payout")
 	evt.Encode(wasmtypes.AddressToString(address))
@@ -37,7 +42,8 @@ func (e FairRouletteEvents) Payout(
 }
 
 func (e FairRouletteEvents) Round(
-	number uint32, // current betting round number
+	// current betting round number
+	number uint32,
 ) {
 	evt := wasmlib.NewEventEncoder("fairroulette.round")
 	evt.Encode(wasmtypes.Uint32ToString(number))
@@ -55,7 +61,8 @@ func (e FairRouletteEvents) Stop() {
 }
 
 func (e FairRouletteEvents) Winner(
-	number uint16, // the winning number
+	// the winning number
+	number uint16,
 ) {
 	evt := wasmlib.NewEventEncoder("fairroulette.winner")
 	evt.Encode(wasmtypes.Uint16ToString(number))

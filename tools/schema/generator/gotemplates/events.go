@@ -17,22 +17,33 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
-$#set separator 
-$#set params 
-$#each event eventParam
+$#set endFunc ) {
+$#if event eventSetEndFunc
 
-$#if eventComment _eventComment
-func (e $TypeName) $EvtName(
-$params) {
+$#each eventComment _eventComment
+func (e $TypeName) $EvtName($endFunc
+$#each event eventParam
+$#if event eventEndFunc2
 	evt := wasmlib.NewEventEncoder("$package.$evtName")
 $#each event eventEmit
 	evt.Emit()
 }
 `,
 	// *******************************
-	"eventParam": "\n$#set params $params$fldName $fldLangType, $fldComment\r\n",
+	"eventParam": `
+$#each fldComment _eventParamComment
+	$fldName $fldLangType,
+`,
 	// *******************************
 	"eventEmit": `
 	evt.Encode(wasmtypes.$FldType$+ToString($fldName))
+`,
+	// *******************************
+	"eventSetEndFunc": `
+$#set endFunc 
+`,
+	// *******************************
+	"eventEndFunc2": `
+) {
 `,
 }
