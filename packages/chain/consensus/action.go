@@ -646,12 +646,10 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 	// check consistency ---------------- end
 
 	publicKey := c.committee.DKShare().GetSharedPublic()
-	var publicKeyArray [ed25519.PublicKeySize]byte
-	copy(publicKeyArray[:], publicKey.AsBytes())
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)
 	signatureForUnlock := &iotago.Ed25519Signature{
-		PublicKey: publicKeyArray,
+		PublicKey: publicKey.AsByteArray(),
 		Signature: signatureArray,
 	}
 	tx := &iotago.Transaction{
