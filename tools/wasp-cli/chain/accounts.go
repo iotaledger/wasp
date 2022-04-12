@@ -1,8 +1,6 @@
 package chain
 
 import (
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -47,8 +45,8 @@ var balanceCmd = &cobra.Command{
 		log.Check(err)
 
 		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name, dict.Dict{
-				accounts.ParamAgentID: agentID.Bytes(),
-			})
+			accounts.ParamAgentID: agentID.Bytes(),
+		})
 		log.Check(err)
 
 		header := []string{"token", "amount"}
@@ -62,7 +60,7 @@ var balanceCmd = &cobra.Command{
 			bal, err := codec.DecodeBigIntAbs(v)
 			log.Check(err)
 
-			rows[i] = []string{tokenStr, fmt.Sprintf("%s", bal)}
+			rows[i] = []string{tokenStr, bal.String()}
 			i++
 		}
 		log.PrintTable(header, rows)

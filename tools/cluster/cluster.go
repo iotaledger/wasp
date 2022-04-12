@@ -17,7 +17,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -27,8 +26,8 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -50,18 +49,13 @@ type Cluster struct {
 }
 
 func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
-	err := logger.InitGlobalLogger(parameters.Init())
-	if err != nil {
-		panic(err)
-	}
-
 	return &Cluster{
 		Name:             name,
 		Config:           config,
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), logger.NewLogger("l1client")),
+		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), testlogger.NewLogger(t)),
 	}
 }
 

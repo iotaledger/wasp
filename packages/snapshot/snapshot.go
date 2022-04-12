@@ -2,6 +2,10 @@ package snapshot
 
 import (
 	"fmt"
+	"io"
+	"path"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -9,9 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"io"
-	"path"
-	"time"
 )
 
 type ConsoleReportParams struct {
