@@ -191,36 +191,52 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	chain.StateAddress = stateAddr
 	chain.ChainID = chainID
 
+	// TODO should all nodes be added as access node?
+	return chain, clu.addAllAccessNodes(chain, allPeers)
+}
+
+func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	//
 	// Register all non-committee nodes as access nodes.
-	for _, a := range allPeers {
-		if err := clu.AddAccessNode(a, chain); err != nil {
-			return nil, err
+	addAccessNodesRequests := make([]*iotago.Transaction, len(chain.CommitteeAPIHosts()))
+	for i, a := range nodes {
+		tx, err := clu.AddAccessNode(a, chain)
+		if err != nil {
+			return err
 		}
+		addAccessNodesRequests[i] = tx
 	}
 
-	return chain, nil
+	peers := multiclient.New(chain.CommitteeAPIHosts())
+
+	for _, tx := range addAccessNodesRequests {
+		// ---------- wait until the requests are processed in all committee nodes
+		if err := peers.WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second); err != nil {
+			return xerrors.Errorf("WaitAddAccessNode: %w", err)
+		}
+	}
+	return nil
 }
 
 // AddAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
+func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnAccessNodes(clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
-		return err
+		return nil, err
 	}
 	accessNodePeering, err := waspClient.GetPeeringSelf()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), clu.l1.L1Params().Bech32Prefix)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	scArgs := governance.AccessNodeInfo{
 		NodePubKey:    accessNodePubKey.AsBytes(),
@@ -233,14 +249,14 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	txID, err := tx.ID()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
-	return nil
+	return tx, nil
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
