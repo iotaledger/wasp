@@ -47,7 +47,7 @@ $#emit structMethods
 `,
 	// *******************************
 	"structEncode": `
-		wasmtypes.$FldType$+Encode(enc, o.$FldName)
+	wasmtypes.$FldType$+Encode(enc, o.$FldName)
 `,
 	// *******************************
 	"structMethods": `

@@ -14,12 +14,12 @@ export class SchemaCommentEvents {
 // header comment for TestEvent 2
 	testEvent(
 	// header comment for eventParam1 1
-// header comment for eventParam1 2
+	// header comment for eventParam1 2
 		eventParam1: string,
 	// header comment for eventParam2 1
-// header comment for eventParam2 2
+	// header comment for eventParam2 2
 		eventParam2: string,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("schemacomment.testEvent");
 		evt.encode(wasmtypes.stringToString(eventParam1));
 		evt.encode(wasmtypes.stringToString(eventParam2));
@@ -28,7 +28,7 @@ export class SchemaCommentEvents {
 
 	// header comment for TestEventNoParams 1
 // header comment for TestEventNoParams 2
-	testEventNoParams(): void { 
+	testEventNoParams(): void {
 		const evt = new wasmlib.EventEncoder("schemacomment.testEventNoParams");
 		evt.emit();
 	}

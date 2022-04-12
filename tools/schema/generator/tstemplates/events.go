@@ -16,7 +16,7 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
-$#set endFunc ): void { 
+$#set endFunc ): void {
 $#if event eventSetEndFunc
 
 $#if eventComment _eventComment
@@ -30,7 +30,7 @@ $#each event eventEmit
 `,
 	// *******************************
 	"eventParam": `
-$#if fldComment _eventParamComment
+$#each fldComment _eventParamComment
 		$fldName: $fldLangType,
 `,
 	// *******************************
@@ -43,6 +43,6 @@ $#set endFunc
 `,
 	// *******************************
 	"eventEndFunc2": `
-	): void {  
+	): void {
 `,
 }
