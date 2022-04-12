@@ -19,7 +19,7 @@ $#each events eventFunc
 $#set endFunc ): void {
 $#if event eventSetEndFunc
 
-$#if eventComment _eventComment
+$#each eventComment _eventComment
 	$evtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2

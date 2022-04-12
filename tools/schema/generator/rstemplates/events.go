@@ -24,7 +24,7 @@ $#each events eventFunc
 $#set endFunc ) {
 $#if event eventSetEndFunc
 
-$#if eventComment _eventComment
+$#each eventComment _eventComment
 	pub fn $evt_name(&self$endFunc
 $#each event eventParam
 $#if event eventEndFunc2

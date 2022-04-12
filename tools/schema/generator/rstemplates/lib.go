@@ -187,28 +187,32 @@ $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccessself": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesschain": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	ctx.require(ctx.caller() == ctx.chain_owner_id(), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesscreator": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"accessOther": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	let access = f.state.$func_access();
 	ctx.require(access.exists(), "access not set: $funcAccess");
 	ctx.require(ctx.caller() == access.value(), "no permission");
@@ -216,10 +220,5 @@ $#if funcAccessComment accessComment
 `,
 	// *******************************
 	"accessDone": `
-`,
-	// *******************************
-	"accessComment": `
-
-	$funcAccessComment
 `,
 }

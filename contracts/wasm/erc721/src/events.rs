@@ -19,7 +19,7 @@ impl Erc721Events {
         approved: &ScAgentID,
         owner: &ScAgentID,
         token_id: &ScHash,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("erc721.approval");
 		evt.encode(&agent_id_to_string(&approved));
 		evt.encode(&agent_id_to_string(&owner));
@@ -31,7 +31,7 @@ impl Erc721Events {
         approval: bool,
         operator: &ScAgentID,
         owner: &ScAgentID,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("erc721.approvalForAll");
 		evt.encode(&bool_to_string(approval));
 		evt.encode(&agent_id_to_string(&operator));
@@ -42,7 +42,7 @@ impl Erc721Events {
 	pub fn init(&self,
         name: &str,
         symbol: &str,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("erc721.init");
 		evt.encode(&string_to_string(&name));
 		evt.encode(&string_to_string(&symbol));
@@ -53,7 +53,7 @@ impl Erc721Events {
         balance: u64,
         owner: &ScAgentID,
         token_id: &ScHash,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("erc721.mint");
 		evt.encode(&uint64_to_string(balance));
 		evt.encode(&agent_id_to_string(&owner));
@@ -65,7 +65,7 @@ impl Erc721Events {
         from: &ScAgentID,
         to: &ScAgentID,
         token_id: &ScHash,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("erc721.transfer");
 		evt.encode(&agent_id_to_string(&from));
 		evt.encode(&agent_id_to_string(&to));

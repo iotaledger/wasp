@@ -151,7 +151,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"caseAccessself": `
 
-$#if funcAccessComment _funcAccessComment
+$#each funcAccessComment _funcAccessComment
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
 $#set accessFinalize accessDone
@@ -159,7 +159,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"caseAccesschain": `
 
-$#if funcAccessComment _funcAccessComment
+$#each funcAccessComment _funcAccessComment
 	ctx.Require(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
 
 $#set accessFinalize accessDone
@@ -167,7 +167,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"caseAccesscreator": `
 
-$#if funcAccessComment _funcAccessComment
+$#each funcAccessComment _funcAccessComment
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 $#set accessFinalize accessDone
@@ -175,7 +175,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"accessOther": `
 
-$#if funcAccessComment _funcAccessComment
+$#each funcAccessComment _funcAccessComment
 	access := f.State.$FuncAccess()
 	ctx.Require(access.Exists(), "access not set: $funcAccess")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
@@ -183,9 +183,5 @@ $#if funcAccessComment _funcAccessComment
 `,
 	// *******************************
 	"accessDone": `
-`,
-	// *******************************
-	"_funcAccessComment": `
-	$funcAccessComment
 `,
 }

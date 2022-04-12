@@ -14,7 +14,7 @@ export class Erc721Events {
 		approved: wasmtypes.ScAgentID,
 		owner: wasmtypes.ScAgentID,
 		tokenID: wasmtypes.ScHash,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc721.approval");
 		evt.encode(wasmtypes.agentIDToString(approved));
 		evt.encode(wasmtypes.agentIDToString(owner));
@@ -26,7 +26,7 @@ export class Erc721Events {
 		approval: bool,
 		operator: wasmtypes.ScAgentID,
 		owner: wasmtypes.ScAgentID,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc721.approvalForAll");
 		evt.encode(wasmtypes.boolToString(approval));
 		evt.encode(wasmtypes.agentIDToString(operator));
@@ -37,7 +37,7 @@ export class Erc721Events {
 	init(
 		name: string,
 		symbol: string,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc721.init");
 		evt.encode(wasmtypes.stringToString(name));
 		evt.encode(wasmtypes.stringToString(symbol));
@@ -48,7 +48,7 @@ export class Erc721Events {
 		balance: u64,
 		owner: wasmtypes.ScAgentID,
 		tokenID: wasmtypes.ScHash,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc721.mint");
 		evt.encode(wasmtypes.uint64ToString(balance));
 		evt.encode(wasmtypes.agentIDToString(owner));
@@ -60,7 +60,7 @@ export class Erc721Events {
 		from: wasmtypes.ScAgentID,
 		to: wasmtypes.ScAgentID,
 		tokenID: wasmtypes.ScHash,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc721.transfer");
 		evt.encode(wasmtypes.agentIDToString(from));
 		evt.encode(wasmtypes.agentIDToString(to));

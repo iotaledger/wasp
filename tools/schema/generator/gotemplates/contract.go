@@ -43,7 +43,7 @@ $#if result ImmutableFuncNameResults
 	"FuncNameForCall": `
 $#emit setupInitFunc
 
-$#if funcComment _funcComment
+$#each funcComment _funcComment
 func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+CallContext) *$FuncName$+Call {
 $#set thisView f.Func
 $#if func setThisView

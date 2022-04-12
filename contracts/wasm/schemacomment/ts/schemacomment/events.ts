@@ -11,13 +11,13 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 export class SchemaCommentEvents {
 
 	// header comment for TestEvent 1
-// header comment for TestEvent 2
+	// header comment for TestEvent 2
 	testEvent(
-	// header comment for eventParam1 1
-	// header comment for eventParam1 2
+		// header comment for eventParam1 1
+		// header comment for eventParam1 2
 		eventParam1: string,
-	// header comment for eventParam2 1
-	// header comment for eventParam2 2
+		// header comment for eventParam2 1
+		// header comment for eventParam2 2
 		eventParam2: string,
 	): void {
 		const evt = new wasmlib.EventEncoder("schemacomment.testEvent");
@@ -27,7 +27,7 @@ export class SchemaCommentEvents {
 	}
 
 	// header comment for TestEventNoParams 1
-// header comment for TestEventNoParams 2
+	// header comment for TestEventNoParams 2
 	testEventNoParams(): void {
 		const evt = new wasmlib.EventEncoder("schemacomment.testEventNoParams");
 		evt.emit();

@@ -14,7 +14,7 @@ export class Erc20Events {
 		amount: u64,
 		owner: wasmtypes.ScAgentID,
 		spender: wasmtypes.ScAgentID,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc20.approval");
 		evt.encode(wasmtypes.uint64ToString(amount));
 		evt.encode(wasmtypes.agentIDToString(owner));
@@ -26,7 +26,7 @@ export class Erc20Events {
 		amount: u64,
 		from: wasmtypes.ScAgentID,
 		to: wasmtypes.ScAgentID,
-	): void {  
+	): void {
 		const evt = new wasmlib.EventEncoder("erc20.transfer");
 		evt.encode(wasmtypes.uint64ToString(amount));
 		evt.encode(wasmtypes.agentIDToString(from));

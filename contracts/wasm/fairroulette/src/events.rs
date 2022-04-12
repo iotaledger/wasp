@@ -16,13 +16,13 @@ pub struct FairRouletteEvents {
 impl FairRouletteEvents {
 
 	pub fn bet(&self,
-    // address of better
+        // address of better
         address: &ScAddress,
-    // amount of iotas to bet
+        // amount of iotas to bet
         amount: u64,
-    // number to bet on
+        // number to bet on
         number: u16,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("fairroulette.bet");
 		evt.encode(&address_to_string(&address));
 		evt.encode(&uint64_to_string(amount));
@@ -31,11 +31,11 @@ impl FairRouletteEvents {
 	}
 
 	pub fn payout(&self,
-    // address of winner
+        // address of winner
         address: &ScAddress,
-    // amount of iotas won
+        // amount of iotas won
         amount: u64,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("fairroulette.payout");
 		evt.encode(&address_to_string(&address));
 		evt.encode(&uint64_to_string(amount));
@@ -43,28 +43,28 @@ impl FairRouletteEvents {
 	}
 
 	pub fn round(&self,
-    // current betting round number
+        // current betting round number
         number: u32,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("fairroulette.round");
 		evt.encode(&uint32_to_string(number));
 		evt.emit();
 	}
 
-	pub fn start(&self) { 
+	pub fn start(&self) {
 		let mut evt = EventEncoder::new("fairroulette.start");
 		evt.emit();
 	}
 
-	pub fn stop(&self) { 
+	pub fn stop(&self) {
 		let mut evt = EventEncoder::new("fairroulette.stop");
 		evt.emit();
 	}
 
 	pub fn winner(&self,
-    // the winning number
+        // the winning number
         number: u16,
-    ) {  
+    ) {
 		let mut evt = EventEncoder::new("fairroulette.winner");
 		evt.encode(&uint16_to_string(number));
 		evt.emit();

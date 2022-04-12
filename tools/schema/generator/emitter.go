@@ -154,25 +154,19 @@ func (g *GenBase) emitEach(line string) {
 	case KeyTypeDef:
 		g.emitEachField(g.s.Typedefs, template)
 	default:
-		// emit multi-line comments
-		g.emitEachComment(line, template)
-	}
-}
-
-func (g *GenBase) emitEachComment(line, template string) {
-	key, ok := g.templates[template]
-	if !ok {
-		g.error(line)
-		return
-	}
-
-	tab := strings.Index(key, "$")
-	// the first char of `key` is `\n`, so we need to remove it
-	tabs := key[1:tab]
-	comment := g.keys[strings.TrimSpace(key)[1:]]
-	lines := strings.Split(comment, "\n")
-	for _, line := range lines {
-		g.println(tabs + line)
+		// emit multi-line text
+		text, ok := g.keys[parts[1]]
+		if !ok {
+			g.error(line)
+			return
+		}
+		if text != "" {
+			lines := strings.Split(text, "\n")
+			for _, nextLine := range lines {
+				g.keys["nextLine"] = nextLine
+				g.emit(template)
+			}
+		}
 	}
 }
 
