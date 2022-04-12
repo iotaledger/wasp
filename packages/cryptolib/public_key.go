@@ -41,10 +41,14 @@ func (pkT *PublicKey) AsBytes() []byte {
 	return pkT.key
 }
 
-func (pkT *PublicKey) AsKey() PublicKeyKey {
-	var result PublicKeyKey
+func (pkT *PublicKey) AsByteArray() [PublicKeySize]byte {
+	var result [PublicKeySize]byte
 	copy(result[:], pkT.key)
 	return result
+}
+
+func (pkT *PublicKey) AsKey() PublicKeyKey {
+	return PublicKeyKey(pkT.AsByteArray())
 }
 
 func (pkT *PublicKey) AsString() string {
