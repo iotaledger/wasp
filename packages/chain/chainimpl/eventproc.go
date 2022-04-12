@@ -144,7 +144,7 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 
 func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID, currentCmt chain.Committee) error {
 	currentCmtAddress := currentCmt.Address()
-	anchorOutputAddress := anchorOutput.GetAliasID().ToAddress()
+	anchorOutputAddress := anchorOutput.GetStateAddress()
 	if currentCmtAddress.Equal(anchorOutputAddress) {
 		c.log.Debugf("rotateCommitteeIfNeeded rotation is not needed: committee address %s is not changed", currentCmtAddress)
 		return nil
