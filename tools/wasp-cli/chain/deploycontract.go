@@ -32,7 +32,7 @@ var deployContractCmd = &cobra.Command{
 
 		case vmtypes.Native:
 			var err error
-			progHash, err = hashing.HashValueFromBase58(args[3])
+			progHash, err = hashing.HashValueFromHex(args[3])
 			log.Check(err)
 
 		default:

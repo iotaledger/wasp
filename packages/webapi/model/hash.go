@@ -23,7 +23,7 @@ func (h *HashValue) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	// verify encoding
-	_, err := hashing.HashValueFromBase58(s)
+	_, err := hashing.HashValueFromHex(s)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (h *HashValue) UnmarshalJSON(b []byte) error {
 }
 
 func (h HashValue) HashValue() hashing.HashValue {
-	r, err := hashing.HashValueFromBase58(string(h))
+	r, err := hashing.HashValueFromHex(string(h))
 	if err != nil {
 		// encoding should be already verified
 		panic(err)

@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"syscall"
 	"testing"
 	"text/template"
 	"time"
@@ -191,13 +192,13 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	chain.StateAddress = stateAddr
 	chain.ChainID = chainID
 
-	// TODO should all nodes be added as access node?
 	return chain, clu.addAllAccessNodes(chain, allPeers)
 }
 
 func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	//
-	// Register all non-committee nodes as access nodes.
+	// Register all nodes as access nodes.
+	// TODO make this configurable (so that only selected nodes are access nodes)
 	addAccessNodesRequests := make([]*iotago.Transaction, len(chain.CommitteeAPIHosts()))
 	for i, a := range nodes {
 		tx, err := clu.AddAccessNode(a, chain)
@@ -245,7 +246,10 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
-	scParams := chainclient.NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).WithIotas(1)
+	scParams := chainclient.
+		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
+		WithIotas(1000).
+		WithMaxAffordableGasBudget()
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
@@ -452,6 +456,12 @@ func (clu *Cluster) RestartNode(nodeIndex int) error {
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command(command)
+
+	// force the wasp processes to close if the cluster tests time out
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
