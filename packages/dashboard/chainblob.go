@@ -33,7 +33,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
+	hash, err := hashing.HashValueFromHex(c.Param("hash"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -86,7 +86,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
+	hash, err := hashing.HashValueFromHex(c.Param("hash"))
 	if err != nil {
 		return err
 	}

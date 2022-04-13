@@ -94,7 +94,7 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
-	programHash, err := hashing.HashValueFromBase58(progHashStr)
+	programHash, err := hashing.HashValueFromHex(progHashStr)
 	if err != nil {
 		return nil, err
 	}
