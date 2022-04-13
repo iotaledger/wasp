@@ -42,7 +42,8 @@ $#emit structMethods
 `,
 	// *******************************
 	"structField": `
-    pub $fld_name$fld_pad : $fldLangType, $fldComment
+$#each fldComment _structFieldComment
+    pub $fld_name$fld_pad : $fldLangType,
 `,
 	// *******************************
 	"structDecode": `

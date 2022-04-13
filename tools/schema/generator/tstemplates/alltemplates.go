@@ -121,6 +121,10 @@ import * as sc from "./index";
 $nextLine
 `,
 	// *******************************
+	"_structFieldComment": `
+	$nextLine
+`,
+	// *******************************
 	"_typedefComment": `
 $nextLine
 `,

@@ -8,8 +8,8 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Location {
-	x : i32 = 0; 
-	y : i32 = 0; 
+	x : i32 = 0;
+	y : i32 = 0;
 
 	static fromBytes(buf: u8[]): Location {
 		const dec = new wasmtypes.WasmDecoder(buf);

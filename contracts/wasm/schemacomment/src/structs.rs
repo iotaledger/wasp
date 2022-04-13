@@ -13,8 +13,10 @@ use wasmlib::*;
 // comment for TestStruct1
 #[derive(Clone)]
 pub struct TestStruct1 {
-    pub x1 : i32, // comment for x1
-    pub y1 : i32, // comment for y1
+    // comment for x1
+    pub x1 : i32,
+    // comment for y1
+    pub y1 : i32,
 }
 
 impl TestStruct1 {
@@ -75,8 +77,10 @@ impl MutableTestStruct1 {
 // comment for TestStruct2
 #[derive(Clone)]
 pub struct TestStruct2 {
-    pub x2 : i32, // comment for x2
-    pub y2 : i32, // comment for y2
+    // comment for x2
+    pub x2 : i32,
+    // comment for y2
+    pub y2 : i32,
 }
 
 impl TestStruct2 {

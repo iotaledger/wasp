@@ -10,17 +10,28 @@ package fairauction
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Auction struct {
-	Creator       wasmtypes.ScAgentID // issuer of start_auction transaction
-	Deposit       uint64              // deposit by auction owner to cover the SC fees
-	Description   string              // auction description
-	Duration      uint32              // auction duration in minutes
-	HighestBid    uint64              // the current highest bid amount
-	HighestBidder wasmtypes.ScAgentID // the current highest bidder
-	MinimumBid    uint64              // minimum bid amount
-	NumTokens     uint64              // number of tokens for sale
-	OwnerMargin   uint64              // auction owner's margin in promilles
-	Token         wasmtypes.ScTokenID // token of tokens for sale
-	WhenStarted   uint64              // timestamp when auction started
+	// issuer of start_auction transaction
+	Creator wasmtypes.ScAgentID
+	// deposit by auction owner to cover the SC fees
+	Deposit uint64
+	// auction description
+	Description string
+	// auction duration in minutes
+	Duration uint32
+	// the current highest bid amount
+	HighestBid uint64
+	// the current highest bidder
+	HighestBidder wasmtypes.ScAgentID
+	// minimum bid amount
+	MinimumBid uint64
+	// number of tokens for sale
+	NumTokens uint64
+	// auction owner's margin in promilles
+	OwnerMargin uint64
+	// token of tokens for sale
+	Token wasmtypes.ScTokenID
+	// timestamp when auction started
+	WhenStarted uint64
 }
 
 func NewAuctionFromBytes(buf []byte) *Auction {
@@ -90,9 +101,12 @@ func (o MutableAuction) Value() *Auction {
 }
 
 type Bid struct {
-	Amount    uint64 // cumulative amount of bids from same bidder
-	Index     uint32 // index of bidder in bidder list
-	Timestamp uint64 // timestamp of most recent bid
+	// cumulative amount of bids from same bidder
+	Amount uint64
+	// index of bidder in bidder list
+	Index uint32
+	// timestamp of most recent bid
+	Timestamp uint64
 }
 
 func NewBidFromBytes(buf []byte) *Bid {

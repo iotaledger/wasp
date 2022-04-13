@@ -98,6 +98,10 @@ $nextLine
 $nextLine
 `,
 	// *******************************
+	"_structFieldComment": `
+	$nextLine
+`,
+	// *******************************
 	"_typedefComment": `
 $nextLine
 `,

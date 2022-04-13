@@ -12,10 +12,10 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct CallRequest {
-    pub contract : ScHname, 
-    pub function : ScHname, 
-    pub params   : Vec<u8>, 
-    pub transfer : Vec<u8>, 
+    pub contract : ScHname,
+    pub function : ScHname,
+    pub params   : Vec<u8>,
+    pub transfer : Vec<u8>,
 }
 
 impl CallRequest {
@@ -79,10 +79,10 @@ impl MutableCallRequest {
 
 #[derive(Clone)]
 pub struct DeployRequest {
-    pub description : String, 
-    pub name        : String, 
-    pub params      : Vec<u8>, 
-    pub prog_hash   : ScHash, 
+    pub description : String,
+    pub name        : String,
+    pub params      : Vec<u8>,
+    pub prog_hash   : ScHash,
 }
 
 impl DeployRequest {
@@ -146,12 +146,12 @@ impl MutableDeployRequest {
 
 #[derive(Clone)]
 pub struct PostRequest {
-    pub chain_id : ScChainID, 
-    pub contract : ScHname, 
-    pub delay    : u32, 
-    pub function : ScHname, 
-    pub params   : Vec<u8>, 
-    pub transfer : Vec<u8>, 
+    pub chain_id : ScChainID,
+    pub contract : ScHname,
+    pub delay    : u32,
+    pub function : ScHname,
+    pub params   : Vec<u8>,
+    pub transfer : Vec<u8>,
 }
 
 impl PostRequest {
@@ -219,8 +219,8 @@ impl MutablePostRequest {
 
 #[derive(Clone)]
 pub struct SendRequest {
-    pub address  : ScAddress, 
-    pub transfer : Vec<u8>, 
+    pub address  : ScAddress,
+    pub transfer : Vec<u8>,
 }
 
 impl SendRequest {
@@ -280,9 +280,9 @@ impl MutableSendRequest {
 
 #[derive(Clone)]
 pub struct TransferRequest {
-    pub agent_id : ScAgentID, 
-    pub create   : bool, 
-    pub transfer : Vec<u8>, 
+    pub agent_id : ScAgentID,
+    pub create   : bool,
+    pub transfer : Vec<u8>,
 }
 
 impl TransferRequest {
