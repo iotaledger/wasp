@@ -32,7 +32,7 @@ func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *iotago.T
 	for i := range e.chain.CommitteeNodes {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, 2, blockIndex)
+		require.Greater(e.t, blockIndex, uint32(1))
 
 		contractRegistry, err := e.chain.ContractRegistry(i)
 		require.NoError(e.t, err)

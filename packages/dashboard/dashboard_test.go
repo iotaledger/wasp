@@ -75,7 +75,7 @@ func TestDashboardChainBlob(t *testing.T) {
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
 		"chainid": ch.ChainID.String(),
-		"hash":    hashing.RandomHash(nil).Base58(),
+		"hash":    hashing.RandomHash(nil).Hex(),
 	})
 	checkProperConversionsToString(t, html)
 }

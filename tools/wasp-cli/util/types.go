@@ -47,7 +47,7 @@ func ValueFromString(vtype, s string) []byte {
 	case "file":
 		return ReadFile(s)
 	case "hash":
-		hash, err := hashing.HashValueFromBase58(s)
+		hash, err := hashing.HashValueFromHex(s)
 		log.Check(err)
 		return hash.Bytes()
 	case "hname":

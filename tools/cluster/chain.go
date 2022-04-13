@@ -3,6 +3,7 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -94,7 +95,7 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
-	programHash, err := hashing.HashValueFromBase58(progHashStr)
+	programHash, err := hashing.HashValueFromHex(progHashStr)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,8 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
-			Args: codec.MakeDict(params),
+			Args:      codec.MakeDict(params),
+			GasBudget: math.MaxUint64, // maximum affordable gas budget
 		},
 	)
 	if err != nil {
