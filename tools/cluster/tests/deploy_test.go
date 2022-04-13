@@ -118,7 +118,8 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
-	).WithIotas(1)
+	).WithIotas(100).
+		WithMaxAffordableGasBudget()
 	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 
@@ -129,7 +130,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, blockIndex)
+		require.Greater(t, blockIndex, uint32(2))
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)

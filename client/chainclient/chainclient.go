@@ -145,6 +145,16 @@ func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
 	return par
 }
 
+func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
+	par.GasBudget = budget
+	return par
+}
+
+func (par *PostRequestParams) WithMaxAffordableGasBudget() *PostRequestParams {
+	par.GasBudget = math.MaxUint64
+	return par
+}
+
 func parseParams(params []interface{}) dict.Dict {
 	if len(params) == 1 {
 		return params[0].(dict.Dict)
