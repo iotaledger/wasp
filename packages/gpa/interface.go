@@ -22,3 +22,8 @@ type GPA interface {
 	Message(msg Message) []Message
 	Output() Output
 }
+
+// A convenience function to return from the Input or Message functions in GPA.
+func NoMessages() []Message {
+	return make([]Message, 0)
+}

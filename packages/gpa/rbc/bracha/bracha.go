@@ -25,7 +25,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type RBC struct {
+type rbc struct {
 	n           int
 	f           int
 	me          gpa.NodeID
@@ -42,7 +42,7 @@ type RBC struct {
 }
 
 func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([]byte) bool) gpa.GPA {
-	r := &RBC{
+	r := &rbc{
 		n:           len(peers),
 		f:           f,
 		me:          me,
@@ -59,7 +59,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([
 	return gpa.NewOwnHandler(me, r)
 }
 
-func (r *RBC) Input(input gpa.Input) []gpa.Message {
+func (r *rbc) Input(input gpa.Input) []gpa.Message {
 	if r.broadcaster != r.me {
 		panic(xerrors.Errorf("only broadcaster is allowed to take an input"))
 	}
@@ -81,7 +81,7 @@ func (r *RBC) Input(input gpa.Input) []gpa.Message {
 	return msgs
 }
 
-func (r *RBC) Message(msg gpa.Message) []gpa.Message {
+func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 	m := msg.(*message)
 	switch m.t {
 	case msgInitial:
@@ -95,7 +95,7 @@ func (r *RBC) Message(msg gpa.Message) []gpa.Message {
 	}
 }
 
-func (r *RBC) handleInitial(msg *message) []gpa.Message {
+func (r *rbc) handleInitial(msg *message) []gpa.Message {
 	if r.echoSent || !r.predicate(msg.v) {
 		return []gpa.Message{}
 	}
@@ -112,7 +112,7 @@ func (r *RBC) handleInitial(msg *message) []gpa.Message {
 	return msgs
 }
 
-func (r *RBC) handleEcho(msg *message) []gpa.Message {
+func (r *rbc) handleEcho(msg *message) []gpa.Message {
 	//
 	// Mark the message as received.
 	h := r.ensureValueStored(msg.v)
@@ -128,7 +128,7 @@ func (r *RBC) handleEcho(msg *message) []gpa.Message {
 	return []gpa.Message{}
 }
 
-func (r *RBC) handleReady(msg *message) []gpa.Message {
+func (r *rbc) handleReady(msg *message) []gpa.Message {
 	//
 	// Mark the message as received.
 	h := r.ensureValueStored(msg.v)
@@ -150,7 +150,7 @@ func (r *RBC) handleReady(msg *message) []gpa.Message {
 	return []gpa.Message{}
 }
 
-func (r *RBC) maybeSendEchoReady(v []byte) []gpa.Message {
+func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
 	msgs := []gpa.Message{}
 	if !r.echoSent {
 		for i := range r.peers {
@@ -177,14 +177,14 @@ func (r *RBC) maybeSendEchoReady(v []byte) []gpa.Message {
 	return msgs
 }
 
-func (r *RBC) Output() gpa.Output {
+func (r *rbc) Output() gpa.Output {
 	if r.output == hashing.NilHash {
 		return nil
 	}
 	return r.values[r.output]
 }
 
-func (r *RBC) ensureValueStored(val []byte) hashing.HashValue {
+func (r *rbc) ensureValueStored(val []byte) hashing.HashValue {
 	h := hashing.HashData(val)
 	if _, ok := r.values[h]; ok {
 		return h
