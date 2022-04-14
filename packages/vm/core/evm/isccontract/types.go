@@ -324,7 +324,7 @@ func WrapISCTimeData(data *iscp.TimeData) ISCTimeData {
 }
 
 func (i ISCTimeData) Unwrap() *iscp.TimeData {
-	if i.MilestoneIndex == 0 {
+	if i.MilestoneIndex == 0 && i.Time == 0 {
 		return nil
 	}
 
@@ -357,10 +357,14 @@ func (i *ISCExpiration) Unwrap() *iscp.Expiration {
 		return nil
 	}
 
-	address, err := i.ReturnAddress.Unwrap()
-
-	if err != nil {
+	if i.MilestoneIndex == 0 && i.Time == 0 {
 		return nil
+	}
+
+	var address iotago.Address
+
+	if len(i.ReturnAddress.Data) > 0 {
+		address = i.ReturnAddress.MustUnwrap()
 	}
 
 	ret := iscp.Expiration{
