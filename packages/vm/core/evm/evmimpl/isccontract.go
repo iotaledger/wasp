@@ -121,8 +121,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "send":
 		params := isccontract.ISCRequestParameters{}
 		err := method.Inputs.Copy(&params, args)
-		fmt.Printf("%v", err)
-		outs = []interface{}{}
+		c.ctx.RequireNoError(err)
 		c.ctx.Send(params.Unwrap())
 
 	case "call":
