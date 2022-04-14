@@ -17,10 +17,12 @@ pub struct ImmutableMintSupplyParams {
 }
 
 impl ImmutableMintSupplyParams {
+    // description what minted token represents
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
+    // any user defined text
     pub fn user_defined(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_USER_DEFINED))
 	}
@@ -32,10 +34,12 @@ pub struct MutableMintSupplyParams {
 }
 
 impl MutableMintSupplyParams {
+    // description what minted token represents
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
+    // any user defined text
     pub fn user_defined(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_USER_DEFINED))
 	}
@@ -47,6 +51,7 @@ pub struct ImmutableTransferOwnershipParams {
 }
 
 impl ImmutableTransferOwnershipParams {
+    // token of token to transfer ownership of
     pub fn token(&self) -> ScImmutableTokenID {
 		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
@@ -58,6 +63,7 @@ pub struct MutableTransferOwnershipParams {
 }
 
 impl MutableTransferOwnershipParams {
+    // token of token to transfer ownership of
     pub fn token(&self) -> ScMutableTokenID {
 		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
@@ -69,6 +75,7 @@ pub struct ImmutableUpdateMetadataParams {
 }
 
 impl ImmutableUpdateMetadataParams {
+    // token of token to update metadata for
     pub fn token(&self) -> ScImmutableTokenID {
 		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
@@ -80,6 +87,7 @@ pub struct MutableUpdateMetadataParams {
 }
 
 impl MutableUpdateMetadataParams {
+    // token of token to update metadata for
     pub fn token(&self) -> ScMutableTokenID {
 		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
@@ -91,6 +99,7 @@ pub struct ImmutableGetInfoParams {
 }
 
 impl ImmutableGetInfoParams {
+    // token of token to view registry info of
     pub fn token(&self) -> ScImmutableTokenID {
 		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
@@ -102,6 +111,7 @@ pub struct MutableGetInfoParams {
 }
 
 impl MutableGetInfoParams {
+    // token of token to view registry info of
     pub fn token(&self) -> ScMutableTokenID {
 		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}

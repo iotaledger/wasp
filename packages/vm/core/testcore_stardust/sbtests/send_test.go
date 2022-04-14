@@ -168,7 +168,7 @@ func testPingIotas1(t *testing.T, w bool) {
 	require.NoError(t, err)
 	req.
 		WithFungibleTokens(iscp.NewTokensIotas(expectedBack + gasFee)).
-		WithGasBudget(gas+1)
+		WithGasBudget(gas + 1)
 
 	_, err = ch.PostRequestSync(req, user)
 	require.NoError(t, err)

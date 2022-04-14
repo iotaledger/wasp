@@ -1,6 +1,8 @@
 package corecontracts
 
 import (
+	"sort"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"sort"
 )
 
 var All = map[iscp.Hname]*coreutil.ContractInfo{

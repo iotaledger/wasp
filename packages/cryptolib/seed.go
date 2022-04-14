@@ -4,7 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	hivecrypto "github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
 	"golang.org/x/crypto/blake2b"
 )
@@ -16,7 +16,10 @@ const (
 type Seed [SeedSize]byte
 
 func NewSeed() Seed {
-	return tpkg.RandEd25519Seed()
+	newSeedBytes := hivecrypto.NewSeed().Bytes()
+	var newSeed Seed
+	copy(newSeed[:], newSeedBytes)
+	return newSeed
 }
 
 func NewSeedFromBytes(seedData []byte) Seed {

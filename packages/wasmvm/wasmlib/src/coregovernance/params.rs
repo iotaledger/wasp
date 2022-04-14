@@ -113,22 +113,27 @@ pub struct ImmutableSetChainInfoParams {
 }
 
 impl ImmutableSetChainInfoParams {
+    // default no change
     pub fn max_blob_size(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
 	}
 
+    // default no change
     pub fn max_event_size(&self) -> ScImmutableInt16 {
 		ScImmutableInt16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
 	}
 
+    // default no change
     pub fn max_events_per_req(&self) -> ScImmutableInt16 {
 		ScImmutableInt16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
 	}
 
+    // default no change
     pub fn owner_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
+    // default no change
     pub fn validator_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
@@ -140,22 +145,27 @@ pub struct MutableSetChainInfoParams {
 }
 
 impl MutableSetChainInfoParams {
+    // default no change
     pub fn max_blob_size(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
 	}
 
+    // default no change
     pub fn max_event_size(&self) -> ScMutableInt16 {
 		ScMutableInt16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
 	}
 
+    // default no change
     pub fn max_events_per_req(&self) -> ScMutableInt16 {
 		ScMutableInt16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
 	}
 
+    // default no change
     pub fn owner_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
+    // default no change
     pub fn validator_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
@@ -167,14 +177,17 @@ pub struct ImmutableSetContractFeeParams {
 }
 
 impl ImmutableSetContractFeeParams {
+    // contract id
     pub fn hname(&self) -> ScImmutableHname {
 		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
+    // default 0 (no fee)
     pub fn owner_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
+    // default 0 (no fee)
     pub fn validator_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
@@ -186,14 +199,17 @@ pub struct MutableSetContractFeeParams {
 }
 
 impl MutableSetContractFeeParams {
+    // contract id
     pub fn hname(&self) -> ScMutableHname {
 		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
+    // default 0 (no fee)
     pub fn owner_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
+    // default 0 (no fee)
     pub fn validator_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
@@ -205,10 +221,12 @@ pub struct ImmutableSetDefaultFeeParams {
 }
 
 impl ImmutableSetDefaultFeeParams {
+    // default -1 (not set)
     pub fn owner_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
+    // default -1 (not set)
     pub fn validator_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
@@ -220,10 +238,12 @@ pub struct MutableSetDefaultFeeParams {
 }
 
 impl MutableSetDefaultFeeParams {
+    // default -1 (not set)
     pub fn owner_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
+    // default -1 (not set)
     pub fn validator_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}

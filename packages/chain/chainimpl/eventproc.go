@@ -144,7 +144,7 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 
 func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID, currentCmt chain.Committee) error {
 	currentCmtAddress := currentCmt.Address()
-	anchorOutputAddress := anchorOutput.GetAliasID().ToAddress()
+	anchorOutputAddress := anchorOutput.GetStateAddress()
 	if currentCmtAddress.Equal(anchorOutputAddress) {
 		c.log.Debugf("rotateCommitteeIfNeeded rotation is not needed: committee address %s is not changed", currentCmtAddress)
 		return nil
@@ -182,11 +182,11 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 
 func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID) error {
 	// check if I am in the committee
-	anchorOutputAddress := anchorOutput.GetAliasID().ToAddress()
-	dkShare, err := c.getChainDKShare(anchorOutputAddress)
+	stateControllerAddress := anchorOutput.GetAliasOutput().StateController()
+	dkShare, err := c.getChainDKShare(stateControllerAddress)
 	if err != nil {
 		if errors.Is(err, registry.ErrDKShareNotFound) {
-			c.log.Warnf("DKShare not found, committee not created, node will not participate in consensus")
+			c.log.Warnf("DKShare not found, committee not created, node will not participate in consensus. address: %s", stateControllerAddress)
 			return nil
 		}
 		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
@@ -196,7 +196,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID)
 		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
 			return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus failed %w", err)
 		}
-		c.log.Infof("CREATED COMMITTEE for the state address %s", anchorOutputAddress)
+		c.log.Infof("CREATED COMMITTEE for the state address %s", stateControllerAddress)
 	} else {
 		c.log.Warnf("DKShare is nil, committee not created")
 	}

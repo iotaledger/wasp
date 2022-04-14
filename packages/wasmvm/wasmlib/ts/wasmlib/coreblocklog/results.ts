@@ -60,6 +60,7 @@ export class ArrayOfImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetEventsForBlockResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	event(): sc.ArrayOfImmutableBytes {
 		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
 	}
@@ -85,30 +86,35 @@ export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableGetEventsForBlockResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	event(): sc.ArrayOfMutableBytes {
 		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
 export class ImmutableGetEventsForContractResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	event(): sc.ArrayOfImmutableBytes {
 		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
 export class MutableGetEventsForContractResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	event(): sc.ArrayOfMutableBytes {
 		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
 export class ImmutableGetEventsForRequestResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	event(): sc.ArrayOfImmutableBytes {
 		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
 export class MutableGetEventsForRequestResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	event(): sc.ArrayOfMutableBytes {
 		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
 	}
@@ -146,6 +152,7 @@ export class ArrayOfImmutableRequestID extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetRequestIDsForBlockResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	requestID(): sc.ArrayOfImmutableRequestID {
 		return new sc.ArrayOfImmutableRequestID(this.proxy.root(sc.ResultRequestID));
 	}
@@ -171,6 +178,7 @@ export class ArrayOfMutableRequestID extends wasmtypes.ScProxy {
 }
 
 export class MutableGetRequestIDsForBlockResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	requestID(): sc.ArrayOfMutableRequestID {
 		return new sc.ArrayOfMutableRequestID(this.proxy.root(sc.ResultRequestID));
 	}
@@ -205,12 +213,14 @@ export class MutableGetRequestReceiptResults extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	requestRecord(): sc.ArrayOfImmutableBytes {
 		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultRequestRecord));
 	}
 }
 
 export class MutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy {
+	// native contract, so this is an Array16
 	requestRecord(): sc.ArrayOfMutableBytes {
 		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultRequestRecord));
 	}

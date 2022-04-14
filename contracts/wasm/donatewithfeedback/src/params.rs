@@ -17,6 +17,7 @@ pub struct ImmutableDonateParams {
 }
 
 impl ImmutableDonateParams {
+    // feedback for the person you donate to
     pub fn feedback(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_FEEDBACK))
 	}
@@ -28,6 +29,7 @@ pub struct MutableDonateParams {
 }
 
 impl MutableDonateParams {
+    // feedback for the person you donate to
     pub fn feedback(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_FEEDBACK))
 	}
@@ -39,6 +41,7 @@ pub struct ImmutableWithdrawParams {
 }
 
 impl ImmutableWithdrawParams {
+    // amount to withdraw
     pub fn amount(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
@@ -50,6 +53,7 @@ pub struct MutableWithdrawParams {
 }
 
 impl MutableWithdrawParams {
+    // amount to withdraw
     pub fn amount(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}

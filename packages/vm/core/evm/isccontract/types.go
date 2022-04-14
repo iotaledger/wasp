@@ -4,12 +4,13 @@
 package isccontract
 
 import (
+	"math/big"
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"math/big"
-	"time"
 )
 
 // ISCChainID matches the type definition in ISC.sol

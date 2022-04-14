@@ -24,7 +24,6 @@ require (
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220406103521-d6b913603253
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect
-	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
 	github.com/klauspost/reedsolomon v1.9.16 // indirect
 	github.com/knadh/koanf v1.4.0

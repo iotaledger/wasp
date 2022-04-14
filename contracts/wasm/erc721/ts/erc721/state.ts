@@ -37,14 +37,17 @@ export class MapHashToImmutableString extends wasmtypes.ScProxy {
 }
 
 export class ImmutableErc721State extends wasmtypes.ScProxy {
+	// approved token controller agents
 	approvedAccounts(): sc.MapHashToImmutableAgentID {
 		return new sc.MapHashToImmutableAgentID(this.proxy.root(sc.StateApprovedAccounts));
 	}
 
+	// approved operators per owner
 	approvedOperators(): sc.MapAgentIDToImmutableOperators {
 		return new sc.MapAgentIDToImmutableOperators(this.proxy.root(sc.StateApprovedOperators));
 	}
 
+	// number of tokens held by owners
 	balances(): sc.MapAgentIDToImmutableUint64 {
 		return new sc.MapAgentIDToImmutableUint64(this.proxy.root(sc.StateBalances));
 	}
@@ -53,6 +56,7 @@ export class ImmutableErc721State extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.StateName));
 	}
 
+	// 1:1 mapping of owners to token IDs
 	owners(): sc.MapHashToImmutableAgentID {
 		return new sc.MapHashToImmutableAgentID(this.proxy.root(sc.StateOwners));
 	}
@@ -61,6 +65,7 @@ export class ImmutableErc721State extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.StateSymbol));
 	}
 
+	// token uri per token id
 	tokenURIs(): sc.MapHashToImmutableString {
 		return new sc.MapHashToImmutableString(this.proxy.root(sc.StateTokenURIs));
 	}
@@ -115,14 +120,17 @@ export class MutableErc721State extends wasmtypes.ScProxy {
 		return new sc.ImmutableErc721State(this.proxy);
 	}
 
+	// approved token controller agents
 	approvedAccounts(): sc.MapHashToMutableAgentID {
 		return new sc.MapHashToMutableAgentID(this.proxy.root(sc.StateApprovedAccounts));
 	}
 
+	// approved operators per owner
 	approvedOperators(): sc.MapAgentIDToMutableOperators {
 		return new sc.MapAgentIDToMutableOperators(this.proxy.root(sc.StateApprovedOperators));
 	}
 
+	// number of tokens held by owners
 	balances(): sc.MapAgentIDToMutableUint64 {
 		return new sc.MapAgentIDToMutableUint64(this.proxy.root(sc.StateBalances));
 	}
@@ -131,6 +139,7 @@ export class MutableErc721State extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.StateName));
 	}
 
+	// 1:1 mapping of owners to token IDs
 	owners(): sc.MapHashToMutableAgentID {
 		return new sc.MapHashToMutableAgentID(this.proxy.root(sc.StateOwners));
 	}
@@ -139,6 +148,7 @@ export class MutableErc721State extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.StateSymbol));
 	}
 
+	// token uri per token id
 	tokenURIs(): sc.MapHashToMutableString {
 		return new sc.MapHashToMutableString(this.proxy.root(sc.StateTokenURIs));
 	}

@@ -46,6 +46,8 @@ export function on_load(): void {
 function funcForcePayoutThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcForcePayout");
 	let f = new sc.ForcePayoutContext();
+
+	// only SC creator can restart the round forcefully
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	sc.funcForcePayout(ctx, f);
@@ -55,6 +57,8 @@ function funcForcePayoutThunk(ctx: wasmlib.ScFuncContext): void {
 function funcForceResetThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcForceReset");
 	let f = new sc.ForceResetContext();
+
+	// only SC creator can restart the round forcefully
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	sc.funcForceReset(ctx, f);
@@ -64,6 +68,8 @@ function funcForceResetThunk(ctx: wasmlib.ScFuncContext): void {
 function funcPayWinnersThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcPayWinners");
 	let f = new sc.PayWinnersContext();
+
+	// only SC itself can invoke this function
 	ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
 	sc.funcPayWinners(ctx, f);
@@ -81,6 +87,8 @@ function funcPlaceBetThunk(ctx: wasmlib.ScFuncContext): void {
 function funcPlayPeriodThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcPlayPeriod");
 	let f = new sc.PlayPeriodContext();
+
+	// only SC creator can update the play period
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	ctx.require(f.params.playPeriod().exists(), "missing mandatory playPeriod");

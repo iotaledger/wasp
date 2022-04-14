@@ -111,4 +111,32 @@ use crate::*;
 	"useWasmLib": `
 use wasmlib::*;
 `,
+	// *******************************
+	"_eventComment": `
+    $nextLine
+`,
+	// *******************************
+	"_eventParamComment": `
+        $nextLine
+`,
+	// *******************************
+	"_fldComment": `
+    $nextLine
+`,
+	// *******************************
+	"_funcComment": `
+    $nextLine
+`,
+	// *******************************
+	"_funcAccessComment": `
+	$nextLine
+`,
+	// *******************************
+	"_structComment": `
+$nextLine
+`,
+	// *******************************
+	"_typedefComment": `
+$nextLine
+`,
 }

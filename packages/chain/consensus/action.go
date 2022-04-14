@@ -238,6 +238,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		TimeAssumption:     c.consensusBatch.TimeData,
 		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		L1Params:           c.chain.L1Params(),
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
@@ -648,7 +649,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)
 	signatureForUnlock := &iotago.Ed25519Signature{
-		PublicKey: hashing.HashData(publicKey.AsBytes()),
+		PublicKey: publicKey.AsByteArray(),
 		Signature: signatureArray,
 	}
 	tx := &iotago.Transaction{
@@ -782,7 +783,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotag
 func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
-			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare.Signature[:], msg.SigShare.Signature[:]) {
+			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare.Signature, msg.SigShare.Signature) {
 			c.log.Errorf("receiveSignedResult: conflicting signed result from peer %d", msg.SenderIndex)
 		} else {
 			c.log.Debugf("receiveSignedResult: duplicated signed result from peer %d", msg.SenderIndex)

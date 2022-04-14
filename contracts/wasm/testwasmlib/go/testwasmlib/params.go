@@ -897,6 +897,54 @@ func (s MutableBigIntMulParams) Rhs() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamRhs))
 }
 
+type ImmutableBigIntShlParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntShlParams) Lhs() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamLhs))
+}
+
+func (s ImmutableBigIntShlParams) Shift() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamShift))
+}
+
+type MutableBigIntShlParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntShlParams) Lhs() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamLhs))
+}
+
+func (s MutableBigIntShlParams) Shift() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamShift))
+}
+
+type ImmutableBigIntShrParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntShrParams) Lhs() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamLhs))
+}
+
+func (s ImmutableBigIntShrParams) Shift() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamShift))
+}
+
+type MutableBigIntShrParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntShrParams) Lhs() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamLhs))
+}
+
+func (s MutableBigIntShrParams) Shift() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamShift))
+}
+
 type ImmutableBigIntSubParams struct {
 	proxy wasmtypes.Proxy
 }

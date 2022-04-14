@@ -82,6 +82,29 @@ func TestConvert(t *testing.T) {
 								},
 							},
 						},
+						Views: model.FuncDefMap{
+							model.DefElt{Val: "TestView1", Line: 29, Comment: "// comment for TestView1"}: &model.FuncDef{
+								Line:    29,
+								Comment: "// comment for TestView1",
+								Access: model.DefElt{
+									Val:     "owner",
+									Line:    30,
+									Comment: "// comment for access",
+								},
+								Params: model.DefMap{
+									model.DefElt{Val: "name", Line: 32, Comment: "// comment for name"}: &model.DefElt{
+										Val:  "String",
+										Line: 32,
+									},
+								},
+								Results: model.DefMap{
+									model.DefElt{Val: "length", Line: 34, Comment: "// comment for length"}: &model.DefElt{
+										Val:  "Uint32",
+										Line: 34,
+									},
+								},
+							},
+						},
 					},
 				},
 			}
@@ -184,6 +207,7 @@ func TestConvert(t *testing.T) {
 						},
 						Funcs: model.FuncDefMap{
 							model.DefElt{Val: "TestFunc1", Line: 25}: &model.FuncDef{
+								Line: 25,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 26,
@@ -206,6 +230,7 @@ func TestConvert(t *testing.T) {
 								},
 							},
 							model.DefElt{Val: "TestFunc2", Line: 32}: &model.FuncDef{
+								Line: 32,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 33,
@@ -230,6 +255,7 @@ func TestConvert(t *testing.T) {
 						},
 						Views: model.FuncDefMap{
 							model.DefElt{Val: "TestView1", Line: 42}: &model.FuncDef{
+								Line: 42,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 43,
@@ -252,6 +278,7 @@ func TestConvert(t *testing.T) {
 								},
 							},
 							model.DefElt{Val: "TestView2", Line: 49}: &model.FuncDef{
+								Line: 49,
 								Access: model.DefElt{
 									Val:  "owner",
 									Line: 50,
@@ -285,6 +312,26 @@ func TestConvert(t *testing.T) {
 								Val:  "Int64[]",
 								Line: 64,
 							},
+						},
+					},
+				},
+			}
+		},
+		"successfully test4": func(t *testing.T) test {
+			return test{
+				args: args{
+					path: "testdata/test4.yaml",
+				},
+				wants: wants{
+					out: &model.SchemaDef{
+						Copyright: "// This is the testing copyright message\n// copyright message is the comment block\n// ahead of copyright yaml tag.\n// No other yaml item should exist ahead of\n// the copyright message, and the value of\n// copyright tag should leave empty.",
+						Name: model.DefElt{
+							Val:  "SchemaComment",
+							Line: 8,
+						},
+						Description: model.DefElt{
+							Val:  "test description",
+							Line: 9,
 						},
 					},
 				},

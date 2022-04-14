@@ -51,8 +51,7 @@ const (
 	rabinSecretCommitsMsgType      byte = rabinMsgFrom + 3
 	rabinComplaintCommitsMsgType   byte = rabinMsgFrom + 4
 	rabinReconstructCommitsMsgType byte = rabinMsgFrom + 5
-	rabinMultiKeySetMsgType        byte = rabinMsgFrom + 6 // TODO: Maybe we only need this one?
-	rabinMsgTill                   byte = rabinMsgFrom + 7 // Just a placeholder for first unallocated message type.
+	rabinMsgTill                   byte = rabinMsgFrom + 6 // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol, messages repeatedly sent
 	// in response to duplicated messages from other peers. They should be treated
@@ -184,7 +183,7 @@ type initiatorMsg interface {
 	IsResponse() bool
 }
 
-func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite kyber.Group, blsSuite kyber.Group) (bool, initiatorMsg, error) {
+func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite kyber.Group) (bool, initiatorMsg, error) {
 	switch peerMessage.MsgType {
 	case initiatorInitMsgType:
 		msg := initiatorInitMsg{}
@@ -585,36 +584,36 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 		return err
 	}
 	m.sharedAddress = sharedAddress
-	{ // Ed25519 part.
-		m.edSharedPublic = m.edSuite.Point()
-		if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
-		}
-		m.edPublicShare = m.edSuite.Point()
-		if err = util.ReadMarshaled(r, m.edPublicShare); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edPublicShare: %w", err)
-		}
-		if m.edSignature, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
+	//
+	// Ed25519 part.
+	m.edSharedPublic = m.edSuite.Point()
+	if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
 	}
-	{ // BLS part.
-		m.blsSharedPublic = m.blsSuite.Point()
-		if err = util.ReadMarshaled(r, m.blsSharedPublic); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsSharedPublic: %w", err)
-		}
-		m.blsPublicShare = m.blsSuite.Point()
-		if err = util.ReadMarshaled(r, m.blsPublicShare); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsPublicShare: %w", err)
-		}
-		if m.blsSignature, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
+	m.edPublicShare = m.edSuite.Point()
+	if err = util.ReadMarshaled(r, m.edPublicShare); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edPublicShare: %w", err)
+	}
+	if m.edSignature, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	//
+	// BLS part.
+	m.blsSharedPublic = m.blsSuite.Point()
+	if err = util.ReadMarshaled(r, m.blsSharedPublic); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsSharedPublic: %w", err)
+	}
+	m.blsPublicShare = m.blsSuite.Point()
+	if err = util.ReadMarshaled(r, m.blsPublicShare); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsPublicShare: %w", err)
+	}
+	if m.blsSignature, err = util.ReadBytes16(r); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (m *initiatorPubShareMsg) fromBytes(buf []byte, edSuite kyber.Group, blsSuite kyber.Group) error {
+func (m *initiatorPubShareMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.edSuite = edSuite
 	m.blsSuite = blsSuite

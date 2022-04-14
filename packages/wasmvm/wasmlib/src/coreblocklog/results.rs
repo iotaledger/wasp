@@ -92,6 +92,7 @@ pub struct ImmutableGetEventsForBlockResults {
 }
 
 impl ImmutableGetEventsForBlockResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -126,6 +127,7 @@ pub struct MutableGetEventsForBlockResults {
 }
 
 impl MutableGetEventsForBlockResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -137,6 +139,7 @@ pub struct ImmutableGetEventsForContractResults {
 }
 
 impl ImmutableGetEventsForContractResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -148,6 +151,7 @@ pub struct MutableGetEventsForContractResults {
 }
 
 impl MutableGetEventsForContractResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -159,6 +163,7 @@ pub struct ImmutableGetEventsForRequestResults {
 }
 
 impl ImmutableGetEventsForRequestResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -170,6 +175,7 @@ pub struct MutableGetEventsForRequestResults {
 }
 
 impl MutableGetEventsForRequestResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -226,6 +232,7 @@ pub struct ImmutableGetRequestIDsForBlockResults {
 }
 
 impl ImmutableGetRequestIDsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
 		ArrayOfImmutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
 	}
@@ -260,6 +267,7 @@ pub struct MutableGetRequestIDsForBlockResults {
 }
 
 impl MutableGetRequestIDsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
 		ArrayOfMutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
 	}
@@ -309,6 +317,7 @@ pub struct ImmutableGetRequestReceiptsForBlockResults {
 }
 
 impl ImmutableGetRequestReceiptsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_record(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
 	}
@@ -320,6 +329,7 @@ pub struct MutableGetRequestReceiptsForBlockResults {
 }
 
 impl MutableGetRequestReceiptsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_record(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
 	}

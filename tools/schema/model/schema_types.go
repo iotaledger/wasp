@@ -34,6 +34,7 @@ type DefElt struct {
 }
 
 type SchemaDef struct {
+	Copyright   string
 	Name        DefElt
 	Description DefElt
 	Events      DefMapMap

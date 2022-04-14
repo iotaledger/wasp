@@ -423,6 +423,30 @@ export class BigIntMulContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class BigIntShlCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntShl);
+	params: sc.MutableBigIntShlParams = new sc.MutableBigIntShlParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableBigIntShlResults = new sc.ImmutableBigIntShlResults(wasmlib.ScView.nilProxy);
+}
+
+export class BigIntShlContext {
+	params: sc.ImmutableBigIntShlParams = new sc.ImmutableBigIntShlParams(wasmlib.paramsProxy());
+	results: sc.MutableBigIntShlResults = new sc.MutableBigIntShlResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
+export class BigIntShrCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntShr);
+	params: sc.MutableBigIntShrParams = new sc.MutableBigIntShrParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableBigIntShrResults = new sc.ImmutableBigIntShrResults(wasmlib.ScView.nilProxy);
+}
+
+export class BigIntShrContext {
+	params: sc.ImmutableBigIntShrParams = new sc.ImmutableBigIntShrParams(wasmlib.paramsProxy());
+	results: sc.MutableBigIntShrResults = new sc.MutableBigIntShrResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class BigIntSubCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntSub);
 	params: sc.MutableBigIntSubParams = new sc.MutableBigIntSubParams(wasmlib.ScView.nilProxy);
@@ -552,6 +576,7 @@ export class ScFuncs {
 		return f;
 	}
 
+	// Clear all the arrays of the array
 	static arrayOfAddressArrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArrayClearCall {
 		return new ArrayOfAddressArrayClearCall();
 	}
@@ -578,6 +603,7 @@ export class ScFuncs {
 		return f;
 	}
 
+	// Clear all the arrays of the array
 	static arrayOfStringArrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringArrayClearCall {
 		return new ArrayOfStringArrayClearCall();
 	}
@@ -740,6 +766,20 @@ export class ScFuncs {
 		const f = new BigIntMulCall();
 		f.params = new sc.MutableBigIntMulParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntMulResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static bigIntShl(_ctx: wasmlib.ScViewCallContext): BigIntShlCall {
+		const f = new BigIntShlCall();
+		f.params = new sc.MutableBigIntShlParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableBigIntShlResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static bigIntShr(_ctx: wasmlib.ScViewCallContext): BigIntShrCall {
+		const f = new BigIntShrCall();
+		f.params = new sc.MutableBigIntShrParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableBigIntShrResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 

@@ -17,6 +17,7 @@ pub struct ImmutableBalanceOfResults {
 }
 
 impl ImmutableBalanceOfResults {
+    // amount of tokens owned by owner
     pub fn amount(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
@@ -28,6 +29,7 @@ pub struct MutableBalanceOfResults {
 }
 
 impl MutableBalanceOfResults {
+    // amount of tokens owned by owner
     pub fn amount(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}

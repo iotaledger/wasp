@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/spf13/cobra"
 )
@@ -14,11 +15,35 @@ import (
 var (
 	VerboseFlag bool
 	DebugFlag   bool
+
+	hiveLogger *logger.Logger
 )
 
 func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose")
 	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "debug")
+}
+
+func HiveLogger() *logger.Logger {
+	if hiveLogger == nil {
+		var loggerCfg = logger.Config{
+			Level:             "info",
+			Encoding:          "console",
+			OutputPaths:       []string{"stdout"},
+			DisableEvents:     true,
+			DisableCaller:     true,
+			DisableStacktrace: true,
+		}
+		if DebugFlag {
+			loggerCfg.Level = "debug"
+			loggerCfg.DisableCaller = false
+			loggerCfg.DisableStacktrace = false
+		}
+		var err error
+		hiveLogger, err = logger.NewRootLogger(loggerCfg)
+		Check(err)
+	}
+	return hiveLogger
 }
 
 func Printf(format string, args ...interface{}) {

@@ -583,6 +583,7 @@ export class ArrayOfImmutableString extends wasmtypes.ScProxy {
 	}
 }
 
+//## Array
 export class ImmutableStringArray extends ArrayOfImmutableString {
 }
 
@@ -605,6 +606,7 @@ export class ArrayOfMutableString extends wasmtypes.ScProxy {
 	}
 }
 
+//## Array
 export class MutableStringArray extends ArrayOfMutableString {
 }
 
@@ -615,6 +617,7 @@ export class MapStringToImmutableString extends wasmtypes.ScProxy {
 	}
 }
 
+//## Map
 export class ImmutableStringMap extends MapStringToImmutableString {
 }
 
@@ -629,6 +632,7 @@ export class MapStringToMutableString extends wasmtypes.ScProxy {
 	}
 }
 
+//## Map
 export class MutableStringMap extends MapStringToMutableString {
 }
 

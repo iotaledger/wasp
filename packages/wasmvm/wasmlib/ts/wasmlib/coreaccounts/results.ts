@@ -16,6 +16,7 @@ export class MapAgentIDToImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableAccountsResults extends wasmtypes.ScProxy {
+	// bytes are always empty
 	agents(): sc.MapAgentIDToImmutableBytes {
 		return new sc.MapAgentIDToImmutableBytes(this.proxy);
 	}
@@ -33,18 +34,21 @@ export class MapAgentIDToMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableAccountsResults extends wasmtypes.ScProxy {
+	// bytes are always empty
 	agents(): sc.MapAgentIDToMutableBytes {
 		return new sc.MapAgentIDToMutableBytes(this.proxy);
 	}
 }
 
 export class ImmutableGetAccountNonceResults extends wasmtypes.ScProxy {
+	// TODO should be Uint64
 	accountNonce(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultAccountNonce));
 	}
 }
 
 export class MutableGetAccountNonceResults extends wasmtypes.ScProxy {
+	// TODO should be Uint64
 	accountNonce(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultAccountNonce));
 	}

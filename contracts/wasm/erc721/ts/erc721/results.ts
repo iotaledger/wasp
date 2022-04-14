@@ -9,12 +9,14 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableBalanceOfResults extends wasmtypes.ScProxy {
+	// amount of tokens owned by owner
 	amount(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
 export class MutableBalanceOfResults extends wasmtypes.ScProxy {
+	// amount of tokens owned by owner
 	amount(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultAmount));
 	}

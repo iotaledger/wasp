@@ -17,7 +17,6 @@ func (s ImmutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwner))
 }
 
-// feeColor=fc: Color? # default colored.IOTA
 func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -30,7 +29,6 @@ func (s MutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.Sc
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwner))
 }
 
-// feeColor=fc: Color? # default colored.IOTA
 func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }

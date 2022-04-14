@@ -9,24 +9,28 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutablePlaceBetParams extends wasmtypes.ScProxy {
+	// the number a better bets on
 	number(): wasmtypes.ScImmutableUint16 {
 		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ParamNumber));
 	}
 }
 
 export class MutablePlaceBetParams extends wasmtypes.ScProxy {
+	// the number a better bets on
 	number(): wasmtypes.ScMutableUint16 {
 		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ParamNumber));
 	}
 }
 
 export class ImmutablePlayPeriodParams extends wasmtypes.ScProxy {
+	// number of minutes in one playing round
 	playPeriod(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamPlayPeriod));
 	}
 }
 
 export class MutablePlayPeriodParams extends wasmtypes.ScProxy {
+	// number of minutes in one playing round
 	playPeriod(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamPlayPeriod));
 	}

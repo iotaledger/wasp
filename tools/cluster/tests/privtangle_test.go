@@ -12,6 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestHornetStartup(t *testing.T) {
 	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
-	client := nodeconn.NewL1Client(ClustL1Config, log)
+	client := nodeconn.NewL1Client(ClustL1Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
 
 	initialOutputCount := mustOutputCount(client, myAddress)
 	//

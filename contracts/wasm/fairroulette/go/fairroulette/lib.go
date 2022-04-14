@@ -57,6 +57,8 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+
+	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcForcePayout(ctx, f)
@@ -75,6 +77,8 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+
+	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcForceReset(ctx, f)
@@ -93,6 +97,8 @@ func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+
+	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
 	funcPayWinners(ctx, f)
@@ -136,6 +142,8 @@ func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+
+	// only SC creator can update the play period
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.PlayPeriod().Exists(), "missing mandatory playPeriod")

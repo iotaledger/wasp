@@ -62,14 +62,17 @@ pub struct ImmutableErc721State {
 }
 
 impl ImmutableErc721State {
+    // approved token controller agents
     pub fn approved_accounts(&self) -> MapHashToImmutableAgentID {
 		MapHashToImmutableAgentID { proxy: self.proxy.root(STATE_APPROVED_ACCOUNTS) }
 	}
 
+    // approved operators per owner
     pub fn approved_operators(&self) -> MapAgentIDToImmutableOperators {
 		MapAgentIDToImmutableOperators { proxy: self.proxy.root(STATE_APPROVED_OPERATORS) }
 	}
 
+    // number of tokens held by owners
     pub fn balances(&self) -> MapAgentIDToImmutableUint64 {
 		MapAgentIDToImmutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
@@ -78,6 +81,7 @@ impl ImmutableErc721State {
 		ScImmutableString::new(self.proxy.root(STATE_NAME))
 	}
 
+    // 1:1 mapping of owners to token IDs
     pub fn owners(&self) -> MapHashToImmutableAgentID {
 		MapHashToImmutableAgentID { proxy: self.proxy.root(STATE_OWNERS) }
 	}
@@ -86,6 +90,7 @@ impl ImmutableErc721State {
 		ScImmutableString::new(self.proxy.root(STATE_SYMBOL))
 	}
 
+    // token uri per token id
     pub fn token_ur_is(&self) -> MapHashToImmutableString {
 		MapHashToImmutableString { proxy: self.proxy.root(STATE_TOKEN_UR_IS) }
 	}
@@ -161,14 +166,17 @@ impl MutableErc721State {
 		ImmutableErc721State { proxy: self.proxy.root("") }
 	}
 
+    // approved token controller agents
     pub fn approved_accounts(&self) -> MapHashToMutableAgentID {
 		MapHashToMutableAgentID { proxy: self.proxy.root(STATE_APPROVED_ACCOUNTS) }
 	}
 
+    // approved operators per owner
     pub fn approved_operators(&self) -> MapAgentIDToMutableOperators {
 		MapAgentIDToMutableOperators { proxy: self.proxy.root(STATE_APPROVED_OPERATORS) }
 	}
 
+    // number of tokens held by owners
     pub fn balances(&self) -> MapAgentIDToMutableUint64 {
 		MapAgentIDToMutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
@@ -177,6 +185,7 @@ impl MutableErc721State {
 		ScMutableString::new(self.proxy.root(STATE_NAME))
 	}
 
+    // 1:1 mapping of owners to token IDs
     pub fn owners(&self) -> MapHashToMutableAgentID {
 		MapHashToMutableAgentID { proxy: self.proxy.root(STATE_OWNERS) }
 	}
@@ -185,6 +194,7 @@ impl MutableErc721State {
 		ScMutableString::new(self.proxy.root(STATE_SYMBOL))
 	}
 
+    // token uri per token id
     pub fn token_ur_is(&self) -> MapHashToMutableString {
 		MapHashToMutableString { proxy: self.proxy.root(STATE_TOKEN_UR_IS) }
 	}

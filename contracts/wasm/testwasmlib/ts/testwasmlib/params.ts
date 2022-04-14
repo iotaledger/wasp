@@ -316,6 +316,7 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 
+	// special hook to be able to pass key/values as raw bytes
 	param(): sc.MapStringToImmutableBytes {
 		return new sc.MapStringToImmutableBytes(this.proxy);
 	}
@@ -409,6 +410,7 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 
+	// special hook to be able to pass key/values as raw bytes
 	param(): sc.MapStringToMutableBytes {
 		return new sc.MapStringToMutableBytes(this.proxy);
 	}
@@ -771,6 +773,46 @@ export class MutableBigIntMulParams extends wasmtypes.ScProxy {
 
 	rhs(): wasmtypes.ScMutableBigInt {
 		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamRhs));
+	}
+}
+
+export class ImmutableBigIntShlParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
+export class MutableBigIntShlParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
+export class ImmutableBigIntShrParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamShift));
+	}
+}
+
+export class MutableBigIntShrParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	shift(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamShift));
 	}
 }
 

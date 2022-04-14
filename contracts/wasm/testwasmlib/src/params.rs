@@ -438,6 +438,7 @@ impl ImmutableParamTypesParams {
 		ScImmutableNftID::new(self.proxy.root(PARAM_NFT_ID))
 	}
 
+    // special hook to be able to pass key/values as raw bytes
     pub fn param(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { proxy: self.proxy.clone() }
 	}
@@ -540,6 +541,7 @@ impl MutableParamTypesParams {
 		ScMutableNftID::new(self.proxy.root(PARAM_NFT_ID))
 	}
 
+    // special hook to be able to pass key/values as raw bytes
     pub fn param(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { proxy: self.proxy.clone() }
 	}
@@ -1072,6 +1074,66 @@ impl MutableBigIntMulParams {
 
     pub fn rhs(&self) -> ScMutableBigInt {
 		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntShlParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntShlParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn shift(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_SHIFT))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntShlParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntShlParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn shift(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_SHIFT))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBigIntShrParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntShrParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn shift(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_SHIFT))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntShrParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntShrParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn shift(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_SHIFT))
 	}
 }
 
