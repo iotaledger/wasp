@@ -5,6 +5,8 @@ package wasmclient
 
 import (
 	"strconv"
+
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type Event struct {
@@ -23,12 +25,12 @@ func (e *Event) next() string {
 	return next
 }
 
-func (e *Event) NextAddress() Address {
-	return Address(e.next())
+func (e *Event) NextAddress() wasmtypes.ScAddress {
+	return wasmtypes.AddressFromBytes(e.NextBytes())
 }
 
-func (e *Event) NextAgentID() AgentID {
-	return AgentID(e.next())
+func (e *Event) NextAgentID() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(e.NextBytes())
 }
 
 func (e *Event) NextBytes() []byte {
@@ -39,20 +41,16 @@ func (e *Event) NextBool() bool {
 	return e.next() != "0"
 }
 
-func (e *Event) NextChainID() ChainID {
-	return ChainID(e.next())
+func (e *Event) NextChainID() wasmtypes.ScChainID {
+	return wasmtypes.ChainIDFromBytes(e.NextBytes())
 }
 
-func (e *Event) NextColor() Color {
-	return Color(e.next())
+func (e *Event) NextHash() wasmtypes.ScHash {
+	return wasmtypes.HashFromBytes(e.NextBytes())
 }
 
-func (e *Event) NextHash() Hash {
-	return Hash(e.next())
-}
-
-func (e *Event) NextHname() Hname {
-	return Hname(e.nextUint(32))
+func (e *Event) NextHname() wasmtypes.ScHname {
+	return wasmtypes.ScHname(e.nextUint(32))
 }
 
 func (e *Event) nextInt(bitSize int) int64 {
@@ -79,8 +77,8 @@ func (e *Event) NextInt64() int64 {
 	return e.nextInt(64)
 }
 
-func (e *Event) NextRequestID() RequestID {
-	return RequestID(e.next())
+func (e *Event) NextRequestID() wasmtypes.ScRequestID {
+	return wasmtypes.RequestIDFromBytes(e.NextBytes())
 }
 
 func (e *Event) NextString() string {

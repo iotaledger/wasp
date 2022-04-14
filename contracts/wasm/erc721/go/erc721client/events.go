@@ -9,20 +9,20 @@ package erc721client
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
-var erc721Handlers = map[string]func(*Erc721Events, []string){
-	"erc721.approval":       func(evt *Erc721Events, msg []string) { evt.onErc721ApprovalThunk(msg) },
+var erc721Handlers = map[string]func(*Erc721Events, []string) {
+	"erc721.approval": func(evt *Erc721Events, msg []string) { evt.onErc721ApprovalThunk(msg) },
 	"erc721.approvalForAll": func(evt *Erc721Events, msg []string) { evt.onErc721ApprovalForAllThunk(msg) },
-	"erc721.init":           func(evt *Erc721Events, msg []string) { evt.onErc721InitThunk(msg) },
-	"erc721.mint":           func(evt *Erc721Events, msg []string) { evt.onErc721MintThunk(msg) },
-	"erc721.transfer":       func(evt *Erc721Events, msg []string) { evt.onErc721TransferThunk(msg) },
+	"erc721.init": func(evt *Erc721Events, msg []string) { evt.onErc721InitThunk(msg) },
+	"erc721.mint": func(evt *Erc721Events, msg []string) { evt.onErc721MintThunk(msg) },
+	"erc721.transfer": func(evt *Erc721Events, msg []string) { evt.onErc721TransferThunk(msg) },
 }
 
 type Erc721Events struct {
-	approval       func(e *EventApproval)
+	approval func(e *EventApproval)
 	approvalForAll func(e *EventApprovalForAll)
-	init           func(e *EventInit)
-	mint           func(e *EventMint)
-	transfer       func(e *EventTransfer)
+	init func(e *EventInit)
+	mint func(e *EventMint)
+	transfer func(e *EventTransfer)
 }
 
 func (h *Erc721Events) CallHandler(topic string, params []string) {
@@ -54,13 +54,13 @@ func (h *Erc721Events) OnErc721Transfer(handler func(e *EventTransfer)) {
 
 type EventApproval struct {
 	wasmclient.Event
-	Approved wasmclient.AgentID
-	Owner    wasmclient.AgentID
-	TokenID  wasmclient.Hash
+  	Approved wasmtypes.ScAgentID
+  	Owner wasmtypes.ScAgentID
+  	TokenID wasmtypes.ScHash
 }
 
 func (h *Erc721Events) onErc721ApprovalThunk(message []string) {
-	if h.approval == nil {
+    if h.approval == nil {
 		return
 	}
 	e := &EventApproval{}
@@ -73,13 +73,13 @@ func (h *Erc721Events) onErc721ApprovalThunk(message []string) {
 
 type EventApprovalForAll struct {
 	wasmclient.Event
-	Approval bool
-	Operator wasmclient.AgentID
-	Owner    wasmclient.AgentID
+  	Approval bool
+  	Operator wasmtypes.ScAgentID
+  	Owner wasmtypes.ScAgentID
 }
 
 func (h *Erc721Events) onErc721ApprovalForAllThunk(message []string) {
-	if h.approvalForAll == nil {
+    if h.approvalForAll == nil {
 		return
 	}
 	e := &EventApprovalForAll{}
@@ -92,12 +92,12 @@ func (h *Erc721Events) onErc721ApprovalForAllThunk(message []string) {
 
 type EventInit struct {
 	wasmclient.Event
-	Name   string
-	Symbol string
+  	Name string
+  	Symbol string
 }
 
 func (h *Erc721Events) onErc721InitThunk(message []string) {
-	if h.init == nil {
+    if h.init == nil {
 		return
 	}
 	e := &EventInit{}
@@ -109,13 +109,13 @@ func (h *Erc721Events) onErc721InitThunk(message []string) {
 
 type EventMint struct {
 	wasmclient.Event
-	Balance uint64
-	Owner   wasmclient.AgentID
-	TokenID wasmclient.Hash
+  	Balance uint64
+  	Owner wasmtypes.ScAgentID
+  	TokenID wasmtypes.ScHash
 }
 
 func (h *Erc721Events) onErc721MintThunk(message []string) {
-	if h.mint == nil {
+    if h.mint == nil {
 		return
 	}
 	e := &EventMint{}
@@ -128,13 +128,13 @@ func (h *Erc721Events) onErc721MintThunk(message []string) {
 
 type EventTransfer struct {
 	wasmclient.Event
-	From    wasmclient.AgentID
-	To      wasmclient.AgentID
-	TokenID wasmclient.Hash
+  	From wasmtypes.ScAgentID
+  	To wasmtypes.ScAgentID
+  	TokenID wasmtypes.ScHash
 }
 
 func (h *Erc721Events) onErc721TransferThunk(message []string) {
-	if h.transfer == nil {
+    if h.transfer == nil {
 		return
 	}
 	e := &EventTransfer{}

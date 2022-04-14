@@ -12,14 +12,10 @@ $#if funcs emitContract
 	// *******************************
 	"emitContract": `
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-
-const (
-$#each params constArg
-
-$#each results constRes
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
-$#each func funcStruct
 
 ///////////////////////////// $PkgName$+Service /////////////////////////////
 
@@ -27,21 +23,12 @@ type $PkgName$+Service struct {
 	wasmclient.Service
 }
 
-func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) (*$PkgName$+Service, error) {
+func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*$PkgName$+Service, error) {
 	s := &$PkgName$+Service{}
 	err := s.Service.Init(cl, chainID, 0x$hscName)
 	return s, err
 }
 $#if events newEventHandler
-$#each func serviceFunction
-`,
-	// *******************************
-	"constArg": `
-	Arg$FldName = "$fldAlias"
-`,
-	// *******************************
-	"constRes": `
-	Res$FldName = "$fldAlias"
 `,
 	// *******************************
 	"newEventHandler": `
