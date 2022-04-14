@@ -261,66 +261,37 @@ func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens
 
 func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
 	ret := iscp.FungibleTokens{
-		Iotas: t.Iotas,
+		Iotas:  t.Iotas,
+		Tokens: make(iotago.NativeTokens, len(t.Tokens)),
 	}
 
 	for i, v := range t.Tokens {
-		ret.Tokens[i].ID = v.ID.Unwrap()
-		ret.Tokens[i].Amount = v.Amount
-	}
+		nativeToken := iotago.NativeToken{
+			ID:     v.ID.Unwrap(),
+			Amount: v.Amount,
+		}
 
-	return &ret
-}
-
-type IotaAllowance struct {
-	Assets ISCFungibleTokens
-	NFTs   []IotaNFTID
-}
-
-func WrapIotaAllowance(allowance iscp.Allowance) IotaAllowance {
-	nftIds := make([]IotaNFTID, 0)
-
-	for _, nft := range allowance.NFTs {
-		nftIds = append(nftIds, WrapIotaNFTID(nft))
-	}
-
-	ret := IotaAllowance{
-		NFTs:   nftIds,
-		Assets: WrapISCFungibleTokens(*allowance.Assets),
-	}
-
-	return ret
-}
-
-func (a IotaAllowance) Unwrap() *iscp.Allowance {
-	nftIDs := make([]iotago.NFTID, 0)
-
-	for _, nftID := range a.NFTs {
-		nftIDs = append(nftIDs, nftID.Unwrap())
-	}
-
-	ret := iscp.Allowance{
-		Assets: a.Assets.Unwrap(),
-		NFTs:   nftIDs,
+		ret.Tokens[i] = &nativeToken
 	}
 
 	return &ret
 }
 
 type ISCSendMetadata struct {
-	TargetContract iscp.Hname
-	Entrypoint     iscp.Hname
-	// TODO: Params
-	Allowance IotaAllowance
-	GasBudget uint64
+	TargetContract uint32
+	Entrypoint     uint32
+	Params         ISCDict
+	Allowance      ISCAllowance
+	GasBudget      uint64
 }
 
 func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
 	ret := ISCSendMetadata{
 		GasBudget:      metadata.GasBudget,
-		Entrypoint:     metadata.EntryPoint,
-		TargetContract: metadata.TargetContract,
-		Allowance:      WrapIotaAllowance(*metadata.Allowance),
+		Entrypoint:     uint32(metadata.EntryPoint),
+		TargetContract: uint32(metadata.TargetContract),
+		Allowance:      WrapISCAllowance(metadata.Allowance),
+		Params:         WrapISCDict(metadata.Params),
 	}
 
 	return ret
@@ -328,9 +299,9 @@ func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
 
 func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
 	ret := iscp.SendMetadata{
-		TargetContract: i.TargetContract,
-		EntryPoint:     i.Entrypoint,
-		Params:         nil,
+		TargetContract: iscp.Hname(i.TargetContract),
+		EntryPoint:     iscp.Hname(i.Entrypoint),
+		Params:         i.Params.Unwrap(),
 		Allowance:      i.Allowance.Unwrap(),
 		GasBudget:      i.GasBudget,
 	}
@@ -353,6 +324,10 @@ func WrapISCTimeData(data *iscp.TimeData) ISCTimeData {
 }
 
 func (i ISCTimeData) Unwrap() *iscp.TimeData {
+	if i.MilestoneIndex == 0 && i.Time == 0 {
+		return nil
+	}
+
 	ret := iscp.TimeData{
 		MilestoneIndex: i.MilestoneIndex,
 		Time:           time.UnixMilli(i.Time),
@@ -362,25 +337,34 @@ func (i ISCTimeData) Unwrap() *iscp.TimeData {
 }
 
 type ISCExpiration struct {
-	ISCTimeData
-	ReturnAddress IotaAddress
+	MilestoneIndex uint32
+	Time           int64
+	ReturnAddress  IotaAddress
 }
 
 func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
 	ret := ISCExpiration{
-		ISCTimeData: ISCTimeData{
-			MilestoneIndex: data.MilestoneIndex,
-			Time:           data.Time.UnixMilli(),
-		},
-		ReturnAddress: WrapIotaAddress(data.ReturnAddress),
+		MilestoneIndex: data.MilestoneIndex,
+		Time:           data.Time.UnixMilli(),
+		ReturnAddress:  WrapIotaAddress(data.ReturnAddress),
 	}
 
 	return ret
 }
 
-func (i ISCExpiration) Unwrap() *iscp.Expiration {
+func (i *ISCExpiration) Unwrap() *iscp.Expiration {
+	if i == nil {
+		return nil
+	}
+
+	if i.MilestoneIndex == 0 && i.Time == 0 {
+		return nil
+	}
+
+	address := i.ReturnAddress.MustUnwrap()
+
 	ret := iscp.Expiration{
-		ReturnAddress: i.ReturnAddress.MustUnwrap(),
+		ReturnAddress: address,
 		TimeData: iscp.TimeData{
 			MilestoneIndex: i.MilestoneIndex,
 			Time:           time.UnixMilli(i.Time),
