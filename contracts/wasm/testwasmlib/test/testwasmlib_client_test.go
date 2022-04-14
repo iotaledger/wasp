@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +16,7 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
-	myChainID = "pDtVgzXtTwc2B9bnrf2RbpWuexynqNiGU7waLknsgjWf"
+	myChainID = "mpbE84pT8uDZwNYisKRWKmfamfMUeeL7q94rJqzzhuWv"
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
@@ -24,12 +26,13 @@ func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 
 	require.True(t, wasmclient.SeedIsValid(mySeed))
 	require.True(t, wasmclient.ChainIsValid(myChainID))
+	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(myChainID))
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultServiceClient()
 
 	// create the service for the testwasmlib smart contract
-	svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, myChainID)
+	svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, &chainID)
 	require.NoError(t, err)
 
 	// we'll use the first address in the seed to sign requests
@@ -45,24 +48,27 @@ func TestClientEvents(t *testing.T) {
 	})
 	svc.Register(events)
 
-	// get new triggerEvent interface, pass params, and post the request
-	f := svc.TriggerEvent()
-	f.Name("Lala")
-	f.Address(wasmclient.SeedToAddress(mySeed, 0))
-	req1 := f.Post()
-	require.NoError(t, req1.Error())
+	address0 := wasmclient.SeedToAddress(mySeed, 0)
+	address1 := wasmclient.SeedToAddress(mySeed, 1)
 
-	err := svc.WaitRequest(req1)
+	// get new triggerEvent interface, pass params, and post the request
+	f := testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Lala")
+	f.Params.Address().SetValue(address0)
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+
+	err := svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 
 	// get new triggerEvent interface, pass params, and post the request
-	f = svc.TriggerEvent()
-	f.Name("Trala")
-	f.Address(wasmclient.SeedToAddress(mySeed, 1))
-	req2 := f.Post()
-	require.NoError(t, req2.Error())
+	f = testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Trala")
+	f.Params.Address().SetValue(address1)
+	f.Func.Post()
+	require.NoError(t, svc.Err)
 
-	err = svc.WaitRequest(req2)
+	err = svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 }
 
@@ -70,60 +76,62 @@ func TestClientRandom(t *testing.T) {
 	svc := setupClient(t)
 
 	// generate new random value
-	f := svc.Random()
-	req := f.Post()
-	require.NoError(t, req.Error())
+	f := testwasmlib.ScFuncs.Random(svc)
+	f.Func.Post()
+	require.NoError(t, svc.Err)
 
-	err := svc.WaitRequest(req)
+	err := svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 
 	// get current random value
-	v := svc.GetRandom()
-	res := v.Call()
-	require.NoError(t, v.Error())
-	require.GreaterOrEqual(t, res.Random(), int64(0))
-	fmt.Println("Random: ", res.Random())
+	v := testwasmlib.ScFuncs.GetRandom(svc)
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	rnd := v.Results.Random().Value()
+	require.GreaterOrEqual(t, rnd, uint64(0))
+	fmt.Println("Random: ", rnd)
 }
 
 func TestClientArray(t *testing.T) {
 	svc := setupClient(t)
 
-	v := svc.ArrayLength()
-	v.Name("Bands")
-	res := v.Call()
-	require.NoError(t, v.Error())
-	require.EqualValues(t, 0, res.Length())
+	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 0, v.Results.Length().Value())
 
-	f := svc.ArraySet()
-	f.Name("Bands")
-	f.Index(0)
-	f.Value("Dire Straits")
-	req := f.Post()
-	require.NoError(t, req.Error())
-	err := svc.WaitRequest(req)
+	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(svc)
+	f.Params.Name().SetValue("Bands")
+	f.Params.Value().SetValue("Dire Straits")
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+	err := svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 
-	v = svc.ArrayLength()
-	v.Name("Bands")
-	res = v.Call()
-	require.NoError(t, v.Error())
-	require.EqualValues(t, 1, res.Length())
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 1, v.Results.Length().Value())
 
-	c := svc.ArrayClear()
-	c.Name("Bands")
-	req = c.Post()
-	require.NoError(t, req.Error())
-	err = svc.WaitRequest(req)
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(svc)
+	c.Params.Name().SetValue("Bands")
+	c.Func.Post()
+	require.NoError(t, svc.Err)
+	err = svc.WaitRequest(svc.Req)
 	require.NoError(t, err)
 
-	v = svc.ArrayLength()
-	v.Name("Bands")
-	res = v.Call()
-	require.NoError(t, v.Error())
-	require.EqualValues(t, 0, res.Length())
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 0, v.Results.Length().Value())
 }
 
-//func TestAccountBalance(t *testing.T) {
+//func TestClientAccountBalance(t *testing.T) {
+//	// note: this calls core accounts contract instead of testwasmlib
+//
 //	// for now skip client tests
 //	t.SkipNow()
 //
@@ -137,11 +145,11 @@ func TestClientArray(t *testing.T) {
 //	// we'll use the first address in the seed to sign requests
 //	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
 //
-//	bal := svc.Balance()
-//	agendID := wasmclient.SeedToAgentID(mySeed, 0)
-//	bal.AgentID(agendID)
-//	res := bal.Call()
-//	require.NoError(t, bal.Error())
-//	balances := res.Balances()
-//	fmt.Printf("Balances: %v\n", balances)
+//	bal := coreaccounts.ScFuncs.Balance(svc)
+//	agent := wasmclient.SeedToAgentID(mySeed, 0)
+//	bal.Params.AgentID().SetValue(agent)
+//	bal.Func.Call()
+//	require.NoError(t, svc.Err)
+//	balances := bal.Results.Balances()
+//	fmt.Printf("Balance: %v\n", balances.GetInt64(wasmtypes.IOTA))
 //}

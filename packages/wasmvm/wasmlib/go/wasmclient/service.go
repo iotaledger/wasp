@@ -114,7 +114,7 @@ func (s *Service) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
 }
 
-func (s *Service) Unegister(handler IEventHandler) {
+func (s *Service) Unregister(handler IEventHandler) {
 	for i, h := range s.eventHandlers {
 		if h == handler {
 			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)
