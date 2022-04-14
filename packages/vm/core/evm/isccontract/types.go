@@ -361,11 +361,7 @@ func (i *ISCExpiration) Unwrap() *iscp.Expiration {
 		return nil
 	}
 
-	var address iotago.Address
-
-	if len(i.ReturnAddress.Data) > 0 {
-		address = i.ReturnAddress.MustUnwrap()
-	}
+	address := i.ReturnAddress.MustUnwrap()
 
 	ret := iscp.Expiration{
 		ReturnAddress: address,
