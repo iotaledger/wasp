@@ -130,7 +130,8 @@ func (s *Service) Unegister(handler IEventHandler) {
 }
 
 func (s *Service) WaitRequest(req Request) error {
-	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *req.id, 1*time.Minute)
+	_, err := s.waspClient.WaitUntilRequestProcessed(s.chainID, *req.id, 1*time.Minute)
+	return err
 }
 
 func (s *Service) startEventHandlers(eventPort string) error {

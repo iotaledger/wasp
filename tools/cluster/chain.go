@@ -119,7 +119,8 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	if err != nil {
 		return nil, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
+	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
+	// TODO look into receipt?
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		blob.VarFieldProgramDescription: description,
 	})
 
-	programHash, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
+	programHash, _, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
 	if err != nil {
 		return hashing.NilHash, err
 	}
@@ -166,7 +167,8 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
+	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
+	// TODO look into receipt?
 	if err != nil {
 		return hashing.NilHash, err
 	}

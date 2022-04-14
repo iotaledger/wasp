@@ -64,7 +64,8 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(e.t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	// TODO check receipt?
 	require.NoError(e.t, err)
 
 	ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
@@ -121,7 +122,8 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 		Args:     codec.MakeDict(params),
 	})
 	require.NoError(e.t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 60*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 60*time.Second)
+	// TODO check receipt?
 	require.NoError(e.t, err)
 	if !e.counter.WaitUntilExpectationsMet() {
 		e.t.Fail()

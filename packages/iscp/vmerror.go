@@ -136,27 +136,19 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 }
 
 type UnresolvedVMError struct {
-	code   VMErrorCode
-	params []interface{}
-	hash   uint32
+	ErrorCode VMErrorCode   `json:"code"`
+	Params    []interface{} `json:"params"`
+	Hash      uint32        `json:"hash"`
 }
 
 var _ VMErrorBase = &UnresolvedVMError{}
 
 func (e *UnresolvedVMError) Error() string {
-	return fmt.Sprintf("UnresolvedVMError(code: %s, hash: %x)", e.code, e.hash)
-}
-
-func (e *UnresolvedVMError) Hash() uint32 {
-	return e.hash
+	return fmt.Sprintf("UnresolvedVMError(code: %s, hash: %x)", e.ErrorCode, e.Hash)
 }
 
 func (e *UnresolvedVMError) Code() VMErrorCode {
-	return e.code
-}
-
-func (e *UnresolvedVMError) Params() []interface{} {
-	return e.params
+	return e.ErrorCode
 }
 
 func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error {
@@ -172,7 +164,7 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 
-	if err = json.Unmarshal(params, &e.params); err != nil {
+	if err = json.Unmarshal(params, &e.Params); err != nil {
 		return err
 	}
 
@@ -180,7 +172,7 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 }
 
 func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
-	bytes, err := json.Marshal(e.params)
+	bytes, err := json.Marshal(e.Params)
 	if err != nil {
 		panic(err)
 	}
@@ -191,8 +183,8 @@ func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
 
 func (e *UnresolvedVMError) Bytes() []byte {
 	mu := marshalutil.New()
-	e.code.Serialize(mu)
-	mu.WriteUint32(e.hash)
+	e.ErrorCode.Serialize(mu)
+	mu.WriteUint32(e.Hash)
 	e.serializeParams(mu)
 	return mu.Bytes()
 }
@@ -265,9 +257,9 @@ func (e *VMError) AsGoError() error {
 
 func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 	return &UnresolvedVMError{
-		code:   e.template.code,
-		params: e.params,
-		hash:   e.Hash(),
+		ErrorCode: e.template.code,
+		Params:    e.params,
+		Hash:      e.Hash(),
 	}
 }
 
@@ -278,10 +270,10 @@ func (e *VMError) AsTemplate() *VMErrorTemplate {
 func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedVMError, error) {
 	var err error
 	unresolvedError := &UnresolvedVMError{}
-	if unresolvedError.code, err = VMErrorCodeFromMarshalUtil(mu); err != nil {
+	if unresolvedError.ErrorCode, err = VMErrorCodeFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if unresolvedError.hash, err = mu.ReadUint32(); err != nil {
+	if unresolvedError.Hash, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 	if err = unresolvedError.deserializeParams(mu); err != nil {

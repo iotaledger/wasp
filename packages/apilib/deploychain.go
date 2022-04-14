@@ -91,9 +91,16 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	peers := multiclient.New(par.CommitteeAPIHosts)
 
 	// ---------- wait until the request is processed at least in all committee nodes
-	if err = peers.WaitUntilAllRequestsProcessed(chainID, initRequestTx, 30*time.Second); err != nil {
+	receipts, err := peers.WaitUntilAllRequestsProcessed(chainID, initRequestTx, 30*time.Second)
+	if err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
+	}
+	for _, r := range receipts {
+		if r.Error != nil {
+			fmt.Fprintf(textout, "root init request was processed with an error.. FAILED: %v\n", err)
+			return nil, xerrors.Errorf("DeployChain: %w", err)
+		}
 	}
 
 	fmt.Fprint(textout, par.Prefix)

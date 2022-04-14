@@ -672,7 +672,7 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return OID(rid.UTXOInput()) // CHANGE THIS = the "0/format" is fucking things up
+	return OID(rid.UTXOInput())
 }
 
 func (rid RequestID) Short() string {

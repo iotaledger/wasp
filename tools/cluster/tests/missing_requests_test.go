@@ -42,7 +42,8 @@ func TestMissingRequests(t *testing.T) {
 	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
+	// TODO check receipt
 	require.NoError(t, err)
 
 	// send off-ledger request to all nodes except #3

@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -50,7 +51,7 @@ type ChainEntry interface {
 
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
-	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
+	GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestReceipt, error)
 	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
 	DetachFromRequestProcessed(attachID *events.Closure)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)

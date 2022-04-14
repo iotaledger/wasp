@@ -54,7 +54,8 @@ func TestDepositWithdraw(t *testing.T) {
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
+	// TODO check receipt
 	require.NoError(t, err)
 	chEnv.checkLedger()
 	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, depositIotas)
@@ -68,7 +69,8 @@ func TestDepositWithdraw(t *testing.T) {
 	// withdraw iotas back
 	reqTx3, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname())
 	require.NoError(t, err)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx3, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx3, 30*time.Second)
+	// TODO check receipt
 	require.NoError(t, err)
 
 	require.NoError(t, err)

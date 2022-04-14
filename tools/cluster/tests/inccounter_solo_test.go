@@ -85,7 +85,8 @@ func TestSpamCallViewWasm(t *testing.T) {
 		// increment counter once
 		tx, err := chEnv.chainClient().Post1Request(incHname, iscp.Hn("increment"))
 		require.NoError(t, err)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+		// TODO check receipt
 		require.NoError(t, err)
 	}
 

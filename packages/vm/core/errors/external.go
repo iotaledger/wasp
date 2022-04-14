@@ -29,5 +29,5 @@ func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, err
 		return nil, err
 	}
 
-	return iscp.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params()...), nil
+	return iscp.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params...), nil
 }

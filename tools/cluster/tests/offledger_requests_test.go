@@ -31,7 +31,8 @@ func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnN
 		Transfer: iscp.NewTokensIotas(iotas),
 	})
 	require.NoError(e.t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	// TODO check receipt
 	require.NoError(e.t, err)
 	e.checkBalanceOnChain(userAgentID, iscp.IotaTokenID, iotas)
 
@@ -63,7 +64,8 @@ func TestOffledgerRequest(t *testing.T) {
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, inccounter.FuncIncCounter.Hname())
 	require.NoError(t, err)
-	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	// TODO check receipt
 	require.NoError(t, err)
 
 	// check off-ledger request was successfully processed
@@ -112,7 +114,8 @@ func TestOffledgerRequest900KB(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	// TODO check receipt
 	require.NoError(t, err)
 
 	// ensure blob was stored by the cluster

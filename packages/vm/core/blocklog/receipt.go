@@ -16,15 +16,16 @@ import (
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
-	Error         *iscp.UnresolvedVMError
-	GasBudget     uint64
-	GasBurned     uint64
-	GasFeeCharged uint64
+	// TODO request may be big (blobs). Do we want to store it all?
+	Request       iscp.Request            `json:"request"`
+	Error         *iscp.UnresolvedVMError `json:"error"`
+	GasBudget     uint64                  `json:"gasBudget"`
+	GasBurned     uint64                  `json:"gasBurned"`
+	GasFeeCharged uint64                  `json:"gasFeeCharged"`
 	// not persistent
-	BlockIndex   uint32
-	RequestIndex uint16
-	GasBurnLog   *gas.BurnLog
+	BlockIndex   uint32       `json:"blockIndex"`
+	RequestIndex uint16       `json:"requestIndex"`
+	GasBurnLog   *gas.BurnLog `json:"-"`
 }
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {

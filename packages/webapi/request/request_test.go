@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -35,7 +36,7 @@ var (
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) GetRequestProcessingStatus(_ iscp.RequestID) chain.RequestProcessingStatus {
+func (m *mockedChain) GetRequestReceipt(reqID iscp.RequestID) *blocklog.RequestReceipt {
 	panic("implement me")
 }
 

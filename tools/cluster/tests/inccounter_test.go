@@ -83,7 +83,8 @@ func testNothing(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		// TODO check receipt
 		require.NoError(t, err)
 	}
 
@@ -110,7 +111,8 @@ func testIncrement(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		// TODO check receipt
 		require.NoError(t, err)
 	}
 

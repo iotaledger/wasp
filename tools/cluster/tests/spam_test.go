@@ -79,7 +79,8 @@ func TestSpamOffledger(t *testing.T) {
 			}
 
 			// wait for the request to be processed
-			err = env.chain.CommitteeMultiClient().WaitUntilRequestProcessed(env.chain.ChainID, req.ID(), 30*time.Second)
+			_, err = env.chain.CommitteeMultiClient().WaitUntilRequestProcessed(env.chain.ChainID, req.ID(), 30*time.Second)
+			// TODO check receipt
 
 			// check receipt
 			er = env.chain.OriginatorClient().CheckRequestResult(req.ID())
