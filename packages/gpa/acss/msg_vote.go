@@ -7,8 +7,10 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
+type msgVoteKind byte
+
 const (
-	msgVoteOK byte = iota
+	msgVoteOK msgVoteKind = iota
 	msgVoteREADY
 )
 
@@ -18,7 +20,7 @@ const (
 type msgVote struct {
 	sender    gpa.NodeID
 	recipient gpa.NodeID
-	kind      byte
+	kind      msgVoteKind
 }
 
 var _ gpa.Message = &msgVote{}
