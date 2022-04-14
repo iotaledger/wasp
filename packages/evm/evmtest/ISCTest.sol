@@ -53,32 +53,28 @@ contract ISCTest {
 
 	event SendEvent();
 	function emitSend() public {
-		bytes memory d;
-		IotaNativeTokenID memory id;
-		id.data = d;
+		ISCDict memory params = ISCDict(new ISCDictItem[](1));
+		bytes memory int64Encoded42 = hex"2A00000000000000";
+		params.items[0] = ISCDictItem("x", int64Encoded42);
+
+		IotaAddress memory receiver = isc.getSenderAddress();
 
 
-		IotaAddress memory receiver;
-		receiver.data = d;
+		bytes memory emptyID = new bytes(38);
+		IotaNativeTokenID memory tokenId;
+		tokenId.data = emptyID;
 
 		ISCFungibleTokens memory fungibleTokens;
 		fungibleTokens.iotas = 1074;
-		fungibleTokens.tokens = new IotaNativeToken[](1);
-		fungibleTokens.tokens[0].amount = 1074;
-		fungibleTokens.tokens[0].ID = id;
-
-
-
-	ISCAllowance memory metaDataAllowance;
 
 		ISCSendMetadata memory metadata;
 		metadata.entrypoint = ISCHname.wrap(0x1337);
 		metadata.targetContract = ISCHname.wrap(0xd34db33f);
-		metadata.allowance = metaDataAllowance;
+		metadata.params = params;
 
 		ISCSendOptions memory options;
 
-		isc.send(receiver, fungibleTokens, false, metadata, options);
+		isc.send(receiver, fungibleTokens, true, metadata, options);
 		emit SendEvent();
 	}
 

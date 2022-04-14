@@ -261,12 +261,17 @@ func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens
 
 func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
 	ret := iscp.FungibleTokens{
-		Iotas: t.Iotas,
+		Iotas:  t.Iotas,
+		Tokens: make(iotago.NativeTokens, len(t.Tokens)),
 	}
 
 	for i, v := range t.Tokens {
-		ret.Tokens[i].ID = v.ID.Unwrap()
-		ret.Tokens[i].Amount = v.Amount
+		nativeToken := iotago.NativeToken{
+			ID:     v.ID.Unwrap(),
+			Amount: v.Amount,
+		}
+
+		ret.Tokens[i] = &nativeToken
 	}
 
 	return &ret
@@ -319,6 +324,10 @@ func WrapISCTimeData(data *iscp.TimeData) ISCTimeData {
 }
 
 func (i ISCTimeData) Unwrap() *iscp.TimeData {
+	if i.MilestoneIndex == 0 {
+		return nil
+	}
+
 	ret := iscp.TimeData{
 		MilestoneIndex: i.MilestoneIndex,
 		Time:           time.UnixMilli(i.Time),
@@ -343,9 +352,19 @@ func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
 	return ret
 }
 
-func (i ISCExpiration) Unwrap() *iscp.Expiration {
+func (i *ISCExpiration) Unwrap() *iscp.Expiration {
+	if i == nil {
+		return nil
+	}
+
+	address, err := i.ReturnAddress.Unwrap()
+
+	if err != nil {
+		return nil
+	}
+
 	ret := iscp.Expiration{
-		ReturnAddress: i.ReturnAddress.MustUnwrap(),
+		ReturnAddress: address,
 		TimeData: iscp.TimeData{
 			MilestoneIndex: i.MilestoneIndex,
 			Time:           time.UnixMilli(i.Time),
