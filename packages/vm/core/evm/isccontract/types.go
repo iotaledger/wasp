@@ -271,55 +271,21 @@ func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
 	return &ret
 }
 
-type IotaAllowance struct {
-	Assets ISCFungibleTokens
-	NFTs   []IotaNFTID
-}
-
-func WrapIotaAllowance(allowance iscp.Allowance) IotaAllowance {
-	nftIds := make([]IotaNFTID, 0)
-
-	for _, nft := range allowance.NFTs {
-		nftIds = append(nftIds, WrapIotaNFTID(nft))
-	}
-
-	ret := IotaAllowance{
-		NFTs:   nftIds,
-		Assets: WrapISCFungibleTokens(*allowance.Assets),
-	}
-
-	return ret
-}
-
-func (a IotaAllowance) Unwrap() *iscp.Allowance {
-	nftIDs := make([]iotago.NFTID, 0)
-
-	for _, nftID := range a.NFTs {
-		nftIDs = append(nftIDs, nftID.Unwrap())
-	}
-
-	ret := iscp.Allowance{
-		Assets: a.Assets.Unwrap(),
-		NFTs:   nftIDs,
-	}
-
-	return &ret
-}
-
 type ISCSendMetadata struct {
-	TargetContract iscp.Hname
-	Entrypoint     iscp.Hname
-	// TODO: Params
-	Allowance IotaAllowance
-	GasBudget uint64
+	TargetContract uint32
+	Entrypoint     uint32
+	Params         ISCDict
+	Allowance      ISCAllowance
+	GasBudget      uint64
 }
 
 func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
 	ret := ISCSendMetadata{
 		GasBudget:      metadata.GasBudget,
-		Entrypoint:     metadata.EntryPoint,
-		TargetContract: metadata.TargetContract,
-		Allowance:      WrapIotaAllowance(*metadata.Allowance),
+		Entrypoint:     uint32(metadata.EntryPoint),
+		TargetContract: uint32(metadata.TargetContract),
+		Allowance:      WrapISCAllowance(metadata.Allowance),
+		Params:         WrapISCDict(metadata.Params),
 	}
 
 	return ret
@@ -327,9 +293,9 @@ func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
 
 func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
 	ret := iscp.SendMetadata{
-		TargetContract: i.TargetContract,
-		EntryPoint:     i.Entrypoint,
-		Params:         nil,
+		TargetContract: iscp.Hname(i.TargetContract),
+		EntryPoint:     iscp.Hname(i.Entrypoint),
+		Params:         i.Params.Unwrap(),
 		Allowance:      i.Allowance.Unwrap(),
 		GasBudget:      i.GasBudget,
 	}
@@ -361,17 +327,16 @@ func (i ISCTimeData) Unwrap() *iscp.TimeData {
 }
 
 type ISCExpiration struct {
-	ISCTimeData
-	ReturnAddress IotaAddress
+	MilestoneIndex uint32
+	Time           int64
+	ReturnAddress  IotaAddress
 }
 
 func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
 	ret := ISCExpiration{
-		ISCTimeData: ISCTimeData{
-			MilestoneIndex: data.MilestoneIndex,
-			Time:           data.Time.UnixMilli(),
-		},
-		ReturnAddress: WrapIotaAddress(data.ReturnAddress),
+		MilestoneIndex: data.MilestoneIndex,
+		Time:           data.Time.UnixMilli(),
+		ReturnAddress:  WrapIotaAddress(data.ReturnAddress),
 	}
 
 	return ret

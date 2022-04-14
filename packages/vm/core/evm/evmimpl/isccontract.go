@@ -119,12 +119,11 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
 
 	case "send":
-
 		params := isccontract.ISCRequestParameters{}
 		err := method.Inputs.Copy(&params, args)
-		fmt.Printf(err.Error())
+		fmt.Printf("%v", err)
 		outs = []interface{}{}
-	//	c.ctx.Send(params)
+		c.ctx.Send(params.Unwrap())
 
 	case "call":
 		var callArgs struct {

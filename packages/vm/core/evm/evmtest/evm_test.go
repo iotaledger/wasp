@@ -494,20 +494,6 @@ func TestRevert(t *testing.T) {
 	require.EqualValues(t, err.Error(), "PostRequestSync failed: execution reverted: contractId: 07cb02c1, errorId: 62505")
 }
 
-func TestSend(t *testing.T) {
-	evmChain := initEVM(t)
-	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
-
-	var iotas uint64
-	iscTest.callFnExpectEvent([]ethCallOptions{{iota: iotaCallOptions{
-		before: func(req *solo.CallParams) {
-			req.AddAllowanceIotas(42)
-		},
-	}}}, "SendEvent", nil, "emitSend")
-
-	require.EqualValues(t, 42, iotas)
-}
-
 func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 	evmChain := initEVM(t)
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
@@ -604,6 +590,22 @@ func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
 	require.EqualValues(t, nftInfo.NFTID, nft.MustUnwrap().ID)
 	require.True(t, issuerAddress.Equal(nft.MustUnwrap().Issuer))
 	require.EqualValues(t, metadata, nft.MustUnwrap().Metadata)
+}
+
+func TestSend(t *testing.T) {
+	evmChain := initEVM(t, inccounter.Processor)
+	err := evmChain.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
+	require.NoError(t, err)
+	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+
+	var iotas uint64
+	iscTest.callFnExpectEvent([]ethCallOptions{{iota: iotaCallOptions{
+		before: func(req *solo.CallParams) {
+			req.AddAllowanceIotas(42)
+		},
+	}}}, "SendEvent", nil, "emitSend")
+
+	require.EqualValues(t, 42, iotas)
 }
 
 func TestISCCall(t *testing.T) {
