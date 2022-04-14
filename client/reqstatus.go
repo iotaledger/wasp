@@ -13,7 +13,7 @@ import (
 // RequestStatus fetches the processing status of a request.
 func (c *WaspClient) RequestStatus(chainID *iscp.ChainID, reqID iscp.RequestID) (*model.RequestStatusResponse, error) {
 	res := &model.RequestStatusResponse{}
-	if err := c.do(http.MethodGet, routes.RequestStatus(chainID.String(), reqID.String()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, routes.RequestReceipt(chainID.String(), reqID.String()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil

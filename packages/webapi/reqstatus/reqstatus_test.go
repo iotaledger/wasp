@@ -43,7 +43,7 @@ func TestRequestStatus(t *testing.T) {
 		t,
 		r.handleRequestStatus,
 		http.MethodGet,
-		routes.RequestStatus(":chainID", ":reqID"),
+		routes.RequestReceipt(":chainID", ":reqID"),
 		map[string]string{
 			"chainID": chainID.String(),
 			"reqID":   reqID.String(),

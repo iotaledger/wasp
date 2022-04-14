@@ -24,7 +24,7 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
 		return getChain(chainID)
 	}}
 
-	server.GET(routes.RequestStatus(":chainID", ":reqID"), r.handleRequestStatus).
+	server.GET(routes.RequestReceipt(":chainID", ":reqID"), r.handleRequestReceipt).
 		SetSummary("Get the processing status of a given request in the node").
 		AddParamPath("", "chainID", "ChainID (hex)").
 		AddParamPath("", "reqID", "Request ID (base58)").
@@ -37,11 +37,16 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
 		AddParamBody(model.WaitRequestProcessedParams{}, "Params", "Optional parameters", false)
 }
 
-func (r *reqstatusWebAPI) handleRequestStatus(c echo.Context) error {
+func (r *reqstatusWebAPI) handleRequestReceipt(c echo.Context) error {
 	ch, reqID, err := r.parseParams(c)
 	if err != nil {
 		return err
 	}
+	// call view , then
+	// RequestReceiptFromBytes
+
+	// then get the errors?
+
 	var isProcessed bool
 	switch ch.GetRequestProcessingStatus(reqID) {
 	case chain.RequestProcessingStatusCompleted:
