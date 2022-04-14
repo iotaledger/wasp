@@ -14,13 +14,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
@@ -200,9 +200,7 @@ func (pt *PrivTangle) startNode(i int) {
 	}
 	hornetCmd := exec.CommandContext(pt.ctx, "hornet", args...)
 	// kill hornet cmd if the go test process is killed
-	hornetCmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
+	util.TerminateCmdWhenTestStops(hornetCmd)
 
 	hornetCmd.Env = os.Environ()
 	hornetCmd.Env = append(hornetCmd.Env, env...)
@@ -234,9 +232,7 @@ func (pt *PrivTangle) startIndexer(i int) {
 
 	indexerCmd := exec.CommandContext(pt.ctx, "inx-indexer", args...)
 	// kill indexer cmd if the go test process is killed
-	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
+	util.TerminateCmdWhenTestStops(indexerCmd)
 
 	indexerCmd.Dir = indexerPath
 
@@ -264,17 +260,15 @@ func (pt *PrivTangle) startMqtt(i int) {
 		fmt.Sprintf("--mqtt.wsPort=%d", pt.NodePortMQTTWebSocket(i)),
 	}
 
-	indexerCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
+	mqttCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
 	// kill indexer cmd if the go test process is killed
-	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
+	util.TerminateCmdWhenTestStops(mqttCmd)
 
-	indexerCmd.Dir = indexerPath
+	mqttCmd.Dir = indexerPath
 
-	writeOutputToFiles(indexerPath, indexerCmd)
+	writeOutputToFiles(indexerPath, mqttCmd)
 
-	if err := indexerCmd.Start(); err != nil {
+	if err := mqttCmd.Start(); err != nil {
 		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
 	}
 }

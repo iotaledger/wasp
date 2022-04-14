@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
-	"syscall"
 	"testing"
 	"text/template"
 	"time"
@@ -458,8 +457,8 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 	cmd := exec.Command(command)
 
 	// force the wasp processes to close if the cluster tests time out
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
+	if clu.t != nil {
+		util.TerminateCmdWhenTestStops(cmd)
 	}
 
 	cmd.Dir = cwd
