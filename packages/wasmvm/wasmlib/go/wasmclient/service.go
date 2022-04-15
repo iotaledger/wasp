@@ -8,12 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/mr-tron/base58"
@@ -39,25 +37,32 @@ type IEventHandler interface {
 	CallHandler(topic string, params []string)
 }
 
+type IWaspClient interface {
+	CallView(chainID *iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error)
+	CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error)
+	PostOffLedgerRequest(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) error
+	WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error
+}
+
 type Service struct {
 	chainID       *iscp.ChainID
 	cvt           wasmhost.WasmConvertor
 	Err           error
+	eventDone     chan bool
 	eventHandlers []IEventHandler
 	keyPair       *cryptolib.KeyPair
 	Req           Request
 	scHname       iscp.Hname
-	waspClient    *client.WaspClient
+	svcClient  IServiceClient
+	waspClient IWaspClient
 }
 
-func (s *Service) Init(svcClient *ServiceClient, chainID *wasmtypes.ScChainID, scHname uint32) (err error) {
-	s.waspClient = svcClient.waspClient
+func (s *Service) Init(svcClient IServiceClient, chainID *wasmtypes.ScChainID, scHname uint32) (err error) {
+	s.svcClient = svcClient
+	s.waspClient = svcClient.WaspClient()
 	s.scHname = iscp.Hname(scHname)
 	s.chainID, err = iscp.ChainIDFromBytes(chainID.Bytes())
-	if err != nil {
-		return err
-	}
-	return s.startEventHandlers(svcClient.eventPort)
+	return err
 }
 
 func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
@@ -82,27 +87,22 @@ func (s *Service) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScH
 }
 
 func (s *Service) postRequestOffLedger(hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) Request {
-	req := iscp.NewOffLedgerRequest(s.chainID, s.scHname, hFuncName, params, uint64(time.Now().UnixNano()))
-	req.WithTransfer(allowance)
-	req.Sign(keyPair)
-	s.Err = s.waspClient.PostOffLedgerRequest(s.chainID, req)
-	if s.Err != nil {
-		s.Req.err = s.Err
-		return s.Req
-	}
-	s.Req.err = nil
-	id := req.ID()
-	s.Req.id = &id
+	s.Req.id, s.Req.err = s.svcClient.PostRequest(s.chainID, s.scHname, hFuncName, params, allowance, keyPair)
+	s.Err = s.Req.err
 	return s.Req
 }
 
-func (s *Service) Register(handler IEventHandler) {
+func (s *Service) Register(handler IEventHandler) error {
 	for _, h := range s.eventHandlers {
 		if h == handler {
-			return
+			return nil
 		}
 	}
 	s.eventHandlers = append(s.eventHandlers, handler)
+	if len(s.eventHandlers) > 1 {
+		return nil
+	}
+	return s.startEventHandlers()
 }
 
 // overrides default contract name
@@ -118,19 +118,29 @@ func (s *Service) Unregister(handler IEventHandler) {
 	for i, h := range s.eventHandlers {
 		if h == handler {
 			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)
+			if len(s.eventHandlers) == 0 {
+				s.stopEventHandlers()
+			}
 			return
 		}
 	}
 }
 
-func (s *Service) WaitRequest(req Request) error {
-	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *req.id, 1*time.Minute)
+func (s *Service) WaitRequest(reqID ...*iscp.RequestID) error {
+	id := s.Req.id
+	if len(reqID) == 1 {
+		id = reqID[0]
+	}
+	if id == nil {
+		return nil
+	}
+	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *id, 1*time.Minute)
 }
 
-func (s *Service) startEventHandlers(eventPort string) error {
+func (s *Service) startEventHandlers() error {
 	chMsg := make(chan []string, 20)
-	chDone := make(chan bool)
-	err := subscribe.Subscribe(eventPort, chMsg, chDone, true, "")
+	s.eventDone = make(chan bool)
+	err := s.svcClient.SubscribeEvents(chMsg, s.eventDone)
 	if err != nil {
 		return err
 	}
@@ -151,6 +161,12 @@ func (s *Service) startEventHandlers(eventPort string) error {
 		}
 	}()
 	return nil
+}
+
+func (s *Service) stopEventHandlers() {
+	if len(s.eventHandlers) > 0 {
+		s.eventDone <- true
+	}
 }
 
 /////////////////////////////////////////////////////////////////

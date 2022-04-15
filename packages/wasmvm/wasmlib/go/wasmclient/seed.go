@@ -13,12 +13,12 @@ import (
 
 func ChainIsValid(chainID string) bool {
 	bytes, err := base58.Decode(chainID)
-	return err == nil && len(bytes) == 33
+	return err == nil && len(bytes) == wasmtypes.ScChainIDLength
 }
 
 func SeedIsValid(mySeed string) bool {
 	seedBytes, err := base58.Decode(mySeed)
-	return err == nil && len(seedBytes) == 32
+	return err == nil && len(seedBytes) == wasmtypes.ScHashLength
 }
 
 func SeedToAddress(mySeed string, index uint64) wasmtypes.ScAddress {

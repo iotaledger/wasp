@@ -18,7 +18,7 @@ type Erc721Service struct {
 	wasmclient.Service
 }
 
-func NewErc721Service(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*Erc721Service, error) {
+func NewErc721Service(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*Erc721Service, error) {
 	s := &Erc721Service{}
 	err := s.Service.Init(cl, chainID, 0xd967c216)
 	return s, err

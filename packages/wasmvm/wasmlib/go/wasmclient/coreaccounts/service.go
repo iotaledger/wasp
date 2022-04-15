@@ -18,7 +18,7 @@ type CoreAccountsService struct {
 	wasmclient.Service
 }
 
-func NewCoreAccountsService(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*CoreAccountsService, error) {
+func NewCoreAccountsService(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*CoreAccountsService, error) {
 	s := &CoreAccountsService{}
 	err := s.Service.Init(cl, chainID, 0x3c4b5e02)
 	return s, err

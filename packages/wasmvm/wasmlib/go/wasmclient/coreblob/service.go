@@ -18,7 +18,7 @@ type CoreBlobService struct {
 	wasmclient.Service
 }
 
-func NewCoreBlobService(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*CoreBlobService, error) {
+func NewCoreBlobService(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*CoreBlobService, error) {
 	s := &CoreBlobService{}
 	err := s.Service.Init(cl, chainID, 0xfd91bc63)
 	return s, err

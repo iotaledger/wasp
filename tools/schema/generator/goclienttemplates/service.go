@@ -23,7 +23,7 @@ type $PkgName$+Service struct {
 	wasmclient.Service
 }
 
-func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*$PkgName$+Service, error) {
+func New$PkgName$+Service(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*$PkgName$+Service, error) {
 	s := &$PkgName$+Service{}
 	err := s.Service.Init(cl, chainID, 0x$hscName)
 	return s, err

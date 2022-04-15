@@ -18,7 +18,7 @@ type CoreGovernanceService struct {
 	wasmclient.Service
 }
 
-func NewCoreGovernanceService(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*CoreGovernanceService, error) {
+func NewCoreGovernanceService(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*CoreGovernanceService, error) {
 	s := &CoreGovernanceService{}
 	err := s.Service.Init(cl, chainID, 0x17cf909f)
 	return s, err

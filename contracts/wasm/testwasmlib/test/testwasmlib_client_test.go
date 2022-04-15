@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,13 +17,26 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
-	myChainID = "mpbE84pT8uDZwNYisKRWKmfamfMUeeL7q94rJqzzhuWv"
+	useSolo   = true
+	myChainID = "gkdhQDvLi23xxgpiLbmzodcayx3"
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
 func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 	// for now skip client tests
-	t.SkipNow()
+	// t.SkipNow()
+
+	if useSolo {
+		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
+		svcClient := wasmsolo.NewSoloClient(ctx)
+		chainID := ctx.ChainID()
+		svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, &chainID)
+		require.NoError(t, err)
+
+		// we'll use the first address in the seed to sign requests
+		svc.SignRequests(ctx.Chain.OriginatorPrivateKey)
+		return svc
+	}
 
 	require.True(t, wasmclient.SeedIsValid(mySeed))
 	require.True(t, wasmclient.ChainIsValid(myChainID))
@@ -58,7 +72,7 @@ func TestClientEvents(t *testing.T) {
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
-	err := svc.WaitRequest(svc.Req)
+	err := svc.WaitRequest()
 	require.NoError(t, err)
 
 	// get new triggerEvent interface, pass params, and post the request
@@ -68,7 +82,7 @@ func TestClientEvents(t *testing.T) {
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
-	err = svc.WaitRequest(svc.Req)
+	err = svc.WaitRequest()
 	require.NoError(t, err)
 }
 
@@ -80,7 +94,7 @@ func TestClientRandom(t *testing.T) {
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
-	err := svc.WaitRequest(svc.Req)
+	err := svc.WaitRequest()
 	require.NoError(t, err)
 
 	// get current random value
@@ -106,7 +120,7 @@ func TestClientArray(t *testing.T) {
 	f.Params.Value().SetValue("Dire Straits")
 	f.Func.Post()
 	require.NoError(t, svc.Err)
-	err := svc.WaitRequest(svc.Req)
+	err := svc.WaitRequest()
 	require.NoError(t, err)
 
 	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
@@ -119,7 +133,7 @@ func TestClientArray(t *testing.T) {
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
 	require.NoError(t, svc.Err)
-	err = svc.WaitRequest(svc.Req)
+	err = svc.WaitRequest()
 	require.NoError(t, err)
 
 	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)

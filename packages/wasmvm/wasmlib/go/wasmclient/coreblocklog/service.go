@@ -18,7 +18,7 @@ type CoreBlockLogService struct {
 	wasmclient.Service
 }
 
-func NewCoreBlockLogService(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*CoreBlockLogService, error) {
+func NewCoreBlockLogService(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*CoreBlockLogService, error) {
 	s := &CoreBlockLogService{}
 	err := s.Service.Init(cl, chainID, 0xf538ef2b)
 	return s, err

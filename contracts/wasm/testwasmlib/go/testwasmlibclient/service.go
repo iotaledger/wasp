@@ -18,7 +18,7 @@ type TestWasmLibService struct {
 	wasmclient.Service
 }
 
-func NewTestWasmLibService(cl *wasmclient.ServiceClient, chainID *wasmtypes.ScChainID) (*TestWasmLibService, error) {
+func NewTestWasmLibService(cl wasmclient.IServiceClient, chainID *wasmtypes.ScChainID) (*TestWasmLibService, error) {
 	s := &TestWasmLibService{}
 	err := s.Service.Init(cl, chainID, 0x89703a45)
 	return s, err
