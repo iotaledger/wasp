@@ -7,41 +7,123 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 )
 
 // In this test all the nodes are actually fair.
 func TestBasic(t *testing.T) {
-	log := testlogger.NewLogger(t)
+	t.Parallel()
+	t.Run("n=4,f=1", func(tt *testing.T) { genericTest(tt, 4, 1, 0, 0) })
+	t.Run("n=10,f=3", func(tt *testing.T) { genericTest(tt, 10, 3, 0, 0) })
+	t.Run("n=31,f=10", func(tt *testing.T) { genericTest(tt, 31, 10, 0, 0) })
+}
+
+func TestSilentPeers(t *testing.T) {
+	t.Parallel()
+	t.Run("n=4,f=1", func(tt *testing.T) { genericTest(tt, 4, 1, 1, 0) })
+	t.Run("n=10,f=3", func(tt *testing.T) { genericTest(tt, 10, 3, 3, 0) })
+	t.Run("n=31,f=10", func(tt *testing.T) { genericTest(tt, 31, 10, 10, 0) })
+}
+
+func TestFaultyDealer(t *testing.T) {
+	t.Parallel()
+	t.Run("n=4,f=1,F=1", func(tt *testing.T) { genericTest(tt, 4, 1, 1, 1) })
+	t.Run("n=4,f=1,F=2", func(tt *testing.T) { genericTest(tt, 4, 1, 1, 2) })
+	t.Run("n=10,f=3,F=3", func(tt *testing.T) { genericTest(tt, 10, 3, 3, 3) })
+	t.Run("n=31,f=10,F=10", func(tt *testing.T) { genericTest(tt, 31, 10, 10, 10) })
+}
+
+func genericTest(
+	t *testing.T,
+	n, // Number of nodes.
+	f, // Max number of faulty nodes.
+	silentNodes, // Number of actually faulty nodes (by not responding to anything).
+	faultyDeals int, // How many faulty deals the dealer produces?
+) {
+	log := testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelWarn, false)
 	defer log.Sync()
 	suite := tcrypto.DefaultEd25519Suite()
-	test := func(tt *testing.T, n, f int) {
-		nodeIDs := gpa.MakeTestNodeIDs("node", n)
-		nodeSKs := map[gpa.NodeID]kyber.Scalar{}
-		nodePKs := map[gpa.NodeID]kyber.Point{}
-		for i := range nodeIDs {
-			nodeSKs[nodeIDs[i]] = suite.Scalar().Pick(suite.RandomStream())
-			nodePKs[nodeIDs[i]] = suite.Point().Mul(nodeSKs[nodeIDs[i]], nil)
+	secretToShare := suite.Scalar().Pick(suite.RandomStream())
+	//
+	// Setup keys and node names.
+	nodeIDs := gpa.MakeTestNodeIDs("node", n)
+	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
+	nodePKs := map[gpa.NodeID]kyber.Point{}
+	for i := range nodeIDs {
+		nodeSKs[nodeIDs[i]] = suite.Scalar().Pick(suite.RandomStream())
+		nodePKs[nodeIDs[i]] = suite.Point().Mul(nodeSKs[nodeIDs[i]], nil)
+	}
+	dealer := nodeIDs[rand.Intn(len(nodeIDs))]
+	dealCB := func(i int, e []byte) []byte {
+		if silentNodes <= i && i < silentNodes+faultyDeals {
+			log.Infof("Corrupting the deal for node[%v]=%v", i, nodeIDs[i])
+			e[0] ^= 0xff // Corrupt the data.
 		}
-		dealer := nodeIDs[rand.Intn(len(nodeIDs))]
-		nodes := map[gpa.NodeID]gpa.GPA{}
-		for _, nid := range nodeIDs {
-			nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, log.Named(string(nid)))
-		}
-		gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{dealer: nil})
-		for _, n := range nodes {
-			o := n.Output()
-			require.NotNil(tt, o)
-			// require.Equal(tt, o.([]byte), input) // TODO: Check it.
+		return e
+	}
+	faulty := nodeIDs[:silentNodes]
+	nodes := map[gpa.NodeID]gpa.GPA{}
+	for _, nid := range nodeIDs {
+		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.Named(string(nid)))
+		if isNodeInList(nid, faulty) {
+			nodes[nid] = &silentNode{nested: nodes[nid]}
 		}
 	}
-	t.Parallel()
-	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
-	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })
-	t.Run("n=31,f=10", func(tt *testing.T) { test(tt, 31, 10) })
+	gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{dealer: secretToShare})
+	if faultyDeals <= f {
+		outShares := []*share.PriShare{}
+		for i, n := range nodes {
+			o := n.Output()
+			if !isNodeInList(i, faulty) {
+				require.NotNil(t, o)
+				outShares = append(outShares, o.(*share.PriShare))
+			}
+		}
+		outSecret, err := share.RecoverSecret(suite, outShares, f+1, n)
+		require.NoError(t, err)
+		require.True(t, outSecret.Equal(secretToShare))
+	} else {
+		// No node can output a message, if more than F deals were corrupted.
+		for _, n := range nodes {
+			require.Nil(t, n.Output())
+		}
+	}
+}
+
+func isNodeInList(n gpa.NodeID, list []gpa.NodeID) bool {
+	for i := range list {
+		if list[i] == n {
+			return true
+		}
+	}
+	return false
+}
+
+// silent node don't respond to any messages.
+// If it is the dealer, if performs the initial share.
+type silentNode struct {
+	nested gpa.GPA
+}
+
+var _ gpa.GPA = &silentNode{}
+
+func (s *silentNode) Input(input gpa.Input) []gpa.Message {
+	// Return the messages, if that's a dealer, otherwise the execution is not meaningful.
+	return s.nested.Input(input)
+}
+
+func (s *silentNode) Message(msg gpa.Message) []gpa.Message {
+	// Just drop all the received messages.
+	return gpa.NoMessages()
+}
+
+func (s *silentNode) Output() gpa.Output {
+	return s.nested.Output()
 }

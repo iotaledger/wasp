@@ -73,6 +73,8 @@
 // [4] hbACSS: How to Robustly Share Many Secrets https://eprint.iacr.org/2021/159
 // [5] https://github.com/tyurek/hbACSS
 //
+// A PoC implementation: <https://github.com/Wollac/async.go>
+//
 package acss
 
 import (
@@ -94,7 +96,8 @@ type acssImpl struct {
 	mySK          kyber.Scalar
 	myPK          kyber.Point
 	myIdx         int
-	dealer        gpa.NodeID
+	dealer        gpa.NodeID                 // A node that is recognized as a dealer.
+	dealCB        func(int, []byte) []byte   // Callback to be called on the encrypted deals (for tests actually).
 	peerPKs       map[gpa.NodeID]kyber.Point // Peer public keys.
 	peerIdx       []gpa.NodeID               // Particular order of the nodes (position in the polynomial).
 	rbc           gpa.GPA                    // RBC to share `C||E`.
@@ -105,15 +108,25 @@ type acssImpl struct {
 	voteREADYSent bool                       // Have we sent our READY vote?
 	pendingIRMsgs []*msgImplicateRecover     // I/R messages are buffered, if the RBC is not completed yet.
 	recoverT      map[int]*share.PriShare    // Private shares from the RECOVER messages.
-	outS          kyber.Scalar               // Our share of the secret (decrypted from rbcOutE).
+	outS          *share.PriShare            // Our share of the secret (decrypted from rbcOutE).
 	output        bool
 	log           *logger.Logger
 }
 
 //
-// NOTE: The secret key `mySK` have to be temporary, as it is revealed in the case when the dealer is detected to be faulty and the IMPLICATE/RECOVER procedure is used.
+// NOTE: The secret key `mySK` have to be temporary, as it is revealed in the case
+// when the dealer is detected to be faulty and the IMPLICATE/RECOVER procedure is used.
 //
-func New(suite suites.Suite, peers []gpa.NodeID, peerPKs map[gpa.NodeID]kyber.Point, f int, me gpa.NodeID, mySK kyber.Scalar, dealer gpa.NodeID, log *logger.Logger,
+func New(
+	suite suites.Suite,
+	peers []gpa.NodeID,
+	peerPKs map[gpa.NodeID]kyber.Point,
+	f int,
+	me gpa.NodeID,
+	mySK kyber.Scalar,
+	dealer gpa.NodeID,
+	dealCB func(int, []byte) []byte,
+	log *logger.Logger,
 ) gpa.GPA {
 	n := len(peers)
 	myIdx := -1
@@ -125,6 +138,9 @@ func New(suite suites.Suite, peers []gpa.NodeID, peerPKs map[gpa.NodeID]kyber.Po
 	if myIdx == -1 {
 		panic("i'm not in the peer list")
 	}
+	if dealCB == nil {
+		dealCB = func(i int, b []byte) []byte { return b }
+	}
 	a := acssImpl{
 		suite:         suite,
 		n:             n,
@@ -134,6 +150,7 @@ func New(suite suites.Suite, peers []gpa.NodeID, peerPKs map[gpa.NodeID]kyber.Po
 		myPK:          peerPKs[me],
 		myIdx:         myIdx,
 		dealer:        dealer,
+		dealCB:        dealCB,
 		peerPKs:       peerPKs,
 		peerIdx:       peers,
 		rbc:           rbc.New(peers, f, me, dealer, func(b []byte) bool { return true }),
@@ -155,10 +172,10 @@ func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
 	if a.me != a.dealer {
 		panic(xerrors.Errorf("only dealer can initiate the sharing"))
 	}
-	if input != nil {
-		panic(xerrors.Errorf("we expect nil input"))
+	if input == nil {
+		panic(xerrors.Errorf("we expect kyber.Scalar as input"))
 	}
-	return a.handleInput()
+	return a.handleInput(input.(kyber.Scalar))
 }
 
 //
@@ -200,9 +217,9 @@ func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 // > // party i (including the dealer)
 // > RBC(C||E)
 //
-func (a *acssImpl) handleInput() []gpa.Message {
+func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 	// > sample random polynomial ϕ such that ϕ(0) = s
-	priPoly := share.NewPriPoly(a.suite, a.f+1, nil, a.suite.RandomStream())
+	priPoly := share.NewPriPoly(a.suite, a.f+1, secretToShare, a.suite.RandomStream())
 
 	// > C, S := VSS.Share(ϕ, f+1, n)
 	C := priPoly.Commit(nil)
@@ -222,7 +239,7 @@ func (a *acssImpl) handleInput() []gpa.Message {
 		if err != nil {
 			panic(xerrors.Errorf("cannot encrypt share: %w", err))
 		}
-		E[i] = Ei
+		E[i] = a.dealCB(i, Ei)
 	}
 
 	// > RBC(C||E)
@@ -278,7 +295,7 @@ func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 	if err != nil {
 		return a.broadcastImplicate(err, msgs)
 	}
-	a.outS = myShare.V
+	a.outS = myShare
 	a.tryOutput() // Maybe the READY messages are already received.
 	return a.broadcastVote(msgVoteOK, msgs)
 }
@@ -418,7 +435,7 @@ func (a *acssImpl) handleRecover(m *msgImplicateRecover) []gpa.Message {
 		if err != nil {
 			a.log.Warnf("Failed to recover pri-poly: %v", err)
 		}
-		a.outS = priPoly.Shares(a.n)[a.myIdx].V
+		a.outS = priPoly.Shares(a.n)[a.myIdx]
 		a.output = true
 		return gpa.NoMessages()
 	}
