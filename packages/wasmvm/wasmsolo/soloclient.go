@@ -1,6 +1,7 @@
 package wasmsolo
 
 import (
+	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -8,12 +9,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/pkg/errors"
 )
 
 type SoloClient struct {
 	ctx   *SoloContext
+	msg   chan []string
 	nonce uint64
 }
 
@@ -22,12 +25,27 @@ var (
 	_ wasmclient.IWaspClient    = new(SoloClient)
 )
 
-func NewSoloClient(ctx *SoloContext) *SoloClient {
-	return &SoloClient{ctx: ctx}
+// NewSoloClient creates a new SoloClient
+// Normally we reset the subscribers, assuming a new test.
+// To prevent this when testing with multiple SoloClients,
+// use the optional extra flag to indicate the extra clients.
+func NewSoloClient(ctx *SoloContext, extra ...bool) *SoloClient {
+	s := &SoloClient{ctx: ctx}
+	if len(extra) != 1 || !extra[0] {
+		wasmhost.EventSubscribers = nil
+	}
+	wasmhost.EventSubscribers = append(wasmhost.EventSubscribers, func(msg string) {
+		s.Event(msg)
+	})
+	return s
 }
 
 func (s *SoloClient) SubscribeEvents(msg chan []string, done chan bool) error {
-	panic("implement me")
+	s.msg = msg
+	go func() {
+		<-done
+	}()
+	return nil
 }
 
 func (s *SoloClient) CallView(chainID *iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error) {
@@ -42,6 +60,11 @@ func (s *SoloClient) CallViewByHname(chainID *iscp.ChainID, hContract, hFunction
 		return nil, errors.New("SoloClient.CallViewByHname chain ID mismatch")
 	}
 	return s.ctx.Chain.CallViewByHname(hContract, hFunction, args)
+}
+
+func (s *SoloClient) Event(msg string) {
+	msg = "vmmsg " + s.ctx.Chain.String() + " 0 " + msg
+	s.msg <- strings.Split(msg, " ")
 }
 
 func (s *SoloClient) PostOffLedgerRequest(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) error {

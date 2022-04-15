@@ -53,8 +53,8 @@ type Service struct {
 	keyPair       *cryptolib.KeyPair
 	Req           Request
 	scHname       iscp.Hname
-	svcClient  IServiceClient
-	waspClient IWaspClient
+	svcClient     IServiceClient
+	waspClient    IWaspClient
 }
 
 func (s *Service) Init(svcClient IServiceClient, chainID *wasmtypes.ScChainID, scHname uint32) (err error) {

@@ -117,6 +117,8 @@ type WasmContextSandbox struct {
 
 var _ ISandbox = new(WasmContextSandbox)
 
+var EventSubscribers []func(msg string)
+
 func NewWasmContextSandbox(wc *WasmContext, ctx interface{}) *WasmContextSandbox {
 	s := &WasmContextSandbox{wc: wc}
 	switch tctx := ctx.(type) {
@@ -296,7 +298,11 @@ func (s *WasmContextSandbox) fnEstimateDust(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
-	s.ctx.Event(string(args))
+	msg := string(args)
+	s.ctx.Event(msg)
+	for _, eventSubscribers := range EventSubscribers {
+		eventSubscribers(msg)
+	}
 	return nil
 }
 
