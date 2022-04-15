@@ -495,19 +495,18 @@ func TestRevert(t *testing.T) {
 }
 
 func TestSend(t *testing.T) {
-	t.SkipNow() // TODO: skipping because it fails
-
-	evmChain := initEVM(t)
+	evmChain := initEVM(t, inccounter.Processor)
+	err := evmChain.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
+	require.NoError(t, err)
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
+	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
 
-	var iotas uint64
 	iscTest.callFnExpectEvent([]ethCallOptions{{iota: iotaCallOptions{
 		before: func(req *solo.CallParams) {
-			req.AddAllowanceIotas(42)
+			req.AddIotas(200000).
+				WithMaxAffordableGasBudget()
 		},
 	}}}, "SendEvent", nil, "emitSend")
-
-	require.EqualValues(t, 42, iotas)
 }
 
 func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
