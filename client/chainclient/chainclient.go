@@ -124,6 +124,7 @@ func (c *Client) PostOffLedgerRequest(
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
 		Transfer:  iscp.NewFungibleTokens(n, nil),
+		GasBudget: math.MaxUint64,
 	})
 }
 
