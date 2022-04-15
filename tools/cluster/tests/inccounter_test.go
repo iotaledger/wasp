@@ -18,7 +18,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 	for i := range e.chain.CommitteeNodes {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, numRequests+4, blockIndex)
+		require.Greater(e.t, blockIndex, uint32(numRequests+4))
 
 		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
 		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
