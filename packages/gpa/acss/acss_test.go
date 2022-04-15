@@ -34,19 +34,20 @@ func TestSilentPeers(t *testing.T) {
 
 func TestFaultyDealer(t *testing.T) {
 	t.Parallel()
-	t.Run("n=4,f=1,F=1", func(tt *testing.T) { genericTest(tt, 4, 1, 1, 1) })
-	t.Run("n=4,f=1,F=2", func(tt *testing.T) { genericTest(tt, 4, 1, 1, 2) })
-	t.Run("n=10,f=3,F=3", func(tt *testing.T) { genericTest(tt, 10, 3, 3, 3) })
-	t.Run("n=31,f=10,F=10", func(tt *testing.T) { genericTest(tt, 31, 10, 10, 10) })
+	t.Run("n=4,f=1,F=0,D=1", func(tt *testing.T) { genericTest(tt, 4, 1, 0, 1) })
+	t.Run("n=10,f=3,F=2,D=1", func(tt *testing.T) { genericTest(tt, 10, 3, 2, 1) })
+	t.Run("n=31,f=10,F=5,D=5", func(tt *testing.T) { genericTest(tt, 31, 10, 5, 5) })
+	t.Run("n=31,f=10,F=0,D=10", func(tt *testing.T) { genericTest(tt, 31, 10, 0, 10) })
 }
 
 func genericTest(
 	t *testing.T,
-	n, // Number of nodes.
-	f, // Max number of faulty nodes.
-	silentNodes, // Number of actually faulty nodes (by not responding to anything).
+	n int, // Number of nodes.
+	f int, // Max number of faulty nodes.
+	silentNodes int, // Number of actually faulty nodes (by not responding to anything).
 	faultyDeals int, // How many faulty deals the dealer produces?
 ) {
+	require.True(t, silentNodes+faultyDeals <= f) // Assert tests are within assumptions.
 	log := testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelWarn, false)
 	defer log.Sync()
 	suite := tcrypto.DefaultEd25519Suite()
@@ -77,24 +78,17 @@ func genericTest(
 		}
 	}
 	gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{dealer: secretToShare})
-	if faultyDeals <= f {
-		outShares := []*share.PriShare{}
-		for i, n := range nodes {
-			o := n.Output()
-			if !isNodeInList(i, faulty) {
-				require.NotNil(t, o)
-				outShares = append(outShares, o.(*share.PriShare))
-			}
-		}
-		outSecret, err := share.RecoverSecret(suite, outShares, f+1, n)
-		require.NoError(t, err)
-		require.True(t, outSecret.Equal(secretToShare))
-	} else {
-		// No node can output a message, if more than F deals were corrupted.
-		for _, n := range nodes {
-			require.Nil(t, n.Output())
+	outShares := []*share.PriShare{}
+	for i, n := range nodes {
+		o := n.Output()
+		if !isNodeInList(i, faulty) {
+			require.NotNil(t, o)
+			outShares = append(outShares, o.(*share.PriShare))
 		}
 	}
+	outSecret, err := share.RecoverSecret(suite, outShares, f+1, n)
+	require.NoError(t, err)
+	require.True(t, outSecret.Equal(secretToShare))
 }
 
 func isNodeInList(n gpa.NodeID, list []gpa.NodeID) bool {

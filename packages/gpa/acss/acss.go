@@ -73,7 +73,10 @@
 // [4] hbACSS: How to Robustly Share Many Secrets https://eprint.iacr.org/2021/159
 // [5] https://github.com/tyurek/hbACSS
 //
-// A PoC implementation: <https://github.com/Wollac/async.go>
+// A PoC implementation: <https://github.com/Wollac/async.go>.
+//
+// TODO: Check, how DH key exchange should be applied.
+// TODO: Review other differences.
 //
 package acss
 
@@ -297,7 +300,7 @@ func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 	}
 	a.outS = myShare
 	a.tryOutput() // Maybe the READY messages are already received.
-	return a.broadcastVote(msgVoteOK, msgs)
+	return a.handleImplicateRecoverPending(a.broadcastVote(msgVoteOK, msgs))
 }
 
 //
@@ -334,7 +337,7 @@ func (a *acssImpl) handleVoteREADY(m *msgVote) []gpa.Message {
 		a.voteREADYSent = true
 	}
 	a.tryOutput()
-	return msgs
+	return a.handleImplicateRecoverPending(msgs)
 }
 
 // It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
@@ -359,20 +362,33 @@ func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) []gpa.
 }
 
 func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Message {
+	//
+	// Only process the IMPLICATE/RECOVER messages, if this node has RBC completed.
 	if a.rbcOutC == nil && a.rbcOutE == nil {
 		return msgs
 	}
+	postponedIRMsgs := []*msgImplicateRecover{}
 	for _, m := range a.pendingIRMsgs {
 		switch m.kind {
 		case msgImplicateRecoverKindIMPLICATE:
-			msgs = append(msgs, a.handleImplicate(m)...)
+			// Only handle the IMPLICATE messages when output is already produced to implement the following:
+			//
+			// >     if out == true:
+			// >       send <RECOVER, i, skᵢ> to all parties
+			// >       return
+			//
+			if a.output {
+				msgs = append(msgs, a.handleImplicate(m)...)
+			} else {
+				postponedIRMsgs = append(postponedIRMsgs, m)
+			}
 		case msgImplicateRecoverKindRECOVER:
 			msgs = append(msgs, a.handleRecover(m)...)
 		default:
 			panic(xerrors.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
 		}
 	}
-	a.pendingIRMsgs = []*msgImplicateRecover{}
+	a.pendingIRMsgs = postponedIRMsgs
 	return msgs
 }
 
@@ -385,7 +401,7 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Messa
 // >       send <RECOVER, i, skᵢ> to all parties
 // >       return
 //
-// TODO: The check `if out == true:` is considered a wait??? For now we assume yes.
+// NOTE: We assume `if out == true:` stands for a wait for such condition.
 //
 func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
 	_, err := a.tryDecryptVerifyPriShare(m.i, m.sk)
