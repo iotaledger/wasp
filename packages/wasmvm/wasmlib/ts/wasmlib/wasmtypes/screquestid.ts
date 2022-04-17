@@ -54,6 +54,10 @@ export function requestIDToBytes(value: ScRequestID): u8[] {
     return value.id;
 }
 
+export function requestIDFromString(value: string): ScRequestID {
+    return requestIDFromBytes(wasmtypes.base58Decode(value));
+}
+
 export function requestIDToString(value: ScRequestID): string {
     // TODO standardize human readable string
     return wasmtypes.base58Encode(value.id);

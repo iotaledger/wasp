@@ -30,6 +30,10 @@ export function uint8ToBytes(value: u8): u8[] {
     return [value];
 }
 
+export function uint8FromString(value: string): u8 {
+    return wasmtypes.uintFromString(value, 8) as u8;
+}
+
 export function uint8ToString(value: u8): string {
     return value.toString();
 }

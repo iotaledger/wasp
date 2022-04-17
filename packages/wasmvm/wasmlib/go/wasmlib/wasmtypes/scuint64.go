@@ -36,6 +36,10 @@ func Uint64ToBytes(value uint64) []byte {
 	return tmp
 }
 
+func Uint64FromString(value string) uint64 {
+	return UintFromString(value, 64)
+}
+
 func Uint64ToString(value uint64) string {
 	return strconv.FormatUint(value, 10)
 }

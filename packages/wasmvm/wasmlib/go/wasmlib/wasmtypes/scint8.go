@@ -33,6 +33,10 @@ func Int8ToBytes(value int8) []byte {
 	return []byte{byte(value)}
 }
 
+func Int8FromString(value string) int8 {
+	return int8(IntFromString(value, 8))
+}
+
 func Int8ToString(value int8) string {
 	return strconv.FormatInt(int64(value), 10)
 }

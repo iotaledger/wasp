@@ -27,3 +27,23 @@ func (e *EventEncoder) Encode(value string) {
 	// TODO encode potential vertical bars that are present in the value string
 	e.event += "|" + value
 }
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type EventDecoder struct {
+	msg []string
+}
+
+func NewEventDecoder(msg []string) *EventDecoder {
+	return &EventDecoder{msg: msg}
+}
+
+func (d *EventDecoder) Decode() string {
+	next := d.msg[0]
+	d.msg = d.msg[1:]
+	return next
+}
+
+func (d *EventDecoder) Timestamp() uint32 {
+	return wasmtypes.Uint32FromString(d.Decode())
+}

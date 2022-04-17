@@ -44,6 +44,10 @@ func HashToBytes(value ScHash) []byte {
 	return value.id[:]
 }
 
+func HashFromString(value string) ScHash {
+	return HashFromBytes(Base58Decode(value))
+}
+
 func HashToString(value ScHash) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])

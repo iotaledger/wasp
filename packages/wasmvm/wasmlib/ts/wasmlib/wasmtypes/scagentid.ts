@@ -115,6 +115,14 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
     return buf;
 }
 
+export function agentIDFromString(value: string): ScAgentID {
+    const parts = value.split("::");
+    if (parts.length != 2) {
+        panic("invalid AgentID string");
+    }
+    return new ScAgentID(wasmtypes.addressFromString(parts[0]), wasmtypes.hnameFromString(parts[1]));
+}
+
 export function agentIDToString(value: ScAgentID): string {
     // TODO standardize human readable string
     return value._address.toString() + "::" + value._hname.toString();

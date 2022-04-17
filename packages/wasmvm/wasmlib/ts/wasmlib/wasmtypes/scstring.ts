@@ -27,6 +27,10 @@ export function stringToBytes(value: string): u8[] {
     return ret;
 }
 
+export function stringFromString(value: string): string {
+    return value;
+}
+
 export function stringToString(value: string): string {
     return value;
 }

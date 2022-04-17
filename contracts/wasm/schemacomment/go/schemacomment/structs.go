@@ -11,8 +11,10 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 // comment for TestStruct1
 type TestStruct1 struct {
-	X1 int32 // comment for x1
-	Y1 int32 // comment for y1
+	// comment for x1
+	X1 int32
+	// comment for y1
+	Y1 int32
 }
 
 func NewTestStruct1FromBytes(buf []byte) *TestStruct1 {
@@ -65,8 +67,10 @@ func (o MutableTestStruct1) Value() *TestStruct1 {
 
 // comment for TestStruct2
 type TestStruct2 struct {
-	X2 int32 // comment for x2
-	Y2 int32 // comment for y2
+	// comment for x2
+	X2 int32
+	// comment for y2
+	Y2 int32
 }
 
 func NewTestStruct2FromBytes(buf []byte) *TestStruct2 {

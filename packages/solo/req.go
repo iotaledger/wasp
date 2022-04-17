@@ -40,20 +40,6 @@ type CallParams struct {
 	sender     iotago.Address
 }
 
-func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
-	ret := &CallParams{
-		targetName: scName,
-		target:     iscp.Hn(scName),
-		epName:     funName,
-		entryPoint: iscp.Hn(funName),
-	}
-	ret.params = dict.New()
-	for k, v := range par {
-		ret.params.Set(k, v)
-	}
-	return ret
-}
-
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequestSync and callViewFull
 // calls:
 //  - 'scName' is a a name of the target smart contract
@@ -63,7 +49,26 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 // With the WithTransfers the CallParams structure may be complemented with attached ftokens
 // sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
-	return NewCallParamsFromDic(scName, funName, parseParams(params))
+	return NewCallParamsFromDict(scName, funName, parseParams(params))
+}
+
+func NewCallParamsFromDict(scName, funName string, par dict.Dict) *CallParams {
+	ret := NewCallParamsFromDictByHname(iscp.Hn(scName), iscp.Hn(funName), par)
+	ret.targetName = scName
+	ret.epName = funName
+	return ret
+}
+
+func NewCallParamsFromDictByHname(hContract, hFunction iscp.Hname, par dict.Dict) *CallParams {
+	ret := &CallParams{
+		target:     hContract,
+		entryPoint: hFunction,
+	}
+	ret.params = dict.New()
+	for k, v := range par {
+		ret.params.Set(k, v)
+	}
+	return ret
 }
 
 func (r *CallParams) WithAllowance(allowance *iscp.Allowance) *CallParams {
@@ -451,6 +456,11 @@ func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log().Debugf("callView: %s::%s", scName, funName)
+	return ch.CallViewByHname(iscp.Hn(scName), iscp.Hn(funName), params...)
+}
+
+func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...interface{}) (dict.Dict, error) {
+	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)
 
@@ -459,7 +469,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
-	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
+	return vmctx.CallViewExternal(hContract, hFunction, p)
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state

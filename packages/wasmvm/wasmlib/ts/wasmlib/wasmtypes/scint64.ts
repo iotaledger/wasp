@@ -46,6 +46,10 @@ export function int64ToBytes(value: i64): u8[] {
     ];
 }
 
+export function int64FromString(value: string): i64 {
+    return wasmtypes.intFromString(value, 64);
+}
+
 export function int64ToString(value: i64): string {
     return value.toString();
 }

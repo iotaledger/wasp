@@ -24,14 +24,13 @@ import (
 )
 
 var (
-	flagCore   = flag.Bool("core", false, "generate core contract interface")
-	flagClient = flag.Bool("client", false, "generate client side contract interface")
-	flagForce  = flag.Bool("force", false, "force code generation")
-	flagGo     = flag.Bool("go", false, "generate Go code")
-	flagInit   = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagRust   = flag.Bool("rust", false, "generate Rust code")
-	flagTs     = flag.Bool("ts", false, "generate TypScript code")
-	flagType   = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
+	flagCore  = flag.Bool("core", false, "generate core contract interface")
+	flagForce = flag.Bool("force", false, "force code generation")
+	flagGo    = flag.Bool("go", false, "generate Go code")
+	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagRust  = flag.Bool("rust", false, "generate Rust code")
+	flagTs    = flag.Bool("ts", false, "generate TypScript code")
+	flagType  = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
 func init() {
@@ -127,10 +126,6 @@ func generateSchema(file *os.File) error {
 		}
 	}
 
-	if *flagClient && !*flagGo && !*flagTs {
-		return errors.New("missing language specification")
-	}
-
 	// XXX: Preserve line number until here
 	// XXX: comments are still preserved during generation
 	if *flagGo {
@@ -138,13 +133,6 @@ func generateSchema(file *os.File) error {
 		err = g.Generate()
 		if err != nil {
 			return err
-		}
-		if *flagClient {
-			cg := generator.NewGoClientGenerator(s)
-			err = cg.Generate()
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -161,13 +149,6 @@ func generateSchema(file *os.File) error {
 		err = g.Generate()
 		if err != nil {
 			return err
-		}
-		if *flagClient {
-			cg := generator.NewTsClientGenerator(s)
-			err = cg.Generate()
-			if err != nil {
-				return err
-			}
 		}
 	}
 	return nil

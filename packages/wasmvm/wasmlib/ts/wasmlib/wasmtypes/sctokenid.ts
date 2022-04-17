@@ -51,6 +51,10 @@ export function tokenIDToBytes(value: ScTokenID): u8[] {
     return value.id;
 }
 
+export function tokenIDFromString(value: string): ScTokenID {
+    return tokenIDFromBytes(wasmtypes.base58Decode(value));
+}
+
 export function tokenIDToString(value: ScTokenID): string {
     // TODO standardize human readable string
     return wasmtypes.base58Encode(value.id);

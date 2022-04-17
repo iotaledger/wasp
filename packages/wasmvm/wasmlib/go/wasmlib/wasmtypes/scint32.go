@@ -36,6 +36,10 @@ func Int32ToBytes(value int32) []byte {
 	return tmp
 }
 
+func Int32FromString(value string) int32 {
+	return int32(IntFromString(value, 32))
+}
+
 func Int32ToString(value int32) string {
 	return strconv.FormatInt(int64(value), 10)
 }

@@ -50,6 +50,10 @@ export function hashToBytes(value: ScHash): u8[] {
     return value.id;
 }
 
+export function hashFromString(value: string): ScHash {
+    return hashFromBytes(wasmtypes.base58Decode(value));
+}
+
 export function hashToString(value: ScHash): string {
     // TODO standardize human readable string
     return wasmtypes.base58Encode(value.id);

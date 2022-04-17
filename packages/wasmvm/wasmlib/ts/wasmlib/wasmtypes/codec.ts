@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {sandbox} from "../host";
-import {FnUtilsBase58Encode, panic} from "../sandbox";
+import {FnUtilsBase58Decode, FnUtilsBase58Encode, panic} from "../sandbox";
 import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -207,8 +207,22 @@ export class WasmEncoder {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // wrapper for simplified use by hashtypes
+export function base58Decode(buf: string): u8[] {
+    return sandbox(FnUtilsBase58Decode, wasmtypes.stringToBytes(buf));
+}
+
 export function base58Encode(buf: u8[]): string {
     return wasmtypes.stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
+}
+
+export function intFromString(value: string, bits: u32): i64 {
+    //TODO implement bits, handle 64 bits properly
+    return parseInt(value) as i64;
+}
+
+export function uintFromString(value: string, bits: u32): u64 {
+    //TODO implement bits, handle 64 bits properly
+    return parseInt(value) as u64;
 }
 
 export function zeroes(count: u32): u8[] {

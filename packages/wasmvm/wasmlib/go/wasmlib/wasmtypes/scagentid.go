@@ -3,6 +3,8 @@
 
 package wasmtypes
 
+import "strings"
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const nilAgentID = 0xff
@@ -103,6 +105,14 @@ func AgentIDToBytes(value ScAgentID) []byte {
 		buf = append(buf, HnameToBytes(value.hname)...)
 	}
 	return buf
+}
+
+func AgentIDFromString(value string) ScAgentID {
+	parts := strings.Split(value, "::")
+	if len(parts) != 2 {
+		panic("invalid AgentID string")
+	}
+	return ScAgentID{address: AddressFromString(parts[0]), hname: HnameFromString(parts[1])}
 }
 
 func AgentIDToString(value ScAgentID) string {

@@ -36,6 +36,10 @@ func Uint32ToBytes(value uint32) []byte {
 	return tmp
 }
 
+func Uint32FromString(value string) uint32 {
+	return uint32(UintFromString(value, 32))
+}
+
 func Uint32ToString(value uint32) string {
 	return strconv.FormatUint(uint64(value), 10)
 }

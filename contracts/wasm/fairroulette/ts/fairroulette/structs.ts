@@ -8,9 +8,9 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Bet {
-	amount : u64 = 0; 
-	better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
-	number : u16 = 0; 
+	amount : u64 = 0;
+	better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);
+	number : u16 = 0;
 
 	static fromBytes(buf: u8[]): Bet {
 		const dec = new wasmtypes.WasmDecoder(buf);
