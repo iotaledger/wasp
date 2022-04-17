@@ -1,18 +1,19 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package tsclienttemplates
+package tstemplates
 
-var eventsTs = map[string]string{
+var eventhandlersTs = map[string]string{
 	// *******************************
-	"events.ts": `
-$#emit importWasmClient
+	"eventhandlers.ts": `
+$#emit importWasmLib
+$#emit importWasmTypes
 
-const $pkgName$+Handlers = new Map<string, (evt: $PkgName$+Events, msg: string[]) => void>([
+const $pkgName$+Handlers = new Map<string, (evt: $PkgName$+EventHandlers, msg: string[]) => void>([
 $#each events eventHandler
 ]);
 
-export class $PkgName$+Events implements wasmclient.IEventHandler {
+export class $PkgName$+EventHandlers implements wasmlib.IEventHandler {
 /* eslint-disable @typescript-eslint/no-empty-function */
 $#each events eventHandlerMember
 /* eslint-enable @typescript-eslint/no-empty-function */
@@ -23,20 +24,20 @@ $#each events eventHandlerMember
 			handler(this, params);
 		}
 	}
-$#each events funcSignature
+$#each events eventFuncSignature
 }
 $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-	["$package.$evtName", (evt: $PkgName$+Events, msg: string[]) => evt.$evtName(new Event$EvtName(msg))],
+	["$package.$evtName", (evt: $PkgName$+EventHandlers, msg: string[]) => evt.$evtName(new Event$EvtName(msg))],
 `,
 	// *******************************
 	"eventHandlerMember": `
 	$evtName: (evt: Event$EvtName) => void = () => {};
 `,
 	// *******************************
-	"funcSignature": `
+	"eventFuncSignature": `
 
 	public on$PkgName$EvtName(handler: (evt: Event$EvtName) => void): void {
 		this.$evtName = handler;
@@ -45,21 +46,23 @@ $#each events eventClass
 	// *******************************
 	"eventClass": `
 
-export class Event$EvtName extends wasmclient.Event {
+export class Event$EvtName {
+	public readonly timestamp: u32;
 $#each event eventClassField
 	
 	public constructor(msg: string[]) {
-		super(msg);
+		const evt = new wasmlib.EventDecoder(msg);
+		this.timestamp = evt.timestamp();
 $#each event eventHandlerField
 	}
 }
 `,
 	// *******************************
 	"eventClassField": `
-	public readonly $fldName: wasmclient.$FldType;
+	public readonly $fldName: $fldLangType;
 `,
 	// *******************************
 	"eventHandlerField": `
-		this.$fldName = this.next$FldType();
+		this.$fldName = wasmtypes.$fldType$+FromString(evt.decode());
 `,
 }

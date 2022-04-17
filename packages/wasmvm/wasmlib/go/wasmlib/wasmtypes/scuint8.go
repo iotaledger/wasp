@@ -33,6 +33,10 @@ func Uint8ToBytes(value uint8) []byte {
 	return []byte{value}
 }
 
+func Uint8FromString(value string) uint8 {
+	return uint8(UintFromString(value, 8))
+}
+
 func Uint8ToString(value uint8) string {
 	return strconv.FormatUint(uint64(value), 10)
 }

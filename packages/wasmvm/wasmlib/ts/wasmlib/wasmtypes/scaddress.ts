@@ -96,6 +96,10 @@ export function addressToBytes(value: ScAddress): u8[] {
     return [];
 }
 
+export function addressFromString(value: string): ScAddress {
+    return addressFromBytes(wasmtypes.base58Decode(value));
+}
+
 export function addressToString(value: ScAddress): string {
     // TODO standardize human readable string
     return wasmtypes.base58Encode(value.id);

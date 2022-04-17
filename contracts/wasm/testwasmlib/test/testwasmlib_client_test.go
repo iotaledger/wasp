@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
-	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -17,21 +16,18 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
-	useSolo   = true
-	myChainID = "gkdhQDvLi23xxgpiLbmzodcayx3"
-	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
+	useSoloClient = true
+	myChainID     = "gkdhQDvLi23xxgpiLbmzodcayx3"
+	mySeed        = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
-func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
-	// for now skip client tests
-	// t.SkipNow()
-
-	if useSolo {
+func setupClient(t *testing.T) *wasmclient.Service {
+	if useSoloClient {
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 		svcClient := wasmsolo.NewSoloClient(ctx)
 		chainID := ctx.ChainID()
-		svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, &chainID)
-		require.NoError(t, err)
+		svc := wasmclient.NewService(svcClient, &chainID, testwasmlib.ScName)
+		require.NoError(t, svc.Err)
 
 		// we'll use the first address in the seed to sign requests
 		svc.SignRequests(ctx.Chain.OriginatorPrivateKey)
@@ -46,8 +42,8 @@ func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 	svcClient := wasmclient.DefaultServiceClient()
 
 	// create the service for the testwasmlib smart contract
-	svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, &chainID)
-	require.NoError(t, err)
+	svc := wasmclient.NewService(svcClient, &chainID, testwasmlib.ScName)
+	require.NoError(t, svc.Err)
 
 	// we'll use the first address in the seed to sign requests
 	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
@@ -56,8 +52,8 @@ func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 
 func TestClientEvents(t *testing.T) {
 	svc := setupClient(t)
-	events := svc.NewEventHandler()
-	events.OnTestWasmLibTest(func(e *testwasmlibclient.EventTest) {
+	events := &testwasmlib.TestWasmLibEventHandlers{}
+	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
 		fmt.Printf("Name is %s\n", e.Name)
 	})
 	svc.Register(events)

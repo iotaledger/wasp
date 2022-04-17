@@ -44,6 +44,10 @@ func TokenIDToBytes(value ScTokenID) []byte {
 	return value.id[:]
 }
 
+func TokenIDFromString(value string) ScTokenID {
+	return TokenIDFromBytes(Base58Decode(value))
+}
+
 func TokenIDToString(value ScTokenID) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])

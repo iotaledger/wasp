@@ -52,17 +52,20 @@ type Service struct {
 	eventHandlers []IEventHandler
 	keyPair       *cryptolib.KeyPair
 	Req           Request
+	scName        string
 	scHname       iscp.Hname
 	svcClient     IServiceClient
 	waspClient    IWaspClient
 }
 
-func (s *Service) Init(svcClient IServiceClient, chainID *wasmtypes.ScChainID, scHname uint32) (err error) {
+func NewService(svcClient IServiceClient, chainID *wasmtypes.ScChainID, scName string) *Service {
+	s := &Service{}
 	s.svcClient = svcClient
 	s.waspClient = svcClient.WaspClient()
-	s.scHname = iscp.Hname(scHname)
-	s.chainID, err = iscp.ChainIDFromBytes(chainID.Bytes())
-	return err
+	s.scName = scName
+	s.scHname = iscp.Hn(scName)
+	s.chainID, s.Err = iscp.ChainIDFromBytes(chainID.Bytes())
+	return s
 }
 
 func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {

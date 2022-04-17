@@ -12,7 +12,7 @@ export class ScChainID {
     id: u8[] = wasmtypes.zeroes(ScChainIDLength);
 
     public address(): wasmtypes.ScAddress {
-        const buf: u8[] = [ScAddressAlias];
+        const buf: u8[] = [wasmtypes.ScAddressAlias];
         return wasmtypes.addressFromBytes(buf.concat(this.id));
     }
 
@@ -53,6 +53,10 @@ export function chainIDFromBytes(buf: u8[]): ScChainID {
 
 export function chainIDToBytes(value: ScChainID): u8[] {
     return value.id;
+}
+
+export function chainIDFromString(value: string): ScChainID {
+    return chainIDFromBytes(wasmtypes.base58Decode(value));
 }
 
 export function chainIDToString(value: ScChainID): string {

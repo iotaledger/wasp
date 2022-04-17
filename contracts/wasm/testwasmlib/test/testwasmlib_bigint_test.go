@@ -15,9 +15,9 @@ import (
 const (
 	ExhaustiveLimit = 2048
 	ExtremeLimit    = 66666
-	LogOp           = false
-	SkipWasm        = true
-	TestExhaustive  = true
+	LogOp           = true
+	SkipWasm        = false
+	TestExhaustive  = false
 	TestExtreme     = false
 	UpperLimit      = 1_000_000_000
 )
@@ -26,7 +26,7 @@ func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
 	if SkipWasm {
 		return nil
 	}
-	*wasmsolo.RsWasm = true
+	//*wasmsolo.RsWasm = true
 	return setupTest(t)
 }
 

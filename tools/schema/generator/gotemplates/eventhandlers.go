@@ -1,28 +1,29 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package goclienttemplates
+package gotemplates
 
-var eventsGo = map[string]string{
+var eventhandlersGo = map[string]string{
 	// *******************************
-	"events.go": `
-$#emit clientHeader
+	"eventhandlers.go": `
+$#emit goHeader
+$#emit importWasmTypes
 
-var $pkgName$+Handlers = map[string]func(*$PkgName$+Events, []string) {
+var $pkgName$+Handlers = map[string]func(*$PkgName$+EventHandlers, []string) {
 $#each events eventHandler
 }
 
-type $PkgName$+Events struct {
+type $PkgName$+EventHandlers struct {
 $#each events eventHandlerMember
 }
 
-func (h *$PkgName$+Events) CallHandler(topic string, params []string) {
+func (h *$PkgName$+EventHandlers) CallHandler(topic string, params []string) {
 	handler := $pkgName$+Handlers[topic]
 	if handler != nil {
 		handler(h, params)
 	}
 }
-$#each events funcSignature
+$#each events eventFuncSignature
 $#each events eventClass
 `,
 	// *******************************
@@ -30,30 +31,30 @@ $#each events eventClass
 	$evtName func(e *Event$EvtName)
 `,
 	// *******************************
-	"funcSignature": `
+	"eventFuncSignature": `
 
-func (h *$PkgName$+Events) On$PkgName$EvtName(handler func(e *Event$EvtName)) {
+func (h *$PkgName$+EventHandlers) On$PkgName$EvtName(handler func(e *Event$EvtName)) {
 	h.$evtName = handler
 }
 `,
 	// *******************************
 	"eventHandler": `
-	"$package.$evtName": func(evt *$PkgName$+Events, msg []string) { evt.on$PkgName$EvtName$+Thunk(msg) },
+	"$package.$evtName": func(evt *$PkgName$+EventHandlers, msg []string) { evt.on$PkgName$EvtName$+Thunk(msg) },
 `,
 	// *******************************
 	"eventClass": `
 
 type Event$EvtName struct {
-	wasmclient.Event
+	Timestamp uint32
 $#each event eventClassField
 }
 
-func (h *$PkgName$+Events) on$PkgName$EvtName$+Thunk(message []string) {
+func (h *$PkgName$+EventHandlers) on$PkgName$EvtName$+Thunk(msg []string) {
     if h.$evtName == nil {
 		return
 	}
-	e := &Event$EvtName{}
-	e.Init(message)
+	evt := wasmlib.NewEventDecoder(msg)
+	e := &Event$EvtName{ Timestamp: evt.Timestamp() }
 $#each event eventHandlerField
 	h.$evtName(e)
 }
@@ -64,6 +65,6 @@ $#each event eventHandlerField
 `,
 	// *******************************
 	"eventHandlerField": `
-	e.$FldName = e.Next$FldType()
+	e.$FldName = wasmtypes.$FldType$+FromString(evt.Decode())
 `,
 }

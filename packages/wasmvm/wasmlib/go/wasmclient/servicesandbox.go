@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 )
 
@@ -19,6 +20,14 @@ func (s *Service) Sandbox(funcNr int32, args []byte) []byte {
 		return s.fnCall(args)
 	case wasmlib.FnPost:
 		return s.fnPost(args)
+	case wasmlib.FnUtilsBase58Encode:
+		return []byte(base58.Encode(args))
+	case wasmlib.FnUtilsBase58Decode:
+		ret, err := base58.Decode(string(args))
+		if err != nil {
+			panic(err)
+		}
+		return ret
 	}
 	panic("implement me")
 }

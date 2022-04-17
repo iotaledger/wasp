@@ -23,9 +23,14 @@ type (
 var host ScHost
 
 func init() {
+	wasmtypes.Base58Decode = func(base58 string) []byte {
+		return Sandbox(FnUtilsBase58Decode, []byte(base58))
+	}
+
 	wasmtypes.Base58Encode = func(buf []byte) string {
 		return string(Sandbox(FnUtilsBase58Encode, buf))
 	}
+
 	wasmtypes.NewScHname = func(name string) wasmtypes.ScHname {
 		return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(name)))
 	}
