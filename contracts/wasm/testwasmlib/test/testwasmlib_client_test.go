@@ -21,12 +21,12 @@ const (
 	mySeed        = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
-func setupClient(t *testing.T) *wasmclient.Service {
+func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useSoloClient {
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
-		svcClient := wasmsolo.NewSoloClient(ctx)
+		svcClient := wasmsolo.NewSoloClientService(ctx)
 		chainID := ctx.ChainID()
-		svc := wasmclient.NewService(svcClient, &chainID, testwasmlib.ScName)
+		svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
 		require.NoError(t, svc.Err)
 
 		// we'll use the first address in the seed to sign requests
@@ -42,7 +42,7 @@ func setupClient(t *testing.T) *wasmclient.Service {
 	svcClient := wasmclient.DefaultServiceClient()
 
 	// create the service for the testwasmlib smart contract
-	svc := wasmclient.NewService(svcClient, &chainID, testwasmlib.ScName)
+	svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
 
 	// we'll use the first address in the seed to sign requests

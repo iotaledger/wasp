@@ -9,11 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *Service) ExportName(index int32, name string) {
-	panic("Service.ExportName")
+func (s *WasmClientContext) ExportName(index int32, name string) {
+	panic("WasmClientContext.ExportName")
 }
 
-func (s *Service) Sandbox(funcNr int32, args []byte) []byte {
+func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 	s.Err = nil
 	switch funcNr {
 	case wasmlib.FnCall:
@@ -32,25 +32,25 @@ func (s *Service) Sandbox(funcNr int32, args []byte) []byte {
 	panic("implement me")
 }
 
-func (s *Service) StateDelete(key []byte) {
-	panic("Service.StateDelete")
+func (s *WasmClientContext) StateDelete(key []byte) {
+	panic("WasmClientContext.StateDelete")
 }
 
-func (s *Service) StateExists(key []byte) bool {
-	panic("Service.StateExists")
+func (s *WasmClientContext) StateExists(key []byte) bool {
+	panic("WasmClientContext.StateExists")
 }
 
-func (s *Service) StateGet(key []byte) []byte {
-	panic("Service.StateGet")
+func (s *WasmClientContext) StateGet(key []byte) []byte {
+	panic("WasmClientContext.StateGet")
 }
 
-func (s *Service) StateSet(key, value []byte) {
-	panic("Service.StateSet")
+func (s *WasmClientContext) StateSet(key, value []byte) {
+	panic("WasmClientContext.StateSet")
 }
 
 /////////////////////////////////////////////////////////////////
 
-func (s *Service) fnCall(args []byte) []byte {
+func (s *WasmClientContext) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	hContract := s.cvt.IscpHname(req.Contract)
 	if hContract != s.scHname {
@@ -63,7 +63,7 @@ func (s *Service) fnCall(args []byte) []byte {
 		return nil
 	}
 	hFunction := iscp.Hname(req.Function)
-	res, err := s.waspClient.CallViewByHname(s.chainID, hContract, hFunction, params)
+	res, err := s.svcClient.CallViewByHname(s.chainID, hContract, hFunction, params)
 	if err != nil {
 		s.Err = err
 		return nil
@@ -71,7 +71,7 @@ func (s *Service) fnCall(args []byte) []byte {
 	return res.Bytes()
 }
 
-func (s *Service) fnPost(args []byte) []byte {
+func (s *WasmClientContext) fnPost(args []byte) []byte {
 	req := wasmrequests.NewPostRequestFromBytes(args)
 	chainID := s.cvt.IscpChainID(&req.ChainID)
 	if !chainID.Equals(s.chainID) {
@@ -91,6 +91,6 @@ func (s *Service) fnPost(args []byte) []byte {
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	allowance := s.cvt.IscpAllowance(scAssets)
 	hFunction := s.cvt.IscpHname(req.Function)
-	s.Req = s.postRequestOffLedger(hFunction, params, allowance, s.keyPair)
+	s.postRequestOffLedger(hFunction, params, allowance, s.keyPair)
 	return nil
 }
