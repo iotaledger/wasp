@@ -109,7 +109,7 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(e.t, err)
 
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 10*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 10*time.Second)
 	require.NoError(e.t, err)
 
 	for i := range e.chain.CommitteeNodes {
@@ -211,7 +211,7 @@ func TestBasic2Accounts(t *testing.T) {
 	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 	chEnv.checkLedger()
 
@@ -244,7 +244,7 @@ func TestBasic2Accounts(t *testing.T) {
 	reqTx2, err := originatorClient.Post1Request(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname())
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx2, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx2, 30*time.Second)
 	require.NoError(t, err)
 
 	chEnv.checkLedger()

@@ -123,8 +123,9 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
+	require.Len(t, receipts, 1)
 
 	chEnv.checkCoreContracts()
 	for _, i := range chain.CommitteeNodes {

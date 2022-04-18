@@ -84,8 +84,9 @@ func (s *SoloClient) PostRequest(chainID *iscp.ChainID, hContract, hFuncName isc
 	return nil, err
 }
 
-func (s *SoloClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error {
-	return nil
+func (s *SoloClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) (*iscp.Receipt, error) {
+	// TODO should this actually fetch the receipt?
+	return nil, nil
 }
 
 func (s *SoloClient) WaspClient() wasmclient.IWaspClient {

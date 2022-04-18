@@ -11,7 +11,7 @@ import (
 )
 
 // UploadBlob sends an off-ledger request to call 'store' in the blob contract.
-func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *iscp.OffLedgerRequestData, error) {
+func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *iscp.OffLedgerRequestData, *iscp.Receipt, error) {
 	blobHash := blob.MustGetBlobHash(fields)
 
 	req, err := c.PostOffLedgerRequest(
@@ -23,9 +23,9 @@ func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *iscp.OffLedge
 		},
 	)
 	if err != nil {
-		return hashing.NilHash, nil, err
+		return hashing.NilHash, nil, nil, err
 	}
 
-	err = c.WaspClient.WaitUntilRequestProcessed(c.ChainID, req.ID(), 2*time.Minute)
-	return blobHash, req, err
+	receipt, err := c.WaspClient.WaitUntilRequestProcessed(c.ChainID, req.ID(), 2*time.Minute)
+	return blobHash, req, receipt, err
 }

@@ -249,8 +249,8 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
 	require.EqualValues(t, receipt.Error.Code(), typedError.Code())
-	require.EqualValues(t, receipt.Error.Hash(), typedError.Hash())
-	require.EqualValues(t, receipt.Error.Params(), typedError.Params())
+	require.EqualValues(t, receipt.Error.Hash, typedError.Hash())
+	require.EqualValues(t, receipt.Error.Params, typedError.Params())
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) {
@@ -282,8 +282,8 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
 	require.EqualValues(t, receipt.Error.Code(), typedError.Code())
-	require.EqualValues(t, receipt.Error.Hash(), typedError.Hash())
-	require.Equal(t, receipt.Error.Params(), typedError.Params())
+	require.EqualValues(t, receipt.Error.Hash, typedError.Hash())
+	require.Equal(t, receipt.Error.Params, typedError.Params())
 }
 
 func TestIsComparer(t *testing.T) {

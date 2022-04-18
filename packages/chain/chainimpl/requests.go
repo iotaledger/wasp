@@ -6,26 +6,35 @@ package chainimpl
 
 import (
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
-func (c *chainObj) GetRequestProcessingStatus(reqID iscp.RequestID) chain.RequestProcessingStatus {
-	if c.IsDismissed() {
-		return chain.RequestProcessingStatusUnknown
+func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
+	blocklogStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
+	res, err := blocklog.GetRequestRecordDataByRequestID(
+		blocklogStateReader,
+		reqID,
+	)
+	if err != nil || res == nil {
+		return nil, err
 	}
-	if c.consensus != nil {
-		if c.mempool.HasRequest(reqID) {
-			return chain.RequestProcessingStatusBacklog
-		}
+	receipt, err := blocklog.RequestReceiptFromBytes(res.ReceiptBin)
+	if err != nil {
+		c.log.Errorf("error parsing receipt from bin: %s", err)
+		return nil, err
 	}
-	c.stateReader.SetBaseline()
-	processed, err := blocklog.IsRequestProcessed(c.stateReader.KVStoreReader(), &reqID)
-	if err != nil || !processed {
-		return chain.RequestProcessingStatusUnknown
-	}
-	return chain.RequestProcessingStatusCompleted
+	receipt.BlockIndex = res.BlockIndex
+	receipt.RequestIndex = res.RequestIndex
+	return receipt, nil
+}
+
+func (c *chainObj) TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+	errorsStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(errors.Contract.Hname().Bytes()))
+	return errors.ResolveFromState(errorsStateReader, e)
 }
 
 func (c *chainObj) AttachToRequestProcessed(handler func(iscp.RequestID)) *events.Closure {

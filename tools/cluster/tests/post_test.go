@@ -104,7 +104,7 @@ func TestPost1Request(t *testing.T) {
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
 	e.expectCounter(contractID.Hname(), 43)
@@ -130,7 +130,7 @@ func TestPost3Recursive(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
 	// must wait for recursion to complete
@@ -155,7 +155,7 @@ func TestPost5Requests(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -191,7 +191,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx[i], 30*time.Second)
+		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
 	}
 

@@ -5,8 +5,10 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"golang.org/x/xerrors"
 )
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
@@ -47,4 +49,43 @@ func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid *iscp.RequestID)
 		panic(err)
 	}
 	return ret
+}
+
+type GetRequestReceiptResult struct {
+	ReceiptBin   []byte
+	BlockIndex   uint32
+	RequestIndex uint16
+}
+
+// GetRequestRecordDataByRequestID tries to obtain the receipt data for a given request
+// returns nil if receipt was not found
+func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID iscp.RequestID) (*GetRequestReceiptResult, error) {
+	lookupDigest := reqID.LookupDigest()
+	lookupTable := collections.NewMapReadOnly(stateReader, prefixRequestLookupIndex)
+	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
+	if lookupKeyListBin == nil {
+		return nil, nil
+	}
+	lookupKeyList, err := RequestLookupKeyListFromBytes(lookupKeyListBin)
+	if err != nil {
+		return nil, err
+	}
+	for i := range lookupKeyList {
+		recBin, found := getRequestRecordDataByRef(stateReader, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
+		if !found {
+			return nil, xerrors.Errorf("inconsistency: request log record wasn't found by exact reference")
+		}
+		rec, err := RequestReceiptFromBytes(recBin)
+		if err != nil {
+			return nil, err
+		}
+		if rec.Request.ID().Equals(reqID) {
+			return &GetRequestReceiptResult{
+				ReceiptBin:   recBin,
+				BlockIndex:   lookupKeyList[i].BlockIndex(),
+				RequestIndex: lookupKeyList[i].RequestIndex(),
+			}, nil
+		}
+	}
+	return nil, nil
 }

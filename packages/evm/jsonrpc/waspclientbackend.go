@@ -62,7 +62,8 @@ func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, args di
 	if err != nil {
 		return err
 	}
-	err = w.ChainClient.WaspClient.WaitUntilRequestProcessed(w.ChainClient.ChainID, req.ID(), 1*time.Minute)
+	_, err = w.ChainClient.WaspClient.WaitUntilRequestProcessed(w.ChainClient.ChainID, req.ID(), 1*time.Minute)
+	// TODO is it needed to check the receipt result here?
 	if err != nil {
 		return err
 	}
