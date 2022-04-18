@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -78,7 +77,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	tryGetReceipt := func() (bool, error) {
 		receiptResponse, err := getTranslatedReceipt(ch, reqID)
 		if err != nil {
-			return true, httperrors.ServerError(err.Error())
+			return receiptResponse != nil, httperrors.ServerError(err.Error())
 		}
 		if receiptResponse != nil {
 			return true, c.JSON(http.StatusOK, receiptResponse)
@@ -155,7 +154,6 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 		BlockIndex:      receipt.BlockIndex,
 		RequestIndex:    receipt.RequestIndex,
 		TranslatedError: translatedError,
-		GasBurnLog:      &gas.BurnLog{},
 	}
 	receiptJSON, err := json.Marshal(iscpReceipt)
 	if err != nil {

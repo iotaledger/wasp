@@ -79,7 +79,7 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID iscp.Re
 		if err != nil {
 			return nil, err
 		}
-		if rec.Request.ID() == reqID {
+		if rec.Request.ID().Equals(reqID) {
 			return &GetRequestReceiptResult{
 				ReceiptBin:   recBin,
 				BlockIndex:   lookupKeyList[i].BlockIndex(),

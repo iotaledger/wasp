@@ -661,8 +661,8 @@ func (rid RequestID) OutputID() iotago.OutputID {
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
 	ret := RequestLookupDigest{}
-	// copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
-	// copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
+	copy(ret[:RequestIDDigestLen], rid.TransactionID[:RequestIDDigestLen])
+	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.TransactionOutputIndex))
 	return ret
 }
 
@@ -681,6 +681,13 @@ func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
 	txid := TxID(&oid.TransactionID)
 	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
+}
+
+func (rid RequestID) Equals(reqID2 RequestID) bool {
+	if rid.TransactionOutputIndex != reqID2.TransactionOutputIndex {
+		return false
+	}
+	return rid.TransactionID == reqID2.TransactionID
 }
 
 func OID(o *iotago.UTXOInput) string {
@@ -722,8 +729,7 @@ func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestM
 	if metadataFeatBlock == nil {
 		return nil, nil
 	}
-	bytes := metadataFeatBlock.Data
-	return RequestMetadataFromBytes(bytes)
+	return RequestMetadataFromBytes(metadataFeatBlock.Data)
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {

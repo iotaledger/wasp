@@ -7,13 +7,16 @@ package chainimpl
 import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
 func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
+	blocklogStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 	res, err := blocklog.GetRequestRecordDataByRequestID(
-		c.stateReader.KVStoreReader(),
+		blocklogStateReader,
 		reqID,
 	)
 	if err != nil || res == nil {
@@ -30,7 +33,8 @@ func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRec
 }
 
 func (c *chainObj) TranslateError(e *iscp.UnresolvedVMError) (string, error) {
-	return errors.ResolveToString(c.stateReader.KVStoreReader(), e)
+	errorsStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(errors.Contract.Hname().Bytes()))
+	return errors.ResolveToString(errorsStateReader, e)
 }
 
 func (c *chainObj) AttachToRequestProcessed(handler func(iscp.RequestID)) *events.Closure {

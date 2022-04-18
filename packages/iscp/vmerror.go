@@ -197,10 +197,6 @@ func (e *UnresolvedVMError) AsGoError() error {
 	return e
 }
 
-func (e *UnresolvedVMError) Translate(template VMErrorTemplate) string {
-	return fmt.Sprintf(template.MessageFormat(), e.Params...)
-}
-
 type VMError struct {
 	template *VMErrorTemplate
 	params   []interface{}
