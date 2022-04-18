@@ -52,7 +52,7 @@ type ChainEntry interface {
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
 	GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestReceipt, error)
-	TranslateError(e *iscp.UnresolvedVMError) (string, error)
+	TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error)
 	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
 	DetachFromRequestProcessed(attachID *events.Closure)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)

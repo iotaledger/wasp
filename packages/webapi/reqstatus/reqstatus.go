@@ -153,7 +153,7 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 		GasFeeCharged:   receipt.GasFeeCharged,
 		BlockIndex:      receipt.BlockIndex,
 		RequestIndex:    receipt.RequestIndex,
-		TranslatedError: translatedError,
+		TranslatedError: translatedError.Error(),
 	}
 	receiptJSON, err := json.Marshal(iscpReceipt)
 	if err != nil {

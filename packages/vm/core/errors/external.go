@@ -33,14 +33,13 @@ func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, err
 	return iscp.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params...), nil
 }
 
-func ResolveToString(state kv.KVStoreReader, e *iscp.UnresolvedVMError) (string, error) {
+func ResolveFromState(state kv.KVStoreReader, e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
 	if e == nil {
-		return "", nil
+		return nil, nil
 	}
 	template, err := getErrorMessageFormat(state, e.Code())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	vmerror := iscp.NewVMErrorTemplate(e.Code(), template.MessageFormat()).Create(e.Params...)
-	return vmerror.Error(), nil
+	return iscp.NewVMErrorTemplate(e.Code(), template.MessageFormat()).Create(e.Params...), nil
 }

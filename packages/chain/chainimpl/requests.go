@@ -32,9 +32,9 @@ func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRec
 	return receipt, nil
 }
 
-func (c *chainObj) TranslateError(e *iscp.UnresolvedVMError) (string, error) {
+func (c *chainObj) TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
 	errorsStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(errors.Contract.Hname().Bytes()))
-	return errors.ResolveToString(errorsStateReader, e)
+	return errors.ResolveFromState(errorsStateReader, e)
 }
 
 func (c *chainObj) AttachToRequestProcessed(handler func(iscp.RequestID)) *events.Closure {

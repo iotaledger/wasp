@@ -217,11 +217,14 @@ func (e *VMError) Params() []interface{} {
 }
 
 func (e *VMError) Error() string {
+	if e == nil {
+		return ""
+	}
 	return fmt.Sprintf(e.MessageFormat(), e.params...)
 }
 
 func (e *VMError) Hash() uint32 {
-	if len(e.MessageFormat()) == 0 {
+	if e.MessageFormat() == "" {
 		return 0
 	}
 

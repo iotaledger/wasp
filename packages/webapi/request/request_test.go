@@ -36,7 +36,7 @@ var (
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) TranslateError(e *iscp.UnresolvedVMError) (string, error) {
+func (m *mockedChain) TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
 	panic("implement me")
 }
 
