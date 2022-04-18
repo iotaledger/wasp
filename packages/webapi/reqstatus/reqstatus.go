@@ -146,7 +146,7 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 		return nil, xerrors.Errorf("error translating receipt: %s", err)
 	}
 	iscpReceipt := &iscp.Receipt{
-		Request:         receipt.Request,
+		Request:         receipt.Request.Bytes(),
 		Error:           receipt.Error,
 		GasBudget:       receipt.GasBudget,
 		GasBurned:       receipt.GasBurned,

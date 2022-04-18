@@ -4,7 +4,7 @@ import "github.com/iotaledger/wasp/packages/vm/gas"
 
 // Receipt represents a blocklog.RequestReceipt with translated error string
 type Receipt struct {
-	Request         Request            `json:"request"`
+	Request         []byte             `json:"request"`
 	Error           *UnresolvedVMError `json:"error"`
 	GasBudget       uint64             `json:"gasBudget"`
 	GasBurned       uint64             `json:"gasBurned"`

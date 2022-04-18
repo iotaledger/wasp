@@ -36,7 +36,11 @@ var (
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) GetRequestReceipt(reqID iscp.RequestID) *blocklog.RequestReceipt {
+func (m *mockedChain) TranslateError(e *iscp.UnresolvedVMError) (string, error) {
+	panic("implement me")
+}
+
+func (m *mockedChain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
 	panic("implement me")
 }
 

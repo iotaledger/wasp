@@ -1,6 +1,7 @@
 package reqstatus
 
 import (
+	"math"
 	"net/http"
 	"testing"
 
@@ -25,7 +26,12 @@ const foo = "foo"
 
 func (m *mockChain) GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestReceipt, error) {
 	req := iscp.NewOffLedgerRequest(
-		&iscp.ChainID{123}, iscp.Hn("some contract"), iscp.Hn("some entrypoint"), dict.Dict{foo: []byte("bar")}, 42,
+		&iscp.ChainID{123},
+		iscp.Hn("some contract"),
+		iscp.Hn("some entrypoint"),
+		dict.Dict{foo: []byte("bar")},
+		42,
+		math.MaxUint64,
 	)
 	return &blocklog.RequestReceipt{
 		Request: req,
