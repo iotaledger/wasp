@@ -39,7 +39,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(myChainID))
 
 	// we're testing against wasp-cluster, so defaults will do
-	svcClient := wasmclient.DefaultServiceClient()
+	svcClient := wasmclient.DefaultWasmClientService()
 
 	// create the service for the testwasmlib smart contract
 	svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
@@ -146,7 +146,7 @@ func TestClientArray(t *testing.T) {
 //	t.SkipNow()
 //
 //	// we're testing against wasp-cluster, so defaults will do
-//	svcClient := wasmclient.DefaultServiceClient()
+//	svcClient := wasmclient.DefaultWasmClientService()
 //
 //	// create the service for the testwasmlib smart contract
 //	svc, err := coreaccountsclient.NewCoreAccountsService(svcClient, myChainID)

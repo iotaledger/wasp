@@ -28,12 +28,12 @@ type WasmClientService struct {
 
 var _ IClientService = new(WasmClientService)
 
-func NewServiceClient(waspAPI, eventPort string) *WasmClientService {
+func NewWasmClientService(waspAPI, eventPort string) *WasmClientService {
 	return &WasmClientService{waspClient: client.NewWaspClient(waspAPI), eventPort: eventPort}
 }
 
-func DefaultServiceClient() *WasmClientService {
-	return NewServiceClient("127.0.0.1:9090", "127.0.0.1:5550")
+func DefaultWasmClientService() *WasmClientService {
+	return NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
 }
 
 func (sc *WasmClientService) CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict) (dict.Dict, error) {
