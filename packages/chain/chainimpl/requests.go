@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
 func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
@@ -26,6 +27,10 @@ func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRec
 	receipt.BlockIndex = res.BlockIndex
 	receipt.RequestIndex = res.RequestIndex
 	return receipt, nil
+}
+
+func (c *chainObj) TranslateError(e *iscp.UnresolvedVMError) (string, error) {
+	return errors.ResolveToString(c.stateReader.KVStoreReader(), e)
 }
 
 func (c *chainObj) AttachToRequestProcessed(handler func(iscp.RequestID)) *events.Closure {

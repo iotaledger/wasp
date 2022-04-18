@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -17,9 +18,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"golang.org/x/xerrors"
 )
-
-// TODO ch.GetRequestReceipt(reqID) is succeptible to optimistic state read error - it doesn't retry atm,
-// should probably have a similar retry strategy to the CallView functionality
 
 type reqstatusWebAPI struct {
 	getChain func(chainID *iscp.ChainID) chain.ChainRequests
@@ -133,7 +131,7 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp
 	return theChain, reqID, nil
 }
 
-func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.RequestReceiptResponse, error) {
+func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.RequestReceiptResponse, error) {
 	receipt, err := ch.GetRequestReceipt(reqID)
 	if err != nil {
 		return nil, xerrors.Errorf("error getting request receipt: %s", err)
@@ -141,16 +139,20 @@ func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.
 	if receipt == nil {
 		return nil, nil
 	}
+
+	translatedError, err := ch.TranslateError(receipt.Error)
+	if err != nil {
+		return nil, xerrors.Errorf("error translating receipt: %s", err)
+	}
 	iscpReceipt := &iscp.Receipt{
-		Request:       receipt.Request,
-		Error:         receipt.Error,
-		GasBudget:     receipt.GasBudget,
-		GasBurned:     receipt.GasBurned,
-		GasFeeCharged: receipt.GasFeeCharged,
-		BlockIndex:    receipt.BlockIndex,
-		RequestIndex:  receipt.RequestIndex,
-		// TODO translate receipt error
-		TranslatedError: "",
+		Request:         receipt.Request,
+		Error:           receipt.Error,
+		GasBudget:       receipt.GasBudget,
+		GasBurned:       receipt.GasBurned,
+		GasFeeCharged:   receipt.GasFeeCharged,
+		BlockIndex:      receipt.BlockIndex,
+		RequestIndex:    receipt.RequestIndex,
+		TranslatedError: translatedError,
 		GasBurnLog:      &gas.BurnLog{},
 	}
 	receiptJSON, err := json.Marshal(iscpReceipt)
@@ -160,4 +162,12 @@ func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.
 	return &model.RequestReceiptResponse{
 		Receipt: string(receiptJSON),
 	}, nil
+}
+
+func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (ret *model.RequestReceiptResponse, err error) {
+	err = optimism.RetryOnStateInvalidated(func() (err error) {
+		ret, err = doGetTranslatedReceipt(ch, reqID)
+		return err
+	})
+	return ret, err
 }

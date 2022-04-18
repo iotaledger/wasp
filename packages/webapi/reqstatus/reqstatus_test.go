@@ -49,6 +49,10 @@ func (m *mockChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestP
 	return chain.RequestProcessingStatusCompleted
 }
 
+func (m *mockChain) TranslateError(e *iscp.UnresolvedVMError) (string, error) {
+	return "translated", nil
+}
+
 func (m *mockChain) AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure) {
 	panic("not implemented")
 }

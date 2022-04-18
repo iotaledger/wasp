@@ -2,6 +2,7 @@ package errors
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -30,4 +31,12 @@ func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, err
 	}
 
 	return iscp.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params...), nil
+}
+
+func ResolveToString(state kv.KVStoreReader, e *iscp.UnresolvedVMError) (string, error) {
+	template, err := getErrorMessageFormat(state, e.Code())
+	if err != nil {
+		return "", err
+	}
+	return e.Translate(*template), nil
 }
