@@ -2,6 +2,7 @@ package errors
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -29,7 +30,7 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 	params := kvdecoder.New(ctx.Params())
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)
 
-	if len(errorMessageFormat) == 0 {
+	if errorMessageFormat == "" {
 		panic(coreerrors.ErrMessageFormatEmpty)
 	}
 
@@ -42,16 +43,18 @@ func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 func funcGetErrorMessageFormat(ctx iscp.SandboxView) dict.Dict {
 	code := codec.MustDecodeVMErrorCode(ctx.Params().MustGet(ParamErrorCode))
 
-	var e coreerrors.ErrorCollection
-
-	if code.ContractID == iscp.VMCoreErrorContractID {
-		e = coreerrors.All()
-	} else {
-		e = NewStateErrorCollectionReader(ctx.State(), code.ContractID)
-	}
-
-	template, err := e.Get(code.ID)
+	template, err := getErrorMessageFormat(ctx.State(), code)
 	ctx.RequireNoError(err)
 
 	return dict.Dict{ParamErrorMessageFormat: codec.EncodeString(template.MessageFormat())}
+}
+
+func getErrorMessageFormat(state kv.KVStoreReader, code iscp.VMErrorCode) (*iscp.VMErrorTemplate, error) {
+	var e coreerrors.ErrorCollection
+	if code.ContractID == iscp.VMCoreErrorContractID {
+		e = coreerrors.All()
+	} else {
+		e = NewStateErrorCollectionReader(state, code.ContractID)
+	}
+	return e.Get(code.ID)
 }

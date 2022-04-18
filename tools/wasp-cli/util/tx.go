@@ -19,8 +19,10 @@ func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*iscp.OffLedgerReques
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-		log.Check(config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute))
+		_, err = config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
+		log.Check(err)
 	}
+	// TODO print receipt?
 }
 
 func WithSCTransaction(chainID *iscp.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
@@ -30,8 +32,10 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*iotago.Transaction, err
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute))
+		_, err := config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
+		log.Check(err)
 	}
+	// TODO print receipt?
 
 	return tx
 }

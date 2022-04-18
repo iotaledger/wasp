@@ -18,7 +18,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 	for i := range e.chain.CommitteeNodes {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, numRequests+4, blockIndex)
+		require.Greater(e.t, blockIndex, uint32(numRequests+4))
 
 		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
 		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
@@ -83,7 +83,7 @@ func testNothing(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -110,7 +110,7 @@ func testIncrement(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 

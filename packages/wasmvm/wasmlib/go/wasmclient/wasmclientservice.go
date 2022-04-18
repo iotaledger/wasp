@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type IClientService interface {
@@ -42,7 +43,7 @@ func (sc *WasmClientService) CallViewByHname(chainID *iscp.ChainID, hContract, h
 
 func (sc *WasmClientService) PostRequest(chainID *iscp.ChainID, hContract, hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) (*iscp.RequestID, error) {
 	sc.nonce++
-	req := iscp.NewOffLedgerRequest(chainID, hContract, hFuncName, params, sc.nonce)
+	req := iscp.NewOffLedgerRequest(chainID, hContract, hFuncName, params, sc.nonce, gas.MaxGasPerCall)
 	req.WithTransfer(allowance)
 	req.Sign(keyPair)
 	err := sc.waspClient.PostOffLedgerRequest(chainID, req)
@@ -58,5 +59,6 @@ func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) 
 }
 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error {
-	return sc.waspClient.WaitUntilRequestProcessed(chainID, reqID, timeout)
+	_, err := sc.waspClient.WaitUntilRequestProcessed(chainID, reqID, timeout)
+	return err
 }

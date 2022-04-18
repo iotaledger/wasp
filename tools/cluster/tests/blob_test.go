@@ -99,7 +99,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	sizes := e.getBlobInfo(expectedHash)
@@ -135,10 +135,11 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	expectedHash, _, err := chClient.UploadBlob(fv)
+	expectedHash, _, receipt, err := chClient.UploadBlob(fv)
+	require.Empty(t, receipt.TranslatedError)
 	require.NoError(t, err)
 	t.Logf("expected hash: %s", expectedHash.String())
 

@@ -159,7 +159,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 		if err != nil {
 			return nil, err
 		}
-		if rec.Request.ID() == *reqID {
+		if rec.Request.ID().Equals(*reqID) {
 			rec.BlockIndex = lookupKey.BlockIndex()
 			rec.RequestIndex = lookupKey.RequestIndex()
 			return rec, nil
@@ -330,28 +330,6 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 		return nil, false
 	}
 	return recBin, true
-}
-
-func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
-	lookupDigest := reqID.LookupDigest()
-	lookupTable := collections.NewMapReadOnly(ctx.State(), prefixRequestLookupIndex)
-	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
-	if lookupKeyListBin == nil {
-		return nil, 0, 0, false
-	}
-	lookupKeyList, err := RequestLookupKeyListFromBytes(lookupKeyListBin)
-	ctx.RequireNoError(err)
-	for i := range lookupKeyList {
-		recBin, found := getRequestRecordDataByRef(ctx.State(), lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
-		ctx.Requiref(found, "inconsistency: request log record wasn't found by exact reference")
-		rec, err := RequestReceiptFromBytes(recBin)
-
-		ctx.RequireNoError(err)
-		if rec.Request.ID() == reqID {
-			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
-		}
-	}
-	return nil, 0, 0, false
 }
 
 func GetUTXOInput(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {

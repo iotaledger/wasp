@@ -218,7 +218,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
-	nc.log.Debugf("Posted transaction: %s", tx)
+	nc.log.Debugf("Posted transaction: %v", tx)
 	return txMsg, nil
 }
 

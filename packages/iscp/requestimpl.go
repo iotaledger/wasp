@@ -58,13 +58,15 @@ type OffLedgerRequestData struct {
 	gasBudget  uint64
 }
 
-func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
+func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce, gasBudget uint64) *OffLedgerRequestData {
 	return &OffLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
 		nonce:      nonce,
+		gasBudget:  gasBudget,
+		publicKey:  cryptolib.NewEmptyPublicKey(),
 	}
 }
 
@@ -659,8 +661,8 @@ func (rid RequestID) OutputID() iotago.OutputID {
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
 	ret := RequestLookupDigest{}
-	// copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
-	// copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
+	copy(ret[:RequestIDDigestLen], rid.TransactionID[:RequestIDDigestLen])
+	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.TransactionOutputIndex))
 	return ret
 }
 
@@ -672,13 +674,20 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return OID(rid.UTXOInput()) // CHANGE THIS = the "0/format" is fucking things up
+	return OID(rid.UTXOInput())
 }
 
 func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
 	txid := TxID(&oid.TransactionID)
 	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
+}
+
+func (rid RequestID) Equals(reqID2 RequestID) bool {
+	if rid.TransactionOutputIndex != reqID2.TransactionOutputIndex {
+		return false
+	}
+	return rid.TransactionID == reqID2.TransactionID
 }
 
 func OID(o *iotago.UTXOInput) string {
@@ -720,8 +729,7 @@ func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestM
 	if metadataFeatBlock == nil {
 		return nil, nil
 	}
-	bytes := metadataFeatBlock.Data
-	return RequestMetadataFromBytes(bytes)
+	return RequestMetadataFromBytes(metadataFeatBlock.Data)
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
