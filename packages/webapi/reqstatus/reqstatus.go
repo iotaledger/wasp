@@ -9,7 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -73,19 +75,19 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 		}
 	}
 
-	tryGetReceipt := func() error {
+	tryGetReceipt := func() (bool, error) {
 		receiptResponse, err := getTranslatedReceipt(ch, reqID)
 		if err != nil {
-			return httperrors.ServerError(err.Error())
+			return true, httperrors.ServerError(err.Error())
 		}
 		if receiptResponse != nil {
-			return c.JSON(http.StatusOK, receiptResponse)
+			return true, c.JSON(http.StatusOK, receiptResponse)
 		}
-		return nil
+		return false, nil
 	}
 
-	ret := tryGetReceipt()
-	if ret != nil {
+	found, ret := tryGetReceipt()
+	if found {
 		return ret
 	}
 
@@ -100,15 +102,15 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 
 	select {
 	case <-requestProcessed:
-		ret := tryGetReceipt()
-		if ret != nil {
+		found, ret := tryGetReceipt()
+		if found {
 			return ret
 		}
-		return httperrors.ServerError("Unexpected error, receipt not found after request has been processed")
+		return httperrors.ServerError("Unexpected error, receipt not found after request was processed")
 	case <-time.After(req.Timeout):
 		// check again, in case event was triggered just before we subscribed
-		ret := tryGetReceipt()
-		if ret != nil {
+		found, ret := tryGetReceipt()
+		if found {
 			return ret
 		}
 		return httperrors.Timeout("Timeout while waiting for request to be processed")
@@ -166,7 +168,9 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 
 func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (ret *model.RequestReceiptResponse, err error) {
 	err = optimism.RetryOnStateInvalidated(func() (err error) {
-		ret, err = doGetTranslatedReceipt(ch, reqID)
+		panicutil.CatchPanicReturnError(func() {
+			ret, err = doGetTranslatedReceipt(ch, reqID)
+		}, coreutil.ErrorStateInvalidated)
 		return err
 	})
 	return ret, err

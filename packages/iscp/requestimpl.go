@@ -58,7 +58,7 @@ type OffLedgerRequestData struct {
 	gasBudget  uint64
 }
 
-func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64, gasBudget uint64) *OffLedgerRequestData {
+func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce, gasBudget uint64) *OffLedgerRequestData {
 	return &OffLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
@@ -66,6 +66,7 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		params:     params,
 		nonce:      nonce,
 		gasBudget:  gasBudget,
+		publicKey:  cryptolib.NewEmptyPublicKey(),
 	}
 }
 

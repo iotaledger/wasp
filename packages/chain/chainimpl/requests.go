@@ -16,7 +16,7 @@ func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRec
 		c.stateReader.KVStoreReader(),
 		reqID,
 	)
-	if err != nil {
+	if err != nil || res == nil {
 		return nil, err
 	}
 	receipt, err := blocklog.RequestReceiptFromBytes(res.ReceiptBin)

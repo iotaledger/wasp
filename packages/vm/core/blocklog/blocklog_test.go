@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
-	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce)
+	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce, math.MaxUint64)
 
 	rec := &RequestReceipt{
 		Request: req,
