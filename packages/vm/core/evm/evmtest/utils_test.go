@@ -283,7 +283,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	req := solo.NewCallParamsFromDic(evm.Contract.Name, evm.FuncSendTransaction.Name, dict.Dict{
+	req := solo.NewCallParamsFromDict(evm.Contract.Name, evm.FuncSendTransaction.Name, dict.Dict{
 		evm.FieldTransactionData: txdata,
 	})
 

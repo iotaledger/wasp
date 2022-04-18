@@ -34,6 +34,10 @@ export function int16ToBytes(value: i16): u8[] {
     ];
 }
 
+export function int16FromString(value: string): i16 {
+    return wasmtypes.intFromString(value, 16) as i16;
+}
+
 export function int16ToString(value: i16): string {
     return value.toString();
 }

@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/mr-tron/base58"
 )
 
@@ -37,30 +37,35 @@ type IEventHandler interface {
 	CallHandler(topic string, params []string)
 }
 
+type IWaspClient interface {
+	CallView(chainID *iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error)
+	CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error)
+	PostOffLedgerRequest(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) error
+	WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error
+}
+
 type Service struct {
 	chainID       *iscp.ChainID
+	cvt           wasmhost.WasmConvertor
+	Err           error
+	eventDone     chan bool
 	eventHandlers []IEventHandler
 	keyPair       *cryptolib.KeyPair
+	Req           Request
+	scName        string
 	scHname       iscp.Hname
-	waspClient    *client.WaspClient
+	svcClient     IServiceClient
+	waspClient    IWaspClient
 }
 
-func (s *Service) Init(svcClient *ServiceClient, chainID string, scHname uint32) (err error) {
-	s.waspClient = svcClient.waspClient
-	s.scHname = iscp.Hname(scHname)
-	s.chainID, err = iscp.ChainIDFromString(chainID)
-	if err != nil {
-		return err
-	}
-	return s.startEventHandlers(svcClient.eventPort)
-}
-
-func (s *Service) AsClientFunc() ClientFunc {
-	return ClientFunc{svc: s}
-}
-
-func (s *Service) AsClientView() ClientView {
-	return ClientView{svc: s}
+func NewService(svcClient IServiceClient, chainID *wasmtypes.ScChainID, scName string) *Service {
+	s := &Service{}
+	s.svcClient = svcClient
+	s.waspClient = svcClient.WaspClient()
+	s.scName = scName
+	s.scHname = iscp.Hn(scName)
+	s.chainID, s.Err = iscp.ChainIDFromBytes(chainID.Bytes())
+	return s
 }
 
 func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
@@ -71,44 +76,36 @@ func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
 	return ResMap(res), nil
 }
 
-func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer, keyPair *cryptolib.KeyPair, onLedger bool) Request {
-	panic("fixme: service.postRequest")
-	//bal, err := makeBalances(transfer)
-	//if err != nil {
-	//	return Request{err: err}
-	//}
-	//reqArgs := requestargs.New()
-	//if args != nil {
-	//	reqArgs.AddEncodeSimpleMany(dict.Dict(args))
-	//}
-	//
-	//if onLedger {
-	//	return s.postRequestOnLedger(hFuncName, reqArgs, bal, keyPair)
-	//}
-	//
-	//req := request.NewOffLedger(s.chainID, s.scHname, iscp.Hname(hFuncName), reqArgs)
-	//req.WithTransfer(bal)
-	//req.Sign(keyPair)
-	//err = s.waspClient.PostOffLedgerRequest(s.chainID, req)
-	//if err != nil {
-	//	return Request{err: err}
-	//}
-	//id := req.ID()
-	//return Request{id: &id}
+func (s *Service) ChainID() wasmtypes.ScChainID {
+	return s.cvt.ScChainID(s.chainID)
 }
 
-//func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *cryptolib.KeyPair) Request {
-//	// TODO implement
-//	return Request{}
-//}
+func (s *Service) InitFuncCallContext() {
+	_ = wasmhost.Connect(s)
+}
 
-func (s *Service) Register(handler IEventHandler) {
+func (s *Service) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = wasmhost.Connect(s)
+	return wasmtypes.ScHname(s.scHname)
+}
+
+func (s *Service) postRequestOffLedger(hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) Request {
+	s.Req.id, s.Req.err = s.svcClient.PostRequest(s.chainID, s.scHname, hFuncName, params, allowance, keyPair)
+	s.Err = s.Req.err
+	return s.Req
+}
+
+func (s *Service) Register(handler IEventHandler) error {
 	for _, h := range s.eventHandlers {
 		if h == handler {
-			return
+			return nil
 		}
 	}
 	s.eventHandlers = append(s.eventHandlers, handler)
+	if len(s.eventHandlers) > 1 {
+		return nil
+	}
+	return s.startEventHandlers()
 }
 
 // overrides default contract name
@@ -120,24 +117,33 @@ func (s *Service) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
 }
 
-func (s *Service) Unegister(handler IEventHandler) {
+func (s *Service) Unregister(handler IEventHandler) {
 	for i, h := range s.eventHandlers {
 		if h == handler {
 			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)
+			if len(s.eventHandlers) == 0 {
+				s.stopEventHandlers()
+			}
 			return
 		}
 	}
 }
 
-func (s *Service) WaitRequest(req Request) error {
-	_, err := s.waspClient.WaitUntilRequestProcessed(s.chainID, *req.id, 1*time.Minute)
-	return err
+func (s *Service) WaitRequest(reqID ...*iscp.RequestID) error {
+	id := s.Req.id
+	if len(reqID) == 1 {
+		id = reqID[0]
+	}
+	if id == nil {
+		return nil
+	}
+	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *id, 1*time.Minute)
 }
 
-func (s *Service) startEventHandlers(eventPort string) error {
+func (s *Service) startEventHandlers() error {
 	chMsg := make(chan []string, 20)
-	chDone := make(chan bool)
-	err := subscribe.Subscribe(eventPort, chMsg, chDone, true, "")
+	s.eventDone = make(chan bool)
+	err := s.svcClient.SubscribeEvents(chMsg, s.eventDone)
 	if err != nil {
 		return err
 	}
@@ -160,6 +166,12 @@ func (s *Service) startEventHandlers(eventPort string) error {
 	return nil
 }
 
+func (s *Service) stopEventHandlers() {
+	if len(s.eventHandlers) > 0 {
+		s.eventDone <- true
+	}
+}
+
 /////////////////////////////////////////////////////////////////
 
 func Base58Decode(s string) []byte {
@@ -173,17 +185,3 @@ func Base58Decode(s string) []byte {
 func Base58Encode(b []byte) string {
 	return base58.Encode(b)
 }
-
-//func makeBalances(transfer *Transfer) (colored.Balances, error) {
-//	cb := colored.NewBalances()
-//	if transfer != nil {
-//		for color, amount := range transfer.xfer {
-//			c, err := colored.ColorFromBase58EncodedString(color)
-//			if err != nil {
-//				return nil, err
-//			}
-//			cb.Set(c, amount)
-//		}
-//	}
-//	return cb, nil
-//}

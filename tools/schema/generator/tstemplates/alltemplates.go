@@ -18,6 +18,7 @@ var Templates = []map[string]string{
 	constsTs,
 	contractTs,
 	eventsTs,
+	eventhandlersTs,
 	funcsTs,
 	indexTs,
 	libTs,
@@ -119,6 +120,10 @@ import * as sc from "./index";
 	// *******************************
 	"_structComment": `
 $nextLine
+`,
+	// *******************************
+	"_structFieldComment": `
+	$nextLine
 `,
 	// *******************************
 	"_typedefComment": `

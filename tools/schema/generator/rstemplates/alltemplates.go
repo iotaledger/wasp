@@ -136,6 +136,10 @@ use wasmlib::*;
 $nextLine
 `,
 	// *******************************
+	"_structFieldComment": `
+    $nextLine
+`,
+	// *******************************
 	"_typedefComment": `
 $nextLine
 `,

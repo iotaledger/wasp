@@ -85,6 +85,10 @@ func AddressToBytes(value ScAddress) []byte {
 	}
 }
 
+func AddressFromString(value string) ScAddress {
+	return AddressFromBytes(Base58Decode(value))
+}
+
 func AddressToString(value ScAddress) string {
 	// TODO standardize human readable string
 	return Base58Encode(value.id[:])

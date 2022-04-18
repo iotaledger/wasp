@@ -62,7 +62,7 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	require.NoError(e.t, err)
 	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair)
 
-	reqTx, err := chClient.DepositFunds(100)
+	reqTx, err := chClient.DepositFunds(1000000)
 	require.NoError(e.t, err)
 	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
 	// TODO check receipt?

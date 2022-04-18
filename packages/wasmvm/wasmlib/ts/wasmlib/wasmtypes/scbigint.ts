@@ -267,6 +267,8 @@ export class ScBigInt {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+const quintillion = ScBigInt.fromUint64(1_000_000_000_000_000_000);
+
 export function bigIntDecode(dec: wasmtypes.WasmDecoder): ScBigInt {
     return bigIntFromBytesUnchecked(dec.bytes());
 }
@@ -286,11 +288,24 @@ export function bigIntToBytes(value: ScBigInt): u8[] {
     return value.bytes;
 }
 
+export function bigIntFromString(value: string): ScBigInt {
+    const digits = value.length - 18;
+    if (digits <= 0) {
+        // Uint64 fits 18 digits or 1 quintillion
+        return ScBigInt.fromUint64(wasmtypes.uint64FromString(value));
+    }
+
+    // build value 18 digits at a time
+    const lhs = bigIntFromString(value.slice(0, digits));
+    const rhs = bigIntFromString(value.slice(digits));
+    return lhs.mul(quintillion).add(rhs)
+}
+
 export function bigIntToString(value: ScBigInt): string {
     if (value.isUint64()) {
         return wasmtypes.uint64ToString(value.uint64());
     }
-    const divMod = value.divMod(ScBigInt.fromUint64(1_000_000_000_000_000_000));
+    const divMod = value.divMod(quintillion);
     const digits = wasmtypes.uint64ToString(divMod[1].uint64());
     const zeroes = wasmtypes.zeroes(18 - digits.length);
     return bigIntToString(divMod[0]) + zeroes + digits;

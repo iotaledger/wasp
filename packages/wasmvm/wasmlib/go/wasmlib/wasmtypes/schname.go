@@ -47,6 +47,17 @@ func HnameToBytes(value ScHname) []byte {
 	return Uint32ToBytes(uint32(value))
 }
 
+func HnameFromString(value string) ScHname {
+	if len(value) > 8 {
+		panic("invalid Hname string")
+	}
+	u64, err := strconv.ParseUint(value, 16, 32)
+	if err != nil {
+		panic(err)
+	}
+	return ScHname(u64)
+}
+
 func HnameToString(value ScHname) string {
 	res := strconv.FormatUint(uint64(value), 16)
 	return "0000000"[:8-len(res)] + res

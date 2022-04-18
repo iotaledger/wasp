@@ -139,7 +139,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		assets = allowance.Clone()
 		assets.Assets.Iotas = 1000
 	}
-	req := solo.NewCallParamsFromDic(contract, function, params)
+	req := solo.NewCallParamsFromDict(contract, function, params)
 	req.AddFungibleTokens(assets.Assets)
 	// TODO NFT
 	req.WithAllowance(allowance)

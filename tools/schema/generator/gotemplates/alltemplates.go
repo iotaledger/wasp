@@ -18,6 +18,7 @@ var Templates = []map[string]string{
 	constsGo,
 	contractGo,
 	eventsGo,
+	eventhandlersGo,
 	funcsGo,
 	libGo,
 	mainGo,
@@ -96,6 +97,10 @@ $nextLine
 	// *******************************
 	"_structComment": `
 $nextLine
+`,
+	// *******************************
+	"_structFieldComment": `
+	$nextLine
 `,
 	// *******************************
 	"_typedefComment": `

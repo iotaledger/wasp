@@ -34,6 +34,10 @@ func Int16ToBytes(value int16) []byte {
 	return []byte{byte(value), byte(value >> 8)}
 }
 
+func Int16FromString(value string) int16 {
+	return int16(IntFromString(value, 16))
+}
+
 func Int16ToString(value int16) string {
 	return strconv.FormatInt(int64(value), 10)
 }

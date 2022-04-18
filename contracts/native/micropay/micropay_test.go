@@ -260,7 +260,7 @@ func TestPayment(t *testing.T) {
 	arr := collections.NewArray16(par, ParamPayments)
 	_ = arr.Push(pay1)
 	_ = arr.Push(pay2)
-	req = solo.NewCallParamsFromDic("micropay", FuncSettle.Name, par).AddIotas(1)
+	req = solo.NewCallParamsFromDict("micropay", FuncSettle.Name, par).AddIotas(1)
 	_, err = chain.PostRequestSync(req, provider)
 	require.NoError(t, err)
 
