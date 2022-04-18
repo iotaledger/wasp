@@ -41,7 +41,7 @@ type IWaspClient interface {
 	CallView(chainID *iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error)
 	CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error)
 	PostOffLedgerRequest(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) error
-	WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error
+	WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) (*iscp.Receipt, error)
 }
 
 type Service struct {
@@ -137,7 +137,9 @@ func (s *Service) WaitRequest(reqID ...*iscp.RequestID) error {
 	if id == nil {
 		return nil
 	}
-	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *id, 1*time.Minute)
+	_, err := s.waspClient.WaitUntilRequestProcessed(s.chainID, *id, 1*time.Minute)
+	// TODO check receipt ? - not sure if that is intended here
+	return err
 }
 
 func (s *Service) startEventHandlers() error {

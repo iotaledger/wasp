@@ -119,8 +119,7 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	if err != nil {
 		return nil, err
 	}
-	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
-	// TODO look into receipt?
+	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +167,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
-	// TODO look into receipt?
+	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return hashing.NilHash, err
 	}
