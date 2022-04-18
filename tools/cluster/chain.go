@@ -160,7 +160,8 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
-			Args: args,
+			Args:      args,
+			GasBudget: math.MaxUint64, // maximum affordable gas budget
 		},
 	)
 	if err != nil {

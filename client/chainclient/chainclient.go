@@ -115,7 +115,7 @@ func (c *Client) PostOffLedgerRequest(
 		c.nonces[c.KeyPair.Address().Key()]++
 		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 	}
-	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce, par.GasBudget)
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
@@ -123,7 +123,8 @@ func (c *Client) PostOffLedgerRequest(
 
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
-		Transfer: iscp.NewFungibleTokens(n, nil),
+		Transfer:  iscp.NewFungibleTokens(n, nil),
+		GasBudget: math.MaxUint64,
 	})
 }
 
