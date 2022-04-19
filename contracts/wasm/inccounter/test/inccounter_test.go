@@ -149,8 +149,8 @@ func TestIncrementLocalStatePost(t *testing.T) {
 func TestIncrementWithDelayBug(t *testing.T) {
 	ctx := setupTest(t)
 
-	//info1 := ctx.Chain.MempoolInfo()
-	//require.EqualValues(t, info1.InBufCounter, info1.OutBufCounter)
+	// info1 := ctx.Chain.MempoolInfo()
+	// require.EqualValues(t, info1.InBufCounter, info1.OutBufCounter)
 
 	incWithDelay := inccounter.ScFuncs.IncrementWithDelay(ctx)
 	incWithDelay.Params.Delay().SetValue(5)
@@ -190,11 +190,11 @@ func TestIncrementWithDelayBug(t *testing.T) {
 	// relinquish control until delayed request has been processed
 	ctx.WaitForPendingRequests(1)
 
-	//info5 := ctx.Chain.MempoolInfo()
-	//require.EqualValues(t, info1.InBufCounter+2, info5.InBufCounter)
-	//require.EqualValues(t, info1.OutBufCounter+2, info5.OutBufCounter)
-	//require.EqualValues(t, info1.InPoolCounter+2, info5.InPoolCounter)
-	//require.EqualValues(t, info1.OutPoolCounter+2, info5.OutPoolCounter)
+	// info5 := ctx.Chain.MempoolInfo()
+	// require.EqualValues(t, info1.InBufCounter+2, info5.InBufCounter)
+	// require.EqualValues(t, info1.OutBufCounter+2, info5.OutBufCounter)
+	// require.EqualValues(t, info1.InPoolCounter+2, info5.InPoolCounter)
+	// require.EqualValues(t, info1.OutPoolCounter+2, info5.OutPoolCounter)
 	checkStateCounter(t, ctx, 2)
 }
 
