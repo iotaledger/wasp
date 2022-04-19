@@ -1,4 +1,4 @@
-import { IResponse, IExtendedResponse } from './response_models';
+import {IExtendedResponse, IResponse} from './response_models';
 
 const headers: { [id: string]: string } = {
     'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export async function sendRequestExt<T, U extends IResponse | null>(
     try {
         if(!path.startsWith("/"))
             path = "/" + path;        
-        const url = `${apiUrl}/${path}`;
+        const url = `${apiUrl}${path}`;
         fetchResponse = await fetch(url, {
             method: verb,
             headers,
@@ -38,8 +38,8 @@ export async function sendRequestExt<T, U extends IResponse | null>(
 
         try {
             const response = await fetchResponse.text()
-                            .then((data)=> data ? JSON.parse(data) : {});
-            return { body: response, response: fetchResponse };
+                .then((data) => data ? JSON.parse(data) : {});
+            return {body: response, response: fetchResponse};
         } catch (err) {
             const error = err as Error;
             if (fetchResponse.ok) {

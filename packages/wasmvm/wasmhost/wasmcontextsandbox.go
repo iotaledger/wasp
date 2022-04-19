@@ -279,7 +279,7 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 		EntryPoint:     function,
 		Args:           params,
 	}
-	if req.Delay != 0 {
+	if req.Delay == 0 {
 		if !s.ctx.Send(chainID.AsAddress(), transfer, metadata) {
 			s.Panicf("failed to send to %s", chainID.AsAddress().String())
 		}

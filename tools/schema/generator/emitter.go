@@ -6,7 +6,6 @@ package generator
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -385,27 +384,9 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["scName"] = scName
 	g.keys["hscName"] = iscp.Hn(scName).String()
 	g.keys["scDesc"] = g.s.Description
-	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
 }
 
 func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
-	tmp := make(model.StringMap)
-	for k, v := range g.keys {
-		if len(k) < 3 {
-			continue
-		}
-		switch k[:3] {
-		case "fld":
-			tmp["old"+k[3:]] = v
-		case "Fld":
-			tmp["Old"+k[3:]] = v
-		case "FLD":
-			tmp["OLD"+k[3:]] = v
-		}
-	}
-	for k, v := range tmp {
-		g.keys[k] = v
-	}
 	g.setMultiKeyValues("fldName", g.currentField.Name)
 	g.setMultiKeyValues("fldType", g.currentField.Type)
 	g.setMultiKeyValues("fldMapKey", g.currentField.MapKey)
@@ -419,7 +400,6 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 
 	g.keys["fldAlias"] = g.currentField.Alias
 	g.keys["fldComment"] = g.currentField.Comment
-	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
 
 	if pad {
 		g.keys["fldPad"] = spaces[:maxCamelLength-len(g.keys["fldName"])]

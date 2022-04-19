@@ -9,123 +9,211 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ImmutableArrayAppendParams struct {
+type ImmutableArrayOfArraysAppendParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayAppendParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
-}
-
-func (s ImmutableArrayAppendParams) Value() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
-}
-
-type MutableArrayAppendParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableArrayAppendParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
-}
-
-func (s MutableArrayAppendParams) Value() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
-}
-
-type ImmutableArrayClearParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableArrayClearParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
-}
-
-type MutableArrayClearParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableArrayClearParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
-}
-
-type ImmutableArraySetParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableArraySetParams) Index() wasmtypes.ScImmutableUint32 {
+func (s ImmutableArrayOfArraysAppendParams) Index() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s ImmutableArraySetParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+func (s ImmutableArrayOfArraysAppendParams) Value() ArrayOfImmutableString {
+	return ArrayOfImmutableString{proxy: s.proxy.Root(ParamValue)}
 }
 
-func (s ImmutableArraySetParams) Value() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
-}
-
-type MutableArraySetParams struct {
+type MutableArrayOfArraysAppendParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableArraySetParams) Index() wasmtypes.ScMutableUint32 {
+func (s MutableArrayOfArraysAppendParams) Index() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s MutableArraySetParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+func (s MutableArrayOfArraysAppendParams) Value() ArrayOfMutableString {
+	return ArrayOfMutableString{proxy: s.proxy.Root(ParamValue)}
 }
 
-func (s MutableArraySetParams) Value() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
-}
-
-type ImmutableMapClearParams struct {
+type ImmutableArrayOfArraysSetParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableMapClearParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+func (s ImmutableArrayOfArraysSetParams) Index0() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex0))
 }
 
-type MutableMapClearParams struct {
-	proxy wasmtypes.Proxy
+func (s ImmutableArrayOfArraysSetParams) Index1() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex1))
 }
 
-func (s MutableMapClearParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
-}
-
-type ImmutableMapSetParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableMapSetParams) Key() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
-}
-
-func (s ImmutableMapSetParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
-}
-
-func (s ImmutableMapSetParams) Value() wasmtypes.ScImmutableString {
+func (s ImmutableArrayOfArraysSetParams) Value() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
 }
 
-type MutableMapSetParams struct {
+type MutableArrayOfArraysSetParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableMapSetParams) Key() wasmtypes.ScMutableString {
+func (s MutableArrayOfArraysSetParams) Index0() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex0))
+}
+
+func (s MutableArrayOfArraysSetParams) Index1() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+func (s MutableArrayOfArraysSetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
+type ImmutableArrayOfMapsSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableArrayOfMapsSetParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableArrayOfMapsSetParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+func (s ImmutableArrayOfMapsSetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableArrayOfMapsSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableArrayOfMapsSetParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableArrayOfMapsSetParams) Key() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
 }
 
-func (s MutableMapSetParams) Name() wasmtypes.ScMutableString {
+func (s MutableArrayOfMapsSetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
+type ImmutableMapOfArraysAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysAppendParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+func (s ImmutableMapOfArraysAppendParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableMapOfArraysAppendParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysAppendParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
-func (s MutableMapSetParams) Value() wasmtypes.ScMutableString {
+func (s MutableMapOfArraysAppendParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
+type ImmutableMapOfArraysClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysClearParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableMapOfArraysClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysClearParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableMapOfArraysSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysSetParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableMapOfArraysSetParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+func (s ImmutableMapOfArraysSetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableMapOfArraysSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysSetParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableMapOfArraysSetParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+func (s MutableMapOfArraysSetParams) Value() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
+}
+
+type ImmutableMapOfMapsClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsClearParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableMapOfMapsClearParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsClearParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableMapOfMapsSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsSetParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+func (s ImmutableMapOfMapsSetParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+func (s ImmutableMapOfMapsSetParams) Value() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamValue))
+}
+
+type MutableMapOfMapsSetParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsSetParams) Key() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
+}
+
+func (s MutableMapOfMapsSetParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+func (s MutableMapOfMapsSetParams) Value() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamValue))
 }
 
@@ -335,44 +423,52 @@ func (s MutableTriggerEventParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
-type ImmutableArrayLengthParams struct {
+type ImmutableArrayOfArraysValueParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayLengthParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+func (s ImmutableArrayOfArraysValueParams) Index0() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex0))
 }
 
-type MutableArrayLengthParams struct {
+func (s ImmutableArrayOfArraysValueParams) Index1() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+type MutableArrayOfArraysValueParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayLengthParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+func (s MutableArrayOfArraysValueParams) Index0() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex0))
 }
 
-type ImmutableArrayValueParams struct {
+func (s MutableArrayOfArraysValueParams) Index1() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex1))
+}
+
+type ImmutableArrayOfMapsValueParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableArrayValueParams) Index() wasmtypes.ScImmutableUint32 {
+func (s ImmutableArrayOfMapsValueParams) Index() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s ImmutableArrayValueParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+func (s ImmutableArrayOfMapsValueParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
 }
 
-type MutableArrayValueParams struct {
+type MutableArrayOfMapsValueParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableArrayValueParams) Index() wasmtypes.ScMutableUint32 {
+func (s MutableArrayOfMapsValueParams) Index() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
 }
 
-func (s MutableArrayValueParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+func (s MutableArrayOfMapsValueParams) Key() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
 }
 
 type ImmutableBlockRecordParams struct {
@@ -415,26 +511,66 @@ func (s MutableBlockRecordsParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
-type ImmutableMapValueParams struct {
+type ImmutableMapOfArraysLengthParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableMapValueParams) Key() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
-}
-
-func (s ImmutableMapValueParams) Name() wasmtypes.ScImmutableString {
+func (s ImmutableMapOfArraysLengthParams) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
-type MutableMapValueParams struct {
+type MutableMapOfArraysLengthParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableMapValueParams) Key() wasmtypes.ScMutableString {
+func (s MutableMapOfArraysLengthParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableMapOfArraysValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfArraysValueParams) Index() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s ImmutableMapOfArraysValueParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableMapOfArraysValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfArraysValueParams) Index() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamIndex))
+}
+
+func (s MutableMapOfArraysValueParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+}
+
+type ImmutableMapOfMapsValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableMapOfMapsValueParams) Key() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamKey))
+}
+
+func (s ImmutableMapOfMapsValueParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+}
+
+type MutableMapOfMapsValueParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableMapOfMapsValueParams) Key() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamKey))
 }
 
-func (s MutableMapValueParams) Name() wasmtypes.ScMutableString {
+func (s MutableMapOfMapsValueParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }

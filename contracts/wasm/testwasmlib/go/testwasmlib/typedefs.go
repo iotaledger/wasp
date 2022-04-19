@@ -9,6 +9,630 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
+type ArrayOfImmutableAddress struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableAddress) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableAddress) GetAddress(index uint32) wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(a.proxy.Index(index))
+}
+
+type ImmutableAddressArray = ArrayOfImmutableAddress
+
+type ArrayOfMutableAddress struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableAddress) AppendAddress() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(a.proxy.Append())
+}
+
+func (a ArrayOfMutableAddress) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableAddress) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableAddress) GetAddress(index uint32) wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(a.proxy.Index(index))
+}
+
+type MutableAddressArray = ArrayOfMutableAddress
+
+type MapAddressToImmutableAddress struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToImmutableAddress) GetAddress(key wasmtypes.ScAddress) wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(m.proxy.Key(wasmtypes.AddressToBytes(key)))
+}
+
+type ImmutableAddressMap = MapAddressToImmutableAddress
+
+type MapAddressToMutableAddress struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToMutableAddress) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapAddressToMutableAddress) GetAddress(key wasmtypes.ScAddress) wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(m.proxy.Key(wasmtypes.AddressToBytes(key)))
+}
+
+type MutableAddressMap = MapAddressToMutableAddress
+
+type ArrayOfImmutableAgentID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableAgentID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableAgentID) GetAgentID(index uint32) wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(a.proxy.Index(index))
+}
+
+type ImmutableAgentIDArray = ArrayOfImmutableAgentID
+
+type ArrayOfMutableAgentID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableAgentID) AppendAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(a.proxy.Append())
+}
+
+func (a ArrayOfMutableAgentID) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableAgentID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableAgentID) GetAgentID(index uint32) wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(a.proxy.Index(index))
+}
+
+type MutableAgentIDArray = ArrayOfMutableAgentID
+
+type MapAgentIDToImmutableAgentID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAgentIDToImmutableAgentID) GetAgentID(key wasmtypes.ScAgentID) wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
+}
+
+type ImmutableAgentIDMap = MapAgentIDToImmutableAgentID
+
+type MapAgentIDToMutableAgentID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAgentIDToMutableAgentID) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapAgentIDToMutableAgentID) GetAgentID(key wasmtypes.ScAgentID) wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
+}
+
+type MutableAgentIDMap = MapAgentIDToMutableAgentID
+
+type ArrayOfImmutableBytes struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableBytes) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableBytes) GetBytes(index uint32) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(a.proxy.Index(index))
+}
+
+type ImmutableBytesArray = ArrayOfImmutableBytes
+
+type ArrayOfMutableBytes struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableBytes) AppendBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(a.proxy.Append())
+}
+
+func (a ArrayOfMutableBytes) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableBytes) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableBytes) GetBytes(index uint32) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(a.proxy.Index(index))
+}
+
+type MutableBytesArray = ArrayOfMutableBytes
+
+type MapBytesToImmutableBytes struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToImmutableBytes) GetBytes(key []byte) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
+type ImmutableBytesMap = MapBytesToImmutableBytes
+
+type MapBytesToMutableBytes struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToMutableBytes) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapBytesToMutableBytes) GetBytes(key []byte) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
+type MutableBytesMap = MapBytesToMutableBytes
+
+type ArrayOfImmutableChainID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableChainID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableChainID) GetChainID(index uint32) wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(a.proxy.Index(index))
+}
+
+type ImmutableChainIDArray = ArrayOfImmutableChainID
+
+type ArrayOfMutableChainID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableChainID) AppendChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(a.proxy.Append())
+}
+
+func (a ArrayOfMutableChainID) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableChainID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableChainID) GetChainID(index uint32) wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(a.proxy.Index(index))
+}
+
+type MutableChainIDArray = ArrayOfMutableChainID
+
+type MapChainIDToImmutableChainID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapChainIDToImmutableChainID) GetChainID(key wasmtypes.ScChainID) wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(m.proxy.Key(wasmtypes.ChainIDToBytes(key)))
+}
+
+type ImmutableChainIDMap = MapChainIDToImmutableChainID
+
+type MapChainIDToMutableChainID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapChainIDToMutableChainID) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapChainIDToMutableChainID) GetChainID(key wasmtypes.ScChainID) wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(m.proxy.Key(wasmtypes.ChainIDToBytes(key)))
+}
+
+type MutableChainIDMap = MapChainIDToMutableChainID
+
+type ArrayOfImmutableColor struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableColor) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableColor) GetColor(index uint32) wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(a.proxy.Index(index))
+}
+
+type ImmutableColorArray = ArrayOfImmutableColor
+
+type ArrayOfMutableColor struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableColor) AppendColor() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(a.proxy.Append())
+}
+
+func (a ArrayOfMutableColor) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableColor) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableColor) GetColor(index uint32) wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(a.proxy.Index(index))
+}
+
+type MutableColorArray = ArrayOfMutableColor
+
+type MapColorToImmutableColor struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapColorToImmutableColor) GetColor(key wasmtypes.ScColor) wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(m.proxy.Key(wasmtypes.ColorToBytes(key)))
+}
+
+type ImmutableColorMap = MapColorToImmutableColor
+
+type MapColorToMutableColor struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapColorToMutableColor) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapColorToMutableColor) GetColor(key wasmtypes.ScColor) wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(m.proxy.Key(wasmtypes.ColorToBytes(key)))
+}
+
+type MutableColorMap = MapColorToMutableColor
+
+type ArrayOfImmutableHash struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableHash) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableHash) GetHash(index uint32) wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(a.proxy.Index(index))
+}
+
+type ImmutableHashArray = ArrayOfImmutableHash
+
+type ArrayOfMutableHash struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableHash) AppendHash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(a.proxy.Append())
+}
+
+func (a ArrayOfMutableHash) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableHash) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableHash) GetHash(index uint32) wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(a.proxy.Index(index))
+}
+
+type MutableHashArray = ArrayOfMutableHash
+
+type MapHashToImmutableHash struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapHashToImmutableHash) GetHash(key wasmtypes.ScHash) wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(m.proxy.Key(wasmtypes.HashToBytes(key)))
+}
+
+type ImmutableHashMap = MapHashToImmutableHash
+
+type MapHashToMutableHash struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapHashToMutableHash) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapHashToMutableHash) GetHash(key wasmtypes.ScHash) wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(m.proxy.Key(wasmtypes.HashToBytes(key)))
+}
+
+type MutableHashMap = MapHashToMutableHash
+
+type ArrayOfImmutableHname struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableHname) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableHname) GetHname(index uint32) wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(a.proxy.Index(index))
+}
+
+type ImmutableHnameArray = ArrayOfImmutableHname
+
+type ArrayOfMutableHname struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableHname) AppendHname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(a.proxy.Append())
+}
+
+func (a ArrayOfMutableHname) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableHname) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableHname) GetHname(index uint32) wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(a.proxy.Index(index))
+}
+
+type MutableHnameArray = ArrayOfMutableHname
+
+type MapHnameToImmutableHname struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapHnameToImmutableHname) GetHname(key wasmtypes.ScHname) wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(m.proxy.Key(wasmtypes.HnameToBytes(key)))
+}
+
+type ImmutableHnameMap = MapHnameToImmutableHname
+
+type MapHnameToMutableHname struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapHnameToMutableHname) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapHnameToMutableHname) GetHname(key wasmtypes.ScHname) wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(m.proxy.Key(wasmtypes.HnameToBytes(key)))
+}
+
+type MutableHnameMap = MapHnameToMutableHname
+
+type ArrayOfImmutableInt32 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableInt32) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableInt32) GetInt32(index uint32) wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(a.proxy.Index(index))
+}
+
+type ImmutableInt32Array = ArrayOfImmutableInt32
+
+type ArrayOfMutableInt32 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableInt32) AppendInt32() wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(a.proxy.Append())
+}
+
+func (a ArrayOfMutableInt32) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableInt32) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableInt32) GetInt32(index uint32) wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(a.proxy.Index(index))
+}
+
+type MutableInt32Array = ArrayOfMutableInt32
+
+type MapInt32ToImmutableInt32 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToImmutableInt32) GetInt32(key int32) wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(m.proxy.Key(wasmtypes.Int32ToBytes(key)))
+}
+
+type ImmutableInt32Map = MapInt32ToImmutableInt32
+
+type MapInt32ToMutableInt32 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToMutableInt32) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapInt32ToMutableInt32) GetInt32(key int32) wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(m.proxy.Key(wasmtypes.Int32ToBytes(key)))
+}
+
+type MutableInt32Map = MapInt32ToMutableInt32
+
+type ArrayOfImmutableInt64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableInt64) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableInt64) GetInt64(index uint32) wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(a.proxy.Index(index))
+}
+
+type ImmutableInt64Array = ArrayOfImmutableInt64
+
+type ArrayOfMutableInt64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableInt64) AppendInt64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(a.proxy.Append())
+}
+
+func (a ArrayOfMutableInt64) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableInt64) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableInt64) GetInt64(index uint32) wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(a.proxy.Index(index))
+}
+
+type MutableInt64Array = ArrayOfMutableInt64
+
+type MapInt64ToImmutableInt64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt64ToImmutableInt64) GetInt64(key int64) wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.Int64ToBytes(key)))
+}
+
+type ImmutableInt64Map = MapInt64ToImmutableInt64
+
+type MapInt64ToMutableInt64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt64ToMutableInt64) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapInt64ToMutableInt64) GetInt64(key int64) wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.Int64ToBytes(key)))
+}
+
+type MutableInt64Map = MapInt64ToMutableInt64
+
+type MapInt32ToImmutableLocation struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToImmutableLocation) GetLocation(key int32) ImmutableLocation {
+	return ImmutableLocation{proxy: m.proxy.Key(wasmtypes.Int32ToBytes(key))}
+}
+
+type ImmutableLongitude = MapInt32ToImmutableLocation
+
+type MapInt32ToMutableLocation struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToMutableLocation) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapInt32ToMutableLocation) GetLocation(key int32) MutableLocation {
+	return MutableLocation{proxy: m.proxy.Key(wasmtypes.Int32ToBytes(key))}
+}
+
+type MutableLongitude = MapInt32ToMutableLocation
+
+type ArrayOfImmutableRequestID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableRequestID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableRequestID) GetRequestID(index uint32) wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(a.proxy.Index(index))
+}
+
+type ImmutableRequestIDArray = ArrayOfImmutableRequestID
+
+type ArrayOfMutableRequestID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableRequestID) AppendRequestID() wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(a.proxy.Append())
+}
+
+func (a ArrayOfMutableRequestID) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableRequestID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableRequestID) GetRequestID(index uint32) wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(a.proxy.Index(index))
+}
+
+type MutableRequestIDArray = ArrayOfMutableRequestID
+
+type MapRequestIDToImmutableRequestID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapRequestIDToImmutableRequestID) GetRequestID(key wasmtypes.ScRequestID) wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(m.proxy.Key(wasmtypes.RequestIDToBytes(key)))
+}
+
+type ImmutableRequestIDMap = MapRequestIDToImmutableRequestID
+
+type MapRequestIDToMutableRequestID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapRequestIDToMutableRequestID) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapRequestIDToMutableRequestID) GetRequestID(key wasmtypes.ScRequestID) wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(m.proxy.Key(wasmtypes.RequestIDToBytes(key)))
+}
+
+type MutableRequestIDMap = MapRequestIDToMutableRequestID
+
 type ArrayOfImmutableString struct {
 	proxy wasmtypes.Proxy
 }
@@ -68,3 +692,63 @@ func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableStrin
 }
 
 type MutableStringMap = MapStringToMutableString
+
+type ArrayOfImmutableUint64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableUint64) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableUint64) GetUint64(index uint32) wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(a.proxy.Index(index))
+}
+
+type ImmutableUint64Array = ArrayOfImmutableUint64
+
+type ArrayOfMutableUint64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableUint64) AppendUint64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(a.proxy.Append())
+}
+
+func (a ArrayOfMutableUint64) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableUint64) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableUint64) GetUint64(index uint32) wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(a.proxy.Index(index))
+}
+
+type MutableUint64Array = ArrayOfMutableUint64
+
+type MapUint64ToImmutableUint64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapUint64ToImmutableUint64) GetUint64(key uint64) wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.Uint64ToBytes(key)))
+}
+
+type ImmutableUint64Map = MapUint64ToImmutableUint64
+
+type MapUint64ToMutableUint64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapUint64ToMutableUint64) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapUint64ToMutableUint64) GetUint64(key uint64) wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.Uint64ToBytes(key)))
+}
+
+type MutableUint64Map = MapUint64ToMutableUint64

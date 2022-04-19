@@ -9,6 +9,78 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
+type ArrayOfImmutableAddressArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableAddressArray) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableAddressArray) GetAddressArray(index uint32) ImmutableAddressArray {
+	return ImmutableAddressArray{proxy: a.proxy.Index(index)}
+}
+
+type MapAddressToImmutableAddressArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToImmutableAddressArray) GetAddressArray(key wasmtypes.ScAddress) ImmutableAddressArray {
+	return ImmutableAddressArray{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
+}
+
+type ArrayOfImmutableAddressMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableAddressMap) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableAddressMap) GetAddressMap(index uint32) ImmutableAddressMap {
+	return ImmutableAddressMap{proxy: a.proxy.Index(index)}
+}
+
+type MapAddressToImmutableAddressMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToImmutableAddressMap) GetAddressMap(key wasmtypes.ScAddress) ImmutableAddressMap {
+	return ImmutableAddressMap{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
+}
+
+type MapInt32ToImmutableLongitude struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToImmutableLongitude) GetLongitude(key int32) ImmutableLongitude {
+	return ImmutableLongitude{proxy: m.proxy.Key(wasmtypes.Int32ToBytes(key))}
+}
+
+type ArrayOfImmutableStringArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableStringArray) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableStringArray) GetStringArray(index uint32) ImmutableStringArray {
+	return ImmutableStringArray{proxy: a.proxy.Index(index)}
+}
+
+type ArrayOfImmutableStringMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableStringMap) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableStringMap) GetStringMap(index uint32) ImmutableStringMap {
+	return ImmutableStringMap{proxy: a.proxy.Index(index)}
+}
+
 type MapStringToImmutableStringArray struct {
 	proxy wasmtypes.Proxy
 }
@@ -29,16 +101,160 @@ type ImmutableTestWasmLibState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestWasmLibState) Arrays() MapStringToImmutableStringArray {
-	return MapStringToImmutableStringArray{proxy: s.proxy.Root(StateArrays)}
+func (s ImmutableTestWasmLibState) AddressArrayArrays() ArrayOfImmutableAddressArray {
+	return ArrayOfImmutableAddressArray{proxy: s.proxy.Root(StateAddressArrayArrays)}
 }
 
-func (s ImmutableTestWasmLibState) Maps() MapStringToImmutableStringMap {
-	return MapStringToImmutableStringMap{proxy: s.proxy.Root(StateMaps)}
+func (s ImmutableTestWasmLibState) AddressArrays() MapAddressToImmutableAddressArray {
+	return MapAddressToImmutableAddressArray{proxy: s.proxy.Root(StateAddressArrays)}
+}
+
+func (s ImmutableTestWasmLibState) AddressMapArrays() ArrayOfImmutableAddressMap {
+	return ArrayOfImmutableAddressMap{proxy: s.proxy.Root(StateAddressMapArrays)}
+}
+
+func (s ImmutableTestWasmLibState) AddressMaps() MapAddressToImmutableAddressMap {
+	return MapAddressToImmutableAddressMap{proxy: s.proxy.Root(StateAddressMaps)}
+}
+
+func (s ImmutableTestWasmLibState) LatLong() MapInt32ToImmutableLongitude {
+	return MapInt32ToImmutableLongitude{proxy: s.proxy.Root(StateLatLong)}
 }
 
 func (s ImmutableTestWasmLibState) Random() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateRandom))
+}
+
+func (s ImmutableTestWasmLibState) StringArrayOfArrays() ArrayOfImmutableStringArray {
+	return ArrayOfImmutableStringArray{proxy: s.proxy.Root(StateStringArrayOfArrays)}
+}
+
+func (s ImmutableTestWasmLibState) StringArrayOfMaps() ArrayOfImmutableStringMap {
+	return ArrayOfImmutableStringMap{proxy: s.proxy.Root(StateStringArrayOfMaps)}
+}
+
+func (s ImmutableTestWasmLibState) StringMapOfArrays() MapStringToImmutableStringArray {
+	return MapStringToImmutableStringArray{proxy: s.proxy.Root(StateStringMapOfArrays)}
+}
+
+func (s ImmutableTestWasmLibState) StringMapOfMaps() MapStringToImmutableStringMap {
+	return MapStringToImmutableStringMap{proxy: s.proxy.Root(StateStringMapOfMaps)}
+}
+
+type ArrayOfMutableAddressArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableAddressArray) AppendAddressArray() MutableAddressArray {
+	return MutableAddressArray{proxy: a.proxy.Append()}
+}
+
+func (a ArrayOfMutableAddressArray) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableAddressArray) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableAddressArray) GetAddressArray(index uint32) MutableAddressArray {
+	return MutableAddressArray{proxy: a.proxy.Index(index)}
+}
+
+type MapAddressToMutableAddressArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToMutableAddressArray) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapAddressToMutableAddressArray) GetAddressArray(key wasmtypes.ScAddress) MutableAddressArray {
+	return MutableAddressArray{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
+}
+
+type ArrayOfMutableAddressMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableAddressMap) AppendAddressMap() MutableAddressMap {
+	return MutableAddressMap{proxy: a.proxy.Append()}
+}
+
+func (a ArrayOfMutableAddressMap) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableAddressMap) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableAddressMap) GetAddressMap(index uint32) MutableAddressMap {
+	return MutableAddressMap{proxy: a.proxy.Index(index)}
+}
+
+type MapAddressToMutableAddressMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapAddressToMutableAddressMap) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapAddressToMutableAddressMap) GetAddressMap(key wasmtypes.ScAddress) MutableAddressMap {
+	return MutableAddressMap{proxy: m.proxy.Key(wasmtypes.AddressToBytes(key))}
+}
+
+type MapInt32ToMutableLongitude struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapInt32ToMutableLongitude) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapInt32ToMutableLongitude) GetLongitude(key int32) MutableLongitude {
+	return MutableLongitude{proxy: m.proxy.Key(wasmtypes.Int32ToBytes(key))}
+}
+
+type ArrayOfMutableStringArray struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableStringArray) AppendStringArray() MutableStringArray {
+	return MutableStringArray{proxy: a.proxy.Append()}
+}
+
+func (a ArrayOfMutableStringArray) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableStringArray) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableStringArray) GetStringArray(index uint32) MutableStringArray {
+	return MutableStringArray{proxy: a.proxy.Index(index)}
+}
+
+type ArrayOfMutableStringMap struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableStringMap) AppendStringMap() MutableStringMap {
+	return MutableStringMap{proxy: a.proxy.Append()}
+}
+
+func (a ArrayOfMutableStringMap) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableStringMap) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableStringMap) GetStringMap(index uint32) MutableStringMap {
+	return MutableStringMap{proxy: a.proxy.Index(index)}
 }
 
 type MapStringToMutableStringArray struct {
@@ -73,14 +289,42 @@ func (s MutableTestWasmLibState) AsImmutable() ImmutableTestWasmLibState {
 	return ImmutableTestWasmLibState(s)
 }
 
-func (s MutableTestWasmLibState) Arrays() MapStringToMutableStringArray {
-	return MapStringToMutableStringArray{proxy: s.proxy.Root(StateArrays)}
+func (s MutableTestWasmLibState) AddressArrayArrays() ArrayOfMutableAddressArray {
+	return ArrayOfMutableAddressArray{proxy: s.proxy.Root(StateAddressArrayArrays)}
 }
 
-func (s MutableTestWasmLibState) Maps() MapStringToMutableStringMap {
-	return MapStringToMutableStringMap{proxy: s.proxy.Root(StateMaps)}
+func (s MutableTestWasmLibState) AddressArrays() MapAddressToMutableAddressArray {
+	return MapAddressToMutableAddressArray{proxy: s.proxy.Root(StateAddressArrays)}
+}
+
+func (s MutableTestWasmLibState) AddressMapArrays() ArrayOfMutableAddressMap {
+	return ArrayOfMutableAddressMap{proxy: s.proxy.Root(StateAddressMapArrays)}
+}
+
+func (s MutableTestWasmLibState) AddressMaps() MapAddressToMutableAddressMap {
+	return MapAddressToMutableAddressMap{proxy: s.proxy.Root(StateAddressMaps)}
+}
+
+func (s MutableTestWasmLibState) LatLong() MapInt32ToMutableLongitude {
+	return MapInt32ToMutableLongitude{proxy: s.proxy.Root(StateLatLong)}
 }
 
 func (s MutableTestWasmLibState) Random() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateRandom))
+}
+
+func (s MutableTestWasmLibState) StringArrayOfArrays() ArrayOfMutableStringArray {
+	return ArrayOfMutableStringArray{proxy: s.proxy.Root(StateStringArrayOfArrays)}
+}
+
+func (s MutableTestWasmLibState) StringArrayOfMaps() ArrayOfMutableStringMap {
+	return ArrayOfMutableStringMap{proxy: s.proxy.Root(StateStringArrayOfMaps)}
+}
+
+func (s MutableTestWasmLibState) StringMapOfArrays() MapStringToMutableStringArray {
+	return MapStringToMutableStringArray{proxy: s.proxy.Root(StateStringMapOfArrays)}
+}
+
+func (s MutableTestWasmLibState) StringMapOfMaps() MapStringToMutableStringMap {
+	return MapStringToMutableStringMap{proxy: s.proxy.Root(StateStringMapOfMaps)}
 }

@@ -7,7 +7,9 @@
 
 package testwasmlibclient
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+)
 
 const (
 	ArgAddress     = "address"
