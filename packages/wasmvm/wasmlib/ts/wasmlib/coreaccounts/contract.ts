@@ -9,55 +9,70 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class DepositCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeposit);
+	func: wasmlib.ScFunc;
 	params: sc.MutableDepositParams = new sc.MutableDepositParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncDeposit);
+	}
 }
 
 export class HarvestCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHarvest);
+	func: wasmlib.ScFunc;
 	params: sc.MutableHarvestParams = new sc.MutableHarvestParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncHarvest);
+	}
 }
 
 export class WithdrawCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWithdraw);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncWithdraw);
+	}
 }
 
 export class AccountsCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAccounts);
+	func: wasmlib.ScView;
 	results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAccounts);
+	}
 }
 
 export class GetAccountNonceCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAccountNonce);
+	func: wasmlib.ScView;
 	params: sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableGetAccountNonceResults = new sc.ImmutableGetAccountNonceResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetAccountNonce);
+	}
 }
 
 export class ScFuncs {
-	static deposit(_ctx: wasmlib.ScFuncCallContext): DepositCall {
-		const f = new DepositCall();
+	static deposit(ctx: wasmlib.ScFuncCallContext): DepositCall {
+		const f = new DepositCall(ctx);
 		f.params = new sc.MutableDepositParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static harvest(_ctx: wasmlib.ScFuncCallContext): HarvestCall {
-		const f = new HarvestCall();
+	static harvest(ctx: wasmlib.ScFuncCallContext): HarvestCall {
+		const f = new HarvestCall(ctx);
 		f.params = new sc.MutableHarvestParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
-		return new WithdrawCall();
+	static withdraw(ctx: wasmlib.ScFuncCallContext): WithdrawCall {
+		return new WithdrawCall(ctx);
 	}
 
-	static accounts(_ctx: wasmlib.ScViewCallContext): AccountsCall {
-		const f = new AccountsCall();
+	static accounts(ctx: wasmlib.ScViewCallContext): AccountsCall {
+		const f = new AccountsCall(ctx);
 		f.results = new sc.ImmutableAccountsResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static getAccountNonce(_ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
-		const f = new GetAccountNonceCall();
+	static getAccountNonce(ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
+		const f = new GetAccountNonceCall(ctx);
 		f.params = new sc.MutableGetAccountNonceParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetAccountNonceResults(wasmlib.newCallResultsProxy(f.func));
 		return f;

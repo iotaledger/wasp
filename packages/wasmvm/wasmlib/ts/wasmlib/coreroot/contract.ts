@@ -9,59 +9,74 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class DeployContractCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeployContract);
+	func: wasmlib.ScFunc;
 	params: sc.MutableDeployContractParams = new sc.MutableDeployContractParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncDeployContract);
+	}
 }
 
 export class GrantDeployPermissionCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncGrantDeployPermission);
+	func: wasmlib.ScFunc;
 	params: sc.MutableGrantDeployPermissionParams = new sc.MutableGrantDeployPermissionParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncGrantDeployPermission);
+	}
 }
 
 export class RevokeDeployPermissionCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRevokeDeployPermission);
+	func: wasmlib.ScFunc;
 	params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncRevokeDeployPermission);
+	}
 }
 
 export class FindContractCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewFindContract);
+	func: wasmlib.ScView;
 	params: sc.MutableFindContractParams = new sc.MutableFindContractParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableFindContractResults = new sc.ImmutableFindContractResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewFindContract);
+	}
 }
 
 export class GetContractRecordsCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetContractRecords);
+	func: wasmlib.ScView;
 	results: sc.ImmutableGetContractRecordsResults = new sc.ImmutableGetContractRecordsResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetContractRecords);
+	}
 }
 
 export class ScFuncs {
-	static deployContract(_ctx: wasmlib.ScFuncCallContext): DeployContractCall {
-		const f = new DeployContractCall();
+	static deployContract(ctx: wasmlib.ScFuncCallContext): DeployContractCall {
+		const f = new DeployContractCall(ctx);
 		f.params = new sc.MutableDeployContractParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static grantDeployPermission(_ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
-		const f = new GrantDeployPermissionCall();
+	static grantDeployPermission(ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
+		const f = new GrantDeployPermissionCall(ctx);
 		f.params = new sc.MutableGrantDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static revokeDeployPermission(_ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
-		const f = new RevokeDeployPermissionCall();
+	static revokeDeployPermission(ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
+		const f = new RevokeDeployPermissionCall(ctx);
 		f.params = new sc.MutableRevokeDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static findContract(_ctx: wasmlib.ScViewCallContext): FindContractCall {
-		const f = new FindContractCall();
+	static findContract(ctx: wasmlib.ScViewCallContext): FindContractCall {
+		const f = new FindContractCall(ctx);
 		f.params = new sc.MutableFindContractParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableFindContractResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static getContractRecords(_ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
-		const f = new GetContractRecordsCall();
+	static getContractRecords(ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
+		const f = new GetContractRecordsCall(ctx);
 		f.results = new sc.ImmutableGetContractRecordsResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}

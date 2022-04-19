@@ -20,9 +20,12 @@ $#each func FuncNameForCall
 $#emit setupInitFunc
 
 export class $FuncName$+Call {
-	func: wasmlib.Sc$initFunc$Kind = new wasmlib.Sc$initFunc$Kind(sc.HScName, sc.H$Kind$FuncName);
+	func: wasmlib.Sc$initFunc$Kind;
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
+	public constructor(ctx: wasmlib.Sc$Kind$+CallContext) {
+		this.func = new wasmlib.Sc$initFunc$Kind(ctx, sc.HScName, sc.H$Kind$FuncName);
+	}
 }
 $#if core else FuncNameContext
 `,
@@ -75,13 +78,13 @@ $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
 $#each funcComment _funcComment
-	static $funcName(_ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
+	static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
 	}
 `,
 	// *******************************
 	"setPtrs": `
-		const f = new $FuncName$+Call();
+		const f = new $FuncName$+Call(ctx);
 $#if param initParams
 $#if result initResults
 		return f;
@@ -96,6 +99,6 @@ $#if result initResults
 `,
 	// *******************************
 	"noPtrs": `
-		return new $FuncName$+Call();
+		return new $FuncName$+Call(ctx);
 `,
 }

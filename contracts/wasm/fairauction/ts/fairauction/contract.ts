@@ -9,8 +9,11 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class FinalizeAuctionCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncFinalizeAuction);
+	func: wasmlib.ScFunc;
 	params: sc.MutableFinalizeAuctionParams = new sc.MutableFinalizeAuctionParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncFinalizeAuction);
+	}
 }
 
 export class FinalizeAuctionContext {
@@ -19,8 +22,11 @@ export class FinalizeAuctionContext {
 }
 
 export class PlaceBidCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPlaceBid);
+	func: wasmlib.ScFunc;
 	params: sc.MutablePlaceBidParams = new sc.MutablePlaceBidParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncPlaceBid);
+	}
 }
 
 export class PlaceBidContext {
@@ -29,8 +35,11 @@ export class PlaceBidContext {
 }
 
 export class SetOwnerMarginCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetOwnerMargin);
+	func: wasmlib.ScFunc;
 	params: sc.MutableSetOwnerMarginParams = new sc.MutableSetOwnerMarginParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetOwnerMargin);
+	}
 }
 
 export class SetOwnerMarginContext {
@@ -39,8 +48,11 @@ export class SetOwnerMarginContext {
 }
 
 export class StartAuctionCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStartAuction);
+	func: wasmlib.ScFunc;
 	params: sc.MutableStartAuctionParams = new sc.MutableStartAuctionParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStartAuction);
+	}
 }
 
 export class StartAuctionContext {
@@ -49,9 +61,12 @@ export class StartAuctionContext {
 }
 
 export class GetInfoCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetInfo);
+	func: wasmlib.ScView;
 	params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableGetInfoResults = new sc.ImmutableGetInfoResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetInfo);
+	}
 }
 
 export class GetInfoContext {
@@ -61,32 +76,32 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-	static finalizeAuction(_ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
-		const f = new FinalizeAuctionCall();
+	static finalizeAuction(ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
+		const f = new FinalizeAuctionCall(ctx);
 		f.params = new sc.MutableFinalizeAuctionParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static placeBid(_ctx: wasmlib.ScFuncCallContext): PlaceBidCall {
-		const f = new PlaceBidCall();
+	static placeBid(ctx: wasmlib.ScFuncCallContext): PlaceBidCall {
+		const f = new PlaceBidCall(ctx);
 		f.params = new sc.MutablePlaceBidParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static setOwnerMargin(_ctx: wasmlib.ScFuncCallContext): SetOwnerMarginCall {
-		const f = new SetOwnerMarginCall();
+	static setOwnerMargin(ctx: wasmlib.ScFuncCallContext): SetOwnerMarginCall {
+		const f = new SetOwnerMarginCall(ctx);
 		f.params = new sc.MutableSetOwnerMarginParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static startAuction(_ctx: wasmlib.ScFuncCallContext): StartAuctionCall {
-		const f = new StartAuctionCall();
+	static startAuction(ctx: wasmlib.ScFuncCallContext): StartAuctionCall {
+		const f = new StartAuctionCall(ctx);
 		f.params = new sc.MutableStartAuctionParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
-		const f = new GetInfoCall();
+	static getInfo(ctx: wasmlib.ScViewCallContext): GetInfoCall {
+		const f = new GetInfoCall(ctx);
 		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetInfoResults(wasmlib.newCallResultsProxy(f.func));
 		return f;

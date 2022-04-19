@@ -103,7 +103,7 @@ export class ScSandbox {
     }
 
     // retrieve the chain id of the chain this contract lives on
-    public chainID(): wasmtypes.ScChainID {
+    public currentChainID(): wasmtypes.ScChainID {
         return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null));
     }
 
