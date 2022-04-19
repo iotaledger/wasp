@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:unused
 func seedToAddress(mySeed string, index uint64) wasmtypes.ScAddress {
 	seedBytes, err := base58.Decode(mySeed)
 	if err != nil {
