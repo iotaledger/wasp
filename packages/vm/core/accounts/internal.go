@@ -277,7 +277,11 @@ func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
 
 func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) iscp.NFT {
 	nftMap := getNFTStateR(state)
-	nft, err := iscp.NFTFromBytes(nftMap.MustGetAt(id[:]))
+	nftBytes := nftMap.MustGetAt(id[:])
+	if len(nftBytes) == 0 {
+		panic(ErrNFTIDNotFound.Create(id))
+	}
+	nft, err := iscp.NFTFromBytes(nftBytes)
 	if err != nil {
 		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
 	}
