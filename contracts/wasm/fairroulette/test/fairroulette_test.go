@@ -31,13 +31,8 @@ func TestBets(t *testing.T) {
 		placeBet.Func.TransferIotas(1234).Post()
 		require.NoError(t, ctx.Err)
 	}
-	// TODO this should be a simple 1 request to wait for, but sometimes
-	// the payout will have already been triggered (bug), so instead of
-	// waiting for that single payout request we will (erroneously) wait
-	// for the inbuf and outbuf counts to equalize
-	info := ctx.Chain.MempoolInfo()
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(1201 * time.Second)
-	require.True(t, ctx.WaitForPendingRequests(-info.InBufCounter))
+	require.True(t, ctx.WaitForPendingRequests(1))
 }
