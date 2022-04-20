@@ -17,6 +17,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -26,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -49,13 +51,23 @@ type Cluster struct {
 }
 
 func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
+	var lg *logger.Logger
+	if t != nil {
+		lg = testlogger.NewLogger(t)
+	} else {
+		// when cluster tool is being used outside tests
+		if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+			panic(err)
+		}
+		lg = logger.NewLogger("cluster-tool")
+	}
 	return &Cluster{
 		Name:             name,
 		Config:           config,
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), testlogger.NewLogger(t)),
+		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), lg),
 	}
 }
 
@@ -164,7 +176,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	committeePubKeys := make([]string, 0)
+	committeePubKeys := make([]string, len(committeeNodes))
 	for _, i := range chain.CommitteeNodes {
 		peeringNode, err := clu.WaspClient(i).GetPeeringSelf()
 		if err != nil {
@@ -198,7 +210,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	//
 	// Register all nodes as access nodes.
 	// TODO make this configurable (so that only selected nodes are access nodes)
-	addAccessNodesRequests := make([]*iotago.Transaction, len(chain.CommitteeAPIHosts()))
+	addAccessNodesRequests := make([]*iotago.Transaction, len(nodes))
 	for i, a := range nodes {
 		tx, err := clu.AddAccessNode(a, chain)
 		if err != nil {

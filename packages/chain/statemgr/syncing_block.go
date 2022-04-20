@@ -124,10 +124,10 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
-		if candidateExisting.getApprovingOutputID() != block.ApprovingOutputID() {
+		if !candidateExisting.getApprovingOutputID().Equals(block.ApprovingOutputID()) {
 			delete(sync.blockCandidates, hash)
 			syncsT.log.Debugf("addBlockCandidate: conflicting block index %v with hash %v arrived: prsent approvingOutputID %v, new block approvingOutputID: %v",
-				stateIndex, hash.String(), candidateExisting.getApprovingOutputID(), iscp.OID(block.ApprovingOutputID()))
+				stateIndex, hash.String(), iscp.OID(candidateExisting.getApprovingOutputID()), iscp.OID(block.ApprovingOutputID()))
 			return false, nil
 		}
 		candidateExisting.addVote()

@@ -135,7 +135,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", iscp.OID(block.ApprovingOutputID()))
-		sm.nodeConn.PullOutputByID(block.ApprovingOutputID())
+		sm.nodeConn.PullStateOutputByID(block.ApprovingOutputID())
 	}
 	return true
 }
