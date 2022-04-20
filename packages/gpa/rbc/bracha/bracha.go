@@ -19,7 +19,6 @@ package bracha
 import (
 	"math"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"golang.org/x/xerrors"
@@ -32,6 +31,7 @@ type rbc struct {
 	broadcaster gpa.NodeID
 	peers       []gpa.NodeID
 	predicate   func([]byte) bool
+	pendingMsgs []gpa.Message // Messages that don't satisfy the predicate.
 	initialSent bool
 	values      map[hashing.HashValue][]byte              // Map hashes to actual values.
 	echoSent    bool                                      // Have we sent the ECHO messages?
@@ -39,6 +39,17 @@ type rbc struct {
 	readySent   bool                                      // Have we sent the READY messages?
 	readyRecv   map[hashing.HashValue]map[gpa.NodeID]bool // Quorum counter for the READY messages.
 	output      hashing.HashValue
+}
+
+var _ gpa.GPA = &rbc{}
+
+// Update predicate for the RBC instance.
+func SendPredicateUpdate(rbc gpa.GPA, me gpa.NodeID, predicate func([]byte) bool) []gpa.Message {
+	return rbc.Message(MakePredicateUpdateMsg(me, predicate))
+}
+
+func MakePredicateUpdateMsg(me gpa.NodeID, predicate func([]byte) bool) gpa.Message {
+	return &msgPredicateUpdate{me: me, predicate: predicate}
 }
 
 func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([]byte) bool) gpa.GPA {
@@ -49,6 +60,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([
 		broadcaster: broadcaster,
 		peers:       peers,
 		predicate:   predicate,
+		pendingMsgs: []gpa.Message{},
 		values:      make(map[hashing.HashValue][]byte),
 		echoSent:    false,
 		echoRecv:    make(map[hashing.HashValue]map[gpa.NodeID]bool),
@@ -70,8 +82,8 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 	r.ensureValueStored(inputVal)
 	msgs := []gpa.Message{}
 	for i := range r.peers {
-		msgs = append(msgs, &message{
-			t: msgInitial,
+		msgs = append(msgs, &msgBracha{
+			t: msgBrachaTypeInitial,
 			s: r.me,
 			r: r.peers[i],
 			v: inputVal,
@@ -82,27 +94,37 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 }
 
 func (r *rbc) Message(msg gpa.Message) []gpa.Message {
-	m := msg.(*message)
-	switch m.t {
-	case msgInitial:
-		return r.handleInitial(m)
-	case msgEcho:
-		return r.handleEcho(m)
-	case msgReady:
-		return r.handleReady(m)
+	switch msgT := msg.(type) {
+	case *msgBracha:
+		switch msgT.t {
+		case msgBrachaTypeInitial:
+			return r.handleInitial(msgT)
+		case msgBrachaTypeEcho:
+			return r.handleEcho(msgT)
+		case msgBrachaTypeReady:
+			return r.handleReady(msgT)
+		default:
+			panic(xerrors.Errorf("unexpected message: %+v", msgT))
+		}
+	case *msgPredicateUpdate:
+		return r.handlePredicateUpdate(*msgT)
 	default:
-		panic(xerrors.Errorf("unexpected message: %+v", m))
+		panic(xerrors.Errorf("unexpected message: %+v", msg))
 	}
 }
 
-func (r *rbc) handleInitial(msg *message) []gpa.Message {
-	if r.echoSent || !r.predicate(msg.v) {
+func (r *rbc) handleInitial(msg *msgBracha) []gpa.Message {
+	if r.echoSent {
+		return []gpa.Message{}
+	}
+	if !r.predicate(msg.v) {
+		r.pendingMsgs = append(r.pendingMsgs, msg)
 		return []gpa.Message{}
 	}
 	msgs := []gpa.Message{}
 	for i := range r.peers {
-		msgs = append(msgs, &message{
-			t: msgEcho,
+		msgs = append(msgs, &msgBracha{
+			t: msgBrachaTypeEcho,
 			s: r.me,
 			r: r.peers[i],
 			v: msg.v,
@@ -112,7 +134,7 @@ func (r *rbc) handleInitial(msg *message) []gpa.Message {
 	return msgs
 }
 
-func (r *rbc) handleEcho(msg *message) []gpa.Message {
+func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
 	h := r.ensureValueStored(msg.v)
@@ -128,7 +150,7 @@ func (r *rbc) handleEcho(msg *message) []gpa.Message {
 	return []gpa.Message{}
 }
 
-func (r *rbc) handleReady(msg *message) []gpa.Message {
+func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
 	h := r.ensureValueStored(msg.v)
@@ -150,12 +172,19 @@ func (r *rbc) handleReady(msg *message) []gpa.Message {
 	return []gpa.Message{}
 }
 
+func (r *rbc) handlePredicateUpdate(msg msgPredicateUpdate) []gpa.Message {
+	r.predicate = msg.predicate
+	resendMsgs := r.pendingMsgs
+	r.pendingMsgs = []gpa.Message{}
+	return resendMsgs // The OwnHandler will resend them back.
+}
+
 func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
 	msgs := []gpa.Message{}
 	if !r.echoSent {
 		for i := range r.peers {
-			msgs = append(msgs, &message{
-				t: msgEcho,
+			msgs = append(msgs, &msgBracha{
+				t: msgBrachaTypeEcho,
 				s: r.me,
 				r: r.peers[i],
 				v: v,
@@ -165,8 +194,8 @@ func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
 	}
 	if !r.readySent {
 		for i := range r.peers {
-			msgs = append(msgs, &message{
-				t: msgReady,
+			msgs = append(msgs, &msgBracha{
+				t: msgBrachaTypeReady,
 				s: r.me,
 				r: r.peers[i],
 				v: v,
@@ -191,34 +220,4 @@ func (r *rbc) ensureValueStored(val []byte) hashing.HashValue {
 	}
 	r.values[h] = val
 	return h
-}
-
-//////////////////// message ////////////////////////////////////////////////
-
-const (
-	msgInitial byte = iota
-	msgEcho
-	msgReady
-)
-
-type message struct {
-	t byte       // Type
-	s gpa.NodeID // Sender
-	r gpa.NodeID // Recipient
-	v []byte     // Value
-}
-
-var _ gpa.Message = &message{}
-
-func (m *message) Recipient() gpa.NodeID {
-	return m.r
-}
-
-func (m *message) MarshalBinary() ([]byte, error) {
-	return serializer.NewSerializer().
-		WriteByte(m.t, func(err error) error { return xerrors.Errorf("unable to serialize t: %w", err) }).
-		WriteString(string(m.s), serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize s: %w", err) }).
-		WriteString(string(m.r), serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize r: %w", err) }).
-		WriteVariableByteSlice(m.v, serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize v: %w", err) }).
-		Serialize()
 }
