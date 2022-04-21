@@ -48,18 +48,27 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	}
 	proc.vm = proc.wasmVM()
 
-	// Run setup on main processor, because we will be sharing stuff with the sub-processors
-	err := proc.vm.LinkHost(proc)
+	// load wasm code into a VM Module
+	err := proc.vm.LoadWasm(wasmBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// provide the linker with the sandbox interface
+	err = proc.vm.LinkHost()
 	if err != nil {
 		return nil, err
 	}
 
 	proc.scContext = NewWasmContext("", proc)
 	Connect(proc.scContext)
-	err = proc.vm.LoadWasm(wasmBytes)
+
+	// instantiate a new Wasm instance
+	err = proc.vm.Instantiate(proc)
 	if err != nil {
 		return nil, err
 	}
+
 	proc.vm.GasBudget(1_000_000)
 	proc.vm.GasDisable(true)
 	err = proc.vm.RunFunction("on_load")
@@ -111,14 +120,10 @@ func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
 		vm:            vmInstance,
 		wasmVM:        proc.wasmVM,
 	}
-	err := processor.vm.LinkHost(processor)
-	if err != nil {
-		panic("cannot link: " + err.Error())
-	}
 
 	processor.scContext = NewWasmContext("", processor)
 	Connect(processor.scContext)
-	err = processor.vm.Instantiate()
+	err := processor.vm.Instantiate(processor)
 	if err != nil {
 		panic("cannot instantiate: " + err.Error())
 	}

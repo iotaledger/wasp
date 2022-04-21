@@ -40,9 +40,9 @@ type WasmVM interface {
 	GasBudget(budget uint64)
 	GasBurned() uint64
 	GasDisable(disable bool)
-	Instantiate() error
+	Instantiate(proc *WasmProcessor) error
 	Interrupt()
-	LinkHost(proc *WasmProcessor) error
+	LinkHost() error
 	LoadWasm(wasmData []byte) error
 	NewInstance() WasmVM
 	RunFunction(functionName string, args ...interface{}) error
@@ -84,7 +84,8 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 	defer vm.wrapUp()
 
 	// crude implementation assumes texts to only use ASCII part of UTF-16
-	impl := vm.proc.vm
+	ctx := vm.getContext(0)
+	impl := ctx.proc.vm
 
 	// null-terminated UTF-16 error message
 	str1 := make([]byte, 0)
@@ -111,7 +112,7 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 
 	ctx := vm.getContext(0)
 	ctx.log().Debugf("HostFdWrite(...)")
-	impl := vm.proc.vm
+	impl := ctx.proc.vm
 
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := impl.VMGetBytes(iovs, 8)
@@ -133,7 +134,7 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	defer vm.wrapUp()
 
 	ctx := vm.getContext(0)
-	impl := vm.proc.vm
+	impl := ctx.proc.vm
 
 	// only check for existence ?
 	if valLen < 0 {
@@ -169,7 +170,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	defer vm.wrapUp()
 
 	ctx := vm.getContext(0)
-	impl := vm.proc.vm
+	impl := ctx.proc.vm
 
 	// export name?
 	if keyRef == 0 {
@@ -199,16 +200,13 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	ctx.StateSet(key, value)
 }
 
-func (vm *WasmVMBase) Instantiate() error {
+func (vm *WasmVMBase) Instantiate(proc *WasmProcessor) error {
 	return errors.New("cannot be cloned")
 }
 
-func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
+func (vm *WasmVMBase) LinkHost() error {
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
-	vm.timeoutStarted = DisableWasmTimeout
-
-	vm.proc = proc
 	return nil
 }
 
@@ -216,7 +214,7 @@ func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 func (vm *WasmVMBase) reportGasBurned() {
 	if !vm.gasDisabled {
 		ctx := vm.proc.GetContext(0)
-		ctx.GasBurned(vm.proc.vm.GasBurned() / vm.proc.gasFactor())
+		ctx.GasBurned(ctx.proc.vm.GasBurned() / ctx.proc.mainProc().gasFactor())
 	}
 }
 
@@ -314,7 +312,7 @@ func (vm *WasmVMBase) wrapUp() {
 		if !vm.gasDisabled {
 			// update VM gas budget to reflect what sandbox burned
 			ctx := vm.getContext(0)
-			vm.proc.vm.GasBudget(ctx.GasBudget() * vm.proc.gasFactor())
+			ctx.proc.vm.GasBudget(ctx.GasBudget() * ctx.proc.mainProc().gasFactor())
 		}
 		return
 	}

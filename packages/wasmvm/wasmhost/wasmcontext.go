@@ -68,7 +68,7 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 	defer func() {
 		Connect(wcSaved)
 		// clean up context after use
-		wc.proc.KillContext(wc.id)
+		wc.proc.mainProc().KillContext(wc.id)
 	}()
 
 	if wc.funcName == "" {
@@ -94,16 +94,17 @@ func (wc *WasmContext) callFunction() error {
 	wc.proc.instanceLock.Lock()
 	defer wc.proc.instanceLock.Unlock()
 
-	saveID := wc.proc.currentContextID
-	wc.proc.currentContextID = wc.id
+	mainProc := wc.proc.mainProc()
+	saveID := mainProc.currentContextID
+	mainProc.currentContextID = wc.id
 	wc.gasBudget = wc.GasBudget()
-	wc.proc.vm.GasBudget(wc.gasBudget * wc.proc.gasFactor())
+	wc.proc.vm.GasBudget(wc.gasBudget * mainProc.gasFactor())
 	err := wc.proc.RunScFunction(wc.funcName)
 	// if err == nil {
-	wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
+	wc.GasBurned(wc.proc.vm.GasBurned() / mainProc.gasFactor())
 	//}
 	wc.gasBurned = wc.gasBudget - wc.GasBudget()
-	wc.proc.currentContextID = saveID
+	mainProc.currentContextID = saveID
 	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
