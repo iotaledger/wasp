@@ -58,7 +58,7 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		return nil, err
 	}
 
-	wc := NewWasmContext("", proc)
+	wc := NewWasmContext("", proc, proc.vm)
 	Connect(wc)
 	proc.contexts[wc.id] = wc
 
@@ -68,11 +68,11 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		return nil, err
 	}
 
-	proc.vm.GasBudget(1_000_000)
-	proc.vm.GasDisable(true)
-	err = proc.vm.RunFunction("on_load")
-	proc.vm.GasDisable(false)
-	burned := proc.vm.GasBurned()
+	wc.vm.GasBudget(1_000_000)
+	wc.vm.GasDisable(true)
+	err = wc.vm.RunFunction("on_load")
+	wc.vm.GasDisable(false)
+	burned := wc.vm.GasBurned()
 	_ = burned
 	if err != nil {
 		return nil, err
@@ -102,22 +102,6 @@ func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntry
 		return nil, false
 	}
 	return proc.wasmContext(function), true
-}
-
-func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
-	processor := &WasmProcessor{
-		log:           proc.log,
-		mainProcessor: proc,
-		vm:            vmInstance,
-	}
-
-	wc := NewWasmContext("", processor)
-	Connect(wc)
-	err := processor.vm.Instantiate(wc)
-	if err != nil {
-		panic("cannot instantiate: " + err.Error())
-	}
-	return processor
 }
 
 func (proc *WasmProcessor) IsView(function string) bool {
@@ -153,9 +137,20 @@ func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
 	processor := proc
 	vmInstance := proc.vm.NewInstance()
 	if vmInstance != nil {
-		processor = proc.getSubProcessor(vmInstance)
+		processor = &WasmProcessor{
+			log:           proc.log,
+			mainProcessor: proc,
+			vm:            vmInstance,
+		}
+
+		wc := NewWasmContext("", processor, vmInstance)
+		Connect(wc)
+		err := vmInstance.Instantiate(wc)
+		if err != nil {
+			panic("cannot instantiate: " + err.Error())
+		}
 	}
-	wc := NewWasmContext(function, processor)
+	wc := NewWasmContext(function, processor, processor.vm)
 
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()

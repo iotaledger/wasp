@@ -41,12 +41,12 @@ var (
 	_ wasmlib.ScHost             = &WasmContext{}
 )
 
-func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
+func NewWasmContext(function string, proc *WasmProcessor, vm WasmVM) *WasmContext {
 	return &WasmContext{
 		funcName:  function,
 		proc:      proc,
 		funcTable: proc.funcTable,
-		vm:        proc.vm,
+		vm:        vm,
 	}
 }
 
