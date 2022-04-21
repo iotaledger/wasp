@@ -9,7 +9,7 @@ import (
 // TODO temporary. Must take parameters from something global
 
 const (
-	saveRawBlocks          = true
+	saveRawBlocks          = false
 	saveRawBlocksDirectory = "blocks"
 )
 
