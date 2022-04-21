@@ -161,6 +161,7 @@ func (sm *stateManager) initLoadState() {
 		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return
 	}
+	sm.setRawBlocksOptions()
 	sm.recvLoop() // Check to process external events.
 }
 
