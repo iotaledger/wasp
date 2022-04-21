@@ -60,6 +60,9 @@ const (
 
 	WALEnabled   = "wal.enabled"
 	WALDirectory = "wal.directory"
+
+	RawBlocksEnabled = "debug.rawblocksEnabled"
+	RawBlocksDir     = "debug.rawblocksDirectory"
 )
 
 func Init() *configuration.Configuration {
@@ -112,6 +115,9 @@ func Init() *configuration.Configuration {
 
 	flag.Bool(WALEnabled, true, "enabled wal")
 	flag.String(WALDirectory, "wal", "path to logs folder")
+
+	flag.Bool(RawBlocksEnabled, false, "enable raw blocks to be written to disk on a separate dir")
+	flag.String(RawBlocksDir, "blocks", "path to the directory where the blocks should be written to")
 
 	return all
 }
