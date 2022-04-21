@@ -122,6 +122,10 @@ func Init() *configuration.Configuration {
 	return all
 }
 
+func IsLoaded() bool {
+	return all != nil
+}
+
 func GetBool(name string) bool {
 	return all.Bool(name)
 }

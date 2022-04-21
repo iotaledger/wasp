@@ -9,7 +9,8 @@ import (
 )
 
 func (sm *stateManager) setRawBlocksOptions() {
-	if !parameters.GetBool(parameters.RawBlocksEnabled) {
+	// parameters are not loaded in the context of unit tests
+	if !parameters.IsLoaded() || !parameters.GetBool(parameters.RawBlocksEnabled) {
 		return
 	}
 	dir := path.Join(parameters.GetString(parameters.RawBlocksDir), sm.chain.ID().String())
