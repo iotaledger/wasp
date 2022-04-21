@@ -73,15 +73,19 @@ func TestBlockDeterminism(t *testing.T) {
 		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieNodeStore()))
 
 		commits := make([]int, 0)
+		blockToSave := make([]Block, 0, len(blocks))
 		for i, blk := range blocks {
 			err = vs.ApplyBlock(blk)
 			require.NoError(t, err)
+			blockToSave = append(blockToSave, blk)
+
 			if saveYN(uint16(i)) {
 				commits = append(commits, i)
-				err = vs.Save(blk)
+				err = vs.Save(blockToSave...)
 				require.NoError(t, err)
 
 				require.True(t, trie.EqualCommitments(stateCommitments[i], trie.RootCommitment(vs.TrieNodeStore())))
+				blockToSave = blockToSave[:0]
 			}
 		}
 		err = vs.Save()
