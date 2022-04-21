@@ -31,6 +31,7 @@ type VirtualStateAccess interface {
 	KVStore() *buffered.BufferedKVStoreAccess
 	Copy() VirtualStateAccess
 	DangerouslyConvertToString() string
+	WithOnBlockSave(fun OnBlockSaveClosure)
 }
 
 type OptimisticStateReader interface {
@@ -60,3 +61,5 @@ type Block interface {
 	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
 }
+
+type OnBlockSaveClosure func(stateCommitment trie.VCommitment, block Block)
