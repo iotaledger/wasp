@@ -26,6 +26,8 @@ type virtualStateAccess struct {
 	db   kvstore.KVStore
 	kvs  *buffered.BufferedKVStoreAccess
 	trie *trie.Trie
+	// onBlockSave (if != nil) is called each time block is saved to the db with the state
+	onBlockSave OnBlockSaveClosure
 }
 
 var (
@@ -81,11 +83,16 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 	return db.WithRealm(append(db.Realm(), realm...))
 }
 
+func (vs *virtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {
+	vs.onBlockSave = fun
+}
+
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
-		db:   vs.db,
-		kvs:  vs.kvs.Copy(),
-		trie: vs.trie.Clone(),
+		db:          vs.db,
+		kvs:         vs.kvs.Copy(),
+		trie:        vs.trie.Clone(),
+		onBlockSave: vs.onBlockSave,
 	}
 	return ret
 }

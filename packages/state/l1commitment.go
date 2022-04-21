@@ -10,6 +10,7 @@ import (
 // L1Commitment represents the parsed data stored as a metadata in the anchor output
 type L1Commitment struct {
 	Commitment trie.VCommitment
+	// TODO add block hash here
 }
 
 func NewL1Commitment(c trie.VCommitment) *L1Commitment {
