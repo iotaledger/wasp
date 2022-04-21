@@ -54,6 +54,15 @@ import (
 	"golang.org/x/xerrors"
 )
 
+type Output struct {
+	Indexes  []int           // Intexes used to construct the final key.
+	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
+}
+
+type AgreementResult struct {
+	Indexes []int
+}
+
 type adkgImpl struct {
 	suite   suites.Suite
 	n       int
@@ -61,9 +70,12 @@ type adkgImpl struct {
 	me      gpa.NodeID
 	myIdx   int
 	nodeIDs []gpa.NodeID
+	aggrExt bool // Should we delegate the agreement on share set to the user?
 	acss    []gpa.GPA
 	rbcs    []gpa.GPA
 	st      map[int]*share.PriShare // > Let Si = {}; Ti = {}
+	agreedT []int                   // > T = T ∪ Tⱼ
+	output  *Output                 // Output of the ADKG, can be intermediate, if aggrExt==true.
 	log     *logger.Logger
 }
 
@@ -71,17 +83,21 @@ var _ gpa.GPA = &adkgImpl{}
 
 func New(
 	suite suites.Suite,
-	peers []gpa.NodeID,
+	nodeIDs []gpa.NodeID,
 	peerPKs map[gpa.NodeID]kyber.Point,
+	aggrExt bool, // Should we use external agreement?
 	f int,
 	me gpa.NodeID,
 	mySK kyber.Scalar,
 	log *logger.Logger,
 ) gpa.GPA {
-	n := len(peers)
+	if !aggrExt {
+		panic(xerrors.Errorf("internal agreement not implemented yet")) // TODO: Implement it.
+	}
+	n := len(nodeIDs)
 	myIdx := -1
-	for i := range peers {
-		if peers[i] == me {
+	for i := range nodeIDs {
+		if nodeIDs[i] == me {
 			myIdx = i
 		}
 	}
@@ -94,19 +110,21 @@ func New(
 		f:       f,
 		me:      me,
 		myIdx:   myIdx,
-		nodeIDs: peers,
+		nodeIDs: nodeIDs,
+		aggrExt: aggrExt,
 		acss:    nil,                       // Will be set bellow.
 		rbcs:    nil,                       // Will be set bellow.
 		st:      map[int]*share.PriShare{}, // > Let Si = {}; Ti = {}
+		output:  nil,
 		log:     log,
 	}
-	a.acss = make([]gpa.GPA, len(peers))
+	a.acss = make([]gpa.GPA, len(nodeIDs))
 	for i := range a.acss {
-		a.acss[i] = acss.New(suite, peers, peerPKs, f, me, mySK, peers[i], nil, log)
+		a.acss[i] = acss.New(suite, nodeIDs, peerPKs, f, me, mySK, nodeIDs[i], nil, log)
 	}
-	a.rbcs = make([]gpa.GPA, len(peers))
+	a.rbcs = make([]gpa.GPA, len(nodeIDs))
 	for i := range a.rbcs {
-		a.rbcs[i] = rbc.New(peers, f, me, peers[i], a.rbcPredicate)
+		a.rbcs[i] = rbc.New(nodeIDs, f, me, nodeIDs[i], a.rbcPredicate)
 	}
 	return gpa.NewOwnHandler(me, a)
 }
@@ -126,10 +144,12 @@ func (a *adkgImpl) Message(msg gpa.Message) []gpa.Message {
 		case msgWrapperACSS:
 			return a.handleACSSMessage(msgT)
 		case msgWrapperRBC:
-			return WrapMessages(msgWrapperRBC, msgT.index, a.rbcs[msgT.index].Message(msgT.wrapped))
+			return a.handleRBCMessage(msgT)
 		}
 	case *msgACSSOutput:
 		return a.handleACSSOutput(msgT)
+	case *msgAgreementResult:
+		return a.handleAgreementResult(msgT)
 	default:
 		panic(xerrors.Errorf("unexpected message: %+v", msg))
 	}
@@ -137,7 +157,7 @@ func (a *adkgImpl) Message(msg gpa.Message) []gpa.Message {
 }
 
 func (a *adkgImpl) Output() gpa.Output {
-	return nil
+	return a.output
 }
 
 func (a *adkgImpl) handleACSSMessage(msg *msgWrapper) []gpa.Message {
@@ -167,7 +187,19 @@ func (a *adkgImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message {
 		return gpa.NoMessages()
 	}
 	a.st[j] = acssOutput.priShare
+	msgs := []gpa.Message{}
+	if len(a.st) >= a.f+1 {
+		msgs = append(msgs, a.tryInput1ToABA()...)
+		msgs = append(msgs, a.tryMakeFinalOutput()...)
+		//
+		// Update the predicates.
+		for i := range a.rbcs {
+			msgs = append(msgs, WrapMessage(msgWrapperRBC, i, rbc.MakePredicateUpdateMsg(a.me, a.rbcPredicate)))
+		}
+	}
 	if len(a.st) == a.f+1 {
+		//
+		// Provide input to our RBC.
 		t := make([]int, 0)
 		for ti := range a.st {
 			t = append(t, ti)
@@ -177,10 +209,106 @@ func (a *adkgImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message {
 		if err != nil {
 			panic(xerrors.Errorf("cannot serialize RBC payload: %v", err))
 		}
-		for i := range a.rbcs {
-			rbc.SendPredicateUpdate(a.rbcs[i], a.me, a.rbcPredicate)
+		msgs = append(msgs, WrapMessages(msgWrapperRBC, a.myIdx, a.rbcs[a.myIdx].Input(payloadBytes))...)
+	}
+	return msgs
+}
+
+func (a *adkgImpl) handleRBCMessage(msg *msgWrapper) []gpa.Message {
+	msgs := WrapMessages(msgWrapperRBC, msg.index, a.rbcs[msg.index].Message(msg.wrapped))
+	out := a.rbcs[msg.index].Output()
+	if out != nil {
+		// > on termination of RBCⱼ:
+		// >   when Tⱼ ⊆ Tᵢ:
+		// >     Input 1 to ABAⱼ
+		return append(msgs, a.tryInput1ToABA()...)
+	}
+	return msgs
+}
+
+// This event can happen because of the termination of all ABAs (if aggrExt==false)
+// or can be sent by the user (if aggrExt== true).
+//
+// > wait until all ABAs terminate
+// > z := sum(sⱼ for j in T)
+// > output z
+//
+// NOTE: Here we also have to wait for ACSS instances to terminate, whose indexes
+// are in the decided set of shares.
+//
+func (a *adkgImpl) handleAgreementResult(msg *msgAgreementResult) []gpa.Message {
+	if a.agreedT != nil {
+		return gpa.NoMessages()
+	}
+	a.agreedT = msg.indexes
+	return a.tryMakeFinalOutput()
+}
+
+// The following condition can become true upon reception of RBCⱼ output or
+// when Tᵢ increases. This function is called in both cases.
+//
+// > on termination of RBCⱼ:
+// >   when Tⱼ ⊆ Tᵢ:
+// >     Input 1 to ABAⱼ
+//
+func (a *adkgImpl) tryInput1ToABA() []gpa.Message { // TODO: Make the check more efficient. Will be called a lot.
+	for _, r := range a.rbcs {
+		ro := r.Output()
+		if ro == nil {
+			continue
 		}
-		return a.rbcs[a.myIdx].Input(payloadBytes)
+		roBytes, ok := ro.([]byte)
+		if !ok {
+			panic(xerrors.Errorf("unexpected RBC output: %+v", ro))
+		}
+		if a.rbcPredicate(roBytes) {
+			rbcPayload := &msgRBCPayload{}
+			if err := rbcPayload.UnmarshalBinary(roBytes); err != nil {
+				panic(xerrors.Errorf("cannot decode rbc payload: %v", err))
+			}
+			if a.aggrExt {
+				if a.output == nil {
+					//
+					// In this case we are returning an intermediate output for user
+					// to on the index set to use for the final secret share. I.e.
+					// An external consensus is assumed in this case.
+					//
+					a.output = &Output{
+						Indexes:  rbcPayload.t, // Take first RBC output as a chosen candidate.
+						PriShare: nil,          // That's intermediate result.
+					}
+				}
+				continue
+			}
+			panic(xerrors.Errorf("internal ABA not implemented yet")) // TODO: Input 1 to ABA.
+		}
+	}
+	return gpa.NoMessages()
+}
+
+// Final decision can be made when all the agreement is terminated (all ABAs terminated
+// or user supplied decision provided) or when the missing ACSS is terminated.
+//
+// > wait until all ABAs terminate
+// > z := sum(sⱼ for j in T)
+// > output z
+//
+// NOTE: Here we also have to wait for ACSS instances to terminate, whose indexes
+// are in the decided set of shares.
+func (a *adkgImpl) tryMakeFinalOutput() []gpa.Message {
+	if a.agreedT == nil {
+		return gpa.NoMessages()
+	}
+	sum := a.suite.Scalar().Zero()
+	for _, j := range a.agreedT {
+		if a.st[j] == nil {
+			return gpa.NoMessages()
+		}
+		sum.Add(sum.Clone(), a.st[j].V)
+	}
+	a.output = &Output{
+		Indexes:  a.agreedT,
+		PriShare: &share.PriShare{I: a.myIdx, V: sum},
 	}
 	return gpa.NoMessages()
 }

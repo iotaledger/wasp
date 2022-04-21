@@ -18,10 +18,14 @@ type msgWrapper struct {
 	wrapped   gpa.Message
 }
 
+func WrapMessage(subsystem msgWrapperSubsystem, index int, msg gpa.Message) gpa.Message {
+	return &msgWrapper{subsystem: subsystem, index: index, wrapped: msg}
+}
+
 func WrapMessages(subsystem msgWrapperSubsystem, index int, msgs []gpa.Message) []gpa.Message {
 	wrapped := make([]gpa.Message, len(msgs))
 	for i := range msgs {
-		wrapped[i] = &msgWrapper{subsystem: subsystem, index: index, wrapped: msgs[i]}
+		wrapped[i] = WrapMessage(subsystem, index, msgs[i])
 	}
 	return wrapped
 }
