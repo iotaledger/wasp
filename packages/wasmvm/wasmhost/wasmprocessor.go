@@ -21,9 +21,7 @@ type WasmProcessor struct {
 	log              *logger.Logger
 	mainProcessor    *WasmProcessor
 	nextContextID    int32
-	scContext        *WasmContext
 	vm               WasmVM
-	wasmVM           func() WasmVM
 }
 
 var _ iscp.VMProcessor = new(WasmProcessor)
@@ -37,16 +35,16 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		funcTable:  NewWasmFuncTable(),
 		gasFactorX: 1,
 		log:        log,
-		wasmVM:     NewWasmTimeVM,
 	}
 
 	// By default, we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
 	// This setting will also be propagated to all the sub-processors of this processor
+	wasmVM := NewWasmTimeVM
 	if GoWasmVM != nil {
-		proc.wasmVM = GoWasmVM
+		wasmVM = GoWasmVM
 		GoWasmVM = nil
 	}
-	proc.vm = proc.wasmVM()
+	proc.vm = wasmVM()
 
 	// load wasm code into a VM Module
 	err := proc.vm.LoadWasm(wasmBytes)
@@ -60,11 +58,12 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		return nil, err
 	}
 
-	proc.scContext = NewWasmContext("", proc)
-	Connect(proc.scContext)
+	wc := NewWasmContext("", proc)
+	Connect(wc)
+	proc.contexts[wc.id] = wc
 
 	// instantiate a new Wasm instance
-	err = proc.vm.Instantiate(proc)
+	err = proc.vm.Instantiate(wc)
 	if err != nil {
 		return nil, err
 	}
@@ -81,20 +80,12 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	return proc, nil
 }
 
-func (proc *WasmProcessor) GetContext(id int32) *WasmContext {
-	if id == 0 {
-		id = proc.currentContextID
-	}
-
-	if id == 0 {
-		return proc.scContext
-	}
-
+func (proc *WasmProcessor) GetContext() *WasmContext {
 	mainProcessor := proc.mainProc()
 	mainProcessor.contextLock.Lock()
 	defer mainProcessor.contextLock.Unlock()
 
-	return mainProcessor.contexts[id]
+	return mainProcessor.contexts[mainProcessor.currentContextID]
 }
 
 func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
@@ -118,12 +109,11 @@ func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
 		log:           proc.log,
 		mainProcessor: proc,
 		vm:            vmInstance,
-		wasmVM:        proc.wasmVM,
 	}
 
-	processor.scContext = NewWasmContext("", processor)
-	Connect(processor.scContext)
-	err := processor.vm.Instantiate(processor)
+	wc := NewWasmContext("", processor)
+	Connect(wc)
+	err := processor.vm.Instantiate(wc)
 	if err != nil {
 		panic("cannot instantiate: " + err.Error())
 	}

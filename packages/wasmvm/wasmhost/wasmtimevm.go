@@ -58,16 +58,17 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 	// consume 0 fuel to determine remaining budget
 	remainingBudget, err := vm.store.ConsumeFuel(0)
 	if err != nil {
-		vm.proc.log.Infof("GasBurned.determine: " + err.Error())
+		vm.wc.proc.log.Infof("GasBurned.determine: " + err.Error())
 	}
 
 	burned := vm.lastBudget - remainingBudget
 	return burned
 }
 
-func (vm *WasmTimeVM) Instantiate(proc *WasmProcessor) (err error) {
-	vm.proc = proc
+func (vm *WasmTimeVM) Instantiate(wc *WasmContext) (err error) {
+	vm.wc = wc
 	vm.timeoutStarted = DisableWasmTimeout
+
 	vm.GasBudget(1_000_000)
 	vm.GasDisable(true)
 	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)

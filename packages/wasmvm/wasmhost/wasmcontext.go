@@ -32,6 +32,7 @@ type WasmContext struct {
 	proc      *WasmProcessor
 	results   dict.Dict
 	sandbox   ISandbox
+	vm        WasmVM
 	wcSandbox *WasmContextSandbox
 }
 
@@ -45,6 +46,7 @@ func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
 		funcName:  function,
 		proc:      proc,
 		funcTable: proc.funcTable,
+		vm:        proc.vm,
 	}
 }
 
@@ -98,10 +100,10 @@ func (wc *WasmContext) callFunction() error {
 	saveID := mainProc.currentContextID
 	mainProc.currentContextID = wc.id
 	wc.gasBudget = wc.GasBudget()
-	wc.proc.vm.GasBudget(wc.gasBudget * mainProc.gasFactor())
+	wc.vm.GasBudget(wc.gasBudget * mainProc.gasFactor())
 	err := wc.proc.RunScFunction(wc.funcName)
 	// if err == nil {
-	wc.GasBurned(wc.proc.vm.GasBurned() / mainProc.gasFactor())
+	wc.GasBurned(wc.vm.GasBurned() / mainProc.gasFactor())
 	//}
 	wc.gasBurned = wc.gasBudget - wc.GasBudget()
 	mainProc.currentContextID = saveID
@@ -169,6 +171,10 @@ func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
 	}
 
 	wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
+	// TODO fix this. Probably need to connect proper context or smth
+	if wc.sandbox == nil {
+		panic("nil sandbox")
+	}
 	res := wc.sandbox.Call(funcNr, params)
 	wc.tracef("  => %s", hex(res))
 	return res
