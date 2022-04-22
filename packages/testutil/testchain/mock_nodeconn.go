@@ -75,9 +75,9 @@ func (mncT *MockedNodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iot
 	}
 }
 
-func (mncT *MockedNodeConn) PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
+func (mncT *MockedNodeConn) PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
 	if mncT.pullOutputByIDAllowedFun(chainID, id) {
-		mncT.ledgers.GetLedger(chainID).PullOutputByID(mncT.id, id)
+		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, id)
 	} else {
 		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, iscp.OID(id))
 	}

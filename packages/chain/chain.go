@@ -96,17 +96,17 @@ type (
 type NodeConnection interface {
 	RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
 	UnregisterChain(chainID *iscp.ChainID)
-	//----------delimeter to appease linter
+
 	PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
 	PullLatestOutput(chainID *iscp.ChainID)
 	PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID)
-	PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
-	//----------delimeter to appease linter
+	PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
+
 	AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
 	DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
-	//----------delimeter to appease linter
+
 	L1Params() *parameters.L1
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
@@ -123,12 +123,12 @@ type ChainNodeConnection interface {
 	DetachFromMilestones()
 	L1Params() *parameters.L1
 	Close()
-	//----------delimeter to appease linter
+
 	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
 	PullLatestOutput()
 	PullTxInclusionState(txid iotago.TransactionID)
-	PullOutputByID(*iotago.UTXOInput)
-	//----------delimeter to appease linter
+	PullStateOutputByID(*iotago.UTXOInput)
+
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 

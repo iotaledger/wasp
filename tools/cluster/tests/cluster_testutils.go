@@ -29,7 +29,7 @@ func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *iotago.T
 
 	e.checkCoreContracts()
 
-	for i := range e.chain.CommitteeNodes {
+	for i := range e.chain.AllPeers {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
 		require.Greater(e.t, blockIndex, uint32(1))
