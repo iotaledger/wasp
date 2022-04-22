@@ -6,13 +6,10 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
