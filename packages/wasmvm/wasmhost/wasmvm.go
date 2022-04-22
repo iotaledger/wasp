@@ -179,7 +179,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 			if strings.Contains(name, "TYPESCRIPT") {
 				wc.proc.gasFactorX = 10
 			}
-			wc.proc.log.Infof(name)
+			wc.log().Infof(name)
 			return
 		}
 		wc.ExportName(keyLen, name)
