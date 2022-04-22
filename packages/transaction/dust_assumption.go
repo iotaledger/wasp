@@ -62,7 +62,7 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       iotago.AliasID{},
 		Amount:        1000,
-		StateMetadata: state.OriginStateCommitment().Bytes(),
+		StateMetadata: state.OriginL1Commitment().Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: addr},
 			&iotago.GovernorAddressUnlockCondition{Address: addr},

@@ -122,7 +122,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 			ret.Log.Debugf("State manager mock (OnStateCandidate): approving output %v received", iscp.OID(approvingOutputID))
 			aoCommitment, err := state.L1CommitmentFromAliasOutput(output)
 			require.NoError(env.T, err)
-			require.True(env.T, trie.EqualCommitments(nsCommitment, aoCommitment.Commitment))
+			require.True(env.T, trie.EqualCommitments(nsCommitment, aoCommitment.StateCommitment))
 
 			if output.StateIndex <= ret.StateOutput.GetStateIndex() {
 				ret.Log.Debugf("State manager mock (OnStateCandidate): state output index %v received, but it is too old: current state output is %v",

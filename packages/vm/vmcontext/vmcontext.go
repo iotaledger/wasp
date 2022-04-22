@@ -101,11 +101,11 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	// assert consistency
 	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieNodeStore())
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if !trie.EqualCommitments(stateData.Commitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
+	if !trie.EqualCommitments(stateData.StateCommitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
+	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, stateData.StateCommitment)
 	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
@@ -138,7 +138,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), stateData.Commitment)
+			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), stateData.StateCommitment)
 		})
 
 		ret.virtualState.ApplyStateUpdate(ret.currentStateUpdate)
@@ -219,7 +219,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		TotalRequests:           numRequests,
 		NumSuccessfulRequests:   numSuccess,
 		NumOffLedgerRequests:    numOffLedger,
-		PreviousStateCommitment: prevStateData.Commitment,
+		PreviousStateCommitment: prevStateData.StateCommitment,
 		AnchorTransactionID:     iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
 		TotalIotasInL2Accounts:  totalIotasInContracts,
 		TotalDustDeposit:        totalDustOnChain,

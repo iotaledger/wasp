@@ -81,7 +81,7 @@ func runTask(task *vm.VMTask) {
 	if rotationAddr == nil {
 		// rotation does not happen
 		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(&state.L1Commitment{
-			Commitment: stateCommitment,
+			StateCommitment: stateCommitment,
 		})
 
 		// TODO extract latest total assets
@@ -101,6 +101,7 @@ func runTask(task *vm.VMTask) {
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger
 func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.FungibleTokens) {
+	// TODO
 	//var chainOutput *ledgerstate.AliasOutput
 	//for _, o := range essence.Outputs() {
 	//	if out, ok := o.(*ledgerstate.AliasOutput); ok {

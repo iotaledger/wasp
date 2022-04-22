@@ -66,7 +66,7 @@ func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
 		if err != nil {
 			return
 		}
-		finalCommitment := finalL1Commitment.Commitment
+		finalCommitment := finalL1Commitment.StateCommitment
 		if cT.isLocal() {
 			if trie.EqualCommitments(cT.nextStateCommitment, finalCommitment) {
 				cT.approved = true

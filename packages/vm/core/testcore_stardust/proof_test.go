@@ -18,8 +18,8 @@ func TestProofs(t *testing.T) {
 		ch := env.NewChain(nil, "chain1")
 
 		proof := ch.GetMerkleProofRaw(nil)
-		stateCommitment := ch.GetStateCommitment()
-		err := proof.Validate(stateCommitment, ch.ChainID[:])
+		l1Commitment := ch.GetL1Commitment()
+		err := proof.Validate(l1Commitment.StateCommitment, ch.ChainID[:])
 		require.NoError(t, err)
 	})
 	t.Run("check PoI blob", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestProofs(t *testing.T) {
 
 		key := blob.FieldValueKey(h, "file")
 		proof := ch.GetMerkleProof(blob.Contract.Hname(), key)
-		err = proof.Validate(ch.GetStateCommitment(), data)
+		err = proof.Validate(ch.GetL1Commitment().StateCommitment, data)
 		require.NoError(t, err)
 		t.Logf("key size = %d", len(key))
 		t.Logf("proof size = %d", len(proof.Bytes()))
@@ -56,7 +56,7 @@ func TestProofs(t *testing.T) {
 
 		recKey := blocklog.RequestReceiptKey(rec.LookupKey())
 		proof := ch.GetMerkleProof(blocklog.Contract.Hname(), recKey)
-		err = proof.Validate(ch.GetStateCommitment(), rec.Bytes())
+		err = proof.Validate(ch.GetL1Commitment().StateCommitment, rec.Bytes())
 
 		require.NoError(t, err)
 		t.Logf("proof size = %d", len(proof.Bytes()))
@@ -68,7 +68,7 @@ func TestProofs(t *testing.T) {
 		err := ch.DepositIotasToL2(100_000, nil)
 		require.NoError(t, err)
 
-		pastStateCommitment := ch.GetStateCommitment()
+		pastL1Commitment := ch.GetL1Commitment()
 		pastBlockIndex := ch.State.BlockIndex()
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
@@ -81,12 +81,12 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 
 		proof := ch.GetMerkleProof(blocklog.Contract.Hname(), blocklog.BlockInfoKey(pastBlockIndex))
-		err = proof.Validate(ch.GetStateCommitment(), bi.Bytes())
+		err = proof.Validate(ch.GetL1Commitment().StateCommitment, bi.Bytes())
 
 		require.NoError(t, err)
 		t.Logf("proof size = %d", len(proof.Bytes()))
 
-		require.True(t, trie.EqualCommitments(pastStateCommitment, bi.StateCommitment))
+		require.True(t, trie.EqualCommitments(pastL1Commitment.StateCommitment, bi.StateCommitment))
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
@@ -96,7 +96,7 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 
 		pastBlockIndex := ch.State.BlockIndex()
-		pastStateCommitment := ch.GetStateCommitment()
+		pastL1Commitment := ch.GetL1Commitment()
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
@@ -107,8 +107,8 @@ func TestProofs(t *testing.T) {
 		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)
 		require.NoError(t, err)
 
-		require.True(t, trie.EqualCommitments(pastStateCommitment, pastBlockInfo.StateCommitment))
-		err = poi.Validate(ch.GetStateCommitment(), pastBlockInfo.Bytes())
+		require.True(t, trie.EqualCommitments(pastL1Commitment.StateCommitment, pastBlockInfo.StateCommitment))
+		err = poi.Validate(ch.GetL1Commitment().StateCommitment, pastBlockInfo.Bytes())
 
 		require.NoError(t, err)
 		t.Logf("proof size = %d", len(poi.Bytes()))
@@ -125,7 +125,7 @@ func TestProofStateTerminals(t *testing.T) {
 	// core contracts must contain their hname at nil key in their state
 	for _, ci := range corecontracts.AllSortedByName() {
 		proof := ch.GetMerkleProof(ci.Hname(), nil)
-		err = proof.Validate(ch.GetStateCommitment(), ci.Hname().Bytes())
+		err = proof.Validate(ch.GetL1Commitment().StateCommitment, ci.Hname().Bytes())
 		if err != nil {
 			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
 				ci.Name, ci.Hname())
@@ -144,7 +144,7 @@ func TestProofStateTerminals(t *testing.T) {
 	// core contracts must contain their hname at nil key in their state
 	for _, ci := range corecontracts.AllSortedByName() {
 		proof := ch.GetMerkleProof(ci.Hname(), nil)
-		err = proof.Validate(ch.GetStateCommitment(), ci.Hname().Bytes())
+		err = proof.Validate(ch.GetL1Commitment().StateCommitment, ci.Hname().Bytes())
 		if err != nil {
 			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
 				ci.Name, ci.Hname())

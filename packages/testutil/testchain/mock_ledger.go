@@ -31,7 +31,7 @@ type MockedLedger struct {
 func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, *iscp.ChainID) {
 	originOutput := &iotago.AliasOutput{
 		Amount:        iotago.TokenSupply,
-		StateMetadata: state.NewL1Commitment(state.OriginStateCommitment()).Bytes(),
+		StateMetadata: state.OriginL1Commitment().Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
