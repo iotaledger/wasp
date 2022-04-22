@@ -61,13 +61,12 @@ func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
+	l1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
 	if err != nil {
 		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
 		return false
 	}
-	stateCommitment := stateL1Commitment.StateCommitment
-	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieNodeStore()), stateCommitment)
+	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieNodeStore()), l1Commitment.StateCommitment)
 }
 
 func (sm *stateManager) pullStateIfNeeded() {

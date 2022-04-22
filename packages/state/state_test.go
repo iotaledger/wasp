@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
 
@@ -74,7 +75,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		currentTime := time.Now()
-		su := NewStateUpdateWithBlockLogValues(1, currentTime, testmisc.RandVectorCommitment())
+		su := NewStateUpdateWithBlockLogValues(1, currentTime, RandL1Commitment())
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -122,7 +123,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		time1 := time.Now()
-		su := NewStateUpdateWithBlockLogValues(1, time1, testmisc.RandVectorCommitment())
+		su := NewStateUpdateWithBlockLogValues(1, time1, RandL1Commitment())
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -133,7 +134,7 @@ func TestStateWithDB(t *testing.T) {
 		require.True(t, time1.Equal(vsOrig.Timestamp()))
 
 		time2 := time.Now()
-		su = NewStateUpdateWithBlockLogValues(2, time2, vsOrig.PreviousStateCommitment())
+		su = NewStateUpdateWithBlockLogValues(2, time2, vsOrig.PreviousL1Commitment())
 		su.Mutations().Set("other_key", []byte("other_value"))
 		block2, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -158,7 +159,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 2, vsLoaded.BlockIndex())
 
 		time3 := time.Now()
-		su = NewStateUpdateWithBlockLogValues(3, time3, vsLoaded.PreviousStateCommitment())
+		su = NewStateUpdateWithBlockLogValues(3, time3, vsLoaded.PreviousL1Commitment())
 		su.Mutations().Set("more_keys", []byte("more_values"))
 		block3, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -186,7 +187,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		currentTime := time.Now()
-		su := NewStateUpdateWithBlockLogValues(1, currentTime, testmisc.RandVectorCommitment())
+		su := NewStateUpdateWithBlockLogValues(1, currentTime, RandL1Commitment())
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -305,7 +306,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 		_, _ = vsOpt.ExtractBlock()
 	})
 	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
-		_ = vsOpt.PreviousStateCommitment()
+		_ = vsOpt.PreviousL1Commitment()
 	})
 	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.KVStore()
@@ -328,7 +329,8 @@ func TestVirtualStateMustOptimistic2(t *testing.T) {
 	require.EqualValues(t, hash, hashOpt)
 
 	hashPrev := hash
-	upd := NewStateUpdateWithBlockLogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), trie.RootCommitment(vsOpt.TrieNodeStore()))
+	prev := NewL1Commitment(trie.RootCommitment(vsOpt.TrieNodeStore()), hashing.RandomHash(nil))
+	upd := NewStateUpdateWithBlockLogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), prev)
 	vsOpt.ApplyStateUpdate(upd)
 	hash = trie.RootCommitment(vs.TrieNodeStore())
 	hashOpt = trie.RootCommitment(vsOpt.TrieNodeStore())

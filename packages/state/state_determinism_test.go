@@ -2,7 +2,6 @@ package state
 
 import (
 	"encoding/hex"
-	"fmt"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -66,9 +65,7 @@ func genRndBlocks(start, num int) []Block {
 	millis := rand.Int63()
 	const numMutations = 20
 	for blkNum := range blocks {
-		var buf [32]byte
-		copy(buf[:], fmt.Sprintf("kuku %d", blkNum))
-		vc, _ := CommitmentModel.VectorCommitmentFromBytes(buf[:])
+		vc := RandL1Commitment()
 		upd := NewStateUpdateWithBlockLogValues(uint32(blkNum+start), time.UnixMilli(millis+int64(blkNum+100)), vc)
 		for i := 0; i < numMutations; i++ {
 			s := "1111" + strs[rand.Intn(len(strs))]
@@ -97,7 +94,7 @@ func TestRnd(t *testing.T) {
 
 	// blocks := genBlocks(2, numBlocks)
 	t.Logf("num blocks: %d", len(blocks))
-	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), testmisc.RandVectorCommitment())
+	upd1 := NewStateUpdateWithBlockLogValues(1, time.UnixMilli(0), RandL1Commitment())
 	var exists bool
 	store := make([]kvstore.KVStore, numRepeat)
 	rndCommits := make([][]bool, numRepeat)

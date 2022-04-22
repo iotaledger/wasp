@@ -1,6 +1,7 @@
 package testchain
 
 import (
+	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
 
@@ -77,7 +78,8 @@ func nextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieNodeStore()))
+	prev := state.NewL1Commitment(trie.RootCommitment(vs.TrieNodeStore()), hashing.HashValue{})
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, prev)
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)

@@ -105,7 +105,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, l1Commitment.StateCommitment)
+	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, &l1Commitment)
 	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
@@ -235,7 +235,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasBurned:              vmctx.gasBurnedTotal,
 		GasFeeCharged:          vmctx.gasFeeChargedTotal,
 	}
-	if !trie.EqualCommitments(vmctx.virtualState.PreviousStateCommitment(), blockInfo.PreviousL1Commitment.StateCommitment) {
+	if !trie.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
 		panic("CloseVMContext: inconsistent previous state commitment")
 	}
 

@@ -308,7 +308,7 @@ func (c *consensus) checkQuorum() {
 	}
 	sigSharesToAggregate := make([]*dss.PartialSig, len(contributors))
 	invalidSignatures := false
-	// TODO: can dss sig shares be verified sepparatelly?
+	// TODO: can dss sig shares be verified separately?
 	for i, idx := range contributors {
 		/*msg, err := c.resultTxEssence.SigningMessage()
 		if err != nil {

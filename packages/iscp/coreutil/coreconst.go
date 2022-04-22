@@ -44,15 +44,15 @@ var (
 const (
 	StateVarTimestamp           = "T"
 	StateVarBlockIndex          = "I"
-	StateVarPrevStateHash       = "H"
+	StateVarPrevL1Commitment    = "H"
 	ParamStateControllerAddress = "S"
 )
 
 // used in 'state' package as key for timestamp and block index
 var (
-	StatePrefixTimestamp           = string(CoreContractBlocklogHname.Bytes()) + StateVarTimestamp
-	StatePrefixBlockIndex          = string(CoreContractBlocklogHname.Bytes()) + StateVarBlockIndex
-	StatePrefixPrevStateCommitment = string(CoreContractBlocklogHname.Bytes()) + StateVarPrevStateHash
+	StatePrefixTimestamp        = string(CoreContractBlocklogHname.Bytes()) + StateVarTimestamp
+	StatePrefixBlockIndex       = string(CoreContractBlocklogHname.Bytes()) + StateVarBlockIndex
+	StatePrefixPrevL1Commitment = string(CoreContractBlocklogHname.Bytes()) + StateVarPrevL1Commitment
 )
 
 func CoreHname(name string) iscp.Hname {

@@ -143,16 +143,16 @@ func (vs *virtualStateAccess) Timestamp() time.Time {
 	return ts
 }
 
-func (vs *virtualStateAccess) PreviousStateCommitment() trie.VCommitment {
-	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
+func (vs *virtualStateAccess) PreviousL1Commitment() *L1Commitment {
+	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
 	if err != nil {
 		panic(xerrors.Errorf("state.PreviousL1Commitment: %w", err))
 	}
-	c, err := vs.trie.VectorCommitmentFromBytes(cBin)
+	c, err := L1CommitmentFromBytes(cBin)
 	if err != nil {
 		panic(xerrors.Errorf("loadPrevStateHashFromState: %w", err))
 	}
-	return c
+	return &c
 }
 
 // ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash

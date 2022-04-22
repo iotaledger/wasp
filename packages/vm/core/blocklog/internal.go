@@ -23,7 +23,7 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	return ret
 }
 
-// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id of the previous one
+// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
 func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxId iotago.TransactionID, l1Commitment *state.L1Commitment) {
 	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
