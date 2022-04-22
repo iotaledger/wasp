@@ -9,17 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
-func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
-	mapping := getNativeTokenOutputMapR(ctx.State())
-	ret := dict.New()
-	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), []byte{0xFF})
-		return true
-	})
-	return ret
-}
-
 // viewBalance returns colored balances of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
@@ -46,6 +35,17 @@ func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
+	return ret
+}
+
+// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
+func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
+	mapping := getNativeTokenOutputMapR(ctx.State())
+	ret := dict.New()
+	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
+		ret.Set(kv.Key(elemKey), []byte{0xFF})
+		return true
+	})
 	return ret
 }
 

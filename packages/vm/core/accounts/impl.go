@@ -63,8 +63,8 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 // transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
-// - ParamAgentID. AgentID. mandatory
-// - ParamForceOpenAccount Bool. Optional, default: false
+// - ParamAgentID. AgentID. Required
+// - ParamForceOpenAccount Bool. Required, default: false
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 

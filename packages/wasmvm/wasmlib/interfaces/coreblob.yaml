@@ -10,17 +10,18 @@ funcs:
     results:
       hash: Hash # calculated hash of blob set
 views:
+  getBlobInfo:
+    params:
+      hash: Hash # blob set
+    results:
+      blobSizes=this: map[String]Int32 # size for each named blob
   getBlobField:
     params:
       field: String # blob name
       hash: Hash # blob set
     results:
       bytes: Bytes # blob data
-  getBlobInfo:
-    params:
-      hash: Hash # blob set
-    results:
-      blobSizes=this: map[String]Int32 # size for each named blob
   listBlobs:
     results:
       blobSizes=this: map[Hash]Int32 # total size for each blob set
+ 

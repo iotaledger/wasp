@@ -5,32 +5,60 @@ typedefs: {}
 state: {}
 funcs:
   deposit:
+  transferAllowanceTo:
     params:
-      agentID=a: AgentID? # default is caller
+      agentID=a: AgentID
+      forceOpenAccount=c: Bool
+  withdraw: {}
   harvest:
     params:
-      withdrawAmount=m: Int64? # default (zero) means all
-
-      # withdrawColor=c: Color? # defaults to colored.IOTA
-
-  withdraw: {}
-views:
-  accounts:
+      forceMinimumIotas=f: Uint64
+  foundryCreateNew:
+    params:
+      tokenScheme=t: TokenScheme
+      tokenTag=g: TokenTag
     results:
-      agents=this: map[AgentID]Bytes # bytes are always empty
+      foundrySN: Bytes
+  foundryDestroy:
+    params:
+      foundrySN: Uint32
+  foundryOutput: {}
+  foundryModifySupply:
+    params:
+      foundrySN: Uint32
+      supplyDeltaAbs: BigInt
+      destroyTokens: Bool
 
-#  balance:
-#    params:
-#      agentID=a: AgentID
-#    results:
-#      balances=this: map[Color]Int64
-
-  getAccountNonce:
+views:
+  balance:
     params:
       agentID=a: AgentID
     results:
-      accountNonce=n: Int64 # TODO should be Uint64
-
-#  totalAssets:
-#    results:
-#      balances=this: map[Color]Int64
+      balances: map[Color]Uint64
+  totalAssets:
+    results:
+      assets: map[Color]Uint64
+  accounts:
+    results:
+      allAccounts=C: map[AccountID]Bool
+  getAccountNonce:
+    params:
+      foundrySN: Uint32
+    results:
+      accountNonce=n: Uint64
+  getNativeTokenIDs:
+    results:
+      mapping=G: map[TokenID]Bytes
+  foundryOutput:
+    results:
+      foundryOutputBin: Bytes
+  accountNFTs:
+    params:
+      agentID=a: AgentID
+    results:
+      nftIDs=i: Bytes
+  nftData:
+    params:
+      nftID=z: Bytes
+    results:
+      nftData=e: Bytes
