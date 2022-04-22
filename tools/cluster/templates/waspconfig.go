@@ -74,6 +74,10 @@ const WaspConfig = `
   "wal": {
     "directory": "wal",
     "enabled": true
+  },
+  "debug": {
+    "rawblocksEnabled": true,
+    "rawblocksDirectory": "blocks" 
   }
 }
 `

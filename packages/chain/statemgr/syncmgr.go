@@ -81,7 +81,9 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
 		// TODO: temporary if. We need to find a solution to synchronize over large gaps. Making state snapshots may help.
 		if i > startSyncFromIndex+maxBlocksToCommitConst {
-			sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1))
+			errorStr := fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1)
+			sm.log.Errorf(errorStr)
+			sm.chain.EnqueueDismissChain(errorStr)
 			return
 		}
 		currentTime := time.Now()

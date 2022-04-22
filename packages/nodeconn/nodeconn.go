@@ -125,7 +125,7 @@ func (nc *nodeConn) RegisterChain(
 	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
-	nc.chains[ncc.Key()] = ncc
+	nc.chains[chainID.Key()] = ncc
 	nc.log.Debugf("nodeconn: chain registered: %s", chainID)
 }
 
@@ -193,15 +193,26 @@ func (nc *nodeConn) Close() {
 }
 
 func (nc *nodeConn) PullLatestOutput(chainID *iscp.ChainID) {
-	// TODO
+	ncc := nc.chains[chainID.Key()]
+	if ncc == nil {
+		nc.log.Errorf("PullLatestOutput: NCChain not  found for chainID %s", chainID)
+		return
+	}
+	ncc.queryLatestChainStateUTXO()
 }
 
 func (nc *nodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID) {
-	// TODO
+	// TODO - is this needed? - output should come from MQTT subscription
+	// we are also constantly polling for confirmation in the promotion/reattachment logic
 }
 
-func (nc *nodeConn) PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
-	// TODO
+func (nc *nodeConn) PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
+	ncc := nc.chains[chainID.Key()]
+	if ncc == nil {
+		nc.log.Errorf("PullOutputByID: NCChain not  found for chainID %s", chainID)
+		return
+	}
+	ncc.PullStateOutputByID(id.ID())
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {

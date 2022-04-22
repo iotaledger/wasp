@@ -165,7 +165,7 @@ func (mlT *MockedLedger) PullTxInclusionState(nodeID string, txID iotago.Transac
 	}
 }
 
-func (mlT *MockedLedger) PullOutputByID(nodeID string, outputID *iotago.UTXOInput) {
+func (mlT *MockedLedger) PullStateOutputByID(nodeID string, outputID *iotago.UTXOInput) {
 	mlT.mutex.RLock()
 	defer mlT.mutex.RUnlock()
 

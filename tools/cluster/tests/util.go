@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"time"
@@ -11,7 +12,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -22,7 +22,7 @@ import (
 )
 
 func (e *chainEnv) checkCoreContracts() {
-	for i := range e.chain.CommitteeNodes {
+	for i := range e.chain.AllPeers {
 		b, err := e.chain.GetStateVariable(root.Contract.Hname(), root.StateVarStateInitialized, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, []byte{0xFF}, b)
@@ -95,15 +95,23 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, node
 		return 0
 	}
 
-	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(assetID)), 0)
+	actual, err := iscp.FungibleTokensFromDict(ret)
 	require.NoError(e.t, err)
 
-	return actual
+	if bytes.Equal(assetID, iscp.IotaTokenID) {
+		return actual.Iotas
+	}
+
+	tokenSet, err := actual.Tokens.Set()
+	require.NoError(e.t, err)
+	tokenID, err := iscp.NativeTokenIDFromBytes(assetID)
+	require.NoError(e.t, err)
+	return tokenSet[tokenID].Amount.Uint64()
 }
 
 func (e *chainEnv) checkBalanceOnChain(agentID *iscp.AgentID, assetID []byte, expected uint64) {
 	actual := e.getBalanceOnChain(agentID, assetID)
-	require.EqualValues(e.t, int64(expected), int64(actual))
+	require.EqualValues(e.t, expected, actual)
 }
 
 func (e *chainEnv) getAccountsOnChain() []*iscp.AgentID {
