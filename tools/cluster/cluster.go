@@ -176,13 +176,13 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	committeePubKeys := make([]string, len(committeeNodes))
-	for _, i := range chain.CommitteeNodes {
-		peeringNode, err := clu.WaspClient(i).GetPeeringSelf()
+	committeePubKeys := make([]string, len(chain.CommitteeNodes))
+	for i, nodeIndex := range chain.CommitteeNodes {
+		peeringNode, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
 		if err != nil {
 			return nil, err
 		}
-		committeePubKeys = append(committeePubKeys, peeringNode.PubKey)
+		committeePubKeys[i] = peeringNode.PubKey
 	}
 
 	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
