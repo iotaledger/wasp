@@ -62,6 +62,7 @@ func newISCContract(ctx iscp.Sandbox) vm.ISCContract {
 	return &iscContract{ctx}
 }
 
+//nolint:funlen
 func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
@@ -166,7 +167,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 	ret, err := method.Outputs.Pack(outs...)
 	c.ctx.RequireNoError(err)
-	return
+	return ret, remainingGas
 }
 
 type iscContractView struct {
@@ -180,7 +181,7 @@ func newISCContractView(ctx iscp.SandboxView) vm.ISCContract {
 var _ vm.ISCContract = &iscContractView{}
 
 func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
-	ret, remainingGas, method, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
 	}
@@ -211,9 +212,11 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 
 	ret, err := method.Outputs.Pack(outs...)
 	c.ctx.RequireNoError(err)
-	return
+	return ret, remainingGas
 }
 
+// TODO evm param is not used, can it be removed?
+//nolint:unparam
 func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
@@ -261,5 +264,5 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 	ok = true
 	ret, err := method.Outputs.Pack(outs...)
 	ctx.RequireNoError(err)
-	return
+	return ret, remainingGas, method, ok
 }

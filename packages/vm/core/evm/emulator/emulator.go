@@ -158,28 +158,28 @@ func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header 
 	return result, gasUsed, err
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, error, *core.ExecutionResult) {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, 0, xerrors.Errorf("invalid transaction: %w", err), nil
+		return nil, 0, nil, xerrors.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce), nil
+		return nil, 0, nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
-		return nil, 0, err, nil
+		return nil, 0, nil, err
 	}
 
 	result, gasUsed, err := e.applyMessage(msg, statedb, pendingHeader, gasLimit)
 	if err != nil {
-		return nil, gasUsed, err, nil
+		return nil, gasUsed, nil, err
 	}
 
 	cumulativeGasUsed := result.UsedGas
@@ -214,7 +214,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, gasUsed, nil, result
+	return receipt, gasUsed, result, nil
 }
 
 func (e *EVMEmulator) MintBlock() {

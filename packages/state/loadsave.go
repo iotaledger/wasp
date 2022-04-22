@@ -3,9 +3,12 @@ package state
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"io/ioutil"
 	"path"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
@@ -140,7 +143,7 @@ func SaveRawBlockClosure(dir string, log *logger.Logger) OnBlockSaveClosure {
 		data := block.Bytes()
 		h := hashing.HashData(data)
 		fname := fmt.Sprintf("%d.%s.%s.mut", block.BlockIndex(), stateCommitment.String(), h.String())
-		err := ioutil.WriteFile(path.Join(dir, fname), data, 0666)
+		err := ioutil.WriteFile(path.Join(dir, fname), data, 0o666)
 		if err != nil {
 			log.Warnf("failed to save raw block #%d to dir %s as '%s': %v", block.BlockIndex(), dir, fname, err)
 		} else {
