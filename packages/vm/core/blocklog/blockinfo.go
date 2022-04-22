@@ -9,24 +9,23 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type BlockInfo struct {
-	BlockIndex              uint32 // not persistent. Set from key
-	Timestamp               time.Time
-	TotalRequests           uint16
-	NumSuccessfulRequests   uint16
-	NumOffLedgerRequests    uint16
-	PreviousStateCommitment trie.VCommitment
-	StateCommitment         trie.VCommitment // nil if not known
-	AnchorTransactionID     iotago.TransactionID
-	TotalIotasInL2Accounts  uint64
-	TotalDustDeposit        uint64
-	GasBurned               uint64
-	GasFeeCharged           uint64
+	BlockIndex             uint32 // not persistent. Set from key
+	Timestamp              time.Time
+	TotalRequests          uint16
+	NumSuccessfulRequests  uint16
+	NumOffLedgerRequests   uint16
+	PreviousL1Commitment   state.L1Commitment  // always known
+	L1Commitment           *state.L1Commitment // nil if not known
+	AnchorTransactionID    iotago.TransactionID
+	TotalIotasInL2Accounts uint64
+	TotalDustDeposit       uint64
+	GasBurned              uint64
+	GasFeeCharged          uint64
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -56,7 +55,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("Prev state hash: %s\n", bi.PreviousStateCommitment.String())
+	ret += fmt.Sprintf("Prev L1 commitment: %s\n", bi.PreviousL1Commitment.String())
 	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
 	ret += fmt.Sprintf("Total iotas in contracts: %d\n", bi.TotalIotasInL2Accounts)
 	ret += fmt.Sprintf("Total iotas locked in dust deposit: %d\n", bi.TotalDustDeposit)
@@ -81,14 +80,14 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.AnchorTransactionID[:]); err != nil {
 		return err
 	}
-	if _, err := w.Write(bi.PreviousStateCommitment.Bytes()); err != nil {
+	if err := bi.PreviousL1Commitment.Write(w); err != nil {
 		return err
 	}
-	if err := util.WriteBoolByte(w, bi.StateCommitment != nil); err != nil {
+	if err := util.WriteBoolByte(w, bi.L1Commitment != nil); err != nil {
 		return err
 	}
-	if bi.StateCommitment != nil {
-		if _, err := w.Write(bi.StateCommitment.Bytes()); err != nil {
+	if bi.L1Commitment != nil {
+		if err := bi.L1Commitment.Write(w); err != nil {
 			return err
 		}
 	}
@@ -123,18 +122,17 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadTransactionID(r, &bi.AnchorTransactionID); err != nil {
 		return err
 	}
-	bi.PreviousStateCommitment = state.CommitmentModel.NewVectorCommitment()
-	if err := bi.PreviousStateCommitment.Read(r); err != nil {
+	if err := bi.PreviousL1Commitment.Read(r); err != nil {
 		return err
 	}
 	var knownStateCommitments bool
 	if err := util.ReadBoolByte(r, &knownStateCommitments); err != nil {
 		return err
 	}
-	bi.StateCommitment = nil
+	bi.L1Commitment = nil
 	if knownStateCommitments {
-		bi.StateCommitment = state.CommitmentModel.NewVectorCommitment()
-		if err := bi.StateCommitment.Read(r); err != nil {
+		bi.L1Commitment = &state.L1Commitment{}
+		if err := bi.L1Commitment.Read(r); err != nil {
 			return err
 		}
 	}

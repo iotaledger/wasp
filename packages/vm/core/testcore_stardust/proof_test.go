@@ -86,7 +86,7 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("proof size = %d", len(proof.Bytes()))
 
-		require.True(t, trie.EqualCommitments(pastL1Commitment.StateCommitment, bi.StateCommitment))
+		require.True(t, trie.EqualCommitments(pastL1Commitment.StateCommitment, bi.L1Commitment.StateCommitment))
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
@@ -107,7 +107,7 @@ func TestProofs(t *testing.T) {
 		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)
 		require.NoError(t, err)
 
-		require.True(t, trie.EqualCommitments(pastL1Commitment.StateCommitment, pastBlockInfo.StateCommitment))
+		require.True(t, trie.EqualCommitments(pastL1Commitment.StateCommitment, pastBlockInfo.L1Commitment.StateCommitment))
 		err = poi.Validate(ch.GetL1Commitment().StateCommitment, pastBlockInfo.Bytes())
 
 		require.NoError(t, err)

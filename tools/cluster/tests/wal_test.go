@@ -45,7 +45,7 @@ func TestWriteToWAL(t *testing.T) {
 
 	require.EqualValues(t, blockInfo.BlockIndex, block.BlockIndex())
 	require.EqualValues(t, blockInfo.Timestamp, block.Timestamp())
-	require.EqualValues(t, blockInfo.PreviousStateCommitment.Bytes(), block.PreviousStateCommitment(state.CommitmentModel).Bytes())
+	require.EqualValues(t, blockInfo.PreviousL1Commitment.Bytes(), block.PreviousStateCommitment(state.CommitmentModel).Bytes())
 }
 
 func walDirectoryCreated(walDir string) bool {

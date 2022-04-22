@@ -146,7 +146,7 @@ func (vs *virtualStateAccess) Timestamp() time.Time {
 func (vs *virtualStateAccess) PreviousStateCommitment() trie.VCommitment {
 	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
 	if err != nil {
-		panic(xerrors.Errorf("state.PreviousStateCommitment: %w", err))
+		panic(xerrors.Errorf("state.PreviousL1Commitment: %w", err))
 	}
 	c, err := vs.trie.VectorCommitmentFromBytes(cBin)
 	if err != nil {

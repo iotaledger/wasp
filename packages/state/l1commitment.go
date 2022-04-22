@@ -7,7 +7,9 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+	"io"
 	"math/rand"
 )
 
@@ -33,18 +35,12 @@ func NewL1Commitment(c trie.VCommitment, blockHash hashing.HashValue) *L1Commitm
 }
 
 func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
+	if len(data) != L1CommitmentSizeBlake2b {
+		return L1Commitment{}, xerrors.New("L1CommitmentFromBytes: wrong data length")
+	}
 	ret := L1Commitment{}
-	ret.StateCommitment = CommitmentModel.NewVectorCommitment()
-	rdr := bytes.NewReader(data)
-	if err := ret.StateCommitment.Read(rdr); err != nil {
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return L1Commitment{}, err
-	}
-	l, err := rdr.Read(ret.BlockHash[:])
-	if err != nil {
-		return L1Commitment{}, err
-	}
-	if l != 32 {
-		return L1Commitment{}, xerrors.New("wrong data length")
 	}
 	return ret, nil
 }
@@ -58,12 +54,32 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 }
 
 func (s *L1Commitment) Bytes() []byte {
-	var buf bytes.Buffer
+	return util.MustBytes(s)
+}
 
-	_ = s.StateCommitment.Write(&buf)
-	_, _ = buf.Write(s.BlockHash[:])
+func (s *L1Commitment) Write(w io.Writer) error {
+	if err := s.StateCommitment.Write(w); err != nil {
+		return err
+	}
+	if _, err := w.Write(s.BlockHash[:]); err != nil {
+		return err
+	}
+	return nil
+}
 
-	return buf.Bytes()
+func (s *L1Commitment) Read(r io.Reader) error {
+	s.StateCommitment = CommitmentModel.NewVectorCommitment()
+	if err := s.StateCommitment.Read(r); err != nil {
+		return err
+	}
+	l, err := r.Read(s.BlockHash[:])
+	if err != nil {
+		return err
+	}
+	if l != 32 {
+		return xerrors.New("wrong data length")
+	}
+	return nil
 }
 
 func (s *L1Commitment) String() string {

@@ -26,11 +26,11 @@ var Processor = Contract.Processor(initialize,
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
-		Timestamp:               time.Unix(0, ctx.Timestamp()),
-		TotalRequests:           1,
-		NumSuccessfulRequests:   1,
-		NumOffLedgerRequests:    0,
-		PreviousStateCommitment: state.OriginStateCommitment(),
+		Timestamp:             time.Unix(0, ctx.Timestamp()),
+		TotalRequests:         1,
+		NumSuccessfulRequests: 1,
+		NumOffLedgerRequests:  0,
+		PreviousL1Commitment:  *state.OriginL1Commitment(),
 	})
 	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	// storing hname as a terminal value of the contract's state root.
