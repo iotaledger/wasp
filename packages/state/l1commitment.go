@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/trie"
@@ -14,8 +15,8 @@ import (
 type L1Commitment struct {
 	// root commitment to the state
 	StateCommitment trie.VCommitment
-	// hash of the las block
-	BlockHash [32]byte
+	// hash of the essence of the last block
+	BlockHash hashing.HashValue
 }
 
 const (
@@ -63,6 +64,10 @@ func (s *L1Commitment) Bytes() []byte {
 	_, _ = buf.Write(s.BlockHash[:])
 
 	return buf.Bytes()
+}
+
+func (s *L1Commitment) String() string {
+	return fmt.Sprintf("L1Commitment(%s, %s)", s.StateCommitment.String(), s.BlockHash.String())
 }
 
 func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (L1Commitment, error) {

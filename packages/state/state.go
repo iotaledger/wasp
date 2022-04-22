@@ -182,7 +182,7 @@ func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
 	return trie.GetProofGeneric(vs.trie, dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
 }
 
-// ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
+// ExtractBlock creates a block from mutations
 func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 	ret, err := newBlock(vs.kvs.Mutations())
 	if err != nil {

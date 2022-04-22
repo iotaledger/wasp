@@ -176,7 +176,7 @@ func (vmctx *VMContext) L1Params() *parameters.L1 {
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, trie.VCommitment, time.Time, iotago.Address) {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
 	vmctx.gasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
@@ -185,11 +185,19 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 	vmctx.virtualState.Commit()
 
-	blockIndex := vmctx.virtualState.BlockIndex()
+	block, err := vmctx.virtualState.ExtractBlock()
+	if err != nil {
+		panic(err)
+	}
+
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
+	blockHash := hashing.HashData(block.EssenceBytes())
+	l1Commitment := state.NewL1Commitment(stateCommitment, blockHash)
+
+	blockIndex := vmctx.virtualState.BlockIndex()
 	timestamp := vmctx.virtualState.Timestamp()
 
-	return blockIndex, stateCommitment, timestamp, rotationAddr
+	return blockIndex, l1Commitment, timestamp, rotationAddr
 }
 
 func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
