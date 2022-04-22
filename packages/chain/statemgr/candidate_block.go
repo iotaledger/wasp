@@ -60,23 +60,24 @@ func (cT *candidateBlock) isApproved() bool {
 }
 
 func (cT *candidateBlock) approveIfRightOutput(output *iscp.AliasOutputWithID) {
-	if cT.block.BlockIndex() == output.GetStateIndex() {
-		outputID := output.ID()
-		finalL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
-		if err != nil {
-			return
+	if cT.block.BlockIndex() != output.GetStateIndex() {
+		return
+	}
+	outputID := output.ID()
+	finalL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
+	if err != nil {
+		return
+	}
+	finalCommitment := finalL1Commitment.Commitment
+	if cT.isLocal() {
+		if trie.EqualCommitments(cT.nextStateCommitment, finalCommitment) {
+			cT.approved = true
+			cT.block.SetApprovingOutputID(outputID)
 		}
-		finalCommitment := finalL1Commitment.Commitment
-		if cT.isLocal() {
-			if trie.EqualCommitments(cT.nextStateCommitment, finalCommitment) {
-				cT.approved = true
-				cT.block.SetApprovingOutputID(outputID)
-			}
-		} else {
-			if cT.block.ApprovingOutputID().Equals(outputID) {
-				cT.approved = true
-				cT.nextStateCommitment = finalCommitment
-			}
+	} else {
+		if cT.block.ApprovingOutputID().Equals(outputID) {
+			cT.approved = true
+			cT.nextStateCommitment = finalCommitment
 		}
 	}
 }

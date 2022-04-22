@@ -5,12 +5,10 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -362,7 +360,9 @@ func TestFoundryOutputRec(t *testing.T) {
 	require.EqualValues(t, o.TokenTag, o1.TokenTag)
 	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
 	require.True(t, ok)
+	//nolint:gocritic
 	require.True(t, ts.MaximumSupply.Cmp(ts.MaximumSupply) == 0)
+	//nolint:gocritic
 	require.True(t, ts.MintedTokens.Cmp(ts.MintedTokens) == 0)
 	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
 	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)

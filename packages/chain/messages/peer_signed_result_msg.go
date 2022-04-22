@@ -31,10 +31,11 @@ func NewSignedResultMsg(data []byte) (*SignedResultMsg, error) {
 	msg := &SignedResultMsg{}
 	r := bytes.NewReader(data)
 	var err error
-	if err = util.ReadHashValue(r, &msg.EssenceHash); err != nil { // nolint:gocritic // - ignore sloppyReassign
+	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
 		return nil, err
 	}
 	var uintTmp uint16
+	//nolint:gocritic
 	if err = util.ReadUint16(r, &uintTmp); err != nil {
 		return nil, err
 	}

@@ -66,7 +66,7 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 		return nil, err
 	}
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
-	feePolicy, err := gas.GasFeePolicyFromBytes(fpBin)
+	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 		evm.FieldTransactionData: txdata,
 	}
 
-	gas, sendTxFee, err := e.backend.EstimateGasOffLedger(evm.Contract.Name, evm.FuncSendTransaction.Name, args)
+	estimatedGas, sendTxFee, err := e.backend.EstimateGasOffLedger(evm.Contract.Name, evm.FuncSendTransaction.Name, args)
 	if err != nil {
 		return err
 	}
@@ -117,12 +117,12 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	}
 
 	// send the Ethereum transaction
-	return e.backend.PostOffLedgerRequest(evm.Contract.Name, evm.FuncSendTransaction.Name, args, gas)
+	return e.backend.PostOffLedgerRequest(evm.Contract.Name, evm.FuncSendTransaction.Name, args, estimatedGas)
 }
 
-func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {
-	ret := params
-	if params == nil {
+func paramsWithOptionalBlockNumber(blockNumber *big.Int, parameters dict.Dict) dict.Dict {
+	ret := parameters
+	if parameters == nil {
 		ret = dict.Dict{}
 	}
 	if blockNumber != nil {
@@ -131,12 +131,12 @@ func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.
 	return ret
 }
 
-func paramsWithOptionalBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash, params dict.Dict) dict.Dict {
+func paramsWithOptionalBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash, parameters dict.Dict) dict.Dict {
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
-		return paramsWithOptionalBlockNumber(parseBlockNumber(blockNumber), params)
+		return paramsWithOptionalBlockNumber(parseBlockNumber(blockNumber), parameters)
 	}
-	ret := params
-	if params == nil {
+	ret := parameters
+	if parameters == nil {
 		ret = dict.Dict{}
 	}
 	blockHash, _ := blockNumberOrHash.Hash()
