@@ -24,13 +24,9 @@ type WasmGoVM struct {
 }
 
 func NewWasmGoVM(scName string, onLoad ScOnloadFunc) WasmVM {
-	return &WasmGoVM{scName: scName, onLoad: onLoad}
-}
-
-func (vm *WasmGoVM) Instantiate(wc *WasmContext) error {
-	vm.wc = wc
+	vm := &WasmGoVM{scName: scName, onLoad: onLoad}
 	vm.timeoutStarted = DisableWasmTimeout
-	return nil
+	return vm
 }
 
 func (vm *WasmGoVM) Interrupt() {
@@ -49,7 +45,10 @@ func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {
 	return nil
 }
 
-func (vm *WasmGoVM) NewInstance() WasmVM {
+func (vm *WasmGoVM) NewInstance(wc *WasmContext) WasmVM {
+	if vm.wc == nil {
+		vm.wc = wc
+	}
 	return nil
 }
 

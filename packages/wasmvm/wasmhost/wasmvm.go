@@ -39,12 +39,10 @@ var (
 type WasmVM interface {
 	GasBudget(budget uint64)
 	GasBurned() uint64
-	GasDisable(disable bool)
-	Instantiate(wc *WasmContext) error
 	Interrupt()
 	LinkHost() error
 	LoadWasm(wasmData []byte) error
-	NewInstance() WasmVM
+	NewInstance(wc *WasmContext) WasmVM
 	RunFunction(functionName string, args ...interface{}) error
 	RunScFunction(index int32) error
 	UnsafeMemory() []byte
@@ -55,7 +53,6 @@ type WasmVM interface {
 
 type WasmVMBase struct {
 	cachedResult   []byte
-	gasDisabled    bool
 	panicErr       error
 	timeoutStarted bool
 	wc             *WasmContext
@@ -70,20 +67,16 @@ func (vm *WasmVMBase) GasBurned() uint64 {
 	return 0
 }
 
-func (vm *WasmVMBase) GasDisable(disable bool) {
-	vm.gasDisabled = disable
-}
-
 func (vm *WasmVMBase) getContext() *WasmContext {
 	return vm.wc.proc.GetContext()
 }
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
-	vm.reportGasBurned()
-	defer vm.wrapUp()
+	wc := vm.getContext()
+	vm.reportGasBurned(wc)
+	defer vm.wrapUp(wc)
 
 	// crude implementation assumes texts to only use ASCII part of UTF-16
-	wc := vm.getContext()
 	impl := wc.vm
 
 	// null-terminated UTF-16 error message
@@ -106,10 +99,10 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 }
 
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
-	vm.reportGasBurned()
-	defer vm.wrapUp()
-
 	wc := vm.getContext()
+	vm.reportGasBurned(wc)
+	defer vm.wrapUp(wc)
+
 	wc.log().Debugf("HostFdWrite(...)")
 	impl := wc.vm
 
@@ -129,10 +122,10 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 }
 
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
-	vm.reportGasBurned()
-	defer vm.wrapUp()
-
 	wc := vm.getContext()
+	vm.reportGasBurned(wc)
+	defer vm.wrapUp(wc)
+
 	impl := wc.vm
 
 	// only check for existence ?
@@ -165,10 +158,10 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 }
 
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
-	vm.reportGasBurned()
-	defer vm.wrapUp()
-
 	wc := vm.getContext()
+	vm.reportGasBurned(wc)
+	defer vm.wrapUp(wc)
+
 	impl := wc.vm
 
 	// export name?
@@ -210,10 +203,9 @@ func (vm *WasmVMBase) LinkHost() error {
 }
 
 // reportGasBurned updates the sandbox gas budget with the amount burned by the VM
-func (vm *WasmVMBase) reportGasBurned() {
-	if !vm.gasDisabled {
-		wc := vm.getContext()
-		wc.GasBurned(wc.vm.GasBurned() / wc.proc.mainProc().gasFactor())
+func (vm *WasmVMBase) reportGasBurned(wc *WasmContext) {
+	if !wc.gasDisabled {
+		wc.GasBurned(wc.vm.GasBurned() / wc.proc.gasFactor())
 	}
 }
 
@@ -305,13 +297,12 @@ func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {
 // the first, thereby reporting the wrong panic error sometimes
 // wrapUp will also update the Wasm code that initiated the call with
 // the remaining gas budget (the Wasp node may have burned some)
-func (vm *WasmVMBase) wrapUp() {
+func (vm *WasmVMBase) wrapUp(wc *WasmContext) {
 	panicMsg := recover()
 	if panicMsg == nil {
-		if !vm.gasDisabled {
+		if !wc.gasDisabled {
 			// update VM gas budget to reflect what sandbox burned
-			wc := vm.getContext()
-			wc.vm.GasBudget(wc.GasBudget() * wc.proc.mainProc().gasFactor())
+			wc.vm.GasBudget(wc.GasBudget() * wc.proc.gasFactor())
 		}
 		return
 	}
