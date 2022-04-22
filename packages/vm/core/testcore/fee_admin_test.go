@@ -23,7 +23,7 @@ package testcore
 // }
 
 // func TestFeeBasic(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 // 	checkFees(chain, root.Contract.Name, 0, 0)
 // 	checkFees(chain, accounts.Contract.Name, 0, 0)
@@ -34,7 +34,7 @@ package testcore
 // }
 
 // func TestSetDefaultFeeNotAuthorized(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	user, _ := env.NewKeyPairWithFunds()
@@ -52,7 +52,7 @@ package testcore
 // }
 
 // func TestSetContractFeeNotAuthorized(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	user, _ := env.NewKeyPairWithFunds()
@@ -70,7 +70,7 @@ package testcore
 // }
 
 // func TestSetDefaultOwnerFeeOk(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
@@ -87,7 +87,7 @@ package testcore
 // }
 
 // func TestSetDefaultValidatorFeeOk(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
@@ -104,7 +104,7 @@ package testcore
 // }
 
 // func TestSetDefaultFeeOk(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
@@ -122,7 +122,7 @@ package testcore
 // }
 
 // func TestSetDefaultFeeFailNegative1(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name, governance.ParamOwnerFee, -2)
@@ -138,7 +138,7 @@ package testcore
 // }
 
 // func TestSetDefaultFeeFailNegative2(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name, governance.ParamValidatorFee, -100)
@@ -154,7 +154,7 @@ package testcore
 // }
 
 // func TestSetContractValidatorFeeOk(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -173,7 +173,7 @@ package testcore
 // }
 
 // func TestSetContractOwnerFeeOk(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -192,7 +192,7 @@ package testcore
 // }
 
 // func TestSetContractFeeWithDefault(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -234,7 +234,7 @@ package testcore
 // }
 
 // func TestFeeNotEnough(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	_, validatorFeeTargetAddr := env.NewKeyPair()
 // 	validatorFeeTargetAgentID := iscp.NewAgentID(validatorFeeTargetAddr, 0)
 
@@ -270,7 +270,7 @@ package testcore
 // }
 
 // func TestFeeOwnerDontNeed(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -299,7 +299,7 @@ package testcore
 // }
 
 // func TestRevertContractFeeToZero(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,

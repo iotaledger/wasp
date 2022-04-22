@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -90,7 +89,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
-		{K: "Sender", V: req.SenderAccount().String(config.L1NetworkPrefix())},
+		{K: "Sender", V: req.SenderAccount().String()},
 		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
 		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
 		{K: "Arguments", V: argsTree},

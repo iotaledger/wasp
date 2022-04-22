@@ -102,11 +102,11 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, 1, vs2.BlockIndex())
 
-		data, err := LoadBlockBytes(store, 0)
+		_, err = LoadBlockBytes(store, 0)
 		require.NoError(t, err)
 		// require.EqualValues(t, newBlock().Bytes(), data)
 
-		data, err = LoadBlockBytes(store, 1)
+		data, err := LoadBlockBytes(store, 1)
 		require.NoError(t, err)
 		require.EqualValues(t, block1.Bytes(), data)
 
@@ -342,18 +342,18 @@ func TestRnd(t *testing.T) {
 				// t.Logf("           commit at block: #%d", bn)
 				err = vs.Save()
 				require.NoError(t, err)
-				c1 := trie.RootCommitment(vs.TrieNodeStore())
+				c1a := trie.RootCommitment(vs.TrieNodeStore())
 				vs, exists, err = LoadSolidState(store[round], chainID)
 				require.NoError(t, err)
 				require.True(t, exists)
-				c2 := trie.RootCommitment(vs.TrieNodeStore())
+				c2a := trie.RootCommitment(vs.TrieNodeStore())
 
 				diff := vs.ReconcileTrie()
 				if len(diff) > 0 {
 					t.Logf("============== reconcile failed: %v", diff)
 				}
 
-				require.True(t, trie.EqualCommitments(c1, c2))
+				require.True(t, trie.EqualCommitments(c1a, c2a))
 			}
 		}
 		vs.Commit()

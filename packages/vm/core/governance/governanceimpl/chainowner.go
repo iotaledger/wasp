@@ -20,7 +20,7 @@ func delegateChainOwnership(ctx iscp.Sandbox) dict.Dict {
 
 	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
 	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
-	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String(ctx.L1Params().Bech32Prefix))
+	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID)
 	return nil
 }
 
@@ -40,10 +40,7 @@ func claimChainOwnership(ctx iscp.Sandbox) dict.Dict {
 
 	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(governance.VarChainOwnerIDDelegated)
-	ctx.Log().Debugf("governance.chainChainOwner.success: chain owner changed: %s --> %s",
-		currentOwner.String(ctx.L1Params().Bech32Prefix),
-		nextOwner.String(ctx.L1Params().Bech32Prefix),
-	)
+	ctx.Log().Debugf("governance.chainChainOwner.success: chain owner changed: %s --> %s", currentOwner, nextOwner)
 	return nil
 }
 

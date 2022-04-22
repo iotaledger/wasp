@@ -4,7 +4,7 @@ package testcore
 // 	corecontracts.PrintWellKnownHnames()
 
 // 	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
-// 		env := solo.New(t, false, false)
+// 		env := solo.New(t)
 // 		chain := env.NewChain(nil, "chain1")
 // 		defer chain.Log.Sync()
 
@@ -12,7 +12,7 @@ package testcore
 // 		require.EqualValues(t, 0, len(lst))
 // 	})
 // 	t.Run("add/remove allowed rotation addresses", func(t *testing.T) {
-// 		env := solo.New(t, false, false)
+// 		env := solo.New(t)
 // 		chain := env.NewChain(nil, "chain1")
 // 		defer chain.Log.Sync()
 
@@ -54,7 +54,7 @@ package testcore
 // 	corecontracts.PrintWellKnownHnames()
 
 // 	t.Run("not allowed address", func(t *testing.T) {
-// 		env := solo.New(t, false, false)
+// 		env := solo.New(t)
 // 		chain := env.NewChain(nil, "chain1")
 // 		defer chain.Log.Sync()
 
@@ -64,7 +64,7 @@ package testcore
 // 		strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
 // 	})
 // 	t.Run("unauthorized", func(t *testing.T) {
-// 		env := solo.New(t, false, false)
+// 		env := solo.New(t)
 // 		chain := env.NewChain(nil, "chain1")
 // 		defer chain.Log.Sync()
 
@@ -74,7 +74,7 @@ package testcore
 // 		strings.Contains(err.Error(), "checkRotateStateControllerRequest: unauthorized access")
 // 	})
 // 	t.Run("rotate success", func(t *testing.T) {
-// 		env := solo.New(t, false, false)
+// 		env := solo.New(t)
 // 		chain := env.NewChain(nil, "chain1")
 // 		defer chain.Log.Sync()
 

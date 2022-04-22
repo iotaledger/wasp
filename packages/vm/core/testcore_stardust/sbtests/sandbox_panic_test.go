@@ -105,6 +105,8 @@ func testCallPanicFull(t *testing.T, w bool) {
 }
 
 func TestCallPanicViewFromFull(t *testing.T) { run2(t, testCallPanicViewFromFull) }
+
+//nolint:dupl
 func testCallPanicViewFromFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)

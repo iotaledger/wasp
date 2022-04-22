@@ -83,5 +83,5 @@ func (d *Dashboard) addressToString(a iotago.Address) string {
 }
 
 func (d *Dashboard) agentIDToString(a *iscp.AgentID) string {
-	return a.String(d.wasp.L1Params().Bech32Prefix)
+	return a.String()
 }

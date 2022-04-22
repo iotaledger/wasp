@@ -10,7 +10,7 @@ package examples
 // )
 
 // func TestExample1(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	chain := env.NewChain(nil, "ex1")
 
 // 	chainID, chainOwner, coreContracts := chain.GetInfo()              // calls view root::GetInfo
@@ -25,7 +25,7 @@ package examples
 // }
 
 // func TestExample2(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	_, userAddress := env.NewKeyPair()
 // 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 // 	numIotas := env.L1NativeTokens(userAddress, colored.IOTA)
@@ -34,7 +34,7 @@ package examples
 // }
 
 // func TestExample3(t *testing.T) {
-// 	env := solo.New(t, false, false)
+// 	env := solo.New(t)
 // 	_, userAddress := env.NewKeyPairWithFunds()
 // 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 // 	numIotas := env.L1NativeTokens(userAddress, colored.IOTA)

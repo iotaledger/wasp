@@ -46,7 +46,7 @@
 // The following example deploys chain and retrieves basic info from the deployed chain.
 // It is expected 4 core contracts deployed on it by default and the test prints them.
 //  func TestSolo1(t *testing.T) {
-//    env := solo.New(t, false, false)
+//    env := solo.New(t)
 //    chain := env.NewChain(nil, "ex1")
 //
 //    chainInfo, coreContracts := chain.GetInfo()   // calls view root::GetInfo

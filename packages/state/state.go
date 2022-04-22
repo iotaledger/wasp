@@ -50,9 +50,9 @@ func NewVirtualState(db kvstore.KVStore) *virtualStateAccess {
 // CreateOriginState origin state and saves it. It assumes store is empty
 func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 	ret := NewVirtualState(store)
-	nilChainId := iscp.ChainID{}
+	nilChainID := iscp.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
-	ret.KVStore().Set("", nilChainId.Bytes())
+	ret.KVStore().Set("", nilChainID.Bytes())
 	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
 	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
 	ret.Commit()

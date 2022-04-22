@@ -8,6 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/stretchr/testify/require"
 )
 
 func readBlocks(t *testing.T, dir string) ([]Block, []trie.VCommitment, []hashing.HashValue) {

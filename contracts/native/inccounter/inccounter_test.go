@@ -1,7 +1,6 @@
 package inccounter
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"testing"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +25,7 @@ func checkCounter(e *solo.Chain, expected int64) {
 }
 
 func TestDeployInc(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
@@ -38,7 +38,7 @@ func TestDeployInc(t *testing.T) {
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
@@ -48,7 +48,7 @@ func TestDeployIncInitParams(t *testing.T) {
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
@@ -63,7 +63,7 @@ func TestIncDefaultParam(t *testing.T) {
 }
 
 func TestIncParam(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
@@ -79,7 +79,7 @@ func TestIncParam(t *testing.T) {
 }
 
 func TestIncWith1Post(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
@@ -99,7 +99,7 @@ func TestIncWith1Post(t *testing.T) {
 }
 
 func TestSpawn(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
