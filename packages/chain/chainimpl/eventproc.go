@@ -164,7 +164,7 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 	// rotation needed
 	// close current in any case
 	currentCmt.Close()
-	c.consensus.Close()
+	(*c.consensus).Close()
 	c.setCommittee(nil)
 	c.log.Infof("CLOSED COMMITTEE for the state address %s", currentCmtAddress)
 	c.consensus = nil
@@ -240,7 +240,8 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 		cmtPeerGroup.Detach(attachID)
 	}
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.wal)
+	consensus := consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.wal)
+	c.consensus = &consensus
 	c.setCommittee(cmt)
 	return nil
 }
@@ -390,7 +391,7 @@ func (c *chainObj) handleMissingRequestMsg(msg *messages.MissingRequestMsg) {
 		c.log.Warnf("handleMissingRequestMsg ignored: pull from committee disabled")
 		return
 	}
-	if c.consensus.ShouldReceiveMissingRequest(msg.Request) {
+	if (*c.consensus).ShouldReceiveMissingRequest(msg.Request) {
 		c.mempool.ReceiveRequest(msg.Request)
 		c.log.Warnf("handleMissingRequestMsg request with ID %v added to mempool", msg.Request.ID().String())
 	} else {
@@ -407,6 +408,6 @@ func (c *chainObj) handleTimerTick(msg messages.TimerTick) {
 	if msg%2 == 0 {
 		c.stateMgr.EnqueueTimerMsg(msg / 2)
 	} else if c.consensus != nil {
-		c.consensus.EnqueueTimerMsg(msg / 2)
+		(*c.consensus).EnqueueTimerMsg(msg / 2)
 	}
 }
