@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,12 +28,14 @@ func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnN
 	// deposit funds before sending the off-ledger requestargs
 	e.requestFunds(userAddress, "userWallet")
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(iotas),
+		Transfer:  iscp.NewTokensIotas(iotas),
+		GasBudget: gas.MaxGasPerCall,
 	})
 	require.NoError(e.t, err)
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
+	receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
-	e.checkBalanceOnChain(userAgentID, iscp.IotaTokenID, iotas)
+	expectedIotas := iotas - receipts[0].GasFeeCharged
+	e.checkBalanceOnChain(userAgentID, iscp.IotaTokenID, expectedIotas)
 
 	// wait until access node syncs with account
 	if len(waitOnNodes) > 0 {
@@ -58,10 +60,16 @@ func TestOffledgerRequest(t *testing.T) {
 	chEnv := newChainEnv(t, e.clu, chain)
 	chEnv.deployIncCounterSC(counter)
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 100, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 1, 1000, 0, 1, 2, 3)
 
 	// send off-ledger request via Web API
-	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, inccounter.FuncIncCounter.Hname())
+	offledgerReq, err := chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			GasBudget: gas.MaxGasPerCall,
+		},
+	)
 	require.NoError(t, err)
 	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, offledgerReq.ID(), 30*time.Second)
 	require.NoError(t, err)
@@ -93,7 +101,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.clu, chain)
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 100, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 1, 10000, 0, 1, 2, 3)
 
 	// send big blob off-ledger request via Web API
 	size := int64(1 * 900 * 1024) // 900 KB
@@ -108,7 +116,8 @@ func TestOffledgerRequest900KB(t *testing.T) {
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
-			Args: paramsDict,
+			Args:      paramsDict,
+			GasBudget: gas.MaxGasPerCall,
 		})
 	require.NoError(t, err)
 
@@ -144,16 +153,22 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	e.deployIncCounterSC(nil)
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), util.MakeRange(0, clusterSize), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	// use an access node to create the chainClient
-	chClient := e.newWalletWithFunds(5, 1, 100, 0, 1, 2, 3, 4, 5)
+	chClient := e.newWalletWithFunds(5, 1, 1000, 0, 1, 2, 3, 4, 5)
 
 	// send off-ledger request via Web API (to the access node)
-	_, err = chClient.PostOffLedgerRequest(incCounterSCHname, inccounter.FuncIncCounter.Hname())
+	_, err = chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			GasBudget: gas.MaxGasPerCall,
+		},
+	)
 	require.NoError(t, err)
 
-	waitUntil(t, e.counterEquals(43), []int{0, 1, 2, 3, 6}, 30*time.Second)
+	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu.WaspClient(6).CallView(

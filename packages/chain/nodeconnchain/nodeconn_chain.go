@@ -269,9 +269,9 @@ func (nccT *nodeconnChain) PullTxInclusionState(txID iotago.TransactionID) {
 	nccT.nc.PullTxInclusionState(nccT.chainID, txID)
 }
 
-func (nccT *nodeconnChain) PullOutputByID(outputID *iotago.UTXOInput) {
+func (nccT *nodeconnChain) PullStateOutputByID(outputID *iotago.UTXOInput) {
 	nccT.metrics.GetOutPullOutputByID().CountLastMessage(outputID)
-	nccT.nc.PullOutputByID(nccT.chainID, outputID)
+	nccT.nc.PullStateOutputByID(nccT.chainID, outputID)
 }
 
 func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {

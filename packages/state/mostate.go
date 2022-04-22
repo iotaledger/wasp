@@ -50,6 +50,13 @@ func (s *mustOptimisticVirtualStateAccess) Timestamp() time.Time {
 	return s.state.Timestamp()
 }
 
+func (s *mustOptimisticVirtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	s.state.WithOnBlockSave(fun)
+}
+
 func (s *mustOptimisticVirtualStateAccess) PreviousStateCommitment() trie.VCommitment {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()

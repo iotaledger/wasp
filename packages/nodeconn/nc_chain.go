@@ -104,6 +104,22 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
 }
 
+func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
+	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	res, err := ncc.nc.nodeAPIClient.OutputByID(ctxWithTimeout, id)
+	cancelContext()
+	if err != nil {
+		ncc.log.Errorf("PullOutputByID: error querying API - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+		return
+	}
+	out, err := res.Output()
+	if err != nil {
+		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+		return
+	}
+	ncc.outputHandler(id, out)
+}
+
 func (ncc *ncChain) queryChainUTXOs() {
 	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Bech32Prefix)
 	queries := []nodeclient.IndexerQuery{
@@ -201,16 +217,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 	}
 }
 
-func (ncc *ncChain) subscribeToChainStateUpdates() {
-	//
-	// Subscribe to the new outputs first.
-	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
-	if subInfo.Error() != nil {
-		ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
-	}
-
-	//
-	// Then fetch all the existing unspent outputs owned by the chain.
+func (ncc *ncChain) queryLatestChainStateUTXO() {
 	// TODO what should be an adequate timeout for this query?
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
 	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
@@ -220,9 +227,22 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 	}
 	ncc.log.Debugf("received chain state update, outputID: %s", stateOutputID.ToHex())
 	ncc.stateOutputHandler(*stateOutputID, stateOutput)
+}
+
+func (ncc *ncChain) subscribeToChainStateUpdates() {
+	//
+	// Subscribe to the new outputs first.
+	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
+	if subInfo.Error() != nil {
+		ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+	}
 
 	//
-	// Then receive all the subscribed new outputs.
+	// Then fetch the latest chain state UTXO.
+	ncc.queryLatestChainStateUTXO()
+
+	//
+	// Then receive all the subscribed state outputs.
 	for {
 		select {
 		case outResponse := <-eventsCh:
