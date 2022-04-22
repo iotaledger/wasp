@@ -11,9 +11,8 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
-	engine     *wasmtime.Engine
+	config     *wasmtime.Config
 	instance   *wasmtime.Instance
-	interrupt  *wasmtime.InterruptHandle
 	linker     *wasmtime.Linker
 	memory     *wasmtime.Memory
 	module     *wasmtime.Module
@@ -22,11 +21,9 @@ type WasmTimeVM struct {
 }
 
 func NewWasmTimeVM() WasmVM {
-	vm := &WasmTimeVM{}
-	config := wasmtime.NewConfig()
-	config.SetInterruptable(true)
-	config.SetConsumeFuel(true)
-	vm.engine = wasmtime.NewEngineWithConfig(config)
+	vm := &WasmTimeVM{config: wasmtime.NewConfig()}
+	vm.config.SetInterruptable(true)
+	vm.config.SetConsumeFuel(true)
 	return vm
 }
 
@@ -61,14 +58,17 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 	// consume 0 fuel to determine remaining budget
 	remainingBudget, err := vm.store.ConsumeFuel(0)
 	if err != nil {
-		vm.proc.log.Infof("GasBurned.determine: " + err.Error())
+		vm.wc.proc.log.Infof("GasBurned.determine: " + err.Error())
 	}
 
 	burned := vm.lastBudget - remainingBudget
 	return burned
 }
 
-func (vm *WasmTimeVM) Instantiate() (err error) {
+func (vm *WasmTimeVM) Instantiate(wc *WasmContext) (err error) {
+	vm.wc = wc
+	vm.timeoutStarted = DisableWasmTimeout
+
 	vm.GasBudget(1_000_000)
 	vm.GasDisable(true)
 	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
@@ -90,19 +90,15 @@ func (vm *WasmTimeVM) Instantiate() (err error) {
 }
 
 func (vm *WasmTimeVM) Interrupt() {
-	vm.interrupt.Interrupt()
+	interrupt, err := vm.store.InterruptHandle()
+	if err != nil {
+		panic(err)
+	}
+	interrupt.Interrupt()
 }
 
-func (vm *WasmTimeVM) LinkHost(proc *WasmProcessor) (err error) {
-	_ = vm.WasmVMBase.LinkHost(proc)
-
-	vm.store = wasmtime.NewStore(vm.engine)
-	vm.interrupt, err = vm.store.InterruptHandle()
-	if err != nil {
-		return err
-	}
-
-	vm.linker = wasmtime.NewLinker(vm.engine)
+func (vm *WasmTimeVM) LinkHost() (err error) {
+	vm.linker = wasmtime.NewLinker(vm.store.Engine)
 
 	// new Wasm VM interface
 	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateGet, vm.HostStateGet)
@@ -129,15 +125,13 @@ func (vm *WasmTimeVM) LinkHost(proc *WasmProcessor) (err error) {
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
-	vm.module, err = wasmtime.NewModule(vm.engine, wasmData)
-	if err != nil {
-		return err
-	}
-	return vm.Instantiate()
+	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(vm.config))
+	vm.module, err = wasmtime.NewModule(vm.store.Engine, wasmData)
+	return err
 }
 
 func (vm *WasmTimeVM) NewInstance() WasmVM {
-	return &WasmTimeVM{engine: vm.engine, module: vm.module}
+	return &WasmTimeVM{store: vm.store, module: vm.module, linker: vm.linker}
 }
 
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {
@@ -159,6 +153,7 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(vm.store, index)
+		vm.store.GC()
 		return err
 	})
 }

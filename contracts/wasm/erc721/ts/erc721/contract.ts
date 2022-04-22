@@ -9,8 +9,11 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ApproveCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncApprove);
+	func: wasmlib.ScFunc;
 	params: sc.MutableApproveParams = new sc.MutableApproveParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncApprove);
+	}
 }
 
 export class ApproveContext {
@@ -20,8 +23,11 @@ export class ApproveContext {
 }
 
 export class BurnCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncBurn);
+	func: wasmlib.ScFunc;
 	params: sc.MutableBurnParams = new sc.MutableBurnParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncBurn);
+	}
 }
 
 export class BurnContext {
@@ -31,8 +37,11 @@ export class BurnContext {
 }
 
 export class InitCall {
-	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
+	func: wasmlib.ScInitFunc;
 	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScInitFunc(ctx, sc.HScName, sc.HFuncInit);
+	}
 }
 
 export class InitContext {
@@ -42,8 +51,11 @@ export class InitContext {
 }
 
 export class MintCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMint);
+	func: wasmlib.ScFunc;
 	params: sc.MutableMintParams = new sc.MutableMintParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncMint);
+	}
 }
 
 export class MintContext {
@@ -53,8 +65,11 @@ export class MintContext {
 }
 
 export class SafeTransferFromCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSafeTransferFrom);
+	func: wasmlib.ScFunc;
 	params: sc.MutableSafeTransferFromParams = new sc.MutableSafeTransferFromParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSafeTransferFrom);
+	}
 }
 
 export class SafeTransferFromContext {
@@ -64,8 +79,11 @@ export class SafeTransferFromContext {
 }
 
 export class SetApprovalForAllCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetApprovalForAll);
+	func: wasmlib.ScFunc;
 	params: sc.MutableSetApprovalForAllParams = new sc.MutableSetApprovalForAllParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetApprovalForAll);
+	}
 }
 
 export class SetApprovalForAllContext {
@@ -75,8 +93,11 @@ export class SetApprovalForAllContext {
 }
 
 export class TransferFromCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferFrom);
+	func: wasmlib.ScFunc;
 	params: sc.MutableTransferFromParams = new sc.MutableTransferFromParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTransferFrom);
+	}
 }
 
 export class TransferFromContext {
@@ -86,9 +107,12 @@ export class TransferFromContext {
 }
 
 export class BalanceOfCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalanceOf);
+	func: wasmlib.ScView;
 	params: sc.MutableBalanceOfParams = new sc.MutableBalanceOfParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBalanceOfResults = new sc.ImmutableBalanceOfResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBalanceOf);
+	}
 }
 
 export class BalanceOfContext {
@@ -98,9 +122,12 @@ export class BalanceOfContext {
 }
 
 export class GetApprovedCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetApproved);
+	func: wasmlib.ScView;
 	params: sc.MutableGetApprovedParams = new sc.MutableGetApprovedParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableGetApprovedResults = new sc.ImmutableGetApprovedResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetApproved);
+	}
 }
 
 export class GetApprovedContext {
@@ -110,9 +137,12 @@ export class GetApprovedContext {
 }
 
 export class IsApprovedForAllCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIsApprovedForAll);
+	func: wasmlib.ScView;
 	params: sc.MutableIsApprovedForAllParams = new sc.MutableIsApprovedForAllParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableIsApprovedForAllResults = new sc.ImmutableIsApprovedForAllResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewIsApprovedForAll);
+	}
 }
 
 export class IsApprovedForAllContext {
@@ -122,8 +152,11 @@ export class IsApprovedForAllContext {
 }
 
 export class NameCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewName);
+	func: wasmlib.ScView;
 	results: sc.ImmutableNameResults = new sc.ImmutableNameResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewName);
+	}
 }
 
 export class NameContext {
@@ -132,9 +165,12 @@ export class NameContext {
 }
 
 export class OwnerOfCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewOwnerOf);
+	func: wasmlib.ScView;
 	params: sc.MutableOwnerOfParams = new sc.MutableOwnerOfParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableOwnerOfResults = new sc.ImmutableOwnerOfResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewOwnerOf);
+	}
 }
 
 export class OwnerOfContext {
@@ -144,8 +180,11 @@ export class OwnerOfContext {
 }
 
 export class SymbolCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewSymbol);
+	func: wasmlib.ScView;
 	results: sc.ImmutableSymbolResults = new sc.ImmutableSymbolResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewSymbol);
+	}
 }
 
 export class SymbolContext {
@@ -154,9 +193,12 @@ export class SymbolContext {
 }
 
 export class TokenURICall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTokenURI);
+	func: wasmlib.ScView;
 	params: sc.MutableTokenURIParams = new sc.MutableTokenURIParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableTokenURIResults = new sc.ImmutableTokenURIResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewTokenURI);
+	}
 }
 
 export class TokenURIContext {
@@ -166,90 +208,90 @@ export class TokenURIContext {
 }
 
 export class ScFuncs {
-	static approve(_ctx: wasmlib.ScFuncCallContext): ApproveCall {
-		const f = new ApproveCall();
+	static approve(ctx: wasmlib.ScFuncCallContext): ApproveCall {
+		const f = new ApproveCall(ctx);
 		f.params = new sc.MutableApproveParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static burn(_ctx: wasmlib.ScFuncCallContext): BurnCall {
-		const f = new BurnCall();
+	static burn(ctx: wasmlib.ScFuncCallContext): BurnCall {
+		const f = new BurnCall(ctx);
 		f.params = new sc.MutableBurnParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
-		const f = new InitCall();
+	static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall(ctx);
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static mint(_ctx: wasmlib.ScFuncCallContext): MintCall {
-		const f = new MintCall();
+	static mint(ctx: wasmlib.ScFuncCallContext): MintCall {
+		const f = new MintCall(ctx);
 		f.params = new sc.MutableMintParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static safeTransferFrom(_ctx: wasmlib.ScFuncCallContext): SafeTransferFromCall {
-		const f = new SafeTransferFromCall();
+	static safeTransferFrom(ctx: wasmlib.ScFuncCallContext): SafeTransferFromCall {
+		const f = new SafeTransferFromCall(ctx);
 		f.params = new sc.MutableSafeTransferFromParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static setApprovalForAll(_ctx: wasmlib.ScFuncCallContext): SetApprovalForAllCall {
-		const f = new SetApprovalForAllCall();
+	static setApprovalForAll(ctx: wasmlib.ScFuncCallContext): SetApprovalForAllCall {
+		const f = new SetApprovalForAllCall(ctx);
 		f.params = new sc.MutableSetApprovalForAllParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static transferFrom(_ctx: wasmlib.ScFuncCallContext): TransferFromCall {
-		const f = new TransferFromCall();
+	static transferFrom(ctx: wasmlib.ScFuncCallContext): TransferFromCall {
+		const f = new TransferFromCall(ctx);
 		f.params = new sc.MutableTransferFromParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static balanceOf(_ctx: wasmlib.ScViewCallContext): BalanceOfCall {
-		const f = new BalanceOfCall();
+	static balanceOf(ctx: wasmlib.ScViewCallContext): BalanceOfCall {
+		const f = new BalanceOfCall(ctx);
 		f.params = new sc.MutableBalanceOfParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBalanceOfResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static getApproved(_ctx: wasmlib.ScViewCallContext): GetApprovedCall {
-		const f = new GetApprovedCall();
+	static getApproved(ctx: wasmlib.ScViewCallContext): GetApprovedCall {
+		const f = new GetApprovedCall(ctx);
 		f.params = new sc.MutableGetApprovedParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetApprovedResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static isApprovedForAll(_ctx: wasmlib.ScViewCallContext): IsApprovedForAllCall {
-		const f = new IsApprovedForAllCall();
+	static isApprovedForAll(ctx: wasmlib.ScViewCallContext): IsApprovedForAllCall {
+		const f = new IsApprovedForAllCall(ctx);
 		f.params = new sc.MutableIsApprovedForAllParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableIsApprovedForAllResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static name(_ctx: wasmlib.ScViewCallContext): NameCall {
-		const f = new NameCall();
+	static name(ctx: wasmlib.ScViewCallContext): NameCall {
+		const f = new NameCall(ctx);
 		f.results = new sc.ImmutableNameResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static ownerOf(_ctx: wasmlib.ScViewCallContext): OwnerOfCall {
-		const f = new OwnerOfCall();
+	static ownerOf(ctx: wasmlib.ScViewCallContext): OwnerOfCall {
+		const f = new OwnerOfCall(ctx);
 		f.params = new sc.MutableOwnerOfParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableOwnerOfResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static symbol(_ctx: wasmlib.ScViewCallContext): SymbolCall {
-		const f = new SymbolCall();
+	static symbol(ctx: wasmlib.ScViewCallContext): SymbolCall {
+		const f = new SymbolCall(ctx);
 		f.results = new sc.ImmutableSymbolResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static tokenURI(_ctx: wasmlib.ScViewCallContext): TokenURICall {
-		const f = new TokenURICall();
+	static tokenURI(ctx: wasmlib.ScViewCallContext): TokenURICall {
+		const f = new TokenURICall(ctx);
 		f.params = new sc.MutableTokenURIParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableTokenURIResults(wasmlib.newCallResultsProxy(f.func));
 		return f;

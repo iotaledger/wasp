@@ -22,7 +22,10 @@ const (
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	// TODO
+	t.SkipNow()
 	if useSoloClient {
+		*wasmsolo.TsWasm = true
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 		svcClient := wasmsolo.NewSoloClientService(ctx)
 		chainID := ctx.ChainID()

@@ -9,7 +9,10 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class HelloWorldCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHelloWorld);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncHelloWorld);
+	}
 }
 
 export class HelloWorldContext {
@@ -17,8 +20,11 @@ export class HelloWorldContext {
 }
 
 export class GetHelloWorldCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetHelloWorld);
+	func: wasmlib.ScView;
 	results: sc.ImmutableGetHelloWorldResults = new sc.ImmutableGetHelloWorldResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetHelloWorld);
+	}
 }
 
 export class GetHelloWorldContext {
@@ -27,12 +33,12 @@ export class GetHelloWorldContext {
 }
 
 export class ScFuncs {
-	static helloWorld(_ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
-		return new HelloWorldCall();
+	static helloWorld(ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
+		return new HelloWorldCall(ctx);
 	}
 
-	static getHelloWorld(_ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
-		const f = new GetHelloWorldCall();
+	static getHelloWorld(ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
+		const f = new GetHelloWorldCall(ctx);
 		f.results = new sc.ImmutableGetHelloWorldResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}

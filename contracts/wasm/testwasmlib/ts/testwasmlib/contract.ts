@@ -9,8 +9,11 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class AddressMapOfAddressArrayAppendCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddressMapOfAddressArrayAppend);
+	func: wasmlib.ScFunc;
 	params: sc.MutableAddressMapOfAddressArrayAppendParams = new sc.MutableAddressMapOfAddressArrayAppendParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddressMapOfAddressArrayAppend);
+	}
 }
 
 export class AddressMapOfAddressArrayAppendContext {
@@ -20,8 +23,11 @@ export class AddressMapOfAddressArrayAppendContext {
 }
 
 export class AddressMapOfAddressArrayClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddressMapOfAddressArrayClear);
+	func: wasmlib.ScFunc;
 	params: sc.MutableAddressMapOfAddressArrayClearParams = new sc.MutableAddressMapOfAddressArrayClearParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddressMapOfAddressArrayClear);
+	}
 }
 
 export class AddressMapOfAddressArrayClearContext {
@@ -31,8 +37,11 @@ export class AddressMapOfAddressArrayClearContext {
 }
 
 export class AddressMapOfAddressArraySetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddressMapOfAddressArraySet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableAddressMapOfAddressArraySetParams = new sc.MutableAddressMapOfAddressArraySetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddressMapOfAddressArraySet);
+	}
 }
 
 export class AddressMapOfAddressArraySetContext {
@@ -42,8 +51,11 @@ export class AddressMapOfAddressArraySetContext {
 }
 
 export class AddressMapOfAddressMapClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddressMapOfAddressMapClear);
+	func: wasmlib.ScFunc;
 	params: sc.MutableAddressMapOfAddressMapClearParams = new sc.MutableAddressMapOfAddressMapClearParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddressMapOfAddressMapClear);
+	}
 }
 
 export class AddressMapOfAddressMapClearContext {
@@ -53,8 +65,11 @@ export class AddressMapOfAddressMapClearContext {
 }
 
 export class AddressMapOfAddressMapSetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddressMapOfAddressMapSet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableAddressMapOfAddressMapSetParams = new sc.MutableAddressMapOfAddressMapSetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddressMapOfAddressMapSet);
+	}
 }
 
 export class AddressMapOfAddressMapSetContext {
@@ -64,8 +79,11 @@ export class AddressMapOfAddressMapSetContext {
 }
 
 export class ArrayOfAddressArrayAppendCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfAddressArrayAppend);
+	func: wasmlib.ScFunc;
 	params: sc.MutableArrayOfAddressArrayAppendParams = new sc.MutableArrayOfAddressArrayAppendParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfAddressArrayAppend);
+	}
 }
 
 export class ArrayOfAddressArrayAppendContext {
@@ -75,7 +93,10 @@ export class ArrayOfAddressArrayAppendContext {
 }
 
 export class ArrayOfAddressArrayClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfAddressArrayClear);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfAddressArrayClear);
+	}
 }
 
 export class ArrayOfAddressArrayClearContext {
@@ -84,8 +105,11 @@ export class ArrayOfAddressArrayClearContext {
 }
 
 export class ArrayOfAddressArraySetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfAddressArraySet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableArrayOfAddressArraySetParams = new sc.MutableArrayOfAddressArraySetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfAddressArraySet);
+	}
 }
 
 export class ArrayOfAddressArraySetContext {
@@ -95,7 +119,10 @@ export class ArrayOfAddressArraySetContext {
 }
 
 export class ArrayOfAddressMapClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfAddressMapClear);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfAddressMapClear);
+	}
 }
 
 export class ArrayOfAddressMapClearContext {
@@ -104,8 +131,11 @@ export class ArrayOfAddressMapClearContext {
 }
 
 export class ArrayOfAddressMapSetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfAddressMapSet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableArrayOfAddressMapSetParams = new sc.MutableArrayOfAddressMapSetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfAddressMapSet);
+	}
 }
 
 export class ArrayOfAddressMapSetContext {
@@ -115,8 +145,11 @@ export class ArrayOfAddressMapSetContext {
 }
 
 export class ArrayOfStringArrayAppendCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfStringArrayAppend);
+	func: wasmlib.ScFunc;
 	params: sc.MutableArrayOfStringArrayAppendParams = new sc.MutableArrayOfStringArrayAppendParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfStringArrayAppend);
+	}
 }
 
 export class ArrayOfStringArrayAppendContext {
@@ -126,7 +159,10 @@ export class ArrayOfStringArrayAppendContext {
 }
 
 export class ArrayOfStringArrayClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfStringArrayClear);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfStringArrayClear);
+	}
 }
 
 export class ArrayOfStringArrayClearContext {
@@ -135,8 +171,11 @@ export class ArrayOfStringArrayClearContext {
 }
 
 export class ArrayOfStringArraySetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfStringArraySet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableArrayOfStringArraySetParams = new sc.MutableArrayOfStringArraySetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfStringArraySet);
+	}
 }
 
 export class ArrayOfStringArraySetContext {
@@ -146,7 +185,10 @@ export class ArrayOfStringArraySetContext {
 }
 
 export class ArrayOfStringMapClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfStringMapClear);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfStringMapClear);
+	}
 }
 
 export class ArrayOfStringMapClearContext {
@@ -155,8 +197,11 @@ export class ArrayOfStringMapClearContext {
 }
 
 export class ArrayOfStringMapSetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayOfStringMapSet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableArrayOfStringMapSetParams = new sc.MutableArrayOfStringMapSetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncArrayOfStringMapSet);
+	}
 }
 
 export class ArrayOfStringMapSetContext {
@@ -166,8 +211,11 @@ export class ArrayOfStringMapSetContext {
 }
 
 export class ParamTypesCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncParamTypes);
+	func: wasmlib.ScFunc;
 	params: sc.MutableParamTypesParams = new sc.MutableParamTypesParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncParamTypes);
+	}
 }
 
 export class ParamTypesContext {
@@ -177,7 +225,10 @@ export class ParamTypesContext {
 }
 
 export class RandomCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRandom);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncRandom);
+	}
 }
 
 export class RandomContext {
@@ -186,8 +237,11 @@ export class RandomContext {
 }
 
 export class StringMapOfStringArrayAppendCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStringMapOfStringArrayAppend);
+	func: wasmlib.ScFunc;
 	params: sc.MutableStringMapOfStringArrayAppendParams = new sc.MutableStringMapOfStringArrayAppendParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStringMapOfStringArrayAppend);
+	}
 }
 
 export class StringMapOfStringArrayAppendContext {
@@ -197,8 +251,11 @@ export class StringMapOfStringArrayAppendContext {
 }
 
 export class StringMapOfStringArrayClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStringMapOfStringArrayClear);
+	func: wasmlib.ScFunc;
 	params: sc.MutableStringMapOfStringArrayClearParams = new sc.MutableStringMapOfStringArrayClearParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStringMapOfStringArrayClear);
+	}
 }
 
 export class StringMapOfStringArrayClearContext {
@@ -208,8 +265,11 @@ export class StringMapOfStringArrayClearContext {
 }
 
 export class StringMapOfStringArraySetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStringMapOfStringArraySet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableStringMapOfStringArraySetParams = new sc.MutableStringMapOfStringArraySetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStringMapOfStringArraySet);
+	}
 }
 
 export class StringMapOfStringArraySetContext {
@@ -219,8 +279,11 @@ export class StringMapOfStringArraySetContext {
 }
 
 export class StringMapOfStringMapClearCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStringMapOfStringMapClear);
+	func: wasmlib.ScFunc;
 	params: sc.MutableStringMapOfStringMapClearParams = new sc.MutableStringMapOfStringMapClearParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStringMapOfStringMapClear);
+	}
 }
 
 export class StringMapOfStringMapClearContext {
@@ -230,8 +293,11 @@ export class StringMapOfStringMapClearContext {
 }
 
 export class StringMapOfStringMapSetCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStringMapOfStringMapSet);
+	func: wasmlib.ScFunc;
 	params: sc.MutableStringMapOfStringMapSetParams = new sc.MutableStringMapOfStringMapSetParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStringMapOfStringMapSet);
+	}
 }
 
 export class StringMapOfStringMapSetContext {
@@ -241,7 +307,10 @@ export class StringMapOfStringMapSetContext {
 }
 
 export class TakeAllowanceCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTakeAllowance);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTakeAllowance);
+	}
 }
 
 export class TakeAllowanceContext {
@@ -250,8 +319,11 @@ export class TakeAllowanceContext {
 }
 
 export class TakeBalanceCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTakeBalance);
+	func: wasmlib.ScFunc;
 	results: sc.ImmutableTakeBalanceResults = new sc.ImmutableTakeBalanceResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTakeBalance);
+	}
 }
 
 export class TakeBalanceContext {
@@ -261,8 +333,11 @@ export class TakeBalanceContext {
 }
 
 export class TriggerEventCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTriggerEvent);
+	func: wasmlib.ScFunc;
 	params: sc.MutableTriggerEventParams = new sc.MutableTriggerEventParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTriggerEvent);
+	}
 }
 
 export class TriggerEventContext {
@@ -272,9 +347,12 @@ export class TriggerEventContext {
 }
 
 export class AddressMapOfAddressArrayLengthCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAddressMapOfAddressArrayLength);
+	func: wasmlib.ScView;
 	params: sc.MutableAddressMapOfAddressArrayLengthParams = new sc.MutableAddressMapOfAddressArrayLengthParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableAddressMapOfAddressArrayLengthResults = new sc.ImmutableAddressMapOfAddressArrayLengthResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAddressMapOfAddressArrayLength);
+	}
 }
 
 export class AddressMapOfAddressArrayLengthContext {
@@ -284,9 +362,12 @@ export class AddressMapOfAddressArrayLengthContext {
 }
 
 export class AddressMapOfAddressArrayValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAddressMapOfAddressArrayValue);
+	func: wasmlib.ScView;
 	params: sc.MutableAddressMapOfAddressArrayValueParams = new sc.MutableAddressMapOfAddressArrayValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableAddressMapOfAddressArrayValueResults = new sc.ImmutableAddressMapOfAddressArrayValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAddressMapOfAddressArrayValue);
+	}
 }
 
 export class AddressMapOfAddressArrayValueContext {
@@ -296,9 +377,12 @@ export class AddressMapOfAddressArrayValueContext {
 }
 
 export class AddressMapOfAddressMapValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAddressMapOfAddressMapValue);
+	func: wasmlib.ScView;
 	params: sc.MutableAddressMapOfAddressMapValueParams = new sc.MutableAddressMapOfAddressMapValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableAddressMapOfAddressMapValueResults = new sc.ImmutableAddressMapOfAddressMapValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAddressMapOfAddressMapValue);
+	}
 }
 
 export class AddressMapOfAddressMapValueContext {
@@ -308,8 +392,11 @@ export class AddressMapOfAddressMapValueContext {
 }
 
 export class ArrayOfAddressArrayLengthCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayOfAddressArrayLength);
+	func: wasmlib.ScView;
 	results: sc.ImmutableArrayOfAddressArrayLengthResults = new sc.ImmutableArrayOfAddressArrayLengthResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewArrayOfAddressArrayLength);
+	}
 }
 
 export class ArrayOfAddressArrayLengthContext {
@@ -318,9 +405,12 @@ export class ArrayOfAddressArrayLengthContext {
 }
 
 export class ArrayOfAddressArrayValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayOfAddressArrayValue);
+	func: wasmlib.ScView;
 	params: sc.MutableArrayOfAddressArrayValueParams = new sc.MutableArrayOfAddressArrayValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableArrayOfAddressArrayValueResults = new sc.ImmutableArrayOfAddressArrayValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewArrayOfAddressArrayValue);
+	}
 }
 
 export class ArrayOfAddressArrayValueContext {
@@ -330,9 +420,12 @@ export class ArrayOfAddressArrayValueContext {
 }
 
 export class ArrayOfAddressMapValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayOfAddressMapValue);
+	func: wasmlib.ScView;
 	params: sc.MutableArrayOfAddressMapValueParams = new sc.MutableArrayOfAddressMapValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableArrayOfAddressMapValueResults = new sc.ImmutableArrayOfAddressMapValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewArrayOfAddressMapValue);
+	}
 }
 
 export class ArrayOfAddressMapValueContext {
@@ -342,8 +435,11 @@ export class ArrayOfAddressMapValueContext {
 }
 
 export class ArrayOfStringArrayLengthCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayOfStringArrayLength);
+	func: wasmlib.ScView;
 	results: sc.ImmutableArrayOfStringArrayLengthResults = new sc.ImmutableArrayOfStringArrayLengthResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewArrayOfStringArrayLength);
+	}
 }
 
 export class ArrayOfStringArrayLengthContext {
@@ -352,9 +448,12 @@ export class ArrayOfStringArrayLengthContext {
 }
 
 export class ArrayOfStringArrayValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayOfStringArrayValue);
+	func: wasmlib.ScView;
 	params: sc.MutableArrayOfStringArrayValueParams = new sc.MutableArrayOfStringArrayValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableArrayOfStringArrayValueResults = new sc.ImmutableArrayOfStringArrayValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewArrayOfStringArrayValue);
+	}
 }
 
 export class ArrayOfStringArrayValueContext {
@@ -364,9 +463,12 @@ export class ArrayOfStringArrayValueContext {
 }
 
 export class ArrayOfStringMapValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayOfStringMapValue);
+	func: wasmlib.ScView;
 	params: sc.MutableArrayOfStringMapValueParams = new sc.MutableArrayOfStringMapValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableArrayOfStringMapValueResults = new sc.ImmutableArrayOfStringMapValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewArrayOfStringMapValue);
+	}
 }
 
 export class ArrayOfStringMapValueContext {
@@ -376,9 +478,12 @@ export class ArrayOfStringMapValueContext {
 }
 
 export class BigIntAddCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntAdd);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntAddParams = new sc.MutableBigIntAddParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntAddResults = new sc.ImmutableBigIntAddResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntAdd);
+	}
 }
 
 export class BigIntAddContext {
@@ -388,9 +493,12 @@ export class BigIntAddContext {
 }
 
 export class BigIntDivCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntDiv);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntDivParams = new sc.MutableBigIntDivParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntDivResults = new sc.ImmutableBigIntDivResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntDiv);
+	}
 }
 
 export class BigIntDivContext {
@@ -400,9 +508,12 @@ export class BigIntDivContext {
 }
 
 export class BigIntModCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntMod);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntModParams = new sc.MutableBigIntModParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntModResults = new sc.ImmutableBigIntModResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntMod);
+	}
 }
 
 export class BigIntModContext {
@@ -412,9 +523,12 @@ export class BigIntModContext {
 }
 
 export class BigIntMulCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntMul);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntMulParams = new sc.MutableBigIntMulParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntMulResults = new sc.ImmutableBigIntMulResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntMul);
+	}
 }
 
 export class BigIntMulContext {
@@ -424,9 +538,12 @@ export class BigIntMulContext {
 }
 
 export class BigIntShlCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntShl);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntShlParams = new sc.MutableBigIntShlParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntShlResults = new sc.ImmutableBigIntShlResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntShl);
+	}
 }
 
 export class BigIntShlContext {
@@ -436,9 +553,12 @@ export class BigIntShlContext {
 }
 
 export class BigIntShrCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntShr);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntShrParams = new sc.MutableBigIntShrParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntShrResults = new sc.ImmutableBigIntShrResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntShr);
+	}
 }
 
 export class BigIntShrContext {
@@ -448,9 +568,12 @@ export class BigIntShrContext {
 }
 
 export class BigIntSubCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBigIntSub);
+	func: wasmlib.ScView;
 	params: sc.MutableBigIntSubParams = new sc.MutableBigIntSubParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBigIntSubResults = new sc.ImmutableBigIntSubResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntSub);
+	}
 }
 
 export class BigIntSubContext {
@@ -460,9 +583,12 @@ export class BigIntSubContext {
 }
 
 export class BlockRecordCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecord);
+	func: wasmlib.ScView;
 	params: sc.MutableBlockRecordParams = new sc.MutableBlockRecordParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBlockRecordResults = new sc.ImmutableBlockRecordResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBlockRecord);
+	}
 }
 
 export class BlockRecordContext {
@@ -472,9 +598,12 @@ export class BlockRecordContext {
 }
 
 export class BlockRecordsCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecords);
+	func: wasmlib.ScView;
 	params: sc.MutableBlockRecordsParams = new sc.MutableBlockRecordsParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableBlockRecordsResults = new sc.ImmutableBlockRecordsResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBlockRecords);
+	}
 }
 
 export class BlockRecordsContext {
@@ -484,8 +613,11 @@ export class BlockRecordsContext {
 }
 
 export class GetRandomCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetRandom);
+	func: wasmlib.ScView;
 	results: sc.ImmutableGetRandomResults = new sc.ImmutableGetRandomResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetRandom);
+	}
 }
 
 export class GetRandomContext {
@@ -494,8 +626,11 @@ export class GetRandomContext {
 }
 
 export class IotaBalanceCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIotaBalance);
+	func: wasmlib.ScView;
 	results: sc.ImmutableIotaBalanceResults = new sc.ImmutableIotaBalanceResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewIotaBalance);
+	}
 }
 
 export class IotaBalanceContext {
@@ -504,9 +639,12 @@ export class IotaBalanceContext {
 }
 
 export class StringMapOfStringArrayLengthCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewStringMapOfStringArrayLength);
+	func: wasmlib.ScView;
 	params: sc.MutableStringMapOfStringArrayLengthParams = new sc.MutableStringMapOfStringArrayLengthParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableStringMapOfStringArrayLengthResults = new sc.ImmutableStringMapOfStringArrayLengthResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewStringMapOfStringArrayLength);
+	}
 }
 
 export class StringMapOfStringArrayLengthContext {
@@ -516,9 +654,12 @@ export class StringMapOfStringArrayLengthContext {
 }
 
 export class StringMapOfStringArrayValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewStringMapOfStringArrayValue);
+	func: wasmlib.ScView;
 	params: sc.MutableStringMapOfStringArrayValueParams = new sc.MutableStringMapOfStringArrayValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableStringMapOfStringArrayValueResults = new sc.ImmutableStringMapOfStringArrayValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewStringMapOfStringArrayValue);
+	}
 }
 
 export class StringMapOfStringArrayValueContext {
@@ -528,9 +669,12 @@ export class StringMapOfStringArrayValueContext {
 }
 
 export class StringMapOfStringMapValueCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewStringMapOfStringMapValue);
+	func: wasmlib.ScView;
 	params: sc.MutableStringMapOfStringMapValueParams = new sc.MutableStringMapOfStringMapValueParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableStringMapOfStringMapValueResults = new sc.ImmutableStringMapOfStringMapValueResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewStringMapOfStringMapValue);
+	}
 }
 
 export class StringMapOfStringMapValueContext {
@@ -540,298 +684,298 @@ export class StringMapOfStringMapValueContext {
 }
 
 export class ScFuncs {
-	static addressMapOfAddressArrayAppend(_ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressArrayAppendCall {
-		const f = new AddressMapOfAddressArrayAppendCall();
+	static addressMapOfAddressArrayAppend(ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressArrayAppendCall {
+		const f = new AddressMapOfAddressArrayAppendCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressArrayAppendParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressArrayClear(_ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressArrayClearCall {
-		const f = new AddressMapOfAddressArrayClearCall();
+	static addressMapOfAddressArrayClear(ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressArrayClearCall {
+		const f = new AddressMapOfAddressArrayClearCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressArrayClearParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressArraySet(_ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressArraySetCall {
-		const f = new AddressMapOfAddressArraySetCall();
+	static addressMapOfAddressArraySet(ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressArraySetCall {
+		const f = new AddressMapOfAddressArraySetCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressArraySetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressMapClear(_ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressMapClearCall {
-		const f = new AddressMapOfAddressMapClearCall();
+	static addressMapOfAddressMapClear(ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressMapClearCall {
+		const f = new AddressMapOfAddressMapClearCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressMapClearParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressMapSet(_ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressMapSetCall {
-		const f = new AddressMapOfAddressMapSetCall();
+	static addressMapOfAddressMapSet(ctx: wasmlib.ScFuncCallContext): AddressMapOfAddressMapSetCall {
+		const f = new AddressMapOfAddressMapSetCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressMapSetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfAddressArrayAppend(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArrayAppendCall {
-		const f = new ArrayOfAddressArrayAppendCall();
+	static arrayOfAddressArrayAppend(ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArrayAppendCall {
+		const f = new ArrayOfAddressArrayAppendCall(ctx);
 		f.params = new sc.MutableArrayOfAddressArrayAppendParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
 	// Clear all the arrays of the array
-	static arrayOfAddressArrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArrayClearCall {
-		return new ArrayOfAddressArrayClearCall();
+	static arrayOfAddressArrayClear(ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArrayClearCall {
+		return new ArrayOfAddressArrayClearCall(ctx);
 	}
 
-	static arrayOfAddressArraySet(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArraySetCall {
-		const f = new ArrayOfAddressArraySetCall();
+	static arrayOfAddressArraySet(ctx: wasmlib.ScFuncCallContext): ArrayOfAddressArraySetCall {
+		const f = new ArrayOfAddressArraySetCall(ctx);
 		f.params = new sc.MutableArrayOfAddressArraySetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfAddressMapClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressMapClearCall {
-		return new ArrayOfAddressMapClearCall();
+	static arrayOfAddressMapClear(ctx: wasmlib.ScFuncCallContext): ArrayOfAddressMapClearCall {
+		return new ArrayOfAddressMapClearCall(ctx);
 	}
 
-	static arrayOfAddressMapSet(_ctx: wasmlib.ScFuncCallContext): ArrayOfAddressMapSetCall {
-		const f = new ArrayOfAddressMapSetCall();
+	static arrayOfAddressMapSet(ctx: wasmlib.ScFuncCallContext): ArrayOfAddressMapSetCall {
+		const f = new ArrayOfAddressMapSetCall(ctx);
 		f.params = new sc.MutableArrayOfAddressMapSetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfStringArrayAppend(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringArrayAppendCall {
-		const f = new ArrayOfStringArrayAppendCall();
+	static arrayOfStringArrayAppend(ctx: wasmlib.ScFuncCallContext): ArrayOfStringArrayAppendCall {
+		const f = new ArrayOfStringArrayAppendCall(ctx);
 		f.params = new sc.MutableArrayOfStringArrayAppendParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
 	// Clear all the arrays of the array
-	static arrayOfStringArrayClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringArrayClearCall {
-		return new ArrayOfStringArrayClearCall();
+	static arrayOfStringArrayClear(ctx: wasmlib.ScFuncCallContext): ArrayOfStringArrayClearCall {
+		return new ArrayOfStringArrayClearCall(ctx);
 	}
 
-	static arrayOfStringArraySet(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringArraySetCall {
-		const f = new ArrayOfStringArraySetCall();
+	static arrayOfStringArraySet(ctx: wasmlib.ScFuncCallContext): ArrayOfStringArraySetCall {
+		const f = new ArrayOfStringArraySetCall(ctx);
 		f.params = new sc.MutableArrayOfStringArraySetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfStringMapClear(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringMapClearCall {
-		return new ArrayOfStringMapClearCall();
+	static arrayOfStringMapClear(ctx: wasmlib.ScFuncCallContext): ArrayOfStringMapClearCall {
+		return new ArrayOfStringMapClearCall(ctx);
 	}
 
-	static arrayOfStringMapSet(_ctx: wasmlib.ScFuncCallContext): ArrayOfStringMapSetCall {
-		const f = new ArrayOfStringMapSetCall();
+	static arrayOfStringMapSet(ctx: wasmlib.ScFuncCallContext): ArrayOfStringMapSetCall {
+		const f = new ArrayOfStringMapSetCall(ctx);
 		f.params = new sc.MutableArrayOfStringMapSetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static paramTypes(_ctx: wasmlib.ScFuncCallContext): ParamTypesCall {
-		const f = new ParamTypesCall();
+	static paramTypes(ctx: wasmlib.ScFuncCallContext): ParamTypesCall {
+		const f = new ParamTypesCall(ctx);
 		f.params = new sc.MutableParamTypesParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static random(_ctx: wasmlib.ScFuncCallContext): RandomCall {
-		return new RandomCall();
+	static random(ctx: wasmlib.ScFuncCallContext): RandomCall {
+		return new RandomCall(ctx);
 	}
 
-	static stringMapOfStringArrayAppend(_ctx: wasmlib.ScFuncCallContext): StringMapOfStringArrayAppendCall {
-		const f = new StringMapOfStringArrayAppendCall();
+	static stringMapOfStringArrayAppend(ctx: wasmlib.ScFuncCallContext): StringMapOfStringArrayAppendCall {
+		const f = new StringMapOfStringArrayAppendCall(ctx);
 		f.params = new sc.MutableStringMapOfStringArrayAppendParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringArrayClear(_ctx: wasmlib.ScFuncCallContext): StringMapOfStringArrayClearCall {
-		const f = new StringMapOfStringArrayClearCall();
+	static stringMapOfStringArrayClear(ctx: wasmlib.ScFuncCallContext): StringMapOfStringArrayClearCall {
+		const f = new StringMapOfStringArrayClearCall(ctx);
 		f.params = new sc.MutableStringMapOfStringArrayClearParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringArraySet(_ctx: wasmlib.ScFuncCallContext): StringMapOfStringArraySetCall {
-		const f = new StringMapOfStringArraySetCall();
+	static stringMapOfStringArraySet(ctx: wasmlib.ScFuncCallContext): StringMapOfStringArraySetCall {
+		const f = new StringMapOfStringArraySetCall(ctx);
 		f.params = new sc.MutableStringMapOfStringArraySetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringMapClear(_ctx: wasmlib.ScFuncCallContext): StringMapOfStringMapClearCall {
-		const f = new StringMapOfStringMapClearCall();
+	static stringMapOfStringMapClear(ctx: wasmlib.ScFuncCallContext): StringMapOfStringMapClearCall {
+		const f = new StringMapOfStringMapClearCall(ctx);
 		f.params = new sc.MutableStringMapOfStringMapClearParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringMapSet(_ctx: wasmlib.ScFuncCallContext): StringMapOfStringMapSetCall {
-		const f = new StringMapOfStringMapSetCall();
+	static stringMapOfStringMapSet(ctx: wasmlib.ScFuncCallContext): StringMapOfStringMapSetCall {
+		const f = new StringMapOfStringMapSetCall(ctx);
 		f.params = new sc.MutableStringMapOfStringMapSetParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static takeAllowance(_ctx: wasmlib.ScFuncCallContext): TakeAllowanceCall {
-		return new TakeAllowanceCall();
+	static takeAllowance(ctx: wasmlib.ScFuncCallContext): TakeAllowanceCall {
+		return new TakeAllowanceCall(ctx);
 	}
 
-	static takeBalance(_ctx: wasmlib.ScFuncCallContext): TakeBalanceCall {
-		const f = new TakeBalanceCall();
+	static takeBalance(ctx: wasmlib.ScFuncCallContext): TakeBalanceCall {
+		const f = new TakeBalanceCall(ctx);
 		f.results = new sc.ImmutableTakeBalanceResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static triggerEvent(_ctx: wasmlib.ScFuncCallContext): TriggerEventCall {
-		const f = new TriggerEventCall();
+	static triggerEvent(ctx: wasmlib.ScFuncCallContext): TriggerEventCall {
+		const f = new TriggerEventCall(ctx);
 		f.params = new sc.MutableTriggerEventParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressArrayLength(_ctx: wasmlib.ScViewCallContext): AddressMapOfAddressArrayLengthCall {
-		const f = new AddressMapOfAddressArrayLengthCall();
+	static addressMapOfAddressArrayLength(ctx: wasmlib.ScViewCallContext): AddressMapOfAddressArrayLengthCall {
+		const f = new AddressMapOfAddressArrayLengthCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressArrayLengthParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableAddressMapOfAddressArrayLengthResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressArrayValue(_ctx: wasmlib.ScViewCallContext): AddressMapOfAddressArrayValueCall {
-		const f = new AddressMapOfAddressArrayValueCall();
+	static addressMapOfAddressArrayValue(ctx: wasmlib.ScViewCallContext): AddressMapOfAddressArrayValueCall {
+		const f = new AddressMapOfAddressArrayValueCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressArrayValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableAddressMapOfAddressArrayValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static addressMapOfAddressMapValue(_ctx: wasmlib.ScViewCallContext): AddressMapOfAddressMapValueCall {
-		const f = new AddressMapOfAddressMapValueCall();
+	static addressMapOfAddressMapValue(ctx: wasmlib.ScViewCallContext): AddressMapOfAddressMapValueCall {
+		const f = new AddressMapOfAddressMapValueCall(ctx);
 		f.params = new sc.MutableAddressMapOfAddressMapValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableAddressMapOfAddressMapValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfAddressArrayLength(_ctx: wasmlib.ScViewCallContext): ArrayOfAddressArrayLengthCall {
-		const f = new ArrayOfAddressArrayLengthCall();
+	static arrayOfAddressArrayLength(ctx: wasmlib.ScViewCallContext): ArrayOfAddressArrayLengthCall {
+		const f = new ArrayOfAddressArrayLengthCall(ctx);
 		f.results = new sc.ImmutableArrayOfAddressArrayLengthResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfAddressArrayValue(_ctx: wasmlib.ScViewCallContext): ArrayOfAddressArrayValueCall {
-		const f = new ArrayOfAddressArrayValueCall();
+	static arrayOfAddressArrayValue(ctx: wasmlib.ScViewCallContext): ArrayOfAddressArrayValueCall {
+		const f = new ArrayOfAddressArrayValueCall(ctx);
 		f.params = new sc.MutableArrayOfAddressArrayValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableArrayOfAddressArrayValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfAddressMapValue(_ctx: wasmlib.ScViewCallContext): ArrayOfAddressMapValueCall {
-		const f = new ArrayOfAddressMapValueCall();
+	static arrayOfAddressMapValue(ctx: wasmlib.ScViewCallContext): ArrayOfAddressMapValueCall {
+		const f = new ArrayOfAddressMapValueCall(ctx);
 		f.params = new sc.MutableArrayOfAddressMapValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableArrayOfAddressMapValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfStringArrayLength(_ctx: wasmlib.ScViewCallContext): ArrayOfStringArrayLengthCall {
-		const f = new ArrayOfStringArrayLengthCall();
+	static arrayOfStringArrayLength(ctx: wasmlib.ScViewCallContext): ArrayOfStringArrayLengthCall {
+		const f = new ArrayOfStringArrayLengthCall(ctx);
 		f.results = new sc.ImmutableArrayOfStringArrayLengthResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfStringArrayValue(_ctx: wasmlib.ScViewCallContext): ArrayOfStringArrayValueCall {
-		const f = new ArrayOfStringArrayValueCall();
+	static arrayOfStringArrayValue(ctx: wasmlib.ScViewCallContext): ArrayOfStringArrayValueCall {
+		const f = new ArrayOfStringArrayValueCall(ctx);
 		f.params = new sc.MutableArrayOfStringArrayValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableArrayOfStringArrayValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static arrayOfStringMapValue(_ctx: wasmlib.ScViewCallContext): ArrayOfStringMapValueCall {
-		const f = new ArrayOfStringMapValueCall();
+	static arrayOfStringMapValue(ctx: wasmlib.ScViewCallContext): ArrayOfStringMapValueCall {
+		const f = new ArrayOfStringMapValueCall(ctx);
 		f.params = new sc.MutableArrayOfStringMapValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableArrayOfStringMapValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntAdd(_ctx: wasmlib.ScViewCallContext): BigIntAddCall {
-		const f = new BigIntAddCall();
+	static bigIntAdd(ctx: wasmlib.ScViewCallContext): BigIntAddCall {
+		const f = new BigIntAddCall(ctx);
 		f.params = new sc.MutableBigIntAddParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntAddResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntDiv(_ctx: wasmlib.ScViewCallContext): BigIntDivCall {
-		const f = new BigIntDivCall();
+	static bigIntDiv(ctx: wasmlib.ScViewCallContext): BigIntDivCall {
+		const f = new BigIntDivCall(ctx);
 		f.params = new sc.MutableBigIntDivParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntDivResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntMod(_ctx: wasmlib.ScViewCallContext): BigIntModCall {
-		const f = new BigIntModCall();
+	static bigIntMod(ctx: wasmlib.ScViewCallContext): BigIntModCall {
+		const f = new BigIntModCall(ctx);
 		f.params = new sc.MutableBigIntModParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntModResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntMul(_ctx: wasmlib.ScViewCallContext): BigIntMulCall {
-		const f = new BigIntMulCall();
+	static bigIntMul(ctx: wasmlib.ScViewCallContext): BigIntMulCall {
+		const f = new BigIntMulCall(ctx);
 		f.params = new sc.MutableBigIntMulParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntMulResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntShl(_ctx: wasmlib.ScViewCallContext): BigIntShlCall {
-		const f = new BigIntShlCall();
+	static bigIntShl(ctx: wasmlib.ScViewCallContext): BigIntShlCall {
+		const f = new BigIntShlCall(ctx);
 		f.params = new sc.MutableBigIntShlParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntShlResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntShr(_ctx: wasmlib.ScViewCallContext): BigIntShrCall {
-		const f = new BigIntShrCall();
+	static bigIntShr(ctx: wasmlib.ScViewCallContext): BigIntShrCall {
+		const f = new BigIntShrCall(ctx);
 		f.params = new sc.MutableBigIntShrParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntShrResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static bigIntSub(_ctx: wasmlib.ScViewCallContext): BigIntSubCall {
-		const f = new BigIntSubCall();
+	static bigIntSub(ctx: wasmlib.ScViewCallContext): BigIntSubCall {
+		const f = new BigIntSubCall(ctx);
 		f.params = new sc.MutableBigIntSubParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntSubResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static blockRecord(_ctx: wasmlib.ScViewCallContext): BlockRecordCall {
-		const f = new BlockRecordCall();
+	static blockRecord(ctx: wasmlib.ScViewCallContext): BlockRecordCall {
+		const f = new BlockRecordCall(ctx);
 		f.params = new sc.MutableBlockRecordParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBlockRecordResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static blockRecords(_ctx: wasmlib.ScViewCallContext): BlockRecordsCall {
-		const f = new BlockRecordsCall();
+	static blockRecords(ctx: wasmlib.ScViewCallContext): BlockRecordsCall {
+		const f = new BlockRecordsCall(ctx);
 		f.params = new sc.MutableBlockRecordsParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBlockRecordsResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static getRandom(_ctx: wasmlib.ScViewCallContext): GetRandomCall {
-		const f = new GetRandomCall();
+	static getRandom(ctx: wasmlib.ScViewCallContext): GetRandomCall {
+		const f = new GetRandomCall(ctx);
 		f.results = new sc.ImmutableGetRandomResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static iotaBalance(_ctx: wasmlib.ScViewCallContext): IotaBalanceCall {
-		const f = new IotaBalanceCall();
+	static iotaBalance(ctx: wasmlib.ScViewCallContext): IotaBalanceCall {
+		const f = new IotaBalanceCall(ctx);
 		f.results = new sc.ImmutableIotaBalanceResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringArrayLength(_ctx: wasmlib.ScViewCallContext): StringMapOfStringArrayLengthCall {
-		const f = new StringMapOfStringArrayLengthCall();
+	static stringMapOfStringArrayLength(ctx: wasmlib.ScViewCallContext): StringMapOfStringArrayLengthCall {
+		const f = new StringMapOfStringArrayLengthCall(ctx);
 		f.params = new sc.MutableStringMapOfStringArrayLengthParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableStringMapOfStringArrayLengthResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringArrayValue(_ctx: wasmlib.ScViewCallContext): StringMapOfStringArrayValueCall {
-		const f = new StringMapOfStringArrayValueCall();
+	static stringMapOfStringArrayValue(ctx: wasmlib.ScViewCallContext): StringMapOfStringArrayValueCall {
+		const f = new StringMapOfStringArrayValueCall(ctx);
 		f.params = new sc.MutableStringMapOfStringArrayValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableStringMapOfStringArrayValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static stringMapOfStringMapValue(_ctx: wasmlib.ScViewCallContext): StringMapOfStringMapValueCall {
-		const f = new StringMapOfStringMapValueCall();
+	static stringMapOfStringMapValue(ctx: wasmlib.ScViewCallContext): StringMapOfStringMapValueCall {
+		const f = new StringMapOfStringMapValueCall(ctx);
 		f.params = new sc.MutableStringMapOfStringMapValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableStringMapOfStringMapValueResults(wasmlib.newCallResultsProxy(f.func));
 		return f;

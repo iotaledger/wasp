@@ -132,4 +132,27 @@ contract ISCTest {
 		isc.call(isc.hn("inccounter"), isc.hn("incCounter"), params, allowance);
 	}
 
+    function callSendAsNFT(IotaNFTID id) public {
+
+        IotaAddress memory receiver = isc.getSenderAddress();
+
+		ISCFungibleTokens memory fungibleTokens;
+		fungibleTokens.iotas = 1074;
+        fungibleTokens.tokens = new IotaNativeToken[](0);
+
+
+        ISCSendMetadata memory metadata;
+		metadata.entrypoint = ISCHname.wrap(0x1337);
+		metadata.targetContract = ISCHname.wrap(0xd34db33f);
+
+        ISCDict memory optParams = ISCDict(new ISCDictItem[](1));
+		bytes memory int64Encoded42 = hex"2A00000000000000";
+		optParams.items[0] = ISCDictItem("x", int64Encoded42);
+		metadata.params = optParams;
+
+		ISCSendOptions memory options;
+
+        isc.sendAsNFT(receiver, fungibleTokens, true, metadata, options, id); 
+    }
+
 }
