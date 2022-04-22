@@ -27,7 +27,9 @@ func NewWasmGoVM(scName string, onLoad ScOnloadFunc) WasmVM {
 	return &WasmGoVM{scName: scName, onLoad: onLoad}
 }
 
-func (vm *WasmGoVM) Instantiate() error {
+func (vm *WasmGoVM) Instantiate(wc *WasmContext) error {
+	vm.wc = wc
+	vm.timeoutStarted = DisableWasmTimeout
 	return nil
 }
 

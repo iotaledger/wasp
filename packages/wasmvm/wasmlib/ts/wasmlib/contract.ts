@@ -3,19 +3,20 @@
 
 import * as wasmrequests from "./wasmrequests"
 import * as wasmtypes from "./wasmtypes"
-import {ScAssets, ScTransfer} from "./assets";
+import {ScTransfer} from "./assets";
 import {ScDict} from "./dict";
 import {sandbox} from "./host";
 import {FnCall, FnPost, panic, ScSandbox} from "./sandbox";
 
 // base contract objects
 
-export interface ScFuncCallContext {
-    canCallFunc(): void;
+export interface ScViewCallContext {
+    chainID(): wasmtypes.ScChainID;
+    initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname;
 }
 
-export interface ScViewCallContext {
-    canCallView(): void;
+export interface ScFuncCallContext extends ScViewCallContext {
+    initFuncCallContext(): void;
 }
 
 export function newCallParamsProxy(v: ScView): wasmtypes.Proxy {
@@ -40,7 +41,7 @@ export class ScView {
     params: ScDict;
     resultsProxy: wasmtypes.Proxy | null;
 
-    constructor(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
+    constructor(ctx: ScViewCallContext, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
         this.hContract = hContract;
         this.hFunction = hFunction;
         this.params = ScView.nilParams;
@@ -77,6 +78,10 @@ export class ScView {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScInitFunc extends ScView {
+    constructor(ctx: ScFuncCallContext, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
+        super(ctx, hContract, hFunction);
+    }
+
     call(): void {
         return panic("cannot call init");
     }
@@ -87,6 +92,10 @@ export class ScInitFunc extends ScView {
 export class ScFunc extends ScView {
     delaySeconds: u32 = 0;
     transferAssets: ScTransfer | null = null;
+
+    constructor(ctx: ScFuncCallContext, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
+        super(ctx, hContract, hFunction);
+    }
 
     call(): void {
         if (this.delaySeconds != 0) {
@@ -101,7 +110,7 @@ export class ScFunc extends ScView {
     }
 
     post(): void {
-        return this.postToChain(new ScSandbox().chainID());
+        return this.postToChain(new ScSandbox().currentChainID());
     }
 
     postToChain(chainID: wasmtypes.ScChainID): void {

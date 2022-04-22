@@ -32,6 +32,7 @@ type WasmContext struct {
 	proc      *WasmProcessor
 	results   dict.Dict
 	sandbox   ISandbox
+	vm        WasmVM
 	wcSandbox *WasmContextSandbox
 }
 
@@ -40,11 +41,12 @@ var (
 	_ wasmlib.ScHost             = &WasmContext{}
 )
 
-func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
+func NewWasmContext(function string, proc *WasmProcessor, vm WasmVM) *WasmContext {
 	return &WasmContext{
 		funcName:  function,
 		proc:      proc,
 		funcTable: proc.funcTable,
+		vm:        vm,
 	}
 }
 
@@ -68,7 +70,7 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 	defer func() {
 		Connect(wcSaved)
 		// clean up context after use
-		wc.proc.KillContext(wc.id)
+		wc.proc.mainProc().KillContext(wc.id)
 	}()
 
 	if wc.funcName == "" {
@@ -94,16 +96,17 @@ func (wc *WasmContext) callFunction() error {
 	wc.proc.instanceLock.Lock()
 	defer wc.proc.instanceLock.Unlock()
 
-	saveID := wc.proc.currentContextID
-	wc.proc.currentContextID = wc.id
+	mainProc := wc.proc.mainProc()
+	saveID := mainProc.currentContextID
+	mainProc.currentContextID = wc.id
 	wc.gasBudget = wc.GasBudget()
-	wc.proc.vm.GasBudget(wc.gasBudget * wc.proc.gasFactor())
+	wc.vm.GasBudget(wc.gasBudget * mainProc.gasFactor())
 	err := wc.proc.RunScFunction(wc.funcName)
 	// if err == nil {
-	wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
+	wc.GasBurned(wc.vm.GasBurned() / mainProc.gasFactor())
 	//}
 	wc.gasBurned = wc.gasBudget - wc.GasBudget()
-	wc.proc.currentContextID = saveID
+	mainProc.currentContextID = saveID
 	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
@@ -168,6 +171,10 @@ func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
 	}
 
 	wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
+	// TODO fix this. Probably need to connect proper context or smth
+	if wc.sandbox == nil {
+		panic("nil sandbox")
+	}
 	res := wc.sandbox.Call(funcNr, params)
 	wc.tracef("  => %s", hex(res))
 	return res

@@ -9,9 +9,12 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class TestFunc1Call {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestFunc1);
+	func: wasmlib.ScFunc;
 	params: sc.MutableTestFunc1Params = new sc.MutableTestFunc1Params(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableTestFunc1Results = new sc.ImmutableTestFunc1Results(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTestFunc1);
+	}
 }
 
 export class TestFunc1Context {
@@ -22,9 +25,12 @@ export class TestFunc1Context {
 }
 
 export class TestView1Call {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTestView1);
+	func: wasmlib.ScView;
 	params: sc.MutableTestView1Params = new sc.MutableTestView1Params(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableTestView1Results = new sc.ImmutableTestView1Results(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewTestView1);
+	}
 }
 
 export class TestView1Context {
@@ -35,16 +41,16 @@ export class TestView1Context {
 
 export class ScFuncs {
 	// comment for TestFunc1 1
-	static testFunc1(_ctx: wasmlib.ScFuncCallContext): TestFunc1Call {
-		const f = new TestFunc1Call();
+	static testFunc1(ctx: wasmlib.ScFuncCallContext): TestFunc1Call {
+		const f = new TestFunc1Call(ctx);
 		f.params = new sc.MutableTestFunc1Params(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableTestFunc1Results(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
 	// comment for TestView1
-	static testView1(_ctx: wasmlib.ScViewCallContext): TestView1Call {
-		const f = new TestView1Call();
+	static testView1(ctx: wasmlib.ScViewCallContext): TestView1Call {
+		const f = new TestView1Call(ctx);
 		f.params = new sc.MutableTestView1Params(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableTestView1Results(wasmlib.newCallResultsProxy(f.func));
 		return f;

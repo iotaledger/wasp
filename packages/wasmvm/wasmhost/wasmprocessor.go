@@ -21,9 +21,7 @@ type WasmProcessor struct {
 	log              *logger.Logger
 	mainProcessor    *WasmProcessor
 	nextContextID    int32
-	scContext        *WasmContext
 	vm               WasmVM
-	wasmVM           func() WasmVM
 }
 
 var _ iscp.VMProcessor = new(WasmProcessor)
@@ -37,34 +35,44 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		funcTable:  NewWasmFuncTable(),
 		gasFactorX: 1,
 		log:        log,
-		wasmVM:     NewWasmTimeVM,
 	}
 
 	// By default, we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
 	// This setting will also be propagated to all the sub-processors of this processor
+	wasmVM := NewWasmTimeVM
 	if GoWasmVM != nil {
-		proc.wasmVM = GoWasmVM
+		wasmVM = GoWasmVM
 		GoWasmVM = nil
 	}
-	proc.vm = proc.wasmVM()
+	proc.vm = wasmVM()
 
-	// Run setup on main processor, because we will be sharing stuff with the sub-processors
-	err := proc.vm.LinkHost(proc)
+	// load wasm code into a VM Module
+	err := proc.vm.LoadWasm(wasmBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	proc.scContext = NewWasmContext("", proc)
-	Connect(proc.scContext)
-	err = proc.vm.LoadWasm(wasmBytes)
+	// provide the linker with the sandbox interface
+	err = proc.vm.LinkHost()
 	if err != nil {
 		return nil, err
 	}
-	proc.vm.GasBudget(1_000_000)
-	proc.vm.GasDisable(true)
-	err = proc.vm.RunFunction("on_load")
-	proc.vm.GasDisable(false)
-	burned := proc.vm.GasBurned()
+
+	wc := NewWasmContext("", proc, proc.vm)
+	Connect(wc)
+	proc.contexts[wc.id] = wc
+
+	// instantiate a new Wasm instance
+	err = proc.vm.Instantiate(wc)
+	if err != nil {
+		return nil, err
+	}
+
+	wc.vm.GasBudget(1_000_000)
+	wc.vm.GasDisable(true)
+	err = wc.vm.RunFunction("on_load")
+	wc.vm.GasDisable(false)
+	burned := wc.vm.GasBurned()
 	_ = burned
 	if err != nil {
 		return nil, err
@@ -72,20 +80,12 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	return proc, nil
 }
 
-func (proc *WasmProcessor) GetContext(id int32) *WasmContext {
-	if id == 0 {
-		id = proc.currentContextID
-	}
-
-	if id == 0 {
-		return proc.scContext
-	}
-
+func (proc *WasmProcessor) GetContext() *WasmContext {
 	mainProcessor := proc.mainProc()
 	mainProcessor.contextLock.Lock()
 	defer mainProcessor.contextLock.Unlock()
 
-	return mainProcessor.contexts[id]
+	return mainProcessor.contexts[mainProcessor.currentContextID]
 }
 
 func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
@@ -102,27 +102,6 @@ func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntry
 		return nil, false
 	}
 	return proc.wasmContext(function), true
-}
-
-func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
-	processor := &WasmProcessor{
-		log:           proc.log,
-		mainProcessor: proc,
-		vm:            vmInstance,
-		wasmVM:        proc.wasmVM,
-	}
-	err := processor.vm.LinkHost(processor)
-	if err != nil {
-		panic("cannot link: " + err.Error())
-	}
-
-	processor.scContext = NewWasmContext("", processor)
-	Connect(processor.scContext)
-	err = processor.vm.Instantiate()
-	if err != nil {
-		panic("cannot instantiate: " + err.Error())
-	}
-	return processor
 }
 
 func (proc *WasmProcessor) IsView(function string) bool {
@@ -158,9 +137,20 @@ func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
 	processor := proc
 	vmInstance := proc.vm.NewInstance()
 	if vmInstance != nil {
-		processor = proc.getSubProcessor(vmInstance)
+		processor = &WasmProcessor{
+			log:           proc.log,
+			mainProcessor: proc,
+			vm:            vmInstance,
+		}
+
+		wc := NewWasmContext("", processor, vmInstance)
+		Connect(wc)
+		err := vmInstance.Instantiate(wc)
+		if err != nil {
+			panic("cannot instantiate: " + err.Error())
+		}
 	}
-	wc := NewWasmContext(function, processor)
+	wc := NewWasmContext(function, processor, processor.vm)
 
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
