@@ -129,6 +129,7 @@ interface ISC {
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
 	function send(IotaAddress memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
+        function sendAsNFT(IotaAddress memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions, IotaNFTID id) external;
 	function registerError(string memory s) external view returns (ISCError);
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
 	function getAllowanceAvailableIotas() external view returns (uint64);

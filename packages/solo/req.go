@@ -112,6 +112,10 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 	return r
 }
 
+func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
+	return r.AddAllowance(iscp.NewAllowance(0, nil, nfts))
+}
+
 func (r *CallParams) WithFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
 	if r.allowance == nil {
 		r.allowance = iscp.NewEmptyAllowance()
