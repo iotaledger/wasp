@@ -6,8 +6,10 @@
 		<h2 class="section">Block #{{ .Index }}</h2>
 		<dl>
 			<dt>Timestamp</dt><dd><code>{{ formatTimestamp .Block.Timestamp }}</code></dd>
-			<dt>State commitment</dt><dd><code>{{ .Block.StateCommitment }}</code></dd>
-			<dt>Previous state commitment</dt><dd><code>{{ .Block.PreviousStateCommitment }}</code></dd>
+			<dt>State commitment</dt><dd><code>{{ .Block.L1Commitment.StateCommitment }}</code></dd>
+			<dt>Block hash</dt><dd><code>{{ .Block.L1Commitment.BlockHash }}</code></dd>
+			<dt>Previous state commitment</dt><dd><code>{{ .Block.PreviousL1Commitment.StateCommitment }}</code></dd>
+			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousL1Commitment.BlockHash }}</code></dd>
 			<dt>Anchor transaction ID</dt><dd><code>{{ .Block.AnchorTransactionID }}</code></dd>
 			<dt>Total iotas in L2 accounts</dt><dd><code>{{ .Block.TotalIotasInL2Accounts }}</code></dd>
 			<dt>Total dust deposit</dt><dd><code>{{ .Block.TotalDustDeposit }}</code></dd>

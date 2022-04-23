@@ -3,6 +3,7 @@ package dashboard
 import (
 	_ "embed"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state"
 	"net/http"
 	"strconv"
 
@@ -62,6 +63,10 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 		result.Block, err = blocklog.BlockInfoFromBytes(uint32(index), ret.MustGet(blocklog.ParamBlockInfo))
 		if err != nil {
 			return err
+		}
+		if result.Block.L1Commitment == nil {
+			// to please the template.
+			result.Block.L1Commitment = state.L1CommitmentNil
 		}
 	}
 
