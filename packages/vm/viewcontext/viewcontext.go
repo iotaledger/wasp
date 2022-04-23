@@ -251,7 +251,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.P
 }
 
 // GetRootCommitment calculates root commitment from state.
-// A valid state must return root commitment equal to the StateCommitment from the anchor
+// A valid state must return root commitment equal to the L1Commitment from the anchor
 func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
 	var ret trie.VCommitment
 	err := panicutil.CatchAllButDBError(func() {

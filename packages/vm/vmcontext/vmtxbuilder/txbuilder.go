@@ -199,13 +199,13 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 }
 
 // BuildTransactionEssence builds transaction essence from tx builder data
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
 		NetworkID: txb.l1Params.NetworkID,
 		Inputs:    inputIDs.UTXOInputs(),
-		Outputs:   txb.outputs(stateData),
+		Outputs:   txb.outputs(l1Commitment),
 		Payload:   nil,
 	}
 
@@ -269,7 +269,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 }
 
 // outputs generates outputs for the transaction essence
-func (txb *AnchorTransactionBuilder) outputs(stateData *state.L1Commitment) iotago.Outputs {
+func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 	// creating the anchor output
 	aliasID := txb.anchorOutput.AliasID
@@ -281,7 +281,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *state.L1Commitment) iota
 		NativeTokens:   nil, // anchor output does not contain native tokens
 		AliasID:        aliasID,
 		StateIndex:     txb.anchorOutput.StateIndex + 1,
-		StateMetadata:  stateData.Bytes(),
+		StateMetadata:  l1Commitment.Bytes(),
 		FoundryCounter: txb.nextFoundryCounter(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: txb.anchorOutput.StateController()},

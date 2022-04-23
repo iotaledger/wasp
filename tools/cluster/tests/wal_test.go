@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"os"
 	"path"
 	"strconv"
@@ -45,7 +46,7 @@ func TestWriteToWAL(t *testing.T) {
 
 	require.EqualValues(t, blockInfo.BlockIndex, block.BlockIndex())
 	require.EqualValues(t, blockInfo.Timestamp, block.Timestamp())
-	require.EqualValues(t, blockInfo.PreviousStateCommitment.Bytes(), block.PreviousStateCommitment(state.CommitmentModel).Bytes())
+	require.True(t, trie.EqualCommitments(blockInfo.PreviousL1Commitment.StateCommitment, block.PreviousL1Commitment().StateCommitment))
 }
 
 func walDirectoryCreated(walDir string) bool {

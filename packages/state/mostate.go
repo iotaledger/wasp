@@ -57,11 +57,11 @@ func (s *mustOptimisticVirtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosur
 	s.state.WithOnBlockSave(fun)
 }
 
-func (s *mustOptimisticVirtualStateAccess) PreviousStateCommitment() trie.VCommitment {
+func (s *mustOptimisticVirtualStateAccess) PreviousL1Commitment() *L1Commitment {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.state.PreviousStateCommitment()
+	return s.state.PreviousL1Commitment()
 }
 
 func (s *mustOptimisticVirtualStateAccess) Commit() {

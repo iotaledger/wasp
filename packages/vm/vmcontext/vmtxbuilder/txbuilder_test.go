@@ -23,15 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func randStateData() *state.L1Commitment {
-	h := hashing.RandomHash(nil)
-	sd, err := state.L1CommitmentFromBytes(h[:])
-	if err != nil {
-		panic(err)
-	}
-	return &sd
-}
-
 func rndAliasID() (ret iotago.AliasID) {
 	a := tpkg.RandAliasAddress()
 	copy(ret[:], a[:])
@@ -142,7 +133,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		require.EqualValues(t, 1, len(essence.Inputs))
 		require.EqualValues(t, 1, len(essence.Outputs))
 
@@ -186,7 +177,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, expectedIotas, int(totalsOut.TotalIotasInL2Accounts))
 		require.EqualValues(t, 0, len(totalsOut.NativeTokenBalances))
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -214,7 +205,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 1, len(totalsOut.NativeTokenBalances))
 		require.True(t, totalsOut.NativeTokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -363,7 +354,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -377,7 +368,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -390,7 +381,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		runConsume(runTimes, testAmount)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -404,7 +395,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -423,7 +414,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -447,7 +438,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -471,7 +462,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -499,7 +490,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -555,7 +546,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, afterTokens[nativeTokenIDs[0]].Cmp(new(big.Int).SetInt64(10)) == 0)
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -585,7 +576,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		require.EqualValues(t, 2, len(essence.Inputs))
 		require.EqualValues(t, 2, len(essence.Outputs))
 
@@ -621,7 +612,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		require.EqualValues(t, 6, len(essence.Inputs))
 		require.EqualValues(t, 6, len(essence.Outputs))
 
@@ -742,7 +733,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("create foundry ok", func(t *testing.T) {
 		initTest()
 		createNFoundries(3)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
@@ -754,7 +745,7 @@ func TestFoundries(t *testing.T) {
 		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
