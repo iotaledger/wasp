@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// TODO: BDN is actually not used (only functions used, that delegate to the tbls directly). Update to use it!
+
 package tcrypto
 
 import (
