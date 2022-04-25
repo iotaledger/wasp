@@ -7,31 +7,14 @@ funcs: {}
 views:
   controlAddresses:
     results:
-      blockIndex=n: Uint32
-      governingAddress=g: Address
       stateControllerAddress=s: Address
+      governingAddress=g: Address
+      blockIndex=n: Uint32
   getBlockInfo:
     params:
-      blockIndex=n: Uint32
+      blockIndex=n: Uint32 
     results:
       blockInfo=i: Bytes
-  getEventsForBlock:
-    params:
-      blockIndex=n: Uint32
-    results:
-      event=e: Bytes[] # native contract, so this is an Array16
-  getEventsForContract:
-    params:
-      contractHname=h: Hname
-      fromBlock=f: Uint32?
-      toBlock=t: Uint32?
-    results:
-      event=e: Bytes[] # native contract, so this is an Array16
-  getEventsForRequest:
-    params:
-      requestID=u: RequestID
-    results:
-      event=e: Bytes[] # native contract, so this is an Array16
   getLatestBlockInfo:
     results:
       blockIndex=n: Uint32
@@ -45,9 +28,9 @@ views:
     params:
       requestID=u: RequestID
     results:
+      requestRecord=d: Bytes
       blockIndex=n: Uint32
       requestIndex=r: Uint16
-      requestRecord=d: Bytes
   getRequestReceiptsForBlock:
     params:
       blockIndex=n: Uint32
@@ -58,3 +41,20 @@ views:
       requestID=u: RequestID
     results:
       requestProcessed=p: String
+  getEventsForRequest:
+    params:
+      requestID=u: RequestID
+    results:
+      event=e: Bytes[] # native contract, so this is an Array16
+  getEventsForBlock:
+    params:
+      blockIndex=n: Uint32
+    results:
+      event=e: Bytes[] # native contract, so this is an Array16
+  getEventsForContract:
+    params:
+      contractHname=h: Hname
+      fromBlock=f: Uint32?
+      toBlock=t: Uint32?
+    results:
+      event=e: Bytes[] # native contract, so this is an Array16
