@@ -11,19 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-// delegateChainOwnership stores next possible (delegated) chain owner to another agentID
-// checks authorisation by the current owner
-// Two step process allow/change is in order to avoid mistakes
-func delegateChainOwnership(ctx iscp.Sandbox) dict.Dict {
-	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
-	ctx.RequireCallerIsChainOwner()
-
-	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
-	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
-	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String(ctx.L1Params().Bech32Prefix))
-	return nil
-}
-
 // claimChainOwnership changes the chain owner to the delegated agentID (if any)
 // Checks authorisation if the caller is the one to which the ownership is delegated
 // Note that ownership is only changed by the successful call to  claimChainOwnership
@@ -44,6 +31,19 @@ func claimChainOwnership(ctx iscp.Sandbox) dict.Dict {
 		currentOwner.String(ctx.L1Params().Bech32Prefix),
 		nextOwner.String(ctx.L1Params().Bech32Prefix),
 	)
+	return nil
+}
+
+// delegateChainOwnership stores next possible (delegated) chain owner to another agentID
+// checks authorisation by the current owner
+// Two step process allow/change is in order to avoid mistakes
+func delegateChainOwnership(ctx iscp.Sandbox) dict.Dict {
+	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
+	ctx.RequireCallerIsChainOwner()
+
+	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
+	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
+	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String(ctx.L1Params().Bech32Prefix))
 	return nil
 }
 

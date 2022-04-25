@@ -28,15 +28,15 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncGetFeePolicy.WithHandler(getFeePolicy),
 
 	// chain info
-	governance.FuncGetChainInfo.WithHandler(getChainInfo),
 	governance.FuncSetChainInfo.WithHandler(setChainInfo),
+	governance.FuncGetChainInfo.WithHandler(getChainInfo),
 	governance.FuncGetMaxBlobSize.WithHandler(getMaxBlobSize),
 
-	// access nodes.
-	governance.FuncGetChainNodes.WithHandler(getChainNodesFuncHandler),
+	// access nodes
 	governance.FuncAddCandidateNode.WithHandler(addCandidateNodeFuncHandler),
 	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNodeFuncHandler),
 	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodesFuncHandler),
+	governance.FuncGetChainNodes.WithHandler(getChainNodesFuncHandler),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
