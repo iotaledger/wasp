@@ -12,16 +12,16 @@ import (
 )
 
 var Processor = Contract.Processor(initialize,
-	FuncControlAddresses.WithHandler(viewControlAddresses),
-	FuncGetBlockInfo.WithHandler(viewGetBlockInfo),
-	FuncGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
-	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
-	FuncGetRequestReceipt.WithHandler(viewGetRequestReceipt),
-	FuncGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
-	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
-	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
-	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
-	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
+	ViewControlAddresses.WithHandler(viewControlAddresses),
+	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
+	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
+	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
+	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
+	ViewGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
+	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
+	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
+	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
+	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {

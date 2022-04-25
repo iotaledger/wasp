@@ -28,10 +28,10 @@ import (
 var Processor = root.Contract.Processor(initialize,
 	root.FuncDeployContract.WithHandler(deployContract),
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
-	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
-	root.FuncFindContract.WithHandler(findContract),
-	root.FuncGetContractRecords.WithHandler(getContractRecords),
 	root.FuncRequireDeployPermissions.WithHandler(requireDeployPermissions),
+	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
+	root.ViewFindContract.WithHandler(findContract),
+	root.ViewGetContractRecords.WithHandler(getContractRecords),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain

@@ -68,7 +68,7 @@ func (ch *Chain) DumpAccounts() string {
 // FindContract is a view call to the 'root' smart contract on the chain.
 // It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
-	retDict, err := ch.CallView(root.Contract.Name, root.FuncFindContract.Name,
+	retDict, err := ch.CallView(root.Contract.Name, root.ViewFindContract.Name,
 		root.ParamHname, iscp.Hn(scName),
 	)
 	if err != nil {
@@ -94,7 +94,7 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 // GetBlobInfo return info about blob with the given hash with existence flag
 // The blob information is returned as a map of pairs 'blobFieldName': 'fieldDataLength'
 func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
-	res, err := ch.CallView(blob.Contract.Name, blob.FuncGetBlobInfo.Name, blob.ParamHash, blobHash)
+	res, err := ch.CallView(blob.Contract.Name, blob.ViewGetBlobInfo.Name, blob.ParamHash, blobHash)
 	require.NoError(ch.Env.T, err)
 	if res.IsEmpty() {
 		return nil, false
@@ -105,7 +105,7 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 }
 
 func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
-	res, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeePolicy.Name)
+	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
 	feePolicy, err := gas.GasFeePolicyFromBytes(fpBin)
@@ -186,7 +186,7 @@ func (ch *Chain) UploadWasmFromFile(keyPair *cryptolib.KeyPair, fileName string)
 
 // GetWasmBinary retrieves program binary in the format of Wasm blob from the chain by hash.
 func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
-	res, err := ch.CallView(blob.Contract.Name, blob.FuncGetBlobField.Name,
+	res, err := ch.CallView(blob.Contract.Name, blob.ViewGetBlobField.Name,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldVMType,
 	)
@@ -195,7 +195,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	}
 	require.EqualValues(ch.Env.T, vmtypes.WasmTime, string(res.MustGet(blob.ParamBytes)))
 
-	res, err = ch.CallView(blob.Contract.Name, blob.FuncGetBlobField.Name,
+	res, err = ch.CallView(blob.Contract.Name, blob.ViewGetBlobField.Name,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldProgramBinary,
 	)
@@ -244,7 +244,7 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
+	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	chainID, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
@@ -253,7 +253,7 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.C
 	chainOwnerID, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
 
-	res, err = ch.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
+	res, err = ch.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
 	require.NoError(ch.Env.T, err)
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.StateVarContractRegistry))
@@ -294,7 +294,7 @@ func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
 // GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
 func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 	viewResult, err := ch.CallView(
-		blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name,
+		blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
 		blocklog.ParamContractHname, iscp.Hn(name),
 	)
 	if err != nil {
@@ -307,7 +307,7 @@ func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 // GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
 func (ch *Chain) GetEventsForRequest(reqID iscp.RequestID) ([]string, error) {
 	viewResult, err := ch.CallView(
-		blocklog.Contract.Name, blocklog.FuncGetEventsForRequest.Name,
+		blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
 	)
 	if err != nil {
@@ -319,7 +319,7 @@ func (ch *Chain) GetEventsForRequest(reqID iscp.RequestID) ([]string, error) {
 // GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
 func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 	viewResult, err := ch.CallView(
-		blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name,
+		blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex,
 	)
 	if err != nil {
@@ -335,7 +335,7 @@ func (ch *Chain) CommonAccount() *iscp.AgentID {
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetLatestBlockInfo.Name)
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetLatestBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
@@ -347,7 +347,7 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 }
 
 func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
-	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
+	ret, err := ch.CallView(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, code.Bytes(),
 	)
 	if err != nil {
@@ -362,7 +362,7 @@ func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
 
 // GetBlockInfo return BlockInfo for the particular block index in the chain
 func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetBlockInfo.Name,
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
 		return nil, err
@@ -377,7 +377,7 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 
 // IsRequestProcessed checks if the request is booked on the chain as processed
 func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncIsRequestProcessed.Name,
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewIsRequestProcessed.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
@@ -388,7 +388,7 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
 func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, bool) {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceipt.Name,
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
@@ -414,7 +414,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 		blockIdx = blockIndex[0]
 	}
 
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceiptsForBlock.Name,
+	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestReceiptsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIdx)
 	if err != nil {
 		return nil
@@ -433,7 +433,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 
 // GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
 func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestIDsForBlock.Name,
+	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestIDsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
 		ch.Log().Warnf("GetRequestIDsForBlock: %v", err)
@@ -478,7 +478,7 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 }
 
 func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncControlAddresses.Name)
+	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewControlAddresses.Name)
 	require.NoError(ch.Env.T, err)
 	par := kvdecoder.New(res, ch.Log())
 	ret := &blocklog.ControlAddresses{
@@ -509,7 +509,7 @@ func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryp
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
-	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedStateControllerAddresses.Name)
+	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.ViewGetAllowedStateControllerAddresses.Name)
 	require.NoError(ch.Env.T, err)
 	if len(res) == 0 {
 		return nil

@@ -13,30 +13,30 @@ import (
 
 var Processor = governance.Contract.Processor(initialize,
 	// state controller
-	governance.FuncRotateStateController.WithHandler(rotateStateController),
 	governance.FuncAddAllowedStateControllerAddress.WithHandler(addAllowedStateControllerAddress),
 	governance.FuncRemoveAllowedStateControllerAddress.WithHandler(removeAllowedStateControllerAddress),
-	governance.FuncGetAllowedStateControllerAddresses.WithHandler(getAllowedStateControllerAddresses),
+	governance.FuncRotateStateController.WithHandler(rotateStateController),
+	governance.ViewGetAllowedStateControllerAddresses.WithHandler(getAllowedStateControllerAddresses),
 
 	// chain owner
 	governance.FuncClaimChainOwnership.WithHandler(claimChainOwnership),
 	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
-	governance.FuncGetChainOwner.WithHandler(getChainOwner),
+	governance.ViewGetChainOwner.WithHandler(getChainOwner),
 
 	// fees
 	governance.FuncSetFeePolicy.WithHandler(setFeePolicy),
-	governance.FuncGetFeePolicy.WithHandler(getFeePolicy),
+	governance.ViewGetFeePolicy.WithHandler(getFeePolicy),
 
 	// chain info
 	governance.FuncSetChainInfo.WithHandler(setChainInfo),
-	governance.FuncGetChainInfo.WithHandler(getChainInfo),
-	governance.FuncGetMaxBlobSize.WithHandler(getMaxBlobSize),
+	governance.ViewGetChainInfo.WithHandler(getChainInfo),
+	governance.ViewGetMaxBlobSize.WithHandler(getMaxBlobSize),
 
 	// access nodes
 	governance.FuncAddCandidateNode.WithHandler(addCandidateNodeFuncHandler),
-	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNodeFuncHandler),
 	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodesFuncHandler),
-	governance.FuncGetChainNodes.WithHandler(getChainNodesFuncHandler),
+	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNodeFuncHandler),
+	governance.ViewGetChainNodes.WithHandler(getChainNodesFuncHandler),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {

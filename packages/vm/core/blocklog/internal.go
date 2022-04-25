@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
 	"io"
 	"math"
+
+	"github.com/iotaledger/wasp/packages/state"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"

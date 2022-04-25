@@ -48,7 +48,7 @@ func setupBlobTest(t *testing.T) *chainEnv {
 
 func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
 	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name,
+		e.chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Name,
 		dict.Dict{
 			blob.ParamHash: hash[:],
 		})
@@ -60,7 +60,7 @@ func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
 
 func (e *chainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
 	v, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+		e.chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),

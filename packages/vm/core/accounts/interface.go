@@ -9,14 +9,14 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain accoun
 
 var (
 	// Views
-	FuncViewBalance                  = coreutil.ViewFunc("balance")
-	FuncViewTotalAssets              = coreutil.ViewFunc("totalAssets")
-	FuncViewAccounts                 = coreutil.ViewFunc("accounts")
-	FuncViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
-	FuncViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
-	FuncViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
-	FuncViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
-	FuncViewNFTData                  = coreutil.ViewFunc("nftData")
+	ViewBalance                  = coreutil.ViewFunc("balance")
+	ViewTotalAssets              = coreutil.ViewFunc("totalAssets")
+	ViewAccounts                 = coreutil.ViewFunc("accounts")
+	ViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
+	ViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
+	ViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
+	ViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
+	ViewNFTData                  = coreutil.ViewFunc("nftData")
 
 	// Funcs
 	FuncDeposit             = coreutil.Func("deposit")

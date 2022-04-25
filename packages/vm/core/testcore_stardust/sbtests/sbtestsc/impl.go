@@ -39,7 +39,7 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) dict.Dict {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) dict.Dict {
-	ret := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainInfo.Hname(), nil)
+	ret := ctx.Call(governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
 	desc := ret.MustGet(governance.VarDescription)
 	ret.Set(VarSandboxCall, desc)
 	return ret

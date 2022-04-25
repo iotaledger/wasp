@@ -133,40 +133,40 @@ func TestDoPanicUserFeeless(t *testing.T) {
 
 func TestDoPanicUserFee(t *testing.T) {
 	t.SkipNow()
-	run2(t, func(t *testing.T, w bool) {
-		ctx := deployTestCore(t, w)
-		user := ctx.NewSoloAgent()
-
-		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
-		require.EqualValues(t, 0, ctx.Balance(user))
-		originatorBalanceReducedBy(ctx, w, 2)
-		chainAccountBalances(ctx, w, 2, 2)
-
-		setOwnerFee(t, ctx, 10)
-
-		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
-		require.EqualValues(t, 0, ctx.Balance(user))
-		originatorBalanceReducedBy(ctx, w, 3)
-		chainAccountBalances(ctx, w, 3, 3)
-
-		f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-		f.Func.TransferIotas(1234).Post()
-		require.Error(t, ctx.Err)
-
-		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount-10, user.Balance())
-		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
-		require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
-		require.EqualValues(t, 0, ctx.Balance(user))
-		originatorBalanceReducedBy(ctx, w, 3)
-		chainAccountBalances(ctx, w, 3+10, 3+10)
-	})
+	//run2(t, func(t *testing.T, w bool) {
+	//	ctx := deployTestCore(t, w)
+	//	user := ctx.NewSoloAgent()
+	//
+	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+	//	require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
+	//	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	//	require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
+	//	require.EqualValues(t, 0, ctx.Balance(user))
+	//	originatorBalanceReducedBy(ctx, w, 2)
+	//	chainAccountBalances(ctx, w, 2, 2)
+	//
+	//	setOwnerFee(t, ctx, 10)
+	//
+	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+	//	require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
+	//	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	//	require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
+	//	require.EqualValues(t, 0, ctx.Balance(user))
+	//	originatorBalanceReducedBy(ctx, w, 3)
+	//	chainAccountBalances(ctx, w, 3, 3)
+	//
+	//	f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
+	//	f.Func.TransferIotas(1234).Post()
+	//	require.Error(t, ctx.Err)
+	//
+	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+	//	require.EqualValues(t, utxodb.FundsFromFaucetAmount-10, user.Balance())
+	//	require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+	//	require.EqualValues(t, 0, ctx.Balance(ctx.Originator()))
+	//	require.EqualValues(t, 0, ctx.Balance(user))
+	//	originatorBalanceReducedBy(ctx, w, 3)
+	//	chainAccountBalances(ctx, w, 3+10, 3+10)
+	//})
 }
 
 func TestRequestToView(t *testing.T) {

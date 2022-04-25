@@ -11,7 +11,7 @@ import (
 // CheckRequestResult fetches the receipt for the given request ID, and returns
 // an error indicating whether the request was processed successfully.
 func (c *Client) CheckRequestResult(reqID iscp.RequestID) error {
-	ret, err := c.CallView(blocklog.Contract.Hname(), blocklog.FuncGetRequestReceipt.Name, dict.Dict{
+	ret, err := c.CallView(blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Name, dict.Dict{
 		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 	})
 	if err != nil {

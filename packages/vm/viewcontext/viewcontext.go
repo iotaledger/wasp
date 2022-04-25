@@ -236,7 +236,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.P
 		// retrieve serialized block info record
 		retBlockInfoBin = ctx.initAndCallView(
 			blocklog.Contract.Hname(),
-			blocklog.FuncGetBlockInfo.Hname(),
+			blocklog.ViewGetBlockInfo.Hname(),
 			codec.MakeDict(map[string]interface{}{
 				blocklog.ParamBlockIndex: blockIndex,
 			}),
