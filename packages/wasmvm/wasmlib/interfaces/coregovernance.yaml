@@ -24,7 +24,7 @@ funcs:
     params:
       feePolicyBytes=d: Bytes
     results:
-      gasFeePolicyBytes: Bytes
+      gasFeePolicyBytes=g: Bytes
   # chain info
   setChainInfo:
     params:
@@ -33,10 +33,10 @@ funcs:
       maxEventsPerReq=i: Uint16? # default maximum number of events per request
   # access nodes
   addCandidateNode: {}
-  revokeAccessNode: {} //
+  revokeAccessNode: {}
   changeAccessNodes:
     params:
-      changeAccessNodesActions: map[Bytes]Uint8
+      changeAccessNodesActions=p: map[Bytes]Uint8
 
 views:
   # state controller
@@ -50,7 +50,7 @@ views:
   # fees
   getFeePolicy:
     results:
-      feePolicyBytes: Bytes
+      feePolicyBytes=d: Bytes
   # chain info
   getChainInfo:
     results:
@@ -66,5 +66,6 @@ views:
       maxBlobSize=mb: Uint32
   # access nodes
   getChainNodes:
-    accessNodeCandidates=ac: map[Bytes]Bytes
-    accessNodes=an: map[Bytes]Bytes
+    results:
+      accessNodeCandidates=ac: map[Bytes]Bytes
+      accessNodes=an: map[Bytes]Bytes

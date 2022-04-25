@@ -10,13 +10,13 @@ funcs:
       agentID=a: AgentID
       forceOpenAccount=c: Bool
   withdraw: {}
-  harvest:
+  harvest: 
     params:
       forceMinimumIotas=f: Uint64
   foundryCreateNew:
     params:
-      tokenScheme=t: TokenScheme
-      tokenTag=g: TokenTag
+      tokenScheme=t: Bytes
+      tokenTag=g: Bytes
     results:
       foundrySN=s: Uint32
   foundryDestroy:
@@ -45,15 +45,14 @@ views:
       foundrySN: Uint32
     results:
       accountNonce=n: Uint64
-  getNativeTokenIDs:
+  getNativeTokenIDRegistry:
     results:
-      mapping=G: map[TokenID]Bytes
-  foundryOutput:
-    results:
-      foundryOutputBin=b: Bytes
+      mapping=G: map[TokenID]Bool
   foundryOutput:
     params:
       foundrySN: Uint32
+    results:
+      foundryOutputBin=b: Bytes
   accountNFTs:
     params:
       agentID=a: AgentID

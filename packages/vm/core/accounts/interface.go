@@ -14,8 +14,8 @@ var (
 	FuncViewAccounts                 = coreutil.ViewFunc("accounts")
 	FuncViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
 	FuncViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
-	FuncViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
 	FuncViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
+	FuncViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
 	FuncViewNFTData                  = coreutil.ViewFunc("nftData")
 
 	// Funcs

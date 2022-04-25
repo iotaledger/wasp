@@ -148,6 +148,39 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
+// grantDeployPermission grants permission to deploy contracts
+// Input:
+//  - ParamDeployer iscp.AgentID
+func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+
+	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
+
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %v", deployer))
+	return nil
+}
+
+// revokeDeployPermission revokes permission to deploy contracts
+// Input:
+//  - ParamDeployer iscp.AgentID
+func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+
+	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
+
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
+	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %v", deployer))
+	return nil
+}
+
+func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
+	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
+	return nil
+}
+
 // findContract view finds and returns encoded record of the contract
 // Input:
 // - ParamHname
@@ -165,32 +198,6 @@ func findContract(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-// grantDeployPermission grants permission to deploy contracts
-// Input:
-//  - ParamDeployer iscp.AgentID
-func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
-
-	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
-	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
-	return nil
-}
-
-// revokeDeployPermission revokes permission to deploy contracts
-// Input:
-//  - ParamDeployer iscp.AgentID
-func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
-
-	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
-	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
-	return nil
-}
-
 func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 	src := root.GetContractRegistryR(ctx.State())
 
@@ -202,11 +209,4 @@ func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 	})
 
 	return ret
-}
-
-func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
-	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
-	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
-	return nil
 }
