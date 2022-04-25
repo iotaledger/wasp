@@ -54,21 +54,17 @@ func TestBasic(t *testing.T) {
 		//
 		// Emulate the agreement (union of index sets from f+1 proposals).
 		decidedProposals := gpa.ShuffleNodeIDs(gpa.CopyNodeIDs(nodeIDs))[0 : f+1]
-		t.Logf("XXXXXXXXXXXXXXX: decidedProposals=%+v", decidedProposals)
 		decidedIndexMap := map[int]bool{}
 		for _, nid := range decidedProposals {
 			subset := nodes[nid].Output().(*adkg.Output).Indexes
-			t.Logf("XXXXXXXXXXXXXXX: decidedProposals[%v]=%+v", nid, subset)
 			for _, subsetElem := range subset {
 				decidedIndexMap[subsetElem] = true
 			}
 		}
-		t.Logf("XXXXXXXXXXXXXXX: decidedIndexMap=%+v", decidedIndexMap)
 		decidedIndexes := []int{}
 		for idx := range decidedIndexMap {
 			decidedIndexes = append(decidedIndexes, idx)
 		}
-		t.Logf("XXXXXXXXXXXXXXX: decidedIndexes=%+v", decidedIndexes)
 		//
 		// Run the ADKG with agreement already decided.
 		agreementMsgs := []gpa.Message{}

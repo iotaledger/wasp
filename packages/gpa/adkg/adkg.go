@@ -28,14 +28,14 @@
 // >
 // > on termination of RBCⱼ:
 // >   when Tⱼ ⊆ Tᵢ:
-// >     Input 1 to ABAⱼ
-// >
-// > on termination of ABAⱼ:
-// >   if ABAⱼ outputs 1:
-// >     T = T ∪ Tⱼ
-// >     input 0 to all remaining ABAs
-// >
-// > wait until all ABAs terminate
+// >     Input 1 to ABAⱼ					\
+// >										|
+// > on termination of ABAⱼ:				| NOTE: This is an agreement on the set of
+// >   if ABAⱼ outputs 1:					| indexes to include into the final share.
+// >     T = T ∪ Tⱼ							| That is made optional by allowing a user
+// >     input 0 to all remaining ABAs		| to provide a decision (see aggrExt parameter).
+// >										|
+// > wait until all ABAs terminate			/
 // > z := sum(sⱼ for j in T)
 // > output z
 //
@@ -55,12 +55,8 @@ import (
 )
 
 type Output struct {
-	Indexes  []int           // Intexes used to construct the final key.
+	Indexes  []int           // Intexes used to construct the final key (exactly f+1 for the intermediate output).
 	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
-}
-
-type AgreementResult struct {
-	Indexes []int
 }
 
 type adkgImpl struct {
@@ -145,6 +141,8 @@ func (a *adkgImpl) Message(msg gpa.Message) []gpa.Message {
 			return a.handleACSSMessage(msgT)
 		case msgWrapperRBC:
 			return a.handleRBCMessage(msgT)
+		default:
+			panic(xerrors.Errorf("unexpected message: %+v", msg))
 		}
 	case *msgACSSOutput:
 		return a.handleACSSOutput(msgT)
@@ -153,7 +151,6 @@ func (a *adkgImpl) Message(msg gpa.Message) []gpa.Message {
 	default:
 		panic(xerrors.Errorf("unexpected message: %+v", msg))
 	}
-	return nil
 }
 
 func (a *adkgImpl) Output() gpa.Output {
@@ -301,7 +298,7 @@ func (a *adkgImpl) tryMakeFinalOutput() []gpa.Message {
 	}
 	sum := a.suite.Scalar().Zero()
 	for _, j := range a.agreedT {
-		if a.st[j] == nil {
+		if _, ok := a.st[j]; !ok {
 			return gpa.NoMessages()
 		}
 		sum.Add(sum.Clone(), a.st[j].V)
