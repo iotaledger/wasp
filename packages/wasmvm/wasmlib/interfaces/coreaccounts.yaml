@@ -4,7 +4,7 @@ structs: {}
 typedefs: {}
 state: {}
 funcs:
-  deposit:
+  deposit: {}
   transferAllowanceTo:
     params:
       agentID=a: AgentID
@@ -18,11 +18,10 @@ funcs:
       tokenScheme=t: TokenScheme
       tokenTag=g: TokenTag
     results:
-      foundrySN: Bytes
+      foundrySN=s: Uint32
   foundryDestroy:
     params:
       foundrySN: Uint32
-  foundryOutput: {}
   foundryModifySupply:
     params:
       foundrySN: Uint32
@@ -34,13 +33,13 @@ views:
     params:
       agentID=a: AgentID
     results:
-      balances: map[Color]Uint64
+      balances=this: map[TokenID]Uint64
   totalAssets:
     results:
-      assets: map[Color]Uint64
+      assets=this: map[TokenID]Uint64
   accounts:
     results:
-      allAccounts=C: map[AccountID]Bool
+      allAccounts=this: map[TokenID]Uint64
   getAccountNonce:
     params:
       foundrySN: Uint32
@@ -51,7 +50,10 @@ views:
       mapping=G: map[TokenID]Bytes
   foundryOutput:
     results:
-      foundryOutputBin: Bytes
+      foundryOutputBin=b: Bytes
+  foundryOutput:
+    params:
+      foundrySN: Uint32
   accountNFTs:
     params:
       agentID=a: AgentID

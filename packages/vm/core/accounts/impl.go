@@ -15,22 +15,23 @@ import (
 
 var Processor = Contract.Processor(initialize,
 	// views
-	FuncGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
 	FuncViewBalance.WithHandler(viewBalance),
 	FuncViewTotalAssets.WithHandler(viewTotalAssets),
 	FuncViewAccounts.WithHandler(viewAccounts),
+	FuncViewGetAccountNonce.WithHandler(viewGetAccountNonce),
+	FuncViewGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
 	FuncViewAccountNFTs.WithHandler(viewAccountNFTs),
+	FuncViewFoundryOutput.WithHandler(viewFoundryOutput),
 	FuncViewNFTData.WithHandler(viewNFTData),
+
 	// funcs
 	FuncDeposit.WithHandler(deposit),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
-	FuncGetAccountNonce.WithHandler(getAccountNonce),
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
-	FuncFoundryOutput.WithHandler(foundryOutput),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {

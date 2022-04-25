@@ -30,7 +30,7 @@ func viewAccounts(ctx iscp.SandboxView) dict.Dict {
 	return getAccountsIntern(ctx.State())
 }
 
-func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
+func viewGetAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID)
 	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
 	ret := dict.New()
@@ -49,20 +49,6 @@ func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-// foundryOutput takes serial number and returns corresponding foundry output in serialized form
-func foundryOutput(ctx iscp.SandboxView) dict.Dict {
-	ctx.Log().Debugf("accounts.foundryOutput")
-
-	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
-	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-	ctx.RequireNoError(err, "internal: error while serializing foundry output")
-	ret := dict.New()
-	ret.Set(ParamFoundryOutputBin, outBin)
-	return ret
-}
-
 // viewAccountNFTs returns the NFTIDs of NFTs owned by an account
 func viewAccountNFTs(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
@@ -75,6 +61,20 @@ func viewAccountNFTs(ctx iscp.SandboxView) dict.Dict {
 	return dict.Dict{
 		ParamNFTIDs: ret,
 	}
+}
+
+// viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
+func viewFoundryOutput(ctx iscp.SandboxView) dict.Dict {
+	ctx.Log().Debugf("accounts.foundryOutput")
+
+	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
+	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
+	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
+	ctx.RequireNoError(err, "internal: error while serializing foundry output")
+	ret := dict.New()
+	ret.Set(ParamFoundryOutputBin, outBin)
+	return ret
 }
 
 // viewNFTData returns the NFT data for a given NFTID
