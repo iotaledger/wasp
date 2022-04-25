@@ -15,6 +15,15 @@ pub struct AddAllowedStateControllerAddressCall {
 	pub params: MutableAddAllowedStateControllerAddressParams,
 }
 
+pub struct AddCandidateNodeCall {
+	pub func: ScFunc,
+}
+
+pub struct ChangeAccessNodesCall {
+	pub func: ScFunc,
+	pub params: MutableChangeAccessNodesParams,
+}
+
 pub struct ClaimChainOwnershipCall {
 	pub func: ScFunc,
 }
@@ -29,6 +38,10 @@ pub struct RemoveAllowedStateControllerAddressCall {
 	pub params: MutableRemoveAllowedStateControllerAddressParams,
 }
 
+pub struct RevokeAccessNodeCall {
+	pub func: ScFunc,
+}
+
 pub struct RotateStateControllerCall {
 	pub func: ScFunc,
 	pub params: MutableRotateStateControllerParams,
@@ -39,14 +52,10 @@ pub struct SetChainInfoCall {
 	pub params: MutableSetChainInfoParams,
 }
 
-pub struct SetContractFeeCall {
+pub struct SetFeePolicyCall {
 	pub func: ScFunc,
-	pub params: MutableSetContractFeeParams,
-}
-
-pub struct SetDefaultFeeCall {
-	pub func: ScFunc,
-	pub params: MutableSetDefaultFeeParams,
+	pub params: MutableSetFeePolicyParams,
+	pub results: ImmutableSetFeePolicyResults,
 }
 
 pub struct GetAllowedStateControllerAddressesCall {
@@ -59,10 +68,19 @@ pub struct GetChainInfoCall {
 	pub results: ImmutableGetChainInfoResults,
 }
 
-pub struct GetFeeInfoCall {
+pub struct GetChainNodesCall {
 	pub func: ScView,
-	pub params: MutableGetFeeInfoParams,
-	pub results: ImmutableGetFeeInfoResults,
+	pub results: ImmutableGetChainNodesResults,
+}
+
+pub struct GetChainOwnerCall {
+	pub func: ScView,
+	pub results: ImmutableGetChainOwnerResults,
+}
+
+pub struct GetFeePolicyCall {
+	pub func: ScView,
+	pub results: ImmutableGetFeePolicyResults,
 }
 
 pub struct GetMaxBlobSizeCall {
@@ -83,6 +101,23 @@ impl ScFuncs {
         f
     }
 
+    // access nodes
+    pub fn add_candidate_node(_ctx: &dyn ScFuncCallContext) -> AddCandidateNodeCall {
+        AddCandidateNodeCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ADD_CANDIDATE_NODE),
+        }
+    }
+
+    pub fn change_access_nodes(_ctx: &dyn ScFuncCallContext) -> ChangeAccessNodesCall {
+        let mut f = ChangeAccessNodesCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_CHANGE_ACCESS_NODES),
+            params: MutableChangeAccessNodesParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    // chain owner
     pub fn claim_chain_ownership(_ctx: &dyn ScFuncCallContext) -> ClaimChainOwnershipCall {
         ClaimChainOwnershipCall {
             func: ScFunc::new(HSC_NAME, HFUNC_CLAIM_CHAIN_OWNERSHIP),
@@ -107,6 +142,13 @@ impl ScFuncs {
         f
     }
 
+    pub fn revoke_access_node(_ctx: &dyn ScFuncCallContext) -> RevokeAccessNodeCall {
+        RevokeAccessNodeCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_ACCESS_NODE),
+        }
+    }
+
+    // state controller
     pub fn rotate_state_controller(_ctx: &dyn ScFuncCallContext) -> RotateStateControllerCall {
         let mut f = RotateStateControllerCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ROTATE_STATE_CONTROLLER),
@@ -116,6 +158,7 @@ impl ScFuncs {
         f
     }
 
+    // chain info
     pub fn set_chain_info(_ctx: &dyn ScFuncCallContext) -> SetChainInfoCall {
         let mut f = SetChainInfoCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_CHAIN_INFO),
@@ -125,24 +168,19 @@ impl ScFuncs {
         f
     }
 
-    pub fn set_contract_fee(_ctx: &dyn ScFuncCallContext) -> SetContractFeeCall {
-        let mut f = SetContractFeeCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_SET_CONTRACT_FEE),
-            params: MutableSetContractFeeParams { proxy: Proxy::nil() },
+    // fees
+    pub fn set_fee_policy(_ctx: &dyn ScFuncCallContext) -> SetFeePolicyCall {
+        let mut f = SetFeePolicyCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SET_FEE_POLICY),
+            params: MutableSetFeePolicyParams { proxy: Proxy::nil() },
+            results: ImmutableSetFeePolicyResults { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
+        ScFunc::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn set_default_fee(_ctx: &dyn ScFuncCallContext) -> SetDefaultFeeCall {
-        let mut f = SetDefaultFeeCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_SET_DEFAULT_FEE),
-            params: MutableSetDefaultFeeParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
-    }
-
+    // state controller
     pub fn get_allowed_state_controller_addresses(_ctx: &dyn ScViewCallContext) -> GetAllowedStateControllerAddressesCall {
         let mut f = GetAllowedStateControllerAddressesCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_ALLOWED_STATE_CONTROLLER_ADDRESSES),
@@ -152,6 +190,7 @@ impl ScFuncs {
         f
     }
 
+    // chain info
     pub fn get_chain_info(_ctx: &dyn ScViewCallContext) -> GetChainInfoCall {
         let mut f = GetChainInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_CHAIN_INFO),
@@ -161,13 +200,32 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_fee_info(_ctx: &dyn ScViewCallContext) -> GetFeeInfoCall {
-        let mut f = GetFeeInfoCall {
-            func: ScView::new(HSC_NAME, HVIEW_GET_FEE_INFO),
-            params: MutableGetFeeInfoParams { proxy: Proxy::nil() },
-            results: ImmutableGetFeeInfoResults { proxy: Proxy::nil() },
+    // access nodes
+    pub fn get_chain_nodes(_ctx: &dyn ScViewCallContext) -> GetChainNodesCall {
+        let mut f = GetChainNodesCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_CHAIN_NODES),
+            results: ImmutableGetChainNodesResults { proxy: Proxy::nil() },
         };
-        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // chain owner
+    pub fn get_chain_owner(_ctx: &dyn ScViewCallContext) -> GetChainOwnerCall {
+        let mut f = GetChainOwnerCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_CHAIN_OWNER),
+            results: ImmutableGetChainOwnerResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // fees
+    pub fn get_fee_policy(_ctx: &dyn ScViewCallContext) -> GetFeePolicyCall {
+        let mut f = GetFeePolicyCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_FEE_POLICY),
+            results: ImmutableGetFeePolicyResults { proxy: Proxy::nil() },
+        };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }

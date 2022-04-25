@@ -20,6 +20,11 @@ pub struct GrantDeployPermissionCall {
 	pub params: MutableGrantDeployPermissionParams,
 }
 
+pub struct RequireDeployPermissionsCall {
+	pub func: ScFunc,
+	pub params: MutableRequireDeployPermissionsParams,
+}
+
 pub struct RevokeDeployPermissionCall {
 	pub func: ScFunc,
 	pub params: MutableRevokeDeployPermissionParams,
@@ -53,6 +58,15 @@ impl ScFuncs {
         let mut f = GrantDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
             params: MutableGrantDeployPermissionParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn require_deploy_permissions(_ctx: &dyn ScFuncCallContext) -> RequireDeployPermissionsCall {
+        let mut f = RequireDeployPermissionsCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_REQUIRE_DEPLOY_PERMISSIONS),
+            params: MutableRequireDeployPermissionsParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
