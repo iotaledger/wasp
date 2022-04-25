@@ -57,23 +57,22 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	}
 
 	wc := NewWasmContext(proc, "")
-	proc.currentContextID = wc.id
-
 	wc.vm.GasBudget(1_000_000)
 	wc.GasDisable(true)
 	Connect(wc)
+	proc.currentContextID = wc.id
 	err = wc.vm.RunFunction("on_load")
 	wc.GasDisable(false)
 	//burned := wc.vm.GasBurned()
 	//_ = burned
-	proc.KillContext(wc.id)
+	delete(proc.contexts, wc.id)
 	if err != nil {
 		return nil, err
 	}
 	return proc, nil
 }
 
-func (proc *WasmProcessor) GetContext() *WasmContext {
+func (proc *WasmProcessor) GetCurrentContext() *WasmContext {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
 
@@ -100,10 +99,19 @@ func (proc *WasmProcessor) IsView(function string) bool {
 	return (proc.funcTable.funcToIndex[function] & 0x8000) != 0
 }
 
-func (proc *WasmProcessor) KillContext(id int32) {
+func (proc *WasmProcessor) RegisterContext(wc *WasmContext) {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
-	delete(proc.contexts, id)
+
+	proc.nextContextID++
+	wc.id = proc.nextContextID
+	proc.contexts[wc.id] = wc
+}
+
+func (proc *WasmProcessor) UnregisterContext(wc *WasmContext) {
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
+	delete(proc.contexts, wc.id)
 }
 
 func (proc *WasmProcessor) gasFactor() uint64 {
