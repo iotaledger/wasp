@@ -12,13 +12,13 @@ import (
 )
 
 var Processor = Contract.Processor(initialize,
+	FuncControlAddresses.WithHandler(viewControlAddresses),
 	FuncGetBlockInfo.WithHandler(viewGetBlockInfo),
 	FuncGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
+	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	FuncGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	FuncGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
-	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
-	FuncControlAddresses.WithHandler(viewControlAddresses),
 	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
@@ -42,6 +42,19 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
+func viewControlAddresses(ctx iscp.SandboxView) dict.Dict {
+	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
+	l := registry.MustLen()
+	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
+	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
+	ctx.RequireNoError(err)
+	return dict.Dict{
+		ParamStateControllerAddress: iscp.BytesFromAddress(rec.StateAddress),
+		ParamGoverningAddress:       iscp.BytesFromAddress(rec.GoverningAddress),
+		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
+	}
+}
+
 // viewGetBlockInfo returns blockInfo for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to the latest block)
@@ -61,30 +74,6 @@ func viewGetLatestBlockInfo(ctx iscp.SandboxView) dict.Dict {
 	return dict.Dict{
 		ParamBlockIndex: codec.EncodeUint32(regLen - 1),
 		ParamBlockInfo:  data,
-	}
-}
-
-func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
-	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
-	ctx.RequireNoError(err)
-	ret := dict.New()
-	if seen {
-		ret.Set(ParamRequestProcessed, codec.EncodeString("+"))
-	}
-	return ret
-}
-
-func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
-	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	res, err := GetRequestRecordDataByRequestID(ctx.State(), requestID)
-
-	ctx.RequireNoError(err)
-
-	return dict.Dict{
-		ParamRequestRecord: res.ReceiptBin,
-		ParamBlockIndex:    codec.EncodeUint32(res.BlockIndex),
-		ParamRequestIndex:  codec.EncodeUint16(res.RequestIndex),
 	}
 }
 
@@ -113,6 +102,19 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
+func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
+	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
+	res, err := GetRequestRecordDataByRequestID(ctx.State(), requestID)
+
+	ctx.RequireNoError(err)
+
+	return dict.Dict{
+		ParamRequestRecord: res.ReceiptBin,
+		ParamBlockIndex:    codec.EncodeUint32(res.BlockIndex),
+		ParamRequestIndex:  codec.EncodeUint16(res.RequestIndex),
+	}
+}
+
 // viewGetRequestReceiptsForBlock returns a list of receipts for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to latest block)
@@ -136,17 +138,15 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func viewControlAddresses(ctx iscp.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
-	l := registry.MustLen()
-	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
-	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
+func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
+	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
+	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
 	ctx.RequireNoError(err)
-	return dict.Dict{
-		ParamStateControllerAddress: iscp.BytesFromAddress(rec.StateAddress),
-		ParamGoverningAddress:       iscp.BytesFromAddress(rec.GoverningAddress),
-		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
+	ret := dict.New()
+	if seen {
+		ret.Set(ParamRequestProcessed, codec.EncodeString("+"))
 	}
+	return ret
 }
 
 // viewGetEventsForRequest returns a list of events for a given request.

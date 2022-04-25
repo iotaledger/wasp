@@ -15,22 +15,23 @@ import (
 
 var Processor = Contract.Processor(initialize,
 	// views
-	FuncGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
 	FuncViewBalance.WithHandler(viewBalance),
 	FuncViewTotalAssets.WithHandler(viewTotalAssets),
 	FuncViewAccounts.WithHandler(viewAccounts),
+	FuncViewGetAccountNonce.WithHandler(viewGetAccountNonce),
+	FuncViewGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
 	FuncViewAccountNFTs.WithHandler(viewAccountNFTs),
+	FuncViewFoundryOutput.WithHandler(viewFoundryOutput),
 	FuncViewNFTData.WithHandler(viewNFTData),
+
 	// funcs
 	FuncDeposit.WithHandler(deposit),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
-	FuncGetAccountNonce.WithHandler(getAccountNonce),
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
-	FuncFoundryOutput.WithHandler(foundryOutput),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
@@ -63,8 +64,8 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 // transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
-// - ParamAgentID. AgentID. mandatory
-// - ParamForceOpenAccount Bool. Optional, default: false
+// - ParamAgentID. AgentID. Required
+// - ParamForceOpenAccount Bool. Required, default: false
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 

@@ -10,18 +10,23 @@ package coreroot
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DeployContractCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableDeployContractParams
+	Func    *wasmlib.ScFunc
+	Params  MutableDeployContractParams
 }
 
 type GrantDeployPermissionCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableGrantDeployPermissionParams
+	Func    *wasmlib.ScFunc
+	Params  MutableGrantDeployPermissionParams
+}
+
+type RequireDeployPermissionsCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableRequireDeployPermissionsParams
 }
 
 type RevokeDeployPermissionCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableRevokeDeployPermissionParams
+	Func    *wasmlib.ScFunc
+	Params  MutableRevokeDeployPermissionParams
 }
 
 type FindContractCall struct {
@@ -51,6 +56,12 @@ func (sc Funcs) GrantDeployPermission(ctx wasmlib.ScFuncCallContext) *GrantDeplo
 	return f
 }
 
+func (sc Funcs) RequireDeployPermissions(ctx wasmlib.ScFuncCallContext) *RequireDeployPermissionsCall {
+	f := &RequireDeployPermissionsCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRequireDeployPermissions)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 func (sc Funcs) RevokeDeployPermission(ctx wasmlib.ScFuncCallContext) *RevokeDeployPermissionCall {
 	f := &RevokeDeployPermissionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeDeployPermission)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -72,13 +83,15 @@ func (sc Funcs) GetContractRecords(ctx wasmlib.ScViewCallContext) *GetContractRe
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncDeployContract,
-		FuncGrantDeployPermission,
-		FuncRevokeDeployPermission,
-		ViewFindContract,
-		ViewGetContractRecords,
+    	FuncDeployContract,
+    	FuncGrantDeployPermission,
+    	FuncRequireDeployPermissions,
+    	FuncRevokeDeployPermission,
+    	ViewFindContract,
+    	ViewGetContractRecords,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,

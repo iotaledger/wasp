@@ -43,10 +43,10 @@ var (
 	FuncGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobSize")
 
 	// access nodes
-	FuncGetChainNodes     = coreutil.ViewFunc("getChainNodes")
 	FuncAddCandidateNode  = coreutil.Func("addCandidateNode")
 	FuncRevokeAccessNode  = coreutil.Func("revokeAccessNode")
 	FuncChangeAccessNodes = coreutil.Func("changeAccessNodes")
+	FuncGetChainNodes     = coreutil.ViewFunc("getChainNodes")
 )
 
 // state variables

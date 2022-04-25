@@ -129,7 +129,7 @@ func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
 }
 
 func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncGetNativeTokenIDRegistry.Name)
+	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewGetNativeTokenIDRegistry.Name)
 	require.NoError(ch.Env.T, err)
 	ret := make([]*iotago.NativeTokenID, 0, len(res))
 	for k := range res {
@@ -139,7 +139,7 @@ func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
 }
 
 func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncFoundryOutput.Name,
+	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewFoundryOutput.Name,
 		accounts.ParamFoundrySN, sn,
 	)
 	if err != nil {

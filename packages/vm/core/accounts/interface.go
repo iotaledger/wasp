@@ -9,13 +9,14 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain accoun
 
 var (
 	// Views
-	FuncViewBalance              = coreutil.ViewFunc("balance")
-	FuncViewTotalAssets          = coreutil.ViewFunc("totalAssets")
-	FuncViewAccounts             = coreutil.ViewFunc("accounts")
-	FuncGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
-	FuncGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDs")
-	FuncViewAccountNFTs          = coreutil.ViewFunc("accountNFTs")
-	FuncViewNFTData              = coreutil.ViewFunc("nftData")
+	FuncViewBalance                  = coreutil.ViewFunc("balance")
+	FuncViewTotalAssets              = coreutil.ViewFunc("totalAssets")
+	FuncViewAccounts                 = coreutil.ViewFunc("accounts")
+	FuncViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
+	FuncViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
+	FuncViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
+	FuncViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
+	FuncViewNFTData                  = coreutil.ViewFunc("nftData")
 
 	// Funcs
 	FuncDeposit             = coreutil.Func("deposit")
@@ -24,7 +25,6 @@ var (
 	FuncHarvest             = coreutil.Func("harvest")
 	FuncFoundryCreateNew    = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy      = coreutil.Func("foundryDestroy")
-	FuncFoundryOutput       = coreutil.ViewFunc("foundryOutput")
 	FuncFoundryModifySupply = coreutil.Func("foundryModifySupply")
 	// TODO implement grant/claim protocol of moving ownership of the foundry
 	//  Including ownership of the foundry by the common account/chain owner

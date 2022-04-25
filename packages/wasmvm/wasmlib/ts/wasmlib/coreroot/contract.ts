@@ -24,6 +24,14 @@ export class GrantDeployPermissionCall {
 	}
 }
 
+export class RequireDeployPermissionsCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableRequireDeployPermissionsParams = new sc.MutableRequireDeployPermissionsParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncRequireDeployPermissions);
+	}
+}
+
 export class RevokeDeployPermissionCall {
 	func: wasmlib.ScFunc;
 	params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams(wasmlib.ScView.nilProxy);
@@ -59,6 +67,12 @@ export class ScFuncs {
 	static grantDeployPermission(ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
 		const f = new GrantDeployPermissionCall(ctx);
 		f.params = new sc.MutableGrantDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static requireDeployPermissions(ctx: wasmlib.ScFuncCallContext): RequireDeployPermissionsCall {
+		const f = new RequireDeployPermissionsCall(ctx);
+		f.params = new sc.MutableRequireDeployPermissionsParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
