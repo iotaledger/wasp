@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
@@ -45,16 +46,14 @@ type PostRequestParams struct {
 	Nonce     uint64
 	NFT       *iscp.NFT
 	Allowance *iscp.Allowance
-	GasBudget uint64
+	GasBudget *uint64
 }
 
 func defaultParams(params ...PostRequestParams) PostRequestParams {
 	if len(params) > 0 {
 		return params[0]
 	}
-	return PostRequestParams{
-		GasBudget: math.MaxUint64,
-	}
+	return PostRequestParams{}
 }
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
@@ -75,6 +74,12 @@ func (c *Client) Post1Request(
 		i++
 	}
 
+	var gasBudget uint64
+	if par.GasBudget == nil {
+		gasBudget = gas.MaxGasPerCall
+	} else {
+		gasBudget = *par.GasBudget
+	}
 	tx, err := transaction.NewRequestTransaction(
 		transaction.NewRequestTransactionParams{
 			SenderKeyPair:    c.KeyPair,
@@ -90,7 +95,7 @@ func (c *Client) Post1Request(
 					EntryPoint:     entryPoint,
 					Params:         par.Args,
 					Allowance:      par.Allowance,
-					GasBudget:      par.GasBudget,
+					GasBudget:      gasBudget,
 				},
 			},
 			NFT: par.NFT,
@@ -115,7 +120,10 @@ func (c *Client) PostOffLedgerRequest(
 		c.nonces[c.KeyPair.Address().Key()]++
 		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 	}
-	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce, par.GasBudget)
+	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	if par.GasBudget != nil {
+		offledgerReq = offledgerReq.WithGasBudget(*par.GasBudget)
+	}
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
@@ -123,8 +131,7 @@ func (c *Client) PostOffLedgerRequest(
 
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
-		Transfer:  iscp.NewFungibleTokens(n, nil),
-		GasBudget: math.MaxUint64,
+		Transfer: iscp.NewFungibleTokens(n, nil),
 	})
 }
 
@@ -147,12 +154,13 @@ func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
 }
 
 func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
-	par.GasBudget = budget
+	par.GasBudget = &budget
 	return par
 }
 
 func (par *PostRequestParams) WithMaxAffordableGasBudget() *PostRequestParams {
-	par.GasBudget = math.MaxUint64
+	budget := uint64(math.MaxUint64)
+	par.GasBudget = &budget
 	return par
 }
 
