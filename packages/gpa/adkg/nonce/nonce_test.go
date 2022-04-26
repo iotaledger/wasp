@@ -35,43 +35,45 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			nodes[nid] = nonce.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], log)
 		}
+		tc := gpa.NewTestContext(nodes)
 		//
 		// Run the DKG
 		inputs := make(map[gpa.NodeID]gpa.Input)
 		for _, nid := range nodeIDs {
 			inputs[nid] = nil // Input is only a signal here.
 		}
-		gpa.RunTestWithInputs(nodes, inputs)
+		tc.Inputs(inputs)
+		tc.RunUntil(0.01, tc.NumberOfOutputsPredicate(n-f))
 		//
 		// Check the INTERMEDIATE result.
-		for _, node := range nodes {
-			o := node.Output()
-			require.NotNil(tt, o)
-			require.NotNil(tt, o.(*nonce.Output).Indexes)
-			require.Len(tt, o.(*nonce.Output).Indexes, n-f)
-			require.Nil(tt, o.(*nonce.Output).PriShare)
-		}
-		//
-		// Emulate the agreement (union of index sets from f+1 proposals).
-		decidedProposals := gpa.ShuffleNodeIDs(gpa.CopyNodeIDs(nodeIDs))[0 : f+1]
-		decidedIndexMap := map[int]bool{}
-		for _, nid := range decidedProposals {
-			subset := nodes[nid].Output().(*nonce.Output).Indexes
-			for _, subsetElem := range subset {
-				decidedIndexMap[subsetElem] = true
+		intermediateOutputs := map[gpa.NodeID]*nonce.Output{}
+		for nid, node := range nodes {
+			nodeOutput := node.Output()
+			if nodeOutput == nil {
+				continue
 			}
+			intermediateOutput := nodeOutput.(*nonce.Output)
+			require.NotNil(tt, intermediateOutput)
+			require.NotNil(tt, intermediateOutput.Indexes)
+			require.Len(tt, intermediateOutput.Indexes, n-f)
+			require.Nil(tt, intermediateOutput.PriShare)
+			intermediateOutputs[nid] = intermediateOutput
 		}
-		decidedIndexes := []int{}
-		for idx := range decidedIndexMap {
-			decidedIndexes = append(decidedIndexes, idx)
+		require.Len(tt, intermediateOutputs, n-f)
+		//
+		// Emulate the agreement.
+		decidedProposals := map[gpa.NodeID][]int{}
+		for nid := range intermediateOutputs {
+			decidedProposals[nid] = intermediateOutputs[nid].Indexes
 		}
 		//
 		// Run the ADKG with agreement already decided.
 		agreementMsgs := []gpa.Message{}
 		for _, nid := range nodeIDs {
-			agreementMsgs = append(agreementMsgs, nonce.NewMsgAgreementResult(nid, decidedIndexes))
+			agreementMsgs = append(agreementMsgs, nonce.NewMsgAgreementResult(nid, decidedProposals))
 		}
-		gpa.RunTestWithMessages(nodes, agreementMsgs)
+		tc.SendMessages(agreementMsgs)
+		tc.RunUntil(0.001, tc.OutOfMessagesPredicate())
 		//
 		// Check the FINAL result.
 		for _, n := range nodes {

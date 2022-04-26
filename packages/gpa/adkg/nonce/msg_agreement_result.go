@@ -10,14 +10,14 @@ import (
 //
 // An event to self.
 type msgAgreementResult struct {
-	me      gpa.NodeID
-	indexes []int
+	me        gpa.NodeID
+	proposals map[gpa.NodeID][]int
 }
 
 var _ gpa.Message = &msgAgreementResult{}
 
-func NewMsgAgreementResult(me gpa.NodeID, indexes []int) gpa.Message {
-	return &msgAgreementResult{me: me, indexes: indexes}
+func NewMsgAgreementResult(me gpa.NodeID, proposals map[gpa.NodeID][]int) gpa.Message {
+	return &msgAgreementResult{me: me, proposals: proposals}
 }
 
 func (m *msgAgreementResult) Recipient() gpa.NodeID {

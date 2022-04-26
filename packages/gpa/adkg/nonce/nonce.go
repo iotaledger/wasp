@@ -58,7 +58,7 @@ type nonceDKGImpl struct {
 	acss    []gpa.GPA
 	st      map[int]*share.PriShare // > Let Si = {}; Ti = {}
 	agreedT []int                   // Output from the external consensus.
-	output  *Output                 // Output of the ADKG, can be intermediate (PriShare=nil).
+	output  gpa.Output              // Output of the ADKG, can be intermediate (PriShare=nil).
 	log     *logger.Logger
 }
 
@@ -176,7 +176,39 @@ func (n *nonceDKGImpl) handleAgreementResult(msg *msgAgreementResult) []gpa.Mess
 	if n.agreedT != nil {
 		return gpa.NoMessages()
 	}
-	n.agreedT = msg.indexes
+
+	if len(msg.proposals) < n.n-n.f {
+		panic(xerrors.Errorf("len(msg.proposals) < n.n - n.f, len=%v, n=%v, f=%v", len(msg.proposals), n.n, n.f))
+	}
+	voteCounts := make([]int, n.n)
+	for _, proposal := range msg.proposals {
+		if len(proposal) < n.f+1 {
+			n.log.Warnf("len(proposal) < f+1, that should not happen")
+			continue
+		}
+		for i := range proposal {
+			duplicatesFound := false
+			for j := range proposal {
+				if i != j && proposal[i] == proposal[j] {
+					duplicatesFound = true
+					n.log.Warnf("msgAgreementResult with duplicate votes")
+				}
+			}
+			if !duplicatesFound {
+				voteCounts[proposal[i]]++
+			}
+		}
+	}
+	agreedT := []int{}
+	for i := range voteCounts {
+		if voteCounts[i] >= n.f+1 {
+			agreedT = append(agreedT, i)
+		}
+	}
+	if len(agreedT) < n.f+1 {
+		panic(xerrors.Errorf("len(agreedT) < f+1, that should not happen, len=%v, f=%v", len(agreedT), n.f))
+	}
+	n.agreedT = agreedT
 	return n.tryMakeFinalOutput()
 }
 
