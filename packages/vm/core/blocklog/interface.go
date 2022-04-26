@@ -18,16 +18,16 @@ const (
 )
 
 var (
-	FuncControlAddresses           = coreutil.ViewFunc("controlAddresses")
-	FuncGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
-	FuncGetLatestBlockInfo         = coreutil.ViewFunc("getLatestBlockInfo")
-	FuncGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")
-	FuncGetRequestReceipt          = coreutil.ViewFunc("getRequestReceipt")
-	FuncGetRequestReceiptsForBlock = coreutil.ViewFunc("getRequestReceiptsForBlock")
-	FuncIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
-	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
-	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
-	FuncGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
+	ViewControlAddresses           = coreutil.ViewFunc("controlAddresses")
+	ViewGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
+	ViewGetLatestBlockInfo         = coreutil.ViewFunc("getLatestBlockInfo")
+	ViewGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")
+	ViewGetRequestReceipt          = coreutil.ViewFunc("getRequestReceipt")
+	ViewGetRequestReceiptsForBlock = coreutil.ViewFunc("getRequestReceiptsForBlock")
+	ViewIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
+	ViewGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
+	ViewGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
+	ViewGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
 )
 
 const (

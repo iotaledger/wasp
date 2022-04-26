@@ -23,9 +23,9 @@ const (
 
 var (
 	FuncStoreBlob    = coreutil.Func("storeBlob")
-	FuncGetBlobInfo  = coreutil.ViewFunc("getBlobInfo")
-	FuncGetBlobField = coreutil.ViewFunc("getBlobField")
-	FuncListBlobs    = coreutil.ViewFunc("listBlobs")
+	ViewGetBlobInfo  = coreutil.ViewFunc("getBlobInfo")
+	ViewGetBlobField = coreutil.ViewFunc("getBlobField")
+	ViewListBlobs    = coreutil.ViewFunc("listBlobs")
 )
 
 // FieldValueKey returns key of the blob field value in the SC state.

@@ -20,28 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-// SC Query Function handler.
-//
-//  getChainNodes() => (
-//      accessNodeCandidates :: map(pubKey => AccessNodeInfo),
-//      accessNodes          :: map(pubKey => ())
-//  )
-//
-func getChainNodesFuncHandler(ctx iscp.SandboxView) dict.Dict {
-	res := dict.New()
-	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
-	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
-		ac.MustSetAt(key, value)
-		return true
-	})
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
-		an.MustSetAt(key, value)
-		return true
-	})
-	return res
-}
-
 // SC Command Function handler.
 // Can only be invoked by the access node owner (verified via the Certificate field).
 //
@@ -120,4 +98,26 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) dict.Dict {
 		return true
 	})
 	return nil
+}
+
+// SC Query Function handler.
+//
+//  getChainNodes() => (
+//      accessNodeCandidates :: map(pubKey => AccessNodeInfo),
+//      accessNodes          :: map(pubKey => ())
+//  )
+//
+func getChainNodesFuncHandler(ctx iscp.SandboxView) dict.Dict {
+	res := dict.New()
+	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
+	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
+	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
+		ac.MustSetAt(key, value)
+		return true
+	})
+	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
+		an.MustSetAt(key, value)
+		return true
+	})
+	return res
 }

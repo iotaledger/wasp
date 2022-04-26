@@ -177,7 +177,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
 	v, err := ch.Cluster.WaspClient(0).CallView(
-		ch.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+		ch.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
@@ -201,7 +201,7 @@ func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCount
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
+	ret, err := cl.CallView(blocklog.ViewGetLatestBlockInfo.Name, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -216,7 +216,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
-		res, err := cl.CallView(blocklog.FuncGetBlockInfo.Name, dict.Dict{
+		res, err := cl.CallView(blocklog.ViewGetBlockInfo.Name, dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
 		})
 		if err != nil {
@@ -233,7 +233,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.FuncGetContractRecords.Name, nil)
+	ret, err := cl.CallView(root.ViewGetContractRecords.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeInde
 
 func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestReceipt, uint32, uint16, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
+	ret, err := cl.CallView(blocklog.ViewGetRequestReceipt.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -276,7 +276,7 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blo
 
 func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	res, err := cl.CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
+	res, err := cl.CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
 	})
 	if err != nil {

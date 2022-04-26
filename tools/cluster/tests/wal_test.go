@@ -35,7 +35,7 @@ func TestWriteToWAL(t *testing.T) {
 	require.EqualValues(t, blockIndex, block.BlockIndex())
 
 	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetBlockInfo.Name,
+		chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Name,
 		dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
 		})

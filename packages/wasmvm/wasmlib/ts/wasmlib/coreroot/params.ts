@@ -52,6 +52,18 @@ export class MutableGrantDeployPermissionParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableRequireDeployPermissionsParams extends wasmtypes.ScProxy {
+	deployPermissionsEnabled(): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamDeployPermissionsEnabled));
+	}
+}
+
+export class MutableRequireDeployPermissionsParams extends wasmtypes.ScProxy {
+	deployPermissionsEnabled(): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamDeployPermissionsEnabled));
+	}
+}
+
 export class ImmutableRevokeDeployPermissionParams extends wasmtypes.ScProxy {
 	deployer(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamDeployer));

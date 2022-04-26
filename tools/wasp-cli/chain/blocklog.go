@@ -37,7 +37,7 @@ func blockCmd() *cobra.Command {
 
 func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	if len(args) == 0 {
-		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
+		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetLatestBlockInfo.Name, nil)
 		log.Check(err)
 		index, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 		log.Check(err)
@@ -47,7 +47,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	}
 	index, err := strconv.Atoi(args[0])
 	log.Check(err)
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetBlockInfo.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetBlockInfo.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
 	})
 	log.Check(err)
@@ -57,7 +57,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 }
 
 func logRequestsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
 	})
 	log.Check(err)
@@ -105,7 +105,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 }
 
 func logEventsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForBlock.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
 	})
 	log.Check(err)
@@ -120,7 +120,7 @@ func requestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			reqID, err := iscp.RequestIDFromString(args[0])
 			log.Check(err)
-			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{
+			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceipt.Name, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 			})
 			log.Check(err)
@@ -140,7 +140,7 @@ func requestCmd() *cobra.Command {
 }
 
 func logEventsInRequest(reqID iscp.RequestID) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForRequest.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForRequest.Name, dict.Dict{
 		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 	})
 	log.Check(err)

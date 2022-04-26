@@ -68,7 +68,7 @@ func (vm *WasmVMBase) GasBurned() uint64 {
 }
 
 func (vm *WasmVMBase) getContext() *WasmContext {
-	return vm.wc.proc.GetContext()
+	return vm.wc.proc.GetCurrentContext()
 }
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {

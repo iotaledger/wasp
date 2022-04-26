@@ -14,6 +14,15 @@ type AddAllowedStateControllerAddressCall struct {
 	Params MutableAddAllowedStateControllerAddressParams
 }
 
+type AddCandidateNodeCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type ChangeAccessNodesCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableChangeAccessNodesParams
+}
+
 type ClaimChainOwnershipCall struct {
 	Func *wasmlib.ScFunc
 }
@@ -28,6 +37,10 @@ type RemoveAllowedStateControllerAddressCall struct {
 	Params MutableRemoveAllowedStateControllerAddressParams
 }
 
+type RevokeAccessNodeCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type RotateStateControllerCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableRotateStateControllerParams
@@ -38,14 +51,10 @@ type SetChainInfoCall struct {
 	Params MutableSetChainInfoParams
 }
 
-type SetContractFeeCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetContractFeeParams
-}
-
-type SetDefaultFeeCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetDefaultFeeParams
+type SetFeePolicyCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableSetFeePolicyParams
+	Results ImmutableSetFeePolicyResults
 }
 
 type GetAllowedStateControllerAddressesCall struct {
@@ -58,10 +67,19 @@ type GetChainInfoCall struct {
 	Results ImmutableGetChainInfoResults
 }
 
-type GetFeeInfoCall struct {
+type GetChainNodesCall struct {
 	Func    *wasmlib.ScView
-	Params  MutableGetFeeInfoParams
-	Results ImmutableGetFeeInfoResults
+	Results ImmutableGetChainNodesResults
+}
+
+type GetChainOwnerCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetChainOwnerResults
+}
+
+type GetFeePolicyCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetFeePolicyResults
 }
 
 type GetMaxBlobSizeCall struct {
@@ -79,6 +97,18 @@ func (sc Funcs) AddAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) 
 	return f
 }
 
+// access nodes
+func (sc Funcs) AddCandidateNode(ctx wasmlib.ScFuncCallContext) *AddCandidateNodeCall {
+	return &AddCandidateNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddCandidateNode)}
+}
+
+func (sc Funcs) ChangeAccessNodes(ctx wasmlib.ScFuncCallContext) *ChangeAccessNodesCall {
+	f := &ChangeAccessNodesCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncChangeAccessNodes)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+// chain owner
 func (sc Funcs) ClaimChainOwnership(ctx wasmlib.ScFuncCallContext) *ClaimChainOwnershipCall {
 	return &ClaimChainOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncClaimChainOwnership)}
 }
@@ -95,45 +125,63 @@ func (sc Funcs) RemoveAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContex
 	return f
 }
 
+func (sc Funcs) RevokeAccessNode(ctx wasmlib.ScFuncCallContext) *RevokeAccessNodeCall {
+	return &RevokeAccessNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeAccessNode)}
+}
+
+// state controller
 func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncCallContext) *RotateStateControllerCall {
 	f := &RotateStateControllerCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRotateStateController)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
+// chain info
 func (sc Funcs) SetChainInfo(ctx wasmlib.ScFuncCallContext) *SetChainInfoCall {
 	f := &SetChainInfoCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetChainInfo)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
-func (sc Funcs) SetContractFee(ctx wasmlib.ScFuncCallContext) *SetContractFeeCall {
-	f := &SetContractFeeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetContractFee)}
+// fees
+func (sc Funcs) SetFeePolicy(ctx wasmlib.ScFuncCallContext) *SetFeePolicyCall {
+	f := &SetFeePolicyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetFeePolicy)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 
-func (sc Funcs) SetDefaultFee(ctx wasmlib.ScFuncCallContext) *SetDefaultFeeCall {
-	f := &SetDefaultFeeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetDefaultFee)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	return f
-}
-
+// state controller
 func (sc Funcs) GetAllowedStateControllerAddresses(ctx wasmlib.ScViewCallContext) *GetAllowedStateControllerAddressesCall {
 	f := &GetAllowedStateControllerAddressesCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAllowedStateControllerAddresses)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
+// chain info
 func (sc Funcs) GetChainInfo(ctx wasmlib.ScViewCallContext) *GetChainInfoCall {
 	f := &GetChainInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainInfo)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
-func (sc Funcs) GetFeeInfo(ctx wasmlib.ScViewCallContext) *GetFeeInfoCall {
-	f := &GetFeeInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetFeeInfo)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+// access nodes
+func (sc Funcs) GetChainNodes(ctx wasmlib.ScViewCallContext) *GetChainNodesCall {
+	f := &GetChainNodesCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainNodes)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+// chain owner
+func (sc Funcs) GetChainOwner(ctx wasmlib.ScViewCallContext) *GetChainOwnerCall {
+	f := &GetChainOwnerCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainOwner)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+// fees
+func (sc Funcs) GetFeePolicy(ctx wasmlib.ScViewCallContext) *GetFeePolicyCall {
+	f := &GetFeePolicyCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetFeePolicy)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
@@ -147,16 +195,20 @@ func (sc Funcs) GetMaxBlobSize(ctx wasmlib.ScViewCallContext) *GetMaxBlobSizeCal
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncAddAllowedStateControllerAddress,
+		FuncAddCandidateNode,
+		FuncChangeAccessNodes,
 		FuncClaimChainOwnership,
 		FuncDelegateChainOwnership,
 		FuncRemoveAllowedStateControllerAddress,
+		FuncRevokeAccessNode,
 		FuncRotateStateController,
 		FuncSetChainInfo,
-		FuncSetContractFee,
-		FuncSetDefaultFee,
+		FuncSetFeePolicy,
 		ViewGetAllowedStateControllerAddresses,
 		ViewGetChainInfo,
-		ViewGetFeeInfo,
+		ViewGetChainNodes,
+		ViewGetChainOwner,
+		ViewGetFeePolicy,
 		ViewGetMaxBlobSize,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
@@ -168,8 +220,12 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

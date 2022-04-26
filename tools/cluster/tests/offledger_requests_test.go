@@ -126,7 +126,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 
 	// ensure blob was stored by the cluster
 	res, err := chain.Cluster.WaspClient(2).CallView(
-		chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+		chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  expectedHash[:],
 			blob.ParamField: []byte("data"),

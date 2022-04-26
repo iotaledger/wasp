@@ -11,7 +11,7 @@ func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.FungibleTok
 	params := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})
-	ret, err := CallView(ch, accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), params)
+	ret, err := CallView(ch, accounts.Contract.Hname(), accounts.ViewBalance.Hname(), params)
 	if err != nil {
 		return nil, err
 	}

@@ -26,27 +26,27 @@ var (
 	FuncRotateStateController               = coreutil.Func(coreutil.CoreEPRotateStateController)
 	FuncAddAllowedStateControllerAddress    = coreutil.Func("addAllowedStateControllerAddress")
 	FuncRemoveAllowedStateControllerAddress = coreutil.Func("removeAllowedStateControllerAddress")
-	FuncGetAllowedStateControllerAddresses  = coreutil.ViewFunc("getAllowedStateControllerAddresses")
+	ViewGetAllowedStateControllerAddresses  = coreutil.ViewFunc("getAllowedStateControllerAddresses")
 
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.Func("claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
-	FuncGetChainOwner          = coreutil.ViewFunc("getChainOwner")
+	ViewGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
 	// fees
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
-	FuncGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
+	ViewGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
 
 	// chain info
 	FuncSetChainInfo   = coreutil.Func("setChainInfo")
-	FuncGetChainInfo   = coreutil.ViewFunc("getChainInfo")
-	FuncGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobSize")
+	ViewGetChainInfo   = coreutil.ViewFunc("getChainInfo")
+	ViewGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobSize")
 
 	// access nodes
-	FuncGetChainNodes     = coreutil.ViewFunc("getChainNodes")
 	FuncAddCandidateNode  = coreutil.Func("addCandidateNode")
 	FuncRevokeAccessNode  = coreutil.Func("revokeAccessNode")
 	FuncChangeAccessNodes = coreutil.Func("changeAccessNodes")
+	ViewGetChainNodes     = coreutil.ViewFunc("getChainNodes")
 )
 
 // state variables

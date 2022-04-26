@@ -38,7 +38,7 @@ func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 	// Two situations possible:
 	// - either there's no need to rotate
 	// - or it just has been rotated. In case of the second situation we emit a 'rotate' event
-	addrs := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.FuncControlAddresses.Hname(), nil, nil)
+	addrs := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.ViewControlAddresses.Hname(), nil, nil)
 	par := kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
 	if !storedStateController.Equal(newStateControllerAddr) {

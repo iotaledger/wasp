@@ -132,7 +132,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 
 	errorCode := codec.MustDecodeVMErrorCode(dict.MustGet(errors.ParamErrorCode))
 
-	req = solo.NewCallParams(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
+	req = solo.NewCallParams(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, errorCode,
 	).
 		WithGasBudget(100_000)

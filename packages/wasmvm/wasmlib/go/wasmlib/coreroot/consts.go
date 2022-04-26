@@ -16,11 +16,12 @@ const (
 )
 
 const (
-	ParamDeployer    = "dp"
-	ParamDescription = "ds"
-	ParamHname       = "hn"
-	ParamName        = "nm"
-	ParamProgramHash = "ph"
+	ParamDeployPermissionsEnabled = "de"
+	ParamDeployer                 = "dp"
+	ParamDescription              = "ds"
+	ParamHname                    = "hn"
+	ParamName                     = "nm"
+	ParamProgramHash              = "ph"
 )
 
 const (
@@ -30,17 +31,19 @@ const (
 )
 
 const (
-	FuncDeployContract         = "deployContract"
-	FuncGrantDeployPermission  = "grantDeployPermission"
-	FuncRevokeDeployPermission = "revokeDeployPermission"
-	ViewFindContract           = "findContract"
-	ViewGetContractRecords     = "getContractRecords"
+	FuncDeployContract           = "deployContract"
+	FuncGrantDeployPermission    = "grantDeployPermission"
+	FuncRequireDeployPermissions = "requireDeployPermissions"
+	FuncRevokeDeployPermission   = "revokeDeployPermission"
+	ViewFindContract             = "findContract"
+	ViewGetContractRecords       = "getContractRecords"
 )
 
 const (
-	HFuncDeployContract         = wasmtypes.ScHname(0x28232c27)
-	HFuncGrantDeployPermission  = wasmtypes.ScHname(0xf440263a)
-	HFuncRevokeDeployPermission = wasmtypes.ScHname(0x850744f1)
-	HViewFindContract           = wasmtypes.ScHname(0xc145ca00)
-	HViewGetContractRecords     = wasmtypes.ScHname(0x078b3ef3)
+	HFuncDeployContract           = wasmtypes.ScHname(0x28232c27)
+	HFuncGrantDeployPermission    = wasmtypes.ScHname(0xf440263a)
+	HFuncRequireDeployPermissions = wasmtypes.ScHname(0xefff8d83)
+	HFuncRevokeDeployPermission   = wasmtypes.ScHname(0x850744f1)
+	HViewFindContract             = wasmtypes.ScHname(0xc145ca00)
+	HViewGetContractRecords       = wasmtypes.ScHname(0x078b3ef3)
 )

@@ -287,7 +287,7 @@ func TestISCCallView(t *testing.T) {
 	ret := new(isccontract.ISCDict)
 	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "callView", []interface{}{
 		accounts.Contract.Hname(),
-		accounts.FuncViewBalance.Hname(),
+		accounts.ViewBalance.Hname(),
 		&isccontract.ISCDict{Items: []isccontract.ISCDictItem{{
 			Key:   []byte(accounts.ParamAgentID),
 			Value: evmChain.soloChain.OriginatorAgentID.Bytes(),

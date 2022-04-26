@@ -13,7 +13,7 @@ var eventsCmd = &cobra.Command{
 	Short: "Show events of contract <name>",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		r, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForContract.Name, dict.Dict{
+		r, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForContract.Name, dict.Dict{
 			blocklog.ParamContractHname: iscp.Hn(args[0]).Bytes(),
 		})
 		log.Check(err)

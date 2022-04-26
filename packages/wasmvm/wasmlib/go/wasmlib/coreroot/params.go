@@ -61,6 +61,22 @@ func (s MutableGrantDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentI
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
 }
 
+type ImmutableRequireDeployPermissionsParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableRequireDeployPermissionsParams) DeployPermissionsEnabled() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamDeployPermissionsEnabled))
+}
+
+type MutableRequireDeployPermissionsParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableRequireDeployPermissionsParams) DeployPermissionsEnabled() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamDeployPermissionsEnabled))
+}
+
 type ImmutableRevokeDeployPermissionParams struct {
 	proxy wasmtypes.Proxy
 }

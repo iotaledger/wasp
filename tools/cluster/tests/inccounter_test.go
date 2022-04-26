@@ -21,7 +21,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.Greater(e.t, blockIndex, uint32(numRequests+4))
 
 		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
-		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
+		info, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
 		chid, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
@@ -36,7 +36,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.chain.Description, desc)
 
-		recs, err := e.chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.FuncGetContractRecords.Name, nil)
+		recs, err := e.chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))

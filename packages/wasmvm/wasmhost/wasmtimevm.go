@@ -11,7 +11,7 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
-	config     *wasmtime.Config
+	engine     *wasmtime.Engine
 	instance   *wasmtime.Instance
 	linker     *wasmtime.Linker
 	memory     *wasmtime.Memory
@@ -21,10 +21,11 @@ type WasmTimeVM struct {
 }
 
 func NewWasmTimeVM() WasmVM {
-	vm := &WasmTimeVM{config: wasmtime.NewConfig()}
+	config := wasmtime.NewConfig()
+	config.SetInterruptable(true)
+	config.SetConsumeFuel(true)
+	vm := &WasmTimeVM{engine: wasmtime.NewEngineWithConfig(config)}
 	vm.timeoutStarted = DisableWasmTimeout
-	vm.config.SetInterruptable(true)
-	vm.config.SetConsumeFuel(true)
 	return vm
 }
 
@@ -75,7 +76,7 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost() (err error) {
-	vm.linker = wasmtime.NewLinker(vm.store.Engine)
+	vm.linker = wasmtime.NewLinker(vm.engine)
 
 	// new Wasm VM interface
 	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateGet, vm.HostStateGet)
@@ -102,8 +103,8 @@ func (vm *WasmTimeVM) LinkHost() (err error) {
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
-	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(vm.config))
-	vm.module, err = wasmtime.NewModule(vm.store.Engine, wasmData)
+	vm.store = wasmtime.NewStore(vm.engine)
+	vm.module, err = wasmtime.NewModule(vm.engine, wasmData)
 	return err
 }
 
@@ -111,7 +112,12 @@ func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
 	if vm.wc == nil {
 		vm.wc = wc
 	}
-	vmInstance := &WasmTimeVM{store: vm.store, module: vm.module, linker: vm.linker}
+	vmInstance := &WasmTimeVM{
+		engine: vm.engine,
+		module: vm.module,
+		linker: vm.linker,
+		store:  vm.store,
+	}
 	vmInstance.wc = wc
 	vmInstance.timeoutStarted = DisableWasmTimeout
 	err := vmInstance.newInstance()

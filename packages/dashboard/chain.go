@@ -87,7 +87,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 }
 
 func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) {
-	ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetLatestBlockInfo.Name, nil)
+	ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetLatestBlockInfo.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) 
 }
 
 func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error) {
-	accs, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewAccounts.Name, nil)
+	accs, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.ViewAccounts.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error
 }
 
 func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (*iscp.FungibleTokens, error) {
-	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewTotalAssets.Name, nil)
+	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.ViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (*iscp.FungibleToken
 }
 
 func (d *Dashboard) fetchBlobs(chainID *iscp.ChainID) (map[hashing.HashValue]uint32, error) {
-	ret, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncListBlobs.Name, nil)
+	ret, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewListBlobs.Name, nil)
 	if err != nil {
 		return nil, err
 	}

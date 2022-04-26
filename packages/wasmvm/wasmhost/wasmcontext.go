@@ -54,13 +54,7 @@ func NewWasmContext(proc *WasmProcessor, function string) *WasmContext {
 	if newInstance != nil {
 		wc.vm = newInstance
 	}
-
-	proc.contextLock.Lock()
-	defer proc.contextLock.Unlock()
-
-	proc.nextContextID++
-	wc.id = proc.nextContextID
-	proc.contexts[wc.id] = wc
+	proc.RegisterContext(wc)
 	return wc
 }
 
@@ -80,7 +74,7 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 	defer func() {
 		Connect(wcSaved)
 		// clean up context after use
-		wc.proc.KillContext(wc.id)
+		wc.proc.UnregisterContext(wc)
 	}()
 
 	if wc.funcName == "" {

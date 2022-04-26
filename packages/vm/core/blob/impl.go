@@ -12,9 +12,9 @@ import (
 
 var Processor = Contract.Processor(initialize,
 	FuncStoreBlob.WithHandler(storeBlob),
-	FuncGetBlobInfo.WithHandler(getBlobInfo),
-	FuncGetBlobField.WithHandler(getBlobField),
-	FuncListBlobs.WithHandler(listBlobs),
+	ViewGetBlobField.WithHandler(getBlobField),
+	ViewGetBlobInfo.WithHandler(getBlobInfo),
+	ViewListBlobs.WithHandler(listBlobs),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
@@ -110,7 +110,7 @@ func listBlobs(ctx iscp.SandboxView) dict.Dict {
 }
 
 func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
-	r := ctx.Call(governance.Contract.Hname(), governance.FuncGetMaxBlobSize.Hname(), nil, nil)
+	r := ctx.Call(governance.Contract.Hname(), governance.ViewGetMaxBlobSize.Hname(), nil, nil)
 	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSizeUint32), 0)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)

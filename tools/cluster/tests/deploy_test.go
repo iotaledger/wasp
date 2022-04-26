@@ -71,7 +71,7 @@ func TestDeployContractOnly(t *testing.T) {
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
