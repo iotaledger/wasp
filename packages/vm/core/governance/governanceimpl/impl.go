@@ -33,10 +33,10 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.ViewGetMaxBlobSize.WithHandler(getMaxBlobSize),
 
 	// access nodes
-	governance.FuncAddCandidateNode.WithHandler(addCandidateNodeFuncHandler),
-	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodesFuncHandler),
-	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNodeFuncHandler),
-	governance.ViewGetChainNodes.WithHandler(getChainNodesFuncHandler),
+	governance.FuncAddCandidateNode.WithHandler(addCandidateNode),
+	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodes),
+	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNode),
+	governance.ViewGetChainNodes.WithHandler(getChainNodes),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
