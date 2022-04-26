@@ -18,7 +18,7 @@ type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	TrieNodeStore() trie.NodeStore
-	PreviousStateCommitment() trie.VCommitment
+	PreviousL1Commitment() *L1Commitment
 	Commit()
 	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
@@ -57,7 +57,7 @@ type Block interface {
 	ApprovingOutputID() *iotago.UTXOInput
 	SetApprovingOutputID(*iotago.UTXOInput)
 	Timestamp() time.Time
-	PreviousStateCommitment(trie.CommitmentModel) trie.VCommitment
+	PreviousL1Commitment() *L1Commitment
 	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
 }

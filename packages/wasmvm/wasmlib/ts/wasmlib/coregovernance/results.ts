@@ -8,28 +8,40 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableBytes extends wasmtypes.ScProxy {
+export class ImmutableSetFeePolicyResults extends wasmtypes.ScProxy {
+	gasFeePolicyBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
+	}
+}
+
+export class MutableSetFeePolicyResults extends wasmtypes.ScProxy {
+	gasFeePolicyBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
+	}
+}
+
+export class ArrayOfImmutableAddress extends wasmtypes.ScProxy {
 
 	length(): u32 {
 		return this.proxy.length();
 	}
 
-	getBytes(index: u32): wasmtypes.ScImmutableBytes {
-		return new wasmtypes.ScImmutableBytes(this.proxy.index(index));
+	getAddress(index: u32): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.index(index));
 	}
 }
 
 export class ImmutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
 	// native contract, so this is an Array16
-	allowedStateControllerAddresses(): sc.ArrayOfImmutableBytes {
-		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
+	allowedStateControllerAddresses(): sc.ArrayOfImmutableAddress {
+		return new sc.ArrayOfImmutableAddress(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
 	}
 }
 
-export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
+export class ArrayOfMutableAddress extends wasmtypes.ScProxy {
 
-	appendBytes(): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.append());
+	appendAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.append());
 	}
 
 	clear(): void {
@@ -40,15 +52,15 @@ export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
 		return this.proxy.length();
 	}
 
-	getBytes(index: u32): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.index(index));
+	getAddress(index: u32): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.index(index));
 	}
 }
 
 export class MutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
 	// native contract, so this is an Array16
-	allowedStateControllerAddresses(): sc.ArrayOfMutableBytes {
-		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
+	allowedStateControllerAddresses(): sc.ArrayOfMutableAddress {
+		return new sc.ArrayOfMutableAddress(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
 	}
 }
 
@@ -61,28 +73,24 @@ export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
 	}
 
-	defaultOwnerFee(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultDefaultOwnerFee));
-	}
-
-	defaultValidatorFee(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultDefaultValidatorFee));
-	}
-
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-	maxBlobSize(): wasmtypes.ScImmutableInt32 {
-		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
+	gasFeePolicyBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
 	}
 
-	maxEventSize(): wasmtypes.ScImmutableInt16 {
-		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ResultMaxEventSize));
+	maxBlobSize(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
 
-	maxEventsPerReq(): wasmtypes.ScImmutableInt16 {
-		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ResultMaxEventsPerReq));
+	maxEventSize(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ResultMaxEventSize));
+	}
+
+	maxEventsPerReq(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ResultMaxEventsPerReq));
 	}
 }
 
@@ -95,59 +103,97 @@ export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
 	}
 
-	defaultOwnerFee(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultDefaultOwnerFee));
-	}
-
-	defaultValidatorFee(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultDefaultValidatorFee));
-	}
-
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-	maxBlobSize(): wasmtypes.ScMutableInt32 {
-		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
+	gasFeePolicyBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
 	}
 
-	maxEventSize(): wasmtypes.ScMutableInt16 {
-		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ResultMaxEventSize));
+	maxBlobSize(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
 
-	maxEventsPerReq(): wasmtypes.ScMutableInt16 {
-		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ResultMaxEventsPerReq));
-	}
-}
-
-export class ImmutableGetFeeInfoResults extends wasmtypes.ScProxy {
-	ownerFee(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultOwnerFee));
+	maxEventSize(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ResultMaxEventSize));
 	}
 
-	validatorFee(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultValidatorFee));
+	maxEventsPerReq(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ResultMaxEventsPerReq));
 	}
 }
 
-export class MutableGetFeeInfoResults extends wasmtypes.ScProxy {
-	ownerFee(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultOwnerFee));
+export class MapBytesToImmutableBytes extends wasmtypes.ScProxy {
+
+	getBytes(key: u8[]): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.bytesToBytes(key)));
+	}
+}
+
+export class ImmutableGetChainNodesResults extends wasmtypes.ScProxy {
+	accessNodeCandidates(): sc.MapBytesToImmutableBytes {
+		return new sc.MapBytesToImmutableBytes(this.proxy.root(sc.ResultAccessNodeCandidates));
 	}
 
-	validatorFee(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultValidatorFee));
+	accessNodes(): sc.MapBytesToImmutableBytes {
+		return new sc.MapBytesToImmutableBytes(this.proxy.root(sc.ResultAccessNodes));
+	}
+}
+
+export class MapBytesToMutableBytes extends wasmtypes.ScProxy {
+
+	clear(): void {
+		this.proxy.clearMap();
+	}
+
+	getBytes(key: u8[]): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.bytesToBytes(key)));
+	}
+}
+
+export class MutableGetChainNodesResults extends wasmtypes.ScProxy {
+	accessNodeCandidates(): sc.MapBytesToMutableBytes {
+		return new sc.MapBytesToMutableBytes(this.proxy.root(sc.ResultAccessNodeCandidates));
+	}
+
+	accessNodes(): sc.MapBytesToMutableBytes {
+		return new sc.MapBytesToMutableBytes(this.proxy.root(sc.ResultAccessNodes));
+	}
+}
+
+export class ImmutableGetChainOwnerResults extends wasmtypes.ScProxy {
+	chainOwner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwner));
+	}
+}
+
+export class MutableGetChainOwnerResults extends wasmtypes.ScProxy {
+	chainOwner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwner));
+	}
+}
+
+export class ImmutableGetFeePolicyResults extends wasmtypes.ScProxy {
+	feePolicyBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFeePolicyBytes));
+	}
+}
+
+export class MutableGetFeePolicyResults extends wasmtypes.ScProxy {
+	feePolicyBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFeePolicyBytes));
 	}
 }
 
 export class ImmutableGetMaxBlobSizeResults extends wasmtypes.ScProxy {
-	maxBlobSize(): wasmtypes.ScImmutableInt32 {
-		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
+	maxBlobSize(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
 }
 
 export class MutableGetMaxBlobSizeResults extends wasmtypes.ScProxy {
-	maxBlobSize(): wasmtypes.ScMutableInt32 {
-		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
+	maxBlobSize(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
 }

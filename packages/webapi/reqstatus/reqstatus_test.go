@@ -1,7 +1,6 @@
 package reqstatus
 
 import (
-	"math"
 	"net/http"
 	"testing"
 
@@ -31,7 +30,6 @@ func (m *mockChain) GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestRecei
 		iscp.Hn("some entrypoint"),
 		dict.Dict{foo: []byte("bar")},
 		42,
-		math.MaxUint64,
 	)
 	return &blocklog.RequestReceipt{
 		Request: req,

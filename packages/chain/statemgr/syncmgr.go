@@ -173,7 +173,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
-		candidatePrevStateCommitment := stateCandidateBlock.getBlock().PreviousStateCommitment(state.CommitmentModel)
+		candidatePrevStateCommitment := stateCandidateBlock.getBlock().PreviousL1Commitment().StateCommitment
 		calculatedPrevStateCommitment := trie.RootCommitment(calculatedPrevState.TrieNodeStore())
 		if !trie.EqualCommitments(candidatePrevStateCommitment, calculatedPrevStateCommitment) {
 			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state commitment does not match calculated state commitment: %s != %s",

@@ -11,7 +11,7 @@ import (
 
 var Processor = Contract.Processor(initialize,
 	FuncRegisterError.WithHandler(funcRegisterError),
-	FuncGetErrorMessageFormat.WithHandler(funcGetErrorMessageFormat),
+	ViewGetErrorMessageFormat.WithHandler(funcGetErrorMessageFormat),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {

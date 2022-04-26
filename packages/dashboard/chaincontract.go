@@ -43,7 +43,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		Hname:   hname,
 	}
 
-	r, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
+	r, err := d.wasp.CallView(chainID, root.Contract.Name, root.ViewFindContract.Name, codec.MakeDict(map[string]interface{}{
 		root.ParamHname: codec.EncodeHname(hname),
 	}))
 	if err != nil {
@@ -57,7 +57,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		return fmt.Errorf("cannot decode contract record: %v", err)
 	}
 
-	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
+	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: codec.EncodeHname(hname),
 	}))
 	if err != nil {

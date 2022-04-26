@@ -4,7 +4,6 @@
 package wasmhost
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -19,7 +18,6 @@ type WasmProcessor struct {
 	gasFactorX       uint64
 	instanceLock     sync.Mutex
 	log              *logger.Logger
-	mainProcessor    *WasmProcessor
 	nextContextID    int32
 	vm               WasmVM
 }
@@ -58,38 +56,31 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		return nil, err
 	}
 
-	wc := NewWasmContext("", proc, proc.vm)
-	Connect(wc)
-	proc.contexts[wc.id] = wc
-
-	// instantiate a new Wasm instance
-	err = proc.vm.Instantiate(wc)
-	if err != nil {
-		return nil, err
-	}
-
+	wc := NewWasmContext(proc, "")
 	wc.vm.GasBudget(1_000_000)
-	wc.vm.GasDisable(true)
+	wc.GasDisable(true)
+	Connect(wc)
+	proc.currentContextID = wc.id
 	err = wc.vm.RunFunction("on_load")
-	wc.vm.GasDisable(false)
-	burned := wc.vm.GasBurned()
-	_ = burned
+	wc.GasDisable(false)
+	//burned := wc.vm.GasBurned()
+	//_ = burned
+	delete(proc.contexts, wc.id)
 	if err != nil {
 		return nil, err
 	}
 	return proc, nil
 }
 
-func (proc *WasmProcessor) GetContext() *WasmContext {
-	mainProcessor := proc.mainProc()
-	mainProcessor.contextLock.Lock()
-	defer mainProcessor.contextLock.Unlock()
+func (proc *WasmProcessor) GetCurrentContext() *WasmContext {
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
 
-	return mainProcessor.contexts[mainProcessor.currentContextID]
+	return proc.contexts[proc.currentContextID]
 }
 
 func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
-	return proc.wasmContext(FuncDefault)
+	return NewWasmContext(proc, FuncDefault)
 }
 
 func (proc *WasmProcessor) GetDescription() string {
@@ -101,62 +92,28 @@ func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntry
 	if function == "" && code != iscp.EntryPointInit {
 		return nil, false
 	}
-	return proc.wasmContext(function), true
+	return NewWasmContext(proc, function), true
 }
 
 func (proc *WasmProcessor) IsView(function string) bool {
-	return (proc.mainProc().funcTable.funcToIndex[function] & 0x8000) != 0
+	return (proc.funcTable.funcToIndex[function] & 0x8000) != 0
 }
 
-func (proc *WasmProcessor) KillContext(id int32) {
-	proc.contextLock.Lock()
-	defer proc.contextLock.Unlock()
-	delete(proc.contexts, id)
-}
-
-func (proc *WasmProcessor) RunScFunction(functionName string) (err error) {
-	index, ok := proc.mainProc().funcTable.funcToIndex[functionName]
-	if !ok {
-		return errors.New("unknown SC function name: " + functionName)
-	}
-	return proc.vm.RunScFunction(index)
-}
-
-func (proc *WasmProcessor) gasFactor() uint64 {
-	return proc.mainProc().gasFactorX
-}
-
-func (proc *WasmProcessor) mainProc() *WasmProcessor {
-	if proc.mainProcessor == nil {
-		return proc
-	}
-	return proc.mainProcessor
-}
-
-func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
-	processor := proc
-	vmInstance := proc.vm.NewInstance()
-	if vmInstance != nil {
-		processor = &WasmProcessor{
-			log:           proc.log,
-			mainProcessor: proc,
-			vm:            vmInstance,
-		}
-
-		wc := NewWasmContext("", processor, vmInstance)
-		Connect(wc)
-		err := vmInstance.Instantiate(wc)
-		if err != nil {
-			panic("cannot instantiate: " + err.Error())
-		}
-	}
-	wc := NewWasmContext(function, processor, processor.vm)
-
+func (proc *WasmProcessor) RegisterContext(wc *WasmContext) {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
 
 	proc.nextContextID++
 	wc.id = proc.nextContextID
 	proc.contexts[wc.id] = wc
-	return wc
+}
+
+func (proc *WasmProcessor) UnregisterContext(wc *WasmContext) {
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
+	delete(proc.contexts, wc.id)
+}
+
+func (proc *WasmProcessor) gasFactor() uint64 {
+	return proc.gasFactorX
 }

@@ -20,28 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-// SC Query Function handler.
-//
-//  getChainNodes() => (
-//      accessNodeCandidates :: map(pubKey => AccessNodeInfo),
-//      accessNodes          :: map(pubKey => ())
-//  )
-//
-func getChainNodesFuncHandler(ctx iscp.SandboxView) dict.Dict {
-	res := dict.New()
-	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
-	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
-		ac.MustSetAt(key, value)
-		return true
-	})
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
-		an.MustSetAt(key, value)
-		return true
-	})
-	return res
-}
-
 // SC Command Function handler.
 // Can only be invoked by the access node owner (verified via the Certificate field).
 //
@@ -49,7 +27,7 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) dict.Dict {
 //      accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
 //  ) => ()
 //
-func addCandidateNodeFuncHandler(ctx iscp.Sandbox) dict.Dict {
+func addCandidateNode(ctx iscp.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
@@ -79,7 +57,7 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) dict.Dict {
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
 //
-func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) dict.Dict {
+func revokeAccessNode(ctx iscp.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
@@ -98,7 +76,7 @@ func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) dict.Dict {
 //      actions: map(pubKey => ChangeAccessNodeAction)
 //  ) => ()
 //
-func changeAccessNodesFuncHandler(ctx iscp.Sandbox) dict.Dict {
+func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
@@ -120,4 +98,26 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) dict.Dict {
 		return true
 	})
 	return nil
+}
+
+// SC Query Function handler.
+//
+//  getChainNodes() => (
+//      accessNodeCandidates :: map(pubKey => AccessNodeInfo),
+//      accessNodes          :: map(pubKey => ())
+//  )
+//
+func getChainNodes(ctx iscp.SandboxView) dict.Dict {
+	res := dict.New()
+	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
+	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
+	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
+		ac.MustSetAt(key, value)
+		return true
+	})
+	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
+		an.MustSetAt(key, value)
+		return true
+	})
+	return res
 }

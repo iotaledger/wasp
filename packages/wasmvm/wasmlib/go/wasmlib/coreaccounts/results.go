@@ -9,60 +9,192 @@ package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type MapAgentIDToImmutableBytes struct {
+type ImmutableFoundryCreateNewResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
+func (s ImmutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultFoundrySN))
+}
+
+type MutableFoundryCreateNewResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultFoundrySN))
+}
+
+type ImmutableAccountNFTsResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableAccountNFTsResults) NftIDs() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultNftIDs))
+}
+
+type MutableAccountNFTsResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableAccountNFTsResults) NftIDs() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultNftIDs))
+}
+
+type MapTokenIDToImmutableUint64 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapTokenIDToImmutableUint64) GetUint64(key wasmtypes.ScTokenID) wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
 }
 
 type ImmutableAccountsResults struct {
 	proxy wasmtypes.Proxy
 }
 
-// bytes are always empty
-func (s ImmutableAccountsResults) Agents() MapAgentIDToImmutableBytes {
+func (s ImmutableAccountsResults) AllAccounts() MapTokenIDToImmutableUint64 {
 	//nolint:gosimple
-	return MapAgentIDToImmutableBytes{proxy: s.proxy}
+	return MapTokenIDToImmutableUint64{proxy: s.proxy}
 }
 
-type MapAgentIDToMutableBytes struct {
+type MapTokenIDToMutableUint64 struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToMutableBytes) Clear() {
+func (m MapTokenIDToMutableUint64) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
+func (m MapTokenIDToMutableUint64) GetUint64(key wasmtypes.ScTokenID) wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
 }
 
 type MutableAccountsResults struct {
 	proxy wasmtypes.Proxy
 }
 
-// bytes are always empty
-func (s MutableAccountsResults) Agents() MapAgentIDToMutableBytes {
+func (s MutableAccountsResults) AllAccounts() MapTokenIDToMutableUint64 {
 	//nolint:gosimple
-	return MapAgentIDToMutableBytes{proxy: s.proxy}
+	return MapTokenIDToMutableUint64{proxy: s.proxy}
+}
+
+type ImmutableBalanceResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBalanceResults) Balances() MapTokenIDToImmutableUint64 {
+	//nolint:gosimple
+	return MapTokenIDToImmutableUint64{proxy: s.proxy}
+}
+
+type MutableBalanceResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBalanceResults) Balances() MapTokenIDToMutableUint64 {
+	//nolint:gosimple
+	return MapTokenIDToMutableUint64{proxy: s.proxy}
+}
+
+type ImmutableFoundryOutputResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultFoundryOutputBin))
+}
+
+type MutableFoundryOutputResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultFoundryOutputBin))
 }
 
 type ImmutableGetAccountNonceResults struct {
 	proxy wasmtypes.Proxy
 }
 
-// TODO should be Uint64
-func (s ImmutableGetAccountNonceResults) AccountNonce() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultAccountNonce))
+func (s ImmutableGetAccountNonceResults) AccountNonce() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAccountNonce))
 }
 
 type MutableGetAccountNonceResults struct {
 	proxy wasmtypes.Proxy
 }
 
-// TODO should be Uint64
-func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultAccountNonce))
+func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAccountNonce))
+}
+
+type MapTokenIDToImmutableBool struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapTokenIDToImmutableBool) GetBool(key wasmtypes.ScTokenID) wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
+}
+
+type ImmutableGetNativeTokenIDRegistryResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBool {
+	return MapTokenIDToImmutableBool{proxy: s.proxy.Root(ResultMapping)}
+}
+
+type MapTokenIDToMutableBool struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapTokenIDToMutableBool) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapTokenIDToMutableBool) GetBool(key wasmtypes.ScTokenID) wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
+}
+
+type MutableGetNativeTokenIDRegistryResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
+	return MapTokenIDToMutableBool{proxy: s.proxy.Root(ResultMapping)}
+}
+
+type ImmutableNftDataResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableNftDataResults) NftData() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultNftData))
+}
+
+type MutableNftDataResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableNftDataResults) NftData() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultNftData))
+}
+
+type ImmutableTotalAssetsResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableTotalAssetsResults) Assets() MapTokenIDToImmutableUint64 {
+	//nolint:gosimple
+	return MapTokenIDToImmutableUint64{proxy: s.proxy}
+}
+
+type MutableTotalAssetsResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableTotalAssetsResults) Assets() MapTokenIDToMutableUint64 {
+	//nolint:gosimple
+	return MapTokenIDToMutableUint64{proxy: s.proxy}
 }

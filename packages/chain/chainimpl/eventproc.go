@@ -13,10 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"golang.org/x/xerrors"
 )
@@ -107,12 +107,12 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 	msgStateIndex := msg.GetStateIndex()
 	c.log.Debugf("handleAliasOutput output received: state index %v, ID %v",
 		msgStateIndex, iscp.OID(msg.ID()))
-	sh, err := hashing.HashValueFromBytes(msg.GetStateMetadata())
+	commitment, err := state.L1CommitmentFromAliasOutput(msg.GetAliasOutput())
 	if err != nil {
-		c.log.Error(xerrors.Errorf("handleAliasOutput: parsing state hash failed %w", err))
+		c.log.Error(xerrors.Errorf("handleAliasOutput: parsing L1 commitment failed %w", err))
 		return
 	}
-	c.log.Debugf("handleAliasOutput: stateHash is %s", sh)
+	c.log.Debugf("handleAliasOutput: L1 commitment is %s", commitment)
 
 	if (c.lastSeenOutputStateIndex == nil) || (*c.lastSeenOutputStateIndex < msgStateIndex) {
 		if c.lastSeenOutputStateIndex == nil {

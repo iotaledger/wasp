@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,8 +27,7 @@ func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnN
 	// deposit funds before sending the off-ledger requestargs
 	e.requestFunds(userAddress, "userWallet")
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
-		Transfer:  iscp.NewTokensIotas(iotas),
-		GasBudget: gas.MaxGasPerCall,
+		Transfer: iscp.NewTokensIotas(iotas),
 	})
 	require.NoError(e.t, err)
 	receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
@@ -66,9 +64,6 @@ func TestOffledgerRequest(t *testing.T) {
 	offledgerReq, err := chClient.PostOffLedgerRequest(
 		incCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
-		chainclient.PostRequestParams{
-			GasBudget: gas.MaxGasPerCall,
-		},
 	)
 	require.NoError(t, err)
 	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, offledgerReq.ID(), 30*time.Second)
@@ -116,8 +111,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
-			Args:      paramsDict,
-			GasBudget: gas.MaxGasPerCall,
+			Args: paramsDict,
 		})
 	require.NoError(t, err)
 
@@ -126,7 +120,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 
 	// ensure blob was stored by the cluster
 	res, err := chain.Cluster.WaspClient(2).CallView(
-		chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+		chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  expectedHash[:],
 			blob.ParamField: []byte("data"),
@@ -162,9 +156,6 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	_, err = chClient.PostOffLedgerRequest(
 		incCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
-		chainclient.PostRequestParams{
-			GasBudget: gas.MaxGasPerCall,
-		},
 	)
 	require.NoError(t, err)
 

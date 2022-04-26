@@ -484,7 +484,7 @@ func (e *chainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
 	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
 		e.chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncGetLatestBlockInfo.Name,
+		blocklog.ViewGetLatestBlockInfo.Name,
 		nil,
 	)
 	if err != nil {
@@ -502,7 +502,7 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	res, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncGetRequestReceipt.Name,
+		blocklog.ViewGetRequestReceipt.Name,
 		args,
 	)
 	if err != nil {
@@ -528,7 +528,7 @@ func (e *chainEnv) callGetStateController(nodeIndex int) (iotago.Address, error)
 	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
 		e.chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncControlAddresses.Name,
+		blocklog.ViewControlAddresses.Name,
 		nil,
 	)
 	if err != nil {
@@ -543,7 +543,7 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		governance.Contract.Hname(),
-		governance.FuncGetAllowedStateControllerAddresses.Name,
+		governance.ViewGetAllowedStateControllerAddresses.Name,
 		nil,
 	)
 	require.NoError(t, err)

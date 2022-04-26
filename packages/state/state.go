@@ -143,16 +143,16 @@ func (vs *virtualStateAccess) Timestamp() time.Time {
 	return ts
 }
 
-func (vs *virtualStateAccess) PreviousStateCommitment() trie.VCommitment {
-	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
+func (vs *virtualStateAccess) PreviousL1Commitment() *L1Commitment {
+	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
 	if err != nil {
-		panic(xerrors.Errorf("state.PreviousStateCommitment: %w", err))
+		panic(xerrors.Errorf("state.PreviousL1Commitment: %w", err))
 	}
-	c, err := vs.trie.VectorCommitmentFromBytes(cBin)
+	c, err := L1CommitmentFromBytes(cBin)
 	if err != nil {
 		panic(xerrors.Errorf("loadPrevStateHashFromState: %w", err))
 	}
-	return c
+	return &c
 }
 
 // ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
@@ -182,7 +182,7 @@ func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
 	return trie.GetProofGeneric(vs.trie, dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
 }
 
-// ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
+// ExtractBlock creates a block from mutations
 func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 	ret, err := newBlock(vs.kvs.Mutations())
 	if err != nil {

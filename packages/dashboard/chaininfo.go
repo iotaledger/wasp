@@ -13,7 +13,7 @@ type ChainInfo struct {
 }
 
 func (d *Dashboard) fetchChainInfo(chainID *iscp.ChainID) (ret *ChainInfo, err error) {
-	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetChainInfo.Name, nil)
+	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.ViewGetChainInfo.Name, nil)
 	if err != nil {
 		return
 	}
@@ -24,7 +24,7 @@ func (d *Dashboard) fetchChainInfo(chainID *iscp.ChainID) (ret *ChainInfo, err e
 		return nil, err
 	}
 
-	recs, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncGetContractRecords.Name, nil)
+	recs, err := d.wasp.CallView(chainID, root.Contract.Name, root.ViewGetContractRecords.Name, nil)
 	if err != nil {
 		return
 	}

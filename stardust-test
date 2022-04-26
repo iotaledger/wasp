@@ -13,6 +13,7 @@ PATHS=(\
     "packages/peering/..." \
     "packages/chain/chainimpl/" \
     "packages/chain/nodeconnchain/" \
+    "packages/chain/messages/" \
     "packages/chain/mempool/" \
     "packages/chain/statemgr/" \
     "packages/chain/consensus/" \
@@ -23,6 +24,8 @@ PATHS=(\
     "packages/nodeconn" \
     "packages/tcrypto/..." \
     "packages/dkg/..." \
+    "packages/iscp" \
+    "packages/webapi/..." \
     "packages/testutil/privtangle" \
 )
 WD=$PWD

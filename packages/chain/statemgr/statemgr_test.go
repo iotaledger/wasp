@@ -108,7 +108,7 @@ func TestGetNextState(t *testing.T) {
 	currSH := trie.RootCommitment(currentState.TrieNodeStore())
 	currOH, err := state.L1CommitmentFromAliasOutput(currentStateOutput.GetAliasOutput())
 	require.NoError(t, err)
-	require.True(t, trie.EqualCommitments(currSH, currOH.Commitment))
+	require.True(t, trie.EqualCommitments(currSH, currOH.StateCommitment))
 
 	node.NextState(currentState, currentStateOutput)
 	waitSyncBlockIndexAndCheck(3*time.Second, t, node, 1)
@@ -116,7 +116,7 @@ func TestGetNextState(t *testing.T) {
 	soc, err := state.L1CommitmentFromAliasOutput(manager.stateOutput.GetAliasOutput())
 	require.NoError(t, err)
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
-	require.True(t, trie.EqualCommitments(trie.RootCommitment(manager.solidState.TrieNodeStore()), soc.Commitment))
+	require.True(t, trie.EqualCommitments(trie.RootCommitment(manager.solidState.TrieNodeStore()), soc.StateCommitment))
 	require.False(t, manager.syncingBlocks.hasBlockCandidates())
 }
 

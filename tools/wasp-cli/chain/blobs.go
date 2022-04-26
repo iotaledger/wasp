@@ -41,7 +41,7 @@ var showBlobCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		hash := util.ValueFromString("base58", args[0])
-		fields, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncGetBlobInfo.Name,
+		fields, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewGetBlobInfo.Name,
 			dict.Dict{
 				blob.ParamHash: hash,
 			})
@@ -49,7 +49,7 @@ var showBlobCmd = &cobra.Command{
 
 		values := dict.New()
 		for field := range fields {
-			value, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncGetBlobField.Name,
+			value, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewGetBlobField.Name,
 				dict.Dict{
 					blob.ParamHash:  hash,
 					blob.ParamField: []byte(field),
@@ -66,7 +66,7 @@ var listBlobsCmd = &cobra.Command{
 	Short: "List blobs in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncListBlobs.Name, nil)
+		ret, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewListBlobs.Name, nil)
 		log.Check(err)
 
 		blobs, err := blob.DecodeSizesMap(ret)

@@ -11,7 +11,7 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
-	config     *wasmtime.Config
+	engine     *wasmtime.Engine
 	instance   *wasmtime.Instance
 	linker     *wasmtime.Linker
 	memory     *wasmtime.Memory
@@ -21,9 +21,11 @@ type WasmTimeVM struct {
 }
 
 func NewWasmTimeVM() WasmVM {
-	vm := &WasmTimeVM{config: wasmtime.NewConfig()}
-	vm.config.SetInterruptable(true)
-	vm.config.SetConsumeFuel(true)
+	config := wasmtime.NewConfig()
+	config.SetInterruptable(true)
+	config.SetConsumeFuel(true)
+	vm := &WasmTimeVM{engine: wasmtime.NewEngineWithConfig(config)}
+	vm.timeoutStarted = DisableWasmTimeout
 	return vm
 }
 
@@ -65,30 +67,6 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 	return burned
 }
 
-func (vm *WasmTimeVM) Instantiate(wc *WasmContext) (err error) {
-	vm.wc = wc
-	vm.timeoutStarted = DisableWasmTimeout
-
-	vm.GasBudget(1_000_000)
-	vm.GasDisable(true)
-	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
-	vm.GasDisable(false)
-	burned := vm.GasBurned()
-	_ = burned
-	if err != nil {
-		return err
-	}
-	memory := vm.instance.GetExport(vm.store, "memory")
-	if memory == nil {
-		return errors.New("no memory export")
-	}
-	vm.memory = memory.Memory()
-	if vm.memory == nil {
-		return errors.New("not a memory type")
-	}
-	return nil
-}
-
 func (vm *WasmTimeVM) Interrupt() {
 	interrupt, err := vm.store.InterruptHandle()
 	if err != nil {
@@ -98,7 +76,7 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost() (err error) {
-	vm.linker = wasmtime.NewLinker(vm.store.Engine)
+	vm.linker = wasmtime.NewLinker(vm.engine)
 
 	// new Wasm VM interface
 	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateGet, vm.HostStateGet)
@@ -125,13 +103,49 @@ func (vm *WasmTimeVM) LinkHost() (err error) {
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
-	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(vm.config))
-	vm.module, err = wasmtime.NewModule(vm.store.Engine, wasmData)
+	vm.store = wasmtime.NewStore(vm.engine)
+	vm.module, err = wasmtime.NewModule(vm.engine, wasmData)
 	return err
 }
 
-func (vm *WasmTimeVM) NewInstance() WasmVM {
-	return &WasmTimeVM{store: vm.store, module: vm.module, linker: vm.linker}
+func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
+	if vm.wc == nil {
+		vm.wc = wc
+	}
+	vmInstance := &WasmTimeVM{
+		engine: vm.engine,
+		module: vm.module,
+		linker: vm.linker,
+		store:  vm.store,
+	}
+	vmInstance.wc = wc
+	vmInstance.timeoutStarted = DisableWasmTimeout
+	err := vmInstance.newInstance()
+	if err != nil {
+		panic("cannot instantiate: " + err.Error())
+	}
+	return vmInstance
+}
+
+func (vm *WasmTimeVM) newInstance() (err error) {
+	vm.GasBudget(1_000_000)
+	vm.wc.GasDisable(true)
+	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
+	vm.wc.GasDisable(false)
+	burned := vm.GasBurned()
+	_ = burned
+	if err != nil {
+		return err
+	}
+	memory := vm.instance.GetExport(vm.store, "memory")
+	if memory == nil {
+		return errors.New("no memory export")
+	}
+	vm.memory = memory.Memory()
+	if vm.memory == nil {
+		return errors.New("not a memory type")
+	}
+	return nil
 }
 
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {

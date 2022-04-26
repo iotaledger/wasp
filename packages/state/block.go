@@ -10,7 +10,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -78,8 +77,8 @@ func (b *blockImpl) Timestamp() time.Time {
 }
 
 // PreviousStateHash of the last state update
-func (b *blockImpl) PreviousStateCommitment(model trie.CommitmentModel) trie.VCommitment {
-	ph, err := findPrevStateCommitmentMutation(b.stateUpdate, model)
+func (b *blockImpl) PreviousL1Commitment() *L1Commitment {
+	ph, err := findPrevStateCommitmentMutation(b.stateUpdate)
 	if err != nil {
 		panic(err)
 	}

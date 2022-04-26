@@ -20,7 +20,7 @@ import (
 
 // L2Accounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) L2Accounts() []*iscp.AgentID {
-	d, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccounts.Name)
+	d, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccounts.Name)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
 	ret := make([]*iscp.AgentID, 0, len(keys)-1)
@@ -69,7 +69,7 @@ func (ch *Chain) L2LedgerString() string {
 // L2Assets return all ftokens contained in the on-chain account controlled by the 'agentID'
 func (ch *Chain) L2Assets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return ch.parseAccountBalance(
-		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
+		ch.CallView(accounts.Contract.Name, accounts.ViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
@@ -79,7 +79,7 @@ func (ch *Chain) L2Iotas(agentID *iscp.AgentID) uint64 {
 
 func (ch *Chain) L2NFTs(agentID *iscp.AgentID) []iotago.NFTID {
 	ret := make([]iotago.NFTID, 0)
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
 	nftIDsBin, err := res.Get(accounts.ParamNFTIDs)
 	require.NoError(ch.Env.T, err)
@@ -110,7 +110,7 @@ func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big
 // L2TotalAssets return total sum of ftokens contained in the on-chain accounts
 func (ch *Chain) L2TotalAssets() *iscp.FungibleTokens {
 	return ch.parseAccountBalance(
-		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
+		ch.CallView(accounts.Contract.Name, accounts.ViewTotalAssets.Name),
 	)
 }
 
@@ -129,7 +129,7 @@ func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
 }
 
 func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncGetNativeTokenIDRegistry.Name)
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetNativeTokenIDRegistry.Name)
 	require.NoError(ch.Env.T, err)
 	ret := make([]*iotago.NativeTokenID, 0, len(res))
 	for k := range res {
@@ -139,7 +139,7 @@ func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
 }
 
 func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncFoundryOutput.Name,
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewFoundryOutput.Name,
 		accounts.ParamFoundrySN, sn,
 	)
 	if err != nil {

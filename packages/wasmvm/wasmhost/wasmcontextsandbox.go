@@ -241,6 +241,7 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
+	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
@@ -282,6 +283,7 @@ func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) {
+	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 

@@ -40,8 +40,8 @@ var (
 	FuncGrantDeployPermission    = coreutil.Func("grantDeployPermission")
 	FuncRevokeDeployPermission   = coreutil.Func("revokeDeployPermission")
 	FuncRequireDeployPermissions = coreutil.Func("requireDeployPermissions")
-	FuncFindContract             = coreutil.ViewFunc("findContract")
-	FuncGetContractRecords       = coreutil.ViewFunc("getContractRecords")
+	ViewFindContract             = coreutil.ViewFunc("findContract")
+	ViewGetContractRecords       = coreutil.ViewFunc("getContractRecords")
 )
 
 var ErrChainInitConditionsFailed = coreerrors.Register("root.init can't be called in this state").Create()

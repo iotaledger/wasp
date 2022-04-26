@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // RequestDataFromMarshalUtil read Request from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
@@ -58,14 +59,14 @@ type OffLedgerRequestData struct {
 	gasBudget  uint64
 }
 
-func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce, gasBudget uint64) *OffLedgerRequestData {
+func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
 	return &OffLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
 		nonce:      nonce,
-		gasBudget:  gasBudget,
+		gasBudget:  gas.MaxGasPerCall,
 		publicKey:  cryptolib.NewEmptyPublicKey(),
 	}
 }

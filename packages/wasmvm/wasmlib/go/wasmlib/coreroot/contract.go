@@ -19,6 +19,11 @@ type GrantDeployPermissionCall struct {
 	Params MutableGrantDeployPermissionParams
 }
 
+type RequireDeployPermissionsCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableRequireDeployPermissionsParams
+}
+
 type RevokeDeployPermissionCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableRevokeDeployPermissionParams
@@ -51,6 +56,12 @@ func (sc Funcs) GrantDeployPermission(ctx wasmlib.ScFuncCallContext) *GrantDeplo
 	return f
 }
 
+func (sc Funcs) RequireDeployPermissions(ctx wasmlib.ScFuncCallContext) *RequireDeployPermissionsCall {
+	f := &RequireDeployPermissionsCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRequireDeployPermissions)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 func (sc Funcs) RevokeDeployPermission(ctx wasmlib.ScFuncCallContext) *RevokeDeployPermissionCall {
 	f := &RevokeDeployPermissionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeDeployPermission)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -74,11 +85,13 @@ var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncDeployContract,
 		FuncGrantDeployPermission,
+		FuncRequireDeployPermissions,
 		FuncRevokeDeployPermission,
 		ViewFindContract,
 		ViewGetContractRecords,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,

@@ -11,7 +11,7 @@ import (
 type ViewCaller func(contractName string, funcName string, params dict.Dict) (dict.Dict, error)
 
 func GetMessageFormat(code iscp.VMErrorCode, callView ViewCaller) (string, error) {
-	ret, err := callView(Contract.Name, FuncGetErrorMessageFormat.Name, dict.Dict{
+	ret, err := callView(Contract.Name, ViewGetErrorMessageFormat.Name, dict.Dict{
 		ParamErrorCode: codec.EncodeVMErrorCode(code),
 	})
 	if err != nil {

@@ -12,26 +12,92 @@ use crate::coreaccounts::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ImmutableDepositParams {
+pub struct ImmutableFoundryCreateNewParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableDepositParams {
-    // default is caller
-    pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+impl ImmutableFoundryCreateNewParams {
+    pub fn token_scheme(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
+	}
+
+    pub fn token_tag(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_TAG))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableDepositParams {
+pub struct MutableFoundryCreateNewParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableDepositParams {
-    // default is caller
-    pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+impl MutableFoundryCreateNewParams {
+    pub fn token_scheme(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
+	}
+
+    pub fn token_tag(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_TAG))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableFoundryDestroyParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableFoundryDestroyParams {
+    pub fn foundry_sn(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableFoundryDestroyParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableFoundryDestroyParams {
+    pub fn foundry_sn(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableFoundryModifySupplyParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableFoundryModifySupplyParams {
+    pub fn destroy_tokens(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(PARAM_DESTROY_TOKENS))
+	}
+
+    pub fn foundry_sn(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+	}
+
+    pub fn supply_delta_abs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_SUPPLY_DELTA_ABS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableFoundryModifySupplyParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableFoundryModifySupplyParams {
+    pub fn destroy_tokens(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(PARAM_DESTROY_TOKENS))
+	}
+
+    pub fn foundry_sn(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+	}
+
+    pub fn supply_delta_abs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_SUPPLY_DELTA_ABS))
 	}
 }
 
@@ -41,9 +107,8 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
-    // default (zero) means all
-    pub fn withdraw_amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
+    pub fn force_minimum_iotas(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
 	}
 }
 
@@ -53,9 +118,104 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
-    // default (zero) means all
-    pub fn withdraw_amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
+    pub fn force_minimum_iotas(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableTransferAllowanceToParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableTransferAllowanceToParams {
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+
+    pub fn force_open_account(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(PARAM_FORCE_OPEN_ACCOUNT))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableTransferAllowanceToParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableTransferAllowanceToParams {
+    pub fn agent_id(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+
+    pub fn force_open_account(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(PARAM_FORCE_OPEN_ACCOUNT))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTsParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAccountNFTsParams {
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTsParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableAccountNFTsParams {
+    pub fn agent_id(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableBalanceParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBalanceParams {
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBalanceParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBalanceParams {
+    pub fn agent_id(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableFoundryOutputParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableFoundryOutputParams {
+    pub fn foundry_sn(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableFoundryOutputParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableFoundryOutputParams {
+    pub fn foundry_sn(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
 	}
 }
 
@@ -65,8 +225,8 @@ pub struct ImmutableGetAccountNonceParams {
 }
 
 impl ImmutableGetAccountNonceParams {
-    pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    pub fn foundry_sn(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
 	}
 }
 
@@ -76,7 +236,29 @@ pub struct MutableGetAccountNonceParams {
 }
 
 impl MutableGetAccountNonceParams {
-    pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    pub fn foundry_sn(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableNftDataParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableNftDataParams {
+    pub fn nft_id(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_NFT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableNftDataParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableNftDataParams {
+    pub fn nft_id(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_NFT_ID))
 	}
 }

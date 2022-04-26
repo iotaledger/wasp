@@ -4,7 +4,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -72,25 +71,20 @@ func runTask(task *vm.VMTask) {
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
-	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(
+	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.CloseVMContext(
 		numProcessed, numSuccess, numOffLedger)
 
 	task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
-		blockIndex, stateCommitment, timestamp, rotationAddr)
+		blockIndex, l1Commitment, timestamp, rotationAddr)
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(&state.L1Commitment{
-			Commitment: stateCommitment,
-		})
+		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment)
 
 		// TODO extract latest total assets
 		checkTotalAssets(task.ResultTransactionEssence, nil)
 
-		task.Log.Debugf("runTask OUT. block index: %d, state hash: %s",
-			blockIndex, stateCommitment.String(),
-			//" tx essence hash: ", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
-		)
+		task.Log.Debugf("runTask OUT. block index: %d, %s", blockIndex, l1Commitment.String())
 	} else {
 		// rotation happens
 		task.RotationAddress = rotationAddr
@@ -101,6 +95,7 @@ func runTask(task *vm.VMTask) {
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger
 func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.FungibleTokens) {
+	// TODO
 	//var chainOutput *ledgerstate.AliasOutput
 	//for _, o := range essence.Outputs() {
 	//	if out, ok := o.(*ledgerstate.AliasOutput); ok {

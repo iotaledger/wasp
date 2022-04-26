@@ -9,17 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
-func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
-	mapping := getNativeTokenOutputMapR(ctx.State())
-	ret := dict.New()
-	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), []byte{0xFF})
-		return true
-	})
-	return ret
-}
-
 // viewBalance returns colored balances of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
@@ -41,7 +30,7 @@ func viewAccounts(ctx iscp.SandboxView) dict.Dict {
 	return getAccountsIntern(ctx.State())
 }
 
-func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
+func viewGetAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID)
 	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
 	ret := dict.New()
@@ -49,9 +38,20 @@ func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-// foundryOutput takes serial number and returns corresponding foundry output in serialized form
-func foundryOutput(ctx iscp.SandboxView) dict.Dict {
-	ctx.Log().Debugf("accounts.foundryOutput")
+// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
+func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
+	mapping := getNativeTokenOutputMapR(ctx.State())
+	ret := dict.New()
+	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
+		ret.Set(kv.Key(elemKey), []byte{0xFF})
+		return true
+	})
+	return ret
+}
+
+// viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
+func viewFoundryOutput(ctx iscp.SandboxView) dict.Dict {
+	ctx.Log().Debugf("accounts.viewFoundryOutput")
 
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())

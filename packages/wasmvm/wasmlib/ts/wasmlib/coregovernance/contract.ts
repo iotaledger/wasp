@@ -16,6 +16,21 @@ export class AddAllowedStateControllerAddressCall {
 	}
 }
 
+export class AddCandidateNodeCall {
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddCandidateNode);
+	}
+}
+
+export class ChangeAccessNodesCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableChangeAccessNodesParams = new sc.MutableChangeAccessNodesParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncChangeAccessNodes);
+	}
+}
+
 export class ClaimChainOwnershipCall {
 	func: wasmlib.ScFunc;
 	public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -39,6 +54,13 @@ export class RemoveAllowedStateControllerAddressCall {
 	}
 }
 
+export class RevokeAccessNodeCall {
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncRevokeAccessNode);
+	}
+}
+
 export class RotateStateControllerCall {
 	func: wasmlib.ScFunc;
 	params: sc.MutableRotateStateControllerParams = new sc.MutableRotateStateControllerParams(wasmlib.ScView.nilProxy);
@@ -55,19 +77,12 @@ export class SetChainInfoCall {
 	}
 }
 
-export class SetContractFeeCall {
+export class SetFeePolicyCall {
 	func: wasmlib.ScFunc;
-	params: sc.MutableSetContractFeeParams = new sc.MutableSetContractFeeParams(wasmlib.ScView.nilProxy);
+	params: sc.MutableSetFeePolicyParams = new sc.MutableSetFeePolicyParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableSetFeePolicyResults = new sc.ImmutableSetFeePolicyResults(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScFuncCallContext) {
-		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetContractFee);
-	}
-}
-
-export class SetDefaultFeeCall {
-	func: wasmlib.ScFunc;
-	params: sc.MutableSetDefaultFeeParams = new sc.MutableSetDefaultFeeParams(wasmlib.ScView.nilProxy);
-	public constructor(ctx: wasmlib.ScFuncCallContext) {
-		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetDefaultFee);
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetFeePolicy);
 	}
 }
 
@@ -87,12 +102,27 @@ export class GetChainInfoCall {
 	}
 }
 
-export class GetFeeInfoCall {
+export class GetChainNodesCall {
 	func: wasmlib.ScView;
-	params: sc.MutableGetFeeInfoParams = new sc.MutableGetFeeInfoParams(wasmlib.ScView.nilProxy);
-	results: sc.ImmutableGetFeeInfoResults = new sc.ImmutableGetFeeInfoResults(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetChainNodesResults = new sc.ImmutableGetChainNodesResults(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScViewCallContext) {
-		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetFeeInfo);
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetChainNodes);
+	}
+}
+
+export class GetChainOwnerCall {
+	func: wasmlib.ScView;
+	results: sc.ImmutableGetChainOwnerResults = new sc.ImmutableGetChainOwnerResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetChainOwner);
+	}
+}
+
+export class GetFeePolicyCall {
+	func: wasmlib.ScView;
+	results: sc.ImmutableGetFeePolicyResults = new sc.ImmutableGetFeePolicyResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetFeePolicy);
 	}
 }
 
@@ -111,6 +141,18 @@ export class ScFuncs {
 		return f;
 	}
 
+	// access nodes
+	static addCandidateNode(ctx: wasmlib.ScFuncCallContext): AddCandidateNodeCall {
+		return new AddCandidateNodeCall(ctx);
+	}
+
+	static changeAccessNodes(ctx: wasmlib.ScFuncCallContext): ChangeAccessNodesCall {
+		const f = new ChangeAccessNodesCall(ctx);
+		f.params = new sc.MutableChangeAccessNodesParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	// chain owner
 	static claimChainOwnership(ctx: wasmlib.ScFuncCallContext): ClaimChainOwnershipCall {
 		return new ClaimChainOwnershipCall(ctx);
 	}
@@ -127,46 +169,64 @@ export class ScFuncs {
 		return f;
 	}
 
+	static revokeAccessNode(ctx: wasmlib.ScFuncCallContext): RevokeAccessNodeCall {
+		return new RevokeAccessNodeCall(ctx);
+	}
+
+	// state controller
 	static rotateStateController(ctx: wasmlib.ScFuncCallContext): RotateStateControllerCall {
 		const f = new RotateStateControllerCall(ctx);
 		f.params = new sc.MutableRotateStateControllerParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
+	// chain info
 	static setChainInfo(ctx: wasmlib.ScFuncCallContext): SetChainInfoCall {
 		const f = new SetChainInfoCall(ctx);
 		f.params = new sc.MutableSetChainInfoParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static setContractFee(ctx: wasmlib.ScFuncCallContext): SetContractFeeCall {
-		const f = new SetContractFeeCall(ctx);
-		f.params = new sc.MutableSetContractFeeParams(wasmlib.newCallParamsProxy(f.func));
+	// fees
+	static setFeePolicy(ctx: wasmlib.ScFuncCallContext): SetFeePolicyCall {
+		const f = new SetFeePolicyCall(ctx);
+		f.params = new sc.MutableSetFeePolicyParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableSetFeePolicyResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static setDefaultFee(ctx: wasmlib.ScFuncCallContext): SetDefaultFeeCall {
-		const f = new SetDefaultFeeCall(ctx);
-		f.params = new sc.MutableSetDefaultFeeParams(wasmlib.newCallParamsProxy(f.func));
-		return f;
-	}
-
+	// state controller
 	static getAllowedStateControllerAddresses(ctx: wasmlib.ScViewCallContext): GetAllowedStateControllerAddressesCall {
 		const f = new GetAllowedStateControllerAddressesCall(ctx);
 		f.results = new sc.ImmutableGetAllowedStateControllerAddressesResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
+	// chain info
 	static getChainInfo(ctx: wasmlib.ScViewCallContext): GetChainInfoCall {
 		const f = new GetChainInfoCall(ctx);
 		f.results = new sc.ImmutableGetChainInfoResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static getFeeInfo(ctx: wasmlib.ScViewCallContext): GetFeeInfoCall {
-		const f = new GetFeeInfoCall(ctx);
-		f.params = new sc.MutableGetFeeInfoParams(wasmlib.newCallParamsProxy(f.func));
-		f.results = new sc.ImmutableGetFeeInfoResults(wasmlib.newCallResultsProxy(f.func));
+	// access nodes
+	static getChainNodes(ctx: wasmlib.ScViewCallContext): GetChainNodesCall {
+		const f = new GetChainNodesCall(ctx);
+		f.results = new sc.ImmutableGetChainNodesResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	// chain owner
+	static getChainOwner(ctx: wasmlib.ScViewCallContext): GetChainOwnerCall {
+		const f = new GetChainOwnerCall(ctx);
+		f.results = new sc.ImmutableGetChainOwnerResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	// fees
+	static getFeePolicy(ctx: wasmlib.ScViewCallContext): GetFeePolicyCall {
+		const f = new GetFeePolicyCall(ctx);
+		f.results = new sc.ImmutableGetFeePolicyResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 

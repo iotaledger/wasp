@@ -61,7 +61,7 @@ func (e *EVMChain) GasRatio() (util.Ratio32, error) {
 }
 
 func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
-	res, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeePolicy.Name, nil)
+	res, err := e.backend.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 
 func (e *EVMChain) L2Balance() (*iscp.FungibleTokens, error) {
 	agentID := iscp.NewAgentID(e.backend.Signer().GetPublicKey().AsEd25519Address(), 0)
-	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
+	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.ViewBalance.Name, codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	}))
 	if err != nil {

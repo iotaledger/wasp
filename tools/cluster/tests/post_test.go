@@ -51,7 +51,7 @@ func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		e.chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
 			root.ParamHname: hname.Bytes(),
 		})

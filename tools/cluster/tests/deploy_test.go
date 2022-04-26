@@ -71,7 +71,7 @@ func TestDeployContractOnly(t *testing.T) {
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
@@ -118,8 +118,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
-	).WithIotas(100).
-		WithMaxAffordableGasBudget()
+	).WithIotas(100)
 	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 

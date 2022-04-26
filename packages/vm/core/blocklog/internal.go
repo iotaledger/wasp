@@ -7,11 +7,12 @@ import (
 	"io"
 	"math"
 
+	"github.com/iotaledger/wasp/packages/state"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"golang.org/x/xerrors"
 )
 
@@ -23,15 +24,15 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	return ret
 }
 
-// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id of the previous one
-func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxId iotago.TransactionID, stateCommitment trie.VCommitment) {
+// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
+func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxId iotago.TransactionID, l1Commitment *state.L1Commitment) {
 	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
 	blockInfo, _ := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
 
 	blockInfo.AnchorTransactionID = anchorTxId
-	blockInfo.StateCommitment = stateCommitment
+	blockInfo.L1Commitment = l1Commitment
 
 	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }

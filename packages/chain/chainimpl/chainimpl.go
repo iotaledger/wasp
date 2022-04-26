@@ -308,7 +308,7 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 	if stateIndex > 0 {
 		res, err := viewcontext.New(c).CallViewExternal(
 			governance.Contract.Hname(),
-			governance.FuncGetChainNodes.Hname(),
+			governance.ViewGetChainNodes.Hname(),
 			governance.GetChainNodesRequest{}.AsDict(),
 		)
 		if err != nil {

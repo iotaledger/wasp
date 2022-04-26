@@ -61,13 +61,12 @@ func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
+	l1Commitment, err := state.L1CommitmentFromAliasOutput(sm.stateOutput.GetAliasOutput())
 	if err != nil {
 		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
 		return false
 	}
-	stateCommitment := stateL1Commitment.Commitment
-	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieNodeStore()), stateCommitment)
+	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieNodeStore()), l1Commitment.StateCommitment)
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -168,7 +167,7 @@ func (sm *stateManager) storeSyncingData() {
 		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state commitment: %v", err)
 		return
 	}
-	outputStateCommitment := outputStateL1Commitment.Commitment
+	outputStateCommitment := outputStateL1Commitment.StateCommitment
 	solidStateCommitment := trie.RootCommitment(sm.solidState.TrieNodeStore())
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateCommitment %s, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputCommitment %s, StateOutputTimestamp %v",
 		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)

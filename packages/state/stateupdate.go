@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"golang.org/x/xerrors"
 )
 
@@ -30,13 +29,13 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
 	return ret
 }
 
-func NewStateUpdateWithBlockLogValues(blockIndex uint32, timestamp time.Time, prevStateCommitment trie.VCommitment) Update {
+func NewStateUpdateWithBlockLogValues(blockIndex uint32, timestamp time.Time, prevL1Commitment *L1Commitment) Update {
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
 	ret.setBlockIndexMutation(blockIndex)
 	ret.setTimestampMutation(timestamp)
-	ret.setPrevStateCommitmentMutation(prevStateCommitment)
+	ret.setPrevL1CommitmentMutation(prevL1Commitment)
 	return ret
 }
 
@@ -94,16 +93,17 @@ func (su *stateUpdateImpl) timestampMutation() (time.Time, bool, error) {
 	return ret, true, nil
 }
 
-func (su *stateUpdateImpl) previousStateHashMutation(model trie.CommitmentModel) (trie.VCommitment, bool, error) {
-	data, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
+func (su *stateUpdateImpl) previousL1CommitmentMutation() (*L1Commitment, bool, error) {
+	data, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
 	if !ok {
 		return nil, false, nil
 	}
-	ret, err := model.VectorCommitmentFromBytes(data)
+
+	ret, err := L1CommitmentFromBytes(data)
 	if err != nil {
 		return nil, false, err
 	}
-	return ret, true, nil
+	return &ret, true, nil
 }
 
 func (su *stateUpdateImpl) Write(w io.Writer) error {
@@ -161,15 +161,15 @@ func findTimestampMutation(stateUpdate *stateUpdateImpl) (time.Time, error) {
 
 // findPrevStateCommitmentMutation goes backward and searches for the 'set' mutation of the previous state hash
 // Return NilHash if not found
-func findPrevStateCommitmentMutation(stateUpdate *stateUpdateImpl, model trie.CommitmentModel) (trie.VCommitment, error) {
-	h, exists, err := stateUpdate.previousStateHashMutation(model)
+func findPrevStateCommitmentMutation(stateUpdate *stateUpdateImpl) (*L1Commitment, error) {
+	ret, exists, err := stateUpdate.previousL1CommitmentMutation()
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, nil
 	}
-	return h, nil
+	return ret, nil
 }
 
 func (su *stateUpdateImpl) setTimestampMutation(ts time.Time) {
@@ -180,6 +180,6 @@ func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(blockIndex))
 }
 
-func (su *stateUpdateImpl) setPrevStateCommitmentMutation(prevStateCommitment trie.VCommitment) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateCommitment), prevStateCommitment.Bytes())
+func (su *stateUpdateImpl) setPrevL1CommitmentMutation(prevL1Commitment *L1Commitment) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevL1Commitment), prevL1Commitment.Bytes())
 }

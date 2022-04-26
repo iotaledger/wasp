@@ -194,7 +194,7 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 		d := dict.New()
 		ii := uint16(i)
 		d.Set("c", []byte{byte(ii % 256), byte(ii / 256)})
-		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64(), 0)
+		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64())
 		reqs[i].Sign(cryptolib.NewKeyPair())
 	}
 	rnd := len(randomize) > 0 && randomize[0]

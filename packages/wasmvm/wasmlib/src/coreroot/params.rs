@@ -76,6 +76,28 @@ impl MutableGrantDeployPermissionParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableRequireDeployPermissionsParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableRequireDeployPermissionsParams {
+    pub fn deploy_permissions_enabled(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableRequireDeployPermissionsParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableRequireDeployPermissionsParams {
+    pub fn deploy_permissions_enabled(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableRevokeDeployPermissionParams {
 	pub(crate) proxy: Proxy,
 }

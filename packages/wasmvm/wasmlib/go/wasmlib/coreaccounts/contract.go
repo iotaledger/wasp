@@ -10,8 +10,23 @@ package coreaccounts
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DepositCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type FoundryCreateNewCall struct {
+	Func    *wasmlib.ScFunc
+	Params  MutableFoundryCreateNewParams
+	Results ImmutableFoundryCreateNewResults
+}
+
+type FoundryDestroyCall struct {
 	Func   *wasmlib.ScFunc
-	Params MutableDepositParams
+	Params MutableFoundryDestroyParams
+}
+
+type FoundryModifySupplyCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableFoundryModifySupplyParams
 }
 
 type HarvestCall struct {
@@ -19,13 +34,36 @@ type HarvestCall struct {
 	Params MutableHarvestParams
 }
 
+type TransferAllowanceToCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableTransferAllowanceToParams
+}
+
 type WithdrawCall struct {
 	Func *wasmlib.ScFunc
+}
+
+type AccountNFTsCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableAccountNFTsParams
+	Results ImmutableAccountNFTsResults
 }
 
 type AccountsCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableAccountsResults
+}
+
+type BalanceCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBalanceParams
+	Results ImmutableBalanceResults
+}
+
+type FoundryOutputCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableFoundryOutputParams
+	Results ImmutableFoundryOutputResults
 }
 
 type GetAccountNonceCall struct {
@@ -34,12 +72,45 @@ type GetAccountNonceCall struct {
 	Results ImmutableGetAccountNonceResults
 }
 
+type GetNativeTokenIDRegistryCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetNativeTokenIDRegistryResults
+}
+
+type NftDataCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableNftDataParams
+	Results ImmutableNftDataResults
+}
+
+type TotalAssetsCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableTotalAssetsResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
 
 func (sc Funcs) Deposit(ctx wasmlib.ScFuncCallContext) *DepositCall {
-	f := &DepositCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDeposit)}
+	return &DepositCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDeposit)}
+}
+
+func (sc Funcs) FoundryCreateNew(ctx wasmlib.ScFuncCallContext) *FoundryCreateNewCall {
+	f := &FoundryCreateNewCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryCreateNew)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) FoundryDestroy(ctx wasmlib.ScFuncCallContext) *FoundryDestroyCall {
+	f := &FoundryDestroyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryDestroy)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) FoundryModifySupply(ctx wasmlib.ScFuncCallContext) *FoundryModifySupplyCall {
+	f := &FoundryModifySupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryModifySupply)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -50,12 +121,39 @@ func (sc Funcs) Harvest(ctx wasmlib.ScFuncCallContext) *HarvestCall {
 	return f
 }
 
+func (sc Funcs) TransferAllowanceTo(ctx wasmlib.ScFuncCallContext) *TransferAllowanceToCall {
+	f := &TransferAllowanceToCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferAllowanceTo)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	return &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 }
 
+func (sc Funcs) AccountNFTs(ctx wasmlib.ScViewCallContext) *AccountNFTsCall {
+	f := &AccountNFTsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountNFTs)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
 func (sc Funcs) Accounts(ctx wasmlib.ScViewCallContext) *AccountsCall {
 	f := &AccountsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccounts)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) Balance(ctx wasmlib.ScViewCallContext) *BalanceCall {
+	f := &BalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalance)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) FoundryOutput(ctx wasmlib.ScViewCallContext) *FoundryOutputCall {
+	f := &FoundryOutputCall{Func: wasmlib.NewScView(ctx, HScName, HViewFoundryOutput)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
@@ -67,20 +165,59 @@ func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceC
 	return f
 }
 
+func (sc Funcs) GetNativeTokenIDRegistry(ctx wasmlib.ScViewCallContext) *GetNativeTokenIDRegistryCall {
+	f := &GetNativeTokenIDRegistryCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetNativeTokenIDRegistry)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) NftData(ctx wasmlib.ScViewCallContext) *NftDataCall {
+	f := &NftDataCall{Func: wasmlib.NewScView(ctx, HScName, HViewNftData)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
+	f := &TotalAssetsCall{Func: wasmlib.NewScView(ctx, HScName, HViewTotalAssets)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncDeposit,
+		FuncFoundryCreateNew,
+		FuncFoundryDestroy,
+		FuncFoundryModifySupply,
 		FuncHarvest,
+		FuncTransferAllowanceTo,
 		FuncWithdraw,
+		ViewAccountNFTs,
 		ViewAccounts,
+		ViewBalance,
+		ViewFoundryOutput,
 		ViewGetAccountNonce,
+		ViewGetNativeTokenIDRegistry,
+		ViewNftData,
+		ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 	},

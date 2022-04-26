@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -128,31 +127,12 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 	ctx.Chain.Env.AssertL1Iotas(ctx.Chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-minus)
 }
 
-func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount uint64) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
-	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
-	if target != nil {
-		f.Params.AgentID().SetValue(target.ScAgentID())
-	}
-	f.Func.TransferIotas(amount).Post()
-	require.NoError(t, ctxAcc.Err)
-}
-
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
 	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
 	f.Func.Post()
 	require.NoError(t, ctxRoot.Err)
-}
-
-func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
-	ctxGov := ctx.SoloContextForCore(t, coregovernance.ScName, coregovernance.OnLoad)
-	f := coregovernance.ScFuncs.SetContractFee(ctxGov)
-	f.Params.Hname().SetValue(testcore.HScName)
-	f.Params.OwnerFee().SetValue(amount)
-	f.Func.Post()
-	require.NoError(t, ctxGov.Err)
 }
 
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {

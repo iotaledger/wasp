@@ -12,7 +12,7 @@ var listContractsCmd = &cobra.Command{
 	Short: "List deployed contracts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		records, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetContractRecords.Name, nil)
+		records, err := SCClient(root.Contract.Hname()).CallView(root.ViewGetContractRecords.Name, nil)
 		log.Check(err)
 		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		log.Check(err)

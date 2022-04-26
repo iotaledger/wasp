@@ -28,7 +28,7 @@ func (e *chainEnv) checkCoreContracts() {
 		require.EqualValues(e.t, []byte{0xFF}, b)
 
 		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
+		ret, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
 		chid, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
@@ -44,7 +44,7 @@ func (e *chainEnv) checkCoreContracts() {
 		require.EqualValues(e.t, e.chain.Description, desc)
 
 		records, err := e.chain.SCClient(root.Contract.Hname(), nil, i).
-			CallView(root.FuncGetContractRecords.Name, nil)
+			CallView(root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
@@ -87,7 +87,7 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, node
 		idx = nodeIndex[0]
 	}
 	ret, err := e.chain.Cluster.WaspClient(idx).CallView(
-		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewBalance.Name,
+		e.chain.ChainID, accounts.Contract.Hname(), accounts.ViewBalance.Name,
 		dict.Dict{
 			accounts.ParamAgentID: agentID.Bytes(),
 		})
@@ -116,7 +116,7 @@ func (e *chainEnv) checkBalanceOnChain(agentID *iscp.AgentID, assetID []byte, ex
 
 func (e *chainEnv) getAccountsOnChain() []*iscp.AgentID {
 	r, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewAccounts.Name, nil,
+		e.chain.ChainID, accounts.Contract.Hname(), accounts.ViewAccounts.Name, nil,
 	)
 	require.NoError(e.t, err)
 
@@ -137,7 +137,7 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.FungibleTokens {
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.chain.Cluster.WaspClient(0).CallView(
-			e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewBalance.Name,
+			e.chain.ChainID, accounts.Contract.Hname(), accounts.ViewBalance.Name,
 			dict.Dict{
 				accounts.ParamAgentID: agentID.Bytes(),
 			},
@@ -151,7 +151,7 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.FungibleTokens {
 
 func (e *chainEnv) getTotalBalance() *iscp.FungibleTokens {
 	r, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
+		e.chain.ChainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Name, nil,
 	)
 	require.NoError(e.t, err)
 	ret, err := iscp.FungibleTokensFromDict(r)
@@ -180,7 +180,7 @@ func (e *chainEnv) checkLedger() {
 
 func (e *chainEnv) getChainInfo() (*iscp.ChainID, *iscp.AgentID) {
 	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, governance.Contract.Hname(), governance.FuncGetChainInfo.Name, nil,
+		e.chain.ChainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Name, nil,
 	)
 	require.NoError(e.t, err)
 
@@ -200,7 +200,7 @@ func (e *chainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 
 	hname := iscp.Hn(name)
 	ret, err := e.chain.Cluster.WaspClient(i).CallView(
-		e.chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		e.chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
 			root.ParamHname: codec.EncodeHname(hname),
 		})
