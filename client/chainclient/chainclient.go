@@ -1,8 +1,6 @@
 package chainclient
 
 import (
-	"math"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -154,12 +152,6 @@ func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
 }
 
 func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
-	par.GasBudget = &budget
-	return par
-}
-
-func (par *PostRequestParams) WithMaxAffordableGasBudget() *PostRequestParams {
-	budget := uint64(math.MaxUint64)
 	par.GasBudget = &budget
 	return par
 }
