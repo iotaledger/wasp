@@ -95,6 +95,8 @@ func (m FuncDefMap) ToRawFuncDefMap() RawFuncDefMap {
 
 func (s *SchemaDef) ToRawSchemaDef() *RawSchemaDef {
 	def := &RawSchemaDef{}
+	def.Name = s.Name.Val
+	def.Description = s.Description.Val
 	def.Structs = s.Structs.ToStringMapMap()
 	def.Events = s.Events.ToStringMapMap()
 	def.Typedefs = s.Typedefs.ToStringMap()
