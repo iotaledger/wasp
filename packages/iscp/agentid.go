@@ -204,10 +204,18 @@ func (a *AgentID) String(networkPrefix iotago.NetworkPrefix) string {
 	if a.IsNil() {
 		return "-"
 	}
-	if a.h == 0 {
-		return a.a.Bech32(networkPrefix)
+	addrStr := ""
+	switch a := a.a.(type) {
+	case *iotago.AliasAddress:
+		c := ChainIDFromAddress(a)
+		addrStr = c.String()
+	default:
+		addrStr = a.Bech32(networkPrefix)
 	}
-	return a.h.String() + "@" + a.a.Bech32(networkPrefix)
+	if a.h == 0 {
+		return addrStr
+	}
+	return a.h.String() + "@" + addrStr
 }
 
 func (a *AgentID) Base58() string {
