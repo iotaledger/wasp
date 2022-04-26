@@ -3,6 +3,7 @@ package chain
 import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +34,7 @@ var listContractsCmd = &cobra.Command{
 		for hname, c := range contracts {
 			creator := ""
 			if c.HasCreator() {
-				creator = c.Creator.String()
+				creator = c.Creator.String(config.L1NetworkPrefix())
 			}
 
 			rows[i] = []string{

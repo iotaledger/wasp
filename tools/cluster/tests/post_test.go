@@ -86,14 +86,14 @@ func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
 func TestPostDeployInccounter(t *testing.T) {
 	e := setupWithChain(t)
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 }
 
 func TestPost1Request(t *testing.T) {
 	e := setupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
 	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := testOwner.Address()
@@ -114,7 +114,7 @@ func TestPost3Recursive(t *testing.T) {
 	e := setupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
 	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := testOwner.Address()
@@ -143,7 +143,7 @@ func TestPost5Requests(t *testing.T) {
 	e := setupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
 	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := testOwner.Address()
@@ -173,7 +173,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	e := setupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
 	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := testOwner.Address()

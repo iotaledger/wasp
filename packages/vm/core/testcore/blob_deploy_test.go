@@ -17,7 +17,7 @@ package testcore
 // var wasmFile = "sbtests/sbtestsc/testcore_bg.wasm"
 
 // func TestDeploy(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 // 	require.NoError(t, err)
@@ -27,14 +27,14 @@ package testcore
 // }
 
 // func TestDeployWasm(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	err := chain.DeployWasmContract(nil, "testCore", wasmFile)
 // 	require.NoError(t, err)
 // }
 
 // func TestDeployRubbish(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	name := "testCore"
 // 	_, err := chain.FindContract(name)
@@ -47,7 +47,7 @@ package testcore
 // }
 
 // func TestDeployNotAuthorized(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	user1, _ := env.NewKeyPairWithFunds()
 // 	err := chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -55,7 +55,7 @@ package testcore
 // }
 
 // func TestDeployGrant(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	user1, addr1 := env.NewKeyPairWithFunds()
 // 	user1AgentID := iscp.NewAgentID(addr1, 0)
@@ -80,7 +80,7 @@ package testcore
 // }
 
 // func TestRevokeDeploy(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	user1, addr1 := env.NewKeyPairWithFunds()
 // 	user1AgentID := iscp.NewAgentID(addr1, 0)
@@ -111,7 +111,7 @@ package testcore
 // }
 
 // func TestDeployGrantFail(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 // 	user1, addr1 := env.NewKeyPairWithFunds()
 // 	user1AgentID := iscp.NewAgentID(addr1, 0)
@@ -127,7 +127,7 @@ package testcore
 // }
 
 // func TestOpenDeploymentToAnyone(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	userWallet, _ := env.NewKeyPairWithFunds()

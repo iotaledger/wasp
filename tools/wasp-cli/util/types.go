@@ -29,7 +29,7 @@ func ValueFromString(vtype, s string) []byte {
 		}
 		return iscp.BytesFromAddress(addr)
 	case "agentid":
-		agentid, err := iscp.NewAgentIDFromString(s)
+		agentid, err := iscp.NewAgentIDFromString(s, config.L1NetworkPrefix())
 		log.Check(err)
 		return agentid.Bytes()
 	case "bool":
@@ -107,7 +107,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
-		return aid.String()
+		return aid.String(config.L1NetworkPrefix())
 	case "bool":
 		b, err := codec.DecodeBool(v)
 		log.Check(err)

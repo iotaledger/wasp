@@ -407,7 +407,6 @@ func (c *consensus) postTransactionIfNeeded() {
 		return
 	}
 	stateIndex := c.resultState.BlockIndex()
-	// TODO nodeConn.PublishTransaction can return an error, that is not handled
 	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx)
 
 	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.

@@ -319,7 +319,12 @@ func (tr *Trie) hasCommitment(key kv.Key) bool {
 		}
 	}
 	// new commitments do not come from children
-	return len(n.ChildCommitments) > 0
+	if len(n.ChildCommitments) > 0 {
+		// existing children commit
+		return true
+	}
+	// node does not commit to anything
+	return false
 }
 
 type reorgStatus int

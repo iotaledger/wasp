@@ -100,11 +100,11 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, 1, vs2.BlockIndex())
 
-		_, err = LoadBlockBytes(store, 0)
+		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
 		// require.EqualValues(t, newBlock().Bytes(), data)
 
-		data, err := LoadBlockBytes(store, 1)
+		data, err = LoadBlockBytes(store, 1)
 		require.NoError(t, err)
 		require.EqualValues(t, block1.Bytes(), data)
 

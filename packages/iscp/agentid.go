@@ -104,7 +104,7 @@ func AgentIDFromBytes(data []byte) (*AgentID, error) {
 }
 
 // NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (*AgentID, error) {
+func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (*AgentID, error) {
 	if s == "-" {
 		return &NilAgentID, nil
 	}
@@ -121,9 +121,12 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 			return nil, xerrors.New("NewAgentIDFromString: wrong format")
 		}
 	}
-	addr, err := iotago.ParseAliasAddressFromHexString(addrPart)
+	prefix, addr, err := iotago.ParseBech32(addrPart)
 	if err != nil {
-		return nil, xerrors.Errorf("ParseAliasAddressFromHexString: %v", err)
+		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+	}
+	if prefix != networkPrefix {
+		return nil, xerrors.Errorf("NewAgentIDFromString: expected network prefix %s, got %s", networkPrefix, prefix)
 	}
 	var hname Hname
 	if hnamePart != "" {
@@ -197,11 +200,14 @@ func (a *AgentID) Equals(a1 *AgentID) bool {
 	return true
 }
 
-func (a *AgentID) String() string {
+func (a *AgentID) String(networkPrefix iotago.NetworkPrefix) string {
 	if a.IsNil() {
 		return "-"
 	}
-	return a.h.String() + "@" + a.a.String()
+	if a.h == 0 {
+		return a.a.Bech32(networkPrefix)
+	}
+	return a.h.String() + "@" + a.a.Bech32(networkPrefix)
 }
 
 func (a *AgentID) Base58() string {

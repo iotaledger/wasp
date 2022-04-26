@@ -16,7 +16,7 @@ package testcore
 // )
 
 // func TestInit(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
@@ -31,7 +31,7 @@ package testcore
 // }
 
 // func TestBase(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -50,7 +50,7 @@ package testcore
 
 // //nolint:dupl
 // func TestFeeIsEnough1(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -81,7 +81,7 @@ package testcore
 
 // //nolint:dupl
 // func TestFeeIsEnough2(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -111,7 +111,7 @@ package testcore
 // }
 
 // func TestFeesNoNeed(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
@@ -139,7 +139,7 @@ package testcore
 // }
 
 // func TestFeesNotEnough(t *testing.T) {
-// 	env := solo.New(t)
+// 	env := solo.New(t, false, false)
 // 	chain := env.NewChain(nil, "chain1")
 
 // 	user, userAddr := env.NewKeyPairWithFunds()

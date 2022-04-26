@@ -53,12 +53,12 @@ func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n",
 		ch.ChainID.String(),
-		chainOwnerID,
+		chainOwnerID.String(ch.L1Params().Bech32Prefix),
 	)
 	acc := ch.L2Accounts()
 	for i := range acc {
 		aid := acc[i]
-		ret += fmt.Sprintf("  %s:\n", aid)
+		ret += fmt.Sprintf("  %s:\n", aid.String(ch.L1Params().Bech32Prefix))
 		bals := ch.L2Assets(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}

@@ -27,7 +27,10 @@ func claimChainOwnership(ctx iscp.Sandbox) dict.Dict {
 
 	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(governance.VarChainOwnerIDDelegated)
-	ctx.Log().Debugf("governance.chainChainOwner.success: chain owner changed: %s --> %s", currentOwner, nextOwner)
+	ctx.Log().Debugf("governance.chainChainOwner.success: chain owner changed: %s --> %s",
+		currentOwner.String(ctx.L1Params().Bech32Prefix),
+		nextOwner.String(ctx.L1Params().Bech32Prefix),
+	)
 	return nil
 }
 

@@ -26,7 +26,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	agentID, err := iscp.NewAgentIDFromString(c.Param("agentid"))
+	agentID, err := iscp.NewAgentIDFromString(c.Param("agentid"), d.wasp.L1Params().Bech32Prefix)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -34,7 +34,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	result := &ChainAccountTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
 			Path:  c.Path(),
-			Title: fmt.Sprintf("Account %.16s…", agentID),
+			Title: fmt.Sprintf("Account %.16s…", agentID.String(d.wasp.L1Params().Bech32Prefix)),
 			Href:  "#",
 		}),
 		ChainID: chainID,

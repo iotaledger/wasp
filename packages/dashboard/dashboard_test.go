@@ -64,7 +64,7 @@ func TestDashboardChainAccount(t *testing.T) {
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
 		"chainid": ch.ChainID.String(),
-		"agentid": iscp.NewRandomAgentID().String(),
+		"agentid": iscp.NewRandomAgentID().String(env.solo.L1Params().Bech32Prefix),
 	})
 	checkProperConversionsToString(t, html)
 	require.Regexp(t, "@", html.Find(".value-agentid").Text())
