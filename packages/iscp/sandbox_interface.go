@@ -32,7 +32,7 @@ type SandboxBase interface {
 	ContractAgentID() *AgentID
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
-	// Timestamp returns the UnixNano timestamp of the current state
+	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() int64
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
 	Log() LogInterface

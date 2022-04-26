@@ -5,14 +5,13 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/utxodb"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +33,7 @@ func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 	for i := range e.chain.CommitteeNodes {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, 2, blockIndex)
+		require.Greater(e.t, blockIndex, uint32(2))
 
 		contractRegistry, err := e.chain.ContractRegistry(i)
 		require.NoError(e.t, err)
@@ -123,7 +122,8 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(1),
+		Transfer:  iscp.NewTokensIotas(10000),
+		Allowance: iscp.NewAllowanceIotas(9000),
 		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
@@ -145,27 +145,27 @@ func TestPost5Requests(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
-	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := testOwner.Address()
+	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
-	e.requestFunds(myAddress, "myAddress")
+	myClient := e.chain.SCClient(contractID.Hname(), myWallet)
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
-
+	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	onChainBalance := uint64(0)
 	for i := 0; i < 5; i++ {
-		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
+		iotasSent := uint64(1000)
+		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
+			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
+		})
 		require.NoError(t, err)
-		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
+		receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
+		onChainBalance += iotasSent - receipts[0].GasFeeCharged
 		require.NoError(t, err)
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
 
-	if !e.clu.AssertAddressBalances(myAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5)) {
-		t.Fail()
-	}
 	e.checkLedger()
 }
 

@@ -57,7 +57,7 @@ func scheduleNextBlock(ctx iscp.Sandbox) {
 			GasBudget:      math.MaxUint64, // TODO: ?
 		},
 		Options: iscp.SendOptions{Timelock: &iscp.TimeData{
-			Time: time.Unix(0, ctx.Timestamp()).
+			Time: time.Unix(ctx.Timestamp(), 0).
 				Add(time.Duration(blockTime) * time.Second),
 		}},
 	})

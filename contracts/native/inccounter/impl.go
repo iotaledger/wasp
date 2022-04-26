@@ -2,6 +2,8 @@ package inccounter
 
 import (
 	"fmt"
+	"math"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -71,17 +73,24 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: counter = %d", val+1))
-	panic("refactor me")
-	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewFungibleTokens(1, nil), &iscp.SendMetadata{
-	//	TargetContract: ctx.Contract(),
-	//	EntryPoint:     FuncIncCounter.Hname(),
-	//}, iscp.SendOptions{
-	//	TimeLock: 5,
-	//}) {
-	//	return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
-	//}
-	//ctx.Log().Debugf("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
-	//return nil, nil
+	ctx.TransferAllowedFunds(ctx.AccountID())
+	ctx.Send(iscp.RequestParameters{
+		TargetAddress:              ctx.ChainID().AsAddress(),
+		FungibleTokens:             iscp.NewFungibleTokens(1, nil),
+		AdjustToMinimumDustDeposit: true,
+		Metadata: &iscp.SendMetadata{
+			TargetContract: ctx.Contract(),
+			EntryPoint:     FuncIncCounter.Hname(),
+			GasBudget:      math.MaxUint64,
+		},
+		Options: iscp.SendOptions{
+			Timelock: &iscp.TimeData{
+				Time: time.Unix(ctx.Timestamp(), 0).Add(2 * time.Second),
+			},
+		},
+	})
+	ctx.Log().Debugf("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 2 sec")
+	return nil
 }
 
 func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
@@ -109,19 +118,26 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("chain of %d requests ahead", numRepeats)
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
+	ctx.TransferAllowedFunds(ctx.AccountID())
+	ctx.Send(iscp.RequestParameters{
+		TargetAddress:              ctx.ChainID().AsAddress(),
+		FungibleTokens:             iscp.NewFungibleTokens(1000, nil),
+		AdjustToMinimumDustDeposit: true,
+		Metadata: &iscp.SendMetadata{
+			TargetContract: ctx.Contract(),
+			EntryPoint:     FuncIncAndRepeatMany.Hname(),
+			GasBudget:      math.MaxUint64,
+			Allowance:      iscp.NewAllowanceIotas(1000),
+		},
+		Options: iscp.SendOptions{
+			Timelock: &iscp.TimeData{
+				Time: time.Unix(ctx.Timestamp(), 0).Add(2 * time.Second),
+			},
+		},
+	})
 
-	panic("refactor me")
-	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewFungibleTokens(1, nil), &iscp.SendMetadata{
-	//	TargetContract: ctx.Contract(),
-	//	EntryPoint:     FuncIncAndRepeatMany.Hname(),
-	//}, iscp.SendOptions{
-	//	TimeLock: 1 * 60,
-	//}) {
-	//	ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
-	//} else {
-	//	ctx.Log().Debugf("incCounterAndRepeatMany FAILED. remaining repeats = %d", numRepeats-1)
-	//}
-	//return nil, nil
+	ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
+	return nil
 }
 
 // spawn deploys new contract and calls it
