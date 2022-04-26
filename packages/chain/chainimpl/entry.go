@@ -26,7 +26,7 @@ func (c *chainObj) Dismiss(reason string) {
 			cmt.Close()
 		}
 		if c.consensus != nil {
-			(*c.consensus).Close()
+			c.consensus.Close()
 		}
 
 		c.eventRequestProcessed.DetachAll()

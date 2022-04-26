@@ -3,7 +3,6 @@ package dashboard
 import (
 	_ "embed"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
 	"net/http"
 	"strconv"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/labstack/echo/v4"
 )

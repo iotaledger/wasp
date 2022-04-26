@@ -17,5 +17,5 @@ func (c *chainObj) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
 	if c.consensus == nil {
 		return nil
 	}
-	return (*c.consensus).GetWorkflowStatus()
+	return c.consensus.GetWorkflowStatus()
 }
