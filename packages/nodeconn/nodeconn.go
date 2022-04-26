@@ -73,7 +73,7 @@ func New(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *lo
 
 func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeAPIClient := nodeclient.New(fmt.Sprintf("http://%s:%d", config.Hostname, config.APIPort))
+	nodeAPIClient := nodeclient.New(fmt.Sprintf("%s:%d", config.Hostname, config.APIPort))
 
 	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
