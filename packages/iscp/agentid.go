@@ -103,6 +103,23 @@ func AgentIDFromBytes(data []byte) (*AgentID, error) {
 	return AgentIDFromMarshalUtil(marshalutil.New(data))
 }
 
+func addrFromString(addrStr string, networkPrefix iotago.NetworkPrefix) (iotago.Address, error) {
+	if strings.HasPrefix(addrStr, string(networkPrefix)) {
+		_, addr, err := iotago.ParseBech32(addrStr)
+		if err != nil {
+			return nil, err
+		}
+		return addr, nil
+	}
+	// when the address string doesn't start with network prefix, it is a chainID
+	cid, err := ChainIDFromString(addrStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return cid.AsAddress(), nil
+}
+
 // NewAgentIDFromString parses the human-readable string representation
 func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (*AgentID, error) {
 	if s == "-" {
@@ -121,13 +138,11 @@ func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (*AgentI
 			return nil, xerrors.New("NewAgentIDFromString: wrong format")
 		}
 	}
-	prefix, addr, err := iotago.ParseBech32(addrPart)
+	addr, err := addrFromString(addrPart, networkPrefix)
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
-	if prefix != networkPrefix {
-		return nil, xerrors.Errorf("NewAgentIDFromString: expected network prefix %s, got %s", networkPrefix, prefix)
-	}
+
 	var hname Hname
 	if hnamePart != "" {
 		hname, err = HnameFromString(hnamePart)
