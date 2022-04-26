@@ -237,7 +237,7 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 }
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (isReady bool, shouldBeRemoved bool) {
+func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (isReady, shouldBeRemoved bool) {
 	if ref.req.IsOffLedger() {
 		return true, false
 	}

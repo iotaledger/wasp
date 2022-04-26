@@ -66,7 +66,7 @@ func CatchPanic(f func()) (err error) {
 			if r == nil {
 				return
 			}
-			err = xerrors.Errorf("v", r)
+			err = xerrors.Errorf("%v", r)
 		}()
 		f()
 	}()

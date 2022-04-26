@@ -2,14 +2,6 @@ package state
 
 import (
 	"encoding/hex"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
 	"os"
@@ -18,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+
 )
 
 func genRnd4() []string {
@@ -172,7 +165,7 @@ func readBlocks(t *testing.T, dir string) ([]Block, []trie.VCommitment, []hashin
 			return nil
 		}
 		files = append(files, info.Name())
-		//t.Logf("-- %s", info.Name())
+		// t.Logf("-- %s", info.Name())
 		return nil
 	})
 	require.NoError(t, err)

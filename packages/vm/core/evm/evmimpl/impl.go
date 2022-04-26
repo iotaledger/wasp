@@ -104,7 +104,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 		emu = getEmulatorInBlockContext(ctx)
 	}
 
-	receipt, gasUsed, err, result := emu.SendTransaction(tx, gasBudget)
+	receipt, gasUsed, result, err := emu.SendTransaction(tx, gasBudget)
 
 	// burn gas even on error
 	ctx.Gas().Burn(gas.BurnCodeEVM1P, evm.EVMGasToISC(gasUsed, gasRatio))

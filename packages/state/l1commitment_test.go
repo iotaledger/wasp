@@ -1,9 +1,10 @@
 package state
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestL1Commitment(t *testing.T) {

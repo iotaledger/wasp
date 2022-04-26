@@ -10,7 +10,7 @@ import (
 func TestFeePolicySerde(t *testing.T) {
 	feePolicy := DefaultGasFeePolicy()
 	feePolicyBin := feePolicy.Bytes()
-	feePolicyBack, err := GasFeePolicyFromBytes(feePolicyBin)
+	feePolicyBack, err := FeePolicyFromBytes(feePolicyBin)
 	require.NoError(t, err)
 	require.EqualValues(t, feePolicy.GasFeeTokenID, feePolicyBack.GasFeeTokenID)
 	require.EqualValues(t, feePolicy.ValidatorFeeShare, feePolicyBack.ValidatorFeeShare)
@@ -22,7 +22,7 @@ func TestFeePolicySerde(t *testing.T) {
 		ValidatorFeeShare: 10,
 	}
 	feePolicyBin = feePolicy.Bytes()
-	feePolicyBack, err = GasFeePolicyFromBytes(feePolicyBin)
+	feePolicyBack, err = FeePolicyFromBytes(feePolicyBin)
 	require.NoError(t, err)
 	require.EqualValues(t, feePolicy.GasFeeTokenID, feePolicyBack.GasFeeTokenID)
 	require.EqualValues(t, feePolicy.ValidatorFeeShare, feePolicyBack.ValidatorFeeShare)

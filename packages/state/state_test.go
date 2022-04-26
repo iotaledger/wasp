@@ -1,9 +1,10 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"

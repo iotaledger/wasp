@@ -68,7 +68,7 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 
 // GetGasFeePolicy returns gas policy from the state
 func GetGasFeePolicy(state kv.KVStoreReader) (*gas.GasFeePolicy, error) {
-	return gas.GasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+	return gas.FeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }
 
 func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {
