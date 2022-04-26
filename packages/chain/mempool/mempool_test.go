@@ -193,7 +193,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(chainAddress, rdr, log, mempoolMetrics)
 
-	offLedgerRequest := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("dummyContract"), iscp.Hn("dummyEP"), dict.New(), 0, 0)
+	offLedgerRequest := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("dummyContract"), iscp.Hn("dummyEP"), dict.New(), 0)
 	offLedgerRequest.Sign(cryptolib.NewKeyPair())
 	require.EqualValues(t, 0, mempoolMetrics.offLedgerRequestCounter)
 	pool.ReceiveRequests(offLedgerRequest)

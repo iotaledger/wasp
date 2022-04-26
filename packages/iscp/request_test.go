@@ -16,7 +16,7 @@ func TestSerializeRequestData(t *testing.T) {
 	var req Request
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
-		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 100)
+		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100)
 
 		serialized := req.Bytes()
 		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
@@ -72,7 +72,7 @@ func TestSerializeRequestData(t *testing.T) {
 }
 
 func TestRequestIDToFromString(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200)
+	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(200)
 	oritinalID := req.ID()
 	s := oritinalID.String()
 	require.NotEmpty(t, s)

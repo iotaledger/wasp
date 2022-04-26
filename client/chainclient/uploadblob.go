@@ -1,7 +1,6 @@
 package chainclient
 
 import (
-	"math"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -18,8 +17,7 @@ func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *iscp.OffLedge
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		PostRequestParams{
-			Args:      fields,
-			GasBudget: math.MaxUint64,
+			Args: fields,
 		},
 	)
 	if err != nil {

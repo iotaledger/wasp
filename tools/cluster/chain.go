@@ -3,7 +3,6 @@ package cluster
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -112,8 +111,7 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
-			Args:      codec.MakeDict(params),
-			GasBudget: math.MaxUint64, // maximum affordable gas budget
+			Args: codec.MakeDict(params),
 		},
 	)
 	if err != nil {
@@ -160,8 +158,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
-			Args:      args,
-			GasBudget: math.MaxUint64, // maximum affordable gas budget
+			Args: args,
 		},
 	)
 	if err != nil {

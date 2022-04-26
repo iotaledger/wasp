@@ -259,8 +259,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
-		WithIotas(1000).
-		WithMaxAffordableGasBudget()
+		WithIotas(1000)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
