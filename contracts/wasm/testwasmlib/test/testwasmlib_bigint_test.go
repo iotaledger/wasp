@@ -15,7 +15,7 @@ import (
 const (
 	ExhaustiveLimit = 2048
 	ExtremeLimit    = 66666
-	LogOp           = true
+	LogOp           = false
 	SkipWasm        = false
 	TestExhaustive  = false
 	TestExtreme     = false

@@ -67,6 +67,10 @@ func main() {
 	if *flagInit != "" {
 		err = generateSchemaNew()
 		if err != nil {
+			if _, err := os.Stat(*flagInit); err == nil {
+				log.Println("schema already exists")
+				return
+			}
 			log.Panic(err)
 		}
 		return
@@ -272,6 +276,8 @@ func WriteYAMLSchema(schemaDef *model.SchemaDef) error {
 	if err != nil {
 		return err
 	}
+
+	b = bytes.ReplaceAll(b, []byte("//"), []byte("#"))
 	_, err = file.Write(b)
 	return err
 }
