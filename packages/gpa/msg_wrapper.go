@@ -35,10 +35,14 @@ func (m *MsgWrapper) Wrapped() Message {
 	return m.wrapped
 }
 
-func (m *MsgWrapper) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
-}
-
 func (m *MsgWrapper) Recipient() NodeID {
 	return m.wrapped.Recipient()
+}
+
+func (m *MsgWrapper) SetSender(sender NodeID) {
+	m.wrapped.SetSender(sender)
+}
+
+func (m *MsgWrapper) MarshalBinary() ([]byte, error) {
+	return nil, nil // TODO: Implement.
 }

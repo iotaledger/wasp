@@ -10,7 +10,8 @@ type NodeID string
 
 type Message interface {
 	encoding.BinaryMarshaler
-	Recipient() NodeID
+	Recipient() NodeID // The sender should indicate the recipient.
+	SetSender(NodeID)  // The transport later will set a validated sender for a message.
 }
 
 type Input interface{}

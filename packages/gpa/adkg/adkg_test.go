@@ -41,7 +41,8 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			inputs[nid] = nil // Input is only a signal here.
 		}
-		gpa.RunTestWithInputs(nodes, inputs)
+		tc := gpa.NewTestContext(nodes).WithInputs(inputs)
+		tc.RunAll() // TODO: tc.RunUntil(0.01, tc.NumberOfOutputsPredicate(n-f))
 		//
 		// Check the INTERMEDIATE result.
 		for _, n := range nodes {
@@ -71,7 +72,8 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			agreementMsgs = append(agreementMsgs, adkg.NewMsgAgreementResult(nid, decidedIndexes))
 		}
-		gpa.RunTestWithMessages(nodes, agreementMsgs)
+		tc.SendMessages(agreementMsgs)
+		tc.RunAll()
 		//
 		// Check the FINAL result.
 		for _, n := range nodes {

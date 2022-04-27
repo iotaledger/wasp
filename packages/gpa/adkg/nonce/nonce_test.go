@@ -42,7 +42,7 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			inputs[nid] = nil // Input is only a signal here.
 		}
-		tc.Inputs(inputs)
+		tc.AddInputs(inputs)
 		tc.RunUntil(0.01, tc.NumberOfOutputsPredicate(n-f))
 		//
 		// Check the INTERMEDIATE result.

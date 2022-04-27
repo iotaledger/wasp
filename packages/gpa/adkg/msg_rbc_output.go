@@ -14,8 +14,14 @@ type msgRBCOutput struct { // TODO: Not used.
 	indexes []int
 }
 
+var _ gpa.Message = &msgRBCOutput{}
+
 func (m *msgRBCOutput) Recipient() gpa.NodeID {
 	return m.me
+}
+
+func (m *msgRBCOutput) SetSender(sender gpa.NodeID) {
+	// Don't care the sender.
 }
 
 func (m *msgRBCOutput) MarshalBinary() ([]byte, error) {

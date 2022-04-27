@@ -77,7 +77,7 @@ func genericTest(
 			nodes[nid] = &silentNode{nested: nodes[nid]}
 		}
 	}
-	gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{dealer: secretToShare})
+	gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{dealer: secretToShare}).RunAll()
 	outShares := []*share.PriShare{}
 	for i, n := range nodes {
 		o := n.Output()

@@ -12,11 +12,13 @@ const (
 	msgWrapperRBC
 )
 
-type msgWrapper struct {
+type msgWrapper struct { // TODO: Use the generic structure.
 	subsystem msgWrapperSubsystem
 	index     int
 	wrapped   gpa.Message
 }
+
+var _ gpa.Message = &msgWrapper{}
 
 func WrapMessage(subsystem msgWrapperSubsystem, index int, msg gpa.Message) gpa.Message {
 	return &msgWrapper{subsystem: subsystem, index: index, wrapped: msg}
@@ -34,10 +36,14 @@ func (m *msgWrapper) Subsystem() msgWrapperSubsystem {
 	return m.subsystem
 }
 
-func (m *msgWrapper) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
-}
-
 func (m *msgWrapper) Recipient() gpa.NodeID {
 	return m.wrapped.Recipient()
+}
+
+func (m *msgWrapper) SetSender(sender gpa.NodeID) {
+	m.wrapped.SetSender(sender)
+}
+
+func (m *msgWrapper) MarshalBinary() ([]byte, error) {
+	return nil, nil // TODO: Implement.
 }

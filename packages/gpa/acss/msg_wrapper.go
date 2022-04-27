@@ -9,7 +9,7 @@ const (
 	msgWrapperRBC byte = iota
 )
 
-type msgWrapper struct {
+type msgWrapper struct { // TODO: Use the indexed, generic msg.
 	subsystem byte
 	wrapped   gpa.Message
 }
@@ -26,10 +26,14 @@ func (m *msgWrapper) Subsystem() byte {
 	return m.subsystem
 }
 
-func (m *msgWrapper) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
-}
-
 func (m *msgWrapper) Recipient() gpa.NodeID {
 	return m.wrapped.Recipient()
+}
+
+func (m *msgWrapper) SetSender(sender gpa.NodeID) {
+	m.wrapped.SetSender(sender)
+}
+
+func (m *msgWrapper) MarshalBinary() ([]byte, error) {
+	return nil, nil // TODO: Implement.
 }

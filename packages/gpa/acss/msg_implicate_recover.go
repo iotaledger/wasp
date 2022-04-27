@@ -25,10 +25,14 @@ type msgImplicateRecover struct {
 	sk        kyber.Scalar
 }
 
-var _ gpa.Message = &msgVote{}
+var _ gpa.Message = &msgImplicateRecover{}
 
 func (m *msgImplicateRecover) Recipient() gpa.NodeID {
 	return m.recipient
+}
+
+func (m *msgImplicateRecover) SetSender(sender gpa.NodeID) {
+	// Don't care the sender.
 }
 
 func (m *msgImplicateRecover) MarshalBinary() ([]byte, error) {

@@ -21,6 +21,7 @@ func (o *OwnHandler) Input(input Input) []Message {
 	outMsgs := []Message{}
 	for i, m := range msgs {
 		if m.Recipient() == o.me {
+			msgs[i].SetSender(o.me)
 			myMsgs = append(myMsgs, msgs[i])
 		} else {
 			outMsgs = append(outMsgs, msgs[i])
@@ -45,6 +46,7 @@ func (o *OwnHandler) handleMsgs(myMsgs, outMsgs []Message) []Message {
 		myMsgs = myMsgs[1:]
 		for i, m := range msgs {
 			if m.Recipient() == o.me {
+				msgs[i].SetSender(o.me)
 				myMsgs = append(myMsgs, msgs[i])
 			} else {
 				outMsgs = append(outMsgs, msgs[i])

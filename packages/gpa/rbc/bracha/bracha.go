@@ -84,7 +84,6 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 	for i := range r.peers {
 		msgs = append(msgs, &msgBracha{
 			t: msgBrachaTypeInitial,
-			s: r.me,
 			r: r.peers[i],
 			v: inputVal,
 		})
@@ -125,7 +124,6 @@ func (r *rbc) handleInitial(msg *msgBracha) []gpa.Message {
 	for i := range r.peers {
 		msgs = append(msgs, &msgBracha{
 			t: msgBrachaTypeEcho,
-			s: r.me,
 			r: r.peers[i],
 			v: msg.v,
 		})
@@ -185,7 +183,6 @@ func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
 		for i := range r.peers {
 			msgs = append(msgs, &msgBracha{
 				t: msgBrachaTypeEcho,
-				s: r.me,
 				r: r.peers[i],
 				v: v,
 			})
@@ -196,7 +193,6 @@ func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
 		for i := range r.peers {
 			msgs = append(msgs, &msgBracha{
 				t: msgBrachaTypeReady,
-				s: r.me,
 				r: r.peers[i],
 				v: v,
 			})

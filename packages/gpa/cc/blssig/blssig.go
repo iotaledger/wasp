@@ -78,7 +78,7 @@ func (cc *ccImpl) Input(input gpa.Input) []gpa.Message {
 	msgs := []gpa.Message{}
 	for _, nid := range cc.nodeIDs {
 		if nid != cc.me {
-			msgs = append(msgs, &msgSigShare{recipient: nid, signer: cc.me, sigShare: sigShare})
+			msgs = append(msgs, &msgSigShare{recipient: nid, sender: cc.me, sigShare: sigShare})
 		}
 	}
 	return msgs
@@ -89,11 +89,11 @@ func (cc *ccImpl) Message(msg gpa.Message) []gpa.Message {
 	if !ok {
 		panic(xerrors.Errorf("unexpected message: %+v", msg))
 	}
-	if _, ok := cc.sigShares[shareMsg.signer]; ok {
+	if _, ok := cc.sigShares[shareMsg.sender]; ok {
 		// Drop a duplicate.
 		return gpa.NoMessages()
 	}
-	cc.sigShares[shareMsg.signer] = shareMsg.sigShare
+	cc.sigShares[shareMsg.sender] = shareMsg.sigShare
 	if len(cc.sigShares) >= cc.t && cc.output == nil {
 		sigs := make([][]byte, len(cc.nodeIDs))
 		for i := range sigs {

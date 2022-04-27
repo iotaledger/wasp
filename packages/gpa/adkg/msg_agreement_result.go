@@ -24,6 +24,10 @@ func (m *msgAgreementResult) Recipient() gpa.NodeID {
 	return m.me
 }
 
+func (m *msgAgreementResult) SetSender(sender gpa.NodeID) {
+	// Don't care the sender.
+}
+
 func (m *msgAgreementResult) MarshalBinary() ([]byte, error) {
 	panic("should be not needed")
 }

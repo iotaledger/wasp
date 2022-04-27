@@ -22,7 +22,7 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, func(b []byte) bool { return true })
 		}
-		gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
+		gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
 		for _, n := range nodes {
 			o := n.Output()
 			require.NotNil(tt, o)
@@ -52,7 +52,7 @@ func TestWithSilent(t *testing.T) {
 		for _, nid := range faulty {
 			nodes[nid] = gpa.MakeTestSilentNode()
 		}
-		gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
+		gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
 		for _, nid := range fair {
 			o := nodes[nid].Output()
 			require.NotNil(tt, o)
@@ -79,7 +79,8 @@ func TestPredicate(t *testing.T) {
 		}
 		//
 		// No outputs are returned while predicates are false.
-		gpa.RunTestWithInputs(nodes, map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
+		tc := gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
+		tc.RunAll()
 		for nid := range nodes {
 			require.Nil(t, nodes[nid].Output())
 		}
@@ -90,7 +91,8 @@ func TestPredicate(t *testing.T) {
 		for i := range predicateUpdates {
 			predicateUpdates[i] = bracha.MakePredicateUpdateMsg(nodeIDs[i], pTrue)
 		}
-		gpa.RunTestWithMessages(nodes, predicateUpdates)
+		tc.SendMessages(predicateUpdates)
+		tc.RunAll()
 		for nid := range nodes {
 			o := nodes[nid].Output()
 			require.NotNil(tt, o)

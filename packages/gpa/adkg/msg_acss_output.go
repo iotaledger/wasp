@@ -16,8 +16,14 @@ type msgACSSOutput struct {
 	priShare *share.PriShare
 }
 
+var _ gpa.Message = &msgACSSOutput{}
+
 func (m *msgACSSOutput) Recipient() gpa.NodeID {
 	return m.me
+}
+
+func (m *msgACSSOutput) SetSender(sender gpa.NodeID) {
+	// Don't care the sender.
 }
 
 func (m *msgACSSOutput) MarshalBinary() ([]byte, error) {

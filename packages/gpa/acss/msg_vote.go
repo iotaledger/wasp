@@ -29,6 +29,10 @@ func (m *msgVote) Recipient() gpa.NodeID {
 	return m.recipient
 }
 
+func (m *msgVote) SetSender(sender gpa.NodeID) {
+	m.sender = sender
+}
+
 func (m *msgVote) MarshalBinary() ([]byte, error) {
 	return nil, nil // TODO: Implemnet.
 }

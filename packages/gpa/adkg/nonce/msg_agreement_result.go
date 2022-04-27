@@ -5,6 +5,7 @@ package nonce
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
+	"golang.org/x/xerrors"
 )
 
 //
@@ -22,6 +23,12 @@ func NewMsgAgreementResult(me gpa.NodeID, proposals map[gpa.NodeID][]int) gpa.Me
 
 func (m *msgAgreementResult) Recipient() gpa.NodeID {
 	return m.me
+}
+
+func (m *msgAgreementResult) SetSender(sender gpa.NodeID) {
+	if sender != "" && sender != m.me {
+		panic(xerrors.Errorf("local events cannot be sent from other nodes"))
+	}
 }
 
 func (m *msgAgreementResult) MarshalBinary() ([]byte, error) {

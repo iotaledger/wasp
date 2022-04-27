@@ -4,7 +4,6 @@
 package bracha
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"golang.org/x/xerrors"
 )
@@ -30,11 +29,16 @@ func (m *msgBracha) Recipient() gpa.NodeID {
 	return m.r
 }
 
+func (m *msgBracha) SetSender(sender gpa.NodeID) {
+	m.s = sender
+}
+
 func (m *msgBracha) MarshalBinary() ([]byte, error) {
-	return serializer.NewSerializer().
-		WriteByte(byte(m.t), func(err error) error { return xerrors.Errorf("unable to serialize t: %w", err) }).
-		WriteString(string(m.s), serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize s: %w", err) }).
-		WriteString(string(m.r), serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize r: %w", err) }).
-		WriteVariableByteSlice(m.v, serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize v: %w", err) }).
-		Serialize()
+	// return serializer.NewSerializer(). // TODO: Implement.
+	// 	WriteByte(byte(m.t), func(err error) error { return xerrors.Errorf("unable to serialize t: %w", err) }).
+	// 	WriteString(string(m.s), serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize s: %w", err) }).
+	// 	WriteString(string(m.r), serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize r: %w", err) }).
+	// 	WriteVariableByteSlice(m.v, serializer.SeriLengthPrefixTypeAsUint16, func(err error) error { return xerrors.Errorf("unable to serialize v: %w", err) }).
+	// 	Serialize()
+	panic(xerrors.Errorf("not implemented"))
 }
