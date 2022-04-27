@@ -5,6 +5,7 @@ package sandbox
 
 import (
 	"math/big"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -87,7 +88,7 @@ func (s *SandboxBase) ContractCreator() *iscp.AgentID {
 	return s.Ctx.ContractCreator()
 }
 
-func (s *SandboxBase) Timestamp() int64 {
+func (s *SandboxBase) Timestamp() time.Time {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.Timestamp()
 }

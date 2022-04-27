@@ -255,8 +255,8 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 		nft := ctx.GetNFTData(nftID.Unwrap())
 		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
 
-	case "getTimestampUnixNano":
-		outs = []interface{}{ctx.Timestamp()}
+	case "getTimestampUnixSeconds":
+		outs = []interface{}{ctx.Timestamp().Unix()}
 
 	case "logInfo":
 		ctx.Log().Infof("%s", args[0].(string))

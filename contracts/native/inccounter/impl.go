@@ -85,7 +85,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 		},
 		Options: iscp.SendOptions{
 			Timelock: &iscp.TimeData{
-				Time: time.Unix(ctx.Timestamp(), 0).Add(2 * time.Second),
+				Time: ctx.Timestamp().Add(2 * time.Second),
 			},
 		},
 	})
@@ -131,7 +131,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 		},
 		Options: iscp.SendOptions{
 			Timelock: &iscp.TimeData{
-				Time: time.Unix(ctx.Timestamp(), 0).Add(2 * time.Second),
+				Time: ctx.Timestamp().Add(2 * time.Second),
 			},
 		},
 	})
