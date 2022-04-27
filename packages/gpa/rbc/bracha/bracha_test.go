@@ -91,8 +91,7 @@ func TestPredicate(t *testing.T) {
 		for i := range predicateUpdates {
 			predicateUpdates[i] = bracha.MakePredicateUpdateMsg(nodeIDs[i], pTrue)
 		}
-		tc.SendMessages(predicateUpdates)
-		tc.RunAll()
+		tc.WithMessages(predicateUpdates).RunAll()
 		for nid := range nodes {
 			o := nodes[nid].Output()
 			require.NotNil(tt, o)

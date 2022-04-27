@@ -42,8 +42,8 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			inputs[nid] = nil // Input is only a signal here.
 		}
-		tc.AddInputs(inputs)
-		tc.RunUntil(0.01, tc.NumberOfOutputsPredicate(n-f))
+		tc.WithInputs(inputs).WithInputProbability(0.01)
+		tc.RunUntil(tc.NumberOfOutputsPredicate(n - f))
 		//
 		// Check the INTERMEDIATE result.
 		intermediateOutputs := map[gpa.NodeID]*nonce.Output{}
@@ -72,8 +72,9 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			agreementMsgs = append(agreementMsgs, nonce.NewMsgAgreementResult(nid, decidedProposals))
 		}
-		tc.SendMessages(agreementMsgs)
-		tc.RunUntil(0.001, tc.OutOfMessagesPredicate())
+		tc.WithMessages(agreementMsgs)
+		tc.WithInputProbability(0.001)
+		tc.RunUntil(tc.OutOfMessagesPredicate())
 		//
 		// Check the FINAL result.
 		for _, n := range nodes {

@@ -72,8 +72,7 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			agreementMsgs = append(agreementMsgs, adkg.NewMsgAgreementResult(nid, decidedIndexes))
 		}
-		tc.SendMessages(agreementMsgs)
-		tc.RunAll()
+		tc.WithMessages(agreementMsgs).RunAll()
 		//
 		// Check the FINAL result.
 		for _, n := range nodes {

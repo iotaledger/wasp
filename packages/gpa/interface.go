@@ -22,6 +22,7 @@ type GPA interface {
 	Input(inp Input) []Message
 	Message(msg Message) []Message
 	Output() Output
+	// TODO: UnmarshalMessage() (Message, error)
 }
 
 // A convenience function to return from the Input or Message functions in GPA.

@@ -9,16 +9,20 @@ import (
 
 // Imitates a cluster of nodes and the medium performing the message exchange.
 type TestContext struct {
-	nodes  map[NodeID]GPA
-	inputs map[NodeID]Input
-	msgs   []Message
+	nodes           map[NodeID]GPA   // Nodes to test.
+	inputs          map[NodeID]Input // Not yet provided inputs.
+	inputProb       float64          // A probability to process input, instead of a message (if any).
+	msgDeliveryProb float64          // A probability to deliver a message (to not discard/loose it).
+	msgs            []Message        // Not yet delivered messages.
 }
 
 func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 	tc := TestContext{
-		nodes:  nodes,
-		inputs: map[NodeID]Input{},
-		msgs:   []Message{},
+		nodes:           nodes,
+		inputs:          map[NodeID]Input{},
+		inputProb:       1.0,
+		msgDeliveryProb: 1.0,
+		msgs:            []Message{},
 	}
 	return &tc
 }
@@ -36,16 +40,26 @@ func (tc *TestContext) WithInputs(inputs map[NodeID]Input) *TestContext {
 	return tc
 }
 
-func (tc *TestContext) SendMessages(msgs []Message) {
-	tc.msgs = append(tc.msgs, msgs...)
+func (tc *TestContext) WithInputProbability(inputProb float64) *TestContext {
+	tc.inputProb = inputProb
+	return tc
 }
 
-func (tc *TestContext) RunUntil(inputProb float64, predicate func() bool) {
+func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext {
+	tc.msgDeliveryProb = msgDeliveryProb
+	return tc
+}
+
+func (tc *TestContext) WithMessages(msgs []Message) *TestContext {
+	tc.msgs = append(tc.msgs, msgs...)
+	return tc
+}
+
+func (tc *TestContext) RunUntil(predicate func() bool) {
 	for (len(tc.msgs) > 0 || len(tc.inputs) > 0) && !predicate() {
 		//
 		// Try provide an input, if any and we are lucky.
-		inputRand := rand.Float64()
-		if len(tc.inputs) > 0 && (inputRand <= inputProb || len(tc.msgs) == 0) {
+		if len(tc.inputs) > 0 && (rand.Float64() <= tc.inputProb || len(tc.msgs) == 0) {
 			nids := []NodeID{}
 			for nid := range tc.inputs {
 				nids = append(nids, nid)
@@ -60,14 +74,14 @@ func (tc *TestContext) RunUntil(inputProb float64, predicate func() bool) {
 		msg := tc.msgs[msgIdx]
 		nid := msg.Recipient()
 		tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
-		tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Message(msg))...)
+		if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
+			tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Message(msg))...)
+		}
 	}
 }
 
-func (tc *TestContext) RunAll(inputProb ...float32) {
-	if len(inputProb) == 0 {
-		tc.RunUntil(1.0, tc.OutOfMessagesPredicate())
-	}
+func (tc *TestContext) RunAll() {
+	tc.RunUntil(tc.OutOfMessagesPredicate())
 }
 
 // Returns a number of non-nil outputs.
