@@ -106,7 +106,7 @@ func (ctx *ViewContext) Timestamp() int64 {
 	if err != nil {
 		ctx.log.Panicf("%v", err)
 	}
-	return t.UnixNano()
+	return t.Unix()
 }
 
 func (ctx *ViewContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
