@@ -78,7 +78,6 @@ func TestSpamCallViewWasm(t *testing.T) {
 		chain: chain,
 	}
 
-	chEnv.requestFunds(scOwnerAddr, "client")
 	chEnv.deployContract(incName, incDescription, nil)
 
 	{

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -15,11 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	testOwner = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress = testOwner.Address()
 )
 
 func setupBlobTest(t *testing.T) *chainEnv {
@@ -37,6 +31,8 @@ func setupBlobTest(t *testing.T) *chainEnv {
 		require.EqualValues(t, 1, blockIndex)
 	}
 
+	_, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	e.requestFunds(myAddress, "myAddress")
 
 	if !e.clu.AssertAddressBalances(myAddress,
@@ -90,7 +86,10 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	myWallet, _, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
 	reqTx, err := chClient.Post1Request(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
@@ -131,7 +130,10 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	myWallet, _, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
 
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)

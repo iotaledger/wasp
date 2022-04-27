@@ -11,7 +11,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -198,12 +197,13 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
-	keyPair, myAddress := e.getOrCreateAddress()
+	keyPair, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
 	myAgentID := iscp.NewAgentID(myAddress, 0)
 
 	accountsClient := e.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(100),
 	})
 	require.NoError(t, err)
@@ -237,7 +237,8 @@ func TestAccessNodesMany(t *testing.T) {
 
 	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
-	keyPair, _ := e.getOrCreateAddress()
+	keyPair, _, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
 	myClient := e.chain.SCClient(incCounterSCHname, keyPair)
 
@@ -296,8 +297,9 @@ func TestRotation(t *testing.T) {
 	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
 	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
 
-	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := keyPair.Address()
+	keyPair, myAddress, err := clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
 	e.requestFunds(myAddress, "myAddress")
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)
@@ -421,8 +423,8 @@ func TestRotationMany(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
-	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := keyPair.Address()
+	keyPair, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	e.requestFunds(myAddress, "myAddress")
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)

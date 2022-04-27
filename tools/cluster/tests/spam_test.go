@@ -23,7 +23,8 @@ func TestSpamOnledger(t *testing.T) {
 	testutil.RunHeavy(t)
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
-	keyPair, _ := env.getOrCreateAddress()
+	keyPair, _, err := env.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
@@ -51,11 +52,12 @@ func TestSpamOffledger(t *testing.T) {
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	// deposit funds for offledger requests
-	keyPair, myAddress := env.getOrCreateAddress()
+	keyPair, myAddress, err := env.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
 
 	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(1000000),
 	})
 	require.NoError(t, err)

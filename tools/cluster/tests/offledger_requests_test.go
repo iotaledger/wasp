@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -18,8 +16,8 @@ import (
 )
 
 func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
-	userWallet := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(seedN))
-	userAddress := userWallet.Address()
+	userWallet, userAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(e.t, err)
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(waspnode), e.chain.ChainID, userWallet)

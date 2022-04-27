@@ -7,7 +7,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -82,6 +81,24 @@ func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
 	return counter
 }
 
+func (e *chainEnv) waitUntilCounterEquals(hname iscp.Hname, expected int64, duration time.Duration) {
+	timeout := time.After(duration)
+	var c int64
+	for {
+		select {
+		case <-timeout:
+			e.t.Errorf("timeout waiting for inccounter, current: %d, expected: %d", c, expected)
+			e.t.FailNow()
+		default:
+			c = e.getCounter(hname)
+			if c == expected {
+				return // success
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
 func TestPostDeployInccounter(t *testing.T) {
 	e := setupWithChain(t)
 	contractID := e.deployInccounter42(42)
@@ -94,11 +111,10 @@ func TestPost1Request(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
-	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := testOwner.Address()
-	e.requestFunds(myAddress, "myAddress")
+	myWallet, _, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
@@ -109,17 +125,16 @@ func TestPost1Request(t *testing.T) {
 	e.expectCounter(contractID.Hname(), 43)
 }
 
-func TestPost3Recursive(t *testing.T) {
+func TestPost53Recursive(t *testing.T) {
 	e := setupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
-	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := testOwner.Address()
-	e.requestFunds(myAddress, "myAddress")
+	myWallet, _, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
 		Transfer:  iscp.NewTokensIotas(10000),
@@ -133,10 +148,7 @@ func TestPost3Recursive(t *testing.T) {
 	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
-	// must wait for recursion to complete
-	time.Sleep(10 * time.Second)
-
-	e.expectCounter(contractID.Hname(), 43+3)
+	e.waitUntilCounterEquals(contractID.Hname(), 43+3, 10*time.Second)
 }
 
 func TestPost5Requests(t *testing.T) {
@@ -159,8 +171,8 @@ func TestPost5Requests(t *testing.T) {
 		})
 		require.NoError(t, err)
 		receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
-		onChainBalance += iotasSent - receipts[0].GasFeeCharged
 		require.NoError(t, err)
+		onChainBalance += iotasSent - receipts[0].GasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
@@ -175,31 +187,33 @@ func TestPost5AsyncRequests(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.clu.GetL1NetworkPrefix()))
 
-	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := testOwner.Address()
+	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
-	e.requestFunds(myAddress, "myAddress")
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), myWallet)
 
 	tx := [5]*iotago.Transaction{}
-	var err error
-
+	onChainBalance := uint64(0)
+	iotasSent := uint64(1000)
 	for i := 0; i < 5; i++ {
-		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
+			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
+		})
 		require.NoError(t, err)
 	}
 
 	for i := 0; i < 5; i++ {
-		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx[i], 30*time.Second)
+		receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
+		onChainBalance += iotasSent - receipts[0].GasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
 
 	if !e.clu.AssertAddressBalances(myAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5)) {
+		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5*iotasSent)) {
 		t.Fail()
 	}
 	e.checkLedger()
