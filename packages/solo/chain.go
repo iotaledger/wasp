@@ -526,7 +526,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
-// Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
+// Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
