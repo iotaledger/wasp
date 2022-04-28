@@ -214,7 +214,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	if !e.clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5*iotasSent)) {
-		t.Fail()
+		t.FailNow()
 	}
 	e.checkLedger()
 }

@@ -276,6 +276,7 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 			} else {
 				t.Errorf("-->Waiting on node %v... FAILED after %v", nodeIndex, timeout)
 			}
+			t.Helper()
 			t.FailNow()
 		}
 	}

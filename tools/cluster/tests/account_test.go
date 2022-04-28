@@ -66,7 +66,7 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	require.NoError(e.t, err)
 
 	if !counter.WaitUntilExpectationsMet() {
-		e.t.Fail()
+		e.t.FailNow()
 	}
 
 	e.t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
@@ -93,9 +93,12 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
+	x := e.clu.AddressBalances(e.chain.ChainAddress())
+	println(x)
+
 	if !e.clu.AssertAddressBalances(e.chain.ChainID.AsAddress(),
-		iscp.NewTokensIotas(someIotas+2+chainNodeCount)) {
-		e.t.Fail()
+		iscp.NewTokensIotas(someIotas)) {
+		e.t.FailNow()
 	}
 
 	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
@@ -121,12 +124,12 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	}
 
 	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
-		e.t.Fail()
+		e.t.FailNow()
 	}
 
 	if !e.clu.AssertAddressBalances(e.chain.ChainID.AsAddress(),
 		iscp.NewTokensIotas(someIotas+transferIotas+2+chainNodeCount)) {
-		e.t.Fail()
+		e.t.FailNow()
 	}
 	incCounterAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
 	e.checkBalanceOnChain(incCounterAgentID, iscp.IotaTokenID, 0)
@@ -161,7 +164,7 @@ func TestBasic2Accounts(t *testing.T) {
 	chainNodeCount := uint64(len(chain.AllPeers))
 
 	if !counter.WaitUntilExpectationsMet() {
-		t.Fail()
+		t.FailNow()
 	}
 
 	chEnv.checkCoreContracts()
@@ -188,7 +191,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	if !e.clu.AssertAddressBalances(chain.ChainID.AsAddress(),
 		iscp.NewTokensIotas(someIotas+2+chainNodeCount)) {
-		t.Fail()
+		t.FailNow()
 	}
 
 	originatorSigScheme := chain.OriginatorKeyPair
@@ -196,7 +199,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	if !e.clu.AssertAddressBalances(originatorAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-2-chainNodeCount)) {
-		t.Fail()
+		t.FailNow()
 	}
 	chEnv.checkLedger()
 
@@ -221,14 +224,14 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 	if !e.clu.AssertAddressBalances(originatorAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-2-chainNodeCount)) {
-		t.Fail()
+		t.FailNow()
 	}
 	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
-		t.Fail()
+		t.FailNow()
 	}
 	if !e.clu.AssertAddressBalances(chain.ChainID.AsAddress(),
 		iscp.NewTokensIotas(someIotas+2+transferIotas+chainNodeCount)) {
-		t.Fail()
+		t.FailNow()
 	}
 	// verify and print chain accounts
 	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
@@ -257,6 +260,6 @@ func TestBasic2Accounts(t *testing.T) {
 
 	if !e.clu.AssertAddressBalances(originatorAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-3-chainNodeCount)) {
-		t.Fail()
+		t.FailNow()
 	}
 }
