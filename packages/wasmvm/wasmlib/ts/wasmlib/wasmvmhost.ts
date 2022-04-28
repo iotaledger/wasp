@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmtypes from "./wasmtypes"
-import {ScHost} from "./host"
+import {connectHost, ScHost} from "./host"
 
 // interface WasmLib to the VM host
 
@@ -18,6 +18,10 @@ export declare function hostStateSet(keyRef: usize, keyLen: i32, valRef: usize, 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class WasmVMHost implements ScHost {
+    static connect(): void {
+        connectHost(new WasmVMHost());
+    }
+
     exportName(index: i32, name: string): void {
         const buf = wasmtypes.stringToBytes(name);
         hostStateSet(0, index, buf.dataStart, buf.length as i32);
