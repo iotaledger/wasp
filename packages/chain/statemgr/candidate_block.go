@@ -96,3 +96,7 @@ func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (s
 func (cT *candidateBlock) getApprovingOutputID() *iotago.UTXOInput {
 	return cT.block.ApprovingOutputID()
 }
+
+func (cT *candidateBlock) getPreviousL1Commitment() *state.L1Commitment {
+	return cT.block.PreviousL1Commitment()
+}

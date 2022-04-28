@@ -1,13 +1,13 @@
 package testchain
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -78,8 +78,9 @@ func nextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	prev := state.NewL1Commitment(trie.RootCommitment(vs.TrieNodeStore()), hashing.HashValue{})
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, prev)
+	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
+	require.NoError(t, err)
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, &prev)
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -97,6 +98,9 @@ func nextState(
 	nextvs.Commit()
 	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
 
+	block, err := nextvs.ExtractBlock()
+	require.NoError(t, err)
+
 	aliasID := consumedOutput.AliasID
 	inputs := iotago.OutputIDs{consumedOutputID}
 	txEssence := &iotago.TransactionEssence{
@@ -108,7 +112,7 @@ func nextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), [32]byte{}).Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), hashing.HashData(block.EssenceBytes())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Blocks:         consumedOutput.Blocks,

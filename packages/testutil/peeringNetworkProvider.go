@@ -161,6 +161,7 @@ type peeringNetworkProvider struct {
 	self    *peeringNode
 	network *PeeringNetwork
 	senders []*peeringSender // Senders for all the nodes.
+	log     *logger.Logger
 }
 
 var _ peering.NetworkProvider = &peeringNetworkProvider{}
@@ -172,6 +173,7 @@ func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peer
 		self:    self,
 		network: network,
 		senders: senders,
+		log:     network.log.Named(self.netID),
 	}
 	for i := range network.nodes {
 		senders[i] = newPeeringSender(network.nodes[i], &netProvider)
@@ -199,7 +201,7 @@ func (p *peeringNetworkProvider) PeerGroup(peeringID peering.PeeringID, peerPubK
 		}
 		peers[i] = p.senders[i]
 	}
-	return group.NewPeeringGroupProvider(p, peeringID, peers, p.network.log)
+	return group.NewPeeringGroupProvider(p, peeringID, peers, p.log)
 }
 
 // PeerDomain creates peering.PeerDomainProvider.
@@ -212,7 +214,7 @@ func (p *peeringNetworkProvider) PeerDomain(peeringID peering.PeeringID, peerPub
 		}
 		peers[i] = p.senders[i]
 	}
-	return domain.NewPeerDomain(p, peeringID, peers, p.network.log), nil
+	return domain.NewPeerDomain(p, peeringID, peers, p.log), nil
 }
 
 // Attach implements peering.NetworkProvider.

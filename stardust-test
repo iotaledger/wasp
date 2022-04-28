@@ -26,6 +26,8 @@ PATHS=(\
     "packages/dkg/..." \
     "packages/iscp" \
     "packages/webapi/..." \
+    "packages/util" \
+    "packages/util/pipe" \
     "packages/testutil/privtangle" \
 )
 WD=$PWD

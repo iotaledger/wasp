@@ -2,11 +2,12 @@ package statemgr
 
 import (
 	"fmt"
-	"sort"
+	//	"sort"
 	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -20,8 +21,17 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 	sm.log.Debugf("aliasOutputReceived: received output index %v, id %v", aliasOutputIndex, aliasOutputIDStr)
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < aliasOutputIndex {
 		sm.log.Debugf("aliasOutputReceived: output index %v, id %v is new state output", aliasOutputIndex, aliasOutputIDStr)
+		var from uint32
+		if sm.stateOutput == nil {
+			from = 1
+		} else {
+			from = sm.stateOutput.GetStateIndex() + 1
+		}
+		for i := from; i <= aliasOutputIndex; i++ {
+			sm.syncingBlocks.startSyncingIfNeeded(i)
+		}
 		sm.stateOutput = aliasOutput
-		sm.syncingBlocks.approveBlockCandidates(aliasOutput)
+		sm.syncingBlocks.setApprovalInfo(aliasOutput)
 		return true
 	}
 	if sm.stateOutput.GetStateIndex() == aliasOutputIndex {
@@ -42,7 +52,7 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 		return false
 	}
 	sm.log.Debugf("aliasOutputReceived: state index %v is being synced, checking if output id %v approves any blocks", aliasOutputIndex, aliasOutputIDStr)
-	return sm.syncingBlocks.approveBlockCandidates(aliasOutput)
+	return sm.syncingBlocks.setApprovalInfo(aliasOutput)
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
@@ -70,15 +80,9 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
 		requestBlockRetryTime := sm.syncingBlocks.getRequestBlockRetryTime(i)
 		blockCandidatesCount := sm.syncingBlocks.getBlockCandidatesCount(i)
-		if blockCandidatesCount == 0 {
-			if sm.candidateBlockInWAL(i) {
-				blockCandidatesCount++
-				sm.syncingBlocks.setReceivedFromWAL(i)
-			}
-		}
-		approvedBlockCandidatesCount := sm.syncingBlocks.getApprovedBlockCandidatesCount(i)
-		sm.log.Debugf("doSyncAction: trying to sync state for index %v; requestBlockRetryTime %v, blockCandidates count %v, approved blockCandidates count %v",
-			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
+		hasApprovedBlockCandidate := sm.syncingBlocks.hasApprovedBlockCandidate(i)
+		sm.log.Debugf("doSyncAction: trying to sync state for index %v; requestBlockRetryTime %v, blockCandidates count %v, has approved blockCandidate %v",
+			i, requestBlockRetryTime, blockCandidatesCount, hasApprovedBlockCandidate)
 		// TODO: temporary if. We need to find a solution to synchronize over large gaps. Making state snapshots may help.
 		if i > startSyncFromIndex+maxBlocksToCommitConst {
 			errorStr := fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1)
@@ -86,36 +90,34 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			sm.chain.EnqueueDismissChain(errorStr)
 			return
 		}
-		currentTime := time.Now()
-		if !sm.syncingBlocks.isObtainedFromWAL(i) && currentTime.After(requestBlockRetryTime) {
+		if !sm.syncingBlocks.isObtainedFromWAL(i) && time.Now().After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v, fallback=%v from %v random peers.", i, sm.domain.GetFallbackMode(), numberOfNodesToRequestBlockFromConst)
 			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
 			for _, p := range sm.domain.GetRandomOtherPeers(numberOfNodesToRequestBlockFromConst) {
 				sm.domain.SendMsgByPubKey(p, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 				sm.syncingBlocks.blocksPulled()
-				sm.log.Debugf("doSyncAction: requesting block index %v,from %v", i, p.AsString())
+				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.AsString())
 			}
-			sm.syncingBlocks.startSyncingIfNeeded(i)
-			sm.syncingBlocks.setRequestBlockRetryTime(i, currentTime.Add(sm.timers.GetBlockRetry))
-			if blockCandidatesCount == 0 {
-				return
-			}
+			sm.delayRequestBlockRetry(i)
 		}
-		if approvedBlockCandidatesCount > 0 {
+		if blockCandidatesCount == 0 {
+			sm.log.Debugf("doSyncAction: no block candidates for index %v", i)
+			return
+		}
+		if hasApprovedBlockCandidate {
 			sm.log.Debugf("doSyncAction: trying to find candidates to commit from index %v to %v", startSyncFromIndex, i)
-			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), sm.solidState.Copy(), startSyncFromIndex, i)
+			candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, i-startSyncFromIndex+1), startSyncFromIndex, i, sm.syncingBlocks.getApprovedBlockCandidateHash(i))
 			if ok {
 				sm.log.Debugf("doSyncAction: candidates to commit found, committing")
-				sm.commitCandidates(candidates, tentativeState)
-				sm.log.Debugf("doSyncAction: blocks from index %v to %v committed", startSyncFromIndex, i)
+				sm.commitCandidates(candidates)
 				return
 			}
 		}
 	}
 }
 
-func (sm *stateManager) candidateBlockInWAL(i uint32) bool {
+/*func (sm *stateManager) candidateBlockInWAL(i uint32) bool {
 	if !sm.wal.Contains(i) {
 		sm.log.Debugf("candidateBlockInWAL: block with index %d not found in wal.", i)
 		return false
@@ -142,9 +144,24 @@ func (sm *stateManager) candidateBlockInWAL(i uint32) bool {
 	}
 	candidate.approveIfRightOutput(sm.stateOutput)
 	return true
+}*/
+
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32, lastBlockHash hashing.HashValue) ([]*candidateBlock, bool) {
+	if fromStateIndex > toStateIndex {
+		sm.log.Debugf("getCandidatesToCommit: all blocks found")
+		return candidateAcc, true
+	}
+	block := sm.syncingBlocks.getBlockCandidate(toStateIndex, lastBlockHash)
+	if block == nil {
+		sm.log.Warnf("getCandidatesToCommit block index %v hash %s not found", toStateIndex, lastBlockHash)
+		return nil, false
+	}
+	sm.log.Debugf("getCandidatesToCommit block index %v hash %s found", toStateIndex, lastBlockHash)
+	candidateAcc[toStateIndex-fromStateIndex] = block
+	return sm.getCandidatesToCommit(candidateAcc, fromStateIndex, toStateIndex-1, block.getPreviousL1Commitment().BlockHash)
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualStateAccess, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualStateAccess, bool) {
+/*func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualStateAccess, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualStateAccess, bool) {
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state commitments must be equal
@@ -192,18 +209,51 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 		}
 	}
 	return nil, nil, false
-}
+}*/
 
-func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentativeState state.VirtualStateAccess) {
+func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	blocks := make([]state.Block, len(candidates))
+	calculatedState := sm.solidState.Copy()
 	for i, candidate := range candidates {
 		block := candidate.getBlock()
 		blocks[i] = block
-		sm.syncingBlocks.deleteSyncingBlock(block.BlockIndex())
+		calculatedStateCommitment := trie.RootCommitment(calculatedState.TrieNodeStore())
+		candidatePrevStateCommitment := block.PreviousL1Commitment().StateCommitment
+		if !trie.EqualCommitments(candidatePrevStateCommitment, calculatedStateCommitment) {
+			sm.log.Errorf("commitCandidates: candidate index %v previous state commitment does not match calculated state commitment: %s != %s",
+				block.BlockIndex(), candidatePrevStateCommitment, calculatedStateCommitment)
+			sm.syncingBlocks.restartSyncing()
+			return
+		}
+		var err error
+		calculatedState, err = candidate.getNextState(calculatedState)
+		calculatedState.Commit()
+		if err != nil {
+			sm.log.Errorf("commitCandidates: failed to apply synced block index #%d: %v",
+				block.BlockIndex(), err)
+			sm.syncingBlocks.restartSyncing()
+			return
+		}
 	}
+
+	// state commitments must be equal
 	from := blocks[0].BlockIndex()
 	to := blocks[len(blocks)-1].BlockIndex()
-	sm.log.Debugf("commitCandidates: syncing of state indexes from %v to %v is stopped", from, to)
+	finalStateCommitment := trie.RootCommitment(calculatedState.TrieNodeStore())
+	finalCandidateCommitment := sm.syncingBlocks.getNextStateCommitment(to)
+	if !trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
+		sm.log.Debugf("commitCandidates: tentative state index %v obtained, however its commitment does not match last candidate expected state commitment: %s != %s",
+			to, finalStateCommitment, finalCandidateCommitment)
+		sm.syncingBlocks.restartSyncing()
+		return
+	}
+	sm.log.Debugf("commitCandidates: tentative state index %v obtained, its commitment matches last candidate expected state commitment: %s",
+		to, finalStateCommitment)
+
+	for _, block := range blocks {
+		sm.syncingBlocks.deleteSyncingBlock(block.BlockIndex())
+		sm.log.Debugf("commitCandidates: syncing of state index %v is stopped", block.BlockIndex())
+	}
 
 	// TODO: maybe commit in 10 (or some const) block batches?
 	//      This would save from large commits and huge memory usage to store blocks
@@ -212,11 +262,11 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	// - If any VM task is running with the assumption of the previous state, it is obsolete and will self-cancel
 	// - any view call will return 'state invalidated message'
 	sm.chain.GlobalStateSync().InvalidateSolidIndex()
-	err := tentativeState.Save(blocks...)
+	err := calculatedState.Save(blocks...)
 	for _, block := range blocks {
 		sm.stateManagerMetrics.RecordBlockSize(block.BlockIndex(), float64(len(block.Bytes())))
 	}
-	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
+	sm.chain.GlobalStateSync().SetSolidIndex(calculatedState.BlockIndex())
 
 	if err != nil {
 		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %w", err)
@@ -226,7 +276,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 		sm.syncingBlocks.restartSyncing()
 		return
 	}
-	sm.solidState = tentativeState
+	sm.solidState = calculatedState
 
 	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }

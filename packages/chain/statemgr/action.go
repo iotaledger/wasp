@@ -109,7 +109,9 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		return false
 	}
 	block.SetApprovingOutputID(approvingOutputID)
-	sm.addBlockAndCheckStateOutput(block, nextState)
+	sm.syncingBlocks.startSyncingIfNeeded(nextState.BlockIndex())
+	sm.syncingBlocks.addBlockCandidate(block, nextState)
+	sm.delayRequestBlockRetry(block.BlockIndex())
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
 		if sm.stateOutput == nil {
@@ -124,6 +126,10 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	return true
 }
 
+func (sm *stateManager) delayRequestBlockRetry(stateIndex uint32) {
+	sm.syncingBlocks.setRequestBlockRetryTime(stateIndex, time.Now().Add(sm.timers.GetBlockRetry))
+}
+
 func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	sm.log.Debugf("addBlockFromPeer: adding block index %v", block.BlockIndex())
 	if !sm.syncingBlocks.isSyncing(block.BlockIndex()) {
@@ -131,7 +137,9 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 		sm.log.Debugf("addBlockFromPeer failed: not asked for block index %v", block.BlockIndex())
 		return false
 	}
-	if sm.addBlockAndCheckStateOutput(block, nil) {
+
+	sm.syncingBlocks.addBlockCandidate(block, nil)
+	if sm.syncingBlocks.hasApprovedBlockCandidate(block.BlockIndex()) { // TODO: make the timer to not spam L1
 		// ask for approving output
 		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", iscp.OID(block.ApprovingOutputID()))
 		sm.nodeConn.PullStateOutputByID(block.ApprovingOutputID())
@@ -140,7 +148,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 }
 
 // addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput
-func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualStateAccess) bool {
+/*func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualStateAccess) bool {
 	isBlockNew, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
 	if candidate == nil {
 		return false
@@ -155,7 +163,7 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 		return !candidate.isApproved()
 	}
 	return false
-}
+}*/
 
 func (sm *stateManager) storeSyncingData() {
 	if sm.stateOutput == nil {
