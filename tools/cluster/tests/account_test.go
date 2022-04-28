@@ -5,12 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/utxodb"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -100,10 +98,11 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		e.t.Fail()
 	}
 
-	e.requestFunds(scOwnerAddr, "originator")
+	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(e.t, err)
 
 	transferIotas := uint64(42)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, scOwner)
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
 	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
@@ -118,7 +117,7 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.clu.AssertAddressBalances(scOwnerAddr, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
+	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
 		e.t.Fail()
 	}
 
@@ -199,10 +198,8 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 	chEnv.checkLedger()
 
-	myWallet := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(3))
-	myWalletAddr := myWallet.Address()
-
-	e.requestFunds(myWalletAddr, "myWalletAddress")
+	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
 	transferIotas := uint64(42)
 	myWalletClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, myWallet)
@@ -224,7 +221,7 @@ func TestBasic2Accounts(t *testing.T) {
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-2-chainNodeCount)) {
 		t.Fail()
 	}
-	if !e.clu.AssertAddressBalances(myWalletAddr, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
+	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
 		t.Fail()
 	}
 	if !e.clu.AssertAddressBalances(chain.ChainID.AsAddress(),

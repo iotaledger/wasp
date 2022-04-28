@@ -262,9 +262,9 @@ func TestISCTimestamp(t *testing.T) {
 	evmChain := initEVM(t)
 
 	var ret int64
-	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getTimestampUnixNano", nil, &ret)
+	evmChain.ISCContract(evmChain.faucetKey).callView(nil, "getTimestampUnixSeconds", nil, &ret)
 
-	require.EqualValues(t, evmChain.soloChain.GetLatestBlockInfo().Timestamp.UnixNano(), ret)
+	require.EqualValues(t, evmChain.soloChain.GetLatestBlockInfo().Timestamp.Unix(), ret)
 }
 
 func TestISCGetParam(t *testing.T) {

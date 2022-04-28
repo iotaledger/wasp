@@ -43,7 +43,7 @@ func StartPrivTangle() {
 	l1DirPath := path.Join(os.TempDir(), "l1")
 	ctx := context.Background()
 	PrivTangle = privtangle.Start(ctx, l1DirPath, pvtTangleAPIPort, *pvtTangleNnodes, nil)
-	ClustL1Config.Hostname = "localhost"
+	ClustL1Config.Hostname = "http://localhost"
 	ClustL1Config.APIPort = PrivTangle.NodePortRestAPI(0)
 	ClustL1Config.FaucetPort = PrivTangle.NodePortFaucet(0)
 	ClustL1Config.FaucetKey = PrivTangle.FaucetKeyPair

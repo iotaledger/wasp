@@ -1,6 +1,8 @@
 package vmcontext
 
 import (
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -57,8 +59,8 @@ func (vmctx *VMContext) Caller() *iscp.AgentID {
 	return vmctx.getCallContext().caller
 }
 
-func (vmctx *VMContext) Timestamp() int64 {
-	return vmctx.virtualState.Timestamp().UnixNano()
+func (vmctx *VMContext) Timestamp() time.Time {
+	return vmctx.virtualState.Timestamp()
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {

@@ -31,7 +31,7 @@ func TestHornetStartup(t *testing.T) {
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nc := nodeclient.New(fmt.Sprintf("http://%s:%d", ClustL1Config.Hostname, ClustL1Config.APIPort))
+	nc := nodeclient.New(fmt.Sprintf("%s:%d", ClustL1Config.Hostname, ClustL1Config.APIPort))
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))

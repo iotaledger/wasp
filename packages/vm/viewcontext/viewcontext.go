@@ -2,6 +2,7 @@ package viewcontext
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -101,12 +102,12 @@ func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) iscp.NFT {
 	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
 }
 
-func (ctx *ViewContext) Timestamp() int64 {
+func (ctx *ViewContext) Timestamp() time.Time {
 	t, err := ctx.stateReader.Timestamp()
 	if err != nil {
 		ctx.log.Panicf("%v", err)
 	}
-	return t.UnixNano()
+	return t
 }
 
 func (ctx *ViewContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {

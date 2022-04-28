@@ -69,7 +69,7 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 		time.Sleep(100 * time.Millisecond)
 		mlT.milestones.Trigger(&nodeclient.MilestonePointer{
 			Index:     milestone,
-			Timestamp: uint64(time.Now().UnixNano()),
+			Timestamp: uint64(time.Now().Unix()),
 		})
 		milestone++
 	}
