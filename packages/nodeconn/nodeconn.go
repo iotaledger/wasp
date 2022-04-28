@@ -260,7 +260,22 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
 			nc.log.Debugf("promoting msgID: %s", msgID)
 			// create an empty message and the messageID as one of the parents
-			promotionMsg, err := builder.NewMessageBuilder().Parents([][]byte{msgID[:]}).Build()
+			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
+			if err != nil {
+				return xerrors.Errorf("failed to fetch Tips: %w", err)
+			}
+			tips, err := tipsResp.Tips()
+			if err != nil {
+				return xerrors.Errorf("failed to get Tips from tips response: %w", err)
+			}
+			parents := [][]byte{msgID[:]}
+			if len(tips) > 7 {
+				tips = tips[:7] // max 8 parents
+			}
+			for _, tip := range tips {
+				parents = append(parents, tip[:])
+			}
+			promotionMsg, err := builder.NewMessageBuilder().Parents(parents).Build()
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion message: %w", err)
 			}
