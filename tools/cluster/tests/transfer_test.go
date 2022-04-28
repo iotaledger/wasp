@@ -27,7 +27,7 @@ func TestDepositWithdraw(t *testing.T) {
 	)
 	chEnv.checkLedger()
 
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress)
 	// origAgentID := iscp.NewAgentID(chain.OriginatorAddress(), 0)
 
 	// chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)

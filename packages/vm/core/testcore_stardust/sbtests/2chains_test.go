@@ -42,7 +42,7 @@ func test2Chains(t *testing.T, w bool) {
 	contractAgentID := setupTestSandboxSC(t, chain2, nil, w)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := iscp.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress)
 	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount)
 
 	chain1CommonAccountIotas := chain1.L2Iotas(chain1.CommonAccount())

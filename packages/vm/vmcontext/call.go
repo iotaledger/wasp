@@ -41,8 +41,11 @@ func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params di
 }
 
 func (vmctx *VMContext) callerIsRoot() bool {
-	caller := vmctx.Caller()
-	if !caller.Address().Equal(vmctx.ChainID().AsAddress()) {
+	caller, ok := vmctx.Caller().(*iscp.ContractAgentID)
+	if !ok {
+		return false
+	}
+	if !caller.ChainID().Equals(vmctx.ChainID()) {
 		return false
 	}
 	return caller.Hname() == root.Contract.Hname()
@@ -74,7 +77,7 @@ func (vmctx *VMContext) popCallContext() {
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
 }
 
-func (vmctx *VMContext) getToBeCaller() *iscp.AgentID {
+func (vmctx *VMContext) getToBeCaller() iscp.AgentID {
 	if len(vmctx.callStack) > 0 {
 		return vmctx.MyAgentID()
 	}

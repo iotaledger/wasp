@@ -11,6 +11,8 @@ import (
 
 // testSplitFunds calls Send in a loop by sending 200 iotas back to the caller
 func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
+	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
 	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.Iotas >= 200 {
 		// claim 200 iotas from allowance at a time
 		// send back to caller's address
@@ -18,7 +20,7 @@ func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(200, nil, nil))
 		ctx.Send(
 			iscp.RequestParameters{
-				TargetAddress:  ctx.Caller().Address(),
+				TargetAddress:  addr,
 				FungibleTokens: iscp.NewTokensIotas(200),
 			},
 		)
@@ -28,6 +30,8 @@ func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 
 // testSplitFundsNativeTokens calls Send for each Native token
 func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
+	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
 	// claims all iotas from allowance
 	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(ctx.AllowanceAvailable().Assets.Iotas, nil, nil))
 	for _, token := range ctx.AllowanceAvailable().Assets.Tokens {
@@ -41,7 +45,7 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
 				iscp.RequestParameters{
-					TargetAddress:              ctx.Caller().Address(),
+					TargetAddress:              addr,
 					FungibleTokens:             assets,
 					AdjustToMinimumDustDeposit: true,
 				},
@@ -52,8 +56,9 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 }
 
 func pingAllowanceBack(ctx iscp.Sandbox) dict.Dict {
+	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
 	// assert caller is L1 address, not a SC
-	ctx.Requiref(!ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) && ctx.Caller().Hname() == 0,
+	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(ctx.Caller()),
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
 	toSend := ctx.AllowanceAvailable().Assets
@@ -69,7 +74,7 @@ func pingAllowanceBack(ctx iscp.Sandbox) dict.Dict {
 	// send the funds to the caller L1 address on-ledger
 	ctx.Send(
 		iscp.RequestParameters{
-			TargetAddress:  ctx.Caller().Address(),
+			TargetAddress:  addr,
 			FungibleTokens: toSend,
 		},
 	)
@@ -78,10 +83,13 @@ func pingAllowanceBack(ctx iscp.Sandbox) dict.Dict {
 
 // testEstimateMinimumDust returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
 func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
+	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
+
 	provided := ctx.AllowanceAvailable().Assets.Iotas
 
 	requestParams := iscp.RequestParameters{
-		TargetAddress: ctx.Caller().Address(),
+		TargetAddress: addr,
 		Metadata: &iscp.SendMetadata{
 			EntryPoint:     iscp.Hn("foo"),
 			TargetContract: iscp.Hn("bar"),
@@ -96,11 +104,14 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 
 // tries to sendback whaever NFTs are specified in allowance
 func sendNFTsBack(ctx iscp.Sandbox) dict.Dict {
+	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
+
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	for _, nftID := range allowance.NFTs {
 		ctx.SendAsNFT(iscp.RequestParameters{
-			TargetAddress:              ctx.Caller().Address(),
+			TargetAddress:              addr,
 			FungibleTokens:             &iscp.FungibleTokens{},
 			AdjustToMinimumDustDeposit: true,
 			Metadata:                   &iscp.SendMetadata{},

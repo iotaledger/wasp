@@ -37,10 +37,10 @@ func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) iotago.Addres
 	}
 }
 
-func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID {
+func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) iscp.AgentID {
 	address := agentID.Address()
 	hname := agentID.Hname()
-	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
+	return iscp.NewAgentIDFromAddressAndHname(cvt.IscpAddress(&address), cvt.IscpHname(hname))
 }
 
 func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance {
@@ -112,8 +112,13 @@ func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
 	return wasmtypes.AddressFromBytes(buf)
 }
 
-func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {
-	return wasmtypes.NewScAgentID(cvt.ScAddress(agentID.Address()), cvt.ScHname(agentID.Hname()))
+func (cvt WasmConvertor) ScAgentID(agentID iscp.AgentID) wasmtypes.ScAgentID {
+	addr, _ := iscp.AddressFromAgentID(agentID)
+	if addr == nil {
+		panic("TODO: implement")
+	}
+	hname, _ := iscp.HnameFromAgentID(agentID)
+	return wasmtypes.NewScAgentID(cvt.ScAddress(addr), cvt.ScHname(hname))
 }
 
 func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalances {

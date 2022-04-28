@@ -243,7 +243,7 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 //  - chainID
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (*iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
@@ -329,7 +329,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) CommonAccount() *iscp.AgentID {
+func (ch *Chain) CommonAccount() iscp.AgentID {
 	return ch.ChainID.CommonAccount()
 }
 
@@ -558,23 +558,10 @@ func (a *L1L2AddressAssets) String() string {
 	return fmt.Sprintf("Address: %s\nL1 ftokens:\n  %s\nL2 ftokens:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
 }
 
-func getAddr(addrOrKeypair interface{}) iotago.Address {
-	switch a := addrOrKeypair.(type) {
-	case iotago.Address:
-		return a
-	case *cryptolib.KeyPair:
-		return a.GetPublicKey().AsEd25519Address()
-	case cryptolib.KeyPair:
-		return a.GetPublicKey().AsEd25519Address()
-	}
-	panic(xerrors.Errorf("getAddr: wrong type %T", addrOrKeypair))
-}
-
-func (ch *Chain) L1L2Funds(addrOrKeypair interface{}) *L1L2AddressAssets {
-	addr := getAddr(addrOrKeypair)
+func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 	return &L1L2AddressAssets{
 		Address:  addr,
 		AssetsL1: ch.Env.L1Assets(addr),
-		AssetsL2: ch.L2Assets(iscp.NewAgentID(addr, 0)),
+		AssetsL2: ch.L2Assets(iscp.NewAgentID(addr)),
 	}
 }

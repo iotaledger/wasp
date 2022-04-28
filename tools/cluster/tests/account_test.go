@@ -104,7 +104,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	require.NoError(e.t, err)
 
 	fees := receipts[0].GasFeeCharged
-	e.checkBalanceOnChain(iscp.NewAgentID(myAddress, 0), iscp.IotaTokenID, transferIotas-fees)
+	e.checkBalanceOnChain(iscp.NewAgentID(myAddress), iscp.IotaTokenID, transferIotas-fees)
 
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(incCounterSCHname, i)
@@ -116,7 +116,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		e.t.Fatal()
 	}
 
-	incCounterAgentID := iscp.NewAgentID(e.Chain.ChainID.AsAddress(), hname)
+	incCounterAgentID := iscp.NewContractAgentID(e.Chain.ChainID, hname)
 	e.checkBalanceOnChain(incCounterAgentID, iscp.IotaTokenID, 0)
 }
 

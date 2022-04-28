@@ -92,7 +92,7 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(_ chain.Chain, _ *iscp.AgentID) (*iscp.FungibleTokens, error) {
+func getAccountBalanceMocked(_ chain.Chain, _ iscp.AgentID) (*iscp.FungibleTokens, error) {
 	return iscp.NewTokensIotas(100), nil
 }
 

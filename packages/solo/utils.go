@@ -7,7 +7,7 @@ import (
 )
 
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
-func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID *iscp.AgentID) error {
+func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID iscp.AgentID) error {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
@@ -18,7 +18,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgent
 }
 
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
-func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID *iscp.AgentID) error {
+func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID iscp.AgentID) error {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
@@ -28,8 +28,8 @@ func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgen
 	return err
 }
 
-func (ch *Chain) ContractAgentID(name string) *iscp.AgentID {
-	return iscp.NewAgentID(ch.ChainID.AsAddress(), iscp.Hn(name))
+func (ch *Chain) ContractAgentID(name string) iscp.AgentID {
+	return iscp.NewContractAgentID(ch.ChainID, iscp.Hn(name))
 }
 
 // Warning: if the same `req` is passed in different occasions, the resulting request will have different IDs (because the ledger state is different)

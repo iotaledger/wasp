@@ -130,7 +130,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := iscp.NewAgentID(senderAddr, 0)
+		senderAgentID := iscp.NewAgentID(senderAddr)
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -200,7 +200,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := iscp.NewAgentID(senderAddr, 0)
+		senderAgentID := iscp.NewAgentID(senderAddr)
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -343,7 +343,7 @@ func TestEstimateGas(t *testing.T) {
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
 			keyPair, addr := env.NewKeyPairWithFunds()
-			agentID := iscp.NewAgentID(addr, 0)
+			agentID := iscp.NewAgentID(addr)
 
 			if testCase.L2Balance > 0 {
 				ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
@@ -451,7 +451,7 @@ func TestDeployNativeContract(t *testing.T) {
 	env.AssertL1Iotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
+		root.ParamDeployer, iscp.NewAgentID(senderAddr)).
 		AddIotas(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)

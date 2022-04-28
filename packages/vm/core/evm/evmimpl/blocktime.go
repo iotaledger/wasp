@@ -40,7 +40,7 @@ func getBlockTime(state kv.KVStoreReader) uint32 {
 }
 
 func scheduleNextBlock(ctx iscp.Sandbox) {
-	ctx.RequireCallerAnyOf([]*iscp.AgentID{ctx.ChainOwnerID(), ctx.ContractAgentID()})
+	ctx.RequireCallerAnyOf([]iscp.AgentID{ctx.ChainOwnerID(), ctx.ContractAgentID()})
 
 	blockTime := getBlockTime(ctx.State())
 	if blockTime == 0 {

@@ -33,7 +33,7 @@ func (s *SandboxBase) assert() *assert.Assert {
 	return s.assertObj
 }
 
-func (s *SandboxBase) AccountID() *iscp.AgentID {
+func (s *SandboxBase) AccountID() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.AccountID()
 }
@@ -68,7 +68,7 @@ func (s *SandboxBase) ChainID() *iscp.ChainID {
 	return s.Ctx.ChainID()
 }
 
-func (s *SandboxBase) ChainOwnerID() *iscp.AgentID {
+func (s *SandboxBase) ChainOwnerID() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ChainOwnerID()
 }
@@ -78,12 +78,12 @@ func (s *SandboxBase) Contract() iscp.Hname {
 	return s.Ctx.CurrentContractHname()
 }
 
-func (s *SandboxBase) ContractAgentID() *iscp.AgentID {
+func (s *SandboxBase) ContractAgentID() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return iscp.NewAgentID(s.Ctx.ChainID().AsAddress(), s.Ctx.CurrentContractHname())
+	return iscp.NewContractAgentID(s.Ctx.ChainID(), s.Ctx.CurrentContractHname())
 }
 
-func (s *SandboxBase) ContractCreator() *iscp.AgentID {
+func (s *SandboxBase) ContractCreator() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ContractCreator()
 }

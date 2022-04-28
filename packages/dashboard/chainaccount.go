@@ -59,7 +59,7 @@ type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
 	ChainID *iscp.ChainID
-	AgentID *iscp.AgentID
+	AgentID iscp.AgentID
 
 	Balances *iscp.FungibleTokens
 }

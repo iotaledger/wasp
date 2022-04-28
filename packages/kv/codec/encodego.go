@@ -49,10 +49,8 @@ func Encode(v interface{}) []byte {
 		return EncodeChainID(vt)
 	case iscp.ChainID:
 		return EncodeChainID(&vt)
-	case *iscp.AgentID:
-		return EncodeAgentID(vt)
 	case iscp.AgentID:
-		return EncodeAgentID(&vt)
+		return EncodeAgentID(vt)
 	case iscp.RequestID:
 		return EncodeRequestID(vt)
 	case *iscp.RequestID:
