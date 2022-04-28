@@ -113,6 +113,21 @@ func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
 	if vm.wc == nil {
 		vm.wc = wc
 	}
+
+	// WasmTime stores instances in a store, but provides no way to release an
+	// obsolete instance. They keep on being retained by the store after usage,
+	// until at 10,000 instances we get an error 'max instances exceeded', i.e.
+	// there is a memory leak here we need to work around.
+	//
+	// To combat this leak we keep track of the number of instances and when we
+	// hit a magic number (256 in this case) we tell our main WasmVM to do a hard
+	// relink of the Wasm module. Since this means we get a new linker with a new
+	// store for the loaded Wasm module, the old store is now being abandoned.
+	// Instances keep track of the store they are in through their WasmContext.
+	// That means that store will stay alive as long as there still are instances
+	// using it (usually because of nested calls). Once all WasmContexts that
+	// reference the old store have been released, there is nothing referencing
+	// the old store any more, and it will be cleaned up by WasmTime-Go.
 	vm.instances++
 	if (vm.instances & 0xff) == 0 {
 		err := vm.LinkHost()
@@ -120,6 +135,7 @@ func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
 			panic(err)
 		}
 	}
+
 	vmInstance := &WasmTimeVM{
 		engine: vm.engine,
 		module: vm.module,
