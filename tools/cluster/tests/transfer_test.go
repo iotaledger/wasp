@@ -23,7 +23,6 @@ func TestDepositWithdraw(t *testing.T) {
 	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	e.requestFunds(myAddress, "myAddress")
 	if !e.clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
 		t.Fail()

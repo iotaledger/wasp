@@ -297,10 +297,8 @@ func TestRotation(t *testing.T) {
 	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
 	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
 
-	keyPair, myAddress, err := clu.NewKeyPairWithFunds()
+	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-
-	e.requestFunds(myAddress, "myAddress")
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)
 
@@ -423,9 +421,8 @@ func TestRotationMany(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
-	keyPair, myAddress, err := e.clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	e.requestFunds(myAddress, "myAddress")
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)
 

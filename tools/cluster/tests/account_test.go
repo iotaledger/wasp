@@ -77,7 +77,7 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	for i := range e.chain.CommitteeNodes {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, 2, blockIndex)
+		require.Greater(e.t, blockIndex, uint32(2))
 
 		contractRegistry, err := e.chain.ContractRegistry(i)
 		require.NoError(e.t, err)
@@ -101,15 +101,18 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	transferIotas := uint64(42)
+	transferIotas := uint64(42000)
 	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
 	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(e.t, err)
 
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 10*time.Second)
+	receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 10*time.Second)
 	require.NoError(e.t, err)
+
+	fees := receipts[0].GasFeeCharged
+	e.checkBalanceOnChain(iscp.NewAgentID(myAddress, 0), iscp.IotaTokenID, transferIotas-fees)
 
 	for i := range e.chain.CommitteeNodes {
 		counterValue, err := e.chain.GetCounterValue(incCounterSCHname, i)
@@ -125,9 +128,8 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		iscp.NewTokensIotas(someIotas+transferIotas+2+chainNodeCount)) {
 		e.t.Fail()
 	}
-	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
-	actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)
-	require.EqualValues(e.t, 42, actual)
+	incCounterAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
+	e.checkBalanceOnChain(incCounterAgentID, iscp.IotaTokenID, 0)
 }
 
 func TestBasic2Accounts(t *testing.T) {
