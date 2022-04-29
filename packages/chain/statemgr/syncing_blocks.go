@@ -156,18 +156,18 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	sync.addBlockCandidate(hash, block, nextState)
 }
 
-func (syncsT *syncingBlocks) setApprovalInfo(output *iscp.AliasOutputWithID) bool {
+func (syncsT *syncingBlocks) setApprovalInfo(output *iscp.AliasOutputWithID) {
 	if output == nil {
 		syncsT.log.Debugf("setApprovalInfo failed, provided output is nil")
-		return false
+		return
 	}
 	stateIndex := output.GetStateIndex()
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		syncsT.log.Debugf("setApprovalInfo failed: state index %v is not syncing", stateIndex)
-		return false
+		return
 	}
-	return sync.setApprovalInfo(output)
+	sync.setApprovalInfo(output)
 }
 
 func (syncsT *syncingBlocks) isObtainedFromWAL(i uint32) bool {

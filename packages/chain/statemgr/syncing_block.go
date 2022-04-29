@@ -92,15 +92,14 @@ func (syncT *syncingBlock) addBlockCandidate(hash hashing.HashValue, block state
 	return true, candidate
 }
 
-func (syncT *syncingBlock) setApprovalInfo(output *iscp.AliasOutputWithID) bool {
+func (syncT *syncingBlock) setApprovalInfo(output *iscp.AliasOutputWithID) {
 	approvalInfo, err := newApprovalInfo(output)
 	if err != nil {
 		syncT.log.Errorf("setApprovalInfo failed: %v", err)
-		return false
+		return
 	}
 	syncT.approvalInfo = approvalInfo
 	syncT.log.Debugf("setApprovalInfo suceeded for state %v; approval info is %s", output.GetStateIndex(), approvalInfo)
-	return syncT.hasApprovedBlockCandidate()
 }
 
 func (syncT *syncingBlock) setReceivedFromWAL() {

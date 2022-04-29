@@ -52,7 +52,8 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 		return false
 	}
 	sm.log.Debugf("aliasOutputReceived: state index %v is being synced, checking if output id %v approves any blocks", aliasOutputIndex, aliasOutputIDStr)
-	return sm.syncingBlocks.setApprovalInfo(aliasOutput)
+	sm.syncingBlocks.setApprovalInfo(aliasOutput)
+	return sm.syncingBlocks.hasApprovedBlockCandidate(aliasOutputIndex)
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
