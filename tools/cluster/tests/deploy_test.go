@@ -30,7 +30,7 @@ func TestDeployChain(t *testing.T) {
 	chEnv := newChainEnv(t, e.clu, chain)
 
 	if !counter1.WaitUntilExpectationsMet() {
-		t.FailNow()
+		t.Fatal()
 	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)

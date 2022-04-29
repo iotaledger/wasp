@@ -36,7 +36,7 @@ func setupBlobTest(t *testing.T) *chainEnv {
 
 	if !e.clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
-		t.FailNow()
+		t.Fatal()
 	}
 	return chEnv
 }

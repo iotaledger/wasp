@@ -101,7 +101,7 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 60*time.Second)
 	require.NoError(e.t, err)
 	if !e.counter.WaitUntilExpectationsMet() {
-		e.t.FailNow()
+		e.t.Fatal()
 	}
 }
 

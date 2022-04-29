@@ -88,7 +88,7 @@ func (e *chainEnv) waitUntilCounterEquals(hname iscp.Hname, expected int64, dura
 		select {
 		case <-timeout:
 			e.t.Errorf("timeout waiting for inccounter, current: %d, expected: %d", c, expected)
-			e.t.FailNow()
+			e.t.Fatal()
 		default:
 			c = e.getCounter(hname)
 			if c == expected {
@@ -214,7 +214,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	if !e.clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5*iotasSent)) {
-		t.FailNow()
+		t.Fatal()
 	}
 	e.checkLedger()
 }

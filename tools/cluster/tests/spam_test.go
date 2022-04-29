@@ -99,7 +99,7 @@ func TestSpamOffledger(t *testing.T) {
 		case e := <-reqErrorChan:
 			// no request should fail
 			fmt.Printf("ERROR sending offledger request, err: %v\n", e)
-			t.FailNow()
+			t.Fatal()
 		}
 		if n == numRequests {
 			break

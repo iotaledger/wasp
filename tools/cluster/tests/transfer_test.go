@@ -74,5 +74,5 @@ func TestDepositWithdraw(t *testing.T) {
 	)
 
 	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining iotas
-	t.FailNow()
+	t.Fatal()
 }

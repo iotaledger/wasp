@@ -597,6 +597,7 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 }
 
 func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
@@ -605,6 +606,16 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	balance := iscp.NewEmptyAssets()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
+	}
+
+	// if the address is an alias output, we also need to fetch the output itself and add that balance
+	if aliasAddr, ok := addr.(*iotago.AliasAddress); ok {
+		aliasOutput, err := clu.l1.GetAliasOutput(aliasAddr.AliasID())
+		if err != nil {
+			fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
+			return nil
+		}
+		balance.Add(transaction.AssetsFromOutput(aliasOutput))
 	}
 	return balance
 }

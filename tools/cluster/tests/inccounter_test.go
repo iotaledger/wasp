@@ -61,7 +61,7 @@ func TestIncDeployment(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
 
 	if !e.counter.WaitUntilExpectationsMet() {
-		t.FailNow()
+		t.Fatal()
 	}
 	e.checkSC(0)
 	e.checkCounter(0)
@@ -87,7 +87,7 @@ func testNothing(t *testing.T, numRequests int) {
 	}
 
 	if !e.counter.WaitUntilExpectationsMet() {
-		t.FailNow()
+		t.Fatal()
 	}
 
 	e.checkSC(numRequests)
@@ -114,7 +114,7 @@ func testIncrement(t *testing.T, numRequests int) {
 	}
 
 	if !e.counter.WaitUntilExpectationsMet() {
-		t.FailNow()
+		t.Fatal()
 	}
 
 	e.checkSC(numRequests)
@@ -130,7 +130,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 	// TODO refactor
 	// if !e.clu.AssertAddressBalances(scOwnerAddr,
 	// 	iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42)) {
-	// 	t.FailNow()
+	// 	t.Fatal()
 	// }
 	// agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
 	// actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)

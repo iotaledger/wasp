@@ -35,6 +35,8 @@ type L1Client interface {
 	PostTx(tx *iotago.Transaction, timeout ...time.Duration) error
 	// returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
+	// output
+	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error)
 	// returns the l1 parameters used by the node
 	L1Params() *parameters.L1
 	// used to query the health endpoint of the node
@@ -99,6 +101,13 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 	}
 
 	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
+}
+
+func (nc *nodeConn) GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error) {
+	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
+	_, stateOutput, err := nc.indexerClient.Alias(ctxWithTimeout, aliasID)
+	cancelContext()
+	return stateOutput, err
 }
 
 // RequestFunds implements L1Connection
