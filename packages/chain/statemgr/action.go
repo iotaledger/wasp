@@ -147,24 +147,6 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	return true
 }
 
-// addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput
-/*func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualStateAccess) bool {
-	isBlockNew, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
-	if candidate == nil {
-		return false
-	}
-	if isBlockNew {
-		if sm.stateOutput != nil {
-			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateCommitment %s, approvingOutputID %v, already approved %v) is approved by current stateOutput",
-				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitment(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
-			candidate.approveIfRightOutput(sm.stateOutput)
-		}
-		sm.log.Debugf("addBlockAndCheckStateOutput: block index %v approved %v", block.BlockIndex(), candidate.isApproved())
-		return !candidate.isApproved()
-	}
-	return false
-}*/
-
 func (sm *stateManager) storeSyncingData() {
 	if sm.stateOutput == nil {
 		sm.log.Debugf("storeSyncingData not needed: stateOutput is nil")

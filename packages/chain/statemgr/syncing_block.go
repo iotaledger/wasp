@@ -82,7 +82,6 @@ func (syncT *syncingBlock) addBlockCandidate(hash hashing.HashValue, block state
 				block.BlockIndex(), hash, iscp.OID(candidateExisting.getApprovingOutputID()), iscp.OID(block.ApprovingOutputID()))
 			return false, nil
 		}
-		candidateExisting.addVote()
 		syncT.log.Debugf("addBlockCandidate: existing block index %v with hash %s arrived, votes increased.", block.BlockIndex(), hash)
 		return false, candidateExisting
 	}

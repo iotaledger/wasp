@@ -56,20 +56,6 @@ func (syncsT *syncingBlocks) getBlockCandidatesCount(stateIndex uint32) int {
 	return sync.getBlockCandidatesCount()
 }
 
-/*func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
-	sync, ok := syncsT.blocks[stateIndex]
-	if !ok {
-		return make([]*candidateBlock, 0)
-	}
-	result := make([]*candidateBlock, len(sync.blockCandidates))
-	i := 0
-	for _, candidate := range sync.blockCandidates {
-		result[i] = candidate
-		i++
-	}
-	return result
-}*/
-
 func (syncsT *syncingBlocks) getBlockCandidate(stateIndex uint32, hash hashing.HashValue) *candidateBlock {
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
@@ -101,33 +87,6 @@ func (syncsT *syncingBlocks) getNextStateCommitment(stateIndex uint32) trie.VCom
 	}
 	return sync.getNextStateCommitment()
 }
-
-/*func (syncsT *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []*candidateBlock {
-	result := make([]*candidateBlock, 0, 1)
-	sync, ok := syncsT.blocks[stateIndex]
-	if ok {
-		for _, candidate := range sync.blockCandidates {
-			if candidate.isApproved() {
-				result = append(result, candidate)
-			}
-		}
-	}
-	return result
-}*/
-
-/*func (syncsT *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint32) int {
-	sync, ok := syncsT.blocks[stateIndex]
-	if !ok {
-		return 0
-	}
-	approvedCount := 0
-	for _, candidate := range sync.blockCandidates {
-		if candidate.isApproved() {
-			approvedCount++
-		}
-	}
-	return approvedCount
-}*/
 
 func (syncsT *syncingBlocks) hasBlockCandidates() bool {
 	return syncsT.hasBlockCandidatesNotOlderThan(0)
@@ -235,10 +194,3 @@ func (syncsT *syncingBlocks) blockPollFallbackNeeded() bool {
 	}
 	return syncsT.lastPullTime.Sub(syncsT.lastRecvTime) >= pollFallbackDelay
 }
-
-/*func (syncsT *syncingBlocks) setReceivedFromWAL(i uint32) {
-	block, ok := syncsT.blocks[i]
-	if ok {
-		block.receivedFromWAL = true
-	}
-}*/
