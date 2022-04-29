@@ -23,10 +23,10 @@ type WasmTimeVM struct {
 
 func NewWasmTimeVM() WasmVM {
 	config := wasmtime.NewConfig()
-	config.SetInterruptable(true)
+	// config.SetInterruptable(true)
 	config.SetConsumeFuel(true)
 	vm := &WasmTimeVM{engine: wasmtime.NewEngineWithConfig(config)}
-	vm.timeoutStarted = DisableWasmTimeout
+	vm.timeoutStarted = false // DisableWasmTimeout
 	return vm
 }
 

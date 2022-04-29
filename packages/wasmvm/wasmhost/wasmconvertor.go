@@ -9,6 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -154,4 +155,15 @@ func (cvt WasmConvertor) ScRequestID(requestID iscp.RequestID) wasmtypes.ScReque
 
 func (cvt WasmConvertor) ScTokenID(tokenID *iotago.NativeTokenID) wasmtypes.ScTokenID {
 	return wasmtypes.TokenIDFromBytes(tokenID[:])
+}
+
+func (cvt WasmConvertor) ToBigInt(amount interface{}) *big.Int {
+	switch it := amount.(type) {
+	case wasmtypes.ScBigInt:
+		bi := new(big.Int)
+		bi.SetBytes(it.Bytes())
+		return bi
+	default:
+		return util.ToBigInt(amount)
+	}
 }
