@@ -50,11 +50,12 @@ func TestNanoPublisher(t *testing.T) {
 	}
 
 	// deposit funds for offledger requests
-	keyPair, myAddress := env.getOrCreateAddress()
+	keyPair, myAddress, err := env.clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
 
 	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(10000),
 	})
 	require.NoError(t, err)

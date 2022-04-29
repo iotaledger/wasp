@@ -126,12 +126,11 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 	if messageLength, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	if messageInBytes, err := mu.ReadBytes(int(messageLength)); err != nil {
+	messageInBytes, err := mu.ReadBytes(int(messageLength))
+	if err != nil {
 		return nil, err
-	} else {
-		e.messageFormat = string(messageInBytes)
 	}
-
+	e.messageFormat = string(messageInBytes)
 	return e, nil
 }
 
@@ -164,11 +163,7 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 
-	if err = json.Unmarshal(params, &e.Params); err != nil {
-		return err
-	}
-
-	return err
+	return json.Unmarshal(params, &e.Params)
 }
 
 func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
@@ -279,7 +274,7 @@ func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedV
 	if unresolvedError.Hash, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
-	if err = unresolvedError.deserializeParams(mu); err != nil {
+	if err := unresolvedError.deserializeParams(mu); err != nil {
 		return nil, err
 	}
 	return unresolvedError, nil
@@ -289,12 +284,12 @@ func GetErrorIDFromMessageFormat(messageFormat string) uint16 {
 	messageFormatHash := hashing.HashStrings(messageFormat).Bytes()
 	mu := marshalutil.New(messageFormatHash)
 
-	errorId, err := mu.ReadUint16()
+	errorID, err := mu.ReadUint16()
 	if err != nil {
 		panic(err)
 	}
 
-	return errorId
+	return errorID
 }
 
 // VMErrorIs returns true if the error includes a VMErrorCode in its chain that matches the given code

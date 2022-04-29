@@ -5,6 +5,7 @@ package iscp
 
 import (
 	"math/big"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -32,8 +33,8 @@ type SandboxBase interface {
 	ContractAgentID() *AgentID
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
-	// Timestamp returns the UnixNano timestamp of the current state
-	Timestamp() int64
+	// Timestamp returns the Unix timestamp of the current state in seconds
+	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
 	Log() LogInterface
 	// Utils provides access to common necessary functionality

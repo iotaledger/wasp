@@ -51,7 +51,7 @@ func (bi *BlockInfo) Bytes() []byte {
 
 func (bi *BlockInfo) String() string {
 	ret := fmt.Sprintf("Block index: %d\n", bi.BlockIndex)
-	ret += fmt.Sprintf("Timestamp: %d\n", bi.Timestamp.UnixNano())
+	ret += fmt.Sprintf("Timestamp: %d\n", bi.Timestamp.Unix())
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)

@@ -36,9 +36,9 @@ func (e *StateErrorCollectionWriter) getErrorTemplateMap() *collections.Map {
 
 func (e *StateErrorCollectionWriter) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
 	errorMap := e.getErrorTemplateMap()
-	errorIdKey := codec.EncodeUint16(errorID)
+	errorIDKey := codec.EncodeUint16(errorID)
 
-	errorBytes, err := errorMap.GetAt(errorIdKey)
+	errorBytes, err := errorMap.GetAt(errorIDKey)
 	if err != nil {
 		return nil, err
 	}
@@ -98,9 +98,9 @@ func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname iscp.Hname)
 
 func (e *StateErrorCollectionReader) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
 	errorMap := e.getErrorTemplateMap()
-	errorIdKey := codec.EncodeUint16(errorID)
+	errorIDKey := codec.EncodeUint16(errorID)
 
-	errorBytes, err := errorMap.GetAt(errorIdKey)
+	errorBytes, err := errorMap.GetAt(errorIDKey)
 	if err != nil {
 		return nil, err
 	}

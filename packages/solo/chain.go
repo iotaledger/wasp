@@ -108,7 +108,7 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
-	feePolicy, err := gas.GasFeePolicyFromBytes(fpBin)
+	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(ch.Env.T, err)
 	return feePolicy
 }

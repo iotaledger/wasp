@@ -106,7 +106,7 @@ interface ISC {
 
 	function getChainID() external view returns (ISCChainID);
 	function getChainOwnerID() external view returns (ISCAgentID memory);
-	function getTimestampUnixNano() external view returns (int64);
+	function getTimestampUnixSeconds() external view returns (int64);
 
 	// these show up only on the wasp node log
 	function logInfo(string memory s) external view;

@@ -62,14 +62,14 @@ func DefaultGasFeePolicy() *GasFeePolicy {
 }
 
 func MustGasFeePolicyFromBytes(data []byte) *GasFeePolicy {
-	ret, err := GasFeePolicyFromBytes(data)
+	ret, err := FeePolicyFromBytes(data)
 	if err != nil {
 		panic(err)
 	}
 	return ret
 }
 
-func GasFeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
+func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 	ret := &GasFeePolicy{}
 	mu := marshalutil.New(data)
 	var gasNativeToken bool

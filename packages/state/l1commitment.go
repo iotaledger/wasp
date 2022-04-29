@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"math/rand"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"io"
-	"math/rand"
 )
 
 // L1Commitment represents parsed data stored as a metadata in the anchor output

@@ -2,6 +2,7 @@ package execution
 
 import (
 	"math/big"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -24,7 +25,7 @@ type WaspContext interface {
 	// needed for sandbox
 	iscp.LogInterface
 	GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens
-	Timestamp() int64
+	Timestamp() time.Time
 	AccountID() *iscp.AgentID
 	GetIotaBalance(agentID *iscp.AgentID) uint64
 	GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int

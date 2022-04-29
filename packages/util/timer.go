@@ -2,12 +2,12 @@ package util
 
 import "time"
 
-type timer time.Time
+type Timer time.Time
 
-func NewTimer() timer {
-	return timer(time.Now())
+func NewTimer() Timer {
+	return Timer(time.Now())
 }
 
-func (t timer) Duration() time.Duration {
-	return time.Now().Sub(time.Time(t))
+func (t Timer) Duration() time.Duration {
+	return time.Since(time.Time(t))
 }

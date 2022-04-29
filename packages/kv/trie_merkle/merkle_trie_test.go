@@ -303,6 +303,7 @@ func TestTrieBase(t *testing.T) {
 }
 
 func genRnd1() []string {
+	//nolint:goconst
 	str := "0123456789abcdef"
 	ret := make([]string, 0, len(str)*len(str)*len(str))
 	for i := range str {

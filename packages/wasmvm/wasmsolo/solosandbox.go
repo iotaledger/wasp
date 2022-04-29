@@ -334,7 +334,7 @@ func (s *SoloSandbox) fnStateAnchor(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(time.Now().UnixNano())
+	return codec.EncodeInt64(time.Now().Unix())
 }
 
 func (s *SoloSandbox) fnTrace(args []byte) []byte {

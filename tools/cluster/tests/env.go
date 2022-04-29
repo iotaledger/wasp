@@ -1,13 +1,11 @@
 package tests
 
 import (
-	"math/rand"
 	"os"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -16,12 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	wallet      = initSeed()
-	scOwner     = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(0))
-	scOwnerAddr = tpkg.RandEd25519Address()
 )
 
 type env struct {
@@ -33,10 +25,20 @@ type chainEnv struct {
 	*env
 	chain        *cluster.Chain
 	addressIndex uint64
+	scOwner      *cryptolib.KeyPair
+	scOwnerAddr  iotago.Address
 }
 
 func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *chainEnv {
-	return &chainEnv{env: &env{t: t, clu: clu}, chain: chain}
+	keyPair, addr, err := clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
+	return &chainEnv{
+		env:         &env{t: t, clu: clu},
+		chain:       chain,
+		scOwner:     keyPair,
+		scOwnerAddr: addr,
+	}
 }
 
 type contractEnv struct {
@@ -75,35 +77,10 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 }
 
 func (e *chainEnv) createNewClient() *scclient.SCClient {
-	keyPair, _ := e.getOrCreateAddress()
+	keyPair, _, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(e.t, err)
 	client := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 	return client
-}
-
-func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, iotago.Address) {
-	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
-
-	randomAddress := rand.NewSource(time.Now().UnixNano())
-
-	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
-	myAddress := keyPair.Address()
-
-	funds := e.clu.AddressBalances(myAddress).Iotas
-
-	if funds <= minTokenAmountBeforeRequestingNewFunds {
-		// Requesting new token requires a new address
-
-		e.addressIndex = rand.New(randomAddress).Uint64()
-		e.t.Logf("Generating new address: %v", e.addressIndex)
-
-		keyPair = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
-		myAddress = keyPair.Address()
-
-		e.requestFunds(myAddress, "myAddress")
-		e.t.Logf("Funds: %v, addressIndex: %v", funds, e.addressIndex)
-	}
-
-	return keyPair, myAddress
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
@@ -162,11 +139,9 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 	cEnv := chEnv.deployContract(name, description, nil)
 	require.NoError(t, err)
 
-	chEnv.requestFunds(scOwnerAddr, "client")
-
 	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
 }
 
 func (e *chainEnv) chainClient() *chainclient.Client {
-	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, scOwner)
+	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.scOwner)
 }

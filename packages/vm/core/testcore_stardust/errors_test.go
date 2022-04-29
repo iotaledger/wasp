@@ -127,20 +127,20 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name, errors.ParamErrorMessageFormat, errorMessageToTest).
 		WithGasBudget(100_000)
 
-	_, dict, err := chain.PostRequestSyncTx(req, nil)
+	_, d, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	errorCode := codec.MustDecodeVMErrorCode(dict.MustGet(errors.ParamErrorCode))
+	errorCode := codec.MustDecodeVMErrorCode(d.MustGet(errors.ParamErrorCode))
 
 	req = solo.NewCallParams(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, errorCode,
 	).
 		WithGasBudget(100_000)
 
-	_, dict, err = chain.PostRequestSyncTx(req, nil)
+	_, d, err = chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	message := dict.MustGet(errors.ParamErrorMessageFormat)
+	message := d.MustGet(errors.ParamErrorMessageFormat)
 
 	require.Equal(t, string(message), errorMessageToTest)
 }

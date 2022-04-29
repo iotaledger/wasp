@@ -66,7 +66,7 @@ func (r Ratio32) XCeil64(y uint64) uint64 {
 }
 
 // Set is part of the pflag.Value interface. It accepts a string in the form "a:b".
-func (r Ratio32) Set(s string) error {
+func (r *Ratio32) Set(s string) error {
 	parts := strings.Split(s, ":")
 	if len(parts) != 2 {
 		return errors.New("invalid format for Ratio32")

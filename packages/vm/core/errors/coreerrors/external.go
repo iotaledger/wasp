@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-var coreErrorCollection ErrorCollection = NewCoreErrorCollection()
+var coreErrorCollection = NewCoreErrorCollection()
 
 func Register(messageFormat string) *iscp.VMErrorTemplate {
 	template, err := coreErrorCollection.Register(messageFormat)

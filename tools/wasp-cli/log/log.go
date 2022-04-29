@@ -26,7 +26,7 @@ func Init(rootCmd *cobra.Command) {
 
 func HiveLogger() *logger.Logger {
 	if hiveLogger == nil {
-		var loggerCfg = logger.Config{
+		loggerCfg := logger.Config{
 			Level:             "info",
 			Encoding:          "console",
 			OutputPaths:       []string{"stdout"},

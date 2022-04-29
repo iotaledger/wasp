@@ -18,6 +18,7 @@ type WasmTimeVM struct {
 	module     *wasmtime.Module
 	store      *wasmtime.Store
 	lastBudget uint64
+	instances  uint32
 }
 
 func NewWasmTimeVM() WasmVM {
@@ -76,6 +77,7 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost() (err error) {
+	vm.store = wasmtime.NewStore(vm.engine)
 	vm.linker = wasmtime.NewLinker(vm.engine)
 
 	// new Wasm VM interface
@@ -103,7 +105,6 @@ func (vm *WasmTimeVM) LinkHost() (err error) {
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
-	vm.store = wasmtime.NewStore(vm.engine)
 	vm.module, err = wasmtime.NewModule(vm.engine, wasmData)
 	return err
 }
@@ -111,6 +112,13 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
 	if vm.wc == nil {
 		vm.wc = wc
+	}
+	vm.instances++
+	if (vm.instances & 0xff) == 0 {
+		err := vm.LinkHost()
+		if err != nil {
+			panic(err)
+		}
 	}
 	vmInstance := &WasmTimeVM{
 		engine: vm.engine,

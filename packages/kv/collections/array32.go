@@ -53,7 +53,7 @@ func Array32RangeKeys(name string, length, from, to uint32) []kv.Key {
 	keys := make([]kv.Key, 0)
 	if to >= from {
 		for i := from; i < to && i < length; i++ {
-			keys = append(keys, kv.Key(Array32ElemKey(name, i)))
+			keys = append(keys, Array32ElemKey(name, i))
 		}
 	}
 	return keys

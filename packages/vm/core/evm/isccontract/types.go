@@ -170,8 +170,8 @@ func (n ISCNFT) Unwrap() (*iscp.NFT, error) {
 	}, nil
 }
 
-func (a ISCNFT) MustUnwrap() *iscp.NFT {
-	ret, err := a.Unwrap()
+func (n ISCNFT) MustUnwrap() *iscp.NFT {
+	ret, err := n.Unwrap()
 	if err != nil {
 		panic(err)
 	}

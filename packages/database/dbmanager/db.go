@@ -61,6 +61,8 @@ type rocksDB struct {
 	*rocksdb.RocksDB
 }
 
+var _ DB = &rocksDB{}
+
 // NewDB returns a new persisting DB object.
 func NewDB(dirname string) (DB, error) {
 	// opt := rocksdb.UseCompression(true)
