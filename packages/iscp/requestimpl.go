@@ -65,7 +65,10 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
+		publicKey:  cryptolib.NewEmptyPublicKey(),
+		signature:  []byte{},
 		nonce:      nonce,
+		allowance:  NewEmptyAllowance(),
 		gasBudget:  gas.MaxGasPerCall,
 	}
 }
