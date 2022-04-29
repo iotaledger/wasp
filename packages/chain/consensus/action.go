@@ -341,11 +341,24 @@ func (c *consensus) checkQuorum() {
 	c.finalTx = tx
 
 	// if !chainOutput.GetIsGovernanceUpdated() {
+	// write block to WAL
+	chainOutputID := chainOutput.ID()
+	block, err := c.resultState.ExtractBlock()
+	if err == nil {
+		block.SetApprovingOutputID(chainOutputID)
+		err = c.wal.Write(block.Bytes())
+		if err == nil {
+			c.log.Debugf("checkQuorum: block index %v written to wal", block.BlockIndex())
+		} else {
+			c.log.Warnf("checkQuorum: error writing block to wal: %v", err)
+		}
+	} else {
+		c.log.Warnf("checkQuorum: skipping writing block to was: error extracting block from state: %v", err)
+	}
+
 	// if it is not state controller rotation, sending message to state manager
 	// Otherwise state manager is not notified
-	c.writeToWAL()
 	c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
-	chainOutputID := chainOutput.ID()
 	c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
 	c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
 		c.resultState.BlockIndex(), iscp.OID(chainOutputID))
@@ -371,16 +384,6 @@ func (c *consensus) checkQuorum() {
 	}
 	c.workflow.setTransactionFinalized()
 	c.pullInclusionStateDeadline = time.Now()
-}
-
-func (c *consensus) writeToWAL() {
-	block, err := c.resultState.ExtractBlock()
-	if err == nil {
-		err = c.wal.Write(block.Bytes())
-		if err != nil {
-			c.log.Debugf("Error writing block to wal: %v", err)
-		}
-	}
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
