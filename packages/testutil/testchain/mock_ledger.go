@@ -65,6 +65,9 @@ func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLe
 }
 
 func (mlT *MockedLedger) Register(nodeID string, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
+	mlT.mutex.Lock()
+	defer mlT.mutex.Unlock()
+
 	_, ok := mlT.outputHandlerFuns[nodeID]
 	if ok {
 		mlT.log.Panicf("Output handler for node %v already registered", nodeID)
@@ -74,6 +77,9 @@ func (mlT *MockedLedger) Register(nodeID string, stateOutputHandler, outputHandl
 }
 
 func (mlT *MockedLedger) Unregister(nodeID string) {
+	mlT.mutex.Lock()
+	defer mlT.mutex.Unlock()
+
 	delete(mlT.stateOutputHandlerFuns, nodeID)
 	delete(mlT.outputHandlerFuns, nodeID)
 }
