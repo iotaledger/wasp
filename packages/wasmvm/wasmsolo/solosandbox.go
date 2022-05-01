@@ -77,7 +77,7 @@ type SoloSandbox struct {
 }
 
 func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
-	panic("implement Burn")
+	// just do nothing
 }
 
 func (s *SoloSandbox) Budget() uint64 {
