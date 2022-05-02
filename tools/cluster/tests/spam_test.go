@@ -5,31 +5,55 @@ import (
 	"testing"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
 )
 
-const numRequests = 100000
+const numRequests = 100_000
 
+// TODO this is currently broken - the indexer can't keep up and returns UTXOs that were already spent. - to revisit after updating L1 dependencies
 func TestSpamOnledger(t *testing.T) {
 	testutil.RunHeavy(t)
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
-	keyPair, _, err := env.clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	// send requests from many different wallets to speed things up
+	numAccounts := 100
+	numRequestsPerAccount := numRequests / numAccounts
+	errCh := make(chan error, numRequests)
+	txCh := make(chan iotago.Transaction, numRequests)
+	for i := 0; i < numAccounts; i++ {
+		keyPair, _, err := env.clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
+		go func() {
+			chainClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+			for i := 0; i < numRequestsPerAccount; i++ {
+				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
+				errCh <- err
+				txCh <- *tx
+				time.Sleep(300 * time.Millisecond) // give time for the indexer to get the new UTXOs (so we don't issue conflicting txs)
+			}
+		}()
+	}
+
+	// wait for all requests to be sent
+	for i := 0; i < numRequests; i++ {
+		err := <-errCh
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	for i := 0; i < numRequests; i++ {
-		args := chainclient.NewPostRequestParams().WithIotas(1)
-		_, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, *args)
+		tx := <-txCh
+		_, err := env.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.chain.ChainID, &tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -52,17 +76,16 @@ func TestSpamOffledger(t *testing.T) {
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	// deposit funds for offledger requests
-	keyPair, myAddress, err := env.clu.NewKeyPairWithFunds()
+	keyPair, _, err := env.clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := iscp.NewAgentID(myAddress, 0)
 
 	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(1000000),
+	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(100_000_000),
 	})
 	require.NoError(t, err)
-
-	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
+	_, err = env.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
 	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 

@@ -252,9 +252,10 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 
 		if metadataResp.ReferencedByMilestoneIndex != nil {
 			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
-				return nil
+				return nil // success
 			}
-			return xerrors.Errorf("tx was not included in the ledger")
+			return xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d",
+				*metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
