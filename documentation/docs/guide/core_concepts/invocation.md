@@ -33,4 +33,4 @@ An on-ledger request is a Layer 1 transaction that validator nodes retrieve from
 
 ### Off-Ledger
 
-If you have all necessary assets on a chain already, you can send a request directly to that chain's validator nodes. This way you don't have to wait for the Tangle to process the message, which makes the overall confirmation time much, much shorter. Due to the shorter delay, you should prefer sending off-ledger requests over on-ledger requests, unless you have to move assets between chains or Layer 1 accounts.
+If you have all necessary assets on a chain already, you can send a request directly to that chain's validator nodes. This way you do not have to wait for the Tangle to process the message, which makes the overall confirmation time much, much shorter. Due to the shorter delay, you should prefer sending off-ledger requests over on-ledger requests, unless you have to move assets between chains or Layer 1 accounts.
