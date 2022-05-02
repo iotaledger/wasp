@@ -1,9 +1,10 @@
 package inccounter
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"

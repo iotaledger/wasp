@@ -73,8 +73,8 @@ func TestNodeConn(t *testing.T) {
 
 	//
 	// Check milestone attach/detach.
-	mChan := make(chan *nodeclient.MilestonePointer, 10)
-	mSub := nc.AttachMilestones(func(m *nodeclient.MilestonePointer) {
+	mChan := make(chan *nodeclient.MilestoneInfo, 10)
+	mSub := nc.AttachMilestones(func(m *nodeclient.MilestoneInfo) {
 		mChan <- m
 	})
 	<-mChan

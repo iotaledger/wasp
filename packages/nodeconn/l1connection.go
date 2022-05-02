@@ -196,7 +196,7 @@ func MakeSimpleValueTX(
 		})
 	}
 	tx, err := txBuilder.Build(
-		client.L1Params().DeSerializationParameters,
+		client.L1Params().ProtocolParameters,
 		sender.AsAddressSigner(),
 	)
 	if err != nil {

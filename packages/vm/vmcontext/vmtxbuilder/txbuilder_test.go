@@ -77,7 +77,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			Options:                    iscp.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
 		},
-		testdeserparams.DeSerializationParameters().RentStructure,
+		&testdeserparams.ProtocolParameters().RentStructure,
 	)
 	txb.AddOutput(exout)
 	_, _, err := txb.Totals()
@@ -650,7 +650,7 @@ func TestDustDeposit(t *testing.T) {
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
-		require.Equal(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
+		require.Equal(t, out.Deposit(), out.VBytes(parameters.L1ForTesting().RentStructure(), nil))
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewFungibleTokens(10000, nil)
@@ -662,7 +662,7 @@ func TestDustDeposit(t *testing.T) {
 			iscp.SendOptions{},
 			testdeserparams.RentStructure(),
 		)
-		require.GreaterOrEqual(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
+		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(parameters.L1ForTesting().RentStructure(), nil))
 	})
 }
 
@@ -769,7 +769,7 @@ func TestSerDe(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			testdeserparams.DeSerializationParameters().RentStructure,
+			&testdeserparams.ProtocolParameters().RentStructure,
 		)
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

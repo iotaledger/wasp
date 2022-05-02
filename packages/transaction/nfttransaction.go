@@ -28,7 +28,7 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 			&iotago.MetadataFeatureBlock{Data: par.ImmutableMetadata},
 		},
 	}
-	requiredDust := out.VByteCost(par.L1Params.RentStructure(), nil)
+	requiredDust := out.VBytes(par.L1Params.RentStructure(), nil)
 	out.Amount = requiredDust
 
 	outputs := iotago.Outputs{out}

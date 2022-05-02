@@ -7,15 +7,15 @@ import (
 
 // L1 describes parameters coming from the L1 node
 type L1 struct {
-	NetworkName               string
-	NetworkID                 uint64
-	Bech32Prefix              iotago.NetworkPrefix
-	MaxTransactionSize        int
-	DeSerializationParameters *iotago.DeSerializationParameters
+	NetworkName        string
+	NetworkID          uint64
+	Bech32Prefix       iotago.NetworkPrefix
+	MaxTransactionSize int
+	ProtocolParameters *iotago.ProtocolParameters
 }
 
 func (l1 *L1) RentStructure() *iotago.RentStructure {
-	return l1.DeSerializationParameters.RentStructure
+	return &l1.ProtocolParameters.RentStructure
 }
 
 func L1ForTesting() *L1 {
@@ -25,6 +25,6 @@ func L1ForTesting() *L1 {
 		NetworkID:          0,
 		MaxTransactionSize: 32000,
 		// https://github.com/muXxer/protocol-rfcs/blob/master/text/0032-dust-protection/0032-dust-protection.md
-		DeSerializationParameters: testdeserparams.DeSerializationParameters(),
+		ProtocolParameters: testdeserparams.ProtocolParameters(),
 	}
 }

@@ -172,9 +172,10 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Fungi
 func creditToAccount(account *collections.Map, assets *iscp.FungibleTokens) {
 	iotasBalance, iotasAdd, tokenMutations := loadAccountMutations(account, assets)
 	// safe arithmetics
-	if iotasAdd > iotago.TokenSupply || iotasBalance > iotago.TokenSupply-iotasAdd {
-		panic(ErrOverflow)
-	}
+	// TODO this overflow check can most likely be removed
+	// if iotasAdd > tokenSupply || iotasBalance > tokenSupply-iotasAdd {
+	// 	panic(ErrOverflow)
+	// }
 	if iotasAdd > 0 {
 		account.MustSetAt(nil, util.Uint64To8Bytes(iotasBalance+iotasAdd))
 	}

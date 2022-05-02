@@ -73,7 +73,7 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			},
 		},
 	}
-	return aliasOutput.VByteCost(rent, nil)
+	return aliasOutput.VBytes(rent, nil)
 }
 
 func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
@@ -92,7 +92,7 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		iscp.SendOptions{},
 		rent,
 	)
-	return o.VByteCost(rent, nil)
+	return o.VBytes(rent, nil)
 }
 
 func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
@@ -117,5 +117,5 @@ func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		Metadata: make([]byte, iotago.MaxMetadataLength),
 	})
 
-	return out.VByteCost(rent, nil)
+	return out.VBytes(rent, nil)
 }

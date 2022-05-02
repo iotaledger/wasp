@@ -95,7 +95,7 @@ func MakeBasicOutput(
 		return out
 	}
 
-	requiredDustDeposit := out.VByteCost(rentStructure, nil)
+	requiredDustDeposit := out.VBytes(rentStructure, nil)
 	if out.Deposit() < requiredDustDeposit {
 		// adjust the amount to the minimum required
 		out.Amount = requiredDustDeposit
@@ -117,7 +117,7 @@ func NFTOutputFromPostData(
 	if !par.AdjustToMinimumDustDeposit {
 		return out
 	}
-	requiredDustDeposit := out.VByteCost(rentStructure, nil)
+	requiredDustDeposit := out.VBytes(rentStructure, nil)
 	if out.Deposit() < requiredDustDeposit {
 		// adjust the amount to the minimum required
 		out.Amount = requiredDustDeposit

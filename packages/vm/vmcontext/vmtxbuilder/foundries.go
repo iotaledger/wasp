@@ -44,7 +44,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 			Data: metadata,
 		}}
 	}
-	f.Amount = f.VByteCost(txb.l1Params.RentStructure(), nil)
+	f.Amount = f.VBytes(txb.l1Params.RentStructure(), nil)
 	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)

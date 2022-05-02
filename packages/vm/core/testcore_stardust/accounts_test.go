@@ -596,7 +596,7 @@ func TestDepositIotas(t *testing.T) {
 			require.NoError(t, err)
 			rec := v.ch.LastReceipt()
 
-			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
+			byteCost := tx.Essence.Outputs[0].VBytes(v.env.RentStructure(), nil)
 			t.Logf("byteCost = %d", byteCost)
 
 			adjusted := addIotas

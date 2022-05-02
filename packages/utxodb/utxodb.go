@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -18,7 +19,7 @@ import (
 )
 
 const (
-	DefaultIOTASupply = iotago.TokenSupply
+	DefaultIOTASupply = tpkg.TestTokenSupply
 
 	Mi = 1_000_000
 
@@ -129,8 +130,8 @@ func (u *UtxoDB) RentStructure() *iotago.RentStructure {
 	return u.l1Params.RentStructure()
 }
 
-func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
-	return u.l1Params.DeSerializationParameters
+func (u *UtxoDB) deSeriParams() *iotago.ProtocolParameters {
+	return u.l1Params.ProtocolParameters
 }
 
 func (u *UtxoDB) genesisInit() {

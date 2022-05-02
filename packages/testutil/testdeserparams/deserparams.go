@@ -2,9 +2,9 @@ package testdeserparams
 
 import iotago "github.com/iotaledger/iota.go/v3"
 
-func DeSerializationParameters() *iotago.DeSerializationParameters {
-	return &iotago.DeSerializationParameters{
-		RentStructure: RentStructure(),
+func ProtocolParameters() *iotago.ProtocolParameters {
+	return &iotago.ProtocolParameters{
+		RentStructure: *RentStructure(),
 	}
 }
 

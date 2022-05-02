@@ -221,7 +221,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	bc := ret.VByteCost(rentStructure, nil)
+	bc := ret.VBytes(rentStructure, nil)
 	if ret.Amount < bc {
 		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, bc)
 	}
@@ -262,7 +262,7 @@ func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signat
 func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {
-		ret[i] = out.VByteCost(rentStructure, nil)
+		ret[i] = out.VBytes(rentStructure, nil)
 	}
 	return ret
 }

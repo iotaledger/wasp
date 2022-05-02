@@ -9,6 +9,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.9.0 // indirect
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/btcsuite/btcd v0.22.1 // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/containerd/cgroups v1.0.3 // indirect
@@ -20,8 +21,8 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/iotaledger/hive.go v0.0.0-20220323112142-b879f04276bd
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220406082310-fa38df493f6b
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220406103521-d6b913603253
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220428170023-7fb77d7475d8
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220429152429-63458675d51e
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
@@ -65,13 +66,12 @@ require (
 	go.uber.org/dig v1.14.1
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
-	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
-	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/sys v0.0.0-20220502124256-b6088ccd6cba // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
 	golang.org/x/tools v0.1.10 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	google.golang.org/genproto v0.0.0-20220329172620-7be39ac1afc7 // indirect
+	google.golang.org/genproto v0.0.0-20220429170224-98d788798c3e // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	lukechampine.com/blake3 v1.1.7 // indirect
 	nhooyr.io/websocket v1.8.7
