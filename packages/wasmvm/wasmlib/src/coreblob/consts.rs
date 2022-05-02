@@ -13,9 +13,12 @@ pub const SC_NAME        : &str = "blob";
 pub const SC_DESCRIPTION : &str = "Core blob contract";
 pub const HSC_NAME       : ScHname = ScHname(0xfd91bc63);
 
-pub(crate) const PARAM_BLOBS : &str = "this";
-pub(crate) const PARAM_FIELD : &str = "field";
-pub(crate) const PARAM_HASH  : &str = "hash";
+pub(crate) const PARAM_BLOBS       : &str = "this";
+pub(crate) const PARAM_DESCRIPTION : &str = "d";
+pub(crate) const PARAM_FIELD       : &str = "field";
+pub(crate) const PARAM_HASH        : &str = "hash";
+pub(crate) const PARAM_PROG_BINARY : &str = "p";
+pub(crate) const PARAM_VM_TYPE     : &str = "v";
 
 pub(crate) const RESULT_BLOB_SIZES : &str = "this";
 pub(crate) const RESULT_BYTES      : &str = "bytes";

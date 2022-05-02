@@ -7,6 +7,15 @@ funcs:
   storeBlob:
     params:
       blobs=this: map[String]Bytes # set of named blobs
+
+      # The following are predefined blob names that are necessary
+      # to be able to load and deploy specific VM binary code.
+      # They directly map to entries in the blobs map.
+      # In fact, we will probably never use the blobs map directly.
+
+      progBinary=p: Bytes? # smart contract program binary code
+      description=d: String? # description of progBinary
+      vmType=v: String? # VM type that must be used to run progBinary
     results:
       hash: Hash # calculated hash of blob set
 views:
