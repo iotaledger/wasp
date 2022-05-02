@@ -5,7 +5,6 @@ package evmimpl
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -48,8 +47,7 @@ func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
 
 // timestamp returns the current timestamp in seconds since epoch
 func timestamp(ctx iscp.SandboxBase) uint64 {
-	tsNano := time.Duration(ctx.Timestamp()) * time.Nanosecond
-	return uint64(tsNano / time.Second)
+	return uint64(ctx.Timestamp().Unix())
 }
 
 func result(value []byte) dict.Dict {

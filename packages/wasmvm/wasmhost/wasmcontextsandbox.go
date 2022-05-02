@@ -179,7 +179,7 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 		},
 	}
 	if req.Delay != 0 {
-		timeLock := time.Unix(0, s.ctx.Timestamp())
+		timeLock := s.ctx.Timestamp()
 		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
 		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
 	}
@@ -376,7 +376,7 @@ func (s *WasmContextSandbox) fnStateAnchor(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(s.common.Timestamp())
+	return codec.EncodeInt64(s.common.Timestamp().Unix())
 }
 
 func (s *WasmContextSandbox) fnTrace(args []byte) []byte {

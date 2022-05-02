@@ -2,7 +2,6 @@ package blocklog
 
 import (
 	"math"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -26,7 +25,7 @@ var Processor = Contract.Processor(initialize,
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
-		Timestamp:             time.Unix(0, ctx.Timestamp()),
+		Timestamp:             ctx.Timestamp(),
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,

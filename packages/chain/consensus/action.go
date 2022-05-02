@@ -567,7 +567,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		StateOutputID:       c.stateOutput.ID(),
 		RequestIDs:          inBatchIDs,
 		RequestHashes:       inBatchHashes,
-		TimeData:            par.timeData, // It will be possibly adjusted later, when all requests are received.
+		TimeData:            par.timeData,
 		ConsensusManaPledge: par.consensusPledge,
 		AccessManaPledge:    par.accessPledge,
 		FeeDestination:      par.feeDestination,

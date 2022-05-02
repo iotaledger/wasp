@@ -9,9 +9,8 @@ import (
 	"sync"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/metrics"

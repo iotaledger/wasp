@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -21,8 +20,8 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.clu, chain)
 
-	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := testOwner.Address()
+	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	require.NoError(e.t, err)
 
 	e.requestFunds(myAddress, "myAddress")
 	if !e.clu.AssertAddressBalances(myAddress,
@@ -48,7 +47,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// deposit some iotas to the chain
 	depositIotas := uint64(42)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, testOwner)
+	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
