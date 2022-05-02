@@ -28,15 +28,17 @@ func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
 	return MapStringToImmutableBytes{proxy: s.proxy}
 }
 
+// description of progBinary
 func (s ImmutableStoreBlobParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
 
-//
+// smart contract program binary code
 func (s ImmutableStoreBlobParams) ProgBinary() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamProgBinary))
 }
 
+// VM type that must be used to run progBinary
 func (s ImmutableStoreBlobParams) VmType() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamVmType))
 }
@@ -63,15 +65,17 @@ func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
 	return MapStringToMutableBytes{proxy: s.proxy}
 }
 
+// description of progBinary
 func (s MutableStoreBlobParams) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
 
-//
+// smart contract program binary code
 func (s MutableStoreBlobParams) ProgBinary() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamProgBinary))
 }
 
+// VM type that must be used to run progBinary
 func (s MutableStoreBlobParams) VmType() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamVmType))
 }

@@ -26,7 +26,7 @@ func NewWasmTimeVM() WasmVM {
 	// config.SetInterruptable(true)
 	config.SetConsumeFuel(true)
 	vm := &WasmTimeVM{engine: wasmtime.NewEngineWithConfig(config)}
-	vm.timeoutStarted = false // DisableWasmTimeout
+	vm.timeoutStarted = true // DisableWasmTimeout
 	return vm
 }
 
@@ -143,7 +143,7 @@ func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
 		store:  vm.store,
 	}
 	vmInstance.wc = wc
-	vmInstance.timeoutStarted = DisableWasmTimeout
+	vmInstance.timeoutStarted = true // DisableWasmTimeout
 	err := vmInstance.newInstance()
 	if err != nil {
 		panic("cannot instantiate: " + err.Error())
