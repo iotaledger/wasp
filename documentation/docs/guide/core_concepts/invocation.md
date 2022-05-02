@@ -13,7 +13,7 @@ keywords:
 
 # Smart Contracts Invocation
 
-Just like any other computer program, a smart contract will lie dormant until someone or something would instruct it to activate. In case of smart contracts, the basic way to activate them is to call one of their [entry points](./smart-contract-anatomy.md#entry-points). It is the same as calling a program's function, and it will take a set of instructions of the smart contract and execute it over the current chain's state. View entry points can only read the state, and full entry points can both read and write to it.
+Just like any other computer program, a smart contract will lie dormant until someone or something would instruct it to activate. In the case of smart contracts, the basic way to activate them is to call one of their [entry points](./smart-contract-anatomy.md#entry-points). It is the same as calling a program's function, and it will take a set of instructions of the smart contract and execute it over the current chain's state. View entry points can only read the state, and full entry points can both read and write to it.
 
 Calls just execute the code, on their own they have no security checks. There is no harm in calling view entry points, but full entry points cannot be directly exposed to the outside world. Instead you need to wrap a call into a request, cryptographically sign it, and submit it to the [consensus](./consensus.md) procedure to let the chain's committee evaluate it and engrave the outcome of its execution into a new state update.
 
