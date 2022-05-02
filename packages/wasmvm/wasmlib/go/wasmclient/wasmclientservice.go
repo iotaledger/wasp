@@ -43,7 +43,7 @@ func (sc *WasmClientService) CallViewByHname(chainID *iscp.ChainID, hContract, h
 func (sc *WasmClientService) PostRequest(chainID *iscp.ChainID, hContract, hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) (*iscp.RequestID, error) {
 	sc.nonce++
 	req := iscp.NewOffLedgerRequest(chainID, hContract, hFuncName, params, sc.nonce)
-	req.WithTransfer(allowance)
+	req.WithAllowance(allowance)
 	req.Sign(keyPair)
 	err := sc.waspClient.PostOffLedgerRequest(chainID, req)
 	if err != nil {
