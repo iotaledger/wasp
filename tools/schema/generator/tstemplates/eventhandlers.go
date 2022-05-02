@@ -47,7 +47,7 @@ $#each events eventClass
 	"eventClass": `
 
 export class Event$EvtName {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 $#each event eventClassField
 	
 	public constructor(msg: string[]) {

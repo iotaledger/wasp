@@ -54,7 +54,7 @@ export class Erc721EventHandlers implements wasmlib.IEventHandler {
 }
 
 export class EventApproval {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly approved: wasmtypes.ScAgentID;
 	public readonly owner: wasmtypes.ScAgentID;
 	public readonly tokenID: wasmtypes.ScHash;
@@ -69,7 +69,7 @@ export class EventApproval {
 }
 
 export class EventApprovalForAll {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly approval: bool;
 	public readonly operator: wasmtypes.ScAgentID;
 	public readonly owner: wasmtypes.ScAgentID;
@@ -84,7 +84,7 @@ export class EventApprovalForAll {
 }
 
 export class EventInit {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly name: string;
 	public readonly symbol: string;
 	
@@ -97,7 +97,7 @@ export class EventInit {
 }
 
 export class EventMint {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly balance: u64;
 	public readonly owner: wasmtypes.ScAgentID;
 	public readonly tokenID: wasmtypes.ScHash;
@@ -112,7 +112,7 @@ export class EventMint {
 }
 
 export class EventTransfer {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly from: wasmtypes.ScAgentID;
 	public readonly to: wasmtypes.ScAgentID;
 	public readonly tokenID: wasmtypes.ScHash;

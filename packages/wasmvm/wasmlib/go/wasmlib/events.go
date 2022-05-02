@@ -13,9 +13,7 @@ type EventEncoder struct {
 
 func NewEventEncoder(eventName string) *EventEncoder {
 	e := &EventEncoder{event: eventName}
-	timestamp := ScFuncContext{}.Timestamp()
-	// convert nanoseconds to seconds
-	e.Encode(wasmtypes.Uint64ToString(timestamp / 1_000_000_000))
+	e.Encode(wasmtypes.Uint64ToString(ScFuncContext{}.Timestamp()))
 	return e
 }
 
@@ -44,6 +42,6 @@ func (d *EventDecoder) Decode() string {
 	return next
 }
 
-func (d *EventDecoder) Timestamp() uint32 {
-	return wasmtypes.Uint32FromString(d.Decode())
+func (d *EventDecoder) Timestamp() uint64 {
+	return wasmtypes.Uint64FromString(d.Decode())
 }

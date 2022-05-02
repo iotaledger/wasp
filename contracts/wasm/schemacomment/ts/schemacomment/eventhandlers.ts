@@ -36,7 +36,7 @@ export class SchemaCommentEventHandlers implements wasmlib.IEventHandler {
 }
 
 export class EventTestEvent {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly eventParam1: string;
 	public readonly eventParam2: string;
 	
@@ -49,7 +49,7 @@ export class EventTestEvent {
 }
 
 export class EventTestEventNoParams {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	
 	public constructor(msg: string[]) {
 		const evt = new wasmlib.EventDecoder(msg);

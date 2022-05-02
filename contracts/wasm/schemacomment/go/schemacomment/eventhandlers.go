@@ -38,7 +38,7 @@ func (h *SchemaCommentEventHandlers) OnSchemaCommentTestEventNoParams(handler fu
 }
 
 type EventTestEvent struct {
-	Timestamp   uint32
+	Timestamp   uint64
 	EventParam1 string
 	EventParam2 string
 }
@@ -55,7 +55,7 @@ func (h *SchemaCommentEventHandlers) onSchemaCommentTestEventThunk(msg []string)
 }
 
 type EventTestEventNoParams struct {
-	Timestamp uint32
+	Timestamp uint64
 }
 
 func (h *SchemaCommentEventHandlers) onSchemaCommentTestEventNoParamsThunk(msg []string) {
