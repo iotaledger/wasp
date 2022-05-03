@@ -16,65 +16,63 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)
-	chainNodeCount := uint64(len(chain.AllPeers))
 
 	chEnv := newChainEnv(t, e.clu, chain)
 
 	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	e.requestFunds(myAddress, "myAddress")
-	if !e.clu.AssertAddressBalances(myAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
-		t.Fail()
-	}
-	if !e.clu.AssertAddressBalances(chain.OriginatorAddress(),
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-someIotas-1-chainNodeCount)) {
-		t.Fail()
-	}
-	if !e.clu.AssertAddressBalances(chain.ChainAddress(),
-		iscp.NewTokensIotas(someIotas+1+chainNodeCount)) {
-		t.Fail()
-	}
+	require.True(t,
+		e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)),
+	)
 	chEnv.checkLedger()
 
 	myAgentID := iscp.NewAgentID(myAddress, 0)
-	origAgentID := iscp.NewAgentID(chain.OriginatorAddress(), 0)
+	// origAgentID := iscp.NewAgentID(chain.OriginatorAddress(), 0)
 
-	chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)
+	// chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)
 	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
 	chEnv.checkLedger()
 
 	// deposit some iotas to the chain
-	depositIotas := uint64(42)
+	depositIotas := uint64(42000)
 	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, 30*time.Second)
+	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 	chEnv.checkLedger()
-	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, depositIotas)
-	chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)
 
-	if !e.clu.AssertAddressBalances(myAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas)) {
-		t.Fail()
-	}
+	// chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)
+	gasFees1 := receipts[0].GasFeeCharged
+	onChainBalance := depositIotas - gasFees1
+	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
 
-	// withdraw iotas back
-	reqTx3, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname())
+	require.True(t,
+		e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas)),
+	)
+
+	// withdraw some iotas back
+	iotasToWithdraw := uint64(500)
+	req, err := chClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+		chainclient.PostRequestParams{
+			Allowance: iscp.NewAllowanceIotas(iotasToWithdraw),
+		},
+	)
 	require.NoError(t, err)
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx3, 30*time.Second)
+	receipt, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), 30*time.Second)
 	require.NoError(t, err)
 
-	require.NoError(t, err)
 	chEnv.checkLedger()
-	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	gasFees2 := receipt.GasFeeCharged
+	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance-iotasToWithdraw-gasFees2)
+	require.True(t,
+		e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas+iotasToWithdraw)),
+	)
 
-	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
-		t.Fail()
-	}
+	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining iotas
+	t.Fatal()
 }

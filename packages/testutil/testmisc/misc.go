@@ -13,7 +13,7 @@ import (
 func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 	if err == nil {
 		assert.Fail(t, "error expected, found nil")
-		t.FailNow()
+		t.Fatal()
 		return
 	}
 	if target, ok := target.(iscp.VMErrorBase); ok {
@@ -39,5 +39,5 @@ func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 		return
 	}
 	assert.Fail(t, fmt.Sprintf("error does not contain '%s' but instead is '%v'", targ, err))
-	t.FailNow()
+	t.Fatal()
 }

@@ -23,7 +23,6 @@ func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnN
 	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(waspnode), e.chain.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
-	e.requestFunds(userAddress, "userWallet")
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(iotas),
 	})

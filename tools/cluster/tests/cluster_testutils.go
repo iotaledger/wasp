@@ -24,7 +24,7 @@ func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *iotago.T
 	require.NoError(e.t, err)
 
 	if counter != nil && !counter.WaitUntilExpectationsMet() {
-		e.t.Fail()
+		e.t.Fatal()
 	}
 
 	e.checkCoreContracts()

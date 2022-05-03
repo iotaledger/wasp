@@ -6,16 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -69,15 +66,6 @@ func (e *chainEnv) checkRootsOutside() {
 		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
 		require.EqualValues(e.t, rec.Description, recBack.Description)
 		require.True(e.t, recBack.Creator.IsNil())
-	}
-}
-
-func (e *env) requestFunds(addr iotago.Address, who string) {
-	err := e.clu.RequestFunds(addr)
-	require.NoError(e.t, err)
-	if !e.clu.AssertAddressBalances(addr, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
-		e.t.Logf("unexpected requested amount")
-		e.t.FailNow()
 	}
 }
 
@@ -288,7 +276,8 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 			} else {
 				t.Errorf("-->Waiting on node %v... FAILED after %v", nodeIndex, timeout)
 			}
-			t.FailNow()
+			t.Helper()
+			t.Fatal()
 		}
 	}
 }

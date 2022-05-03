@@ -50,24 +50,31 @@ func TestNanoPublisher(t *testing.T) {
 	}
 
 	// deposit funds for offledger requests
-	keyPair, myAddress, err := env.clu.NewKeyPairWithFunds()
+	keyPair, _, err := env.clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := iscp.NewAgentID(myAddress, 0)
 
 	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(10000),
+	reqTx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_000_000),
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 10000), util.MakeRange(0, 1), 60*time.Second, "send 100i")
+	_, err = env.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.chain.ChainID, reqTx, 30*time.Second)
+	require.NoError(t, err)
 
 	// send 100 requests
 	numRequests := 100
 	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
+	reqIDs := make([]iscp.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		reqIDs[i] = req.ID()
+		require.NoError(t, err)
+	}
+
+	for _, reqID := range reqIDs {
+		_, err = env.chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.chain.ChainID, reqID, 30*time.Second)
 		require.NoError(t, err)
 	}
 

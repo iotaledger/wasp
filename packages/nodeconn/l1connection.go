@@ -35,6 +35,8 @@ type L1Client interface {
 	PostTx(tx *iotago.Transaction, timeout ...time.Duration) error
 	// returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
+	// output
+	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error)
 	// returns the l1 parameters used by the node
 	L1Params() *parameters.L1
 	// used to query the health endpoint of the node
@@ -54,10 +56,6 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
-	indexerClient, err := nc.nodeAPIClient.Indexer(ctxWithTimeout)
-	if err != nil {
-		return nil, xerrors.Errorf("failed getting the indexer client: %w", err)
-	}
 	bech32Addr := myAddress.Bech32(nc.l1params.Bech32Prefix)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
@@ -69,7 +67,7 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	result := make(map[iotago.OutputID]iotago.Output)
 
 	for _, query := range queries {
-		res, err := indexerClient.Outputs(ctxWithTimeout, query)
+		res, err := nc.indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to query address outputs: %w", err)
 		}
@@ -99,6 +97,13 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 	}
 
 	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
+}
+
+func (nc *nodeConn) GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error) {
+	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
+	_, stateOutput, err := nc.indexerClient.Alias(ctxWithTimeout, aliasID)
+	cancelContext()
+	return stateOutput, err
 }
 
 // RequestFunds implements L1Connection

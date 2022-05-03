@@ -118,9 +118,16 @@ func (c *Client) PostOffLedgerRequest(
 		c.nonces[c.KeyPair.Address().Key()]++
 		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 	}
+	var gasBudget uint64
+	if par.GasBudget == nil {
+		gasBudget = gas.MaxGasPerCall
+	} else {
+		gasBudget = *par.GasBudget
+	}
 	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	offledgerReq.WithAllowance(par.Allowance)
 	if par.GasBudget != nil {
-		offledgerReq = offledgerReq.WithGasBudget(*par.GasBudget)
+		offledgerReq = offledgerReq.WithGasBudget(gasBudget)
 	}
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)

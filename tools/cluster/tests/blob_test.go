@@ -28,16 +28,15 @@ func setupBlobTest(t *testing.T) *chainEnv {
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 1, blockIndex)
+		require.EqualValues(t, 5, blockIndex)
 	}
 
 	_, myAddress, err := e.clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	e.requestFunds(myAddress, "myAddress")
 
 	if !e.clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
-		t.Fail()
+		t.Fatal()
 	}
 	return chEnv
 }

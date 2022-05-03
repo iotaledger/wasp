@@ -65,9 +65,11 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
-		nonce:      nonce,
-		gasBudget:  gas.MaxGasPerCall,
 		publicKey:  cryptolib.NewEmptyPublicKey(),
+		signature:  []byte{},
+		nonce:      nonce,
+		allowance:  NewEmptyAllowance(),
+		gasBudget:  gas.MaxGasPerCall,
 	}
 }
 
@@ -241,8 +243,8 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-func (r *OffLedgerRequestData) WithTransfer(transfer *Allowance) *OffLedgerRequestData {
-	r.allowance = transfer.Clone()
+func (r *OffLedgerRequestData) WithAllowance(allowance *Allowance) *OffLedgerRequestData {
+	r.allowance = allowance.Clone()
 	return r
 }
 
