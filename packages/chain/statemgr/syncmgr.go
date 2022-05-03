@@ -30,6 +30,7 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 		}
 		sm.stateOutput = aliasOutput
+		sm.stateOutputTimestamp = time.Now()
 		sm.syncingBlocks.setApprovalInfo(aliasOutput)
 		return true
 	}
