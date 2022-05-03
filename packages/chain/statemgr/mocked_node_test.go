@@ -67,6 +67,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	require.NoError(env.T, err)
 	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.ChainNodeConn, stateMgrMetrics, wal.NewDefault(), timers)
 	ret.ChainNodeConn.AttachToAliasOutput(ret.StateManager.EnqueueAliasOutput)
+	ret.Log.Debugf("Mocked node %v started: id %v public key %v", nodeIndex, nodeID, ret.PubKey.AsString())
 	return ret
 }
 

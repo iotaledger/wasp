@@ -27,8 +27,8 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 		return
 	}
 	if msg.BlockIndex > sm.stateOutput.GetStateIndex() { // Not a necessary check, only for optimization.
-		sm.log.Debugf("handleGetBlockMsg: message ignored 1: block #%d not found. Current state index: #%d",
-			msg.BlockIndex, sm.stateOutput.GetStateIndex())
+		sm.log.Debugf("handleGetBlockMsg ignored: current state output index #%d is older than requested block index #%d",
+			sm.stateOutput.GetStateIndex(), msg.BlockIndex)
 		return
 	}
 	blockBytes, err := state.LoadBlockBytes(sm.store, msg.BlockIndex)
@@ -37,8 +37,7 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 		return
 	}
 	if blockBytes == nil {
-		sm.log.Debugf("handleGetBlockMsg message ignored 2: block #%d not found. Current state index: #%d",
-			msg.BlockIndex, sm.stateOutput.GetStateIndex())
+		sm.log.Debugf("handleGetBlockMsg ignored: block index #%d not found", msg.BlockIndex)
 		return
 	}
 
@@ -82,7 +81,7 @@ func (sm *stateManager) EnqueueAliasOutput(output *iscp.AliasOutputWithID) {
 }
 
 func (sm *stateManager) handleAliasOutput(output *iscp.AliasOutputWithID) {
-	sm.log.Debugf("EventAliasOutput received: output id %s for state index", iscp.OID(output.ID()), output.GetStateIndex())
+	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", iscp.OID(output.ID()), output.GetStateIndex())
 	// sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex()) //TODO!!!
 	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 	if err != nil {
