@@ -45,7 +45,7 @@ func (h *$PkgName$+EventHandlers) On$PkgName$EvtName(handler func(e *Event$EvtNa
 	"eventClass": `
 
 type Event$EvtName struct {
-	Timestamp uint32
+	Timestamp uint64
 $#each event eventClassField
 }
 

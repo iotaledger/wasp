@@ -32,7 +32,7 @@ func (h *TestWasmLibEventHandlers) OnTestWasmLibTest(handler func(e *EventTest))
 }
 
 type EventTest struct {
-	Timestamp uint32
+	Timestamp uint64
 	Address   wasmtypes.ScAddress
 	Name      string
 }

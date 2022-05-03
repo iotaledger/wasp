@@ -38,7 +38,7 @@ func (h *Erc20EventHandlers) OnErc20Transfer(handler func(e *EventTransfer)) {
 }
 
 type EventApproval struct {
-	Timestamp uint32
+	Timestamp uint64
 	Amount    uint64
 	Owner     wasmtypes.ScAgentID
 	Spender   wasmtypes.ScAgentID
@@ -57,7 +57,7 @@ func (h *Erc20EventHandlers) onErc20ApprovalThunk(msg []string) {
 }
 
 type EventTransfer struct {
-	Timestamp uint32
+	Timestamp uint64
 	Amount    uint64
 	From      wasmtypes.ScAgentID
 	To        wasmtypes.ScAgentID

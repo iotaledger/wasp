@@ -36,7 +36,7 @@ export class Erc20EventHandlers implements wasmlib.IEventHandler {
 }
 
 export class EventApproval {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly amount: u64;
 	public readonly owner: wasmtypes.ScAgentID;
 	public readonly spender: wasmtypes.ScAgentID;
@@ -51,7 +51,7 @@ export class EventApproval {
 }
 
 export class EventTransfer {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly amount: u64;
 	public readonly from: wasmtypes.ScAgentID;
 	public readonly to: wasmtypes.ScAgentID;

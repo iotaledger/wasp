@@ -60,7 +60,7 @@ export class FairRouletteEventHandlers implements wasmlib.IEventHandler {
 }
 
 export class EventBet {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly address: wasmtypes.ScAddress;
 	public readonly amount: u64;
 	public readonly number: u16;
@@ -75,7 +75,7 @@ export class EventBet {
 }
 
 export class EventPayout {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly address: wasmtypes.ScAddress;
 	public readonly amount: u64;
 	
@@ -88,7 +88,7 @@ export class EventPayout {
 }
 
 export class EventRound {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly number: u32;
 	
 	public constructor(msg: string[]) {
@@ -99,7 +99,7 @@ export class EventRound {
 }
 
 export class EventStart {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	
 	public constructor(msg: string[]) {
 		const evt = new wasmlib.EventDecoder(msg);
@@ -108,7 +108,7 @@ export class EventStart {
 }
 
 export class EventStop {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	
 	public constructor(msg: string[]) {
 		const evt = new wasmlib.EventDecoder(msg);
@@ -117,7 +117,7 @@ export class EventStop {
 }
 
 export class EventWinner {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly number: u16;
 	
 	public constructor(msg: string[]) {

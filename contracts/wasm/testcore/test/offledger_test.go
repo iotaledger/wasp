@@ -115,7 +115,12 @@ func TestOffLedgerTransferWhenNotEnoughBudget(t *testing.T) {
 		v := testcore.ScFuncs.GetInt(ctx)
 		v.Params.Name().SetValue("ppp")
 		v.Func.Call()
-		require.Error(t, ctx.Err)
-		require.Contains(t, ctx.Err.Error(), "param 'ppp' not found")
+		if w {
+			require.Error(t, ctx.Err)
+			require.Contains(t, ctx.Err.Error(), "param 'ppp' not found")
+		} else {
+			require.NoError(t, ctx.Err)
+		}
+		require.EqualValues(t, 0, v.Results.Values().GetInt64("ppp").Value())
 	})
 }

@@ -77,7 +77,7 @@ type SoloSandbox struct {
 }
 
 func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
-	panic("implement Burn")
+	// just do nothing
 }
 
 func (s *SoloSandbox) Budget() uint64 {
@@ -334,7 +334,7 @@ func (s *SoloSandbox) fnStateAnchor(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(time.Now().Unix())
+	return codec.EncodeUint64(uint64(time.Now().UnixNano()))
 }
 
 func (s *SoloSandbox) fnTrace(args []byte) []byte {

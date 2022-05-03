@@ -56,7 +56,7 @@ func (h *Erc721EventHandlers) OnErc721Transfer(handler func(e *EventTransfer)) {
 }
 
 type EventApproval struct {
-	Timestamp uint32
+	Timestamp uint64
 	Approved  wasmtypes.ScAgentID
 	Owner     wasmtypes.ScAgentID
 	TokenID   wasmtypes.ScHash
@@ -75,7 +75,7 @@ func (h *Erc721EventHandlers) onErc721ApprovalThunk(msg []string) {
 }
 
 type EventApprovalForAll struct {
-	Timestamp uint32
+	Timestamp uint64
 	Approval  bool
 	Operator  wasmtypes.ScAgentID
 	Owner     wasmtypes.ScAgentID
@@ -94,7 +94,7 @@ func (h *Erc721EventHandlers) onErc721ApprovalForAllThunk(msg []string) {
 }
 
 type EventInit struct {
-	Timestamp uint32
+	Timestamp uint64
 	Name      string
 	Symbol    string
 }
@@ -111,7 +111,7 @@ func (h *Erc721EventHandlers) onErc721InitThunk(msg []string) {
 }
 
 type EventMint struct {
-	Timestamp uint32
+	Timestamp uint64
 	Balance   uint64
 	Owner     wasmtypes.ScAgentID
 	TokenID   wasmtypes.ScHash
@@ -130,7 +130,7 @@ func (h *Erc721EventHandlers) onErc721MintThunk(msg []string) {
 }
 
 type EventTransfer struct {
-	Timestamp uint32
+	Timestamp uint64
 	From      wasmtypes.ScAgentID
 	To        wasmtypes.ScAgentID
 	TokenID   wasmtypes.ScHash

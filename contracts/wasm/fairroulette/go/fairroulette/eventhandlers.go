@@ -62,7 +62,7 @@ func (h *FairRouletteEventHandlers) OnFairRouletteWinner(handler func(e *EventWi
 }
 
 type EventBet struct {
-	Timestamp uint32
+	Timestamp uint64
 	Address   wasmtypes.ScAddress
 	Amount    uint64
 	Number    uint16
@@ -81,7 +81,7 @@ func (h *FairRouletteEventHandlers) onFairRouletteBetThunk(msg []string) {
 }
 
 type EventPayout struct {
-	Timestamp uint32
+	Timestamp uint64
 	Address   wasmtypes.ScAddress
 	Amount    uint64
 }
@@ -98,7 +98,7 @@ func (h *FairRouletteEventHandlers) onFairRoulettePayoutThunk(msg []string) {
 }
 
 type EventRound struct {
-	Timestamp uint32
+	Timestamp uint64
 	Number    uint32
 }
 
@@ -113,7 +113,7 @@ func (h *FairRouletteEventHandlers) onFairRouletteRoundThunk(msg []string) {
 }
 
 type EventStart struct {
-	Timestamp uint32
+	Timestamp uint64
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteStartThunk(msg []string) {
@@ -126,7 +126,7 @@ func (h *FairRouletteEventHandlers) onFairRouletteStartThunk(msg []string) {
 }
 
 type EventStop struct {
-	Timestamp uint32
+	Timestamp uint64
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteStopThunk(msg []string) {
@@ -139,7 +139,7 @@ func (h *FairRouletteEventHandlers) onFairRouletteStopThunk(msg []string) {
 }
 
 type EventWinner struct {
-	Timestamp uint32
+	Timestamp uint64
 	Number    uint16
 }
 

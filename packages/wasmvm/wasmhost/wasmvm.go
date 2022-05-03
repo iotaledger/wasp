@@ -169,7 +169,10 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 		name := string(impl.VMGetBytes(valRef, valLen))
 		if keyLen < 0 {
 			// ExportWasmTag, log the wasm tag name
-			if strings.Contains(name, "TYPESCRIPT") {
+			if strings.Contains(name, "WASM::GO") {
+				wc.proc.gasFactorX = 2
+			}
+			if strings.Contains(name, "WASM::TYPESCRIPT") {
 				wc.proc.gasFactorX = 10
 			}
 			wc.log().Infof(name)

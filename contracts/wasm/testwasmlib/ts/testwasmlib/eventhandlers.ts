@@ -30,7 +30,7 @@ export class TestWasmLibEventHandlers implements wasmlib.IEventHandler {
 }
 
 export class EventTest {
-	public readonly timestamp: u32;
+	public readonly timestamp: u64;
 	public readonly address: wasmtypes.ScAddress;
 	public readonly name: string;
 	

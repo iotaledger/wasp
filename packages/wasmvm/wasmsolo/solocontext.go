@@ -64,7 +64,6 @@ type SoloContext struct {
 	isRequest   bool
 	IsWasm      bool
 	keyPair     *cryptolib.KeyPair
-	mint        uint64
 	offLedger   bool
 	scName      string
 	Tx          *iotago.Transaction
@@ -253,7 +252,7 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
 // The optional tokenID parameter can be used to retrieve the balance for the specific token.
-// When color is omitted, the iota balance is assumed.
+// When tokenID is omitted, the iota balance is assumed.
 func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
 	account := iscp.NewAgentID(agent.address, agent.hname)
 	switch len(tokenID) {
@@ -360,29 +359,30 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 	return ctx.Cvt.ScHname(iscp.Hn(ctx.scName))
 }
 
-// Minted returns the color and amount of newly minted tokens
-func (ctx *SoloContext) Minted() (wasmtypes.ScTokenID, uint64) {
-	panic("fixme: soloContext.Minted")
-	//t := ctx.Chain.Env.T
-	//t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
-	//mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
-	//require.Len(t, mintedAmounts, 1)
-	//var mintedColor wasmtypes.ScTokenID
-	//var mintedAmount uint64
-	//for c := range mintedAmounts {
-	//	mintedColor = ctx.Cvt.ScTokenID(c)
-	//	mintedAmount = mintedAmounts[c]
-	//	break
-	//}
-	//t.Logf("Minted: amount = %d color = %s", mintedAmount, mintedColor.String())
-	//return mintedColor, mintedAmount
-}
-
-// NewSoloAgent creates a new SoloAgent with utxodb.FundsFromFaucetAmount tokens in its address
+// NewSoloAgent creates a new SoloAgent with utxodb.FundsFromFaucetAmount (1 Gi)
+// tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 	agent := NewSoloAgent(ctx.Chain.Env)
 	ctx.Chain.MustDepositIotasToL2(10_000_000, agent.Pair)
 	return agent
+}
+
+// NewSoloFoundry creates a new SoloFoundry
+func (ctx *SoloContext) NewSoloFoundry(maxSupply interface{}, agent ...*SoloAgent) (*SoloFoundry, error) {
+	return NewSoloFoundry(ctx, maxSupply, agent...)
+}
+
+// NFTs returns the list of NFTs in the account of the specified agent on
+// the chain associated with ctx.
+func (ctx *SoloContext) NFTs(agent *SoloAgent) []wasmtypes.ScNftID {
+	account := iscp.NewAgentID(agent.address, agent.hname)
+	l2nfts := ctx.Chain.L2NFTs(account)
+	nfts := make([]wasmtypes.ScNftID, 0, len(l2nfts))
+	for _, l2nft := range l2nfts {
+		theNft := l2nft
+		nfts = append(nfts, ctx.Cvt.ScNftID(&theNft))
+	}
+	return nfts
 }
 
 // OffLedger tells SoloContext to Post() the next request off-ledger
@@ -399,11 +399,8 @@ func (ctx *SoloContext) Originator() *SoloAgent {
 }
 
 // Sign is used to force a different agent for signing a Post() request
-func (ctx *SoloContext) Sign(agent *SoloAgent, mint ...uint64) wasmlib.ScFuncCallContext {
+func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	ctx.keyPair = agent.Pair
-	if len(mint) != 0 {
-		ctx.mint = mint[0]
-	}
 	return ctx
 }
 
@@ -447,7 +444,7 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 // WaitForPendingRequests waits for expectedRequests pending requests to be processed.
 // a negative value indicates the absolute amount of requests
 // The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
-// The function returns the false in case of a timeout.
+// The function returns false in case of a timeout.
 func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	if expectedRequests > 0 {

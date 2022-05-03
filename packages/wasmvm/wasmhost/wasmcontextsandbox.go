@@ -376,7 +376,7 @@ func (s *WasmContextSandbox) fnStateAnchor(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(s.common.Timestamp().Unix())
+	return codec.EncodeUint64(uint64(s.common.Timestamp().UnixNano()))
 }
 
 func (s *WasmContextSandbox) fnTrace(args []byte) []byte {

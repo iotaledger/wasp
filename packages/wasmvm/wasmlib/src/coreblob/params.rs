@@ -32,6 +32,21 @@ impl ImmutableStoreBlobParams {
     pub fn blobs(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { proxy: self.proxy.clone() }
 	}
+
+    // description of progBinary
+    pub fn description(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
+	}
+
+    // smart contract program binary code
+    pub fn prog_binary(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
+	}
+
+    // VM type that must be used to run progBinary
+    pub fn vm_type(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_VM_TYPE))
+	}
 }
 
 #[derive(Clone)]
@@ -58,6 +73,21 @@ impl MutableStoreBlobParams {
     // set of named blobs
     pub fn blobs(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { proxy: self.proxy.clone() }
+	}
+
+    // description of progBinary
+    pub fn description(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
+	}
+
+    // smart contract program binary code
+    pub fn prog_binary(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
+	}
+
+    // VM type that must be used to run progBinary
+    pub fn vm_type(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_VM_TYPE))
 	}
 }
 
