@@ -389,7 +389,7 @@ Now is not after requestBlockRetryTime[i]</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>200</x>
+      <x>240</x>
       <y>990</y>
       <w>40</w>
       <h>40</h>
@@ -400,14 +400,14 @@ Now is not after requestBlockRetryTime[i]</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>230</x>
+      <x>270</x>
       <y>990</y>
-      <w>310</w>
+      <w>270</w>
       <h>40</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 *hasApprovedBlockCandidate(i)*</panel_attributes>
-    <additional_attributes>10.0;20.0;290.0;20.0</additional_attributes>
+    <additional_attributes>10.0;20.0;250.0;20.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
@@ -439,21 +439,21 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>240</x>
+      <x>150</x>
       <y>1060</y>
-      <w>240</w>
-      <h>50</h>
+      <w>330</w>
+      <h>370</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 some candidates[from..i]
 not available</panel_attributes>
-    <additional_attributes>220.0;20.0;10.0;20.0</additional_attributes>
+    <additional_attributes>310.0;20.0;10.0;20.0;10.0;350.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>200</x>
-      <y>1060</y>
+      <x>160</x>
+      <y>1030</y>
       <w>50</w>
       <h>40</h>
     </coordinates>
@@ -464,14 +464,15 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>210</x>
+      <x>200</x>
       <y>1020</y>
-      <w>280</w>
-      <h>60</h>
+      <w>330</w>
+      <h>50</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-m2=*!hasApprovedBlockCandidate(i)*</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;40.0</additional_attributes>
+m1=*!hasApprovedBlockCandidate(i)*
+m1pos=0,-15</panel_attributes>
+    <additional_attributes>60.0;10.0;60.0;30.0;10.0;30.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
@@ -479,10 +480,10 @@ m2=*!hasApprovedBlockCandidate(i)*</panel_attributes>
       <x>170</x>
       <y>680</y>
       <w>50</w>
-      <h>420</h>
+      <h>370</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>30.0;400.0;10.0;400.0;10.0;10.0;30.0;10.0</additional_attributes>
+    <additional_attributes>10.0;350.0;10.0;10.0;30.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
@@ -1645,11 +1646,12 @@ version: 9
       <x>210</x>
       <y>950</y>
       <w>210</w>
-      <h>60</h>
+      <h>80</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-m2=len(blockCandidates(i))&gt;0</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;40.0</additional_attributes>
+m1=len(blockCandidates(i))&gt;0
+m1pos=0,-15</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0;30.0;60.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>

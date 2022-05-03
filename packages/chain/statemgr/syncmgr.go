@@ -29,9 +29,9 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 		for i := from; i <= aliasOutputIndex; i++ {
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 		}
+		sm.syncingBlocks.setApprovalInfo(aliasOutput)
 		sm.stateOutput = aliasOutput
 		sm.stateOutputTimestamp = time.Now()
-		sm.syncingBlocks.setApprovalInfo(aliasOutput)
 		return true
 	}
 	if sm.stateOutput.GetStateIndex() == aliasOutputIndex {
@@ -112,8 +112,8 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			if ok {
 				sm.log.Debugf("doSyncAction: candidates to commit found, committing")
 				sm.commitCandidates(candidates)
-				return
 			}
+			return
 		}
 	}
 }
