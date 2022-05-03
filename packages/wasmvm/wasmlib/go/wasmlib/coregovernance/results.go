@@ -5,25 +5,10 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coregovernance
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-
-type ImmutableSetFeePolicyResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableSetFeePolicyResults) GasFeePolicyBytes() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultGasFeePolicyBytes))
-}
-
-type MutableSetFeePolicyResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableSetFeePolicyResults) GasFeePolicyBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultGasFeePolicyBytes))
-}
 
 type ArrayOfImmutableAddress struct {
 	proxy wasmtypes.Proxy
