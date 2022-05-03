@@ -121,7 +121,7 @@ func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
-	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Bech32Prefix)
+	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
 		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
@@ -182,7 +182,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
 			ncc.chainID.AsAddress(),
-			ncc.nc.l1params.Bech32Prefix,
+			ncc.nc.l1params.Protocol.Bech32HRP,
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {

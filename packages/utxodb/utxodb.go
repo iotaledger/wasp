@@ -130,12 +130,8 @@ func (u *UtxoDB) RentStructure() *iotago.RentStructure {
 	return u.l1Params.RentStructure()
 }
 
-func (u *UtxoDB) deSeriParams() *iotago.ProtocolParameters {
-	return u.l1Params.ProtocolParameters
-}
-
 func (u *UtxoDB) genesisInit() {
-	genesisTx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
+	genesisTx, err := builder.NewTransactionBuilder(u.l1Params.Protocol.NetworkID()).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address: genesisAddress,
 			Output: &iotago.BasicOutput{
@@ -151,7 +147,7 @@ func (u *UtxoDB) genesisInit() {
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(u.deSeriParams(), genesisSigner)
+		Build(u.l1Params.Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -238,7 +234,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 		fundsAmount = amount[0]
 	}
 
-	tx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
+	tx, err := builder.NewTransactionBuilder(u.l1Params.Protocol.NetworkID()).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  genesisAddress,
 			Output:   inputOutput,
@@ -256,7 +252,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(u.deSeriParams(), genesisSigner)
+		Build(u.l1Params.Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -324,7 +320,7 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 
 func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	// serialize for syntactic check
-	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.deSeriParams()); err != nil {
+	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.l1Params.Protocol); err != nil {
 		return err
 	}
 

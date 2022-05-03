@@ -86,7 +86,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, par.L1.NetworkID)
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, par.L1.Protocol.NetworkID())
 }
 
 func outputMatchesSendAsAddress(output iotago.Output, oID iotago.OutputID, address iotago.Address) bool {

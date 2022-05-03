@@ -42,7 +42,7 @@ func TestCreateOrigin(t *testing.T) {
 			user,
 			stateAddr,
 			stateAddr,
-			0,
+			1000,
 			allOutputs,
 			ids,
 			parameters.L1ForTesting(),
@@ -155,7 +155,7 @@ func TestConsumeRequest(t *testing.T) {
 		},
 	}
 	essence := &iotago.TransactionEssence{
-		NetworkID: 0,
+		NetworkID: tpkg.TestNetworkID,
 		Inputs:    iotago.Inputs{aliasOut1Inp, reqInp},
 		Outputs:   iotago.Outputs{aliasOut2},
 	}

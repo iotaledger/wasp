@@ -82,7 +82,7 @@ func L1Client() nodeconn.L1Client {
 }
 
 func L1NetworkPrefix() iotago.NetworkPrefix {
-	return L1Client().L1Params().Bech32Prefix
+	return L1Client().L1Params().Protocol.Bech32HRP
 }
 
 func WaspClient() *client.WaspClient {

@@ -246,7 +246,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	if err != nil {
 		return nil, err
 	}
-	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), clu.l1.L1Params().Bech32Prefix)
+	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), clu.l1.L1Params().Protocol.Bech32HRP)
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +324,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			waspNodeDataPath(dataPath, i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), clu.l1.L1Params().Bech32Prefix),
+			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), clu.l1.L1Params().Protocol.Bech32HRP),
 			i,
 			modifyConfig,
 		)
@@ -629,5 +629,5 @@ func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.
 }
 
 func (clu *Cluster) GetL1NetworkPrefix() iotago.NetworkPrefix {
-	return clu.l1.L1Params().Bech32Prefix
+	return clu.l1.L1Params().Protocol.Bech32HRP
 }

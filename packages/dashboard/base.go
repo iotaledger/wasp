@@ -102,7 +102,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
 		"formatTimestampOrNever": formatTimestampOrNever,
-		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL(), d.wasp.L1Params().Bech32Prefix),
+		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL(), d.wasp.L1Params().Protocol.Bech32HRP),
 		"args":                   args,
 		"hashref":                hashref,
 		"assedID":                assetID,

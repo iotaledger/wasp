@@ -83,7 +83,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr2},
 			},
 		}).
-		Build(u.deSeriParams(), key1Signer)
+		Build(u.l1Params.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
@@ -100,7 +100,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr3},
 			},
 		}).
-		Build(u.deSeriParams(), key1Signer)
+		Build(u.l1Params.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend3)
 	require.Error(t, err)

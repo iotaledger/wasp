@@ -204,7 +204,7 @@ func TestBasic2Accounts(t *testing.T) {
 	chEnv.printAccounts("withdraw before")
 
 	// withdraw back 500 iotas to originator address
-	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.clu.L1Client().L1Params().Bech32Prefix))
+	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.clu.L1Client().L1Params().Protocol.Bech32HRP))
 	origL1Balance := e.clu.AddressBalances(originatorAddress).Iotas
 	originatorClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),

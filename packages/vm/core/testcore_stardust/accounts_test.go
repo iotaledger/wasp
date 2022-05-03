@@ -943,7 +943,7 @@ func TestMintedTokensBurn(t *testing.T) {
 	}
 
 	essence := &iotago.TransactionEssence{
-		NetworkID: 0,
+		NetworkID: tpkg.TestNetworkID,
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs: iotago.Outputs{
 			&iotago.AliasOutput{

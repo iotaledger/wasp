@@ -203,7 +203,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
-		NetworkID: txb.l1Params.NetworkID,
+		NetworkID: txb.l1Params.Protocol.NetworkID(),
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs:   txb.outputs(l1Commitment),
 		Payload:   nil,

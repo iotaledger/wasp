@@ -172,7 +172,7 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Fungi
 func creditToAccount(account *collections.Map, assets *iscp.FungibleTokens) {
 	iotasBalance, iotasAdd, tokenMutations := loadAccountMutations(account, assets)
 	// safe arithmetics
-	// TODO this overflow check can most likely be removed
+	// TODO this "overflow" check can most likely be removed
 	// if iotasAdd > tokenSupply || iotasBalance > tokenSupply-iotasAdd {
 	// 	panic(ErrOverflow)
 	// }
