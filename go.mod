@@ -10,7 +10,7 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.35.0
+	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
