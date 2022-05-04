@@ -9,8 +9,8 @@ require (
 	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/iotaledger/hive.go v0.0.0-20220428170023-7fb77d7475d8
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220428170023-7fb77d7475d8
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220429152429-63458675d51e
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220504130911-9e8278f09723
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220503191919-5a9d1fff0743
 	github.com/knadh/koanf v1.4.1
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/libp2p/go-libp2p v0.19.1
@@ -111,7 +111,6 @@ require (
 	github.com/libp2p/go-libp2p-swarm v0.10.2 // indirect
 	github.com/libp2p/go-libp2p-transport-upgrader v0.7.1 // indirect
 	github.com/libp2p/go-libp2p-yamux v0.9.1 // indirect
-	github.com/libp2p/go-mplex v0.7.0 // indirect
 	github.com/libp2p/go-msgio v0.2.0 // indirect
 	github.com/libp2p/go-nat v0.1.0 // indirect
 	github.com/libp2p/go-netroute v0.2.0 // indirect
@@ -121,7 +120,6 @@ require (
 	github.com/libp2p/go-stream-muxer-multistream v0.4.0 // indirect
 	github.com/libp2p/go-ws-transport v0.6.0 // indirect
 	github.com/libp2p/go-yamux/v3 v3.1.1 // indirect
-	github.com/linxGnu/grocksdb v1.7.1 // indirect
 	github.com/lucas-clemente/quic-go v0.27.0 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/marten-seemann/qtls-go1-16 v0.1.5 // indirect
