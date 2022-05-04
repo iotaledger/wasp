@@ -33,6 +33,10 @@ func NewArray16ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray1
 	}
 }
 
+// For easy distinction between arrays and map collections
+// we use '#' as separator for arrays and '.' for maps.
+// Do not change this value unless you want to break how
+// WasmLib maps these collections in the exact same way
 const array16ElemKeyCode = byte('#')
 
 func array16SizeKey(name string) kv.Key {
