@@ -16,7 +16,6 @@ export class HelloWorldCall {
 }
 
 export class HelloWorldContext {
-	state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState(wasmlib.ScState.proxy());
 }
 
 export class GetHelloWorldCall {
@@ -29,7 +28,6 @@ export class GetHelloWorldCall {
 
 export class GetHelloWorldContext {
 	results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults(wasmlib.ScView.nilProxy);
-	state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {

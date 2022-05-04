@@ -16,13 +16,17 @@ const (
 )
 
 const (
-	ParamChainOwner               = "c"
-	ParamChangeAccessNodesActions = "p"
-	ParamFeePolicyBytes           = "d"
-	ParamMaxBlobSize              = "g"
-	ParamMaxEventSize             = "h"
-	ParamMaxEventsPerReq          = "i"
-	ParamStateControllerAddress   = "S"
+	ParamAccessNodeInfoAccessAPI    = "o"
+	ParamAccessNodeInfoCertificate  = "n"
+	ParamAccessNodeInfoForCommittee = "l"
+	ParamAccessNodeInfoPubKey       = "m"
+	ParamChainOwner                 = "c"
+	ParamChangeAccessNodesActions   = "p"
+	ParamFeePolicyBytes             = "d"
+	ParamMaxBlobSize                = "g"
+	ParamMaxEventSize               = "h"
+	ParamMaxEventsPerReq            = "i"
+	ParamStateControllerAddress     = "S"
 )
 
 const (

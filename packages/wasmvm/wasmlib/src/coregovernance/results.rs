@@ -12,28 +12,6 @@ use crate::coregovernance::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ImmutableSetFeePolicyResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSetFeePolicyResults {
-    pub fn gas_fee_policy_bytes(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(RESULT_GAS_FEE_POLICY_BYTES))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableSetFeePolicyResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableSetFeePolicyResults {
-    pub fn gas_fee_policy_bytes(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(RESULT_GAS_FEE_POLICY_BYTES))
-	}
-}
-
-#[derive(Clone)]
 pub struct ArrayOfImmutableAddress {
 	pub(crate) proxy: Proxy,
 }

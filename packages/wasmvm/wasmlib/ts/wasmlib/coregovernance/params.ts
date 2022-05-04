@@ -20,6 +20,42 @@ export class MutableAddAllowedStateControllerAddressParams extends wasmtypes.ScP
 	}
 }
 
+export class ImmutableAddCandidateNodeParams extends wasmtypes.ScProxy {
+	accessNodeInfoAccessAPI(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamAccessNodeInfoAccessAPI));
+	}
+
+	accessNodeInfoCertificate(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+	}
+
+	accessNodeInfoForCommittee(): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamAccessNodeInfoForCommittee));
+	}
+
+	accessNodeInfoPubKey(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+	}
+}
+
+export class MutableAddCandidateNodeParams extends wasmtypes.ScProxy {
+	accessNodeInfoAccessAPI(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamAccessNodeInfoAccessAPI));
+	}
+
+	accessNodeInfoCertificate(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+	}
+
+	accessNodeInfoForCommittee(): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamAccessNodeInfoForCommittee));
+	}
+
+	accessNodeInfoPubKey(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+	}
+}
+
 export class MapBytesToImmutableUint8 extends wasmtypes.ScProxy {
 
 	getUint8(key: u8[]): wasmtypes.ScImmutableUint8 {
@@ -71,6 +107,26 @@ export class ImmutableRemoveAllowedStateControllerAddressParams extends wasmtype
 export class MutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
 	stateControllerAddress(): wasmtypes.ScMutableAddress {
 		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+	}
+}
+
+export class ImmutableRevokeAccessNodeParams extends wasmtypes.ScProxy {
+	accessNodeInfoCertificate(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+	}
+
+	accessNodeInfoPubKey(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+	}
+}
+
+export class MutableRevokeAccessNodeParams extends wasmtypes.ScProxy {
+	accessNodeInfoCertificate(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+	}
+
+	accessNodeInfoPubKey(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
 	}
 }
 

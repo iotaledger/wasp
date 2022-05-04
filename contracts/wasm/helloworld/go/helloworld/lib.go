@@ -31,24 +31,17 @@ func OnLoad(index int32) {
 	wasmlib.ScExportsExport(&exportMap)
 }
 
-type HelloWorldContext struct {
-	State MutableHelloWorldState
-}
+type HelloWorldContext struct{}
 
 func funcHelloWorldThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("helloworld.funcHelloWorld")
-	f := &HelloWorldContext{
-		State: MutableHelloWorldState{
-			proxy: wasmlib.NewStateProxy(),
-		},
-	}
+	f := &HelloWorldContext{}
 	funcHelloWorld(ctx, f)
 	ctx.Log("helloworld.funcHelloWorld ok")
 }
 
 type GetHelloWorldContext struct {
 	Results MutableGetHelloWorldResults
-	State   ImmutableHelloWorldState
 }
 
 func viewGetHelloWorldThunk(ctx wasmlib.ScViewContext) {
@@ -57,9 +50,6 @@ func viewGetHelloWorldThunk(ctx wasmlib.ScViewContext) {
 	f := &GetHelloWorldContext{
 		Results: MutableGetHelloWorldResults{
 			proxy: results.AsProxy(),
-		},
-		State: ImmutableHelloWorldState{
-			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetHelloWorld(ctx, f)

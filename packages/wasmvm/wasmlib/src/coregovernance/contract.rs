@@ -17,6 +17,7 @@ pub struct AddAllowedStateControllerAddressCall {
 
 pub struct AddCandidateNodeCall {
 	pub func: ScFunc,
+	pub params: MutableAddCandidateNodeParams,
 }
 
 pub struct ChangeAccessNodesCall {
@@ -40,6 +41,7 @@ pub struct RemoveAllowedStateControllerAddressCall {
 
 pub struct RevokeAccessNodeCall {
 	pub func: ScFunc,
+	pub params: MutableRevokeAccessNodeParams,
 }
 
 pub struct RotateStateControllerCall {
@@ -55,7 +57,6 @@ pub struct SetChainInfoCall {
 pub struct SetFeePolicyCall {
 	pub func: ScFunc,
 	pub params: MutableSetFeePolicyParams,
-	pub results: ImmutableSetFeePolicyResults,
 }
 
 pub struct GetAllowedStateControllerAddressesCall {
@@ -103,9 +104,12 @@ impl ScFuncs {
 
     // access nodes
     pub fn add_candidate_node(_ctx: &dyn ScFuncCallContext) -> AddCandidateNodeCall {
-        AddCandidateNodeCall {
+        let mut f = AddCandidateNodeCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ADD_CANDIDATE_NODE),
-        }
+            params: MutableAddCandidateNodeParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
     }
 
     pub fn change_access_nodes(_ctx: &dyn ScFuncCallContext) -> ChangeAccessNodesCall {
@@ -143,9 +147,12 @@ impl ScFuncs {
     }
 
     pub fn revoke_access_node(_ctx: &dyn ScFuncCallContext) -> RevokeAccessNodeCall {
-        RevokeAccessNodeCall {
+        let mut f = RevokeAccessNodeCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_ACCESS_NODE),
-        }
+            params: MutableRevokeAccessNodeParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
     }
 
     // state controller
@@ -173,10 +180,8 @@ impl ScFuncs {
         let mut f = SetFeePolicyCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_FEE_POLICY),
             params: MutableSetFeePolicyParams { proxy: Proxy::nil() },
-            results: ImmutableSetFeePolicyResults { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
-        ScFunc::link_results(&mut f.results.proxy, &f.func);
         f
     }
 

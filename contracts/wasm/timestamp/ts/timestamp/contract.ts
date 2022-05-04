@@ -16,7 +16,6 @@ export class NowCall {
 }
 
 export class NowContext {
-	state: sc.MutabletimestampState = new sc.MutabletimestampState(wasmlib.ScState.proxy());
 }
 
 export class GetTimestampCall {
@@ -29,7 +28,6 @@ export class GetTimestampCall {
 
 export class GetTimestampContext {
 	results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults(wasmlib.ScView.nilProxy);
-	state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
