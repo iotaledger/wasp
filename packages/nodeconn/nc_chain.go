@@ -124,7 +124,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
-		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
