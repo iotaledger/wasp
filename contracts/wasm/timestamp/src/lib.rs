@@ -13,12 +13,10 @@ use wasmlib::*;
 
 use crate::consts::*;
 use crate::results::*;
-use crate::state::*;
 
 mod consts;
 mod contract;
 mod results;
-mod state;
 
 mod timestamp;
 
@@ -46,13 +44,11 @@ fn on_load() {
 }
 
 pub struct NowContext {
-	state: MutabletimestampState,
 }
 
 fn func_now_thunk(ctx: &ScFuncContext) {
 	ctx.log("timestamp.funcNow");
 	let f = NowContext {
-		state: MutabletimestampState { proxy: state_proxy() },
 	};
 	func_now(ctx, &f);
 	ctx.log("timestamp.funcNow ok");
@@ -60,14 +56,12 @@ fn func_now_thunk(ctx: &ScFuncContext) {
 
 pub struct GetTimestampContext {
 	results: MutableGetTimestampResults,
-	state: ImmutabletimestampState,
 }
 
 fn view_get_timestamp_thunk(ctx: &ScViewContext) {
 	ctx.log("timestamp.viewGetTimestamp");
 	let f = GetTimestampContext {
 		results: MutableGetTimestampResults { proxy: results_proxy() },
-		state: ImmutabletimestampState { proxy: state_proxy() },
 	};
 	view_get_timestamp(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);

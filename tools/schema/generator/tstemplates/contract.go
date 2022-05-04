@@ -36,8 +36,7 @@ export class $FuncName$+Context {
 $#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
-$#if func MutablePackageState
-$#if view ImmutablePackageState
+$#if state PackageState
 }
 `,
 	// *******************************
@@ -63,6 +62,11 @@ $#if events PackageEventsExist
 	// *******************************
 	"MutableFuncNameResults": `
 	results: sc.Mutable$FuncName$+Results = new sc.Mutable$FuncName$+Results(wasmlib.ScView.nilProxy);
+`,
+	// *******************************
+	"PackageState": `
+$#if func MutablePackageState
+$#if view ImmutablePackageState
 `,
 	// *******************************
 	"ImmutablePackageState": `

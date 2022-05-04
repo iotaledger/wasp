@@ -31,24 +31,17 @@ func OnLoad(index int32) {
 	wasmlib.ScExportsExport(&exportMap)
 }
 
-type NowContext struct {
-	State MutabletimestampState
-}
+type NowContext struct{}
 
 func funcNowThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("timestamp.funcNow")
-	f := &NowContext{
-		State: MutabletimestampState{
-			proxy: wasmlib.NewStateProxy(),
-		},
-	}
+	f := &NowContext{}
 	funcNow(ctx, f)
 	ctx.Log("timestamp.funcNow ok")
 }
 
 type GetTimestampContext struct {
 	Results MutableGetTimestampResults
-	State   ImmutabletimestampState
 }
 
 func viewGetTimestampThunk(ctx wasmlib.ScViewContext) {
@@ -57,9 +50,6 @@ func viewGetTimestampThunk(ctx wasmlib.ScViewContext) {
 	f := &GetTimestampContext{
 		Results: MutableGetTimestampResults{
 			proxy: results.AsProxy(),
-		},
-		State: ImmutabletimestampState{
-			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetTimestamp(ctx, f)
