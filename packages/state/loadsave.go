@@ -50,7 +50,10 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	}
 	vs.Commit()
 
-	batch := vs.db.Batched()
+	batch, err := vs.db.Batched()
+	if err != nil {
+		panic(fmt.Errorf("error saving state: %w", err))
+	}
 
 	vs.trie.PersistMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
 	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))

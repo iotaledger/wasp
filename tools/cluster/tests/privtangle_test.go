@@ -38,7 +38,7 @@ func TestHornetStartup(t *testing.T) {
 	l1Info, err := nc.Info(ctx)
 	require.NoError(t, err)
 
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
 	client := nodeconn.NewL1Client(ClustL1Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
