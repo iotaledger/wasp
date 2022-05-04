@@ -20,7 +20,11 @@ type ImmutableMap struct {
 	name string
 }
 
-const mapElemKeyCode = byte('#')
+// For easy distinction between arrays and map collections
+// we use '#' as separator for arrays and '.' for maps.
+// Do not change this value unless you want to break how
+// WasmLib maps these collections in the exact same way
+const mapElemKeyCode = byte('.')
 
 func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
