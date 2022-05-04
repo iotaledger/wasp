@@ -34,6 +34,52 @@ impl MutableAddAllowedStateControllerAddressParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableAddCandidateNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAddCandidateNodeParams {
+    pub fn access_node_info_access_api(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
+	}
+
+    pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_for_committee(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableAddCandidateNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableAddCandidateNodeParams {
+    pub fn access_node_info_access_api(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
+	}
+
+    pub fn access_node_info_certificate(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_for_committee(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
 pub struct MapBytesToImmutableUint8 {
 	pub(crate) proxy: Proxy,
 }
@@ -122,6 +168,36 @@ pub struct MutableRemoveAllowedStateControllerAddressParams {
 impl MutableRemoveAllowedStateControllerAddressParams {
     pub fn state_controller_address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableRevokeAccessNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableRevokeAccessNodeParams {
+    pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableRevokeAccessNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableRevokeAccessNodeParams {
+    pub fn access_node_info_certificate(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
 	}
 }
 

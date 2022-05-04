@@ -23,8 +23,6 @@ funcs:
   setFeePolicy:
     params:
       feePolicyBytes=d: Bytes
-    results:
-      gasFeePolicyBytes=g: Bytes
   # chain info
   setChainInfo:
     params:
@@ -32,8 +30,16 @@ funcs:
       maxEventSize=h: Uint16? # default maximum size of a single event
       maxEventsPerReq=i: Uint16? # default maximum number of events per request
   # access nodes
-  addCandidateNode: {}
-  revokeAccessNode: {}
+  addCandidateNode:
+    params:
+      accessNodeInfoPubKey=m: Bytes
+      accessNodeInfoCertificate=n: Bytes
+      accessNodeInfoForCommittee=l: Bool
+      accessNodeInfoAccessAPI=o: String
+  revokeAccessNode:
+    params:
+      accessNodeInfoPubKey=m: Bytes
+      accessNodeInfoCertificate=n: Bytes
   changeAccessNodes:
     params:
       changeAccessNodesActions=p: map[Bytes]Uint8

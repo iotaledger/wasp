@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coregovernance
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -16,13 +17,17 @@ const (
 )
 
 const (
-	ParamChainOwner               = "c"
-	ParamChangeAccessNodesActions = "p"
-	ParamFeePolicyBytes           = "d"
-	ParamMaxBlobSize              = "g"
-	ParamMaxEventSize             = "h"
-	ParamMaxEventsPerReq          = "i"
-	ParamStateControllerAddress   = "S"
+	ParamAccessNodeInfoAccessAPI    = "o"
+	ParamAccessNodeInfoCertificate  = "n"
+	ParamAccessNodeInfoForCommittee = "l"
+	ParamAccessNodeInfoPubKey       = "m"
+	ParamChainOwner                 = "c"
+	ParamChangeAccessNodesActions   = "p"
+	ParamFeePolicyBytes             = "d"
+	ParamMaxBlobSize                = "g"
+	ParamMaxEventSize               = "h"
+	ParamMaxEventsPerReq            = "i"
+	ParamStateControllerAddress     = "S"
 )
 
 const (
