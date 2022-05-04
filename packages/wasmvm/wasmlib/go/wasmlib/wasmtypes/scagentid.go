@@ -66,7 +66,7 @@ func AgentIDFromBytes(buf []byte) ScAgentID {
 	switch buf[0] {
 	case ScAddressAlias:
 		if len(buf) != ScLengthAlias+ScHnameLength {
-			panic("invalid AgentID length: Alias address")
+			panic("invalid AgentID length: Alias 123 address")
 		}
 		return ScAgentID{
 			address: AddressFromBytes(buf[:ScLengthAlias]),

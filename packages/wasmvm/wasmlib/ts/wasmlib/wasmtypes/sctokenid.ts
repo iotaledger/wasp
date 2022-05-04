@@ -1,12 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import { panic } from "../sandbox";
 import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export const ScTokenIDLength = 38;
+export const ScTokenIDLength = 50;
 
 export class ScTokenID {
     id: u8[] = wasmtypes.zeroes(ScTokenIDLength);
