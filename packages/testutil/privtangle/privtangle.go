@@ -40,6 +40,7 @@ const (
 	nodePortOffsetFaucet
 	nodePortOffsetMQTT
 	nodePortOffsetMQTTWebSocket
+	nodePortOffsetCoordinator
 	nodePortOffsetIndexer
 	nodePortOffsetINX
 )
@@ -48,7 +49,7 @@ type PrivTangle struct {
 	CooKeyPair1   *cryptolib.KeyPair
 	CooKeyPair2   *cryptolib.KeyPair
 	FaucetKeyPair *cryptolib.KeyPair
-	NetworkID     string
+	NetworkName   string
 	SnapshotInit  string
 	ConfigFile    string
 	BaseDir       string
@@ -65,7 +66,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		CooKeyPair1:   cryptolib.NewKeyPair(),
 		CooKeyPair2:   cryptolib.NewKeyPair(),
 		FaucetKeyPair: cryptolib.NewKeyPair(),
-		NetworkID:     "private_tangle_wasp_cluster",
+		NetworkName:   "private_tangle_wasp_cluster",
 		SnapshotInit:  "snapshot.init",
 		ConfigFile:    "config.json",
 		BaseDir:       baseDir,
@@ -91,9 +92,13 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		pt.startNode(i)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
-	pt.logf("Starting... Done, all nodes started.")
+	pt.logf("Starting... all nodes started.")
 
-	pt.WaitAllAlive()
+	pt.waitAllHealthy()
+	pt.logf("Starting... all nodes are healthy, starting coordinator.")
+	pt.startCoordinator(0)
+	pt.waitAllReturnTips()
+
 	pt.logf("Starting... Done, all nodes alive.")
 
 	for i := range pt.NodeKeyPairs {
@@ -116,7 +121,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	}
 	snapGenArgs := []string{
 		"tool", "snap-gen",
-		fmt.Sprintf("--networkID=%s", pt.NetworkID),
+		fmt.Sprintf("--networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsEd25519Address().String()[2:]), // Dropping 0x from HEX.
 		fmt.Sprintf("--outputPath=%s", filepath.Join(pt.BaseDir, pt.SnapshotInit)),
 	}
@@ -174,7 +179,7 @@ func (pt *PrivTangle) startNode(i int) {
 
 	args := []string{
 		"-c", pt.ConfigFile,
-		fmt.Sprintf("--protocol.networkID=%s", pt.NetworkID),
+		fmt.Sprintf("--protocol.parameters.networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortRestAPI(i)),
 		fmt.Sprintf("--dashboard.bindAddress=localhost:%d", pt.NodePortDashboard(i)),
 		fmt.Sprintf("--db.path=%s", nodePathDB),
@@ -186,18 +191,18 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--profiling.bindAddress=127.0.0.1:%d", pt.NodePortProfiling(i)),
 		fmt.Sprintf("--prometheus.bindAddress=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
-		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
+		// fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
-	if i == 0 {
-		args = append(args,
-			"--cooBootstrap",
-			"--cooStartIndex", "0",
-		)
-	}
+	// if i == 0 {
+	// 	args = append(args,
+	// 		"--cooBootstrap",
+	// 		"--cooStartIndex", "0",
+	// 	)
+	// }
 	hornetCmd := exec.CommandContext(pt.ctx, "hornet", args...)
 	// kill hornet cmd if the go test process is killed
 	util.TerminateCmdWhenTestStops(hornetCmd)
@@ -214,6 +219,35 @@ func (pt *PrivTangle) startNode(i int) {
 	}
 }
 
+func (pt *PrivTangle) startCoordinator(i int) {
+	coordinatorPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-coordinator")
+
+	if err := os.MkdirAll(coordinatorPath, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", coordinatorPath, err))
+	}
+
+	// if err := os.WriteFile(filepath.Join(coordinatorPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
+	// 	panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+	// }
+
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		// fmt.Sprintf("--coordinator.bindAddress=0.0.0.0:%d", pt.NodePortCoordinator(i)),
+	}
+
+	coordinatorCmd := exec.CommandContext(pt.ctx, "inx-coordinator", args...)
+	// kill coordinator cmd if the go test process is killed
+	util.TerminateCmdWhenTestStops(coordinatorCmd)
+
+	coordinatorCmd.Dir = coordinatorPath
+
+	writeOutputToFiles(coordinatorPath, coordinatorCmd)
+
+	if err := coordinatorCmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
+	}
+}
+
 func (pt *PrivTangle) startIndexer(i int) {
 	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-indexer")
 
@@ -221,6 +255,7 @@ func (pt *PrivTangle) startIndexer(i int) {
 		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
 	}
 
+	// TODO is this needed?
 	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
 		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
 	}
@@ -249,7 +284,7 @@ func (pt *PrivTangle) startMqtt(i int) {
 	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
 		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
 	}
-
+	// TODO is this needed?
 	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
 		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
 	}
@@ -293,13 +328,6 @@ func (pt *PrivTangle) Stop() {
 
 func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
 	return nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
-}
-
-// The health endpoint is not working for now.
-// So we are using other endpoint for this check.
-func (pt *PrivTangle) WaitAllAlive() {
-	pt.waitAllHealthy()
-	pt.waitAllReturnTips()
 }
 
 func (pt *PrivTangle) waitAllReturnTips() {
@@ -426,6 +454,10 @@ func (pt *PrivTangle) NodePortMQTT(i int) int {
 
 func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
 	return pt.BasePort + i*10 + nodePortOffsetMQTTWebSocket
+}
+
+func (pt *PrivTangle) NodePortCoordinator(i int) int {
+	return pt.BasePort + i*10 + nodePortOffsetCoordinator
 }
 
 func (pt *PrivTangle) NodePortIndexer(i int) int {

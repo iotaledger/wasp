@@ -40,7 +40,7 @@ func init() {
 
 func StartPrivTangle() {
 	// start private tangle if no L1 parameters were provided
-	l1DirPath := path.Join(os.TempDir(), "l1")
+	l1DirPath := path.Join(os.TempDir(), "private-tangle")
 	ctx := context.Background()
 	PrivTangle = privtangle.Start(ctx, l1DirPath, pvtTangleAPIPort, *pvtTangleNnodes, nil)
 	ClustL1Config.Hostname = "http://localhost"
