@@ -1,14 +1,19 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
 
+	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/spf13/pflag"
 )
+
+const cmdName = "wasp-cluster"
 
 func check(err error) {
 	if err != nil {
@@ -29,15 +34,17 @@ func main() {
 
 	templatesPath := commonFlags.StringP("templates-path", "t", ".", "Where to find alternative wasp & layer1 config.json templates (optional)")
 
-	config := cluster.DefaultConfig()
+	waspConfig := cluster.DefaultWaspConfig()
 
-	commonFlags.IntVarP(&config.Wasp.NumNodes, "num-nodes", "n", config.Wasp.NumNodes, "Amount of wasp nodes")
-	commonFlags.IntVarP(&config.Wasp.FirstAPIPort, "first-api-port", "a", config.Wasp.FirstAPIPort, "First wasp API port")
-	commonFlags.IntVarP(&config.Wasp.FirstPeeringPort, "first-peering-port", "p", config.Wasp.FirstPeeringPort, "First wasp Peering port")
-	commonFlags.IntVarP(&config.Wasp.FirstNanomsgPort, "first-nanomsg-port", "u", config.Wasp.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
-	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
-	commonFlags.IntVarP(&config.L1.APIPort, "layer1-api-port", "i", config.L1.APIPort, "layer1 API port")
-	commonFlags.StringVarP(&config.L1.Hostname, "layer1-hostname", "H", config.L1.Hostname, "layer1 hostname")
+	commonFlags.IntVarP(&waspConfig.NumNodes, "num-nodes", "n", waspConfig.NumNodes, "Amount of wasp nodes")
+	commonFlags.IntVarP(&waspConfig.FirstAPIPort, "first-api-port", "a", waspConfig.FirstAPIPort, "First wasp API port")
+	commonFlags.IntVarP(&waspConfig.FirstPeeringPort, "first-peering-port", "p", waspConfig.FirstPeeringPort, "First wasp Peering port")
+	commonFlags.IntVarP(&waspConfig.FirstNanomsgPort, "first-nanomsg-port", "u", waspConfig.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
+	commonFlags.IntVarP(&waspConfig.FirstDashboardPort, "first-dashboard-port", "h", waspConfig.FirstDashboardPort, "First wasp dashboard port")
+
+	l1StarterFlags := flag.NewFlagSet("l1", flag.ExitOnError)
+	l1 := l1starter.New(l1StarterFlags)
+	commonFlags.AddGoFlagSet(l1StarterFlags)
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)
@@ -61,8 +68,20 @@ func main() {
 			os.Exit(1)
 		}
 
+		if l1.PrivtangleEnabled() {
+			fmt.Printf("non-disposable cluster and privtangle are mutually exclusive")
+			os.Exit(1)
+		}
+
+		l1.StartPrivtangleIfNecessary(log.Printf)
+		defer l1.Stop()
+
 		dataPath := flags.Arg(0)
-		err := cluster.New("cluster", config, nil).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
+		clusterConfig := cluster.NewConfig(
+			waspConfig,
+			l1.Config,
+		)
+		err := cluster.New(cmdName, clusterConfig, nil).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
 		check(err)
 
 	case "start":
@@ -79,6 +98,11 @@ func main() {
 
 		var err error
 
+		if !*disposable && l1.PrivtangleEnabled() {
+			fmt.Printf("non-disposable cluster and privtangle are mutually exclusive")
+			os.Exit(1)
+		}
+
 		dataPath := "."
 		if flags.NArg() == 1 {
 			if *disposable {
@@ -86,10 +110,11 @@ func main() {
 			}
 			dataPath = flags.Arg(0)
 		} else if *disposable {
-			dataPath, err = ioutil.TempDir(os.TempDir(), "wasp-cluster-*")
+			dataPath, err = ioutil.TempDir(os.TempDir(), cmdName+"-*")
 			check(err)
 		}
 
+		var clusterConfig *cluster.ClusterConfig
 		if !*disposable {
 			exists, err := cluster.ConfigExists(dataPath)
 			check(err)
@@ -97,11 +122,18 @@ func main() {
 				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first", dataPath, os.Args[0]))
 			}
 
-			config, err = cluster.LoadConfig(dataPath)
+			clusterConfig, err = cluster.LoadConfig(dataPath)
 			check(err)
+		} else {
+			l1.StartPrivtangleIfNecessary(log.Printf)
+			defer l1.Stop()
+			clusterConfig = cluster.NewConfig(
+				waspConfig,
+				l1.Config,
+			)
 		}
 
-		clu := cluster.New("wasp-cluster", config, nil)
+		clu := cluster.New(cmdName, clusterConfig, nil)
 
 		if *disposable {
 			check(clu.InitDataPath(*templatesPath, dataPath, true, nil))
