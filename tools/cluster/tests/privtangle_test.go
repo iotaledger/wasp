@@ -20,6 +20,8 @@ import (
 )
 
 func TestHornetStartup(t *testing.T) {
+	l1.StartPrivtangleIfNecessary(t.Logf)
+
 	if l1.Privtangle == nil {
 		t.Skip("tests running against live network, skipping pvt tangle tests")
 	}
