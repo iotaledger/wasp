@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -29,19 +30,6 @@ import (
 // https://github.com/gohornet/hornet
 // https://github.com/gohornet/inx-mqtt
 // https://github.com/gohornet/inx-indexer
-
-const (
-	nodePortOffsetRestAPI = iota
-	nodePortOffsetPeering
-	nodePortOffsetDashboard
-	nodePortOffsetProfiling
-	nodePortOffsetPrometheus
-	nodePortOffsetFaucet
-	nodePortOffsetMQTT
-	nodePortOffsetMQTTWebSocket
-	nodePortOffsetIndexer
-	nodePortOffsetINX
-)
 
 type LogFunc func(format string, args ...interface{})
 
@@ -388,43 +376,43 @@ func (pt *PrivTangle) NodeMultiAddrsWoIndex(x int) []string {
 }
 
 func (pt *PrivTangle) NodePortRestAPI(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetRestAPI
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetRestAPI
 }
 
 func (pt *PrivTangle) NodePortPeering(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetPeering
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetPeering
 }
 
 func (pt *PrivTangle) NodePortDashboard(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetDashboard
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetDashboard
 }
 
 func (pt *PrivTangle) NodePortProfiling(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetProfiling
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetProfiling
 }
 
 func (pt *PrivTangle) NodePortPrometheus(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetPrometheus
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetPrometheus
 }
 
 func (pt *PrivTangle) NodePortFaucet(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetFaucet
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetFaucet
 }
 
 func (pt *PrivTangle) NodePortMQTT(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetMQTT
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetMQTT
 }
 
 func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetMQTTWebSocket
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetMQTTWebSocket
 }
 
 func (pt *PrivTangle) NodePortIndexer(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetIndexer
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetIndexer
 }
 
 func (pt *PrivTangle) NodePortINX(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetINX
+	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetINX
 }
 
 func (pt *PrivTangle) logf(msg string, args ...interface{}) {
