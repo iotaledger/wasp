@@ -18,6 +18,10 @@ func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
 }
 
+func chainIDref(chID iscp.ChainID) *iscp.ChainID {
+	return &chID
+}
+
 func assetID(aID []byte) []byte {
 	panic("TODO")
 	return aID
@@ -72,10 +76,8 @@ func formatTimestampOrNever(t time.Time) string {
 	return formatTimestamp(t)
 }
 
-func exploreAddressURL(baseURL string, networkPrefix iotago.NetworkPrefix) func(address iotago.Address) string {
-	return func(address iotago.Address) string {
-		return baseURL + "/" + address.Bech32(networkPrefix)
-	}
+func (d *Dashboard) exploreAddressURL(address iotago.Address) string {
+	return d.wasp.ExploreAddressBaseURL() + "/" + d.addressToString(address)
 }
 
 func (d *Dashboard) addressToString(a iotago.Address) string {
