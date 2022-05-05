@@ -128,16 +128,22 @@ func (c *consensus) runVMIfNeeded() {
 	c.log.Debugf("runVM needed: total number of requests = %d", len(reqs))
 	// here reqs as a set is deterministic. Must be sorted to have fully deterministic list
 	c.sortBatch(reqs)
-	c.log.Debugf("runVM: sorted requests")
+	c.log.Debugf("runVM: sorted requests: %+v", iscp.ShortRequestIDs(c.consensusBatch.RequestIDs))
 
 	if vmTask := c.prepareVMTask(reqs); vmTask != nil {
 		chainID := iscp.ChainIDFromAliasID(vmTask.AnchorOutput.AliasID)
 		c.log.Debugw("runVMIfNeeded: starting VM task",
 			"chainID", (&chainID).String(),
+			"ACS session ID", vmTask.ACSSessionID,
 			"milestone", vmTask.TimeAssumption.MilestoneIndex,
-			"timestamp", vmTask.TimeAssumption.Time,
+			"timestamp", vmTask.TimeAssumption.Time.UnixNano(),
+			"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
 			"block index", vmTask.AnchorOutput.StateIndex,
+			"entropy", vmTask.Entropy.String(),
+			"validator fee target", vmTask.ValidatorFeeTarget.String(vmTask.L1Params.Bech32Prefix),
 			"num req", len(vmTask.Requests),
+			"estimate gas mode", vmTask.EstimateGasMode,
+			"state commitment", trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
 		)
 		c.workflow.setVMStarted()
 		c.consensusMetrics.CountVMRuns()
