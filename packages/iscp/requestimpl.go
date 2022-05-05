@@ -709,6 +709,14 @@ func ShortRequestIDs(ids []RequestID) []string {
 	return ret
 }
 
+func ShortRequestIDsFromRequests(reqs []Request) []string {
+	requestIDs := make([]RequestID, len(reqs))
+	for i := range reqs {
+		requestIDs[i] = reqs[i].ID()
+	}
+	return ShortRequestIDs(requestIDs)
+}
+
 // endregion ////////////////////////////////////////////////////////////
 
 // region RequestMetadata //////////////////////////////////////////////////
