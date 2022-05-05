@@ -54,15 +54,27 @@ func Read() {
 }
 
 func L1Host() string {
-	return viper.GetString("l1.host")
+	host := viper.GetString("l1.host")
+	if host != "" {
+		return host
+	}
+	return "http://localhost"
 }
 
 func L1APIPort() int {
-	return viper.GetInt("l1.apiport")
+	port := viper.GetInt("l1.apiport")
+	if port != 0 {
+		return port
+	}
+	return 16500 // privtangle
 }
 
 func L1FaucetPort() int {
-	return viper.GetInt("l1.faucet")
+	port := viper.GetInt("l1.faucetport")
+	if port != 0 {
+		return port
+	}
+	return L1APIPort() + 5 // privtangle
 }
 
 func L1Client() nodeconn.L1Client {
