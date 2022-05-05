@@ -38,7 +38,25 @@ var (
 		testwasmlib.ParamUint32,
 		testwasmlib.ParamUint64,
 	}
-	allLengths    = []int{33, 33, 1, 20, 32, 4, 1, 2, 4, 8, 20, 34, 38, 1, 2, 4, 8}
+	allLengths = []int{
+		wasmtypes.ScAddressLength,
+		wasmtypes.ScAddressLength,
+		wasmtypes.ScBoolLength,
+		wasmtypes.ScChainIDLength,
+		wasmtypes.ScHashLength,
+		wasmtypes.ScHnameLength,
+		wasmtypes.ScInt8Length,
+		wasmtypes.ScInt16Length,
+		wasmtypes.ScInt32Length,
+		wasmtypes.ScInt64Length,
+		wasmtypes.ScNftIDLength,
+		wasmtypes.ScRequestIDLength,
+		wasmtypes.ScTokenIDLength,
+		wasmtypes.ScUint8Length,
+		wasmtypes.ScUint16Length,
+		wasmtypes.ScUint32Length,
+		wasmtypes.ScUint64Length,
+	}
 	invalidValues = map[string][][]byte{
 		testwasmlib.ParamAddress: {
 			append([]byte{3}, zeroHash...),
@@ -60,7 +78,7 @@ var (
 			append(zeroHash, []byte{4, 4}...),
 		},
 	}
-	zeroHash = make([]byte, 32)
+	zeroHash = make([]byte, wasmtypes.ScHashLength)
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {

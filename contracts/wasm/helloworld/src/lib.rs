@@ -13,12 +13,10 @@ use wasmlib::*;
 
 use crate::consts::*;
 use crate::results::*;
-use crate::state::*;
 
 mod consts;
 mod contract;
 mod results;
-mod state;
 
 mod helloworld;
 
@@ -46,13 +44,11 @@ fn on_load() {
 }
 
 pub struct HelloWorldContext {
-	state: MutableHelloWorldState,
 }
 
 fn func_hello_world_thunk(ctx: &ScFuncContext) {
 	ctx.log("helloworld.funcHelloWorld");
 	let f = HelloWorldContext {
-		state: MutableHelloWorldState { proxy: state_proxy() },
 	};
 	func_hello_world(ctx, &f);
 	ctx.log("helloworld.funcHelloWorld ok");
@@ -60,14 +56,12 @@ fn func_hello_world_thunk(ctx: &ScFuncContext) {
 
 pub struct GetHelloWorldContext {
 	results: MutableGetHelloWorldResults,
-	state: ImmutableHelloWorldState,
 }
 
 fn view_get_hello_world_thunk(ctx: &ScViewContext) {
 	ctx.log("helloworld.viewGetHelloWorld");
 	let f = GetHelloWorldContext {
 		results: MutableGetHelloWorldResults { proxy: results_proxy() },
-		state: ImmutableHelloWorldState { proxy: state_proxy() },
 	};
 	view_get_hello_world(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);

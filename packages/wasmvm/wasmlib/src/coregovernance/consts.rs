@@ -13,13 +13,17 @@ pub const SC_NAME        : &str = "governance";
 pub const SC_DESCRIPTION : &str = "Core governance contract";
 pub const HSC_NAME       : ScHname = ScHname(0x17cf909f);
 
-pub(crate) const PARAM_CHAIN_OWNER                 : &str = "c";
-pub(crate) const PARAM_CHANGE_ACCESS_NODES_ACTIONS : &str = "p";
-pub(crate) const PARAM_FEE_POLICY_BYTES            : &str = "d";
-pub(crate) const PARAM_MAX_BLOB_SIZE               : &str = "g";
-pub(crate) const PARAM_MAX_EVENT_SIZE              : &str = "h";
-pub(crate) const PARAM_MAX_EVENTS_PER_REQ          : &str = "i";
-pub(crate) const PARAM_STATE_CONTROLLER_ADDRESS    : &str = "S";
+pub(crate) const PARAM_ACCESS_NODE_INFO_ACCESS_API    : &str = "o";
+pub(crate) const PARAM_ACCESS_NODE_INFO_CERTIFICATE   : &str = "n";
+pub(crate) const PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE : &str = "l";
+pub(crate) const PARAM_ACCESS_NODE_INFO_PUB_KEY       : &str = "m";
+pub(crate) const PARAM_CHAIN_OWNER                    : &str = "c";
+pub(crate) const PARAM_CHANGE_ACCESS_NODES_ACTIONS    : &str = "p";
+pub(crate) const PARAM_FEE_POLICY_BYTES               : &str = "d";
+pub(crate) const PARAM_MAX_BLOB_SIZE                  : &str = "g";
+pub(crate) const PARAM_MAX_EVENT_SIZE                 : &str = "h";
+pub(crate) const PARAM_MAX_EVENTS_PER_REQ             : &str = "i";
+pub(crate) const PARAM_STATE_CONTROLLER_ADDRESS       : &str = "S";
 
 pub(crate) const RESULT_ACCESS_NODE_CANDIDATES             : &str = "ac";
 pub(crate) const RESULT_ACCESS_NODES                       : &str = "an";

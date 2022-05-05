@@ -28,27 +28,27 @@ type ClusterConfig struct {
 	L1   nodeconn.L1Config
 }
 
-func DefaultConfig() *ClusterConfig {
-	return &ClusterConfig{
-		Wasp: WaspConfig{
-			NumNodes:           4,
-			FirstAPIPort:       9090,
-			FirstPeeringPort:   4000,
-			FirstNanomsgPort:   5550,
-			FirstDashboardPort: 7000,
-			FirstProfilingPort: 6060,
-			FirstMetricsPort:   2112,
-		},
-		L1: nodeconn.L1Config{
-			Hostname:   "127.0.0.1",
-			APIPort:    8080,
-			FaucetPort: 8091,
-		},
+func DefaultWaspConfig() WaspConfig {
+	return WaspConfig{
+		NumNodes:           4,
+		FirstAPIPort:       9090,
+		FirstPeeringPort:   4000,
+		FirstNanomsgPort:   5550,
+		FirstDashboardPort: 7000,
+		FirstProfilingPort: 6060,
+		FirstMetricsPort:   2112,
 	}
 }
 
 func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
+}
+
+func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config) *ClusterConfig {
+	return &ClusterConfig{
+		Wasp: waspConfig,
+		L1:   l1Config,
+	}
 }
 
 func LoadConfig(dataPath string) (*ClusterConfig, error) {
@@ -71,10 +71,6 @@ func (c *ClusterConfig) Save(dataPath string) error {
 
 func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
-}
-
-func (c *ClusterConfig) goshimmerAPIHost() string {
-	return fmt.Sprintf("%s:%d", c.L1.Hostname, c.L1.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {

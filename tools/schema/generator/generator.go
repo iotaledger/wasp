@@ -85,10 +85,12 @@ func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err
 }
 
 func (g *GenBase) createSourceFile(name string, condition bool) error {
+	path := g.folder + name + g.extension
 	if !condition {
+		_ = os.Remove(path)
 		return nil
 	}
-	return g.createFile(g.folder+name+g.extension, true, func() {
+	return g.createFile(path, true, func() {
 		g.emit("copyright")
 		g.emit("warning")
 		g.emit(name + g.extension)
@@ -176,7 +178,7 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("state", !g.s.CoreContracts)
+	err = g.createSourceFile("state", !g.s.CoreContracts && len(g.s.StateVars) != 0)
 	if err != nil {
 		return err
 	}

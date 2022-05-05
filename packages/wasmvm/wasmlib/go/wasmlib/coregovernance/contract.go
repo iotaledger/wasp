@@ -15,7 +15,8 @@ type AddAllowedStateControllerAddressCall struct {
 }
 
 type AddCandidateNodeCall struct {
-	Func *wasmlib.ScFunc
+	Func   *wasmlib.ScFunc
+	Params MutableAddCandidateNodeParams
 }
 
 type ChangeAccessNodesCall struct {
@@ -38,7 +39,8 @@ type RemoveAllowedStateControllerAddressCall struct {
 }
 
 type RevokeAccessNodeCall struct {
-	Func *wasmlib.ScFunc
+	Func   *wasmlib.ScFunc
+	Params MutableRevokeAccessNodeParams
 }
 
 type RotateStateControllerCall struct {
@@ -52,9 +54,8 @@ type SetChainInfoCall struct {
 }
 
 type SetFeePolicyCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableSetFeePolicyParams
-	Results ImmutableSetFeePolicyResults
+	Func   *wasmlib.ScFunc
+	Params MutableSetFeePolicyParams
 }
 
 type GetAllowedStateControllerAddressesCall struct {
@@ -99,7 +100,9 @@ func (sc Funcs) AddAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) 
 
 // access nodes
 func (sc Funcs) AddCandidateNode(ctx wasmlib.ScFuncCallContext) *AddCandidateNodeCall {
-	return &AddCandidateNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddCandidateNode)}
+	f := &AddCandidateNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddCandidateNode)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
 }
 
 func (sc Funcs) ChangeAccessNodes(ctx wasmlib.ScFuncCallContext) *ChangeAccessNodesCall {
@@ -126,7 +129,9 @@ func (sc Funcs) RemoveAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContex
 }
 
 func (sc Funcs) RevokeAccessNode(ctx wasmlib.ScFuncCallContext) *RevokeAccessNodeCall {
-	return &RevokeAccessNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeAccessNode)}
+	f := &RevokeAccessNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeAccessNode)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
 }
 
 // state controller
@@ -147,7 +152,6 @@ func (sc Funcs) SetChainInfo(ctx wasmlib.ScFuncCallContext) *SetChainInfoCall {
 func (sc Funcs) SetFeePolicy(ctx wasmlib.ScFuncCallContext) *SetFeePolicyCall {
 	f := &SetFeePolicyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetFeePolicy)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 

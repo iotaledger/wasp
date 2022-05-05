@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -44,6 +43,8 @@ const (
 	nodePortOffsetINX
 )
 
+type LogFunc func(format string, args ...interface{})
+
 type PrivTangle struct {
 	CooKeyPair1   *cryptolib.KeyPair
 	CooKeyPair2   *cryptolib.KeyPair
@@ -57,10 +58,10 @@ type PrivTangle struct {
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
 	ctx           context.Context
-	t             *testing.T
+	logfunc       LogFunc
 }
 
-func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *testing.T) *PrivTangle {
+func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc LogFunc) *PrivTangle {
 	pt := PrivTangle{
 		CooKeyPair1:   cryptolib.NewKeyPair(),
 		CooKeyPair2:   cryptolib.NewKeyPair(),
@@ -74,7 +75,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
-		t:             t,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
@@ -101,11 +101,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		pt.startMqtt(i)
 	}
 	pt.WaitInxPlugins()
-
-	// Close when the test ends
-	if t != nil {
-		t.Cleanup(pt.Stop)
-	}
 
 	return &pt
 }
@@ -307,7 +302,7 @@ func (pt *PrivTangle) waitAllReturnTips() {
 		allOK := true
 		for i := range pt.NodeCommands {
 			_, err := pt.nodeClient(i).Tips(pt.ctx)
-			if err != nil && pt.t != nil {
+			if err != nil {
 				pt.logf("Node[%d] is not ready yet: %v", i, err)
 			}
 			if err != nil {
@@ -327,7 +322,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 		allOK := true
 		for i := range pt.NodeCommands {
 			ok, err := pt.nodeClient(i).Health(pt.ctx)
-			if err != nil && pt.t != nil {
+			if err != nil {
 				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
 			if err != nil || !ok {
@@ -337,9 +332,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 		if allOK {
 			break
 		}
-		if pt.t != nil {
-			pt.logf("Waiting to all nodes to startup.")
-		}
+		pt.logf("Waiting to all nodes to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -364,9 +357,7 @@ func (pt *PrivTangle) WaitInxPlugins() {
 		if allOK {
 			return
 		}
-		if pt.t != nil {
-			pt.logf("Waiting to all nodes INX plugings to startup.")
-		}
+		pt.logf("Waiting to all nodes INX plugings to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -437,8 +428,8 @@ func (pt *PrivTangle) NodePortINX(i int) int {
 }
 
 func (pt *PrivTangle) logf(msg string, args ...interface{}) {
-	if pt.t != nil {
-		pt.t.Logf("HORNET Cluster: "+msg, args...)
+	if pt.logfunc != nil {
+		pt.logfunc("HORNET Cluster: "+msg, args...)
 	}
 }
 

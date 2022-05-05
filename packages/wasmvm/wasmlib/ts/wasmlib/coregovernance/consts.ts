@@ -11,13 +11,17 @@ export const ScName        = "governance";
 export const ScDescription = "Core governance contract";
 export const HScName       = new wasmtypes.ScHname(0x17cf909f);
 
-export const ParamChainOwner               = "c";
-export const ParamChangeAccessNodesActions = "p";
-export const ParamFeePolicyBytes           = "d";
-export const ParamMaxBlobSize              = "g";
-export const ParamMaxEventSize             = "h";
-export const ParamMaxEventsPerReq          = "i";
-export const ParamStateControllerAddress   = "S";
+export const ParamAccessNodeInfoAccessAPI    = "o";
+export const ParamAccessNodeInfoCertificate  = "n";
+export const ParamAccessNodeInfoForCommittee = "l";
+export const ParamAccessNodeInfoPubKey       = "m";
+export const ParamChainOwner                 = "c";
+export const ParamChangeAccessNodesActions   = "p";
+export const ParamFeePolicyBytes             = "d";
+export const ParamMaxBlobSize                = "g";
+export const ParamMaxEventSize               = "h";
+export const ParamMaxEventsPerReq            = "i";
+export const ParamStateControllerAddress     = "S";
 
 export const ResultAccessNodeCandidates            = "ac";
 export const ResultAccessNodes                     = "an";

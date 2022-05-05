@@ -11,4 +11,3 @@ export * from "./consts";
 export * from "./contract";
 export * from "./lib";
 export * from "./results";
-export * from "./state";
