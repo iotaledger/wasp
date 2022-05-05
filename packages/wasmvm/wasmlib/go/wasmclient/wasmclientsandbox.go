@@ -1,7 +1,6 @@
 package wasmclient
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
@@ -62,7 +61,7 @@ func (s *WasmClientContext) fnCall(args []byte) []byte {
 		s.Err = err
 		return nil
 	}
-	hFunction := iscp.Hname(req.Function)
+	hFunction := s.cvt.IscpHname(req.Function)
 	res, err := s.svcClient.CallViewByHname(s.chainID, hContract, hFunction, params)
 	if err != nil {
 		s.Err = err
