@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 )
 
 type L1Starter struct {
@@ -15,8 +16,6 @@ type L1Starter struct {
 	privtangleNumNodes int
 	Privtangle         *privtangle.PrivTangle
 }
-
-const pvtTangleAPIPort = 16500
 
 // New sets up the CLI flags relevant to L1/privtangle configuration in the given FlagSet.
 func New(flags *flag.FlagSet) *L1Starter {
@@ -40,12 +39,12 @@ func (s *L1Starter) StartPrivtangleIfNecessary(logfunc privtangle.LogFunc) {
 	s.Privtangle = privtangle.Start(
 		context.Background(),
 		path.Join(os.TempDir(), "privtangle"),
-		pvtTangleAPIPort,
+		privtangledefaults.BasePort,
 		s.privtangleNumNodes,
 		logfunc,
 	)
 	s.Config = nodeconn.L1Config{
-		Hostname:   "http://localhost",
+		Hostname:   privtangledefaults.Host,
 		APIPort:    s.Privtangle.NodePortRestAPI(0),
 		FaucetPort: s.Privtangle.NodePortFaucet(0),
 		FaucetKey:  s.Privtangle.FaucetKeyPair,

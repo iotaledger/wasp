@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -58,7 +59,7 @@ func L1Host() string {
 	if host != "" {
 		return host
 	}
-	return "http://localhost"
+	return privtangledefaults.Host
 }
 
 func L1APIPort() int {
@@ -66,7 +67,7 @@ func L1APIPort() int {
 	if port != 0 {
 		return port
 	}
-	return 16500 // privtangle
+	return privtangledefaults.BasePort + privtangledefaults.NodePortOffsetRestAPI
 }
 
 func L1FaucetPort() int {
@@ -74,13 +75,11 @@ func L1FaucetPort() int {
 	if port != 0 {
 		return port
 	}
-	return L1APIPort() + 5 // privtangle
+	return privtangledefaults.BasePort + privtangledefaults.NodePortOffsetFaucet
 }
 
 func L1Client() nodeconn.L1Client {
 	log.Verbosef("using L1 host %s\n", L1Host())
-
-	// TODO this will fail with "global loger not initialized", not sure what should be done here...
 
 	return nodeconn.NewL1Client(
 		nodeconn.L1Config{
