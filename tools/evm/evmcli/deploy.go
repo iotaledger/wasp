@@ -39,14 +39,11 @@ func (d *DeployParams) InitFlags(cmd *cobra.Command) {
 }
 
 func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {
+	if len(d.alloc) == 0 && d.allocBase64 == "" {
+		return def
+	}
 	if len(d.alloc) != 0 && d.allocBase64 != "" {
 		log.Fatalf("--alloc and --alloc-bytes are mutually exclusive")
-	}
-	if len(d.alloc) == 0 && d.allocBase64 == "" {
-		if len(def) == 0 {
-			log.Fatalf("One of --alloc and --alloc-bytes is mandatory")
-		}
-		return def
 	}
 	if len(d.alloc) != 0 {
 		// --alloc provided
