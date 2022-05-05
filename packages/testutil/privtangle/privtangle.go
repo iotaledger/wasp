@@ -134,18 +134,18 @@ func (pt *PrivTangle) generateSnapshot() {
 func (pt *PrivTangle) startNode(i int) {
 	env := []string{}
 	plugins := "INX,Debug,Prometheus"
-	if i == 0 {
-		plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
-		env = append(env,
-			fmt.Sprintf("COO_PRV_KEYS=%s,%s",
-				hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
-				hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
-			),
-			fmt.Sprintf("FAUCET_PRV_KEY=%s",
-				hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
-			),
-		)
-	}
+	// if i == 0 {
+	// 	plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
+	// 	env = append(env,
+	// 		fmt.Sprintf("COO_PRV_KEYS=%s,%s",
+	// 			hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
+	// 			hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
+	// 		),
+	// 		fmt.Sprintf("FAUCET_PRV_KEY=%s",
+	// 			hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
+	// 		),
+	// 	)
+	// }
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
 	nodePathDB := "db"               // Relative from nodePath.
 	nodeP2PStore := "p2pStore"       // Relative from nodePath.
