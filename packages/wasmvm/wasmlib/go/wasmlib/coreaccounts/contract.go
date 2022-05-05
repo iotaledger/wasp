@@ -10,7 +10,7 @@ package coreaccounts
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DepositCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type FoundryCreateNewCall struct {
@@ -20,27 +20,27 @@ type FoundryCreateNewCall struct {
 }
 
 type FoundryDestroyCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableFoundryDestroyParams
+	Func    *wasmlib.ScFunc
+	Params  MutableFoundryDestroyParams
 }
 
 type FoundryModifySupplyCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableFoundryModifySupplyParams
+	Func    *wasmlib.ScFunc
+	Params  MutableFoundryModifySupplyParams
 }
 
 type HarvestCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableHarvestParams
+	Func    *wasmlib.ScFunc
+	Params  MutableHarvestParams
 }
 
 type TransferAllowanceToCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableTransferAllowanceToParams
+	Func    *wasmlib.ScFunc
+	Params  MutableTransferAllowanceToParams
 }
 
 type WithdrawCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type AccountNFTsCall struct {
@@ -186,21 +186,21 @@ func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncDeposit,
-		FuncFoundryCreateNew,
-		FuncFoundryDestroy,
-		FuncFoundryModifySupply,
-		FuncHarvest,
-		FuncTransferAllowanceTo,
-		FuncWithdraw,
-		ViewAccountNFTs,
-		ViewAccounts,
-		ViewBalance,
-		ViewFoundryOutput,
-		ViewGetAccountNonce,
-		ViewGetNativeTokenIDRegistry,
-		ViewNftData,
-		ViewTotalAssets,
+    	FuncDeposit,
+    	FuncFoundryCreateNew,
+    	FuncFoundryDestroy,
+    	FuncFoundryModifySupply,
+    	FuncHarvest,
+    	FuncTransferAllowanceTo,
+    	FuncWithdraw,
+    	ViewAccountNFTs,
+    	ViewAccounts,
+    	ViewBalance,
+    	ViewFoundryOutput,
+    	ViewGetAccountNonce,
+    	ViewGetNativeTokenIDRegistry,
+    	ViewNftData,
+    	ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

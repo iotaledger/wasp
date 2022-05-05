@@ -65,7 +65,7 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
 // - ParamAgentID. AgentID. Required
-// - ParamForceOpenAccount Bool. Required, default: false
+// - ParamForceOpenAccount Bool. Optional, default: false
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 
