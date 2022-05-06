@@ -98,43 +98,69 @@ func TestGetRequestIDsForBlock(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	f := coreblocklog.ScFuncs.GetRequestIDsForBlock(ctx)
-	f.Params.BlockIndex().SetValue(0)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
-
-	// FIXME: check result
+	for blockNum := uint32(0); blockNum < 6; blockNum++ {
+		f.Params.BlockIndex().SetValue(blockNum)
+		f.Func.Call()
+		require.NoError(t, ctx.Err)
+		reqs := ctx.Chain.GetRequestIDsForBlock(blockNum)
+		assert.Equal(t, uint32(len(reqs)), f.Results.RequestID().Length())
+		for reqNum := uint32(0); reqNum < uint32(len(reqs)); reqNum++ {
+			assert.Equal(t, reqs[reqNum].Bytes(), f.Results.RequestID().GetRequestID(reqNum).Value().Bytes())
+		}
+	}
 }
 
 func TestGetRequestReceipt(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	blockIndex := uint32(3)
+	reqIndex := uint16(0)
+	reqs := ctx.Chain.GetRequestIDsForBlock(blockIndex)
 	f := coreblocklog.ScFuncs.GetRequestReceipt(ctx)
+	f.Params.RequestID().SetValue(ctx.Cvt.ScRequestID(reqs[0]))
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
+	assert.Equal(t, blockIndex, f.Results.BlockIndex().Value())
+	assert.Equal(t, reqIndex, f.Results.RequestIndex().Value())
 
-	// FIXME: check result
+	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().Value())
+	require.NoError(t, err)
+	soloreceipt, exist := ctx.Chain.GetRequestReceipt(reqs[0])
+	assert.True(t, exist)
+	assert.Equal(t, soloreceipt, receipt)
 }
 
 func TestGetRequestReceiptsForBlock(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	blockIndex := uint32(3)
 	f := coreblocklog.ScFuncs.GetRequestReceiptsForBlock(ctx)
+	f.Params.BlockIndex().SetValue(blockIndex)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	// FIXME: check result
+	soloreceipts := ctx.Chain.GetRequestReceiptsForBlock(blockIndex)
+	recNum := f.Results.RequestRecord().Length()
+	for i := uint32(0); i < recNum; i++ {
+		receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().GetBytes(i).Value())
+		require.NoError(t, err)
+		assert.Equal(t, soloreceipts[i], receipt)
+	}
 }
 
 func TestIsRequestProcessed(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	blockIndex := uint32(3)
+	reqs := ctx.Chain.GetRequestIDsForBlock(blockIndex)
+
 	f := coreblocklog.ScFuncs.IsRequestProcessed(ctx)
+	f.Params.RequestID().SetValue(ctx.Cvt.ScRequestID(reqs[0]))
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-
 	// FIXME: check result
 }
 
@@ -142,31 +168,54 @@ func TestGetEventsForRequest(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	blockIndex := uint32(3)
+	reqs := ctx.Chain.GetRequestIDsForBlock(blockIndex)
+
 	f := coreblocklog.ScFuncs.GetEventsForRequest(ctx)
+	f.Params.RequestID().SetValue(ctx.Cvt.ScRequestID(reqs[0]))
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	// FIXME: check result
+	events, err := ctx.Chain.GetEventsForRequest(reqs[0])
+	require.NoError(t, err)
+	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
+	for i := uint32(0); i < uint32(len(events)); i++ {
+		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+	}
 }
 
 func TestGetEventsForBlock(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	blockIndex := uint32(3)
 	f := coreblocklog.ScFuncs.GetEventsForBlock(ctx)
+	f.Params.BlockIndex().SetValue(blockIndex)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	// FIXME: check result
+	events, err := ctx.Chain.GetEventsForBlock(blockIndex)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
+	for i := uint32(0); i < uint32(len(events)); i++ {
+		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+	}
 }
 
 func TestGetEventsForContract(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	blockIndex := uint32(3)
 	f := coreblocklog.ScFuncs.GetEventsForContract(ctx)
+	f.Params.ContractHname().SetValue(coreblocklog.HScName)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	// FIXME: check result
+	events, err := ctx.Chain.GetEventsForContract(coreblocklog.ScName)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, uint32(len(events)), f.Results.Event().Length())
+	for i := blockIndex; i < blockIndex+1; i++ {
+		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+	}
 }
