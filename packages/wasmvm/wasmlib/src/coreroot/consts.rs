@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "root";
-pub const SC_DESCRIPTION : &str = "Core root contract";
+pub const SC_DESCRIPTION : &str = "Root Contract";
 pub const HSC_NAME       : ScHname = ScHname(0xcebf5908);
 
 pub(crate) const PARAM_DEPLOY_PERMISSIONS_ENABLED : &str = "de";

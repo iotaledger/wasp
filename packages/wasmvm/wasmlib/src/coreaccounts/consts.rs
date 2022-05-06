@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "accounts";
-pub const SC_DESCRIPTION : &str = "Core chain account ledger contract";
+pub const SC_DESCRIPTION : &str = "Chain account ledger contract";
 pub const HSC_NAME       : ScHname = ScHname(0x3c4b5e02);
 
 pub(crate) const PARAM_AGENT_ID            : &str = "a";

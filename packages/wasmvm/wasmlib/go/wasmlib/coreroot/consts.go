@@ -5,13 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreroot
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "root"
-	ScDescription = "Core root contract"
+	ScDescription = "Root Contract"
 	HScName       = wasmtypes.ScHname(0xcebf5908)
 )
 

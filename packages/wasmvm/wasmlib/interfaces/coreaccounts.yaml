@@ -1,5 +1,5 @@
 name: CoreAccounts
-description: Core chain account ledger contract
+description: Chain account ledger contract
 structs: {}
 typedefs: {}
 state: {}

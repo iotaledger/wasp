@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "blocklog";
-pub const SC_DESCRIPTION : &str = "Core block log contract";
+pub const SC_DESCRIPTION : &str = "Block log contract";
 pub const HSC_NAME       : ScHname = ScHname(0xf538ef2b);
 
 pub(crate) const PARAM_BLOCK_INDEX    : &str = "n";

@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreroot
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -22,7 +23,7 @@ func (s ImmutableDeployContractParams) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
-// TODO variable init params for deployed contract
+//TODO variable init params for deployed contract
 func (s ImmutableDeployContractParams) ProgramHash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamProgramHash))
 }
@@ -40,7 +41,7 @@ func (s MutableDeployContractParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
-// TODO variable init params for deployed contract
+//TODO variable init params for deployed contract
 func (s MutableDeployContractParams) ProgramHash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamProgramHash))
 }
