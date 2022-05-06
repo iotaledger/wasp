@@ -9,6 +9,7 @@ views:
     results:
       stateControllerAddress=s: Address
       governingAddress=g: Address
+      # the addresses have been set as state controller address or governing address since the following block index
       blockIndex=n: Uint32
   getBlockInfo:
     params:

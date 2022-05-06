@@ -22,7 +22,7 @@ type ContractRecord struct {
 	// is hname(name) =  iscp.Hn(name)
 	Name string
 	// The agentID of the entity which deployed the instance. It can be interpreted as
-	// an priviledged user of the instance, however it is up to the smart contract.
+	// an privileged user of the instance, however it is up to the smart contract.
 	Creator *iscp.AgentID
 }
 
