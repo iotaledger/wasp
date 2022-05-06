@@ -141,19 +141,18 @@ func (sc Funcs) IsRequestProcessed(ctx wasmlib.ScViewCallContext) *IsRequestProc
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-    	ViewControlAddresses,
-    	ViewGetBlockInfo,
-    	ViewGetEventsForBlock,
-    	ViewGetEventsForContract,
-    	ViewGetEventsForRequest,
-    	ViewGetLatestBlockInfo,
-    	ViewGetRequestIDsForBlock,
-    	ViewGetRequestReceipt,
-    	ViewGetRequestReceiptsForBlock,
-    	ViewIsRequestProcessed,
+		ViewControlAddresses,
+		ViewGetBlockInfo,
+		ViewGetEventsForBlock,
+		ViewGetEventsForContract,
+		ViewGetEventsForRequest,
+		ViewGetLatestBlockInfo,
+		ViewGetRequestIDsForBlock,
+		ViewGetRequestReceipt,
+		ViewGetRequestReceiptsForBlock,
+		ViewIsRequestProcessed,
 	},
-	Funcs: []wasmlib.ScFuncContextFunction{
-	},
+	Funcs: []wasmlib.ScFuncContextFunction{},
 	Views: []wasmlib.ScViewContextFunction{
 		wasmlib.ViewError,
 		wasmlib.ViewError,
