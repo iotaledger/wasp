@@ -26,7 +26,7 @@ funcs:
     params:
       foundrySN=s: Uint32
       supplyDeltaAbs=d: BigInt
-      destroyTokens=y: Bool
+      destroyTokens=y: Bool?
 
 views:
   balance:
@@ -47,7 +47,7 @@ views:
       accountNonce=n: Uint64
   getNativeTokenIDRegistry:
     results:
-      mapping=G: map[TokenID]Bool
+      mapping=this: map[TokenID]Bool
   foundryOutput:
     params:
       foundrySN=s: Uint32
