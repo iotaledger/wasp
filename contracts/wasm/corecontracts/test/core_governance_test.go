@@ -187,7 +187,6 @@ func TestGetChainInfo(t *testing.T) {
 	assert.Equal(t, governance.DefaultMaxBlobSize, f.Results.MaxBlobSize().Value())
 	assert.Equal(t, governance.DefaultMaxEventSize, f.Results.MaxEventSize().Value())
 	assert.Equal(t, governance.DefaultMaxEventsPerRequest, f.Results.MaxEventsPerReq().Value())
-
 }
 
 func TestGetMaxBlobSize(t *testing.T) {

@@ -142,6 +142,7 @@ func TestBalance(t *testing.T) {
 	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value().Uint64()
 	assert.Equal(t, mintAmount, balance)
 }
+
 func TestTotalAssets(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
