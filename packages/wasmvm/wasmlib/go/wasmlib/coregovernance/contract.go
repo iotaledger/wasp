@@ -10,52 +10,52 @@ package coregovernance
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type AddAllowedStateControllerAddressCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddAllowedStateControllerAddressParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddAllowedStateControllerAddressParams
 }
 
 type AddCandidateNodeCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableAddCandidateNodeParams
+	Func    *wasmlib.ScFunc
+	Params  MutableAddCandidateNodeParams
 }
 
 type ChangeAccessNodesCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableChangeAccessNodesParams
+	Func    *wasmlib.ScFunc
+	Params  MutableChangeAccessNodesParams
 }
 
 type ClaimChainOwnershipCall struct {
-	Func *wasmlib.ScFunc
+	Func    *wasmlib.ScFunc
 }
 
 type DelegateChainOwnershipCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableDelegateChainOwnershipParams
+	Func    *wasmlib.ScFunc
+	Params  MutableDelegateChainOwnershipParams
 }
 
 type RemoveAllowedStateControllerAddressCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableRemoveAllowedStateControllerAddressParams
+	Func    *wasmlib.ScFunc
+	Params  MutableRemoveAllowedStateControllerAddressParams
 }
 
 type RevokeAccessNodeCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableRevokeAccessNodeParams
+	Func    *wasmlib.ScFunc
+	Params  MutableRevokeAccessNodeParams
 }
 
 type RotateStateControllerCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableRotateStateControllerParams
+	Func    *wasmlib.ScFunc
+	Params  MutableRotateStateControllerParams
 }
 
 type SetChainInfoCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetChainInfoParams
+	Func    *wasmlib.ScFunc
+	Params  MutableSetChainInfoParams
 }
 
 type SetFeePolicyCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetFeePolicyParams
+	Func    *wasmlib.ScFunc
+	Params  MutableSetFeePolicyParams
 }
 
 type GetAllowedStateControllerAddressesCall struct {
@@ -198,22 +198,22 @@ func (sc Funcs) GetMaxBlobSize(ctx wasmlib.ScViewCallContext) *GetMaxBlobSizeCal
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncAddAllowedStateControllerAddress,
-		FuncAddCandidateNode,
-		FuncChangeAccessNodes,
-		FuncClaimChainOwnership,
-		FuncDelegateChainOwnership,
-		FuncRemoveAllowedStateControllerAddress,
-		FuncRevokeAccessNode,
-		FuncRotateStateController,
-		FuncSetChainInfo,
-		FuncSetFeePolicy,
-		ViewGetAllowedStateControllerAddresses,
-		ViewGetChainInfo,
-		ViewGetChainNodes,
-		ViewGetChainOwner,
-		ViewGetFeePolicy,
-		ViewGetMaxBlobSize,
+    	FuncAddAllowedStateControllerAddress,
+    	FuncAddCandidateNode,
+    	FuncChangeAccessNodes,
+    	FuncClaimChainOwnership,
+    	FuncDelegateChainOwnership,
+    	FuncRemoveAllowedStateControllerAddress,
+    	FuncRevokeAccessNode,
+    	FuncRotateStateController,
+    	FuncSetChainInfo,
+    	FuncSetFeePolicy,
+    	ViewGetAllowedStateControllerAddresses,
+    	ViewGetChainInfo,
+    	ViewGetChainNodes,
+    	ViewGetChainOwner,
+    	ViewGetFeePolicy,
+    	ViewGetMaxBlobSize,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

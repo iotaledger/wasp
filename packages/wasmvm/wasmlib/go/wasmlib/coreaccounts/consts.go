@@ -5,13 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "accounts"
-	ScDescription = "Core chain account ledger contract"
+	ScDescription = "Chain account ledger contract"
 	HScName       = wasmtypes.ScHname(0x3c4b5e02)
 )
 

@@ -1,5 +1,5 @@
 name: CoreAccounts
-description: Core chain account ledger contract
+description: Chain account ledger contract
 structs: {}
 typedefs: {}
 state: {}
@@ -12,7 +12,7 @@ funcs:
   withdraw: {}
   harvest: 
     params:
-      forceMinimumIotas=f: Uint64
+      forceMinimumIotas=f: BigInt
   foundryCreateNew:
     params:
       tokenScheme=t: Bytes
@@ -33,13 +33,13 @@ views:
     params:
       agentID=a: AgentID
     results:
-      balances=this: map[TokenID]Uint64
+      balances=this: map[TokenID]BigInt
   totalAssets:
     results:
-      assets=this: map[TokenID]Uint64
+      assets=this: map[TokenID]BigInt
   accounts:
     results:
-      allAccounts=this: map[TokenID]Uint64
+      allAccounts=this: map[AgentID]Bool
   getAccountNonce:
     params:
       foundrySN=s: Uint32
