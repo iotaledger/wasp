@@ -44,15 +44,15 @@ func NewCallResultsProxy(v *ScView, resultsProxy *wasmtypes.Proxy) {
 }
 
 func (v *ScView) Call() {
-	v.call(nil)
+	v.callWithAllowance(nil)
 }
 
-func (v *ScView) call(transfer *ScTransfer) {
+func (v *ScView) callWithAllowance(allowance *ScTransfer) {
 	req := wasmrequests.CallRequest{
-		Contract: v.hContract,
-		Function: v.hFunction,
-		Params:   v.params.Bytes(),
-		Transfer: transfer.Bytes(),
+		Contract:  v.hContract,
+		Function:  v.hFunction,
+		Params:    v.params.Bytes(),
+		Allowance: allowance.Bytes(),
 	}
 	res := Sandbox(FnCall, req.Bytes())
 	if v.resultsProxy != nil {
@@ -107,9 +107,10 @@ func (f *ScInitFunc) Params() []interface{} {
 
 type ScFunc struct {
 	ScView
-	ctx      ScFuncCallContext
-	delay    uint32
-	transfer *ScTransfer
+	allowance *ScTransfer
+	ctx       ScFuncCallContext
+	delay     uint32
+	transfer  *ScTransfer
 }
 
 func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
@@ -120,11 +121,24 @@ func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *S
 	return f
 }
 
+func (f *ScFunc) Allowance(allowance *ScTransfer) *ScFunc {
+	f.allowance = allowance
+	return f
+}
+
+func (f *ScFunc) AllowanceIotas(amount uint64) *ScFunc {
+	f.allowance = NewScTransferIotas(amount)
+	return f
+}
+
 func (f *ScFunc) Call() {
+	if f.transfer != nil {
+		Panic("cannot transfer assets in a call")
+	}
 	if f.delay != 0 {
 		Panic("cannot delay a call")
 	}
-	f.call(f.transfer)
+	f.callWithAllowance(f.allowance)
 }
 
 func (f *ScFunc) Delay(seconds uint32) *ScFunc {
@@ -143,12 +157,13 @@ func (f *ScFunc) Post() {
 
 func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
 	req := wasmrequests.PostRequest{
-		ChainID:  chainID,
-		Contract: f.hContract,
-		Function: f.hFunction,
-		Params:   f.params.Bytes(),
-		Transfer: f.transfer.Bytes(),
-		Delay:    f.delay,
+		ChainID:   chainID,
+		Contract:  f.hContract,
+		Function:  f.hFunction,
+		Params:    f.params.Bytes(),
+		Allowance: f.allowance.Bytes(),
+		Transfer:  f.transfer.Bytes(),
+		Delay:     f.delay,
 	}
 	res := Sandbox(FnPost, req.Bytes())
 	if f.resultsProxy != nil {
