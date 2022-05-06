@@ -52,6 +52,8 @@ func createChain(t *testing.T) *iscp.ChainID {
 }
 
 func TestNodeConn(t *testing.T) {
+	l1.StartPrivtangleIfNecessary(t.Logf)
+
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peerCount := 1

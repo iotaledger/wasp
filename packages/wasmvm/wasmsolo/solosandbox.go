@@ -132,24 +132,26 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
-func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance *iscp.Allowance) []byte {
-	assets := allowance
-	if assets.Assets.Iotas < 1000 {
-		// assets are different from allowance, so clone allowance before modifying
-		assets = allowance.Clone()
-		assets.Assets.Iotas = 1000
-	}
-	req := solo.NewCallParamsFromDict(contract, function, params)
-	req.AddFungibleTokens(assets.Assets)
-	// TODO NFT
-	req.WithAllowance(allowance)
-	req.WithMaxAffordableGasBudget()
+func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance, transfer *iscp.Allowance) []byte {
 	ctx := s.ctx
-	//TODO mint!
-	//if ctx.mint > 0 {
-	//	mintAddress := ledgerstate.NewED25519Address(ctx.keyPair.PublicKey)
-	//	req.WithMint(mintAddress, ctx.mint)
-	//}
+	req := solo.NewCallParamsFromDict(contract, function, params)
+	if allowance.IsEmpty() {
+		allowance = transfer
+	}
+	req.WithAllowance(allowance)
+	// Force a minimum transfer of 1000 iotas for dust and some gas
+	// excess can always be reclaimed from the chain account by the user
+	// This also removes the silly requirement to transfer 1 iota
+	if transfer.IsEmpty() && !ctx.offLedger {
+		transfer = iscp.NewAllowanceIotas(1000)
+	}
+	if !transfer.IsEmpty() && transfer.Assets.Iotas < 1000 {
+		transfer = transfer.Clone()
+		transfer.Assets.Iotas = 1000
+	}
+	req.AddFungibleTokens(transfer.Assets)
+	// TODO NFT
+	req.WithMaxAffordableGasBudget()
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
 	if ctx.offLedger {
@@ -217,10 +219,10 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	s.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssets(req.Transfer)
-	if !scAssets.IsEmpty() {
-		allowance := s.cvt.IscpAllowance(scAssets)
-		return s.postSync(ctx.scName, funcName, params, allowance)
+	scAllowance := wasmlib.NewScAssets(req.Allowance)
+	if !scAllowance.IsEmpty() {
+		allowance := s.cvt.IscpAllowance(scAllowance)
+		return s.postSync(ctx.scName, funcName, params, allowance, nil)
 	}
 
 	_ = wasmhost.Connect(ctx.wasmHostOld)
@@ -304,12 +306,12 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	s.Tracef("POST %s.%s", s.ctx.scName, funcName)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}
-	allowance := s.cvt.IscpAllowance(scAssets)
-	return s.postSync(s.ctx.scName, funcName, params, allowance)
+	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
+	return s.postSync(s.ctx.scName, funcName, params, allowance, transfer)
 }
 
 func (s *SoloSandbox) fnRequest(args []byte) []byte {

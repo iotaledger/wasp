@@ -68,6 +68,12 @@ func parseAssets(args []string) *iscp.FungibleTokens {
 		if len(parts) != 2 {
 			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
 		}
+		// In the past we would indicate iotas as 'IOTA:nnn'
+		// Now we can simply use ':nnn', but let's keep it
+		// backward compatible for now and allow both
+		if parts[0] == "IOTA" {
+			parts[0] = ""
+		}
 		assetIDBytes := assetIDFromString(parts[0])
 
 		amount, ok := new(big.Int).SetString(parts[1], 10)
