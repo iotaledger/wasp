@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "blocklog";
-export const ScDescription = "Core block log contract";
+export const ScDescription = "Block log contract";
 export const HScName       = new wasmtypes.ScHname(0xf538ef2b);
 
 export const ParamBlockIndex    = "n";

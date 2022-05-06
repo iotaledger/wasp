@@ -1,5 +1,5 @@
 name: CoreBlob
-description: Core blob contract
+description: Blob Contract
 structs: {}
 typedefs: {}
 state: {}

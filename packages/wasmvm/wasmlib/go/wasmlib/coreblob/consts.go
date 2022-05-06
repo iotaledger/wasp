@@ -12,7 +12,7 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "blob"
-	ScDescription = "Core blob contract"
+	ScDescription = "Blob Contract"
 	HScName       = wasmtypes.ScHname(0xfd91bc63)
 )
 

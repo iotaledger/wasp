@@ -1,5 +1,5 @@
 name: CoreBlockLog
-description: Core block log contract
+description: Block log contract
 structs: {}
 typedefs: {}
 state: {}

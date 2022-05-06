@@ -1,5 +1,5 @@
 name: CoreRoot
-description: Core root contract
+description: Root Contract
 structs: {}
 typedefs: {}
 state: {}
