@@ -53,7 +53,12 @@ func (a *Allowance) Clone() *Allowance {
 }
 
 func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
-	a.Assets.SpendFromFungibleTokenBudget(toSpend.Assets)
+	if a.IsEmpty() {
+		return toSpend.IsEmpty()
+	}
+	if !a.Assets.SpendFromFungibleTokenBudget(toSpend.Assets) {
+		return false
+	}
 	nftSet := a.NFTSet()
 	for _, id := range toSpend.NFTs {
 		if !nftSet[id] {
