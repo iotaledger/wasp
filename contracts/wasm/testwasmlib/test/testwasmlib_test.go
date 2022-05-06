@@ -117,10 +117,10 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Int16().SetValue(-12345)
 	pt.Params.Int32().SetValue(-1234567890)
 	pt.Params.Int64().SetValue(-1234567890123456789)
-	pt.Params.NftID().SetValue(wasmtypes.NftIDFromBytes([]byte("01234567890123456789")))
+	pt.Params.NftID().SetValue(wasmtypes.NftIDFromBytes(testwasmlib.TestNFTID[:]))
 	pt.Params.RequestID().SetValue(wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
 	pt.Params.String().SetValue("this is a string")
-	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple")))
+	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes(testwasmlib.TestTokenID[:]))
 	pt.Params.Uint8().SetValue(123)
 	pt.Params.Uint16().SetValue(12345)
 	pt.Params.Uint32().SetValue(1234567890)
@@ -214,7 +214,7 @@ func TestViewBlockRecords(t *testing.T) {
 	rec.Func.Call()
 	require.NoError(t, ctx.Err)
 	require.True(t, rec.Results.Record().Exists())
-	require.EqualValues(t, 218, len(rec.Results.Record().Value()))
+	require.EqualValues(t, 230, len(rec.Results.Record().Value()))
 }
 
 func TestStringMapOfStringArrayClear(t *testing.T) {

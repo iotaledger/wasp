@@ -6,9 +6,15 @@ package testwasmlib
 import (
 	"bytes"
 
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
+
+var (
+	TestNFTID   = tpkg.RandNFTAddress().NFTID()
+	TestTokenID = tpkg.RandNativeToken().ID
 )
 
 func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
@@ -49,7 +55,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
 	if f.Params.NftID().Exists() {
-		nftID := wasmtypes.NftIDFromBytes([]byte("01234567890123456789"))
+		nftID := wasmtypes.NftIDFromBytes(TestNFTID[:])
 		ctx.Require(f.Params.NftID().Value() == nftID, "mismatch: NftID")
 	}
 	if f.Params.RequestID().Exists() {
@@ -60,7 +66,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.String().Value() == "this is a string", "mismatch: String")
 	}
 	if f.Params.TokenID().Exists() {
-		tokenID := wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
+		tokenID := wasmtypes.TokenIDFromBytes(TestTokenID[:])
 		ctx.Require(f.Params.TokenID().Value() == tokenID, "mismatch: TokenID")
 	}
 	if f.Params.Uint8().Exists() {
