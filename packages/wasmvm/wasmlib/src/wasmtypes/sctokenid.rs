@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_TOKEN_ID_LENGTH: usize = 50;
+pub const SC_TOKEN_ID_LENGTH: usize = 38;
 
 #[derive(PartialEq, Clone, Copy, Eq, Hash)]
 pub struct ScTokenID {

@@ -568,7 +568,6 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 // foundryOutputRec contains information to reconstruct output
 type foundryOutputRec struct {
 	Amount      uint64 // always dust deposit
-	TokenTag    iotago.TokenTag
 	TokenScheme iotago.TokenScheme
 	Metadata    []byte
 	BlockIndex  uint32
@@ -580,7 +579,6 @@ func (f *foundryOutputRec) Bytes() []byte {
 	mu.WriteUint32(f.BlockIndex).
 		WriteUint16(f.OutputIndex).
 		WriteUint64(f.Amount)
-	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenTag(f.TokenTag), mu)
 	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
 	util.WriteBytes16ToMarshalUtil(f.Metadata, mu)
 
@@ -597,13 +595,6 @@ func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutpu
 		return nil, err
 	}
 	if ret.Amount, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	tagBin, err := util.ReadBytes8FromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-	if ret.TokenTag, err = codec.DecodeTokenTag(tagBin); err != nil {
 		return nil, err
 	}
 	schemeBin, err := util.ReadBytes8FromMarshalUtil(mu)
@@ -640,7 +631,6 @@ func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
 	foundryRec := foundryOutputRec{
 		Amount:      f.Amount,
-		TokenTag:    f.TokenTag,
 		TokenScheme: f.TokenScheme,
 		Metadata:    []byte{},
 		BlockIndex:  blockIndex,
@@ -667,7 +657,6 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		NativeTokens: nil,
 		SerialNumber: sn,
 		TokenScheme:  rec.TokenScheme,
-		TokenTag:     rec.TokenTag,
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
 		},

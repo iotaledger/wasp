@@ -9,8 +9,8 @@ require (
 	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/iotaledger/hive.go v0.0.0-20220428170023-7fb77d7475d8
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220504130911-9e8278f09723
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220503191919-5a9d1fff0743
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220506133510-ef2e113d6665
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220506110451-defa263ae45a
 	github.com/knadh/koanf v1.4.1
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/libp2p/go-libp2p v0.19.1
@@ -191,7 +191,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
 	golang.org/x/tools v0.1.10 // indirect
-	google.golang.org/genproto v0.0.0-20220503193339-ba3ae3f07e29 // indirect
+	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3 // indirect
 	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect

@@ -343,8 +343,7 @@ func TestTransferNFTs(t *testing.T) {
 
 func TestFoundryOutputRec(t *testing.T) {
 	o := foundryOutputRec{
-		Amount:   300,
-		TokenTag: iotago.TokenTag{},
+		Amount: 300,
 		TokenScheme: &iotago.SimpleTokenScheme{
 			MaximumSupply: big.NewInt(1000),
 			MintedTokens:  big.NewInt(20),
@@ -357,7 +356,6 @@ func TestFoundryOutputRec(t *testing.T) {
 	o1, err := foundryOutputRecFromMarshalUtil(marshalutil.New(oBin))
 	require.NoError(t, err)
 	require.EqualValues(t, o.Amount, o1.Amount)
-	require.EqualValues(t, o.TokenTag, o1.TokenTag)
 	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
 	require.True(t, ok)
 	//nolint:gocritic

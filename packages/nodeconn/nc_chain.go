@@ -202,12 +202,12 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 					ncc.log.Warnf("error while receiving unspent output: %v", err)
 					continue
 				}
-				tid, err := outResponse.TxID()
+				tid, err := outResponse.Metadata.TxID()
 				if err != nil {
 					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
 					continue
 				}
-				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
 				ncc.log.Debugf("received UTXO, outputID: %s", outID.ToHex())
 				ncc.outputHandler(outID, out)
 			case <-ncc.nc.ctx.Done():
@@ -251,12 +251,12 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
 				continue
 			}
-			tid, err := outResponse.TxID()
+			tid, err := outResponse.Metadata.TxID()
 			if err != nil {
 				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
 				continue
 			}
-			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
 			ncc.log.Debugf("received chain state update, outputID: %s", outID.ToHex())
 			ncc.stateOutputHandler(outID, out)
 		case <-ncc.nc.ctx.Done():

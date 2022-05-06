@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:revive
+
 package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -25,7 +25,6 @@ const (
 	ParamNftID             = "z"
 	ParamSupplyDeltaAbs    = "d"
 	ParamTokenScheme       = "t"
-	ParamTokenTag          = "g"
 )
 
 const (

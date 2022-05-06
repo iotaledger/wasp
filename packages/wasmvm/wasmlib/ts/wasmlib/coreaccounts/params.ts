@@ -12,19 +12,11 @@ export class ImmutableFoundryCreateNewParams extends wasmtypes.ScProxy {
 	tokenScheme(): wasmtypes.ScImmutableBytes {
 		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamTokenScheme));
 	}
-
-	tokenTag(): wasmtypes.ScImmutableBytes {
-		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamTokenTag));
-	}
 }
 
 export class MutableFoundryCreateNewParams extends wasmtypes.ScProxy {
 	tokenScheme(): wasmtypes.ScMutableBytes {
 		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamTokenScheme));
-	}
-
-	tokenTag(): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamTokenTag));
 	}
 }
 

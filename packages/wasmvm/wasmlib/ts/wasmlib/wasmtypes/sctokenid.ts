@@ -6,7 +6,7 @@ import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export const ScTokenIDLength = 50;
+export const ScTokenIDLength = 38;
 
 export class ScTokenID {
     id: u8[] = wasmtypes.zeroes(ScTokenIDLength);

@@ -6,7 +6,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScTokenIDLength = 50
+const ScTokenIDLength = 38
 
 type ScTokenID struct {
 	id [ScTokenIDLength]byte

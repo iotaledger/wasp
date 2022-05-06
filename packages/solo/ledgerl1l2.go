@@ -164,7 +164,6 @@ type foundryParams struct {
 	ch   *Chain
 	user *cryptolib.KeyPair
 	sch  iotago.TokenScheme
-	tag  *iotago.TokenTag
 }
 
 // CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and ftokens for the call
@@ -196,11 +195,6 @@ func (fp *foundryParams) WithTokenScheme(sch iotago.TokenScheme) *foundryParams 
 	return fp
 }
 
-func (fp *foundryParams) WithTag(tag *iotago.TokenTag) *foundryParams {
-	fp.tag = tag
-	return fp
-}
-
 const (
 	allowanceForFoundryDustDeposit = 1000
 	allowanceForModifySupply       = 1000
@@ -210,9 +204,6 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
 	if fp.sch != nil {
 		par.Set(accounts.ParamTokenScheme, codec.EncodeTokenScheme(fp.sch))
-	}
-	if fp.tag != nil {
-		par.Set(accounts.ParamTokenTag, codec.EncodeTokenTag(*fp.tag))
 	}
 	user := fp.ch.OriginatorPrivateKey
 	if fp.user != nil {

@@ -46,8 +46,6 @@ type KVDecoder interface {
 	MustGetBytes(key kv.Key, def ...[]byte) []byte
 	GetTokenScheme(key kv.Key, def ...iotago.TokenScheme) (iotago.TokenScheme, error)
 	MustGetTokenScheme(key kv.Key, def ...iotago.TokenScheme) iotago.TokenScheme
-	GetTokenTag(key kv.Key, def ...iotago.TokenTag) (iotago.TokenTag, error)
-	MustGetTokenTag(key kv.Key, def ...iotago.TokenTag) iotago.TokenTag
 	GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error)
 	MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int
 }

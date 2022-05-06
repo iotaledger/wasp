@@ -730,7 +730,6 @@ func TestFoundries(t *testing.T) {
 		for i := 0; i < n; i++ {
 			sn, _ := txb.CreateNewFoundry(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(10_000_000), MeltedTokens: util.Big0, MintedTokens: util.Big0},
-				iotago.TokenTag{},
 				nil,
 			)
 			require.EqualValues(t, i+1, int(sn))
@@ -803,7 +802,6 @@ func TestSerDe(t *testing.T) {
 			Amount:       1337,
 			NativeTokens: nil,
 			SerialNumber: 5,
-			TokenTag:     iotago.TokenTag{},
 			TokenScheme: &iotago.SimpleTokenScheme{
 				MintedTokens:  big.NewInt(200),
 				MeltedTokens:  big.NewInt(0),

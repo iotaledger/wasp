@@ -16,7 +16,6 @@ funcs:
   foundryCreateNew:
     params:
       tokenScheme=t: Bytes
-      tokenTag=g: Bytes
     results:
       foundrySN=s: Uint32
   foundryDestroy:

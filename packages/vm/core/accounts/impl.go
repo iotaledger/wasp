@@ -192,10 +192,9 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ts := util.MustTokenScheme(tokenScheme)
 	ts.MeltedTokens = util.Big0
 	ts.MintedTokens = util.Big0
-	tokenTag := ctx.Params().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
 
 	// create UTXO
-	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, nil)
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
 	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
 	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
 	debitIotasFromAllowance(ctx, dustConsumed)

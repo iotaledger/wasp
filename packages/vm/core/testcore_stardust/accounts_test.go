@@ -372,11 +372,8 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		ch.MustDepositIotasToL2(50_000_000, senderKeyPair)
 		for sn := uint32(1); sn <= 10; sn++ {
-			var tag iotago.TokenTag
-			copy(tag[:], util.Uint32To4Bytes(sn))
 			snBack, tokenID, err := ch.NewFoundryParams(uint64(sn + 1)).
 				WithUser(senderKeyPair).
-				WithTag(&tag).
 				CreateFoundry()
 			require.NoError(t, err)
 			require.EqualValues(t, int(sn), int(snBack))
@@ -564,9 +561,8 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	return ret
 }
 
-func (v *testParams) createFoundryAndMint(tag *iotago.TokenTag, maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
+func (v *testParams) createFoundryAndMint(maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
 	sn, tokenID, err := v.ch.NewFoundryParams(maxSupply).
-		WithTag(tag).
 		WithUser(v.user).
 		CreateFoundry()
 	require.NoError(v.env.T, err)
@@ -614,7 +610,7 @@ func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	v := initDepositTest(t, initLoad...)
 	v.ch.MustDepositIotasToL2(10_000, v.user)
 	// create foundry and mint 100 tokens
-	v.sn, v.tokenID = v.createFoundryAndMint(nil, 1_000_000, 100)
+	v.sn, v.tokenID = v.createFoundryAndMint(1_000_000, 100)
 	// prepare request parameters to withdraw everything what is in the account
 	// do not run the request yet
 	v.req = solo.NewCallParams("accounts", "withdraw").
@@ -893,8 +889,6 @@ func TestMintedTokensBurn(t *testing.T) {
 	_, ident1, ident1AddrKeys := tpkg.RandEd25519Identity()
 	aliasIdent1 := tpkg.RandAliasAddress()
 
-	tokenTag := tpkg.Rand12ByteArray()
-
 	inputIDs := tpkg.RandOutputIDs(3)
 	inputs := iotago.OutputSet{
 		inputIDs[0]: &iotago.BasicOutput{
@@ -920,7 +914,6 @@ func TestMintedTokensBurn(t *testing.T) {
 			Amount:       OneMi,
 			NativeTokens: nil,
 			SerialNumber: 1,
-			TokenTag:     tokenTag,
 			TokenScheme: &iotago.SimpleTokenScheme{
 				MintedTokens:  big.NewInt(50),
 				MeltedTokens:  util.Big0,
@@ -963,7 +956,6 @@ func TestMintedTokensBurn(t *testing.T) {
 				Amount:       2 * OneMi,
 				NativeTokens: nil,
 				SerialNumber: 1,
-				TokenTag:     tokenTag,
 				TokenScheme: &iotago.SimpleTokenScheme{
 					// burn supply by -50
 					MintedTokens:  big.NewInt(50),
