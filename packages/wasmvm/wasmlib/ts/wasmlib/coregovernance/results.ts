@@ -8,18 +8,6 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableSetFeePolicyResults extends wasmtypes.ScProxy {
-	gasFeePolicyBytes(): wasmtypes.ScImmutableBytes {
-		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
-	}
-}
-
-export class MutableSetFeePolicyResults extends wasmtypes.ScProxy {
-	gasFeePolicyBytes(): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
-	}
-}
-
 export class ArrayOfImmutableAddress extends wasmtypes.ScProxy {
 
 	length(): u32 {

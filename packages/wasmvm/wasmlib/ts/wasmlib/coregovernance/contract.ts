@@ -18,6 +18,7 @@ export class AddAllowedStateControllerAddressCall {
 
 export class AddCandidateNodeCall {
 	func: wasmlib.ScFunc;
+	params: sc.MutableAddCandidateNodeParams = new sc.MutableAddCandidateNodeParams(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScFuncCallContext) {
 		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncAddCandidateNode);
 	}
@@ -56,6 +57,7 @@ export class RemoveAllowedStateControllerAddressCall {
 
 export class RevokeAccessNodeCall {
 	func: wasmlib.ScFunc;
+	params: sc.MutableRevokeAccessNodeParams = new sc.MutableRevokeAccessNodeParams(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScFuncCallContext) {
 		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncRevokeAccessNode);
 	}
@@ -80,7 +82,6 @@ export class SetChainInfoCall {
 export class SetFeePolicyCall {
 	func: wasmlib.ScFunc;
 	params: sc.MutableSetFeePolicyParams = new sc.MutableSetFeePolicyParams(wasmlib.ScView.nilProxy);
-	results: sc.ImmutableSetFeePolicyResults = new sc.ImmutableSetFeePolicyResults(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScFuncCallContext) {
 		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetFeePolicy);
 	}
@@ -143,7 +144,9 @@ export class ScFuncs {
 
 	// access nodes
 	static addCandidateNode(ctx: wasmlib.ScFuncCallContext): AddCandidateNodeCall {
-		return new AddCandidateNodeCall(ctx);
+		const f = new AddCandidateNodeCall(ctx);
+		f.params = new sc.MutableAddCandidateNodeParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
 	}
 
 	static changeAccessNodes(ctx: wasmlib.ScFuncCallContext): ChangeAccessNodesCall {
@@ -170,7 +173,9 @@ export class ScFuncs {
 	}
 
 	static revokeAccessNode(ctx: wasmlib.ScFuncCallContext): RevokeAccessNodeCall {
-		return new RevokeAccessNodeCall(ctx);
+		const f = new RevokeAccessNodeCall(ctx);
+		f.params = new sc.MutableRevokeAccessNodeParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
 	}
 
 	// state controller
@@ -191,7 +196,6 @@ export class ScFuncs {
 	static setFeePolicy(ctx: wasmlib.ScFuncCallContext): SetFeePolicyCall {
 		const f = new SetFeePolicyCall(ctx);
 		f.params = new sc.MutableSetFeePolicyParams(wasmlib.newCallParamsProxy(f.func));
-		f.results = new sc.ImmutableSetFeePolicyResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 

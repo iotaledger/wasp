@@ -45,18 +45,18 @@ impl ScView {
     }
 
     pub fn call(&self) {
-        self.call_with_transfer(None);
+        self.call_with_allowance(None);
     }
 
-    fn call_with_transfer(&self, transfer: Option<ScTransfer>) {
+    fn call_with_allowance(&self, allowance: Option<ScTransfer>) {
         let mut req = wasmrequests::CallRequest {
             contract: self.h_contract,
             function: self.h_function,
             params: self.params.to_bytes(),
-            transfer: vec![0; SC_UINT32_LENGTH],
+            allowance: vec![0; SC_UINT32_LENGTH],
         };
-        if let Some(transfer) = transfer {
-            req.transfer = transfer.to_bytes();
+        if let Some(allowance) = allowance {
+            req.allowance = allowance.to_bytes();
         }
         let res = sandbox(FN_CALL, &req.to_bytes());
         self.results.copy(&res);
@@ -107,6 +107,7 @@ impl ScInitFunc {
 #[derive(Clone)]
 pub struct ScFunc {
     pub view: ScView,
+    allowance: ScTransfer,
     delay: u32,
     transfer: ScTransfer,
 }
@@ -115,6 +116,7 @@ impl ScFunc {
     pub fn new(h_contract: ScHname, h_function: ScHname) -> ScFunc {
         ScFunc {
             view: ScView::new(h_contract, h_function),
+            allowance: ScTransfer::new(),
             delay: 0,
             transfer: ScTransfer::new(),
         }
@@ -128,11 +130,24 @@ impl ScFunc {
         ScView::link_results(proxy, &func.view);
     }
 
+    pub fn allowance(&self, allowance: ScTransfer) -> ScFunc {
+        let mut ret = self.clone();
+        ret.allowance = allowance.clone();
+        ret
+    }
+
+    pub fn allowance_iotas(&self, amount: u64) -> ScFunc {
+        self.allowance(ScTransfer::iotas(amount))
+    }
+
     pub fn call(&self) {
-        if self.delay != 0 {
-            panic("cannot delay a call")
+        if !self.transfer.is_empty() {
+            panic("cannot transfer assets in a call");
         }
-        self.view.call_with_transfer(Some(self.transfer.clone()));
+        if self.delay != 0 {
+            panic("cannot delay a call");
+        }
+        self.view.call_with_allowance(Some(self.transfer.clone()));
     }
 
     pub fn delay(&self, seconds: u32) -> ScFunc {
@@ -157,6 +172,7 @@ impl ScFunc {
             contract: self.view.h_contract,
             function: self.view.h_function,
             params: self.view.params.to_bytes(),
+            allowance: self.allowance.to_bytes(),
             transfer: self.transfer.to_bytes(),
             delay: self.delay,
         }

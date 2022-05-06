@@ -86,18 +86,18 @@ export class ScSandbox {
     }
 
     // calls a smart contract function
-    protected callWithTransfer(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfer | null): ScImmutableDict {
+    protected callWithAllowance(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
+         const req = new wasmrequests.CallRequest();
+        req.contract = hContract;
+        req.function = hFunction;
         if (params === null) {
             params = new ScDict([]);
         }
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
-        const req = new wasmrequests.CallRequest();
-        req.contract = hContract;
-        req.function = hFunction;
         req.params = params.toBytes();
-        req.transfer = transfer.toBytes();
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
         const res = sandbox(FnCall, req.bytes());
         return new ScDict(res).immutable();
     }
@@ -167,7 +167,7 @@ export class ScSandbox {
 export class ScSandboxView extends ScSandbox {
     // calls a smart contract view
     public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null): ScImmutableDict {
-        return this.callWithTransfer(hContract, hFunction, params, null);
+        return this.callWithAllowance(hContract, hFunction, params, null);
     }
 
     public rawState(): ScImmutableState {
@@ -190,8 +190,8 @@ export class ScSandboxFunc extends ScSandbox {
     //}
 
     // calls a smart contract function
-    public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfer | null): ScImmutableDict {
-        return this.callWithTransfer(hContract, hFunction, params, transfer);
+    public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
+        return this.callWithAllowance(hContract, hFunction, params, allowance);
     }
 
     // retrieve the agent id of the caller of the smart contract
@@ -218,14 +218,19 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     public estimateDust(fn: ScFunc): u64 {
-        let transfer = fn.transferAssets;
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
         const req = new wasmrequests.PostRequest();
         req.contract = fn.hContract;
         req.function = fn.hFunction;
         req.params = fn.params.toBytes();
+        let allowance = fn.allowanceAssets;
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
+        let transfer = fn.transferAssets;
+        if (transfer === null) {
+            transfer = new ScTransfer();
+        }
         req.transfer = transfer.toBytes();
         req.delay = fn.delaySeconds;
         return wasmtypes.uint64FromBytes(sandbox(FnEstimateDust, req.bytes()));
@@ -241,13 +246,14 @@ export class ScSandboxFunc extends ScSandbox {
         return new ScAssets(sandbox(FnMinted, null)).balances();
     }
 
-    // (delayed) posts a smart contract function request
-    public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, transfer: ScTransfer, delay: u32): void {
+    // Post (delayed) posts a SC function request
+    public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, allowance: ScTransfer, transfer: ScTransfer, delay: u32): void {
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
         req.contract = hContract;
         req.function = hFunction;
         req.params = params.toBytes();
+        req.allowance = allowance.toBytes();
         req.transfer = transfer.toBytes();
         req.delay = delay;
         sandbox(FnPost, req.bytes());
@@ -288,7 +294,7 @@ export class ScSandboxFunc extends ScSandbox {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
     }
 
-    // transfer assets to the specified Tangle ledger address
+    // Send transfers SC assets to the specified address
     public send(address: wasmtypes.ScAddress, transfer: ScTransfer): void {
         // we need some assets to send
         if (transfer.isEmpty()) {
@@ -305,7 +311,7 @@ export class ScSandboxFunc extends ScSandbox {
     //	panic("implement me")
     //}
 
-    // transfer allowed assets to the specified ISCP ledger address
+    // TransferAllowed transfers allowed assets from caller to the specified account
     public transferAllowed(agentID: wasmtypes.ScAgentID, transfer: ScTransfer, create: bool): void {
         // we need some assets to send
         if (transfer.isEmpty()) {

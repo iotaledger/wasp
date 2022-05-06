@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/mr-tron/base58"
 )
@@ -49,6 +50,12 @@ type WasmClientContext struct {
 	scHname       iscp.Hname
 	svcClient     IClientService
 }
+
+var (
+	_ wasmlib.ScHost            = new(WasmClientContext)
+	_ wasmlib.ScFuncCallContext = new(WasmClientContext)
+	_ wasmlib.ScViewCallContext = new(WasmClientContext)
+)
 
 func NewWasmClientContext(svcClient IClientService, chainID *wasmtypes.ScChainID, scName string) *WasmClientContext {
 	s := &WasmClientContext{}

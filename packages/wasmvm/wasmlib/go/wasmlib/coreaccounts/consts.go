@@ -18,12 +18,12 @@ const (
 
 const (
 	ParamAgentID           = "a"
-	ParamDestroyTokens     = "destroyTokens"
+	ParamDestroyTokens     = "y"
 	ParamForceMinimumIotas = "f"
 	ParamForceOpenAccount  = "c"
-	ParamFoundrySN         = "foundrySN"
+	ParamFoundrySN         = "s"
 	ParamNftID             = "z"
-	ParamSupplyDeltaAbs    = "supplyDeltaAbs"
+	ParamSupplyDeltaAbs    = "d"
 	ParamTokenScheme       = "t"
 	ParamTokenTag          = "g"
 )

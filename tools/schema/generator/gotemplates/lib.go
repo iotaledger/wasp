@@ -58,8 +58,7 @@ type $FuncName$+Context struct {
 $#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
-$#if func MutablePackageState
-$#if view ImmutablePackageState
+$#if state PackageState
 }
 
 func $kind$FuncName$+Thunk(ctx wasmlib.Sc$Kind$+Context) {
@@ -68,8 +67,7 @@ $#if result initResultDict
 	f := &$FuncName$+Context{
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
-$#if func MutablePackageStateInit
-$#if view ImmutablePackageStateInit
+$#if state PackageStateInit
 	}
 $#emit accessCheck
 $#each mandatory requireMandatory
@@ -111,18 +109,28 @@ $#if events PackageEventsExist
 		},
 `,
 	// *******************************
+	"PackageState": `
+$#if func MutablePackageState
+$#if view ImmutablePackageState
+`,
+	// *******************************
 	"MutablePackageState": `
 	State   Mutable$Package$+State
+`,
+	// *******************************
+	"ImmutablePackageState": `
+	State   Immutable$Package$+State
+`,
+	// *******************************
+	"PackageStateInit": `
+$#if func MutablePackageStateInit
+$#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"MutablePackageStateInit": `
 		State: Mutable$Package$+State{
 			proxy: wasmlib.NewStateProxy(),
 		},
-`,
-	// *******************************
-	"ImmutablePackageState": `
-	State   Immutable$Package$+State
 `,
 	// *******************************
 	"ImmutablePackageStateInit": `

@@ -28,6 +28,7 @@ PATHS=(\
     "packages/webapi/..." \
     "packages/util/..." \
     "packages/testutil/privtangle" \
+    "contracts/wasm/..." \
 )
 WD=$PWD
 

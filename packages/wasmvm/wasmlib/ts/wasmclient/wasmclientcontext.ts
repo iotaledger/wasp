@@ -1,25 +1,32 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
+import * as wasmrequests from "wasmlib/wasmrequests";
 import * as wasmclient from "./index";
-import {Hash, IKeyPair} from "./crypto";
+import {Base58, Hash, IKeyPair} from "./crypto";
 import {IOnLedger} from "./goshimmer/models/on_ledger";
 import {Colors} from "./colors";
 import {Buffer} from "./buffer";
+import {panic} from "./index";
+
+declare type u8 = number;
+declare type i32 = number;
 
 export interface IEventHandler {
     callHandler(topic: string, params: string[]): void;
 }
 
-export class Service {
-    private serviceClient: wasmclient.ServiceClient;
+export class WasmClientContext implements wasmlib.ScHost {
+    private serviceClient: wasmclient.WasmClientService;
     private webSocket: WebSocket | null = null;
     public keyPair: IKeyPair | null = null;
     private eventHandlers: Array<IEventHandler> = [];
     public scHname: wasmclient.Hname;
     private waspWebSocketUrl = "";
 
-    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname) {
+    constructor(client: wasmclient.WasmClientService, scHname: wasmclient.Hname) {
         this.serviceClient = client;
         this.scHname = scHname;
     }
@@ -132,5 +139,91 @@ export class Service {
         for (let i = 0; i < this.eventHandlers.length; i++) {
             this.eventHandlers[i].callHandler(topic, params);
         }
+    }
+
+/////////////////////////////////////////////////////////////////
+
+    exportName(index: i32, name: string): void{
+        panic("WasmClientContext.ExportName");
+    }
+    
+    sandbox(funcNr: i32, args: u8[] | null): u8[]{
+        switch (funcNr) {
+        case wasmlib.FnCall:
+            return this.fnCall(args);
+        case wasmlib.FnPost:
+            return this.fnPost(args);
+        case wasmlib.FnUtilsBase58Encode:
+            return Base58.encode(args);
+        case wasmlib.FnUtilsBase58Decode:
+            return Base58.decode(wasmtypes.stringFromBytes(args));
+         }
+        panic("implement me")
+        return [];
+     }
+    
+    stateDelete(key: u8[]): void{
+        panic("WasmClientContext.StateDelete");
+    }
+    
+    stateExists(key: u8[]): bool{
+        panic("WasmClientContext.StateExists");
+        return false;
+    }
+    
+    stateGet(key: u8[]): u8[] | null{
+        panic("WasmClientContext.StateGet");
+        return null;
+    }
+    
+    stateSet(key: u8[], value: u8[]): void{
+        panic("WasmClientContext.StateSet");
+    }
+
+/////////////////////////////////////////////////////////////////
+
+    private fnCall(args: u8[]): u8[] {
+        const req = wasmrequests.CallRequest.fromBytes(args);
+        let hContract = this.cvt.IscpHname(req.contract);
+        if (hContract != this.scHname) {
+            this.Err = errors.Errorf("unknown contract: %this", req.contract.toString());
+            return nil;
+        }
+        let params, err = dict.FromBytes(req.params);
+        if (err != nil) {
+            this.Err = err;
+            return nil;
+        }
+        let hFunction = this.cvt.iscpHname(req.function);
+        let res, err = this.svcClient.CallViewByHname(this.chainID, hContract, hFunction, params);
+        if (err != nil) {
+            this.Err = err;
+            return nil;
+        }
+        return res.toBytes();
+    }
+
+    private fnPost(args: u8[]): u8[] {
+        const req = wasmrequests.PostRequest.fromBytes(args);
+        let chainID = this.cvt.iscpChainID(&req.chainID);
+        if (!chainID.equals(this.chainID)) {
+            this.Err = errors.Errorf("unknown chain id: %this", req.chainID.toString());
+            return nil;
+        }
+        let hContract = this.cvt.IscpHname(req.contract);
+        if (hContract != this.scHname) {
+            this.Err = errors.Errorf("unknown contract: %this", req.contract.toString());
+            return nil;
+        }
+        let params, err = dict.FromBytes(req.params);
+        if (err != nil) {
+            this.Err = err;
+            return nil;
+        }
+        let scAssets = new wasmlib.ScAssets(req.transfer);
+        let allowance = this.cvt.iscpAllowance(scAssets);
+        let hFunction = this.cvt.iscpHname(req.function);
+        this.postRequestOffLedger(hFunction, params, allowance, this.keyPair);
+        return nil;
     }
 }

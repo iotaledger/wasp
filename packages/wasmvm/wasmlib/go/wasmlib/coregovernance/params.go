@@ -26,6 +26,46 @@ func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() 
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
 
+type ImmutableAddCandidateNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamAccessNodeInfoAccessAPI))
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoForCommittee() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamAccessNodeInfoForCommittee))
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoPubKey() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
+type MutableAddCandidateNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamAccessNodeInfoAccessAPI))
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoCertificate() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoForCommittee() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamAccessNodeInfoForCommittee))
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoPubKey() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
 type MapBytesToImmutableUint8 struct {
 	proxy wasmtypes.Proxy
 }
@@ -92,6 +132,30 @@ type MutableRemoveAllowedStateControllerAddressParams struct {
 
 func (s MutableRemoveAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamStateControllerAddress))
+}
+
+type ImmutableRevokeAccessNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoPubKey() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
+type MutableRevokeAccessNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s MutableRevokeAccessNodeParams) AccessNodeInfoPubKey() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
 }
 
 type ImmutableRotateStateControllerParams struct {

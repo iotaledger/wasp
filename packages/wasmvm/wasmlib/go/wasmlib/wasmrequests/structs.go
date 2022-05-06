@@ -10,29 +10,30 @@ package wasmrequests
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type CallRequest struct {
-	Contract wasmtypes.ScHname
-	Function wasmtypes.ScHname
-	Params   []byte
-	Transfer []byte
+	// caller assets that the call is allowed to access
+	Allowance []byte
+	Contract  wasmtypes.ScHname
+	Function  wasmtypes.ScHname
+	Params    []byte
 }
 
 func NewCallRequestFromBytes(buf []byte) *CallRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &CallRequest{}
+	data.Allowance = wasmtypes.BytesDecode(dec)
 	data.Contract = wasmtypes.HnameDecode(dec)
 	data.Function = wasmtypes.HnameDecode(dec)
-	data.Params   = wasmtypes.BytesDecode(dec)
-	data.Transfer = wasmtypes.BytesDecode(dec)
+	data.Params = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *CallRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.BytesEncode(enc, o.Allowance)
 	wasmtypes.HnameEncode(enc, o.Contract)
 	wasmtypes.HnameEncode(enc, o.Function)
 	wasmtypes.BytesEncode(enc, o.Params)
-	wasmtypes.BytesEncode(enc, o.Transfer)
 	return enc.Buf()
 }
 
@@ -79,9 +80,9 @@ func NewDeployRequestFromBytes(buf []byte) *DeployRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &DeployRequest{}
 	data.Description = wasmtypes.StringDecode(dec)
-	data.Name        = wasmtypes.StringDecode(dec)
-	data.Params      = wasmtypes.BytesDecode(dec)
-	data.ProgHash    = wasmtypes.HashDecode(dec)
+	data.Name = wasmtypes.StringDecode(dec)
+	data.Params = wasmtypes.BytesDecode(dec)
+	data.ProgHash = wasmtypes.HashDecode(dec)
 	dec.Close()
 	return data
 }
@@ -128,22 +129,26 @@ func (o MutableDeployRequest) Value() *DeployRequest {
 }
 
 type PostRequest struct {
-	ChainID  wasmtypes.ScChainID
-	Contract wasmtypes.ScHname
-	Delay    uint32
-	Function wasmtypes.ScHname
-	Params   []byte
+	// caller assets that the call is allowed to access
+	Allowance []byte
+	ChainID   wasmtypes.ScChainID
+	Contract  wasmtypes.ScHname
+	Delay     uint32
+	Function  wasmtypes.ScHname
+	Params    []byte
+	// assets that are transferred into caller account
 	Transfer []byte
 }
 
 func NewPostRequestFromBytes(buf []byte) *PostRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PostRequest{}
-	data.ChainID  = wasmtypes.ChainIDDecode(dec)
+	data.Allowance = wasmtypes.BytesDecode(dec)
+	data.ChainID = wasmtypes.ChainIDDecode(dec)
 	data.Contract = wasmtypes.HnameDecode(dec)
-	data.Delay    = wasmtypes.Uint32Decode(dec)
+	data.Delay = wasmtypes.Uint32Decode(dec)
 	data.Function = wasmtypes.HnameDecode(dec)
-	data.Params   = wasmtypes.BytesDecode(dec)
+	data.Params = wasmtypes.BytesDecode(dec)
 	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
@@ -151,6 +156,7 @@ func NewPostRequestFromBytes(buf []byte) *PostRequest {
 
 func (o *PostRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.BytesEncode(enc, o.Allowance)
 	wasmtypes.ChainIDEncode(enc, o.ChainID)
 	wasmtypes.HnameEncode(enc, o.Contract)
 	wasmtypes.Uint32Encode(enc, o.Delay)
@@ -200,7 +206,7 @@ type SendRequest struct {
 func NewSendRequestFromBytes(buf []byte) *SendRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &SendRequest{}
-	data.Address  = wasmtypes.AddressDecode(dec)
+	data.Address = wasmtypes.AddressDecode(dec)
 	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
@@ -254,8 +260,8 @@ type TransferRequest struct {
 func NewTransferRequestFromBytes(buf []byte) *TransferRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &TransferRequest{}
-	data.AgentID  = wasmtypes.AgentIDDecode(dec)
-	data.Create   = wasmtypes.BoolDecode(dec)
+	data.AgentID = wasmtypes.AgentIDDecode(dec)
+	data.Create = wasmtypes.BoolDecode(dec)
 	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data

@@ -59,7 +59,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
 			panic(err)
 		}
-		lg = logger.NewLogger("cluster-tool")
+		lg = logger.NewLogger(name)
 	}
 	return &Cluster{
 		Name:             name,

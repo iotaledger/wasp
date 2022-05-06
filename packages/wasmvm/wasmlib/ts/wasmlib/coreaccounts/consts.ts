@@ -12,12 +12,12 @@ export const ScDescription = "Core chain account ledger contract";
 export const HScName       = new wasmtypes.ScHname(0x3c4b5e02);
 
 export const ParamAgentID           = "a";
-export const ParamDestroyTokens     = "destroyTokens";
+export const ParamDestroyTokens     = "y";
 export const ParamForceMinimumIotas = "f";
 export const ParamForceOpenAccount  = "c";
-export const ParamFoundrySN         = "foundrySN";
+export const ParamFoundrySN         = "s";
 export const ParamNftID             = "z";
-export const ParamSupplyDeltaAbs    = "supplyDeltaAbs";
+export const ParamSupplyDeltaAbs    = "d";
 export const ParamTokenScheme       = "t";
 export const ParamTokenTag          = "g";
 
