@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "governance";
-export const ScDescription = "Core governance contract";
+export const ScDescription = "Governance contract";
 export const HScName       = new wasmtypes.ScHname(0x17cf909f);
 
 export const ParamAccessNodeInfoAccessAPI    = "o";

@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "blob";
-pub const SC_DESCRIPTION : &str = "Core blob contract";
+pub const SC_DESCRIPTION : &str = "Blob Contract";
 pub const HSC_NAME       : ScHname = ScHname(0xfd91bc63);
 
 pub(crate) const PARAM_BLOBS       : &str = "this";

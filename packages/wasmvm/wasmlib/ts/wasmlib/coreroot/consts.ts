@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "root";
-export const ScDescription = "Core root contract";
+export const ScDescription = "Root Contract";
 export const HScName       = new wasmtypes.ScHname(0xcebf5908);
 
 export const ParamDeployPermissionsEnabled = "de";

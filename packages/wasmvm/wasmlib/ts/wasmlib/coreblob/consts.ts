@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "blob";
-export const ScDescription = "Core blob contract";
+export const ScDescription = "Blob Contract";
 export const HScName       = new wasmtypes.ScHname(0xfd91bc63);
 
 export const ParamBlobs       = "this";
