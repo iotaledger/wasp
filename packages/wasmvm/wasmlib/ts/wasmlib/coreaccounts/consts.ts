@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "accounts";
-export const ScDescription = "Core chain account ledger contract";
+export const ScDescription = "Chain account ledger contract";
 export const HScName       = new wasmtypes.ScHname(0x3c4b5e02);
 
 export const ParamAgentID           = "a";
@@ -27,7 +27,7 @@ export const ResultAssets           = "this";
 export const ResultBalances         = "this";
 export const ResultFoundryOutputBin = "b";
 export const ResultFoundrySN        = "s";
-export const ResultMapping          = "G";
+export const ResultMapping          = "this";
 export const ResultNftData          = "e";
 export const ResultNftIDs           = "i";
 

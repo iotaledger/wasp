@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -85,16 +86,16 @@ type ImmutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableHarvestParams) ForceMinimumIotas() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamForceMinimumIotas))
+func (s ImmutableHarvestParams) ForceMinimumIotas() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamForceMinimumIotas))
 }
 
 type MutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableHarvestParams) ForceMinimumIotas() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamForceMinimumIotas))
+func (s MutableHarvestParams) ForceMinimumIotas() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamForceMinimumIotas))
 }
 
 type ImmutableTransferAllowanceToParams struct {
