@@ -143,7 +143,7 @@ func (c *consensus) runVMIfNeeded() {
 			"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
 			"block index", vmTask.AnchorOutput.StateIndex,
 			"entropy", vmTask.Entropy.String(),
-			"validator fee target", vmTask.ValidatorFeeTarget.String(vmTask.L1Params.Bech32Prefix),
+			"validator fee target", vmTask.ValidatorFeeTarget.String(vmTask.L1Params.Protocol.Bech32HRP),
 			"num req", len(vmTask.Requests),
 			"estimate gas mode", vmTask.EstimateGasMode,
 			"state commitment", trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),

@@ -12,9 +12,11 @@ use corecontracts::*;
 use wasmlib::*;
 
 use crate::consts::*;
+use crate::state::*;
 
 mod consts;
 mod contract;
+mod state;
 
 mod corecontracts;
 

@@ -202,13 +202,11 @@ func (pt *PrivTangle) startCoordinator(i int) {
 		"--cooBootstrap",
 		"--cooStartIndex", "0",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		// fmt.Sprintf("--coordinator.bindAddress=0.0.0.0:%d", pt.NodePortCoordinator(i)),
 	}
 	pt.startINXPlugin(i, "inx-coordinator", args, env)
 }
 
 func (pt *PrivTangle) startFaucet(i int) {
-	// TODO
 	env := []string{
 		fmt.Sprintf("FAUCET_PRV_KEY=%s",
 			hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
@@ -233,7 +231,6 @@ func (pt *PrivTangle) startMqtt(i int) {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--mqtt.websocket.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
-		// fmt.Sprintf("--mqtt.wsPort=%d", pt.NodePortMQTTWebSocket(i)),
 	}
 	pt.startINXPlugin(i, "inx-mqtt", args, nil)
 }
@@ -243,11 +240,6 @@ func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) {
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		panic(xerrors.Errorf("Unable to create dir %v: %w", path, err))
 	}
-
-	// TODO is this needed? - probably not
-	// if err := os.WriteFile(filepath.Join(path, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-	// 	panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
-	// }
 
 	cmd := exec.CommandContext(pt.ctx, plugin, args...)
 	cmd.Env = os.Environ()
@@ -310,7 +302,7 @@ func (pt *PrivTangle) waitAllReady() {
 		allOK := true
 		for i := range pt.NodeCommands {
 			_, err := pt.nodeClient(i).Info(pt.ctx)
-			if err != nil && pt.t != nil {
+			if err != nil {
 				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
 			if err != nil {
@@ -320,9 +312,7 @@ func (pt *PrivTangle) waitAllReady() {
 		if allOK {
 			break
 		}
-		if pt.t != nil {
-			pt.logf("Waiting to all nodes to startup.")
-		}
+		pt.logf("Waiting to all nodes to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -423,10 +413,6 @@ func (pt *PrivTangle) NodePortFaucet(i int) int {
 
 func (pt *PrivTangle) NodePortMQTT(i int) int {
 	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetMQTT
-}
-
-func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
-	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetMQTTWebSocket
 }
 
 func (pt *PrivTangle) NodePortCoordinator(i int) int {
