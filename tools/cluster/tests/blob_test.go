@@ -28,7 +28,8 @@ func setupBlobTest(t *testing.T) *chainEnv {
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 5, blockIndex)
+		require.Greater(t, blockIndex, uint32(2))
+		require.LessOrEqual(t, blockIndex, uint32(5))
 	}
 
 	_, myAddress, err := e.clu.NewKeyPairWithFunds()
