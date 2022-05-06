@@ -91,18 +91,18 @@ pub trait ScSandbox {
     }
 
     // calls a smart contract function
-    fn call_with_transfer(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfer>) -> ScImmutableDict {
+    fn call_with_allowance(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, allowance: Option<ScTransfer>) -> ScImmutableDict {
         let mut req = wasmrequests::CallRequest {
             contract: h_contract,
             function: h_function,
             params: vec![0; SC_UINT32_LENGTH],
-            transfer: vec![0; SC_UINT32_LENGTH],
+            allowance: vec![0; SC_UINT32_LENGTH],
         };
         if let Some(params) = params {
             req.params = params.to_bytes();
         }
-        if let Some(transfer) = transfer {
-            req.transfer = transfer.to_bytes();
+        if let Some(allowance) = allowance {
+            req.allowance = allowance.to_bytes();
         }
         let buf = sandbox(FN_CALL, &req.to_bytes());
         ScImmutableDict::new(ScDict::new(&buf))
@@ -174,7 +174,7 @@ pub trait ScSandbox {
 pub trait ScSandboxView: ScSandbox {
     // calls a smart contract view
     fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>) -> ScImmutableDict {
-        return self.call_with_transfer(h_contract, h_function, params, None);
+        return self.call_with_allowance(h_contract, h_function, params, None);
     }
 
     fn raw_state(&self) -> ScImmutableDict {
@@ -194,8 +194,8 @@ pub trait ScSandboxFunc: ScSandbox {
     //}
 
     // calls a smart contract func or view
-    fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfer>) -> ScImmutableDict {
-        return self.call_with_transfer(h_contract, h_function, params, transfer);
+    fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, allowance: Option<ScTransfer>) -> ScImmutableDict {
+        return self.call_with_allowance(h_contract, h_function, params, allowance);
     }
 
     // retrieve the agent id of the caller of the smart contract
@@ -238,13 +238,14 @@ pub trait ScSandboxFunc: ScSandbox {
         return ScAssets::new(&buf).balances();
     }
 
-    // (delayed) posts a smart contract function request
-    fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, transfer: ScTransfer, delay: u32) {
+    // Post (delayed) posts a SC function request
+    fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, allowance: ScTransfer, transfer: ScTransfer, delay: u32) {
         let req = wasmrequests::PostRequest {
             chain_id,
             contract: h_contract,
             function: h_function,
             params: params.to_bytes(),
+            allowance: allowance.to_bytes(),
             transfer: transfer.to_bytes(),
             delay: delay,
         };
@@ -289,7 +290,7 @@ pub trait ScSandboxFunc: ScSandbox {
         return request_id_from_bytes(&sandbox(FN_REQUEST_ID, &[]));
     }
 
-    // transfer assets to the specified Tangle ledger address
+    // Send transfers SC assets to the specified address
     fn send(&self, address: &ScAddress, transfer: &ScTransfer) {
         // we need some assets to send
         if transfer.is_empty() {
@@ -307,7 +308,7 @@ pub trait ScSandboxFunc: ScSandbox {
     //	panic("implement me")
     //}
 
-    // transfer assets to the specified Tangle ledger address
+    // TransferAllowed transfers allowed assets from caller to the specified account
     fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfer, create: bool) {
         // we need some assets to send
         if transfer.is_empty() {

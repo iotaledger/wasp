@@ -85,12 +85,12 @@ func (s ScSandbox) Balances() *ScBalances {
 }
 
 // calls a smart contract function
-func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer *ScTransfer) *ScImmutableDict {
+func (s ScSandbox) callWithAllowance(hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance *ScTransfer) *ScImmutableDict {
 	req := &wasmrequests.CallRequest{
-		Contract: hContract,
-		Function: hFunction,
-		Params:   params.Bytes(),
-		Transfer: transfer.Bytes(),
+		Contract:  hContract,
+		Function:  hFunction,
+		Params:    params.Bytes(),
+		Allowance: allowance.Bytes(),
 	}
 	res := Sandbox(FnCall, req.Bytes())
 	return NewScDictFromBytes(res).Immutable()
@@ -167,7 +167,7 @@ type ScSandboxView struct {
 
 // calls a smart contract view
 func (s ScSandboxView) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict) *ScImmutableDict {
-	return s.call(hContract, hFunction, params, nil)
+	return s.callWithAllowance(hContract, hFunction, params, nil)
 }
 
 type ScSandboxFunc struct {
@@ -186,8 +186,8 @@ func (s ScSandboxFunc) Allowance() *ScBalances {
 //}
 
 // calls a smart contract function
-func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer *ScTransfer) *ScImmutableDict {
-	return s.call(hContract, hFunction, params, transfer)
+func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance *ScTransfer) *ScImmutableDict {
+	return s.callWithAllowance(hContract, hFunction, params, allowance)
 }
 
 // retrieve the agent id of the caller of the smart contract
@@ -213,11 +213,12 @@ func (s ScSandboxFunc) Entropy() wasmtypes.ScHash {
 
 func (s ScSandboxFunc) EstimateDust(fn *ScFunc) uint64 {
 	req := &wasmrequests.PostRequest{
-		Contract: fn.hContract,
-		Function: fn.hFunction,
-		Params:   fn.params.Bytes(),
-		Transfer: fn.transfer.Bytes(),
-		Delay:    fn.delay,
+		Contract:  fn.hContract,
+		Function:  fn.hFunction,
+		Params:    fn.params.Bytes(),
+		Allowance: fn.allowance.Bytes(),
+		Transfer:  fn.transfer.Bytes(),
+		Delay:     fn.delay,
 	}
 	return wasmtypes.Uint64FromBytes(Sandbox(FnEstimateDust, req.Bytes()))
 }
@@ -232,15 +233,16 @@ func (s ScSandboxFunc) Minted() ScBalances {
 	return NewScAssets(Sandbox(FnMinted, nil)).Balances()
 }
 
-// (delayed) posts a smart contract function request
-func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfer, delay uint32) {
+// Post (delayed) posts a SC function request
+func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance, transfer ScTransfer, delay uint32) {
 	req := &wasmrequests.PostRequest{
-		ChainID:  chainID,
-		Contract: hContract,
-		Function: hFunction,
-		Params:   params.Bytes(),
-		Transfer: transfer.Bytes(),
-		Delay:    delay,
+		ChainID:   chainID,
+		Contract:  hContract,
+		Function:  hFunction,
+		Params:    params.Bytes(),
+		Allowance: allowance.Bytes(),
+		Transfer:  transfer.Bytes(),
+		Delay:     delay,
 	}
 	Sandbox(FnPost, req.Bytes())
 }
@@ -285,7 +287,7 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
 }
 
-// transfer assets to the specified Tangle ledger address
+// Send transfers SC assets to the specified address
 func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer *ScTransfer) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
@@ -303,7 +305,7 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer *ScTransfer) {
 //	panic("implement me")
 //}
 
-// transfer assets to the specified Tangle ledger address
+// TransferAllowed transfers allowed assets from caller to the specified account
 func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer *ScTransfer, create bool) {
 	// we need some assets to send
 	if transfer.IsEmpty() {

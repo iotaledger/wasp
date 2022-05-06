@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -152,30 +153,31 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 
-	scAssets := wasmlib.NewScAssets(req.Transfer)
-	allowance := s.cvt.IscpAllowance(scAssets)
-	assets := allowance
+	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
+	if allowance.IsEmpty() {
+		allowance = transfer
+	}
 	// Force a minimum transfer of 1000 iotas for dust and some gas
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 iota
-	if assets.Assets.Iotas < 1000 {
-		// assets are different from allowance, so clone allowance before modifying
-		assets = allowance.Clone()
-		assets.Assets.Iotas = 1000
+	if !transfer.IsEmpty() && transfer.Assets.Iotas < 1000 {
+		transfer = transfer.Clone()
+		transfer.Assets.Iotas = 1000
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
 	sendReq := iscp.RequestParameters{
 		AdjustToMinimumDustDeposit: true,
 		TargetAddress:              chainID.AsAddress(),
-		FungibleTokens:             assets.Assets,
+		FungibleTokens:             transfer.Assets,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: contract,
 			EntryPoint:     function,
 			Params:         params,
 			// TODO check, probably not correct
 			Allowance: allowance,
-			GasBudget: 500_000,
+			GasBudget: gas.MaxGasPerCall,
 		},
 	}
 	if req.Delay != 0 {
@@ -231,12 +233,9 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssets(req.Transfer)
-	allowance := s.cvt.IscpAllowance(scAssets)
-	// TODO check, probably not right
-	transfer := iscp.NewAllowanceFungibleTokens(allowance.Assets)
+	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
-	results := s.callUnlocked(contract, function, params, transfer)
+	results := s.callUnlocked(contract, function, params, allowance)
 	return results.Bytes()
 }
 
