@@ -4,7 +4,6 @@
 package test
 
 import (
-	"fmt"
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -205,6 +204,5 @@ func TestGetMaxBlobSize(t *testing.T) {
 	fget := coregovernance.ScFuncs.GetMaxBlobSize(ctx)
 	fget.Func.Call()
 	require.NoError(t, ctx.Err)
-	bs := fget.Results.MaxBlobSize().Value()
-	fmt.Println("bs: ", bs)
+	// FIXME check results
 }

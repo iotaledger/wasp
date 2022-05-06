@@ -283,7 +283,6 @@ func (a *FungibleTokens) AddNativeTokens(tokenID iotago.NativeTokenID, amount in
 func (a *FungibleTokens) ToDict() dict.Dict {
 	ret := dict.New()
 	ret.Set(kv.Key(IotaTokenID), new(big.Int).SetUint64(a.Iotas).Bytes())
-	fmt.Println("IotaTokenID: ", IotaTokenID)
 	for _, token := range a.Tokens {
 		ret.Set(kv.Key(token.ID[:]), token.Amount.Bytes())
 	}
