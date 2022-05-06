@@ -213,7 +213,7 @@ pub struct ImmutableGetNativeTokenIDRegistryResults {
 
 impl ImmutableGetNativeTokenIDRegistryResults {
     pub fn mapping(&self) -> MapTokenIDToImmutableBool {
-		MapTokenIDToImmutableBool { proxy: self.proxy.root(RESULT_MAPPING) }
+		MapTokenIDToImmutableBool { proxy: self.proxy.clone() }
 	}
 }
 
@@ -239,7 +239,7 @@ pub struct MutableGetNativeTokenIDRegistryResults {
 
 impl MutableGetNativeTokenIDRegistryResults {
     pub fn mapping(&self) -> MapTokenIDToMutableBool {
-		MapTokenIDToMutableBool { proxy: self.proxy.root(RESULT_MAPPING) }
+		MapTokenIDToMutableBool { proxy: self.proxy.clone() }
 	}
 }
 

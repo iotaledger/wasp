@@ -163,7 +163,8 @@ type ImmutableGetNativeTokenIDRegistryResults struct {
 }
 
 func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBool {
-	return MapTokenIDToImmutableBool{proxy: s.proxy.Root(ResultMapping)}
+	//nolint:gosimple
+	return MapTokenIDToImmutableBool{proxy: s.proxy}
 }
 
 type MapTokenIDToMutableBool struct {
@@ -183,7 +184,8 @@ type MutableGetNativeTokenIDRegistryResults struct {
 }
 
 func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
-	return MapTokenIDToMutableBool{proxy: s.proxy.Root(ResultMapping)}
+	//nolint:gosimple
+	return MapTokenIDToMutableBool{proxy: s.proxy}
 }
 
 type ImmutableNftDataResults struct {

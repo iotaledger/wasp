@@ -125,7 +125,7 @@ export class MapTokenIDToImmutableBool extends wasmtypes.ScProxy {
 
 export class ImmutableGetNativeTokenIDRegistryResults extends wasmtypes.ScProxy {
 	mapping(): sc.MapTokenIDToImmutableBool {
-		return new sc.MapTokenIDToImmutableBool(this.proxy.root(sc.ResultMapping));
+		return new sc.MapTokenIDToImmutableBool(this.proxy);
 	}
 }
 
@@ -142,7 +142,7 @@ export class MapTokenIDToMutableBool extends wasmtypes.ScProxy {
 
 export class MutableGetNativeTokenIDRegistryResults extends wasmtypes.ScProxy {
 	mapping(): sc.MapTokenIDToMutableBool {
-		return new sc.MapTokenIDToMutableBool(this.proxy.root(sc.ResultMapping));
+		return new sc.MapTokenIDToMutableBool(this.proxy);
 	}
 }
 

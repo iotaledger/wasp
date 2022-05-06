@@ -35,7 +35,7 @@ const (
 	ResultBalances         = "this"
 	ResultFoundryOutputBin = "b"
 	ResultFoundrySN        = "s"
-	ResultMapping          = "G"
+	ResultMapping          = "this"
 	ResultNftData          = "e"
 	ResultNftIDs           = "i"
 )

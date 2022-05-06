@@ -27,7 +27,7 @@ export const ResultAssets           = "this";
 export const ResultBalances         = "this";
 export const ResultFoundryOutputBin = "b";
 export const ResultFoundrySN        = "s";
-export const ResultMapping          = "G";
+export const ResultMapping          = "this";
 export const ResultNftData          = "e";
 export const ResultNftIDs           = "i";
 

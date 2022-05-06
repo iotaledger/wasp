@@ -29,7 +29,7 @@ pub(crate) const RESULT_ASSETS             : &str = "this";
 pub(crate) const RESULT_BALANCES           : &str = "this";
 pub(crate) const RESULT_FOUNDRY_OUTPUT_BIN : &str = "b";
 pub(crate) const RESULT_FOUNDRY_SN         : &str = "s";
-pub(crate) const RESULT_MAPPING            : &str = "G";
+pub(crate) const RESULT_MAPPING            : &str = "this";
 pub(crate) const RESULT_NFT_DATA           : &str = "e";
 pub(crate) const RESULT_NFT_I_DS           : &str = "i";
 
