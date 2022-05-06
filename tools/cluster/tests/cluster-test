@@ -1,8 +1,8 @@
 #!/bin/bash -l
 
-# use: stardust-test [arguments for `go test`]
+# use: cluster-test [arguments for `go test`]
 #
-# example: stardust-test -failfast
+# example: ./cluster-test -failfast
 
 TESTS=(\
     "TestDeployChain" \
