@@ -410,11 +410,6 @@ func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad w
 	return ctxCore
 }
 
-// Transfer creates a new ScTransfer proxy
-func (ctx *SoloContext) Transfer() *wasmlib.ScTransfer {
-	return wasmlib.NewScTransfer()
-}
-
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 	wasmFile := ""
 	if *GoWasm {
