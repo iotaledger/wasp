@@ -8,7 +8,7 @@ pub struct ScSandboxUtils {}
 
 impl ScSandboxUtils {
     // decodes the specified base58-encoded string value to its original bytes
-    pub fn base58_ecode(&self, value: &str) -> Vec<u8> {
+    pub fn base58_decode(&self, value: &str) -> Vec<u8> {
         sandbox(FN_UTILS_BASE58_DECODE, &string_to_bytes(value))
     }
 

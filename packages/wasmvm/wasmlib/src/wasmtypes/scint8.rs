@@ -33,6 +33,10 @@ pub fn int8_to_bytes(value: i8) -> Vec<u8> {
     [value as u8].to_vec()
 }
 
+pub fn int8_from_string(value: &str) -> i8 {
+    value.parse::<i8>().unwrap()
+}
+
 pub fn int8_to_string(value: i8) -> String {
     value.to_string()
 }

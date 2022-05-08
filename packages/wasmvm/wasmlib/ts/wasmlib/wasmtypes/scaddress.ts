@@ -102,7 +102,7 @@ export function addressFromString(value: string): ScAddress {
 
 export function addressToString(value: ScAddress): string {
     // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    return wasmtypes.base58Encode(addressToBytes(value));
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

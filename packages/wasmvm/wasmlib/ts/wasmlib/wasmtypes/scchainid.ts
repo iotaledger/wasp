@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {addressToBytes} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -61,7 +62,7 @@ export function chainIDFromString(value: string): ScChainID {
 
 export function chainIDToString(value: ScChainID): string {
     // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    return wasmtypes.base58Encode(chainIDToBytes(value));
 }
 
 function chainIDFromBytesUnchecked(buf: u8[]): ScChainID {
