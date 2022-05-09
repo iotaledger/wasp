@@ -8,7 +8,7 @@ require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/ethereum/go-ethereum v1.10.17
-	github.com/iotaledger/hive.go v0.0.0-20220428170023-7fb77d7475d8
+	github.com/iotaledger/hive.go v0.0.0-20220506133510-ef2e113d6665
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220506133510-ef2e113d6665
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220506110451-defa263ae45a
 	github.com/knadh/koanf v1.4.1
@@ -34,7 +34,7 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/dig v1.14.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7
@@ -90,7 +90,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
-	github.com/klauspost/compress v1.15.2 // indirect
+	github.com/klauspost/compress v1.15.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
 	github.com/klauspost/reedsolomon v1.9.16 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
@@ -155,6 +155,7 @@ require (
 	github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.0 // indirect
 	github.com/petermattis/goid v0.0.0-20220331194723-8ee3e6ded87a // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
