@@ -58,7 +58,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2TotalIotas := chain2.L2TotalIotas()
 
 	// send iotas to contractAgentID (that is an entity of chain2) on chain1
-	iotasToSend := uint64(10000)
+	iotasToSend := uint64(1 * utxodb.Mi)
 	iotasCreditedToSc2OnChain1 := uint64(1321)
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
@@ -88,7 +88,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertL2TotalIotas(chain2TotalIotas)
 
 	// make chain2 send a call to chain1 to withdraw iotas
-	reqAllowance := accounts.ConstDepositFeeTmp               // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas
+	reqAllowance := accounts.ConstDepositFeeTmp + 500_000     // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas
 	iotasToWithdrawalFromChain1 := iotasCreditedToSc2OnChain1 // try to withdraw all iotas deposited to chain1 on behalf of chain2's contract
 	// estimate gas cost of a withdrawal on chain1
 	estimatedWdGas, _, _ := chain1.EstimateGasOnLedger(

@@ -200,7 +200,8 @@ func (pt *PrivTangle) startCoordinator(i int) {
 	}
 	args := []string{
 		"--cooBootstrap",
-		"--cooStartIndex", "0",
+		"--cooStartIndex=0",
+		"--coordinator.interval=1s",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 	}
 	pt.startINXPlugin(i, "inx-coordinator", args, env)

@@ -29,7 +29,7 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 	}
 	requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
 	if availableIotas < requiredDustDeposit {
-		ctx.Log().Panicf("no enough iotas sent to cover dust deposit")
+		ctx.Log().Panicf("not enough iotas sent to cover dust deposit")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(request)

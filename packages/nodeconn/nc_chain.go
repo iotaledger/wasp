@@ -202,6 +202,10 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 					ncc.log.Warnf("error while receiving unspent output: %v", err)
 					continue
 				}
+				if outResponse.Metadata == nil {
+					ncc.log.Warnf("error while receiving unspent output, metadata is nil")
+					continue
+				}
 				tid, err := outResponse.Metadata.TxID()
 				if err != nil {
 					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
@@ -249,6 +253,10 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 			out, err := outResponse.Output()
 			if err != nil {
 				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
+				continue
+			}
+			if outResponse.Metadata == nil {
+				ncc.log.Warnf("error while receiving chain state unspent output, metadata is nil")
 				continue
 			}
 			tid, err := outResponse.Metadata.TxID()

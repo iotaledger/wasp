@@ -133,7 +133,7 @@ var configFileContentTemplate = `
 		}
 	},
 	"logger": {
-		"level": "debug",
+		"level": "info",
 		"disableCaller": true,
 		"encoding": "console",
 		"outputPaths": [
@@ -185,99 +185,6 @@ var configFileContentTemplate = `
 	}
 }
 `
-
-// "pow": {
-// 	"refreshTipsInterval": "5s"
-// },
-// "requests": {
-// 	"discardOlderThan": "15s",
-// 	"pendingReEnqueueInterval": "5s"
-// },
-// "coordinator": {
-// 	"stateFilePath": "coordinator.state",
-// 	"interval": "500ms",
-// 	"powWorkerCount": 0,
-// 	"checkpoints": {
-// 		"maxTrackedMessages": 10000
-// 	},
-// 	"tipsel": {
-// 		"minHeaviestBranchUnreferencedMessagesThreshold": 20,
-// 		"maxHeaviestBranchTipsPerCheckpoint": 10,
-// 		"randomTipsPerCheckpoint": 3,
-// 		"heaviestBranchSelectionTimeout": "100ms"
-// 	},
-// 	"signing": {
-// 		"provider": "local",
-// 		"remoteAddress": "localhost:12345",
-// 		"retryAmount": 10,
-// 		"retryTimeout": "2s"
-// 	},
-// 	"quorum": {
-// 		"enabled": false,
-// 		"groups": {
-// 			"hornet": [
-// 				{
-// 					"alias": "test01",
-// 					"baseURL": "http://localhost:14265",
-// 					"userName": "",
-// 					"password": ""
-// 				}
-// 			]
-// 		},
-// 		"timeout": "2s"
-// 	}
-// },
-// "receipts": {
-// 	"backup": {
-// 		"enabled": false,
-// 		"path": "receipts"
-// 	},
-// 	"validator": {
-// 		"validate": false,
-// 		"ignoreSoftErrors": false,
-// 		"api": {
-// 			"address": "http://localhost:14266",
-// 			"timeout": "5s"
-// 		},
-// 		"coordinator": {
-// 			"address": "UDYXTZBE9GZGPM9SSQV9LTZNDLJIZMPUVVXYXFYVBLIEUHLSEWFTKZZLXYRHHWVQV9MNNX9KZC9D9UZWZ",
-// 			"merkleTreeDepth": 24
-// 		}
-// 	}
-// },
-// "tangle": {
-// 	"milestoneTimeout": "30s"
-// },
-// "tipsel": {
-// 	"maxDeltaMsgYoungestConeRootIndexToCMI": 2,
-// 	"maxDeltaMsgOldestConeRootIndexToCMI": 7,
-// 	"belowMaxDepth": 15,
-// 	"nonLazy": {
-// 		"retentionRulesTipsLimit": 100,
-// 		"maxReferencedTipAge": "3s",
-// 		"maxChildren": 30,
-// 		"spammerTipsThreshold": 0
-// 	},
-// 	"semiLazy": {
-// 		"retentionRulesTipsLimit": 20,
-// 		"maxReferencedTipAge": "3s",
-// 		"maxChildren": 2,
-// 		"spammerTipsThreshold": 30
-// 	}
-// },
-// "faucet": {
-// 	"amount": 10000000,
-// 	"smallAmount": 1000000,
-// 	"maxAddressBalance": 20000000,
-// 	"maxOutputCount": 127,
-// 	"tagMessage": "HORNET FAUCET",
-// 	"batchTimeout": "2s",
-// 	"powWorkerCount": 0,
-// 	"website": {
-// 		"bindAddress": "localhost:8091",
-// 		"enabled": true
-// 	}
-// },
 
 func (pt *PrivTangle) configFileContent() string {
 	return fmt.Sprintf(configFileContentTemplate,

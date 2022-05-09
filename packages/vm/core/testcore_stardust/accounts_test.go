@@ -40,12 +40,12 @@ func TestDeposit(t *testing.T) {
 
 // allowance shouldnt allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: false})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := iscp.NewAgentID(senderAddr, 0)
 	ch := env.NewChain(nil, "chain1")
 
-	iotasSent := uint64(1000)
+	iotasSent := uint64(1 * utxodb.Mi)
 
 	// send a request where allowance == assets - so that no iotas are available outside allowance
 	_, err := ch.PostRequestSync(
