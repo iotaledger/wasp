@@ -66,13 +66,23 @@ var configFileContentTemplate = `
 		"pruneReceipts": false
 	},
 	"protocol": {
-		"networkName": "private_tangle_wasp_cluster",
-		"bech32HRP": "atoi",
-		"minPoWScore": 100.0,
-		"vByteCost": 500,
-		"vByteFactorData": 1,
-		"vByteFactorKey": 10,
-		"tokenSupply": 2779530283277761,
+		"parameters": {
+      "networkName": "private_tangle_wasp_cluster",
+      "bech32HRP": "atoi",
+      "minPoWScore": 100.0,
+      "vByteCost": 600,
+      "vByteFactorData": 1,
+      "vByteFactorKey": 10,
+      "tokenSupply": 2779530283277761
+    },
+    "baseToken" : {
+      "name": "Iota",
+      "tickerSymbol": "MIOTA",
+      "unit": "MIOTA",
+      "decimals": 6,
+      "subunit": "IOTA",
+      "useMetricPrefix": false
+    },
 		"milestonePublicKeyCount": 2,
 		"publicKeyRanges": [
 			{
@@ -87,8 +97,6 @@ var configFileContentTemplate = `
 			}
 		]
 	},
-
-
 	"node": {
 		"alias": "HORNET private-tangle node",
 		"profile": "auto",

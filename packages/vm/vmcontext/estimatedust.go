@@ -13,5 +13,5 @@ func (vmctx *VMContext) EstimateRequiredDustDeposit(par iscp.RequestParameters) 
 		par,
 		vmctx.task.L1Params.RentStructure(),
 	)
-	return out.VBytes(vmctx.task.L1Params.RentStructure(), nil)
+	return vmctx.task.L1Params.RentStructure().VByteCost * out.VBytes(vmctx.task.L1Params.RentStructure(), nil)
 }

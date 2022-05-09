@@ -662,7 +662,8 @@ func TestDustDeposit(t *testing.T) {
 			iscp.SendOptions{},
 			RentStructure(),
 		)
-		require.Equal(t, out.Deposit(), out.VBytes(parameters.L1ForTesting().RentStructure(), nil))
+		expected := parameters.L1ForTesting().RentStructure().VByteCost * out.VBytes(parameters.L1ForTesting().RentStructure(), nil)
+		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewFungibleTokens(10000, nil)

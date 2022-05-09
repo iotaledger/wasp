@@ -26,7 +26,7 @@ func L1ForTesting() *L1 {
 			Bech32HRP:   tpkg.TestProtoParas.Bech32HRP,
 			MinPoWScore: tpkg.TestProtoParas.MinPoWScore,
 			RentStructure: iotago.RentStructure{
-				VByteCost:    1,
+				VByteCost:    10,
 				VBFactorData: 1,
 				VBFactorKey:  1,
 			},
