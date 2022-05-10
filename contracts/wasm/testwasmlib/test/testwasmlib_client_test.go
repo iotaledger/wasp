@@ -2,28 +2,27 @@ package test
 
 import (
 	"fmt"
+	"os"
 	"testing"
+	"time"
 
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
+	"github.com/mr-tron/base58/base58"
 	"github.com/stretchr/testify/require"
 )
 
-// hardcoded seed and chain ID, taken from wasp-cli.json
-// note that normally the chain has already been set up and
-// the contract has already been deployed in some way, so
-// these values are usually available from elsewhere
 const (
-	useSoloClient = true
-	myChainID     = "gkdhQDvLi23xxgpiLbmzodcayx3"
+	useSoloClient = false
 	mySeed        = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
+	mySeedIndex   = 0
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
-	// TODO
-	t.SkipNow()
 	if useSoloClient {
 		*wasmsolo.TsWasm = true
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
@@ -36,10 +35,33 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 		svc.SignRequests(ctx.Chain.OriginatorPrivateKey)
 		return svc
 	}
+	// use cluster tool
+	e := cluster_tests.SetupWithChain(t)
+
+	// TODO wasmlib shouldn't use base58, just the to/from methods from regular chainID // chainIDStr := e.Chain.ChainID.String()
+	chainIDStr := base58.Encode(e.Chain.ChainID[:])
 
 	require.True(t, wasmclient.SeedIsValid(mySeed))
-	require.True(t, wasmclient.ChainIsValid(myChainID))
-	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(myChainID))
+	require.True(t, wasmclient.ChainIsValid(chainIDStr))
+	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(chainIDStr))
+
+	// request funds to the wallet that the wasmclient will use
+	wallet := wasmclient.SeedToKeyPair(mySeed, mySeedIndex)
+	e.Clu.RequestFunds(wallet.Address())
+
+	// deposit funds to the on-chain account
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, wallet)
+	reqTx, err := chClient.DepositFunds(10_000_000)
+	require.NoError(t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
+	require.NoError(t, err)
+
+	// deploy the contract
+	wasm, err := os.ReadFile("./testwasmlib_bg.wasm")
+	require.NoError(t, err)
+
+	_, err = e.Chain.DeployWasmContract("testwasmlib", "contract to test wasmlib", wasm, nil)
+	require.NoError(t, err)
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultWasmClientService()
@@ -49,7 +71,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	require.NoError(t, svc.Err)
 
 	// we'll use the first address in the seed to sign requests
-	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, mySeedIndex))
 	return svc
 }
 
@@ -87,22 +109,27 @@ func TestClientEvents(t *testing.T) {
 
 func TestClientRandom(t *testing.T) {
 	svc := setupClient(t)
+	doit := func() {
+		// generate new random value
+		f := testwasmlib.ScFuncs.Random(svc)
+		f.Func.Post()
+		require.NoError(t, svc.Err)
 
-	// generate new random value
-	f := testwasmlib.ScFuncs.Random(svc)
-	f.Func.Post()
-	require.NoError(t, svc.Err)
+		err := svc.WaitRequest()
+		require.NoError(t, err)
 
-	err := svc.WaitRequest()
-	require.NoError(t, err)
-
-	// get current random value
-	v := testwasmlib.ScFuncs.GetRandom(svc)
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	rnd := v.Results.Random().Value()
-	require.GreaterOrEqual(t, rnd, uint64(0))
-	fmt.Println("Random: ", rnd)
+		// get current random value
+		v := testwasmlib.ScFuncs.GetRandom(svc)
+		v.Func.Call()
+		require.NoError(t, svc.Err)
+		rnd := v.Results.Random().Value()
+		require.GreaterOrEqual(t, rnd, uint64(0))
+		fmt.Println("Random: ", rnd)
+	}
+	doit()
+	doit()
+	doit()
+	doit()
 }
 
 func TestClientArray(t *testing.T) {

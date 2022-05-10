@@ -14,16 +14,16 @@ import (
 func TestDepositWithdraw(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
-	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
 	require.True(t,
-		e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)),
+		e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)),
 	)
 	chEnv.checkLedger()
 
@@ -36,7 +36,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// deposit some iotas to the chain
 	depositIotas := uint64(42000)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
@@ -52,7 +52,7 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
 
 	require.True(t,
-		e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas)),
+		e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas)),
 	)
 
 	// withdraw some iotas back
@@ -70,7 +70,7 @@ func TestDepositWithdraw(t *testing.T) {
 	gasFees2 := receipt.GasFeeCharged
 	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance-iotasToWithdraw-gasFees2)
 	require.True(t,
-		e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas+iotasToWithdraw)),
+		e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas+iotasToWithdraw)),
 	)
 
 	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining iotas

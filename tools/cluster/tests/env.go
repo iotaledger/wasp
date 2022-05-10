@@ -18,31 +18,30 @@ import (
 
 type env struct {
 	t   *testing.T
-	clu *cluster.Cluster
+	Clu *cluster.Cluster
 }
 
-type chainEnv struct {
+type ChainEnv struct {
 	*env
-	chain        *cluster.Chain
-	addressIndex uint64
-	scOwner      *cryptolib.KeyPair
-	scOwnerAddr  iotago.Address
+	Chain       *cluster.Chain
+	scOwner     *cryptolib.KeyPair
+	scOwnerAddr iotago.Address
 }
 
-func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *chainEnv {
+func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *ChainEnv {
 	keyPair, addr, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	return &chainEnv{
-		env:         &env{t: t, clu: clu},
-		chain:       chain,
+	return &ChainEnv{
+		env:         &env{t: t, Clu: clu},
+		Chain:       chain,
 		scOwner:     keyPair,
 		scOwnerAddr: addr,
 	}
 }
 
 type contractEnv struct {
-	*chainEnv
+	*ChainEnv
 	programHash hashing.HashValue
 }
 
@@ -51,35 +50,31 @@ type contractWithMessageCounterEnv struct {
 	counter *cluster.MessageCounter
 }
 
-func initSeed() cryptolib.Seed {
-	return cryptolib.NewSeed()
-}
-
-func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map[string]interface{}) *contractEnv {
-	ret := &contractEnv{chainEnv: e}
+func (e *ChainEnv) deployContract(wasmName, scDescription string, initParams map[string]interface{}) *contractEnv {
+	ret := &contractEnv{ChainEnv: e}
 
 	wasmPath := "wasm/" + wasmName + "_bg.wasm"
 
 	wasm, err := os.ReadFile(wasmPath)
 	require.NoError(e.t, err)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorKeyPair)
 
 	reqTx, err := chClient.DepositFunds(1000000)
 	require.NoError(e.t, err)
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
 
-	ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+	ph, err := e.Chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
 	require.NoError(e.t, err)
 	ret.programHash = ph
 	e.t.Logf("deployContract: proghash = %s\n", ph.String())
 	return ret
 }
 
-func (e *chainEnv) createNewClient() *scclient.SCClient {
-	keyPair, _, err := e.clu.NewKeyPairWithFunds()
+func (e *ChainEnv) createNewClient() *scclient.SCClient {
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
-	client := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	client := e.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 	return client
 }
 
@@ -98,7 +93,7 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 		Args:     codec.MakeDict(params),
 	})
 	require.NoError(e.t, err)
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 60*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 60*time.Second)
 	require.NoError(e.t, err)
 	if !e.counter.WaitUntilExpectationsMet() {
 		e.t.Fatal()
@@ -106,14 +101,14 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 }
 
 func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *env {
-	return &env{t: t, clu: newCluster(t, opt...)}
+	return &env{t: t, Clu: newCluster(t, opt...)}
 }
 
-func setupWithChain(t *testing.T, opt ...waspClusterOpts) *chainEnv {
+func SetupWithChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
 	e := setupWithNoChain(t, opt...)
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
-	return newChainEnv(e.t, e.clu, chain)
+	return newChainEnv(e.t, e.Clu, chain)
 }
 
 func setupWithContractAndMessageCounter(t *testing.T, name, description string, nrOfRequests int) *contractWithMessageCounterEnv {
@@ -142,6 +137,6 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
 }
 
-func (e *chainEnv) chainClient() *chainclient.Client {
-	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.scOwner)
+func (e *ChainEnv) chainClient() *chainclient.Client {
+	return chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.scOwner)
 }

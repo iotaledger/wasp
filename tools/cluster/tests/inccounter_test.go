@@ -14,28 +14,28 @@ import (
 )
 
 func (e *contractEnv) checkSC(numRequests int) {
-	for i := range e.chain.CommitteeNodes {
-		blockIndex, err := e.chain.BlockIndex(i)
+	for i := range e.Chain.CommitteeNodes {
+		blockIndex, err := e.Chain.BlockIndex(i)
 		require.NoError(e.t, err)
 		require.Greater(e.t, blockIndex, uint32(numRequests+4))
 
-		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
+		cl := e.Chain.SCClient(governance.Contract.Hname(), nil, i)
 		info, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
 		chid, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.chain.ChainID, chid)
+		require.EqualValues(e.t, e.Chain.ChainID, chid)
 
 		aid, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.chain.OriginatorID(), aid)
+		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
 
 		desc, err := codec.DecodeString(info.MustGet(governance.VarDescription), "")
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.chain.Description, desc)
+		require.EqualValues(e.t, e.Chain.Description, desc)
 
-		recs, err := e.chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.ViewGetContractRecords.Name, nil)
+		recs, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
@@ -49,9 +49,9 @@ func (e *contractEnv) checkSC(numRequests int) {
 	}
 }
 
-func (e *chainEnv) checkCounter(expected int) {
-	for i := range e.chain.CommitteeNodes {
-		counterValue, err := e.chain.GetCounterValue(incHname, i)
+func (e *ChainEnv) checkCounter(expected int) {
+	for i := range e.Chain.CommitteeNodes {
+		counterValue, err := e.Chain.GetCounterValue(incHname, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, expected, counterValue)
 	}
@@ -82,7 +82,7 @@ func testNothing(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -109,7 +109,7 @@ func testIncrement(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -179,14 +179,14 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 		varNumRepeats: numRepeats,
 	})
 
-	for i := range e.chain.CommitteeNodes {
-		b, err := e.chain.GetStateVariable(incHname, varCounter, i)
+	for i := range e.Chain.CommitteeNodes {
+		b, err := e.Chain.GetStateVariable(incHname, varCounter, i)
 		require.NoError(t, err)
 		counterValue, err := codec.DecodeInt64(b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, numRepeats+1, counterValue)
 
-		b, err = e.chain.GetStateVariable(incHname, varNumRepeats, i)
+		b, err = e.Chain.GetStateVariable(incHname, varNumRepeats, i)
 		require.NoError(t, err)
 		repeats, err := codec.DecodeInt64(b, 0)
 		require.NoError(t, err)
@@ -220,8 +220,8 @@ func TestIncViewCounter(t *testing.T) {
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(1)
-	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, incHname, "getCounter", nil,
+	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
+		e.Chain.ChainID, incHname, "getCounter", nil,
 	)
 	require.NoError(t, err)
 

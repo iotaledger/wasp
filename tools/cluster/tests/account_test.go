@@ -17,16 +17,16 @@ import (
 
 func TestBasicAccounts(t *testing.T) {
 	e := setupWithNoChain(t)
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"state":       2,
 		"request_in":  0,
 		"request_out": 1,
 	})
 	require.NoError(t, err)
 	defer counter.Close()
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
-	newChainEnv(t, e.clu, chain).testBasicAccounts(counter)
+	newChainEnv(t, e.Clu, chain).testBasicAccounts(counter)
 }
 
 func TestBasicAccountsNLow(t *testing.T) {
@@ -36,14 +36,14 @@ func TestBasicAccountsNLow(t *testing.T) {
 		for i := range chainNodes {
 			chainNodes[i] = i
 		}
-		counter, err := cluster.NewMessageCounter(e.clu, chainNodes, map[string]int{
+		counter, err := cluster.NewMessageCounter(e.Clu, chainNodes, map[string]int{
 			"state": 3,
 		})
 		require.NoError(tt, err)
 		defer counter.Close()
-		chain, err := e.clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
+		chain, err := e.Clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
 		require.NoError(tt, err)
-		newChainEnv(tt, e.clu, chain).testBasicAccounts(counter)
+		newChainEnv(tt, e.Clu, chain).testBasicAccounts(counter)
 	}
 	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
 	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
@@ -51,12 +51,12 @@ func TestBasicAccountsNLow(t *testing.T) {
 	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
 }
 
-func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
+func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 
-	_, err := e.chain.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
+	_, err := e.Chain.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        incCounterSCName,
 	})
@@ -71,12 +71,12 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 
 	e.checkCoreContracts()
 
-	for i := range e.chain.CommitteeNodes {
-		blockIndex, err := e.chain.BlockIndex(i)
+	for i := range e.Chain.CommitteeNodes {
+		blockIndex, err := e.Chain.BlockIndex(i)
 		require.NoError(e.t, err)
 		require.Greater(e.t, blockIndex, uint32(2))
 
-		contractRegistry, err := e.chain.ContractRegistry(i)
+		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
 
 		cr := contractRegistry[hname]
@@ -85,45 +85,45 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, incCounterSCName, cr.Name)
 
-		counterValue, err := e.chain.GetCounterValue(hname, i)
+		counterValue, err := e.Chain.GetCounterValue(hname, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
 	transferIotas := uint64(42000)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
 	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(e.t, err)
 
-	receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 10*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 10*time.Second)
 	require.NoError(e.t, err)
 
 	fees := receipts[0].GasFeeCharged
 	e.checkBalanceOnChain(iscp.NewAgentID(myAddress, 0), iscp.IotaTokenID, transferIotas-fees)
 
-	for i := range e.chain.CommitteeNodes {
-		counterValue, err := e.chain.GetCounterValue(incCounterSCHname, i)
+	for i := range e.Chain.CommitteeNodes {
+		counterValue, err := e.Chain.GetCounterValue(incCounterSCHname, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
+	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
 		e.t.Fatal()
 	}
 
-	incCounterAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
+	incCounterAgentID := iscp.NewAgentID(e.Chain.ChainID.AsAddress(), hname)
 	e.checkBalanceOnChain(incCounterAgentID, iscp.IotaTokenID, 0)
 }
 
 func TestBasic2Accounts(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"state":       2,
 		"request_in":  0,
 		"request_out": 1,
@@ -131,10 +131,10 @@ func TestBasic2Accounts(t *testing.T) {
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
@@ -178,11 +178,11 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv.checkLedger()
 
-	myWallet, myAddress, err := e.clu.NewKeyPairWithFunds()
+	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	transferIotas := uint64(42_000)
-	myWalletClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, myWallet)
+	myWalletClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
 	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
@@ -197,16 +197,16 @@ func TestBasic2Accounts(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !e.clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
+	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
 		t.Fatal()
 	}
 
 	chEnv.printAccounts("withdraw before")
 
 	// withdraw back 500 iotas to originator address
-	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.clu.L1Client().L1Params().Bech32Prefix))
-	origL1Balance := e.clu.AddressBalances(originatorAddress).Iotas
-	originatorClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.Clu.L1Client().L1Params().Bech32Prefix))
+	origL1Balance := e.Clu.AddressBalances(originatorAddress).Iotas
+	originatorClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
 			Allowance: iscp.NewAllowanceIotas(500),
@@ -221,5 +221,5 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv.printAccounts("withdraw after")
 
-	require.Equal(t, e.clu.AddressBalances(originatorAddress).Iotas, origL1Balance+500)
+	require.Equal(t, e.Clu.AddressBalances(originatorAddress).Iotas, origL1Balance+500)
 }
