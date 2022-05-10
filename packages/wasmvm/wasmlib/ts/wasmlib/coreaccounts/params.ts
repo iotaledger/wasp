@@ -137,14 +137,14 @@ export class MutableFoundryOutputParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetAccountNonceParams extends wasmtypes.ScProxy {
-	foundrySN(): wasmtypes.ScImmutableUint32 {
-		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	agentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
 export class MutableGetAccountNonceParams extends wasmtypes.ScProxy {
-	foundrySN(): wasmtypes.ScMutableUint32 {
-		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	agentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
