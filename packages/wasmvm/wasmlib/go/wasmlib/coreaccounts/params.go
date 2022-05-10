@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -173,16 +174,16 @@ type ImmutableGetAccountNonceParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetAccountNonceParams) FoundrySN() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+func (s ImmutableGetAccountNonceParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type MutableGetAccountNonceParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetAccountNonceParams) FoundrySN() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+func (s MutableGetAccountNonceParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type ImmutableNftDataParams struct {

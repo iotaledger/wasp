@@ -42,7 +42,7 @@ views:
       allAccounts=this: map[AgentID]Bool
   getAccountNonce:
     params:
-      foundrySN=s: Uint32
+      agentID=a: AgentID
     results:
       accountNonce=n: Uint64
   getNativeTokenIDRegistry:

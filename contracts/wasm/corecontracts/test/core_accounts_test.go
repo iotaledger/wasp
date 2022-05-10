@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -69,7 +70,14 @@ func TestWithdraw(t *testing.T) {
 	assert.Equal(t, balanceOldUser-withdrawAmount, balanceNewUser)
 }
 
-func TestHarvest(t *testing.T) {}
+func TestHarvest(t *testing.T) {
+	ctx := setupAccounts(t)
+	var withdrawAmount uint64 = 10_000
+
+	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
+	f.Func.TransferIotas(withdrawAmount).Post()
+	require.NoError(t, ctx.Err)
+}
 
 func TestFoundryCreateNew(t *testing.T) {
 	ctx := setupAccounts(t)
@@ -125,24 +133,57 @@ func TestFoundryDestroy(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestFoundryModifySupply(t *testing.T) {}
+func TestFoundryModifySupply(t *testing.T) {
+	ctx := setupAccounts(t)
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
+	var dustAllowance uint64 = 1
+
+	user := ctx.NewSoloAgent()
+	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
+	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+		MintedTokens:  big.NewInt(1001),
+		MeltedTokens:  big.NewInt(1002),
+		MaximumSupply: big.NewInt(1003),
+	}))
+	fnew.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
+	fnew.Func.TransferIotas(dustAllowance).Post()
+	require.NoError(t, ctx.Err)
+	// Foundry Serial Number start from 1 and has increment 1 each func call
+	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+
+	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx)
+	fmod1.Params.FoundrySN().SetValue(1)
+	fmod1.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
+	fmod1.Func.TransferIotas(dustAllowance).Post()
+	require.NoError(t, ctx.Err)
+
+	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx)
+	fmod2.Params.FoundrySN().SetValue(1)
+	fmod2.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
+	fmod2.Params.DestroyTokens().SetValue(true)
+	fmod2.Func.TransferIotas(dustAllowance).Post()
+	require.NoError(t, ctx.Err)
+}
 
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent()
+	// user1 := ctx.NewSoloAgent()
+
 	var mintAmount uint64 = 100
-	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
 	require.NoError(t, err)
 	f := coreaccounts.ScFuncs.Balance(ctx)
-	f.Params.AgentID().SetValue(user.ScAgentID())
+	f.Params.AgentID().SetValue(user0.ScAgentID())
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value().Uint64()
 	assert.Equal(t, mintAmount, balance)
-}
 
+	// FIXME complete this test
+}
 func TestTotalAssets(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
@@ -197,12 +238,24 @@ func TestAccounts(t *testing.T) {
 
 func TestGetAccountNonce(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
-	f := coreaccounts.ScFuncs.TransferAllowanceTo(ctx)
-	f.Params.AgentID().SetValue(user.ScAgentID())
-	f.Params.ForceOpenAccount().SetValue(true)
-	f.Func.Post()
+	user0 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
+
+	fnon := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+	fnon.Params.AgentID().SetValue(user0.ScAgentID())
+	fnon.Func.Call()
 	require.NoError(t, ctx.Err)
+	require.Equal(t, uint64(0), fnon.Results.AccountNonce().Value())
+
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user1))
+	ftrans.Params.AgentID().SetValue(user0.ScAgentID())
+	ftrans.Params.ForceOpenAccount().SetValue(false)
+	ftrans.Func.TransferIotas(1000).Post()
+	require.NoError(t, ctx.Err)
+
+	fnon.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.Equal(t, uint64(1), fnon.Results.AccountNonce().Value())
 }
 
 func TestGetNativeTokenIDRegistry(t *testing.T) {
@@ -229,11 +282,37 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	assert.True(t, exist0)
 	exist1 := f.Results.Mapping().GetBool(tokenID1).Value()
 	assert.True(t, exist1)
-	exist2 := f.Results.Mapping().GetBool(wasmtypes.TokenIDFromString("2C1agnXFL6r7U7wSH4MfkWcuj7tJkxes8hEPVPbb5gvApYh3thqh")).Value()
+	notExistTokenID := wasmtypes.TokenIDFromString("2C1agnXFL6r7U7wSH4MfkWcuj7tJkxes8hEPVPbb5gvApYh3thqh")
+	exist2 := f.Results.Mapping().GetBool(notExistTokenID).Value()
 	assert.False(t, exist2)
 }
 
-func TestFoundryOutput(t *testing.T) {}
+func TestFoundryOutput(t *testing.T) {
+	ctx := setupAccounts(t)
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
+	var dustAllowance uint64 = 1000
+
+	user := ctx.NewSoloAgent()
+	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
+	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+		MintedTokens:  big.NewInt(1001),
+		MeltedTokens:  big.NewInt(1002),
+		MaximumSupply: big.NewInt(1003),
+	}))
+	fnew.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
+	fnew.Func.TransferIotas(dustAllowance).Post()
+	require.NoError(t, ctx.Err)
+	// Foundry Serial Number start from 1 and has increment 1 each func call
+	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+
+	f := coreaccounts.ScFuncs.FoundryOutput(ctx)
+	f.Params.FoundrySN().SetValue(1)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	b := f.Results.FoundryOutputBin().Value()
+	fmt.Println("b: ", b)
+
+}
 
 func TestAccountNFTs(t *testing.T) {}
 
