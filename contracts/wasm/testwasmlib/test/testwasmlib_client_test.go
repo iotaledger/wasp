@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	useSoloClient = false
+	useSoloClient = true
 	mySeed        = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 	mySeedIndex   = 0
 )
