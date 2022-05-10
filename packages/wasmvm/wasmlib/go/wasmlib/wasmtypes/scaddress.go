@@ -3,6 +3,8 @@
 
 package wasmtypes
 
+import "strings"
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
@@ -86,12 +88,15 @@ func AddressToBytes(value ScAddress) []byte {
 }
 
 func AddressFromString(value string) ScAddress {
-	return AddressFromBytes(Base58Decode(value))
+	if strings.HasPrefix(value, "0x") {
+		value = value[2:]
+	}
+	return AddressFromBytes(HexDecode(value))
 }
 
 func AddressToString(value ScAddress) string {
 	// TODO standardize human readable string
-	return Base58Encode(AddressToBytes(value))
+	return "0x" + HexEncode(AddressToBytes(value))
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
