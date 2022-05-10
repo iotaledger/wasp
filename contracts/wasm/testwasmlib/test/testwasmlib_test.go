@@ -327,12 +327,12 @@ func TestWasmTypes(t *testing.T) {
 	var cvt wasmhost.WasmConvertor
 
 	// check chain id
-	scChainId := ctx.ChainID()
-	chainId := cvt.IscpChainID(&scChainId)
-	require.True(t, scChainId == wasmtypes.ChainIDFromBytes(wasmtypes.ChainIDToBytes(scChainId)))
-	require.True(t, scChainId == wasmtypes.ChainIDFromString(wasmtypes.ChainIDToString(scChainId)))
-	require.EqualValues(t, scChainId.Bytes(), chainId.Bytes())
-	require.EqualValues(t, scChainId.String(), chainId.String())
+	scChainID := ctx.ChainID()
+	chainID := cvt.IscpChainID(&scChainID)
+	require.True(t, scChainID == wasmtypes.ChainIDFromBytes(wasmtypes.ChainIDToBytes(scChainID)))
+	require.True(t, scChainID == wasmtypes.ChainIDFromString(wasmtypes.ChainIDToString(scChainID)))
+	require.EqualValues(t, scChainID.Bytes(), chainID.Bytes())
+	require.EqualValues(t, scChainID.String(), chainID.String())
 
 	// check alias address
 	scAddress := ctx.ChainID().Address()

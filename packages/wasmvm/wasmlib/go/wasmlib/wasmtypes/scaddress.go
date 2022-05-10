@@ -88,9 +88,7 @@ func AddressToBytes(value ScAddress) []byte {
 }
 
 func AddressFromString(value string) ScAddress {
-	if strings.HasPrefix(value, "0x") {
-		value = value[2:]
-	}
+	value = strings.TrimPrefix(value, "0x")
 	return AddressFromBytes(HexDecode(value))
 }
 

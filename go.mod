@@ -85,5 +85,3 @@ replace (
 	github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260
 	go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
 )
-
-replace github.com/bytecodealliance/wasmtime-go => ../wasmtime-go

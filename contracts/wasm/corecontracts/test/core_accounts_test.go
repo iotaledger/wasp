@@ -63,11 +63,11 @@ func TestWithdraw(t *testing.T) {
 	user := ctx.NewSoloAgent()
 	balanceOldUser := user.Balance()
 
-	f := coreaccounts.ScFuncs.Withdraw(ctx.Sign(user))
-	f.Func.TransferIotas(withdrawAmount).Post()
+	f := coreaccounts.ScFuncs.Withdraw(ctx.OffLedger(user))
+	f.Func.AllowanceIotas(withdrawAmount).Post()
 	require.NoError(t, ctx.Err)
 	balanceNewUser := user.Balance()
-	assert.Equal(t, balanceOldUser-withdrawAmount, balanceNewUser)
+	assert.Equal(t, balanceOldUser+withdrawAmount, balanceNewUser)
 }
 
 func TestHarvest(t *testing.T) {
@@ -184,6 +184,7 @@ func TestBalance(t *testing.T) {
 
 	// FIXME complete this test
 }
+
 func TestTotalAssets(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
@@ -239,7 +240,6 @@ func TestAccounts(t *testing.T) {
 func TestGetAccountNonce(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
 
 	fnon := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	fnon.Params.AgentID().SetValue(user0.ScAgentID())
@@ -247,7 +247,7 @@ func TestGetAccountNonce(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.Equal(t, uint64(0), fnon.Results.AccountNonce().Value())
 
-	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user1))
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	ftrans.Params.AgentID().SetValue(user0.ScAgentID())
 	ftrans.Params.ForceOpenAccount().SetValue(false)
 	ftrans.Func.TransferIotas(1000).Post()
@@ -311,7 +311,6 @@ func TestFoundryOutput(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	b := f.Results.FoundryOutputBin().Value()
 	fmt.Println("b: ", b)
-
 }
 
 func TestAccountNFTs(t *testing.T) {}

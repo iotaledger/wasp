@@ -128,6 +128,11 @@ func TestGetRequestReceipt(t *testing.T) {
 	require.NoError(t, err)
 	soloreceipt, exist := ctx.Chain.GetRequestReceipt(reqs[0])
 	assert.True(t, exist)
+
+	// note: this is what ctx.Chain.GetRequestReceipt() does as well,
+	// so we better make sure they are equal before comparing
+	receipt.BlockIndex = f.Results.BlockIndex().Value()
+	receipt.RequestIndex = f.Results.RequestIndex().Value()
 	assert.Equal(t, soloreceipt, receipt)
 }
 
