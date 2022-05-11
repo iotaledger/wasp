@@ -5,7 +5,6 @@ package wasmhost
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -118,7 +117,7 @@ func (wc *WasmContext) callFunction() error {
 	//}
 	wc.gasBurned = wc.gasBudget - wc.GasBudget()
 	proc.currentContextID = saveID
-	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
+	wc.log().Debugf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
 

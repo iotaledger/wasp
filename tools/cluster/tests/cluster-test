@@ -24,6 +24,20 @@ TESTS=(\
     "TestBasicAccounts" \
     "TestBasicAccountsNLow" \
     "TestBasic2Accounts" \
+    "TestIncDeployment" \
+    "TestIncNothing" \
+    "TestInc5xNothing" \
+    "TestIncIncrement" \
+    "TestInc5xIncrement" \
+    "TestIncCallIncrement1" \
+    "TestIncCallIncrement2Recurse5x" \
+    "TestIncPostIncrement" \
+    "TestIncRepeatManyIncrement" \
+    "TestIncLocalStateInternalCall" \
+    "TestIncLocalStateSandboxCall" \
+    "TestIncLocalStatePost" \
+    "TestIncViewCounter" \
+    "TestIncCounterDelay" \
 )
 TEMP_LOG_FILE="testTemp.log"
 WD=$PWD
