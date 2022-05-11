@@ -4,10 +4,10 @@
 package test
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
@@ -27,16 +27,29 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
+	depositAmount := uint64(1000)
 	user := ctx.NewSoloAgent()
+	balanceOld := user.Balance()
+
+	bal := ctx.Balances(user)
+
 	f := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	f.Func.Post()
+	f.Func.TransferIotas(depositAmount).Post()
 	require.NoError(t, ctx.Err)
+
+	balanceNew := user.Balance()
+	assert.Equal(t, balanceOld-depositAmount, balanceNew)
+
+	// expected changes to L2, note that caller pays the gas fee
+	bal.Chain += ctx.GasFee
+	bal.Add(user, depositAmount-ctx.GasFee)
+	bal.VerifyBalances(t)
 }
 
 func TestTransferAllowanceTo(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	var transferAmount uint64 = 10_000
+	var transferAmountIOTA uint64 = 10_000
 	user0 := ctx.NewSoloAgent()
 	user1 := ctx.NewSoloAgent()
 	balanceOldUser0 := user0.Balance()
@@ -47,7 +60,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	f := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	f.Params.AgentID().SetValue(user1.ScAgentID())
 	f.Params.ForceOpenAccount().SetValue(false)
-	f.Func.AllowanceIotas(transferAmount).Post()
+	f.Func.AllowanceIotas(transferAmountIOTA).Post()
 	require.NoError(t, ctx.Err)
 
 	// note: transfer took place on L2, so no change on L1
@@ -58,8 +71,8 @@ func TestTransferAllowanceTo(t *testing.T) {
 
 	// expected changes to L2, note that caller pays the gas fee
 	bal.Chain += ctx.GasFee
-	bal.Add(user0, -transferAmount-ctx.GasFee)
-	bal.Add(user1, transferAmount)
+	bal.Add(user0, -transferAmountIOTA-ctx.GasFee)
+	bal.Add(user1, transferAmountIOTA)
 	bal.VerifyBalances(t)
 
 	// FIXME transfer other native tokens
@@ -316,14 +329,20 @@ func TestFoundryOutput(t *testing.T) {
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
-	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+	serialNum := uint32(1)
+	assert.Equal(t, serialNum, fnew.Results.FoundrySN().Value())
 
 	f := coreaccounts.ScFuncs.FoundryOutput(ctx)
 	f.Params.FoundrySN().SetValue(1)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	b := f.Results.FoundryOutputBin().Value()
-	fmt.Println("b: ", b)
+	outFoundry := &iotago.FoundryOutput{}
+	_, err := outFoundry.Deserialize(b, serializer.DeSeriModeNoValidation, nil)
+	require.NoError(t, err)
+	soloFoundry, err := ctx.Chain.GetFoundryOutput(serialNum)
+	require.NoError(t, err)
+	assert.Equal(t, soloFoundry, outFoundry)
 }
 
 func TestAccountNFTs(t *testing.T) {}

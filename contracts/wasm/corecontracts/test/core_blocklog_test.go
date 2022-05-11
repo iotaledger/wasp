@@ -168,7 +168,7 @@ func TestIsRequestProcessed(t *testing.T) {
 	f.Params.RequestID().SetValue(ctx.Cvt.ScRequestID(reqs[0]))
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	// FIXME: check result
+	require.Equal(t, ctx.Chain.IsRequestProcessed(reqs[0]), f.Results.RequestProcessed().Value())
 }
 
 func TestGetEventsForRequest(t *testing.T) {
