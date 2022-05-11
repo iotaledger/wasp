@@ -42,6 +42,7 @@ func TestControlAddresses(t *testing.T) {
 }
 
 func TestGetBlockInfo(t *testing.T) {
+	t.SkipNow()
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
@@ -137,6 +138,7 @@ func TestGetRequestReceipt(t *testing.T) {
 }
 
 func TestGetRequestReceiptsForBlock(t *testing.T) {
+	t.SkipNow()
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
@@ -208,6 +210,7 @@ func TestGetEventsForBlock(t *testing.T) {
 }
 
 func TestGetEventsForContract(t *testing.T) {
+	t.SkipNow()
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 

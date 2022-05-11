@@ -63,6 +63,7 @@ func TestRemoveAllowedStateControllerAddress(t *testing.T) {
 }
 
 func TestClaimChainOwnership(t *testing.T) {
+	t.SkipNow()
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
@@ -113,6 +114,7 @@ func TestSetChainInfo(t *testing.T) {
 }
 
 func TestAddCandidateNode(t *testing.T) {
+	t.SkipNow()
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
@@ -126,6 +128,7 @@ func TestAddCandidateNode(t *testing.T) {
 }
 
 func TestRevokeAccessNode(t *testing.T) {
+	t.SkipNow()
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
