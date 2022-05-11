@@ -70,7 +70,11 @@ func (e *chainEnv) expectCounter(hname iscp.Hname, counter int64) {
 }
 
 func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
-	ret, err := e.chain.Cluster.WaspClient(0).CallView(
+	return e.getCounterForNode(hname, 0)
+}
+
+func (e *chainEnv) getCounterForNode(hname iscp.Hname, nodeIndex int) int64 {
+	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
 		e.chain.ChainID, hname, "getCounter", nil,
 	)
 	require.NoError(e.t, err)
@@ -84,14 +88,22 @@ func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
 func (e *chainEnv) waitUntilCounterEquals(hname iscp.Hname, expected int64, duration time.Duration) {
 	timeout := time.After(duration)
 	var c int64
+	allNodesEqualFun := func() bool {
+		for _, node := range e.chain.AllPeers {
+			c = e.getCounterForNode(hname, node)
+			if c != expected {
+				return false
+			}
+		}
+		return true
+	}
 	for {
 		select {
 		case <-timeout:
 			e.t.Errorf("timeout waiting for inccounter, current: %d, expected: %d", c, expected)
 			e.t.Fatal()
 		default:
-			c = e.getCounter(hname)
-			if c == expected {
+			if allNodesEqualFun() {
 				return // success
 			}
 		}

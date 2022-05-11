@@ -11,7 +11,9 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -64,7 +66,7 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	require.NoError(e.t, err)
 	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair)
 
-	reqTx, err := chClient.DepositFunds(1000000)
+	reqTx, err := chClient.DepositFunds(1_000_000)
 	require.NoError(e.t, err)
 	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
@@ -144,4 +146,17 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 
 func (e *chainEnv) chainClient() *chainclient.Client {
 	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.scOwner)
+}
+
+func (e *chainEnv) depositFunds(destinationAgentID *iscp.AgentID, transferAmount, allowanceAmount uint64) {
+	tx, err := e.chainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(transferAmount),
+		Args: map[kv.Key][]byte{
+			accounts.ParamAgentID: codec.EncodeAgentID(destinationAgentID),
+		},
+		Allowance: iscp.NewAllowanceIotas(allowanceAmount),
+	})
+	require.NoError(e.t, err)
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.t, err)
 }
