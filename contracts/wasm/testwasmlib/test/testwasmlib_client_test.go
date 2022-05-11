@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -18,13 +19,10 @@ import (
 
 const (
 	useSoloClient = true
-	mySeed        = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
-	mySeedIndex   = 0
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useSoloClient {
-		*wasmsolo.TsWasm = true
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 		svcClient := wasmsolo.NewSoloClientService(ctx)
 		chainID := ctx.ChainID()
@@ -41,12 +39,10 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	// TODO wasmlib shouldn't use base58, just the to/from methods from regular chainID // chainIDStr := e.Chain.ChainID.String()
 	chainIDStr := base58.Encode(e.Chain.ChainID[:])
 
-	require.True(t, wasmclient.SeedIsValid(mySeed))
-	require.True(t, wasmclient.ChainIsValid(chainIDStr))
 	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(chainIDStr))
 
 	// request funds to the wallet that the wasmclient will use
-	wallet := wasmclient.SeedToKeyPair(mySeed, mySeedIndex)
+	wallet := cryptolib.NewKeyPair()
 	e.Clu.RequestFunds(wallet.Address())
 
 	// deposit funds to the on-chain account
@@ -71,7 +67,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	require.NoError(t, svc.Err)
 
 	// we'll use the first address in the seed to sign requests
-	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, mySeedIndex))
+	svc.SignRequests(wallet)
 	return svc
 }
 
@@ -83,13 +79,10 @@ func TestClientEvents(t *testing.T) {
 	})
 	svc.Register(events)
 
-	address0 := wasmclient.SeedToAddress(mySeed, 0)
-	address1 := wasmclient.SeedToAddress(mySeed, 1)
-
 	// get new triggerEvent interface, pass params, and post the request
 	f := testwasmlib.ScFuncs.TriggerEvent(svc)
 	f.Params.Name().SetValue("Lala")
-	f.Params.Address().SetValue(address0)
+	f.Params.Address().SetValue(svc.ChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
@@ -99,7 +92,7 @@ func TestClientEvents(t *testing.T) {
 	// get new triggerEvent interface, pass params, and post the request
 	f = testwasmlib.ScFuncs.TriggerEvent(svc)
 	f.Params.Name().SetValue("Trala")
-	f.Params.Address().SetValue(address1)
+	f.Params.Address().SetValue(svc.ChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 

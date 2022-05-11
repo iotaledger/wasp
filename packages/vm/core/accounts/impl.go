@@ -157,8 +157,8 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 
 // TODO refactor owner of the chain moves all tokens balance the common account to its own account
 // Params:
-//   ParamForceMinimumIotas specify how may iotas should be left on the common account
-//   but not less that MinimumIotasOnCommonAccount constant
+//   ParamForceMinimumIotas specify the number of IOTAs left on the common account
+//   will be not less than MinimumIotasOnCommonAccount constant
 func harvest(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 

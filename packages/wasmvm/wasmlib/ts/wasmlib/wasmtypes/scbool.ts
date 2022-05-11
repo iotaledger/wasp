@@ -40,8 +40,10 @@ export function boolToBytes(value: bool): u8[] {
 
 export function boolFromString(value: string): bool {
     switch (value) {
-        case "0": return false;
-        case "1": return true;
+    case "0":
+        return false;
+    case "1":
+        return true;
     }
     panic("invalid bool string");
     return false;

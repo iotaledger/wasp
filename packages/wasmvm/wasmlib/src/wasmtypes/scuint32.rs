@@ -33,6 +33,10 @@ pub fn uint32_to_bytes(value: u32) -> Vec<u8> {
     value.to_le_bytes().to_vec()
 }
 
+pub fn uint32_from_string(value: &str) -> u32 {
+    value.parse::<u32>().unwrap()
+}
+
 pub fn uint32_to_string(value: u32) -> String {
     value.to_string()
 }

@@ -50,7 +50,7 @@ func NftIDFromString(value string) ScNftID {
 
 func NftIDToString(value ScNftID) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Base58Encode(NftIDToBytes(value))
 }
 
 func nftIDFromBytesUnchecked(buf []byte) ScNftID {

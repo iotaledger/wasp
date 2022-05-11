@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index"
+import {addressToBytes, addressToString, hnameToBytes, hnameToString} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -125,7 +126,7 @@ export function agentIDFromString(value: string): ScAgentID {
 
 export function agentIDToString(value: ScAgentID): string {
     // TODO standardize human readable string
-    return value._address.toString() + "::" + value._hname.toString();
+    return wasmtypes.addressToString(value._address) + "::" + wasmtypes.hnameToString(value._hname);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

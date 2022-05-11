@@ -43,7 +43,7 @@ func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 	mapping := getNativeTokenOutputMapR(ctx.State())
 	ret := dict.New()
 	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), []byte{0xFF})
+		ret.Set(kv.Key(elemKey), []byte{0xff})
 		return true
 	})
 	return ret

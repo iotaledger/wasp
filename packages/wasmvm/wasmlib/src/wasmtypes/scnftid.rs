@@ -49,6 +49,10 @@ pub fn nft_id_to_bytes(value: &ScNftID) -> Vec<u8> {
     value.id.to_vec()
 }
 
+pub fn nft_id_from_string(value: &str) -> ScNftID {
+    nft_id_from_bytes(&base58_decode(value))
+}
+
 pub fn nft_id_to_string(value: &ScNftID) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)

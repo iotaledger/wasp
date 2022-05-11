@@ -48,6 +48,10 @@ pub fn hash_to_bytes(value: &ScHash) -> Vec<u8> {
     value.id.to_vec()
 }
 
+pub fn hash_from_string(value: &str) -> ScHash {
+    hash_from_bytes(&base58_decode(value))
+}
+
 pub fn hash_to_string(value: &ScHash) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)

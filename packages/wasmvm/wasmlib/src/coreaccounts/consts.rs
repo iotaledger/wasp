@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "accounts";
-pub const SC_DESCRIPTION : &str = "Core chain account ledger contract";
+pub const SC_DESCRIPTION : &str = "Chain account ledger contract";
 pub const HSC_NAME       : ScHname = ScHname(0x3c4b5e02);
 
 pub(crate) const PARAM_AGENT_ID            : &str = "a";
@@ -29,7 +29,7 @@ pub(crate) const RESULT_ASSETS             : &str = "this";
 pub(crate) const RESULT_BALANCES           : &str = "this";
 pub(crate) const RESULT_FOUNDRY_OUTPUT_BIN : &str = "b";
 pub(crate) const RESULT_FOUNDRY_SN         : &str = "s";
-pub(crate) const RESULT_MAPPING            : &str = "G";
+pub(crate) const RESULT_MAPPING            : &str = "this";
 pub(crate) const RESULT_NFT_DATA           : &str = "e";
 pub(crate) const RESULT_NFT_I_DS           : &str = "i";
 

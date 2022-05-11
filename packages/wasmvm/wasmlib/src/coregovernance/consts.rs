@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "governance";
-pub const SC_DESCRIPTION : &str = "Core governance contract";
+pub const SC_DESCRIPTION : &str = "Governance contract";
 pub const HSC_NAME       : ScHname = ScHname(0x17cf909f);
 
 pub(crate) const PARAM_ACCESS_NODE_INFO_ACCESS_API    : &str = "o";

@@ -69,11 +69,11 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 }
 
 func (vm *WasmTimeVM) Interrupt() {
-	//interrupt, err := vm.store.InterruptHandle()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//interrupt.Interrupt()
+	// interrupt, err := vm.store.InterruptHandle()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// interrupt.Interrupt()
 }
 
 func (vm *WasmTimeVM) LinkHost() (err error) {
