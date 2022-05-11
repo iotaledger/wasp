@@ -15,19 +15,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
-	userWallet, userAddress, err := e.clu.NewKeyPairWithFunds()
+func (e *ChainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
+	userWallet, userAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(waspnode), e.chain.ChainID, userWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(iotas),
 	})
 	require.NoError(e.t, err)
-	receipts, err := e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
 	expectedIotas := iotas - receipts[0].GasFeeCharged
 	e.checkBalanceOnChain(userAgentID, iscp.IotaTokenID, expectedIotas)
@@ -42,17 +42,17 @@ func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnN
 func TestOffledgerRequest(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"request_out":         1,
 	})
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 	chEnv.deployIncCounterSC(counter)
 
 	chClient := chEnv.newWalletWithFunds(0, 1, 1000, 0, 1, 2, 3)
@@ -80,7 +80,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 	e := setupWithNoChain(t)
 
 	var err error
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
@@ -88,10 +88,10 @@ func TestOffledgerRequest900KB(t *testing.T) {
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	chClient := chEnv.newWalletWithFunds(0, 1, 10000, 0, 1, 2, 3)
 

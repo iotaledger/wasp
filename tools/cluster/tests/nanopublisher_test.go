@@ -43,28 +43,28 @@ func TestNanoPublisher(t *testing.T) {
 
 	// spawn many NANOMSG nanoClients and subscribe to everything from the node
 	nanoClients := make([]nanoClientTest, 10)
-	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", env.clu.Config.NanomsgPort(0))
+	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", env.Clu.Config.NanomsgPort(0))
 	for i := range nanoClients {
 		nanoClients[i] = nanoClientTest{id: i, messages: []string{}}
 		go nanoClients[i].start(t, nanoURL)
 	}
 
 	// deposit funds for offledger requests
-	keyPair, _, err := env.clu.NewKeyPairWithFunds()
+	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
+	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	reqTx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(1_000_000),
 	})
 	require.NoError(t, err)
 
-	_, err = env.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.chain.ChainID, reqTx, 30*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	// send 100 requests
 	numRequests := 100
-	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	reqIDs := make([]iscp.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
@@ -74,7 +74,7 @@ func TestNanoPublisher(t *testing.T) {
 	}
 
 	for _, reqID := range reqIDs {
-		_, err = env.chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.chain.ChainID, reqID, 30*time.Second)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 30*time.Second)
 		require.NoError(t, err)
 	}
 
