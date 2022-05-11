@@ -381,9 +381,9 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
-	bin, err := resultDecoder.GetBytes(blocklog.ParamRequestProcessed)
+	isProcessed, err := resultDecoder.GetBool(blocklog.ParamRequestProcessed)
 	require.NoError(ch.Env.T, err)
-	return bin != nil
+	return isProcessed
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
