@@ -9,6 +9,7 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableControlAddressesResults extends wasmtypes.ScProxy {
+	// the addresses have been set as state controller address or governing address since the following block index
 	blockIndex(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
 	}
@@ -23,6 +24,7 @@ export class ImmutableControlAddressesResults extends wasmtypes.ScProxy {
 }
 
 export class MutableControlAddressesResults extends wasmtypes.ScProxy {
+	// the addresses have been set as state controller address or governing address since the following block index
 	blockIndex(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
 	}

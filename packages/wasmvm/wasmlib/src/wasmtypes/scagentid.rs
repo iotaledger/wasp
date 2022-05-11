@@ -128,6 +128,10 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
     buf
 }
 
+pub fn agent_id_from_string(value: &str) -> ScAgentID {
+    agent_id_from_bytes(&base58_decode(value))
+}
+
 pub fn agent_id_to_string(value: &ScAgentID) -> String {
     // TODO standardize human readable string
     value.address.to_string() + "::" + &value.hname.to_string()

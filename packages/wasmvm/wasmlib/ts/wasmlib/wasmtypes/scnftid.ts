@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {addressToBytes} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -57,7 +58,7 @@ export function nftIDFromString(value: string): ScNftID {
 
 export function nftIDToString(value: ScNftID): string {
     // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    return wasmtypes.base58Encode(nftIDToBytes(value));
 }
 
 function nftIDFromBytesUnchecked(buf: u8[]): ScNftID {

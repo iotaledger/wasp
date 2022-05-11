@@ -303,6 +303,7 @@ impl ScBigInt {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+
 pub fn big_int_decode(dec: &mut WasmDecoder) -> ScBigInt {
     ScBigInt { bytes: dec.bytes() }
 }
@@ -317,6 +318,20 @@ pub fn big_int_from_bytes(buf: &[u8]) -> ScBigInt {
 
 pub fn big_int_to_bytes(value: &ScBigInt) -> Vec<u8> {
     value.bytes.to_vec()
+}
+
+pub fn big_int_from_string(value: &str) -> ScBigInt {
+    let digits = value.len() - 18;
+    if digits <= 0 {
+        // Uint64 fits 18 digits or 1 quintillion
+        return ScBigInt::from_uint64(uint64_from_string(value));
+    }
+
+    // build value 18 digits at a time
+    let quintillion = ScBigInt::from_uint64(1_000_000_000_000_000_000);
+    let lhs = big_int_from_string(&value[..digits]);
+    let rhs = big_int_from_string(&value[digits..]);
+    lhs.mul(&quintillion).add(&rhs)
 }
 
 pub fn big_int_to_string(value: &ScBigInt) -> String {

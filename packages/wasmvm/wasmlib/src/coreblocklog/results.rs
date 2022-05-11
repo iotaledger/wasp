@@ -17,6 +17,7 @@ pub struct ImmutableControlAddressesResults {
 }
 
 impl ImmutableControlAddressesResults {
+    // the addresses have been set as state controller address or governing address since the following block index
     pub fn block_index(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
@@ -36,6 +37,7 @@ pub struct MutableControlAddressesResults {
 }
 
 impl MutableControlAddressesResults {
+    // the addresses have been set as state controller address or governing address since the following block index
     pub fn block_index(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}

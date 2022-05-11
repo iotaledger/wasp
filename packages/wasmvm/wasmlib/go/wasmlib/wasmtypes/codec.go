@@ -11,6 +11,8 @@ import "strconv"
 var (
 	Base58Decode func(base58 string) []byte
 	Base58Encode func(buf []byte) string
+	HexDecode    func(base58 string) []byte
+	HexEncode    func(buf []byte) string
 )
 
 // WasmDecoder decodes separate entities from a byte buffer

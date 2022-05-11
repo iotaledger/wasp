@@ -50,7 +50,7 @@ func TokenIDFromString(value string) ScTokenID {
 
 func TokenIDToString(value ScTokenID) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Base58Encode(TokenIDToBytes(value))
 }
 
 func tokenIDFromBytesUnchecked(buf []byte) ScTokenID {

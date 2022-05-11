@@ -50,7 +50,7 @@ func HashFromString(value string) ScHash {
 
 func HashToString(value ScHash) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Base58Encode(HashToBytes(value))
 }
 
 func hashFromBytesUnchecked(buf []byte) ScHash {

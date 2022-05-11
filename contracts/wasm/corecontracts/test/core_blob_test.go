@@ -6,19 +6,86 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblob"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-func setupRoot(t *testing.T) *wasmsolo.SoloContext {
+func setupBlob(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
 
-func TestRootXxx(t *testing.T) {
-	ctx := setupRoot(t)
+func TestStoreBlob(t *testing.T) {
+	ctx := setupBlob(t)
 	require.NoError(t, ctx.Err)
+
+	f := coreblob.ScFuncs.StoreBlob(ctx)
+	f.Params.Blobs().GetBytes("key0").SetValue([]byte("val0"))
+	f.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
+	f.Func.Post()
+	require.NoError(t, ctx.Err)
+	expectedHash := "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
+	require.Equal(t, expectedHash, f.Results.Hash().Value().String())
+}
+
+func TestGetBlobInfo(t *testing.T) {
+	ctx := setupBlob(t)
+	require.NoError(t, ctx.Err)
+
+	fStore := coreblob.ScFuncs.StoreBlob(ctx)
+	fStore.Params.Blobs().GetBytes("key0").SetValue([]byte("val0"))
+	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
+	fStore.Func.Post()
+	require.NoError(t, ctx.Err)
+	expectedHash := "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
+	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
+
+	fList := coreblob.ScFuncs.GetBlobInfo(ctx)
+	fList.Params.Hash().SetValue(wasmtypes.HashFromString(expectedHash))
+	fList.Func.Call()
+	size := fList.Results.BlobSizes().GetInt32("key0").Value()
+	require.Equal(t, int32(4), size)
+}
+
+func TestGetBlobField(t *testing.T) {
+	ctx := setupBlob(t)
+	require.NoError(t, ctx.Err)
+
+	fStore := coreblob.ScFuncs.StoreBlob(ctx)
+	fStore.Params.Blobs().GetBytes("key0").SetValue([]byte("val0"))
+	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
+	fStore.Func.Post()
+	require.NoError(t, ctx.Err)
+	expectedHash := "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
+	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
+
+	fList := coreblob.ScFuncs.GetBlobField(ctx)
+	fList.Params.Field().SetValue("key0")
+	fList.Params.Hash().SetValue(wasmtypes.HashFromString(expectedHash))
+	fList.Func.Call()
+	stored := fList.Results.Bytes().Value()
+	require.Equal(t, []byte("val0"), stored)
+}
+
+func TestListBlobs(t *testing.T) {
+	ctx := setupBlob(t)
+	require.NoError(t, ctx.Err)
+
+	fStore := coreblob.ScFuncs.StoreBlob(ctx)
+	fStore.Params.Blobs().GetBytes("key0").SetValue([]byte("val0"))
+	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("_val1"))
+	fStore.Func.Post()
+	require.NoError(t, ctx.Err)
+	expectedHash := "5iuXgyYYRkHsPfZe37W1Yj3iu5X9Brdroe1uWc2dweos"
+	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
+
+	fList := coreblob.ScFuncs.ListBlobs(ctx)
+	fList.Func.Call()
+	size := fList.Results.BlobSizes().GetInt32(wasmtypes.HashFromString(expectedHash)).Value()
+	// The sum of the size of the value of `key0` and `key1` is len("val0")+len("_val1") = 9
+	require.Equal(t, int32(9), size)
 }

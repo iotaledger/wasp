@@ -1,31 +1,24 @@
 package test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/mr-tron/base58"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 )
 
-// hardcoded seed and chain ID, taken from wasp-cli.json
-// note that normally the chain has already been set up and
-// the contract has already been deployed in some way, so
-// these values are usually available from elsewhere
-const (
-	useSoloClient = true
-	myChainID     = "gkdhQDvLi23xxgpiLbmzodcayx3"
-	mySeed        = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
-)
+const useSoloClient = true
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
-	// TODO
-	t.SkipNow()
 	if useSoloClient {
-		*wasmsolo.TsWasm = true
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 		svcClient := wasmsolo.NewSoloClientService(ctx)
 		chainID := ctx.ChainID()
@@ -37,9 +30,15 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 		return svc
 	}
 
-	require.True(t, wasmclient.SeedIsValid(mySeed))
-	require.True(t, wasmclient.ChainIsValid(myChainID))
-	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(myChainID))
+	// TODO cannot run using time as nonce
+	viper.SetConfigFile("wasp-cli.json")
+	err := viper.ReadInConfig()
+	require.NoError(t, err)
+
+	chain := viper.GetString("chains." + viper.GetString("chain"))
+	chainBytes, err := hex.DecodeString(chain)
+	require.NoError(t, err)
+	chainID := wasmtypes.ChainIDFromBytes(chainBytes)
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultWasmClientService()
@@ -48,8 +47,10 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
 
-	// we'll use the first address in the seed to sign requests
-	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+	// we'll use the seed keypair to sign requests
+	seedBytes, err := base58.Decode(viper.GetString("wallet.seed"))
+	require.NoError(t, err)
+	svc.SignRequests(cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes(seedBytes)))
 	return svc
 }
 
@@ -61,13 +62,10 @@ func TestClientEvents(t *testing.T) {
 	})
 	svc.Register(events)
 
-	address0 := wasmclient.SeedToAddress(mySeed, 0)
-	address1 := wasmclient.SeedToAddress(mySeed, 1)
-
 	// get new triggerEvent interface, pass params, and post the request
 	f := testwasmlib.ScFuncs.TriggerEvent(svc)
 	f.Params.Name().SetValue("Lala")
-	f.Params.Address().SetValue(address0)
+	f.Params.Address().SetValue(svc.ChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
@@ -77,7 +75,7 @@ func TestClientEvents(t *testing.T) {
 	// get new triggerEvent interface, pass params, and post the request
 	f = testwasmlib.ScFuncs.TriggerEvent(svc)
 	f.Params.Name().SetValue("Trala")
-	f.Params.Address().SetValue(address1)
+	f.Params.Address().SetValue(svc.ChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 

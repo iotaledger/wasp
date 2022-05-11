@@ -13,6 +13,7 @@ type ImmutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// the addresses have been set as state controller address or governing address since the following block index
 func (s ImmutableControlAddressesResults) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBlockIndex))
 }
@@ -29,6 +30,7 @@ type MutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// the addresses have been set as state controller address or governing address since the following block index
 func (s MutableControlAddressesResults) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
 }

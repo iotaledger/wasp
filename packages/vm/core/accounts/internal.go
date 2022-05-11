@@ -422,7 +422,7 @@ func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.FungibleToke
 func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	ret := dict.New()
 	getAccountsMapR(state).MustIterate(func(agentID []byte, val []byte) bool {
-		ret.Set(kv.Key(agentID), []byte{})
+		ret.Set(kv.Key(agentID), []byte{0xff})
 		return true
 	})
 	return ret

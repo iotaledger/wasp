@@ -49,6 +49,10 @@ pub fn token_id_to_bytes(value: &ScTokenID) -> Vec<u8> {
     value.id.to_vec()
 }
 
+pub fn token_id_from_string(value: &str) -> ScTokenID {
+    token_id_from_bytes(&base58_decode(value))
+}
+
 pub fn token_id_to_string(value: &ScTokenID) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)

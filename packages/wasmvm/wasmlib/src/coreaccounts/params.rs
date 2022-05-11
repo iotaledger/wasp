@@ -107,8 +107,8 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
-    pub fn force_minimum_iotas(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+    pub fn force_minimum_iotas(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
 	}
 }
 
@@ -118,8 +118,8 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
-    pub fn force_minimum_iotas(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+    pub fn force_minimum_iotas(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
 	}
 }
 
@@ -225,8 +225,8 @@ pub struct ImmutableGetAccountNonceParams {
 }
 
 impl ImmutableGetAccountNonceParams {
-    pub fn foundry_sn(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 
@@ -236,8 +236,8 @@ pub struct MutableGetAccountNonceParams {
 }
 
 impl MutableGetAccountNonceParams {
-    pub fn foundry_sn(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+    pub fn agent_id(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 

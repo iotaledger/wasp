@@ -208,6 +208,10 @@ impl WasmEncoder {
     }
 }
 
+pub fn base58_decode(value: &str) -> Vec<u8> {
+    host::sandbox(FN_UTILS_BASE58_DECODE, &string_to_bytes(value))
+}
+
 pub fn base58_encode(buf: &[u8]) -> String {
     string_from_bytes(&host::sandbox(FN_UTILS_BASE58_ENCODE, buf))
 }

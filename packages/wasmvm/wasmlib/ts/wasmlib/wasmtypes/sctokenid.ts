@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {addressToBytes} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -57,7 +58,7 @@ export function tokenIDFromString(value: string): ScTokenID {
 
 export function tokenIDToString(value: ScTokenID): string {
     // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    return wasmtypes.base58Encode(tokenIDToBytes(value));
 }
 
 function tokenIDFromBytesUnchecked(buf: u8[]): ScTokenID {

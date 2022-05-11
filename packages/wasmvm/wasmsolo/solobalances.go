@@ -102,6 +102,8 @@ func (bal *SoloBalances) VerifyBalances(t *testing.T) {
 	require.EqualValues(t, bal.Chain, ctx.Balance(ctx.ChainAccount()))
 	require.EqualValues(t, bal.Originator, ctx.Balance(ctx.Originator()))
 	for _, agent := range bal.agents {
-		require.EqualValues(t, bal.accounts[agent.AgentID().String(iotago.PrefixTestnet)], ctx.Balance(agent))
+		expected := bal.accounts[agent.AgentID().String(iotago.PrefixTestnet)]
+		actual := ctx.Balance(agent)
+		require.EqualValues(t, expected, actual)
 	}
 }
