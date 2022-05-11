@@ -121,6 +121,9 @@ func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *S
 	return f
 }
 
+// Allowance defines the assets that the SC is allowed to take out of the caller account on the chain.
+// Note that that does not mean that the SC will take them all. The SC needs to be able to take them explicitly.
+// Otherwise the assets will stay in the caller’s account.
 func (f *ScFunc) Allowance(allowance *ScTransfer) *ScFunc {
 	f.allowance = allowance
 	return f
@@ -171,6 +174,9 @@ func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
 	}
 }
 
+// Transfer defines the assets that are transferred from the caller’s L1 address to his L2 account.
+// The SC cannot touch these unless explicitly allowed.
+// Transfer only comes into play with on-ledger requests. Off-ledger requests cannot do a transfer.
 func (f *ScFunc) Transfer(transfer *ScTransfer) *ScFunc {
 	f.transfer = transfer
 	return f
