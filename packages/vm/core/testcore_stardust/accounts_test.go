@@ -45,7 +45,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 	senderAgentID := iscp.NewAgentID(senderAddr, 0)
 	ch := env.NewChain(nil, "chain1")
 
-	iotasSent := uint64(1 * utxodb.Mi)
+	iotasSent := uint64(1 * iscp.Mi)
 
 	// send a request where allowance == assets - so that no iotas are available outside allowance
 	_, err := ch.PostRequestSync(
@@ -826,7 +826,7 @@ func TestFoundryDestroy(t *testing.T) {
 
 func TestTransferPartialAssets(t *testing.T) {
 	v := initDepositTest(t)
-	v.ch.MustDepositIotasToL2(10_000, v.user)
+	v.ch.MustDepositIotasToL2(10*iscp.Mi, v.user)
 	// setup a chain with some iotas and native tokens for user1
 	sn, tokenID, err := v.ch.NewFoundryParams(10).
 		WithUser(v.user).
@@ -835,9 +835,9 @@ func TestTransferPartialAssets(t *testing.T) {
 	require.EqualValues(t, 1, int(sn))
 
 	// deposit iotas for the chain owner (needed for L1 dust byte cost to mint tokens)
-	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 10000, v.ch.CommonAccount(), v.chainOwner)
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1*iscp.Mi, v.ch.CommonAccount(), v.chainOwner)
 	require.NoError(t, err)
-	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 10000, v.userAgentID, v.user)
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1*iscp.Mi, v.userAgentID, v.user)
 	require.NoError(t, err)
 
 	err = v.ch.MintTokens(sn, big.NewInt(10), v.user)
@@ -852,16 +852,17 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2Iotas(user2AgentID, 0)
-	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 300, user2AgentID, user2)
+	iotasToSend := 3 * iscp.Mi
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, iotasToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
 	v.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
-	expectedUser2 := IotasDepositFee + 300 - rec.GasFeeCharged
+	expectedUser2 := IotasDepositFee + iotasToSend - rec.GasFeeCharged
 	v.ch.AssertL2Iotas(user2AgentID, expectedUser2)
 	// -----------------------------
 	err = v.ch.SendFromL2ToL2Account(
 		iscp.NewAllowance(
-			300,
+			iotasToSend,
 			iotago.NativeTokens{
 				&iotago.NativeToken{
 					ID:     tokenID,
@@ -878,7 +879,7 @@ func TestTransferPartialAssets(t *testing.T) {
 	// assert that balances are correct
 	v.ch.AssertL2NativeTokens(v.userAgentID, &tokenID, big.NewInt(1))
 	v.ch.AssertL2NativeTokens(user2AgentID, &tokenID, big.NewInt(9))
-	v.ch.AssertL2Iotas(user2AgentID, expectedUser2+300)
+	v.ch.AssertL2Iotas(user2AgentID, expectedUser2+iotasToSend)
 	v.ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
 }
 
@@ -1001,7 +1002,7 @@ func TestNFTAccount(t *testing.T) {
 	nftAddress := nftInfo.NFTID.ToAddress()
 
 	// deposit funds on behalf of the NFT
-	iotasToSend := uint64(100_000)
+	iotasToSend := uint64(10 * iscp.Mi)
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddFungibleTokens(iscp.NewTokensIotas(iotasToSend)).
 		WithMaxAffordableGasBudget().
@@ -1021,7 +1022,7 @@ func TestNFTAccount(t *testing.T) {
 	require.True(t, ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID))
 
 	// withdraw to the NFT on L1
-	iotasToWithdrawal := uint64(1000)
+	iotasToWithdrawal := uint64(1 * iscp.Mi)
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		AddAllowanceIotas(iotasToWithdrawal).
 		WithMaxAffordableGasBudget()

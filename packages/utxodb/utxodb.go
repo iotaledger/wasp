@@ -21,10 +21,8 @@ import (
 const (
 	DefaultIOTASupply = tpkg.TestTokenSupply
 
-	Mi = 1_000_000
-
 	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * Mi
+	FundsFromFaucetAmount = 1000 * iscp.Mi
 )
 
 var (
