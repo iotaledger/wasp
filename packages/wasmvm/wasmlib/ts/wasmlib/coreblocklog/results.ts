@@ -229,13 +229,13 @@ export class MutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy 
 }
 
 export class ImmutableIsRequestProcessedResults extends wasmtypes.ScProxy {
-	requestProcessed(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultRequestProcessed));
+	requestProcessed(): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultRequestProcessed));
 	}
 }
 
 export class MutableIsRequestProcessedResults extends wasmtypes.ScProxy {
-	requestProcessed(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultRequestProcessed));
+	requestProcessed(): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultRequestProcessed));
 	}
 }

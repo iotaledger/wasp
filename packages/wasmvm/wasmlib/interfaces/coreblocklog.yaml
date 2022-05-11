@@ -41,7 +41,7 @@ views:
     params:
       requestID=u: RequestID
     results:
-      requestProcessed=p: String
+      requestProcessed=p: Bool
   getEventsForRequest:
     params:
       requestID=u: RequestID

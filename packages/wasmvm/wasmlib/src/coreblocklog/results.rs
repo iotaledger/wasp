@@ -343,8 +343,8 @@ pub struct ImmutableIsRequestProcessedResults {
 }
 
 impl ImmutableIsRequestProcessedResults {
-    pub fn request_processed(&self) -> ScImmutableString {
-		ScImmutableString::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
+    pub fn request_processed(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
 	}
 }
 
@@ -354,7 +354,7 @@ pub struct MutableIsRequestProcessedResults {
 }
 
 impl MutableIsRequestProcessedResults {
-    pub fn request_processed(&self) -> ScMutableString {
-		ScMutableString::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
+    pub fn request_processed(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
 	}
 }
