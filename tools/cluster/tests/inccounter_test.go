@@ -168,10 +168,6 @@ func TestIncPostIncrement(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
 	entryPoint := iscp.Hn("postIncrement")
-	contractAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	// deposit funds onto the contract account, so it can post a L1 request
-	e.depositFunds(contractAgentID, 1_500_000, 1_000_000)
-
 	e.postRequest(incHname, entryPoint, 1, nil)
 
 	e.waitUntilCounterEquals(incHname, 2, 30*time.Second)
@@ -182,9 +178,6 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRepeats+3) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
 	entryPoint := iscp.Hn("repeatMany")
-	contractAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	// deposit funds onto the contract account, so it can post a L1 request
-	e.depositFunds(contractAgentID, 1_500_000, 1_000_000)
 	e.postRequest(incHname, entryPoint, numRepeats, map[string]interface{}{
 		varNumRepeats: numRepeats,
 	})
@@ -216,9 +209,6 @@ func TestIncLocalStateInternalCall(t *testing.T) {
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 	entryPoint := iscp.Hn("localStateSandboxCall")
-	contractAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	// deposit funds onto the contract account, so it can post a L1 request
-	e.depositFunds(contractAgentID, 1_500_000, 1_000_000)
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(0)
 }
@@ -226,9 +216,6 @@ func TestIncLocalStateSandboxCall(t *testing.T) {
 func TestIncLocalStatePost(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4)
 	entryPoint := iscp.Hn("localStatePost")
-	contractAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	// deposit funds onto the contract account, so it can post a L1 request
-	e.depositFunds(contractAgentID, 1_500_000, 1_000_000)
 	e.postRequest(incHname, entryPoint, 3, nil)
 	e.checkCounter(0)
 }
@@ -252,10 +239,6 @@ func TestIncCounterDelay(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 	e.postRequest(incHname, iscp.Hn("increment"), 0, nil)
 	e.checkCounter(1)
-
-	contractAgentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	// deposit funds onto the contract account, so it can post a L1 request
-	e.depositFunds(contractAgentID, 1_500_000, 1_000_000)
 
 	e.postRequest(incHname, iscp.Hn("incrementWithDelay"), 0, map[string]interface{}{
 		varDelay: int32(5), // 5s delay

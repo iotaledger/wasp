@@ -141,22 +141,22 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 	cEnv := chEnv.deployContract(name, description, nil)
 	require.NoError(t, err)
 
+	// deposit funds onto the contract account, so it can post a L1 request
+	contractAgentID := iscp.NewAgentID(chEnv.chain.ChainID.AsAddress(), iscp.Hn(name))
+	tx, err := chEnv.chainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_500_000),
+		Args: map[kv.Key][]byte{
+			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
+		},
+		Allowance: iscp.NewAllowanceIotas(1_000_000),
+	})
+	require.NoError(chEnv.t, err)
+	_, err = chEnv.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.chain.ChainID, tx, 30*time.Second)
+	require.NoError(chEnv.t, err)
+
 	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
 }
 
 func (e *chainEnv) chainClient() *chainclient.Client {
 	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.scOwner)
-}
-
-func (e *chainEnv) depositFunds(destinationAgentID *iscp.AgentID, transferAmount, allowanceAmount uint64) {
-	tx, err := e.chainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(transferAmount),
-		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: codec.EncodeAgentID(destinationAgentID),
-		},
-		Allowance: iscp.NewAllowanceIotas(allowanceAmount),
-	})
-	require.NoError(e.t, err)
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
-	require.NoError(e.t, err)
 }
