@@ -52,15 +52,13 @@ There are two ways to interact with smart contracts.
 
 #### On Ledger Requests
 
-<!-- TODO Fix link "../core_concepts/smartcontract-interaction/on-ledger-requests.md"
-See: [On-ledger Requests](correct_link_here) -->
+See: [On-ledger Requests](../core_concepts/invocation.md#on-ledger)
 
 On-ledger requests are sent to GoShimmer nodes. Wasp periodically requests new On-ledger requests from GoShimmer nodes, and handles them accordingly. These messages are validated through the network and take some time to be processed. 
 
 #### Off Ledger Requests
 
-<!-- TODO Fix link "../core_concepts/smartcontract-interaction/off-ledger-requests.md"
-See: [Off-ledger Requests](correct_link_here) -->
+See: [Off-ledger Requests](../core_concepts/invocation.md#off-ledger)
 
 Off-ledger requests are directly sent to Wasp nodes and do not require validation through GoShimmer nodes. They are therefore faster. However, they require an initial deposit of funds to a chain account as this account will initiate required On-ledger requests on behalf of the desired contract or player.
 
