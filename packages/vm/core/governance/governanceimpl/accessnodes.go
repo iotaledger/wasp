@@ -36,7 +36,7 @@ func addCandidateNode(ctx iscp.Sandbox) dict.Dict {
 	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
-	if ctx.ChainOwnerID().Address().Equal(ctx.Request().SenderAddress()) {
+	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
 		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
 		accessNodes.MustSetAt(ani.NodePubKey, make([]byte, 0))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)

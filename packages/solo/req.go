@@ -365,7 +365,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address(), 0)
+	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address())
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {

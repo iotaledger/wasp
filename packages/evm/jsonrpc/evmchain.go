@@ -74,7 +74,7 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 }
 
 func (e *EVMChain) L2Balance() (*iscp.FungibleTokens, error) {
-	agentID := iscp.NewAgentID(e.backend.Signer().GetPublicKey().AsEd25519Address(), 0)
+	agentID := iscp.NewAgentID(e.backend.Signer().GetPublicKey().AsEd25519Address())
 	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.ViewBalance.Name, codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	}))

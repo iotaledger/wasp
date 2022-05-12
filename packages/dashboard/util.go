@@ -84,6 +84,11 @@ func (d *Dashboard) addressToString(a iotago.Address) string {
 	return a.Bech32(d.wasp.L1Params().Bech32Prefix)
 }
 
-func (d *Dashboard) agentIDToString(a *iscp.AgentID) string {
+func (d *Dashboard) agentIDToString(a iscp.AgentID) string {
 	return a.String(d.wasp.L1Params().Bech32Prefix)
+}
+
+func (d *Dashboard) addressFromAgentID(a iscp.AgentID) iotago.Address {
+	addr, _ := iscp.AddressFromAgentID(a)
+	return addr
 }

@@ -88,10 +88,10 @@ type Chain struct {
 	OriginatorPrivateKey *cryptolib.KeyPair
 	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID *iscp.AgentID
+	OriginatorAgentID iscp.AgentID
 
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
-	ValidatorFeeTarget *iscp.AgentID
+	ValidatorFeeTarget iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
 	State state.VirtualStateAccess
@@ -228,7 +228,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	} else {
 		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
-	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
+	originatorAgentID := iscp.NewAgentID(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(

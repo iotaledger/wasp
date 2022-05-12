@@ -63,8 +63,8 @@ func (ch *Chain) OriginatorAddress() iotago.Address {
 	return addr
 }
 
-func (ch *Chain) OriginatorID() *iscp.AgentID {
-	ret := iscp.NewAgentID(ch.OriginatorAddress(), 0)
+func (ch *Chain) OriginatorID() iscp.AgentID {
+	ret := iscp.NewAgentID(ch.OriginatorAddress())
 	return ret
 }
 

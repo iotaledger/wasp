@@ -45,7 +45,7 @@ func postRequestCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{"IOTA:1"},
+	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{},
 		"include a funds transfer as part of the transaction. Format: <color>:<amount>,<color>:amount...",
 	)
 	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
@@ -71,7 +71,7 @@ func parseAssets(args []string) *iscp.FungibleTokens {
 		// In the past we would indicate iotas as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
 		// backward compatible for now and allow both
-		if parts[0] == "IOTA" {
+		if strings.ToLower(parts[0]) == "iota" {
 			parts[0] = ""
 		}
 		assetIDBytes := assetIDFromString(parts[0])

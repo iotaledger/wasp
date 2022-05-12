@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -23,7 +24,7 @@ import (
 )
 
 type (
-	getAccountAssetsFn        func(ch chain.Chain, agentID *iscp.AgentID) (*iscp.FungibleTokens, error)
+	getAccountAssetsFn        func(ch chain.Chain, agentID iscp.AgentID) (*iscp.FungibleTokens, error)
 	hasRequestBeenProcessedFn func(ch chain.Chain, reqID iscp.RequestID) (bool, error)
 )
 
@@ -34,6 +35,7 @@ func AddEndpoints(
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
 	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
+	l1Params *parameters.L1,
 	log *logger.Logger,
 ) {
 	instance := &offLedgerReqAPI{
@@ -42,10 +44,11 @@ func AddEndpoints(
 		hasRequestBeenProcessed: hasRequestBeenProcessed,
 		requestsCache:           expiringcache.New(cacheTTL),
 		nodePubKey:              nodePubKey,
+		l1Params:                l1Params,
 		log:                     log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
-		SetSummary("New off-ledger request").
+		SetSummary("Post an off-ledger request").
 		AddParamPath("", "chainID", "chainID represented in base58").
 		AddParamBody(
 			model.OffLedgerRequestBody{Request: "base64 string"},
@@ -61,6 +64,7 @@ type offLedgerReqAPI struct {
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
 	requestsCache           *expiringcache.ExpiringCache
 	nodePubKey              *cryptolib.PublicKey
+	l1Params                *parameters.L1
 	log                     *logger.Logger
 }
 
@@ -96,7 +100,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 
 	alreadyProcessed, err := o.hasRequestBeenProcessed(ch, reqID)
 	if err != nil {
-		o.log.Errorf("webapi.offledger - check if already processed: %w", err)
+		o.log.Errorf("webapi.offledger - check if already processed: %v", err)
 		return httperrors.ServerError("internal error")
 	}
 
@@ -108,14 +112,14 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	// check user has on-chain balance
 	assets, err := o.getAccountAssets(ch, offLedgerReq.SenderAccount())
 	if err != nil {
-		o.log.Errorf("webapi.offledger - account balance: %w", err)
+		o.log.Errorf("webapi.offledger - account balance: %v", err)
 		return httperrors.ServerError("Unable to get account balance")
 	}
 
 	o.requestsCache.Set(reqID, true)
 
 	if assets.IsEmpty() {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String(o.l1Params.Bech32Prefix)))
 	}
 	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{

@@ -14,9 +14,10 @@
 	{{ $chainid := (index . 0) }}
 	{{ $agentid := (index . 1) }}
     {{ $agentidStr := (agentIDToString $agentid) }}
-    {{ if (not $agentid.IsNil) }}
+    {{ $addr := (addressFromAgentID $agentid) }}
+    {{ if $addr }}
         <a href="{{ uri "chainAccount" $chainid $agentidStr }}"><code>{{ $agentidStr }}</code></a>
-        {{ template "exploreAddressInTangle" $agentid.Address }}
+        {{ template "exploreAddressInTangle" $addr }}
     {{ else }}
         <code>{{ $agentidStr }}</code>
     {{ end  }}

@@ -31,7 +31,7 @@ func FindContract(state kv.KVStoreReader, hname iscp.Hname) *ContractRecord {
 	}
 	if hname == Contract.Hname() {
 		// it happens during bootstrap
-		return ContractRecordFromContractInfo(Contract, &iscp.NilAgentID)
+		return ContractRecordFromContractInfo(Contract)
 	}
 	return nil
 }

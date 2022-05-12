@@ -25,7 +25,7 @@ type BatchProposal struct {
 	TimeData                iscp.TimeData
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
-	FeeDestination          *iscp.AgentID
+	FeeDestination          iscp.AgentID
 	SigShareOfStateOutputID tbls.SigShare
 }
 
@@ -33,7 +33,7 @@ type consensusBatchParams struct {
 	timeData        iscp.TimeData // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
-	feeDestination  *iscp.AgentID
+	feeDestination  iscp.AgentID
 	entropy         hashing.HashValue
 }
 

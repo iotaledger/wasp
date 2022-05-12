@@ -65,11 +65,11 @@ func (e *ChainEnv) checkRootsOutside() {
 		require.EqualValues(e.t, rec.Name, recBack.Name)
 		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
 		require.EqualValues(e.t, rec.Description, recBack.Description)
-		require.True(e.t, recBack.Creator.IsNil())
+		require.Equal(e.t, iscp.AgentIDKindNil, recBack.Creator.Kind())
 	}
 }
 
-func (e *ChainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, nodeIndex ...int) uint64 {
+func (e *ChainEnv) getBalanceOnChain(agentID iscp.AgentID, assetID []byte, nodeIndex ...int) uint64 {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]
@@ -97,18 +97,18 @@ func (e *ChainEnv) getBalanceOnChain(agentID *iscp.AgentID, assetID []byte, node
 	return tokenSet[tokenID].Amount.Uint64()
 }
 
-func (e *ChainEnv) checkBalanceOnChain(agentID *iscp.AgentID, assetID []byte, expected uint64) {
+func (e *ChainEnv) checkBalanceOnChain(agentID iscp.AgentID, assetID []byte, expected uint64) {
 	actual := e.getBalanceOnChain(agentID, assetID)
 	require.EqualValues(e.t, expected, actual)
 }
 
-func (e *ChainEnv) getAccountsOnChain() []*iscp.AgentID {
+func (e *ChainEnv) getAccountsOnChain() []iscp.AgentID {
 	r, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, accounts.Contract.Hname(), accounts.ViewAccounts.Name, nil,
 	)
 	require.NoError(e.t, err)
 
-	ret := make([]*iscp.AgentID, 0)
+	ret := make([]iscp.AgentID, 0)
 	for key := range r {
 		aid, err := iscp.AgentIDFromBytes([]byte(key))
 		require.NoError(e.t, err)
@@ -120,8 +120,8 @@ func (e *ChainEnv) getAccountsOnChain() []*iscp.AgentID {
 	return ret
 }
 
-func (e *ChainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.FungibleTokens {
-	ret := make(map[*iscp.AgentID]*iscp.FungibleTokens)
+func (e *ChainEnv) getBalancesOnChain() map[string]*iscp.FungibleTokens {
+	ret := make(map[string]*iscp.FungibleTokens)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.Chain.Cluster.WaspClient(0).CallView(
@@ -131,7 +131,7 @@ func (e *ChainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.FungibleTokens {
 			},
 		)
 		require.NoError(e.t, err)
-		ret[agentID], err = iscp.FungibleTokensFromDict(r)
+		ret[string(agentID.Bytes())], err = iscp.FungibleTokensFromDict(r)
 		require.NoError(e.t, err)
 	}
 	return ret
@@ -150,7 +150,9 @@ func (e *ChainEnv) getTotalBalance() *iscp.FungibleTokens {
 func (e *ChainEnv) printAccounts(title string) {
 	allBalances := e.getBalancesOnChain()
 	s := fmt.Sprintf("------------------------------------- %s\n", title)
-	for aid, bals := range allBalances {
+	for k, bals := range allBalances {
+		aid, err := iscp.AgentIDFromBytes([]byte(k))
+		require.NoError(e.t, err)
 		s += fmt.Sprintf("     %s\n", aid.String(e.Clu.GetL1NetworkPrefix()))
 		s += fmt.Sprintf("%s\n", bals.String())
 	}
@@ -166,7 +168,7 @@ func (e *ChainEnv) checkLedger() {
 	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
-func (e *ChainEnv) getChainInfo() (*iscp.ChainID, *iscp.AgentID) {
+func (e *ChainEnv) getChainInfo() (*iscp.ChainID, iscp.AgentID) {
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Name, nil,
 	)
@@ -235,7 +237,7 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 	}
 }
 
-func (e *ChainEnv) accountExists(agentID *iscp.AgentID) conditionFn {
+func (e *ChainEnv) accountExists(agentID iscp.AgentID) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
 		return e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex) > 0
 	}
@@ -252,7 +254,7 @@ func (e *ChainEnv) contractIsDeployed(contractName string) conditionFn {
 	}
 }
 
-func (e *ChainEnv) balanceOnChainIotaEquals(agentID *iscp.AgentID, iotas uint64) conditionFn {
+func (e *ChainEnv) balanceOnChainIotaEquals(agentID iscp.AgentID, iotas uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
 		have := e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex)
 		e.t.Logf("chainEnv::balanceOnChainIotaEquals: node=%v, have=%v, expected=%v", nodeIndex, have, iotas)

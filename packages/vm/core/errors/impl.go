@@ -25,7 +25,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("Registering error")
-	e := NewStateErrorCollectionWriter(ctx.State(), ctx.Caller().Hname())
+	e := NewStateErrorCollectionWriter(ctx.State(), ctx.Contract())
 
 	params := kvdecoder.New(ctx.Params())
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)

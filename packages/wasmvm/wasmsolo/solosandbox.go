@@ -193,7 +193,7 @@ func (s *SoloSandbox) fnBalance(args []byte) []byte {
 
 func (s *SoloSandbox) fnBalances(args []byte) []byte {
 	agent := s.ctx.Account()
-	account := iscp.NewAgentID(agent.address, agent.hname)
+	account := iscp.NewAgentIDFromAddressAndHname(agent.address, agent.hname)
 	balance := new(iscp.Allowance)
 	balance.Assets = s.ctx.Chain.L2Assets(account)
 	balance.NFTs = s.ctx.Chain.L2NFTs(account)
