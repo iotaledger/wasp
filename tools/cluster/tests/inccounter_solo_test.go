@@ -72,10 +72,10 @@ func TestSpamCallViewWasm(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
 
-	e := &env{t: t, clu: clu}
-	chEnv := &chainEnv{
+	e := &env{t: t, Clu: clu}
+	chEnv := &ChainEnv{
 		env:   e,
-		chain: chain,
+		Chain: chain,
 	}
 
 	chEnv.deployContract(incName, incDescription, nil)

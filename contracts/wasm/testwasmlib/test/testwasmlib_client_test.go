@@ -1,21 +1,25 @@
 package test
 
 import (
-	"encoding/hex"
 	"fmt"
+	"os"
 	"testing"
+	"time"
 
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/mr-tron/base58"
-	"github.com/spf13/viper"
+	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
+	"github.com/mr-tron/base58/base58"
 	"github.com/stretchr/testify/require"
 )
 
-const useSoloClient = true
+const (
+	useSoloClient = true
+)
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useSoloClient {
@@ -29,16 +33,31 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 		svc.SignRequests(ctx.Chain.OriginatorPrivateKey)
 		return svc
 	}
+	// use cluster tool
+	e := cluster_tests.SetupWithChain(t)
 
-	// TODO cannot run using time as nonce
-	viper.SetConfigFile("wasp-cli.json")
-	err := viper.ReadInConfig()
+	// TODO wasmlib shouldn't use base58, just the to/from methods from regular chainID // chainIDStr := e.Chain.ChainID.String()
+	chainIDStr := base58.Encode(e.Chain.ChainID[:])
+
+	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(chainIDStr))
+
+	// request funds to the wallet that the wasmclient will use
+	wallet := cryptolib.NewKeyPair()
+	e.Clu.RequestFunds(wallet.Address())
+
+	// deposit funds to the on-chain account
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, wallet)
+	reqTx, err := chClient.DepositFunds(10_000_000)
+	require.NoError(t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	chain := viper.GetString("chains." + viper.GetString("chain"))
-	chainBytes, err := hex.DecodeString(chain)
+	// deploy the contract
+	wasm, err := os.ReadFile("./testwasmlib_bg.wasm")
 	require.NoError(t, err)
-	chainID := wasmtypes.ChainIDFromBytes(chainBytes)
+
+	_, err = e.Chain.DeployWasmContract("testwasmlib", "contract to test wasmlib", wasm, nil)
+	require.NoError(t, err)
 
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultWasmClientService()
@@ -47,10 +66,8 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
 
-	// we'll use the seed keypair to sign requests
-	seedBytes, err := base58.Decode(viper.GetString("wallet.seed"))
-	require.NoError(t, err)
-	svc.SignRequests(cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes(seedBytes)))
+	// we'll use the first address in the seed to sign requests
+	svc.SignRequests(wallet)
 	return svc
 }
 
@@ -85,22 +102,27 @@ func TestClientEvents(t *testing.T) {
 
 func TestClientRandom(t *testing.T) {
 	svc := setupClient(t)
+	doit := func() {
+		// generate new random value
+		f := testwasmlib.ScFuncs.Random(svc)
+		f.Func.Post()
+		require.NoError(t, svc.Err)
 
-	// generate new random value
-	f := testwasmlib.ScFuncs.Random(svc)
-	f.Func.Post()
-	require.NoError(t, svc.Err)
+		err := svc.WaitRequest()
+		require.NoError(t, err)
 
-	err := svc.WaitRequest()
-	require.NoError(t, err)
-
-	// get current random value
-	v := testwasmlib.ScFuncs.GetRandom(svc)
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	rnd := v.Results.Random().Value()
-	require.GreaterOrEqual(t, rnd, uint64(0))
-	fmt.Println("Random: ", rnd)
+		// get current random value
+		v := testwasmlib.ScFuncs.GetRandom(svc)
+		v.Func.Call()
+		require.NoError(t, svc.Err)
+		rnd := v.Results.Random().Value()
+		require.GreaterOrEqual(t, rnd, uint64(0))
+		fmt.Println("Random: ", rnd)
+	}
+	doit()
+	doit()
+	doit()
+	doit()
 }
 
 func TestClientArray(t *testing.T) {

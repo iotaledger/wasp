@@ -26,7 +26,7 @@ import (
 )
 
 type advancedInccounterEnv struct {
-	*chainEnv
+	*ChainEnv
 }
 
 func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *advancedInccounterEnv {
@@ -51,19 +51,19 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, params)
 	require.NoError(t, err)
 
-	e := &env{t: t, clu: clu}
-	chEnv := &chainEnv{
+	e := &env{t: t, Clu: clu}
+	chEnv := &ChainEnv{
 		env:   e,
-		chain: chain,
+		Chain: chain,
 	}
 	waitUntil(t, chEnv.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 	return &advancedInccounterEnv{
-		chainEnv: chEnv,
+		ChainEnv: chEnv,
 	}
 }
 
-func (e *chainEnv) printBlocks(expected int) {
-	recs, err := e.chain.GetAllBlockInfoRecordsReverse()
+func (e *ChainEnv) printBlocks(expected int) {
+	recs, err := e.Chain.GetAllBlockInfoRecordsReverse()
 	require.NoError(e.t, err)
 
 	sum := 0
@@ -197,12 +197,12 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
-	keyPair, myAddress, err := e.clu.NewKeyPairWithFunds()
+	keyPair, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	myAgentID := iscp.NewAgentID(myAddress, 0)
 
-	accountsClient := e.chain.SCClient(accounts.Contract.Hname(), keyPair)
+	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(100),
 	})
@@ -210,7 +210,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	waitUntil(t, e.balanceOnChainIotaEquals(myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
 
-	myClient := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := e.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
@@ -237,10 +237,10 @@ func TestAccessNodesMany(t *testing.T) {
 
 	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
-	keyPair, _, err := e.clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := e.chain.SCClient(incCounterSCHname, keyPair)
+	myClient := e.Chain.SCClient(incCounterSCHname, keyPair)
 
 	requestsCount := requestsCountInitial
 	requestsCumulative := 0
@@ -254,7 +254,7 @@ func TestAccessNodesMany(t *testing.T) {
 		}
 		posted += requestsCount
 		requestsCumulative += requestsCount
-		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
+		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.Clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
 	e.printBlocks(
@@ -292,7 +292,7 @@ func TestRotation(t *testing.T) {
 	_, err = chain.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), e.clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(incCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second)
 
 	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
 	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
@@ -421,7 +421,7 @@ func TestRotationMany(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
-	keyPair, _, err := e.clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)
@@ -472,16 +472,16 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	return ret
 }
 
-func (e *chainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
+func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
 	return waitTrue(timeout, func() bool {
 		i, err := e.callGetBlockIndex(nodeIndex)
 		return err == nil && i >= blockIndex
 	})
 }
 
-func (e *chainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
-	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.chain.ChainID,
+func (e *ChainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
+	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
+		e.Chain.ChainID,
 		blocklog.Contract.Hname(),
 		blocklog.ViewGetLatestBlockInfo.Name,
 		nil,
@@ -516,16 +516,16 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	return rec, nil
 }
 
-func (e *chainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) bool {
+func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		a, err := e.callGetStateController(nodeIndex)
 		return err == nil && a.Equal(addr)
 	})
 }
 
-func (e *chainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
-	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.chain.ChainID,
+func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
+	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
+		e.Chain.ChainID,
 		blocklog.Contract.Hname(),
 		blocklog.ViewControlAddresses.Name,
 		nil,

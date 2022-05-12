@@ -16,7 +16,7 @@ import (
 func TestDeployChain(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter1, err := e.clu.StartMessageCounter(map[string]int{
+	counter1, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
 		"request_out":     1,
@@ -24,10 +24,10 @@ func TestDeployChain(t *testing.T) {
 	require.NoError(t, err)
 	defer counter1.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	if !counter1.WaitUntilExpectationsMet() {
 		t.Fatal()
@@ -36,7 +36,7 @@ func TestDeployChain(t *testing.T) {
 	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
-	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.clu.GetL1NetworkPrefix()))
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.Clu.GetL1NetworkPrefix()))
 
 	chEnv.checkCoreContracts()
 	chEnv.checkRootsOutside()
@@ -54,7 +54,7 @@ func TestDeployChain(t *testing.T) {
 func TestDeployContractOnly(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
@@ -62,10 +62,10 @@ func TestDeployContractOnly(t *testing.T) {
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	tx := chEnv.deployIncCounterSC(counter)
 
@@ -94,7 +94,7 @@ func TestDeployContractOnly(t *testing.T) {
 func TestDeployContractAndSpawn(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
@@ -102,10 +102,10 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	chEnv.deployIncCounterSC(counter)
 

@@ -33,7 +33,7 @@ func TestMissingRequests(t *testing.T) {
 
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
-	userWallet, _, err := e.clu.NewKeyPairWithFunds()
+	userWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	// deposit funds before sending the off-ledger request
