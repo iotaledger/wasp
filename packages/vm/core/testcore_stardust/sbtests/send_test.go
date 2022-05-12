@@ -118,7 +118,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
-	agentID := iscp.NewAgentID(addr, 0)
+	agentID := iscp.NewAgentID(addr)
 
 	err := ch.DepositIotasToL2(100_000, wallet)
 	require.NoError(t, err)
@@ -317,6 +317,6 @@ func testNFTMintToChain(t *testing.T, w bool) {
 	// - Chain owns the NFT on L1
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nftID))
 	// - The target contract owns the NFT on L2
-	contractAgentID := iscp.NewAgentID(ch.ChainID.AsAddress(), sbtestsc.Contract.Hname())
+	contractAgentID := iscp.NewContractAgentID(ch.ChainID, sbtestsc.Contract.Hname())
 	require.True(t, ch.HasL2NFT(contractAgentID, &nftID))
 }

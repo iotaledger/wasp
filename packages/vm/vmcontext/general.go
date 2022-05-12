@@ -27,15 +27,15 @@ func (vmctx *VMContext) ChainID() *iscp.ChainID {
 	return &ret
 }
 
-func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
+func (vmctx *VMContext) ChainOwnerID() iscp.AgentID {
 	return vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) ContractAgentID() *iscp.AgentID {
-	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+func (vmctx *VMContext) ContractAgentID() iscp.AgentID {
+	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
+func (vmctx *VMContext) ContractCreator() iscp.AgentID {
 	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
 	if rec == nil {
 		panic("can't find current contract")
@@ -51,11 +51,11 @@ func (vmctx *VMContext) Params() *iscp.Params {
 	return &vmctx.getCallContext().params
 }
 
-func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
-	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+func (vmctx *VMContext) MyAgentID() iscp.AgentID {
+	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) Caller() *iscp.AgentID {
+func (vmctx *VMContext) Caller() iscp.AgentID {
 	return vmctx.getCallContext().caller
 }
 
@@ -71,12 +71,12 @@ func (vmctx *VMContext) Request() iscp.Calldata {
 	return vmctx.req
 }
 
-func (vmctx *VMContext) AccountID() *iscp.AgentID {
+func (vmctx *VMContext) AccountID() iscp.AgentID {
 	hname := vmctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return vmctx.ChainID().CommonAccount()
 	}
-	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
+	return iscp.NewContractAgentID(vmctx.ChainID(), hname)
 }
 
 func (vmctx *VMContext) AllowanceAvailable() *iscp.Allowance {
@@ -87,20 +87,21 @@ func (vmctx *VMContext) AllowanceAvailable() *iscp.Allowance {
 	return allowance.Clone()
 }
 
-func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
-	if agentID.IsNil() {
-		return false
-	}
-	return agentID.Address().Equal(vmctx.ChainID().AsAddress())
+func (vmctx *VMContext) isOnChainAccount(agentID iscp.AgentID) bool {
+	return vmctx.ChainID().IsSameChain(agentID)
 }
 
-func (vmctx *VMContext) isCoreAccount(agentID *iscp.AgentID) bool {
-	return vmctx.isOnChainAccount(agentID) && corecontracts.IsCoreHname(agentID.Hname())
+func (vmctx *VMContext) isCoreAccount(agentID iscp.AgentID) bool {
+	contract, ok := agentID.(*iscp.ContractAgentID)
+	if !ok {
+		return false
+	}
+	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
 }
 
 // targetAccountExists check if there's an account with non-zero balance,
 // or it is an existing smart contract
-func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
+func (vmctx *VMContext) targetAccountExists(agentID iscp.AgentID) bool {
 	if agentID.Equals(vmctx.ChainID().CommonAccount()) {
 		return true
 	}
@@ -115,8 +116,9 @@ func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
 	if !vmctx.isOnChainAccount(agentID) {
 		return false
 	}
+	hname, _ := iscp.HnameFromAgentID(agentID)
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
-		accountExists = root.ContractExists(s, agentID.Hname())
+		accountExists = root.ContractExists(s, hname)
 	})
 	return accountExists
 }
@@ -128,7 +130,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
+func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()

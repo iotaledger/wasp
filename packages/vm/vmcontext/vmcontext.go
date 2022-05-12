@@ -32,7 +32,7 @@ import (
 type VMContext struct {
 	task *vm.VMTask
 	// same for the block
-	chainOwnerID         *iscp.AgentID
+	chainOwnerID         iscp.AgentID
 	virtualState         state.VirtualStateAccess
 	finalStateTimestamp  time.Time
 	blockContext         map[iscp.Hname]*blockContext
@@ -70,7 +70,7 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             *iscp.AgentID   // calling agent
+	caller             iscp.AgentID   // calling agent
 	contract           iscp.Hname      // called contract
 	params             iscp.Params     // params passed
 	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds

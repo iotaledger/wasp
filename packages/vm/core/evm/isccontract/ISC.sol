@@ -25,8 +25,7 @@ type ISCHname is uint32;
 type ISCChainID is bytes20;
 
 struct ISCAgentID {
-	IotaAddress iotaAddress;
-	ISCHname hname;
+	bytes data;
 }
 
 struct ISCNFT {

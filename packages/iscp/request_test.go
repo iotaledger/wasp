@@ -31,7 +31,7 @@ func TestSerializeRequestData(t *testing.T) {
 	})
 
 	t.Run("on ledger", func(t *testing.T) {
-		sender := tpkg.RandEd25519Address()
+		sender := tpkg.RandAliasAddress()
 		requestMetadata := &RequestMetadata{
 			SenderContract: Hn("sender_contract"),
 			TargetContract: Hn("target_contract"),
@@ -61,7 +61,7 @@ func TestSerializeRequestData(t *testing.T) {
 		serialized := req.Bytes()
 		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
-		require.True(t, req2.SenderAccount().Equals(NewAgentID(sender, requestMetadata.SenderContract)))
+		require.True(t, req2.SenderAccount().Equals(NewAgentIDFromAddressAndHname(sender, requestMetadata.SenderContract)))
 		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 		require.EqualValues(t, req.ID(), req2.ID())
 		require.True(t, req.SenderAddress().Equal(req2.SenderAddress()))

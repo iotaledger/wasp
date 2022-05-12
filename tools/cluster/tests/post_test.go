@@ -17,7 +17,7 @@ import (
 
 const inccounterName = "inc"
 
-func (e *ChainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:unparam
+func (e *ChainEnv) deployInccounter42(counter int64) *iscp.ContractAgentID { //nolint:unparam
 	hname := iscp.Hn(inccounterName)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Contract.ProgramHash
@@ -61,7 +61,7 @@ func (e *ChainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 	require.EqualValues(e.t, description, rec.Description)
 
 	e.expectCounter(hname, counter)
-	return iscp.NewAgentID(e.Chain.ChainID.AsAddress(), hname)
+	return iscp.NewContractAgentID(e.Chain.ChainID, hname)
 }
 
 func (e *ChainEnv) expectCounter(hname iscp.Hname, counter int64) {
@@ -171,7 +171,7 @@ func TestPost5Requests(t *testing.T) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress)
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
@@ -201,7 +201,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress)
 
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 

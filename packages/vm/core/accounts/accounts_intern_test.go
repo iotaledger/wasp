@@ -14,6 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func knownAgentID(b byte, h uint32) iscp.AgentID {
+	var chid iscp.ChainID
+	for i := range chid {
+		chid[i] = b
+	}
+	return iscp.NewContractAgentID(&chid, iscp.Hname(h))
+}
+
 func TestBasic(t *testing.T) {
 	t.Logf("Name: %s", Contract.Name)
 	t.Logf("Description: %s", Contract.Description)
@@ -38,7 +46,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
-	agentID1 := iscp.KnownAgentID(1, 2)
+	agentID1 := knownAgentID(1, 2)
 	transfer := iscp.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
@@ -371,7 +379,7 @@ func TestFoundryOutputRec(t *testing.T) {
 func TestCreditDebitNFT1(t *testing.T) {
 	state := dict.New()
 
-	agentID1 := iscp.KnownAgentID(1, 2)
+	agentID1 := knownAgentID(1, 2)
 	nft := iscp.NFT{
 		ID:       iotago.NFTID{123},
 		Issuer:   tpkg.RandEd25519Address(),

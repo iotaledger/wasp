@@ -114,6 +114,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"bytesToString":          bytesToString,
 		"addressToString":        d.addressToString,
 		"agentIDToString":        d.agentIDToString,
+		"addressFromAgentID":     d.addressFromAgentID,
 		"keyToString":            keyToString,
 		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,

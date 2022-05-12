@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.FungibleTokens, error) {
+func GetAccountBalance(ch chain.Chain, agentID iscp.AgentID) (*iscp.FungibleTokens, error) {
 	params := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})

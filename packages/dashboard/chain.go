@@ -102,13 +102,13 @@ func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) 
 	return &LatestBlock{Index: index, Info: block}, nil
 }
 
-func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error) {
+func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]iscp.AgentID, error) {
 	accs, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.ViewAccounts.Name, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*iscp.AgentID, 0)
+	ret := make([]iscp.AgentID, 0)
 	for k := range accs {
 		agentid, err := codec.DecodeAgentID([]byte(k))
 		if err != nil {
@@ -148,7 +148,7 @@ type ChainTemplateParams struct {
 	Record      *registry.ChainRecord
 	LatestBlock *LatestBlock
 	ChainInfo   *ChainInfo
-	Accounts    []*iscp.AgentID
+	Accounts    []iscp.AgentID
 	TotalAssets *iscp.FungibleTokens
 	Blobs       map[hashing.HashValue]uint32
 	Committee   *chain.CommitteeInfo

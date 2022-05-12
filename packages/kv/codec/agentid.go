@@ -5,7 +5,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func DecodeAgentID(b []byte, def ...*iscp.AgentID) (*iscp.AgentID, error) {
+func DecodeAgentID(b []byte, def ...iscp.AgentID) (iscp.AgentID, error) {
 	if b == nil {
 		if len(def) == 0 {
 			return nil, xerrors.New("cannot decode nil bytes")
@@ -15,6 +15,6 @@ func DecodeAgentID(b []byte, def ...*iscp.AgentID) (*iscp.AgentID, error) {
 	return iscp.AgentIDFromBytes(b)
 }
 
-func EncodeAgentID(value *iscp.AgentID) []byte {
+func EncodeAgentID(value iscp.AgentID) []byte {
 	return value.Bytes()
 }

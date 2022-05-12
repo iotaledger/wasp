@@ -133,11 +133,11 @@ func TestDeployDouble(t *testing.T) {
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
+	newOwnerAgentID := iscp.NewAgentID(ownerAddr)
 
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
@@ -167,7 +167,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
+	newOwnerAgentID := iscp.NewAgentID(ownerAddr)
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, string(governance.ParamChainOwner), newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)

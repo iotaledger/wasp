@@ -76,7 +76,7 @@ var (
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
 
-func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
+func contains(s []iscp.AgentID, e iscp.AgentID) bool {
 	for _, a := range s {
 		if a.Equals(e) {
 			return true
@@ -149,7 +149,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 
 	ctx.Balances()
 
-	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	scAccount := iscp.NewContractAgentID(ctx.Chain.ChainID, iscp.Hn(scName))
 	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 
 	ctx.Balances()
@@ -189,7 +189,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 		return ctx
 	}
 
-	scAccount := iscp.NewAgentID(ctx.Chain.ChainID.AsAddress(), iscp.Hn(scName))
+	scAccount := iscp.NewContractAgentID(ctx.Chain.ChainID, iscp.Hn(scName))
 	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
@@ -254,7 +254,7 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 // The optional tokenID parameter can be used to retrieve the balance for the specific token.
 // When tokenID is omitted, the iota balance is assumed.
 func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
-	account := iscp.NewAgentID(agent.address, agent.hname)
+	account := iscp.NewAgentIDFromAddressAndHname(agent.address, agent.hname)
 	switch len(tokenID) {
 	case 0:
 		iotas := ctx.Chain.L2Iotas(account)
@@ -375,7 +375,7 @@ func (ctx *SoloContext) NewSoloFoundry(maxSupply interface{}, agent ...*SoloAgen
 // NFTs returns the list of NFTs in the account of the specified agent on
 // the chain associated with ctx.
 func (ctx *SoloContext) NFTs(agent *SoloAgent) []wasmtypes.ScNftID {
-	account := iscp.NewAgentID(agent.address, agent.hname)
+	account := iscp.NewAgentIDFromAddressAndHname(agent.address, agent.hname)
 	l2nfts := ctx.Chain.L2NFTs(account)
 	nfts := make([]wasmtypes.ScNftID, 0, len(l2nfts))
 	for _, l2nft := range l2nfts {

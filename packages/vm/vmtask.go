@@ -32,7 +32,7 @@ type VMTask struct {
 	Requests           []iscp.Request
 	TimeAssumption     iscp.TimeData
 	Entropy            hashing.HashValue
-	ValidatorFeeTarget *iscp.AgentID
+	ValidatorFeeTarget iscp.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
 	EstimateGasMode      bool
 	EnableGasBurnLogging bool // for testing and Solo only

@@ -94,10 +94,15 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 
 	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
-	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
+	callerAddress, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
+
+	callerContract, _ := ctx.Caller().(*iscp.ContractAgentID)
+	if callerContract != nil && callerContract.ChainID().Equals(ctx.ChainID()) {
 		// if the caller is on the same chain, do nothing
 		return nil
 	}
+
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
 	allowance := ctx.AllowanceAvailable()
@@ -114,22 +119,19 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	caller := ctx.Caller()
-	isCallerAContract := caller.Hname() != 0
-
-	if isCallerAContract {
+	if callerContract != nil && callerContract.Hname() != 0 {
 		allowance := iscp.NewAllowanceFungibleTokens(
 			iscp.NewTokensIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
 		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
-			TargetAddress:  ctx.Caller().Address(),
+			TargetAddress:  callerAddress,
 			FungibleTokens: fundsToWithdraw,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
 				Allowance:      allowance,
-				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(caller)},
+				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
 				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
 			},
 		}
@@ -143,7 +145,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 		return nil
 	}
 	tx := iscp.RequestParameters{
-		TargetAddress:  ctx.Caller().Address(),
+		TargetAddress:  callerAddress,
 		FungibleTokens: fundsToWithdraw,
 	}
 	if nftID != nil {
