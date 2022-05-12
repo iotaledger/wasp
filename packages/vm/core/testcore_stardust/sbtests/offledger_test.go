@@ -48,8 +48,9 @@ func TestOffLedgerSuccess(t *testing.T) {
 		ch.AssertL2Iotas(userAgentID, 0)
 		ch.AssertL2Iotas(cAID, 0)
 
-		err := ch.DepositIotasToL2(1000, user)
-		expectedUser := 1000 - ch.LastReceipt().GasFeeCharged
+		depositIotas := 1 * iscp.Mi
+		err := ch.DepositIotasToL2(depositIotas, user)
+		expectedUser := depositIotas - ch.LastReceipt().GasFeeCharged
 		ch.AssertL2Iotas(userAgentID, expectedUser)
 		require.NoError(t, err)
 

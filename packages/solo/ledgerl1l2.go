@@ -168,9 +168,9 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and ftokens for the call
 const (
-	DestroyTokensGasBudgetIotas   = 100_000
-	SendToL2AccountGasBudgetIotas = 100_000
-	DestroyFoundryGasBudgetIotas  = 100_000
+	DestroyTokensGasBudgetIotas   = 1 * iscp.Mi
+	SendToL2AccountGasBudgetIotas = 1 * iscp.Mi
+	DestroyFoundryGasBudgetIotas  = 1 * iscp.Mi
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -196,8 +196,8 @@ func (fp *foundryParams) WithTokenScheme(sch iotago.TokenScheme) *foundryParams 
 }
 
 const (
-	allowanceForFoundryDustDeposit = 1000
-	allowanceForModifySupply       = 1000
+	allowanceForFoundryDustDeposit = 1 * iscp.Mi
+	allowanceForModifySupply       = 1 * iscp.Mi
 )
 
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
@@ -210,21 +210,20 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 		user = fp.user
 	}
 	req := NewCallParamsFromDict(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
-		WithAllowance(iscp.NewAllowance(allowanceForFoundryDustDeposit, nil, nil))
+		WithAllowance(iscp.NewAllowanceIotas(allowanceForFoundryDustDeposit))
+
 	gas, _, err := fp.ch.EstimateGasOnLedger(req, user, true)
 	if err != nil {
 		return 0, iotago.NativeTokenID{}, err
 	}
 	req.WithGasBudget(gas)
 	res, err := fp.ch.PostRequestSync(req, user)
-
-	retSN := uint32(0)
-	var tokenID iotago.NativeTokenID
-	if err == nil {
-		resDeco := kvdecoder.New(res)
-		retSN = resDeco.MustGetUint32(accounts.ParamFoundrySN)
-		tokenID, err = fp.ch.GetNativeTokenIDByFoundrySN(retSN)
+	if err != nil {
+		return 0, iotago.NativeTokenID{}, err
 	}
+	resDeco := kvdecoder.New(res)
+	retSN := resDeco.MustGetUint32(accounts.ParamFoundrySN)
+	tokenID, err := fp.ch.GetNativeTokenIDByFoundrySN(retSN)
 	return retSN, tokenID, err
 }
 

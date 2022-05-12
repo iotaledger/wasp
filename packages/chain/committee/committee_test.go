@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -24,7 +25,7 @@ func TestCommitteeBasic(t *testing.T) {
 	dks0, err := dksRegistries[0].LoadDKShare(stateAddr)
 	require.NoError(t, err)
 
-	c, _, err := New(dks0, nil, net0, log)
+	c, _, err := New(dks0, iscp.RandomChainID(), net0, log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equal(stateAddr))
 	require.EqualValues(t, 4, c.Size())

@@ -58,8 +58,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain2TotalIotas := chain2.L2TotalIotas()
 
 	// send iotas to contractAgentID (that is an entity of chain2) on chain1
-	iotasToSend := uint64(2 * iscp.Mi)
-	iotasCreditedToSc2OnChain1 := uint64(1 * iscp.Mi)
+	iotasToSend := uint64(3 * iscp.Mi)
+	iotasCreditedToSc2OnChain1 := uint64(2 * iscp.Mi)
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,
@@ -95,7 +95,7 @@ func test2Chains(t *testing.T, w bool) {
 
 	// make chain2 send a call to chain1 to withdraw iotas
 	iotasToWithdrawalFromChain1 := iotasCreditedToSc2OnChain1 // try to withdraw all iotas deposited to chain1 on behalf of chain2's contract
-	reqAllowance := accounts.ConstDepositFeeTmp + 0.5*iscp.Mi // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas in chain1 (also needs to be enough for storage deposit)
+	reqAllowance := accounts.ConstDepositFeeTmp + 1*iscp.Mi   // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas in chain1 (also needs to be enough for storage deposit)
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
