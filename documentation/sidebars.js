@@ -56,6 +56,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Smart Contracts Invocation',
+                    id: 'guide/core_concepts/invocation',
+                },
+                {
+                    type: 'doc',
                     label: 'Sandbox Interface',
                     id: 'guide/core_concepts/sandbox'
                 },
@@ -129,22 +134,6 @@ module.exports = {
                             label: 'The Common Account',
                             id: 'guide/core_concepts/accounts/the-common-account',
                         },
-                    ]
-                },
-                {
-                    type: 'category',
-                    label: 'Interacting With Smart Contracts',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'On-ledger Requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/on-ledger-requests',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Off-ledger Requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/off-ledger-requests',
-                        }
                     ]
                 },
                 {
