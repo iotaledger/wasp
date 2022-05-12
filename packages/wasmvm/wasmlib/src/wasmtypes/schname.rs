@@ -50,6 +50,13 @@ pub fn hname_to_bytes(value: ScHname) -> Vec<u8> {
     value.0.to_le_bytes().to_vec()
 }
 
+pub fn hname_from_string(value: &str) -> ScHname {
+    if value.len() > 8 {
+        panic("invalid Hname string");
+    }
+    ScHname(u32::from_str_radix(value, 16).unwrap())
+}
+
 pub fn hname_to_string(value: ScHname) -> String {
     let hexa = "0123456789abcdef".as_bytes();
     let mut res = [0u8; 8];

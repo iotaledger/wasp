@@ -19,14 +19,10 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 		return s.fnCall(args)
 	case wasmlib.FnPost:
 		return s.fnPost(args)
-	case wasmlib.FnUtilsBase58Encode:
-		return []byte(base58.Encode(args))
 	case wasmlib.FnUtilsBase58Decode:
-		ret, err := base58.Decode(string(args))
-		if err != nil {
-			panic(err)
-		}
-		return ret
+		return Base58Decode(string(args))
+	case wasmlib.FnUtilsBase58Encode:
+		return []byte(Base58Encode(args))
 	}
 	panic("implement me")
 }
@@ -90,6 +86,20 @@ func (s *WasmClientContext) fnPost(args []byte) []byte {
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	allowance := s.cvt.IscpAllowance(scAssets)
 	hFunction := s.cvt.IscpHname(req.Function)
-	s.postRequestOffLedger(hFunction, params, allowance, s.keyPair)
+	s.ReqID, s.Err = s.svcClient.PostRequest(s.chainID, s.scHname, hFunction, params, allowance, s.keyPair)
 	return nil
+}
+
+/////////////////////////////////////////////////////////////////
+
+func Base58Decode(s string) []byte {
+	res, err := base58.Decode(s)
+	if err != nil {
+		panic("invalid base58 encoding")
+	}
+	return res
+}
+
+func Base58Encode(b []byte) string {
+	return base58.Encode(b)
 }

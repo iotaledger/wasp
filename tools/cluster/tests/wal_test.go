@@ -17,11 +17,11 @@ import (
 func TestWriteToWAL(t *testing.T) {
 	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 	require.NoError(t, err)
 
-	walDir := walDirFromDataPath(e.clu.DataPath, chain.ChainID.String())
+	walDir := walDirFromDataPath(e.Clu.DataPath, chain.ChainID.String())
 	require.True(t, walDirectoryCreated(walDir))
 
 	blockIndex, _ := chain.BlockIndex(0)

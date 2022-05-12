@@ -24,7 +24,7 @@ type BatchPayment struct {
 }
 
 func NewPayment(ord uint32, amount uint64, targetAddr iotago.Address, payerKeyPair *cryptolib.KeyPair) *Payment {
-	panic("TODO implment")
+	panic("TODO implement")
 	// payerAddr := ledgerstate.NewED25519Address(payerKeyPair.PublicKey)
 	// data := paymentEssence(ord, amount, payerAddr, targetAddr)
 	// shortSig := payerKeyPair.PrivateKey.Sign(data)

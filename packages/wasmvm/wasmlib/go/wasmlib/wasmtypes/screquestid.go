@@ -53,7 +53,7 @@ func RequestIDFromString(value string) ScRequestID {
 
 func RequestIDToString(value ScRequestID) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Base58Encode(RequestIDToBytes(value))
 }
 
 func requestIDFromBytesUnchecked(buf []byte) ScRequestID {

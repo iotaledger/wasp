@@ -16,13 +16,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupBlobTest(t *testing.T) *chainEnv {
+func setupBlobTest(t *testing.T) *ChainEnv {
 	e := setupWithNoChain(t)
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	chEnv.checkCoreContracts()
 	for _, i := range chain.CommitteeNodes {
@@ -32,19 +32,19 @@ func setupBlobTest(t *testing.T) *chainEnv {
 		require.LessOrEqual(t, blockIndex, uint32(5))
 	}
 
-	_, myAddress, err := e.clu.NewKeyPairWithFunds()
+	_, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	if !e.clu.AssertAddressBalances(myAddress,
+	if !e.Clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
 		t.Fatal()
 	}
 	return chEnv
 }
 
-func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
-	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Name,
+func (e *ChainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
+	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
+		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Name,
 		dict.Dict{
 			blob.ParamHash: hash[:],
 		})
@@ -54,9 +54,9 @@ func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
 	return decoded
 }
 
-func (e *chainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
-	v, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
+func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
+	v, err := e.Chain.Cluster.WaspClient(0).CallView(
+		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
@@ -86,10 +86,10 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	myWallet, _, err := e.clu.NewKeyPairWithFunds()
+	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 	reqTx, err := chClient.Post1Request(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
@@ -98,7 +98,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	sizes := e.getBlobInfo(expectedHash)
@@ -130,14 +130,14 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	myWallet, _, err := e.clu.NewKeyPairWithFunds()
+	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
-	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	expectedHash, _, receipt, err := chClient.UploadBlob(fv)

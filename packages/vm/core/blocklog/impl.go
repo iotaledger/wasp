@@ -143,7 +143,7 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
 	ctx.RequireNoError(err)
 	ret := dict.New()
 	if seen {
-		ret.Set(ParamRequestProcessed, codec.EncodeString("+"))
+		ret.Set(ParamRequestProcessed, codec.EncodeBool(true))
 	}
 	return ret
 }

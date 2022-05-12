@@ -381,9 +381,9 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
-	bin, err := resultDecoder.GetBytes(blocklog.ParamRequestProcessed)
+	isProcessed, err := resultDecoder.GetBool(blocklog.ParamRequestProcessed)
 	require.NoError(ch.Env.T, err)
-	return bin != nil
+	return isProcessed
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
@@ -526,7 +526,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
-// Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
+// Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,

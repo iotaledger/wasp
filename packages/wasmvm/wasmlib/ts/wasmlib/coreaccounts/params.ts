@@ -61,14 +61,14 @@ export class MutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableHarvestParams extends wasmtypes.ScProxy {
-	forceMinimumIotas(): wasmtypes.ScImmutableUint64 {
-		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamForceMinimumIotas));
+	forceMinimumIotas(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamForceMinimumIotas));
 	}
 }
 
 export class MutableHarvestParams extends wasmtypes.ScProxy {
-	forceMinimumIotas(): wasmtypes.ScMutableUint64 {
-		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamForceMinimumIotas));
+	forceMinimumIotas(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamForceMinimumIotas));
 	}
 }
 
@@ -129,14 +129,14 @@ export class MutableFoundryOutputParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetAccountNonceParams extends wasmtypes.ScProxy {
-	foundrySN(): wasmtypes.ScImmutableUint32 {
-		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	agentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
 export class MutableGetAccountNonceParams extends wasmtypes.ScProxy {
-	foundrySN(): wasmtypes.ScMutableUint32 {
-		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	agentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 

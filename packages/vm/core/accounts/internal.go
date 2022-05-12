@@ -206,7 +206,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Fung
 	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
-		panic(xerrors.Errorf(" debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
+		panic(xerrors.Errorf(" debit from %s@%s: %v\nassets: %s", agentID.Hname(), agentID.Address(), ErrNotEnoughFunds, assets))
 	}
 	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
@@ -423,7 +423,7 @@ func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.FungibleToke
 func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	ret := dict.New()
 	getAccountsMapR(state).MustIterate(func(agentID []byte, val []byte) bool {
-		ret.Set(kv.Key(agentID), []byte{})
+		ret.Set(kv.Key(agentID), []byte{0xff})
 		return true
 	})
 	return ret

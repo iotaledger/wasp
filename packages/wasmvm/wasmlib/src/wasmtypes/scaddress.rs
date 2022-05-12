@@ -95,9 +95,13 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
     Vec::new()
 }
 
+pub fn address_from_string(value: &str) -> ScAddress {
+    address_from_bytes(&base58_decode(value))
+}
+
 pub fn address_to_string(value: &ScAddress) -> String {
     // TODO standardize human readable string
-    base58_encode(&value.id)
+    base58_encode(&address_to_bytes(value))
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -117,7 +117,7 @@ func AgentIDFromString(value string) ScAgentID {
 
 func AgentIDToString(value ScAgentID) string {
 	// TODO standardize human readable string
-	return value.address.String() + "::" + value.hname.String()
+	return AddressToString(value.address) + "::" + HnameToString(value.hname)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

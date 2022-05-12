@@ -52,6 +52,10 @@ pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
     value.id.to_vec()
 }
 
+pub fn request_id_from_string(value: &str) -> ScRequestID {
+    request_id_from_bytes(&base58_decode(value))
+}
+
 pub fn request_id_to_string(value: &ScRequestID) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)

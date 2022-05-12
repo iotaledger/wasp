@@ -77,7 +77,7 @@ const WaspConfig = `
   },
   "debug": {
     "rawblocksEnabled": true,
-    "rawblocksDirectory": "blocks" 
+    "rawblocksDirectory": "blocks"
   }
 }
 `

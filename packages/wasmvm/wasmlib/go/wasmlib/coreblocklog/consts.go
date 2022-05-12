@@ -12,7 +12,7 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "blocklog"
-	ScDescription = "Core block log contract"
+	ScDescription = "Block log contract"
 	HScName       = wasmtypes.ScHname(0xf538ef2b)
 )
 
