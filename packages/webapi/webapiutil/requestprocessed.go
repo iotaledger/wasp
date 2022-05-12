@@ -20,5 +20,5 @@ func HasRequestBeenProcessed(ch chain.Chain, reqID iscp.RequestID) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	return codec.DecodeBool(pEncoded)
+	return codec.DecodeBool(pEncoded, false)
 }
