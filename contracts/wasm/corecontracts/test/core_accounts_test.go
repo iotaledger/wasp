@@ -191,9 +191,8 @@ func TestFoundryModifySupply(t *testing.T) {
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
-	// user1 := ctx.NewSoloAgent()
 
-	var mintAmount uint64 = 100
+	mintAmount := wasmtypes.NewScBigInt(100)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
@@ -202,7 +201,7 @@ func TestBalance(t *testing.T) {
 	f.Params.AgentID().SetValue(user0.ScAgentID())
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value().Uint64()
+	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
 	assert.Equal(t, mintAmount, balance)
 
 	// FIXME complete this test
@@ -213,7 +212,7 @@ func TestTotalAssets(t *testing.T) {
 	user0 := ctx.NewSoloAgent()
 	user1 := ctx.NewSoloAgent()
 
-	var mintAmount0, mintAmount1 uint64 = 101, 202
+	mintAmount0, mintAmount1 := wasmtypes.NewScBigInt(101), wasmtypes.NewScBigInt(202)
 	foundry0, err := ctx.NewSoloFoundry(mintAmount0, user0)
 	require.NoError(t, err)
 	err = foundry0.Mint(mintAmount0)
@@ -228,9 +227,9 @@ func TestTotalAssets(t *testing.T) {
 	f := coreaccounts.ScFuncs.TotalAssets(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	val0 := f.Results.Assets().GetBigInt(tokenID0).Value().Uint64()
+	val0 := f.Results.Assets().GetBigInt(tokenID0).Value()
 	assert.Equal(t, mintAmount0, val0)
-	val1 := f.Results.Assets().GetBigInt(tokenID1).Value().Uint64()
+	val1 := f.Results.Assets().GetBigInt(tokenID1).Value()
 	assert.Equal(t, mintAmount1, val1)
 }
 

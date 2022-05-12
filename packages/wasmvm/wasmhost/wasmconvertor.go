@@ -115,7 +115,7 @@ func reverse(bytes []byte) []byte {
 	}
 	buf := make([]byte, n)
 	for i, b := range bytes {
-		buf[n-i] = b
+		buf[n-1-i] = b
 	}
 	return buf
 }
