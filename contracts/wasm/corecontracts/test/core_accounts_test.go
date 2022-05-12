@@ -103,10 +103,9 @@ func TestHarvest(t *testing.T) {
 }
 
 func TestFoundryCreateNew(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1
+	var dustAllowance uint64 = 1_000
 
 	user := ctx.NewSoloAgent()
 	f := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -134,10 +133,9 @@ func TestFoundryCreateNew(t *testing.T) {
 }
 
 func TestFoundryDestroy(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1
+	var dustAllowance uint64 = 1_000
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -159,10 +157,9 @@ func TestFoundryDestroy(t *testing.T) {
 }
 
 func TestFoundryModifySupply(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1
+	var dustAllowance uint64 = 1_000
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
