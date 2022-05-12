@@ -13,7 +13,7 @@ keywords:
 
 A smart contract's access to the world has to be restricted. Imagine a smart contract that would directly tap into a weather forecast website: as the weather changes, the result of the contract's execution will change as well. This smart contract is not deterministic anymore, meaning that you cannot reproduce the result yourself to verify it.
 
-The access to the chain's state has to be curated, too. The owner of the chain and developers of individual smart contracts are not necessary the same entity, and a single malicious contract could ruin the whole chain if not limited to its own space. Instead of working on the state as a whole, each smart contract can only modify a part of it.
+The access to the chain's state has to be curated, too. The owner of the chain and developers of individual smart contracts are not necessarily the same entity, and a single malicious contract could ruin the whole chain if not limited to its own space. Instead of working on the state as a whole, each smart contract can only modify a part of it.
 
 The only way for smart contracts to access the data is to use the Sandbox interface. It provides them only with deterministic data and exposes the state as a structure of key/value pairs, only the ones the smart contract has access to.
 
