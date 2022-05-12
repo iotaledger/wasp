@@ -31,8 +31,8 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'ISCP Architecture',
-                    id: 'guide/core_concepts/iscp-architecture',
+                    label: 'ISC Architecture',
+                    id: 'guide/core_concepts/isc-architecture',
                 },
                 {
                     type: 'doc',
@@ -187,7 +187,7 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Sending tokens from ISCP to the Tangle',
+                            label: 'Sending tokens from ISC to the Tangle',
                             id: 'guide/solo/sending-funds-sc'
                         },
                     ]
@@ -196,7 +196,7 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'ISCP Chains and Nodes',
+            label: 'ISC Chains and Nodes',
             items: [
                 {
                     type: 'doc',
@@ -240,7 +240,7 @@ module.exports = {
                     items: [
                         {
                             type: 'doc',
-                            label: 'Wasm VM for ISCP',
+                            label: 'Wasm VM for ISC',
                             id: 'guide/wasm_vm/intro',
                         },
                         {
