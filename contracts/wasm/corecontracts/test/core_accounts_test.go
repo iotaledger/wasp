@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -191,12 +192,15 @@ func TestFoundryModifySupply(t *testing.T) {
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
 
 	mintAmount := wasmtypes.NewScBigInt(100)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
+	tokenID := foundry.TokenID()
 	require.NoError(t, err)
+
 	f := coreaccounts.ScFuncs.Balance(ctx)
 	f.Params.AgentID().SetValue(user0.ScAgentID())
 	f.Func.Call()
@@ -204,7 +208,19 @@ func TestBalance(t *testing.T) {
 	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
 	assert.Equal(t, mintAmount, balance)
 
-	// FIXME complete this test
+	transferTokenAmount := wasmtypes.NewScBigInt(9)
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx)
+	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&tokenID, transferTokenAmount)
+	ftrans.Func.Allowance(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	f.Params.AgentID().SetValue(user0.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	balance = f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
+	assert.Equal(t, mintAmount.Sub(transferTokenAmount), balance)
 }
 
 func TestTotalAssets(t *testing.T) {
