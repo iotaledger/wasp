@@ -145,9 +145,9 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}
 	if opt.Log == nil {
 		opt.Log = testlogger.NewNamedLogger(t.Name(), timeLayout)
-	}
-	if !opt.Debug {
-		opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+		if !opt.Debug {
+			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+		}
 	}
 	if opt.L1Params == nil {
 		opt.L1Params = parameters.L1ForTesting()
