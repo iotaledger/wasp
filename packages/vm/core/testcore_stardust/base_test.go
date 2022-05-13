@@ -1,12 +1,14 @@
 package testcore
 
 import (
+	"math"
 	"strings"
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -303,14 +305,6 @@ func TestEstimateGas(t *testing.T) {
 		require.EqualValues(t, 0, getInt())
 	}
 
-	// find out the gas fee necessary for DepositIotasToL2
-	depositFee := func() uint64 {
-		keyPair, _ := env.NewKeyPairWithFunds()
-		_, gasFee, err := ch.EstimateGasOnLedger(solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name), keyPair, true)
-		require.NoError(t, err)
-		return gasFee
-	}()
-
 	for _, testCase := range []struct {
 		Desc          string
 		L2Balance     uint64
@@ -346,7 +340,21 @@ func TestEstimateGas(t *testing.T) {
 			agentID := iscp.NewAgentID(addr, 0)
 
 			if testCase.L2Balance > 0 {
-				ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
+				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
+				anotherKeyPair, _ := env.NewKeyPairWithFunds()
+				req := solo.NewCallParams(
+					accounts.Contract.Name,
+					accounts.FuncTransferAllowanceTo.Name,
+					dict.Dict{
+						accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewAgentID(addr, 0)),
+						accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+					},
+				).AddAllowance(iscp.NewAllowanceIotas(testCase.L2Balance)).
+					AddIotas(10 * iscp.Mi).
+					WithGasBudget(math.MaxUint64)
+
+				_, err = ch.PostRequestSync(req, anotherKeyPair)
+				require.NoError(t, err)
 				balance := ch.L2Iotas(agentID)
 				require.Equal(t, testCase.L2Balance, balance)
 			}
@@ -502,7 +510,7 @@ func TestMessageSize(t *testing.T) {
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	dust := uint64(reqSize * 2)
+	dust := 1 * iscp.Mi
 
 	maxRequestsPerBlock := env.L1Params().MaxTransactionSize / reqSize
 
