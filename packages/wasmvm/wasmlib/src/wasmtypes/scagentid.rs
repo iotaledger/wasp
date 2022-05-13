@@ -7,24 +7,32 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const NIL_AGENT_ID: u8 = 0xff;
+pub const SC_AGENT_ID_NIL: u8 = 0;
+pub const SC_AGENT_ID_ADDRESS: u8 = 1;
+pub const SC_AGENT_ID_CONTRACT: u8 = 2;
+pub const SC_AGENT_ID_ETHEREUM: u8 = 3;
 
 #[derive(PartialEq, Clone)]
 pub struct ScAgentID {
+    kind: u8,
     address: ScAddress,
     hname: ScHname,
 }
 
-const NIL_AGENT: ScAgentID = ScAgentID {
-    address: ScAddress { id: [0; SC_ADDRESS_LENGTH] },
-    hname: ScHname(0),
-};
-
 impl ScAgentID {
     pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         ScAgentID {
+            kind: SC_AGENT_ID_CONTRACT,
             address: address_from_bytes(&address.to_bytes()),
             hname: hname_from_bytes(&hname.to_bytes()),
+        }
+    }
+
+    pub fn from_address(address: &ScAddress) -> ScAgentID {
+        ScAgentID {
+            kind: SC_AGENT_ID_ADDRESS,
+            address: address_from_bytes(&address.to_bytes()),
+            hname: ScHname(0),
         }
     }
 
@@ -37,7 +45,11 @@ impl ScAgentID {
     }
 
     pub fn is_address(&self) -> bool {
-        self.hname == ScHname(0)
+        self.kind == SC_AGENT_ID_ADDRESS
+    }
+
+    pub fn is_contracts(&self) -> bool {
+        self.kind == SC_AGENT_ID_CONTRACT
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -51,79 +63,62 @@ impl ScAgentID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// note: only alias address can have a non-zero hname
-// so there is no need to encode it when it is always zero
-
 pub fn agent_id_decode(dec: &mut WasmDecoder) -> ScAgentID {
-    if dec.peek() == SC_ADDRESS_ALIAS {
-        return ScAgentID { address: address_decode(dec), hname: hname_decode(dec) };
-    }
-    ScAgentID { address: address_decode(dec), hname: ScHname(0) }
+    agent_id_from_bytes(&dec.bytes())
 }
 
 pub fn agent_id_encode(enc: &mut WasmEncoder, value: &ScAgentID) {
-    address_encode(enc, &value.address());
-    if value.address.id[0] == SC_ADDRESS_ALIAS {
-        hname_encode(enc, value.hname());
-    }
+    enc.bytes(&agent_id_to_bytes(value));
 }
 
 pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
     if buf.len() == 0 {
         return ScAgentID {
+            kind: SC_AGENT_ID_NIL,
             address: address_from_bytes(buf),
             hname: ScHname(0),
         };
     }
     match buf[0] {
-        SC_ADDRESS_ALIAS => {
-            if buf.len() != SC_LENGTH_ALIAS + SC_HNAME_LENGTH {
-                panic("invalid AgentID length: Alias address");
-            }
-            return ScAgentID {
-                address: address_from_bytes(&buf[..SC_LENGTH_ALIAS]),
-                hname: hname_from_bytes(&buf[SC_LENGTH_ALIAS..]),
-            };
-        }
-        SC_ADDRESS_ED25519 => {
+        SC_AGENT_ID_ADDRESS => {
+            let buf: &[u8] = &buf[1..];
             if buf.len() != SC_LENGTH_ED25519 {
                 panic("invalid AgentID length: Ed25519 address");
             }
-            return ScAgentID {
-                address: address_from_bytes(buf),
-                hname: ScHname(0),
-            };
+            return ScAgentID::from_address(&address_from_bytes(&buf));
         }
-        SC_ADDRESS_NFT => {
-            if buf.len() != SC_LENGTH_NFT {
-                panic("invalid AgentID length: NFT address");
+        SC_AGENT_ID_CONTRACT => {
+            let buf: &[u8] = &buf[1..];
+            if buf.len() != SC_CHAIN_ID_LENGTH + SC_HNAME_LENGTH {
+                panic("invalid AgentID length: Alias address");
             }
-            return ScAgentID {
-                address: address_from_bytes(buf),
-                hname: ScHname(0),
-            };
+            let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
+            let hname = hname_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
+            return ScAgentID::new(&chain_id.address(), hname);
         }
-        NIL_AGENT_ID => {
-            if buf.len() != 1 {
-                panic("invalid AgentID length: nil AgentID");
-            }
-        }
-        _ =>
-            panic("invalid AgentID address type"),
+         _ =>
+            panic("AgentIDFromoBytes: invalid AgentID type"),
     }
     ScAgentID {
+        kind: SC_AGENT_ID_NIL,
         address: address_from_bytes(&[]),
         hname: ScHname(0),
     }
 }
 
 pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
-    if *value == NIL_AGENT {
-        return [NIL_AGENT_ID].to_vec();
-    }
-    let mut buf = address_to_bytes(&value.address);
-    if buf[0] == SC_ADDRESS_ALIAS {
-        buf.extend_from_slice(&hname_to_bytes(value.hname));
+    let mut buf:Vec<u8> = Vec::new();
+    buf.push(value.kind);
+    match value.kind {
+        SC_AGENT_ID_ADDRESS => {
+            buf.extend_from_slice(&address_to_bytes(&value.address));
+        }
+        SC_AGENT_ID_CONTRACT => {
+            buf.extend_from_slice(&address_to_bytes(&value.address)[1..]);
+            buf.extend_from_slice(&hname_to_bytes(value.hname));
+        }
+        _ =>
+            panic("AgentIDToBytes: invalid AgentID type"),
     }
     buf
 }

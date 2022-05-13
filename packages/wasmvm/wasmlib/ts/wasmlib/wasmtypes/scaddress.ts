@@ -21,7 +21,7 @@ export class ScAddress {
 
     asAgentID(): wasmtypes.ScAgentID {
         // agentID for address has Hname zero
-        return new wasmtypes.ScAgentID(this, new wasmtypes.ScHname(0));
+        return wasmtypes.ScAgentID.fromAddress(this);
     }
 
     public equals(other: ScAddress): bool {

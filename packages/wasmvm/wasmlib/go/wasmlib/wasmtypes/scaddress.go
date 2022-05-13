@@ -24,8 +24,7 @@ type ScAddress struct {
 }
 
 func (o ScAddress) AsAgentID() ScAgentID {
-	// agentID for address has Hname zero
-	return NewScAgentID(o, 0)
+	return NewScAgentIDFromAddress(o)
 }
 
 func (o ScAddress) Bytes() []byte {

@@ -47,8 +47,6 @@ func TestDeposit(t *testing.T) {
 }
 
 func TestTransferAllowanceTo(t *testing.T) {
-	t.SkipNow() // TODO: not working
-
 	ctx := setupAccounts(t)
 
 	var transferAmountIOTA uint64 = 10_000
@@ -191,8 +189,6 @@ func TestFoundryModifySupply(t *testing.T) {
 }
 
 func TestBalance(t *testing.T) {
-	t.SkipNow() // TODO: not working
-
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
 
@@ -238,8 +234,6 @@ func TestTotalAssets(t *testing.T) {
 }
 
 func TestAccounts(t *testing.T) {
-	t.SkipNow() // TODO: not working
-
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
 	user1 := ctx.NewSoloAgent()
@@ -266,8 +260,6 @@ func TestAccounts(t *testing.T) {
 }
 
 func TestGetAccountNonce(t *testing.T) {
-	t.SkipNow() // TODO: not working
-
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
 

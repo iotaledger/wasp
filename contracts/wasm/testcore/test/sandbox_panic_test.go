@@ -36,6 +36,7 @@ func verifyErrorInReceipts(t *testing.T, ctx *wasmsolo.SoloContext, msg string) 
 }
 
 func TestPanicFull(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -49,6 +50,7 @@ func TestPanicFull(t *testing.T) {
 }
 
 func TestPanicViewCall(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -62,6 +64,7 @@ func TestPanicViewCall(t *testing.T) {
 }
 
 func TestCallPanicFull(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -75,6 +78,7 @@ func TestCallPanicFull(t *testing.T) {
 }
 
 func TestCallPanicViewFromFull(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -88,6 +92,7 @@ func TestCallPanicViewFromFull(t *testing.T) {
 }
 
 func TestCallPanicViewFromView(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
