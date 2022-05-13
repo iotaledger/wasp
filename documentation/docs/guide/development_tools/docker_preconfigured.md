@@ -27,7 +27,7 @@ Checkout the project and start with docker-compose:
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
-cd tools/devnet
+cd wasp/tools/devnet
 docker-compose up
 ```
 
