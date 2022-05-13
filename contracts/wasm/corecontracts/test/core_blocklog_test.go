@@ -5,9 +5,7 @@ package test
 
 import (
 	"testing"
-	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -42,56 +40,61 @@ func TestControlAddresses(t *testing.T) {
 }
 
 func TestGetBlockInfo(t *testing.T) {
-	t.SkipNow()
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	f := coreblocklog.ScFuncs.GetBlockInfo(ctx)
-	f.Params.BlockIndex().SetValue(0)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
-	b := f.Results.BlockInfo().Value()
-	blockinfo, err := blocklog.BlockInfoFromBytes(5, b)
-	require.NoError(t, err)
-	assert.Equal(t, uint32(0), blockinfo.BlockIndex)
-	assert.Equal(t, time.Unix(1, 4000000), blockinfo.Timestamp)
-	assert.Equal(t, uint16(1), blockinfo.TotalRequests)
-	assert.Equal(t, uint16(1), blockinfo.NumSuccessfulRequests)
-	assert.Equal(t, uint16(0), blockinfo.NumOffLedgerRequests)
-	// assert.Equal(t, , blockinfo.PreviousL1Commitment) // FIXME: can't generate the expected object
-	assert.Nil(t, blockinfo.L1Commitment)
-	assert.Equal(t, iotago.TransactionID{}, blockinfo.AnchorTransactionID)
-	assert.Equal(t, uint64(0), blockinfo.TotalIotasInL2Accounts)
-	assert.Equal(t, uint64(0), blockinfo.TotalDustDeposit)
-	assert.Equal(t, uint64(0), blockinfo.GasBurned)
-	assert.Equal(t, uint64(0), blockinfo.GasFeeCharged)
+	for i := uint32(0); i < 6; i++ {
+		f := coreblocklog.ScFuncs.GetBlockInfo(ctx)
+		f.Params.BlockIndex().SetValue(i)
+		f.Func.Call()
+		require.NoError(t, ctx.Err)
+		b := f.Results.BlockInfo().Value()
+		blockinfo, err := blocklog.BlockInfoFromBytes(i, b)
+		require.NoError(t, err)
+
+		expectBlockInfo, err := ctx.Chain.GetBlockInfo(i)
+		require.NoError(t, err)
+
+		assert.Equal(t, expectBlockInfo.BlockIndex, blockinfo.BlockIndex)
+		assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
+		assert.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
+		assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
+		assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
+		assert.Equal(t, expectBlockInfo.PreviousL1Commitment, blockinfo.PreviousL1Commitment)
+		assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
+		assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
+		assert.Equal(t, expectBlockInfo.TotalIotasInL2Accounts, blockinfo.TotalIotasInL2Accounts)
+		assert.Equal(t, expectBlockInfo.TotalDustDeposit, blockinfo.TotalDustDeposit)
+		assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
+		assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
+	}
 }
 
 func TestGetLatestBlockInfo(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
+	expectBlockInfo := ctx.Chain.GetLatestBlockInfo()
 	f := coreblocklog.ScFuncs.GetLatestBlockInfo(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	index := f.Results.BlockIndex().Value()
-	assert.Equal(t, uint32(5), index)
+	assert.Equal(t, expectBlockInfo.BlockIndex, index)
 
-	b := f.Results.BlockInfo().Value()
-	blockinfo, err := blocklog.BlockInfoFromBytes(5, b)
+	blockinfo, err := blocklog.BlockInfoFromBytes(5, f.Results.BlockInfo().Value())
 	require.NoError(t, err)
-	assert.Equal(t, uint32(5), blockinfo.BlockIndex)
-	assert.Equal(t, time.Unix(1, 11000001), blockinfo.Timestamp)
-	assert.Equal(t, uint16(1), blockinfo.TotalRequests)
-	assert.Equal(t, uint16(1), blockinfo.NumSuccessfulRequests)
-	assert.Equal(t, uint16(0), blockinfo.NumOffLedgerRequests)
-	// assert.Equal(t, , blockinfo.PreviousL1Commitment) // FIXME: can't generate the expected object
-	assert.Nil(t, blockinfo.L1Commitment)
-	assert.Equal(t, iotago.TransactionID{}, blockinfo.AnchorTransactionID)
-	assert.Equal(t, uint64(0x3d0acc), blockinfo.TotalIotasInL2Accounts)
-	assert.Equal(t, uint64(0x11b), blockinfo.TotalDustDeposit)
-	assert.Equal(t, uint64(0x2710), blockinfo.GasBurned)
-	assert.Equal(t, uint64(0x64), blockinfo.GasFeeCharged)
+	assert.Equal(t, expectBlockInfo.BlockIndex, blockinfo.BlockIndex)
+	assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
+	assert.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
+	assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
+	assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
+	assert.Equal(t, expectBlockInfo.PreviousL1Commitment, blockinfo.PreviousL1Commitment)
+	assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
+	assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
+	assert.Equal(t, expectBlockInfo.TotalIotasInL2Accounts, blockinfo.TotalIotasInL2Accounts)
+	assert.Equal(t, expectBlockInfo.TotalDustDeposit, blockinfo.TotalDustDeposit)
+	assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
+	assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 }
 
 func TestGetRequestIDsForBlock(t *testing.T) {
@@ -138,22 +141,23 @@ func TestGetRequestReceipt(t *testing.T) {
 }
 
 func TestGetRequestReceiptsForBlock(t *testing.T) {
-	t.SkipNow()
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	blockIndex := uint32(3)
-	f := coreblocklog.ScFuncs.GetRequestReceiptsForBlock(ctx)
-	f.Params.BlockIndex().SetValue(blockIndex)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
+	for i := uint32(0); i < 5; i++ {
+		f := coreblocklog.ScFuncs.GetRequestReceiptsForBlock(ctx)
+		f.Params.BlockIndex().SetValue(i)
+		f.Func.Call()
+		require.NoError(t, ctx.Err)
 
-	soloreceipts := ctx.Chain.GetRequestReceiptsForBlock(blockIndex)
-	recNum := f.Results.RequestRecord().Length()
-	for i := uint32(0); i < recNum; i++ {
-		receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().GetBytes(i).Value())
-		require.NoError(t, err)
-		assert.Equal(t, soloreceipts[i], receipt)
+		soloreceipts := ctx.Chain.GetRequestReceiptsForBlock(i)
+		recNum := f.Results.RequestRecord().Length()
+		for j := uint32(0); j < recNum; j++ {
+			receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().GetBytes(j).Value())
+			require.NoError(t, err)
+			receipt.BlockIndex = soloreceipts[j].BlockIndex
+			assert.Equal(t, soloreceipts[j], receipt)
+		}
 	}
 }
 
@@ -168,7 +172,7 @@ func TestIsRequestProcessed(t *testing.T) {
 	f.Params.RequestID().SetValue(ctx.Cvt.ScRequestID(reqs[0]))
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	// FIXME: check result
+	require.Equal(t, ctx.Chain.IsRequestProcessed(reqs[0]), f.Results.RequestProcessed().Value())
 }
 
 func TestGetEventsForRequest(t *testing.T) {
@@ -210,20 +214,20 @@ func TestGetEventsForBlock(t *testing.T) {
 }
 
 func TestGetEventsForContract(t *testing.T) {
-	t.SkipNow()
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	blockIndex := uint32(3)
 	f := coreblocklog.ScFuncs.GetEventsForContract(ctx)
 	f.Params.ContractHname().SetValue(coreblocklog.HScName)
+	f.Params.FromBlock().SetValue(0)
+	f.Params.ToBlock().SetValue(5)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 
 	events, err := ctx.Chain.GetEventsForContract(coreblocklog.ScName)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, uint32(len(events)), f.Results.Event().Length())
-	for i := blockIndex; i < blockIndex+1; i++ {
+	for i := uint32(0); i < uint32(len(events)); i++ {
 		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
 	}
 }

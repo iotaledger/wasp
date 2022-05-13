@@ -22,6 +22,10 @@ func setupRoot(t *testing.T) *wasmsolo.SoloContext {
 }
 
 func TestDeployContract(t *testing.T) {
+	if *wasmsolo.RsWasm {
+		// will fail because rust blob is already loaded
+		t.SkipNow()
+	}
 	ctxr := setupRoot(t)
 
 	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
@@ -43,8 +47,6 @@ func TestDeployContract(t *testing.T) {
 }
 
 func TestGrantDeployPermission(t *testing.T) {
-	t.SkipNow() // TODO: not working
-
 	ctx := setupRoot(t)
 	require.NoError(t, ctx.Err)
 

@@ -24,7 +24,7 @@ pub struct ScAddress {
 
 impl ScAddress {
     pub fn as_agent_id(&self) -> ScAgentID {
-        ScAgentID::new(self, ScHname(0))
+        ScAgentID::from_address(self)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
