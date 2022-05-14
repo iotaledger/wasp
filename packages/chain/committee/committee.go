@@ -55,12 +55,8 @@ func New(
 	if err != nil {
 		return nil, nil, xerrors.Errorf("NewCommittee: cannot serialize address: %v", err)
 	}
-	var chainArr *iscp.ChainID
-	if chainID != nil {
-		chainArr = chainID
-	}
-	for i := range chainArr {
-		peerGroupID[i] = address[i] ^ chainArr[i]
+	for i := range chainID {
+		peerGroupID[i] = address[i] ^ chainID[i]
 	}
 	var peers peering.GroupProvider
 	if peers, err = netProvider.PeerGroup(peerGroupID, dkShare.GetNodePubKeys()); err != nil {
