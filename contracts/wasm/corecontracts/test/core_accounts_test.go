@@ -209,7 +209,7 @@ func TestBalance(t *testing.T) {
 	assert.Equal(t, mintAmount, balance)
 
 	transferTokenAmount := wasmtypes.NewScBigInt(9)
-	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx)
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
 	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
 	transfer := wasmlib.NewScTransfer()
 	transfer.Set(&tokenID, transferTokenAmount)

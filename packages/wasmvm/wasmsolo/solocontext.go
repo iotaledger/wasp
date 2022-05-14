@@ -34,7 +34,7 @@ var (
 	// They are checked in sequence and the first one set determines the Wasm language used.
 	GoWasm = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
 	RsWasm = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
-	TsWasm = flag.Bool("tswasm", true, "use TypeScript Wasm smart contract code")
+	TsWasm = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
 
 	// UseWasmEdge flag is kept here in case we decide to use WasmEdge again. Some tests
 	// refer to this flag, so we keep it here instead of having to comment out a bunch
