@@ -11,9 +11,6 @@ import (
 
 func TestMainCallsFromFullEP(t *testing.T) { run2(t, testMainCallsFromFullEP) }
 func testMainCallsFromFullEP(t *testing.T, w bool) {
-	if w {
-		t.SkipNow() // TODO: not working
-	}
 	_, chain := setupChain(t, nil)
 
 	user, _, userAgentID := setupDeployer(t, chain)
@@ -33,9 +30,6 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 
 func TestMainCallsFromViewEP(t *testing.T) { run2(t, testMainCallsFromViewEP) }
 func testMainCallsFromViewEP(t *testing.T, w bool) {
-	if w {
-		t.SkipNow() // TODO: not working
-	}
 	_, chain := setupChain(t, nil)
 
 	user, _, userAgentID := setupDeployer(t, chain)

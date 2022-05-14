@@ -10,9 +10,6 @@ import (
 
 func TestChainOwnerIDView(t *testing.T) { run2(t, testChainOwnerIDView) }
 func testChainOwnerIDView(t *testing.T, w bool) {
-	if w {
-		t.SkipNow() // TODO: not working
-	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
@@ -26,9 +23,6 @@ func testChainOwnerIDView(t *testing.T, w bool) {
 
 func TestChainOwnerIDFull(t *testing.T) { run2(t, testChainOwnerIDFull) }
 func testChainOwnerIDFull(t *testing.T, w bool) {
-	if w {
-		t.SkipNow() // TODO: not working
-	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
