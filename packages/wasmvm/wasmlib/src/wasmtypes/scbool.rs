@@ -59,9 +59,9 @@ pub fn bool_from_string(value: &str) -> bool {
 
 pub fn bool_to_string(value: bool) -> String {
     if value {
-        return "1".to_string();
+        return String::from("1");
     }
-    "0".to_string()
+    String::from("0")
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

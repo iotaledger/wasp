@@ -31,7 +31,7 @@ func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 //   -- PARAM_CREATOR is the AgentID where initial supply is placed. Mandatory
 func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	supply := f.Params.Supply().Value()
-	ctx.Require(supply > 0, "erc20.on_init.fail: wrong 'supply' parameter")
+	ctx.Require(supply > 0, "erc20.onInit.fail: wrong 'supply' parameter")
 	f.State.Supply().SetValue(supply)
 
 	// we cannot use 'caller' here because on_init is always called from the 'root'
@@ -40,7 +40,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	creator := f.Params.Creator().Value()
 	f.State.Balances().GetUint64(creator).SetValue(supply)
 
-	t := "erc20.on_init.success. Supply: " + f.Params.Supply().String() +
+	t := "erc20.onInit.success. Supply: " + f.Params.Supply().String() +
 		", creator:" + creator.String()
 	ctx.Log(t)
 }

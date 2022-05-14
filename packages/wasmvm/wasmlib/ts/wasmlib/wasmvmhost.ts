@@ -42,7 +42,7 @@ export class WasmVMHost implements ScHost {
         }
 
         // retrieve cached value from host
-        let result: u8[] = new Array(size);
+        let result = new Array<u8>(size);
         hostStateGet(0, 0, result.dataStart, size);
         return result;
     }
@@ -72,7 +72,7 @@ export class WasmVMHost implements ScHost {
         }
 
         // retrieve cached value from host
-        let result: u8[] = new Array(size);
+        let result = new Array<u8>(size);
         hostStateGet(0, 0, result.dataStart, size);
         return result;
     }

@@ -75,6 +75,7 @@ func TestDoNothingUser(t *testing.T) {
 //}
 
 func TestDoPanicUser(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
