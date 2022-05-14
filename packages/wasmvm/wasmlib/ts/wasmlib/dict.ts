@@ -43,7 +43,7 @@ export class ScDict implements wasmtypes.IKvStore {
     }
 
     static fromKey(key: string): u8[] {
-        let buf: u8[] = new Array(key.length / 2);
+        let buf = new Array<u8>(key.length / 2);
         for (let i = 0; i < key.length; i += 2) {
             const b1 = key.charCodeAt(i) as u8;
             const b2 = key.charCodeAt(i + 1) as u8;

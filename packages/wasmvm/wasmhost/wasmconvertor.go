@@ -72,10 +72,8 @@ func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance
 }
 
 func (cvt WasmConvertor) IscpBigInt(amount wasmtypes.ScBigInt) *big.Int {
-	// big.Int uses BigEndian bytes
-	buf := reverse(wasmtypes.BigIntToBytes(amount))
 	res := new(big.Int)
-	res.SetBytes(buf)
+	res.SetBytes(wasmtypes.BigIntToBytes(amount))
 	return res
 }
 
@@ -119,18 +117,6 @@ func (cvt WasmConvertor) IscpTokenID(tokenID *wasmtypes.ScTokenID) *iotago.Nativ
 	return iscpTokenID
 }
 
-func reverse(bytes []byte) []byte {
-	n := len(bytes)
-	if n == 0 {
-		return bytes
-	}
-	buf := make([]byte, n)
-	for i, b := range bytes {
-		buf[n-1-i] = b
-	}
-	return buf
-}
-
 func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
 	buf := iscp.BytesFromAddress(address)
 	return wasmtypes.AddressFromBytes(buf)
@@ -165,8 +151,7 @@ func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalanc
 }
 
 func (cvt WasmConvertor) ScBigInt(bigInt *big.Int) wasmtypes.ScBigInt {
-	// big.Int uses BigEndian bytes
-	return wasmtypes.BigIntFromBytes(reverse(bigInt.Bytes()))
+	return wasmtypes.BigIntFromBytes(bigInt.Bytes())
 }
 
 func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {

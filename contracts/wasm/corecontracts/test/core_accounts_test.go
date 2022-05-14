@@ -192,7 +192,7 @@ func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
 
-	mintAmount := wasmtypes.NewScBigInt(100)
+	mintAmount := wasmtypes.NewScBigInt(1000)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)

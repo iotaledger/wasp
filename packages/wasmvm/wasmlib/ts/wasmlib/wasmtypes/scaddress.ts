@@ -97,12 +97,14 @@ export function addressToBytes(value: ScAddress): u8[] {
 }
 
 export function addressFromString(value: string): ScAddress {
-    return addressFromBytes(wasmtypes.base58Decode(value));
+    if (value.startsWith("0x")) {
+        value = value.slice(2);
+    }
+    return addressFromBytes(wasmtypes.hexDecode(value));
 }
 
 export function addressToString(value: ScAddress): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(addressToBytes(value));
+    return "0x" + wasmtypes.hexEncode(addressToBytes(value));
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

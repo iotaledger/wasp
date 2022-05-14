@@ -92,7 +92,6 @@ func AddressFromString(value string) ScAddress {
 }
 
 func AddressToString(value ScAddress) string {
-	// TODO standardize human readable string
 	return "0x" + HexEncode(AddressToBytes(value))
 }
 
