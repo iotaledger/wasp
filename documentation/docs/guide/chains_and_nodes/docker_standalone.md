@@ -1,6 +1,6 @@
 ---
 description: How to run a Wasp node in using Docker. Build the image, configure it, run it.
-image: /img/logo/WASP_logo_dark.png
+image: /img/Banner/banner_wasp_using_docker.png
 keywords:
   - Smart Contracts
   - Running a node
@@ -12,6 +12,8 @@ keywords:
 ---
 
 # Docker (Standalone)
+
+![Wasp Node using Docker](/img/Banner/banner_wasp_using_docker.png)
 
 This page describes the configuration of a single Wasp node in combination with Docker. If you followed the instructions in [Running a Node](running-a-node.md), you can skip to [Configuring wasp-cli](wasp-cli.md).
 

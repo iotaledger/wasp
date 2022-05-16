@@ -1,6 +1,6 @@
 ---
 description: Smart contracts are applications you can trust that run on a distributed network with multiple validators all executing and validating the same code.
-image: /img/logo/WASP_logo_dark.png
+image: /img/Banner/banner_wasp_core_concepts_smart_contracts.png
 keywords:
 - smart contracts
 - blockchain
@@ -9,6 +9,8 @@ keywords:
 - explanation
 ---
 # Smart Contracts
+
+![Wasp Node Smart Contracts](/img/Banner/banner_wasp_core_concepts_smart_contracts.png)
 
 Smart contracts are software applications that run on a distributed network with multiple validators executing and validating the same code. This prevents tampering with the execution of the program and ensures that the application behaves as expected. 
 

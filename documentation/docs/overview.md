@@ -1,6 +1,6 @@
 ---
 description: IOTA Smart Contracts allow you to run smart contracts on top of the IOTA Tangle.
-image: /img/logo/WASP_logo_dark.png
+image: /img/Banner/banner_wasp.png
 keywords:
 - smart contracts
 - core concepts
@@ -10,6 +10,8 @@ keywords:
 ---
 
 # IOTA Smart Contracts
+
+![Wasp Node](/img/Banner/banner_wasp.png)
 
 The IOTA Smart Contracts is a protocol that brings scalable and flexible smart contracts into the IOTA ecosystem. It allows anyone to spin up a smart contract blockchain and anchor it to the IOTA Tangle, a design that offers a multiple advantages.
 
