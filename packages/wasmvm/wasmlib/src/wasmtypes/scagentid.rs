@@ -23,15 +23,19 @@ impl ScAgentID {
     pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         ScAgentID {
             kind: SC_AGENT_ID_CONTRACT,
-            address: address_from_bytes(&address.to_bytes()),
-            hname: hname_from_bytes(&hname.to_bytes()),
+            address: address.clone(),
+            hname: hname,
         }
     }
 
     pub fn from_address(address: &ScAddress) -> ScAgentID {
+        let mut kind = SC_AGENT_ID_ADDRESS;
+        if address.id[0] != SC_ADDRESS_ALIAS {
+            kind = SC_AGENT_ID_CONTRACT;
+        }
         ScAgentID {
-            kind: SC_AGENT_ID_ADDRESS,
-            address: address_from_bytes(&address.to_bytes()),
+            kind: kind,
+            address: address.clone(),
             hname: ScHname(0),
         }
     }

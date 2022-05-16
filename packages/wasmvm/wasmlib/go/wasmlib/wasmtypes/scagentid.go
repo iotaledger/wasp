@@ -73,10 +73,13 @@ func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 	buf = buf[1:]
 	switch a.kind {
 	case ScAgentIDAddress:
+		if len(buf) != ScLengthAlias && len(buf) != ScLengthEd25519 {
+			panic("invalid AgentID length: address agentID")
+		}
 		a.address = AddressFromBytes(buf)
 	case ScAgentIDContract:
 		if len(buf) != ScChainIDLength+ScHnameLength {
-			panic("invalid AgentID length: Alias address")
+			panic("invalid AgentID length: contract agentID")
 		}
 		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
 		a.hname = HnameFromBytes(buf[ScChainIDLength:])
