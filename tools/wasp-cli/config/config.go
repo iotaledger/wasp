@@ -28,7 +28,7 @@ var configSetCmd = &cobra.Command{
 		case "true":
 			Set(args[0], true)
 		case "false":
-			Set(args[0], true)
+			Set(args[0], false)
 		default:
 			Set(args[0], v)
 		}

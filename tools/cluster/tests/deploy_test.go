@@ -34,7 +34,7 @@ func TestDeployChain(t *testing.T) {
 	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)
-	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress(), 0))
+	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.Clu.GetL1NetworkPrefix()))
 

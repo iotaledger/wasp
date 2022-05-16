@@ -78,23 +78,23 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	ctx.gasBudget -= g
 }
 
-func (ctx *ViewContext) AccountID() *iscp.AgentID {
+func (ctx *ViewContext) AccountID() iscp.AgentID {
 	hname := ctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return ctx.ChainID().CommonAccount()
 	}
-	return iscp.NewAgentID(ctx.ChainID().AsAddress(), hname)
+	return iscp.NewContractAgentID(ctx.ChainID(), hname)
 }
 
 func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
+func (ctx *ViewContext) GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens {
 	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID {
+func (ctx *ViewContext) GetAccountNFTs(agentID iscp.AgentID) []iotago.NFTID {
 	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
@@ -110,11 +110,11 @@ func (ctx *ViewContext) Timestamp() time.Time {
 	return t
 }
 
-func (ctx *ViewContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
+func (ctx *ViewContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
 	return accounts.GetIotaBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (ctx *ViewContext) GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	return accounts.GetNativeTokenBalance(
 		ctx.contractStateReader(accounts.Contract.Hname()),
 		agentID,
@@ -130,11 +130,11 @@ func (ctx *ViewContext) ChainID() *iscp.ChainID {
 	return ctx.chainInfo.ChainID
 }
 
-func (ctx *ViewContext) ChainOwnerID() *iscp.AgentID {
+func (ctx *ViewContext) ChainOwnerID() iscp.AgentID {
 	return ctx.chainInfo.ChainOwnerID
 }
 
-func (ctx *ViewContext) ContractCreator() *iscp.AgentID {
+func (ctx *ViewContext) ContractCreator() iscp.AgentID {
 	rec := ctx.GetContractRecord(ctx.CurrentContractHname())
 	if rec == nil {
 		panic("can't find current contract")

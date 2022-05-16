@@ -7,17 +7,25 @@ import "strings"
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const nilAgentID = 0xff
+const (
+	ScAgentIDNil      byte = 0
+	ScAgentIDAddress  byte = 1
+	ScAgentIDContract byte = 2
+	ScAgentIDEthereum byte = 3
+)
 
 type ScAgentID struct {
+	kind    byte
 	address ScAddress
 	hname   ScHname
 }
 
-var nilAgent = ScAgentID{}
-
 func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
-	return ScAgentID{address: address, hname: hname}
+	return ScAgentID{kind: ScAgentIDContract, address: address, hname: hname}
+}
+
+func NewScAgentIDFromAddress(address ScAddress) ScAgentID {
+	return ScAgentID{kind: ScAgentIDAddress, address: address, hname: 0}
 }
 
 func (o ScAgentID) Address() ScAddress {
@@ -33,7 +41,11 @@ func (o ScAgentID) Hname() ScHname {
 }
 
 func (o ScAgentID) IsAddress() bool {
-	return o.hname == 0
+	return o.kind == ScAgentIDAddress
+}
+
+func (o ScAgentID) IsContract() bool {
+	return o.kind == ScAgentIDContract
 }
 
 func (o ScAgentID) String() string {
@@ -42,69 +54,53 @@ func (o ScAgentID) String() string {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// note: only alias address can have a non-zero hname
-// so there is no need to encode it when it is always zero
-
 func AgentIDDecode(dec *WasmDecoder) ScAgentID {
-	if dec.Peek() == ScAddressAlias {
-		return ScAgentID{address: AddressDecode(dec), hname: HnameDecode(dec)}
-	}
-	return ScAgentID{address: AddressDecode(dec)}
+	return AgentIDFromBytes(dec.Bytes())
 }
 
 func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
-	AddressEncode(enc, value.address)
-	if value.address.id[0] == ScAddressAlias {
-		HnameEncode(enc, value.hname)
-	}
+	enc.Bytes(AgentIDToBytes(value))
 }
 
-func AgentIDFromBytes(buf []byte) ScAgentID {
+func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 	if len(buf) == 0 {
-		return ScAgentID{}
+		return a
 	}
-	switch buf[0] {
-	case ScAddressAlias:
-		if len(buf) != ScLengthAlias+ScHnameLength {
-			panic("invalid AgentID length: Alias 123 address")
-		}
-		return ScAgentID{
-			address: AddressFromBytes(buf[:ScLengthAlias]),
-			hname:   HnameFromBytes(buf[ScLengthAlias:]),
-		}
-	case ScAddressEd25519:
+	a.kind = buf[0]
+	buf = buf[1:]
+	switch a.kind {
+	case ScAgentIDAddress:
 		if len(buf) != ScLengthEd25519 {
 			panic("invalid AgentID length: Ed25519 address")
 		}
-		return ScAgentID{
-			address: AddressFromBytes(buf),
+		a.address = AddressFromBytes(buf)
+	case ScAgentIDContract:
+		if len(buf) != ScChainIDLength+ScHnameLength {
+			panic("invalid AgentID length: Alias address")
 		}
-	case ScAddressNFT:
-		if len(buf) != ScLengthNFT {
-			panic("invalid AgentID length: NFT address")
-		}
-		return ScAgentID{
-			address: AddressFromBytes(buf),
-		}
-	case nilAgentID: // nil agent id
-		if len(buf) != 1 {
-			panic("invalid AgentID length: nil AgentID")
-		}
-		return ScAgentID{}
+		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
+		a.hname = HnameFromBytes(buf[ScChainIDLength:])
+	case ScAgentIDEthereum:
+		panic("AgentIDFromBytes: unsupported ScAgentIDEthereum")
 	default:
-		panic("invalid AgentID address type")
+		panic("AgentIDFromBytes: invalid AgentID type")
 	}
+	return a
 }
 
 func AgentIDToBytes(value ScAgentID) []byte {
-	if value == nilAgent {
-		return []byte{nilAgentID}
+	buf := []byte{value.kind}
+	switch value.kind {
+	case ScAgentIDAddress:
+		return append(buf, AddressToBytes(value.address)...)
+	case ScAgentIDContract:
+		buf = append(buf, AddressToBytes(value.address)[1:]...)
+		return append(buf, HnameToBytes(value.hname)...)
+	case ScAgentIDEthereum:
+		panic("AgentIDToBytes: unsupported ScAgentIDEthereum")
+	default:
+		panic("AgentIDToBytes: invalid AgentID type")
 	}
-	buf := AddressToBytes(value.address)
-	if buf[0] == ScAddressAlias {
-		buf = append(buf, HnameToBytes(value.hname)...)
-	}
-	return buf
 }
 
 func AgentIDFromString(value string) ScAgentID {

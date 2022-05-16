@@ -30,12 +30,12 @@ func TestRotateStateController(t *testing.T) {
 
 	user := ctx.NewSoloAgent()
 	fadd := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
-	fadd.Params.StateControllerAddress().SetValue(user.ScAddress())
+	fadd.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
 	fadd.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	frot := coregovernance.ScFuncs.RotateStateController(ctx)
-	frot.Params.StateControllerAddress().SetValue(user.ScAddress())
+	frot.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
 	frot.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -46,7 +46,7 @@ func TestAddAllowedStateControllerAddress(t *testing.T) {
 
 	user := ctx.NewSoloAgent()
 	f := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
-	f.Params.StateControllerAddress().SetValue(user.ScAddress())
+	f.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -57,7 +57,7 @@ func TestRemoveAllowedStateControllerAddress(t *testing.T) {
 
 	user := ctx.NewSoloAgent()
 	f := coregovernance.ScFuncs.RemoveAllowedStateControllerAddress(ctx)
-	f.Params.StateControllerAddress().SetValue(user.ScAddress())
+	f.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }

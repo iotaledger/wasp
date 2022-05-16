@@ -8,7 +8,7 @@ func Info() string {
 }
 
 func NewRequest(chainID string) string {
-	return "/request/" + chainID
+	return "chain/" + chainID + "/request"
 }
 
 func CallViewByName(chainID, contractHname, functionName string) string {

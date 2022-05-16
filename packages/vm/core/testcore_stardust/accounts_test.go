@@ -42,7 +42,7 @@ func TestDeposit(t *testing.T) {
 func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: false})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
-	senderAgentID := iscp.NewAgentID(senderAddr, 0)
+	senderAgentID := iscp.NewAgentID(senderAddr)
 	ch := env.NewChain(nil, "chain1")
 
 	iotasSent := uint64(1 * iscp.Mi)
@@ -66,7 +66,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 func TestWithdrawEverything(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
-	senderAgentID := iscp.NewAgentID(senderAddr, 0)
+	senderAgentID := iscp.NewAgentID(senderAddr)
 	ch := env.NewChain(nil, "chain1")
 
 	// deposit some iotas to L2
@@ -106,7 +106,7 @@ func TestFoundries(t *testing.T) {
 	var ch *solo.Chain
 	var senderKeyPair *cryptolib.KeyPair
 	var senderAddr iotago.Address
-	var senderAgentID *iscp.AgentID
+	var senderAgentID iscp.AgentID
 
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -114,7 +114,7 @@ func TestFoundries(t *testing.T) {
 		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID = iscp.NewAgentID(senderAddr, 0)
+		senderAgentID = iscp.NewAgentID(senderAddr)
 
 		ch.MustDepositIotasToL2(10*iscp.Mi, senderKeyPair)
 	}
@@ -458,17 +458,17 @@ func TestAccountBalances(t *testing.T) {
 	env := solo.New(t)
 
 	chainOwner, chainOwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	chainOwnerAgentID := iscp.NewAgentID(chainOwnerAddr, 0)
+	chainOwnerAgentID := iscp.NewAgentID(chainOwnerAddr)
 
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
-	senderAgentID := iscp.NewAgentID(senderAddr, 0)
+	senderAgentID := iscp.NewAgentID(senderAddr)
 
 	l1Iotas := func(addr iotago.Address) uint64 { return env.L1Assets(addr).Iotas }
 	totalIotas := l1Iotas(chainOwnerAddr) + l1Iotas(senderAddr)
 
 	ch := env.NewChain(chainOwner, "chain1")
 
-	l2Iotas := func(agentID *iscp.AgentID) uint64 { return ch.L2Iotas(agentID) }
+	l2Iotas := func(agentID iscp.AgentID) uint64 { return ch.L2Iotas(agentID) }
 	totalGasFeeCharged := uint64(0)
 
 	checkBalance := func(numReqs int) {
@@ -532,10 +532,10 @@ type testParams struct {
 	env               *solo.Solo
 	chainOwner        *cryptolib.KeyPair
 	chainOwnerAddr    iotago.Address
-	chainOwnerAgentID *iscp.AgentID
+	chainOwnerAgentID iscp.AgentID
 	user              *cryptolib.KeyPair
 	userAddr          iotago.Address
-	userAgentID       *iscp.AgentID
+	userAgentID       iscp.AgentID
 	ch                *solo.Chain
 	req               *solo.CallParams
 	sn                uint32
@@ -547,9 +547,9 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
 	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
-	ret.chainOwnerAgentID = iscp.NewAgentID(ret.chainOwnerAddr, 0)
+	ret.chainOwnerAgentID = iscp.NewAgentID(ret.chainOwnerAddr)
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
-	ret.userAgentID = iscp.NewAgentID(ret.userAddr, 0)
+	ret.userAgentID = iscp.NewAgentID(ret.userAddr)
 
 	if len(initLoad) == 0 {
 		ret.ch = ret.env.NewChain(ret.chainOwner, "chain1")
@@ -848,7 +848,7 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// send funds to user2
 	user2, user2Addr := v.env.NewKeyPairWithFunds(v.env.NewSeedFromIndex(100))
-	user2AgentID := iscp.NewAgentID(user2Addr, 0)
+	user2AgentID := iscp.NewAgentID(user2Addr)
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2Iotas(user2AgentID, 0)
@@ -1012,7 +1012,7 @@ func TestNFTAccount(t *testing.T) {
 	require.NoError(t, err)
 	rec := ch.LastReceipt()
 
-	nftAgentID := iscp.NewAgentID(nftAddress, 0)
+	nftAgentID := iscp.NewAgentID(nftAddress)
 	ch.AssertL2Iotas(nftAgentID, iotasToSend-rec.GasFeeCharged)
 	ch.Env.AssertL1Iotas(nftAddress, 0)
 	ch.Env.AssertL1Iotas(

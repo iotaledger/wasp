@@ -41,7 +41,7 @@ func (a Assert) RequireChainOwner(ctx iscp.Sandbox, name ...string) {
 	a.RequireCaller(ctx, ctx.ChainOwnerID(), name...)
 }
 
-func (a Assert) RequireCaller(ctx iscp.Sandbox, agentID *iscp.AgentID, name ...string) {
+func (a Assert) RequireCaller(ctx iscp.Sandbox, agentID iscp.AgentID, name ...string) {
 	if ctx.Caller().Equals(agentID) {
 		return
 	}

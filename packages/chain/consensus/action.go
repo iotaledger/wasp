@@ -460,7 +460,7 @@ func (c *consensus) pullInclusionStateIfNeeded() {
 func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
 	consensusManaPledge := identity.ID{}
 	accessManaPledge := identity.ID{}
-	feeDestination := iscp.NewAgentID(c.chain.ID().AsAddress(), 0)
+	feeDestination := iscp.NewContractAgentID(c.chain.ID(), 0)
 	// sign state output ID. It will be used to produce unpredictable entropy in consensus
 	outputID := c.stateOutput.OutputID()
 	sigShare, err := c.committee.DKShare().BLSSignShare(outputID[:])

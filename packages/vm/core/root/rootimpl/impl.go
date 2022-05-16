@@ -52,11 +52,13 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
 	creator := stateAnchor.Sender
 
+	callerHname, _ := iscp.HnameFromAgentID(ctx.Caller())
+	callerAddress, _ := iscp.AddressFromAgentID(ctx.Caller())
 	initConditionsCorrect := stateAnchor.IsOrigin &&
 		state.MustGet(root.StateVarStateInitialized) == nil &&
-		ctx.Caller().Hname() == 0 &&
+		callerHname == 0 &&
 		creator != nil &&
-		creator.Equal(ctx.Caller().Address()) &&
+		creator.Equal(callerAddress) &&
 		contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
@@ -115,7 +117,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
-	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller())
+	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String(ctx.L1Params().Protocol.Bech32HRP))
 
 	progHash := ctx.Params().MustGetHashValue(root.ParamProgramHash)
 	description := ctx.Params().MustGetString(root.ParamDescription, "N/A")
@@ -155,9 +157,10 @@ func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
+	ctx.Requiref(deployer.Kind() != iscp.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
-	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %v", deployer))
+	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String(ctx.L1Params().Protocol.Bech32HRP)))
 	return nil
 }
 

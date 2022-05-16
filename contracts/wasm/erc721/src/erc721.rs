@@ -248,7 +248,7 @@ pub fn view_symbol(_ctx: &ScViewContext, f: &SymbolContext) {
 pub fn view_token_uri(_ctx: &ScViewContext, f: &TokenURIContext) {
     let token_id = f.params.token_id();
     if token_id.exists() {
-        let mut token_uri = BASE_URI.to_owned() + &token_id.to_string();
+        let mut token_uri = BASE_URI.to_string() + &token_id.to_string();
         let saved_uri = f.state.token_ur_is().get_string(&token_id.value());
         if saved_uri.exists() {
             token_uri = saved_uri.value();

@@ -10,7 +10,7 @@ import (
 )
 
 func storeCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo) {
-	rec := root.ContractRecordFromContractInfo(i, &iscp.NilAgentID)
+	rec := root.ContractRecordFromContractInfo(i)
 	ctx.Log().Debugf("storeCoreContract: '%s', hname = %s", i.Name, i.Hname())
 	storeContractRecord(ctx, rec)
 }
@@ -43,7 +43,7 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 		// chain owner is always authorized
 		return true
 	}
-	if caller.Address().Equal(ctx.ChainID().AsAddress()) {
+	if ctx.ChainID().IsSameChain(caller) {
 		// smart contract from the same chain is always authorized
 		return true
 	}

@@ -140,5 +140,5 @@ func TestFaOneBid(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 1, getInfo.Results.Bidders().Value())
 	require.EqualValues(t, 5000, getInfo.Results.HighestBid().Value())
-	require.Equal(t, bidder.ScAddress().AsAgentID(), getInfo.Results.HighestBidder().Value())
+	require.Equal(t, bidder.ScAgentID(), getInfo.Results.HighestBidder().Value())
 }

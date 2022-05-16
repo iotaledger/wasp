@@ -78,7 +78,7 @@ func testConcurrency(t *testing.T, w bool) {
 	commonAccountFinalBalance := chain.L2Iotas(chain.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
 
-	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName) // SC has no funds (because it never claims funds from allowance)
+	contractAgentID := iscp.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2Iotas(contractAgentID, 0)
 }
 
@@ -129,7 +129,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	for i := range users {
 		expectedBalance := uint64(repeats[i]) * (iotasSentPerRequest - predictedGasFee)
-		chain.AssertL2Iotas(iscp.NewAgentID(userAddr[i], 0), expectedBalance)
+		chain.AssertL2Iotas(iscp.NewAgentID(userAddr[i]), expectedBalance)
 		chain.Env.AssertL1Iotas(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*iotasSentPerRequest)
 	}
 

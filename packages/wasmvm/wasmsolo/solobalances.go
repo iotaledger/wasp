@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,15 +64,20 @@ func (bal *SoloBalances) dumpBalances() {
 	txt := "ACCOUNTS:"
 	for _, acc := range accs {
 		l2 := ctx.Chain.L2Assets(acc)
-		l1 := ctx.Chain.Env.L1Assets(acc.Address())
+		addr, ok := iscp.AddressFromAgentID(acc)
+		l1 := iscp.NewEmptyAssets()
+		if ok {
+			l1 = ctx.Chain.Env.L1Assets(addr)
+		}
 		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(iotago.PrefixTestnet), l2.Iotas)
-		if acc.Hname() == 0 {
+		hname, _ := iscp.HnameFromAgentID(acc)
+		if hname == 0 {
 			txt += fmt.Sprintf(",\tL1: %10d", l1.Iotas)
 		}
 		for _, token := range l2.Tokens {
 			txt += fmt.Sprintf("\n\tL2: %10d", token.Amount)
 			tokTxt := ",\t           "
-			if acc.Hname() == 0 {
+			if hname == 0 {
 				for i := range l1.Tokens {
 					if *l1.Tokens[i] == *token {
 						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)

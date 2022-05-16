@@ -20,19 +20,19 @@ type SandboxBase interface {
 	Helpers
 	Balance
 	// AccountID returns the agentID of the current contract
-	AccountID() *AgentID
+	AccountID() AgentID
 	// Params returns the parameters of the current call
 	Params() *Params
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
-	ChainOwnerID() *AgentID
+	ChainOwnerID() AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
 	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
-	ContractAgentID() *AgentID
+	ContractAgentID() AgentID
 	// ContractCreator returns the agentID that deployed the contract
-	ContractCreator() *AgentID
+	ContractCreator() AgentID
 	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
@@ -58,8 +58,8 @@ type Helpers interface {
 }
 
 type Authorize interface {
-	RequireCaller(agentID *AgentID)
-	RequireCallerAnyOf(agentID []*AgentID)
+	RequireCaller(agentID AgentID)
+	RequireCallerAnyOf(agentID []AgentID)
 	RequireCallerIsChainOwner()
 }
 
@@ -90,7 +90,7 @@ type Sandbox interface {
 	// target contract's accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
-	Caller() *AgentID
+	Caller() AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
@@ -108,10 +108,10 @@ type Sandbox interface {
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
 	// TransferAllowedFunds fails if target does not exist
-	TransferAllowedFunds(target *AgentID, transfer ...*Allowance) *Allowance
+	TransferAllowedFunds(target AgentID, transfer ...*Allowance) *Allowance
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
 	// If it is a random target, funds may be inaccessible (less safe)
-	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
+	TransferAllowedFundsForceCreateTarget(target AgentID, transfer ...*Allowance) *Allowance
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// SendAsNFT sends an on-ledger request as an NFTOutput

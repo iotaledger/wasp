@@ -275,8 +275,8 @@ func (r *OffLedgerRequestData) Params() dict.Dict {
 	return r.params
 }
 
-func (r *OffLedgerRequestData) SenderAccount() *AgentID {
-	return NewAgentID(r.SenderAddress(), 0)
+func (r *OffLedgerRequestData) SenderAccount() AgentID {
+	return NewAgentID(r.SenderAddress())
 }
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
@@ -421,11 +421,11 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 	return r.requestMetadata.Params
 }
 
-func (r *OnLedgerRequestData) SenderAccount() *AgentID {
+func (r *OnLedgerRequestData) SenderAccount() AgentID {
 	if r.SenderAddress() == nil || r.requestMetadata == nil {
 		return nil
 	}
-	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract)
+	return NewAgentIDFromAddressAndHname(r.SenderAddress(), r.requestMetadata.SenderContract)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {

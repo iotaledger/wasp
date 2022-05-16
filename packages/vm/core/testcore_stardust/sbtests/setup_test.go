@@ -49,7 +49,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
+func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, iscp.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
 	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
 
@@ -57,10 +57,10 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Add
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(userAddr, 0)).WithGasBudget(100_000)
+		root.ParamDeployer, iscp.NewAgentID(userAddr)).WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
-	return user, userAddr, iscp.NewAgentID(userAddr, 0)
+	return user, userAddr, iscp.NewAgentID(userAddr)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -101,11 +101,11 @@ func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, ru
 }
 
 // WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) *iscp.AgentID {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) iscp.AgentID {
 	err := deployContract(t, chain, user, runWasm)
 	require.NoError(t, err)
 
-	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
+	deployed := iscp.NewContractAgentID(chain.ChainID, HScName)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).
 		WithGasBudget(100_000)
 	_, err = chain.PostRequestSync(req, user)

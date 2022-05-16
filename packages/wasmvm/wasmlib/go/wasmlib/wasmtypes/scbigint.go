@@ -300,11 +300,11 @@ func BigIntEncode(enc *WasmEncoder, value ScBigInt) {
 }
 
 func BigIntFromBytes(buf []byte) ScBigInt {
-	return ScBigInt{bytes: buf}
+	return ScBigInt{bytes: reverse(buf)}
 }
 
 func BigIntToBytes(value ScBigInt) []byte {
-	return value.bytes
+	return reverse(value.bytes)
 }
 
 func BigIntFromString(value string) ScBigInt {
@@ -328,6 +328,17 @@ func BigIntToString(value ScBigInt) string {
 	digits := Uint64ToString(modulo.Uint64())
 	zeroes := "000000000000000000"[:18-len(digits)]
 	return BigIntToString(div) + zeroes + digits
+}
+
+// Stupid big.Int uses BigEndian byte encoding, so our external byte encoding should
+// reflect this by reverse()-ing the byte order in BigIntFromBytes and BigIntToBytes
+func reverse(bytes []byte) []byte {
+	n := len(bytes)
+	buf := make([]byte, n)
+	for i, b := range bytes {
+		buf[n-1-i] = b
+	}
+	return buf
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

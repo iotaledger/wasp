@@ -274,14 +274,14 @@ type ImmutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultRequestProcessed))
+func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ResultRequestProcessed))
 }
 
 type MutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ResultRequestProcessed))
+func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ResultRequestProcessed))
 }

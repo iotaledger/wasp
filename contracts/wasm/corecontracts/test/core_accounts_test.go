@@ -4,13 +4,14 @@
 package test
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -28,16 +29,29 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
+	depositAmount := uint64(1000)
 	user := ctx.NewSoloAgent()
+	balanceOld := user.Balance()
+
+	bal := ctx.Balances(user)
+
 	f := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	f.Func.Post()
+	f.Func.TransferIotas(depositAmount).Post()
 	require.NoError(t, ctx.Err)
+
+	balanceNew := user.Balance()
+	assert.Equal(t, balanceOld-depositAmount, balanceNew)
+
+	// expected changes to L2, note that caller pays the gas fee
+	bal.Chain += ctx.GasFee
+	bal.Add(user, depositAmount-ctx.GasFee)
+	bal.VerifyBalances(t)
 }
 
 func TestTransferAllowanceTo(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	var transferAmount uint64 = 10_000
+	var transferAmountIOTA uint64 = 10_000
 	user0 := ctx.NewSoloAgent()
 	user1 := ctx.NewSoloAgent()
 	balanceOldUser0 := user0.Balance()
@@ -48,7 +62,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	f := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	f.Params.AgentID().SetValue(user1.ScAgentID())
 	f.Params.ForceOpenAccount().SetValue(false)
-	f.Func.AllowanceIotas(transferAmount).Post()
+	f.Func.AllowanceIotas(transferAmountIOTA).Post()
 	require.NoError(t, ctx.Err)
 
 	// note: transfer took place on L2, so no change on L1
@@ -59,8 +73,8 @@ func TestTransferAllowanceTo(t *testing.T) {
 
 	// expected changes to L2, note that caller pays the gas fee
 	bal.Chain += ctx.GasFee
-	bal.Add(user0, -transferAmount-ctx.GasFee)
-	bal.Add(user1, transferAmount)
+	bal.Add(user0, -transferAmountIOTA-ctx.GasFee)
+	bal.Add(user1, transferAmountIOTA)
 	bal.VerifyBalances(t)
 
 	// FIXME transfer other native tokens
@@ -91,10 +105,9 @@ func TestHarvest(t *testing.T) {
 }
 
 func TestFoundryCreateNew(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1
+	var dustAllowance uint64 = 1_000
 
 	user := ctx.NewSoloAgent()
 	f := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -120,10 +133,9 @@ func TestFoundryCreateNew(t *testing.T) {
 }
 
 func TestFoundryDestroy(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1
+	var dustAllowance uint64 = 1_000
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -144,10 +156,9 @@ func TestFoundryDestroy(t *testing.T) {
 }
 
 func TestFoundryModifySupply(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1
+	var dustAllowance uint64 = 1_000
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -178,21 +189,35 @@ func TestFoundryModifySupply(t *testing.T) {
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
-	// user1 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
 
-	var mintAmount uint64 = 100
+	mintAmount := wasmtypes.NewScBigInt(1000)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
+	tokenID := foundry.TokenID()
 	require.NoError(t, err)
+
 	f := coreaccounts.ScFuncs.Balance(ctx)
 	f.Params.AgentID().SetValue(user0.ScAgentID())
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value().Uint64()
+	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
 	assert.Equal(t, mintAmount, balance)
 
-	// FIXME complete this test
+	transferTokenAmount := wasmtypes.NewScBigInt(9)
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
+	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&tokenID, transferTokenAmount)
+	ftrans.Func.Allowance(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	f.Params.AgentID().SetValue(user0.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	balance = f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
+	assert.Equal(t, mintAmount.Sub(transferTokenAmount), balance)
 }
 
 func TestTotalAssets(t *testing.T) {
@@ -200,7 +225,7 @@ func TestTotalAssets(t *testing.T) {
 	user0 := ctx.NewSoloAgent()
 	user1 := ctx.NewSoloAgent()
 
-	var mintAmount0, mintAmount1 uint64 = 101, 202
+	mintAmount0, mintAmount1 := wasmtypes.NewScBigInt(101), wasmtypes.NewScBigInt(202)
 	foundry0, err := ctx.NewSoloFoundry(mintAmount0, user0)
 	require.NoError(t, err)
 	err = foundry0.Mint(mintAmount0)
@@ -215,9 +240,9 @@ func TestTotalAssets(t *testing.T) {
 	f := coreaccounts.ScFuncs.TotalAssets(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	val0 := f.Results.Assets().GetBigInt(tokenID0).Value().Uint64()
+	val0 := f.Results.Assets().GetBigInt(tokenID0).Value()
 	assert.Equal(t, mintAmount0, val0)
-	val1 := f.Results.Assets().GetBigInt(tokenID1).Value().Uint64()
+	val1 := f.Results.Assets().GetBigInt(tokenID1).Value()
 	assert.Equal(t, mintAmount1, val1)
 }
 
@@ -312,14 +337,20 @@ func TestFoundryOutput(t *testing.T) {
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
-	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+	serialNum := uint32(1)
+	assert.Equal(t, serialNum, fnew.Results.FoundrySN().Value())
 
 	f := coreaccounts.ScFuncs.FoundryOutput(ctx)
 	f.Params.FoundrySN().SetValue(1)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	b := f.Results.FoundryOutputBin().Value()
-	fmt.Println("b: ", b)
+	outFoundry := &iotago.FoundryOutput{}
+	_, err := outFoundry.Deserialize(b, serializer.DeSeriModeNoValidation, nil)
+	require.NoError(t, err)
+	soloFoundry, err := ctx.Chain.GetFoundryOutput(serialNum)
+	require.NoError(t, err)
+	assert.Equal(t, soloFoundry, outFoundry)
 }
 
 func TestAccountNFTs(t *testing.T) {}

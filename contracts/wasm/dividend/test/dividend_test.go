@@ -14,7 +14,7 @@ import (
 
 func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
 	member := dividend.ScFuncs.Member(ctx)
-	member.Params.Address().SetValue(agent.ScAddress())
+	member.Params.Address().SetValue(agent.ScAgentID().Address())
 	member.Params.Factor().SetValue(factor)
 	member.Func.Post()
 }
@@ -26,7 +26,7 @@ func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
 
 func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) uint64 {
 	getFactor := dividend.ScFuncs.GetFactor(ctx)
-	getFactor.Params.Address().SetValue(member.ScAddress())
+	getFactor.Params.Address().SetValue(member.ScAgentID().Address())
 	getFactor.Func.Call()
 	value := getFactor.Results.Factor().Value()
 	return value
@@ -60,7 +60,7 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 
 	member1 := ctx.NewSoloAgent()
 	member := dividend.ScFuncs.Member(ctx)
-	member.Params.Address().SetValue(member1.ScAddress())
+	member.Params.Address().SetValue(member1.ScAgentID().Address())
 	member.Func.Post()
 	require.Error(t, ctx.Err)
 	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")

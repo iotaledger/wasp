@@ -97,26 +97,18 @@ func (a IotaAddress) MustUnwrap() iotago.Address {
 
 // ISCAgentID matches the struct definition in ISC.sol
 type ISCAgentID struct {
-	IotaAddress IotaAddress
-	Hname       uint32
+	Data []byte
 }
 
-func WrapISCAgentID(a *iscp.AgentID) ISCAgentID {
-	return ISCAgentID{
-		IotaAddress: WrapIotaAddress(a.Address()),
-		Hname:       uint32(a.Hname()),
-	}
+func WrapISCAgentID(a iscp.AgentID) ISCAgentID {
+	return ISCAgentID{Data: a.Bytes()}
 }
 
-func (a ISCAgentID) Unwrap() (*iscp.AgentID, error) {
-	addr, err := a.IotaAddress.Unwrap()
-	if err != nil {
-		return nil, err
-	}
-	return iscp.NewAgentID(addr, iscp.Hname(a.Hname)), nil
+func (a ISCAgentID) Unwrap() (iscp.AgentID, error) {
+	return iscp.AgentIDFromBytes(a.Data)
 }
 
-func (a ISCAgentID) MustUnwrap() *iscp.AgentID {
+func (a ISCAgentID) MustUnwrap() iscp.AgentID {
 	ret, err := a.Unwrap()
 	if err != nil {
 		panic(err)

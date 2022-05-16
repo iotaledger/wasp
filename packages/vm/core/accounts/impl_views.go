@@ -30,9 +30,10 @@ func viewAccounts(ctx iscp.SandboxView) dict.Dict {
 	return getAccountsIntern(ctx.State())
 }
 
+// nonces are only sent with off-ledger requests
 func viewGetAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID)
-	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
+	nonce := GetMaxAssumedNonce(ctx.State(), account)
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
 	return ret

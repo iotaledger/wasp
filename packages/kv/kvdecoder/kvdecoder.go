@@ -188,12 +188,12 @@ func (p *kvdecoder) MustGetRequestID(key kv.Key, def ...iscp.RequestID) iscp.Req
 	return ret
 }
 
-func (p *kvdecoder) GetAgentID(key kv.Key, def ...*iscp.AgentID) (*iscp.AgentID, error) {
+func (p *kvdecoder) GetAgentID(key kv.Key, def ...iscp.AgentID) (iscp.AgentID, error) {
 	v, err := codec.DecodeAgentID(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...*iscp.AgentID) *iscp.AgentID {
+func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...iscp.AgentID) iscp.AgentID {
 	ret, err := p.GetAgentID(key, def...)
 	p.check(err)
 	return ret

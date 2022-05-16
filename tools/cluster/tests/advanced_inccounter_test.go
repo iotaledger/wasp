@@ -200,7 +200,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	keyPair, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress)
 
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{

@@ -24,7 +24,7 @@ pub struct ScAddress {
 
 impl ScAddress {
     pub fn as_agent_id(&self) -> ScAgentID {
-        ScAgentID::new(self, ScHname(0))
+        ScAgentID::from_address(self)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -96,12 +96,12 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
 }
 
 pub fn address_from_string(value: &str) -> ScAddress {
-    address_from_bytes(&base58_decode(value))
+    let hex = value.strip_prefix("0x").unwrap_or(value);
+    address_from_bytes(&hex_decode(&hex))
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
-    // TODO standardize human readable string
-    base58_encode(&address_to_bytes(value))
+    "0x".to_string() + &hex_encode(&address_to_bytes(value))
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

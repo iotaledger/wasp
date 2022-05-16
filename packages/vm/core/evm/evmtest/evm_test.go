@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -213,7 +212,7 @@ func TestLoop(t *testing.T) {
 		})
 		// gas fee is charged regardless of result
 		require.LessOrEqual(t,
-			evmChain.soloChain.L2Iotas(iscp.NewAgentID(iotaAddress, 0)),
+			evmChain.soloChain.L2Iotas(iscp.NewAgentID(iotaAddress)),
 			iotasSent-iscGasBudget,
 		)
 	}
@@ -425,10 +424,8 @@ func TestISCGetCaller(t *testing.T) {
 	agentID := new(isccontract.ISCAgentID)
 	iscTest.callFnExpectEvent(nil, "GetCallerEvent", &agentID, "emitGetCaller")
 
-	originatorAddress, err := evmChain.soloChain.OriginatorAddress.Serialize(serializer.DeSeriModeNoValidation, nil)
-	require.NoError(t, err)
-
-	require.EqualValues(t, originatorAddress, agentID.IotaAddress.Data)
+	originatorAgentID := iscp.NewAgentID(evmChain.soloChain.OriginatorAddress)
+	require.True(t, originatorAgentID.Equals(agentID.MustUnwrap()))
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
@@ -677,7 +674,7 @@ func TestBlockTime(t *testing.T) {
 	// deposit funds to cover for dust, gas, etc
 	_, err := evmChain.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-			accounts.ParamAgentID, iscp.NewAgentID(evmChain.soloChain.ChainID.AsAddress(), evm.Contract.Hname()),
+			accounts.ParamAgentID, iscp.NewContractAgentID(evmChain.soloChain.ChainID, evm.Contract.Hname()),
 		).
 			AddIotas(200000).
 			AddAllowanceIotas(100000).

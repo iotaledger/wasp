@@ -24,8 +24,7 @@ type ScAddress struct {
 }
 
 func (o ScAddress) AsAgentID() ScAgentID {
-	// agentID for address has Hname zero
-	return NewScAgentID(o, 0)
+	return NewScAgentIDFromAddress(o)
 }
 
 func (o ScAddress) Bytes() []byte {
@@ -93,7 +92,6 @@ func AddressFromString(value string) ScAddress {
 }
 
 func AddressToString(value ScAddress) string {
-	// TODO standardize human readable string
 	return "0x" + HexEncode(AddressToBytes(value))
 }
 

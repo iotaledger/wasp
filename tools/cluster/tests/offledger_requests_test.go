@@ -18,7 +18,7 @@ import (
 func (e *ChainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
 	userWallet, userAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
-	userAgentID := iscp.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress)
 
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, userWallet)
 

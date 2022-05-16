@@ -33,7 +33,7 @@ func (s *contractSandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, 
 	return s.Ctx.Call(target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) Caller() *iscp.AgentID {
+func (s *contractSandbox) Caller() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetCallerData)
 	return s.Ctx.(*VMContext).Caller()
 }
@@ -61,12 +61,12 @@ func (s *contractSandbox) AllowanceAvailable() *iscp.Allowance {
 	return s.Ctx.(*VMContext).AllowanceAvailable()
 }
 
-func (s *contractSandbox) TransferAllowedFunds(target *iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
+func (s *contractSandbox) TransferAllowedFunds(target iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, transfer...)
 }
 
-func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
+func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, transfer...)
 }
@@ -106,7 +106,7 @@ func (s *contractSandbox) RegisterError(messageFormat string) *iscp.VMErrorTempl
 
 // helper methods
 
-func (s *contractSandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID) {
+func (s *contractSandbox) RequireCallerAnyOf(agentIDs []iscp.AgentID) {
 	ok := false
 	for _, agentID := range agentIDs {
 		if s.Caller().Equals(agentID) {
@@ -118,8 +118,8 @@ func (s *contractSandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID) {
 	}
 }
 
-func (s *contractSandbox) RequireCaller(agentID *iscp.AgentID) {
-	s.RequireCallerAnyOf([]*iscp.AgentID{agentID})
+func (s *contractSandbox) RequireCaller(agentID iscp.AgentID) {
+	s.RequireCallerAnyOf([]iscp.AgentID{agentID})
 }
 
 func (s *contractSandbox) RequireCallerIsChainOwner() {
