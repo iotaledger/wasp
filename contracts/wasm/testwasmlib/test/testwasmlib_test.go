@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -323,53 +322,69 @@ func TestMultiRandom(t *testing.T) {
 func TestWasmTypes(t *testing.T) {
 	ctx := setupTest(t)
 
-	var cvt wasmhost.WasmConvertor
-
 	// check chain id
 	scChainID := ctx.ChainID()
-	chainID := cvt.IscpChainID(&scChainID)
+	chainID := ctx.Chain.ChainID
 	require.True(t, scChainID == wasmtypes.ChainIDFromBytes(wasmtypes.ChainIDToBytes(scChainID)))
 	require.True(t, scChainID == wasmtypes.ChainIDFromString(wasmtypes.ChainIDToString(scChainID)))
 	require.EqualValues(t, scChainID.Bytes(), chainID.Bytes())
 	require.EqualValues(t, scChainID.String(), chainID.String())
 
 	// check alias address
-	scAddress := ctx.ChainID().Address()
-	address := cvt.IscpAddress(&scAddress)
-	require.True(t, scAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAddress)))
-	require.True(t, scAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAddress)))
-	require.EqualValues(t, scAddress.Bytes(), iscp.BytesFromAddress(address))
+	scAliasAddress := scChainID.Address()
+	aliasAddress := chainID.AsAddress()
+	require.True(t, scAliasAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAliasAddress)))
+	require.True(t, scAliasAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAliasAddress)))
+	require.EqualValues(t, scAliasAddress.Bytes(), iscp.BytesFromAddress(aliasAddress))
 	// TODO require.EqualValues(t, scAddress.String(), address.String())
 
 	// check ed25519 address
-	scAddress = ctx.ContractCreator().Address()
-	address = cvt.IscpAddress(&scAddress)
-	require.True(t, scAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAddress)))
-	require.True(t, scAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAddress)))
-	require.EqualValues(t, scAddress.Bytes(), iscp.BytesFromAddress(address))
+	scEd25519Address := ctx.Originator().ScAgentID().Address()
+	ed25519Address := ctx.Chain.OriginatorAddress
+	require.True(t, scEd25519Address == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scEd25519Address)))
+	require.True(t, scEd25519Address == wasmtypes.AddressFromString(wasmtypes.AddressToString(scEd25519Address)))
+	require.EqualValues(t, scEd25519Address.Bytes(), iscp.BytesFromAddress(ed25519Address))
 	// TODO require.EqualValues(t, scAddress.String(), address.String())
 
-	// check nft address
-	nftBytes := ctx.ChainID().Address().Bytes()
+	// check nft address (currently simply use
+	// serialized alias address and overwrite the kind byte)
+	nftBytes := scAliasAddress.Bytes()
 	nftBytes[0] = wasmtypes.ScAddressNFT
-	scAddress = wasmtypes.AddressFromBytes(nftBytes)
-	address = cvt.IscpAddress(&scAddress)
-	require.True(t, scAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAddress)))
-	require.True(t, scAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAddress)))
-	require.EqualValues(t, scAddress.Bytes(), iscp.BytesFromAddress(address))
+	scNftAddress := wasmtypes.AddressFromBytes(nftBytes)
+	nftBytes[0] = byte(iotago.AddressNFT)
+	nftAddress, _, _ := iscp.AddressFromBytes(nftBytes)
+	require.True(t, scNftAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scNftAddress)))
+	require.True(t, scNftAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scNftAddress)))
+	require.EqualValues(t, scNftAddress.Bytes(), iscp.BytesFromAddress(nftAddress))
 	// TODO require.EqualValues(t, scAddress.String(), address.String())
 
-	// check agent id of address (hname zero)
-	scAgentID := ctx.ContractCreator()
-	agentID := cvt.IscpAgentID(&scAgentID)
+	// check agent id of alias address (hname zero)
+	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
+	agentID := iscp.NewAgentID(aliasAddress)
+	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
+	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
+	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+
+	// check agent id of ed25519 address (hname zero)
+	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
+	agentID = iscp.NewAgentID(ed25519Address)
+	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
+	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
+	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+
+	// check agent id of NFT address (hname zero)
+	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
+	agentID = iscp.NewAgentID(nftAddress)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
 	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
 	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
 
 	// check agent id of contract (hname non-zero)
-	scAgentID = ctx.AccountID()
-	agentID = cvt.IscpAgentID(&scAgentID)
+	scAgentID = wasmtypes.NewScAgentID(scAliasAddress, testwasmlib.HScName)
+	agentID = iscp.NewContractAgentID(chainID, iscp.Hname(testwasmlib.HScName))
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
 	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
