@@ -30,7 +30,7 @@ impl ScAgentID {
 
     pub fn from_address(address: &ScAddress) -> ScAgentID {
         let mut kind = SC_AGENT_ID_ADDRESS;
-        if address.id[0] != SC_ADDRESS_ALIAS {
+        if address.id[0] == SC_ADDRESS_ALIAS {
             kind = SC_AGENT_ID_CONTRACT;
         }
         ScAgentID {
@@ -86,15 +86,15 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
     match buf[0] {
         SC_AGENT_ID_ADDRESS => {
             let buf: &[u8] = &buf[1..];
-            if buf.len() != SC_LENGTH_ED25519 {
-                panic("invalid AgentID length: Ed25519 address");
+            if buf.len() != SC_LENGTH_ALIAS && buf.len() != SC_LENGTH_ED25519 {
+                panic("invalid AgentID length: address agendID");
             }
             return ScAgentID::from_address(&address_from_bytes(&buf));
         }
         SC_AGENT_ID_CONTRACT => {
             let buf: &[u8] = &buf[1..];
             if buf.len() != SC_CHAIN_ID_LENGTH + SC_HNAME_LENGTH {
-                panic("invalid AgentID length: Alias address");
+                panic("invalid AgentID length: contract agendID");
             }
             let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
             let hname = hname_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
