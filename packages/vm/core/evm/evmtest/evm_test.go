@@ -159,23 +159,35 @@ func TestGasLimit(t *testing.T) {
 	t.Logf("gas: %d, fee: %d", gas, fee)
 
 	// send again with same gas limit but not enough iotas
-	iotaWallet2, _ := evmChain.solo.NewKeyPairWithFunds()
+	iotaWallet2, wallet2Addr := evmChain.solo.NewKeyPairWithFunds()
+	notEnoughIotasForGas := fee * 9 / 10
+	// use wallet1 to charge wallet2Addr (to be used via offledger requests)
+	// this way we can have the exact amount of funds to test, if we do a on-ledger request and the storage deposit > gas fee, this test won't be possible
+	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(notEnoughIotasForGas, nil), iscp.NewAgentID(wallet2Addr, 0), iotaWallet1)
+
 	_, err = storage.store(124, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet2,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas).AddIotas(fee * 9 / 10)
+			req.WithGasBudget(gas).AddIotas(notEnoughIotasForGas)
 		},
+		offledger: true,
 	}})
 	require.Error(t, err)
 	require.Regexp(t, `\bgas\b`, err.Error())
 
 	// send again with gas limit not enough for transaction
-	iotaWallet3, _ := evmChain.solo.NewKeyPairWithFunds()
+	iotaWallet3, wallet3Addr := evmChain.solo.NewKeyPairWithFunds()
+	iotasForGas := fee
+	// use wallet1 to charge wallet3Addr (to be used via offledger requests)
+	// this way we can have the exact amount of funds to test, if we do a on-ledger request and the storage deposit > gas fee, this test won't be possible
+	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(iotasForGas, nil), iscp.NewAgentID(wallet3Addr, 0), iotaWallet1)
+
 	_, err = storage.store(125, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet3,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas / 2).AddIotas(fee)
+			req.WithGasBudget(gas / 2).AddIotas(iotasForGas)
 		},
+		offledger: true,
 	}})
 	require.Error(t, err)
 	require.Regexp(t, `\bgas\b`, err.Error())

@@ -308,6 +308,20 @@ func (ch *Chain) DepositAssetsToL2(assets *iscp.FungibleTokens, user *cryptolib.
 	return err
 }
 
+// TransferAllowanceTo sends an on-ledger request to transfer funds to target account (sends extra iotas to the sender account to cover gas)
+func (ch *Chain) TransferAllowanceTo(allowance *iscp.FungibleTokens, targetAccount *iscp.AgentID, wallet *cryptolib.KeyPair) error {
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
+			accounts.ParamAgentID: codec.EncodeAgentID(targetAccount),
+		}).
+			WithAllowance(iscp.NewAllowanceFungibleTokens(allowance)).
+			WithFungibleTokens(allowance.Clone().AddIotas(1*iscp.Mi)).
+			WithGasBudget(math.MaxUint64),
+		wallet,
+	)
+	return err
+}
+
 // DepositIotasToL2 deposits ftokens on user's on-chain account
 func (ch *Chain) DepositIotasToL2(amount uint64, user *cryptolib.KeyPair) error {
 	return ch.DepositAssetsToL2(iscp.NewFungibleTokens(amount, nil), user)

@@ -25,6 +25,7 @@ func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
 	if w {
+		// TODO
 		t.SkipNow()
 	}
 	corecontracts.PrintWellKnownHnames()
@@ -58,15 +59,15 @@ func test2Chains(t *testing.T, w bool) {
 	chain2TotalIotas := chain2.L2TotalIotas()
 
 	// send iotas to contractAgentID (that is an entity of chain2) on chain1
-	iotasToSend := uint64(3 * iscp.Mi)
-	iotasCreditedToSc2OnChain1 := uint64(2 * iscp.Mi)
+	iotasToSend := uint64(11 * iscp.Mi)
+	iotasCreditedToScOnChain1 := uint64(10 * iscp.Mi)
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,
 		accounts.ParamForceOpenAccount, true,
 	).
 		AddIotas(iotasToSend).
-		AddAllowanceIotas(iotasCreditedToSc2OnChain1).
+		AddAllowanceIotas(iotasCreditedToScOnChain1).
 		WithGasBudget(math.MaxUint64)
 
 	_, err := chain1.PostRequestSync(req, userWallet)
@@ -75,8 +76,8 @@ func test2Chains(t *testing.T, w bool) {
 	receipt1 := chain1.LastReceipt()
 
 	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-iotasToSend)
-	chain1.AssertL2Iotas(userAgentID, iotasToSend-iotasCreditedToSc2OnChain1-receipt1.GasFeeCharged)
-	chain1.AssertL2Iotas(contractAgentID, iotasCreditedToSc2OnChain1)
+	chain1.AssertL2Iotas(userAgentID, iotasToSend-iotasCreditedToScOnChain1-receipt1.GasFeeCharged)
+	chain1.AssertL2Iotas(contractAgentID, iotasCreditedToScOnChain1)
 	chain1.AssertL2Iotas(chain1.CommonAccount(), chain1CommonAccountIotas+receipt1.GasFeeCharged)
 	chain1CommonAccountIotas += receipt1.GasFeeCharged
 	chain1.AssertL2TotalIotas(chain1TotalIotas + iotasToSend)
@@ -94,13 +95,17 @@ func test2Chains(t *testing.T, w bool) {
 	println("----------------------------------------------")
 
 	// make chain2 send a call to chain1 to withdraw iotas
-	iotasToWithdrawalFromChain1 := iotasCreditedToSc2OnChain1 // try to withdraw all iotas deposited to chain1 on behalf of chain2's contract
-	reqAllowance := accounts.ConstDepositFeeTmp + 1*iscp.Mi   // reqAllowance is the allowance provided to the "withdraw from chain" contract that will be used as gas in chain1 (also needs to be enough for storage deposit)
+	iotasToWithdrawalFromChain1 := iotasCreditedToScOnChain1 // try to withdraw all iotas deposited to chain1 on behalf of chain2's contract
+	// reqAllowance is the allowance provided to the "withdraw from chain" contract (chain2) that needs to be enough to
+	// pay the gas fees of withdraw func on chain1
+	reqAllowance := accounts.ConstDepositFeeTmp + 1*iscp.Mi
+	// allowance + x, where x will be used for the gas costs of `FuncWithdrawFromChain` on chain2
+	iotasToSend2 := reqAllowance + 1*iscp.Mi
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamIotasToWithdrawal, iotasToWithdrawalFromChain1).
-		AddIotas(iotasToSend).
+		AddIotas(iotasToSend2).
 		WithAllowance(iscp.NewAllowanceIotas(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 
@@ -128,16 +133,16 @@ func test2Chains(t *testing.T, w bool) {
 	require.Equal(t, chain1WithdrawalReceipt.Request.CallTarget().EntryPoint, accounts.FuncWithdraw.Hname())
 	require.Nil(t, chain1WithdrawalReceipt.Error)
 
-	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-2*iotasToSend)
+	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-iotasToSend-iotasToSend2)
 
-	chain1.AssertL2Iotas(userAgentID, iotasToSend-iotasCreditedToSc2OnChain1-receipt1.GasFeeCharged)
+	chain1.AssertL2Iotas(userAgentID, iotasToSend-iotasCreditedToScOnChain1-receipt1.GasFeeCharged)
 	chain1.AssertL2Iotas(contractAgentID, reqAllowance-chain1WithdrawalReceipt.GasFeeCharged) // amount of iotas sent from chain2 to chain1 in order to call the "withdrawal" request
 	chain1.AssertL2Iotas(chain1.CommonAccount(), chain1CommonAccountIotas+chain1WithdrawalReceipt.GasFeeCharged)
 	chain1.AssertL2TotalIotas(chain1TotalIotas + reqAllowance - iotasToWithdrawalFromChain1)
 
-	chain2.AssertL2Iotas(userAgentID, iotasToSend-reqAllowance-chain2SendWithdrawalReceipt.GasFeeCharged)
+	chain2.AssertL2Iotas(userAgentID, iotasToSend2-reqAllowance-chain2SendWithdrawalReceipt.GasFeeCharged)
 	chain2.AssertL2Iotas(contractAgentID, iotasToWithdrawalFromChain1-accounts.ConstDepositFeeTmp)
 	chain2.AssertL2Iotas(chain2.CommonAccount(), chain2CommonAccountIotas+chain2SendWithdrawalReceipt.GasFeeCharged+chain2DepositReceipt.GasFeeCharged)
 	println(chain2.DumpAccounts())
-	chain2.AssertL2TotalIotas(chain2TotalIotas + iotasToSend - accounts.ConstDepositFeeTmp + iotasCreditedToSc2OnChain1)
+	chain2.AssertL2TotalIotas(chain2TotalIotas + iotasToSend2 - reqAllowance + iotasCreditedToScOnChain1)
 }

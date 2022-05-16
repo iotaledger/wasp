@@ -83,7 +83,7 @@ func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 }
 
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
-const ConstDepositFeeTmp = uint64(1000)
+const ConstDepositFeeTmp = 1 * iscp.Mi
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request
@@ -118,6 +118,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	isCallerAContract := caller.Hname() != 0
 
 	if isCallerAContract {
+		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
 		allowance := iscp.NewAllowanceFungibleTokens(
 			iscp.NewTokensIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
 		)
