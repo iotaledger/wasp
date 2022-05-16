@@ -22,7 +22,7 @@ func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 		ctx.Send(
 			iscp.RequestParameters{
 				TargetAddress:  addr,
-				FungibleTokens: iscp.NewTokensIotas(200),
+				FungibleTokens: iscp.NewTokensIotas(iotasToSend),
 			},
 		)
 	}

@@ -162,7 +162,7 @@ func TestGasLimit(t *testing.T) {
 	notEnoughIotasForGas := fee * 9 / 10
 	// use wallet1 to charge wallet2Addr (to be used via offledger requests)
 	// this way we can have the exact amount of funds to test, if we do a on-ledger request and the storage deposit > gas fee, this test won't be possible
-	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(notEnoughIotasForGas, nil), iscp.NewAgentID(wallet2Addr, 0), iotaWallet1)
+	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(notEnoughIotasForGas, nil), iscp.NewAgentID(wallet2Addr), iotaWallet1)
 
 	_, err = storage.store(124, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet2,
@@ -179,7 +179,7 @@ func TestGasLimit(t *testing.T) {
 	iotasForGas := fee
 	// use wallet1 to charge wallet3Addr (to be used via offledger requests)
 	// this way we can have the exact amount of funds to test, if we do a on-ledger request and the storage deposit > gas fee, this test won't be possible
-	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(iotasForGas, nil), iscp.NewAgentID(wallet3Addr, 0), iotaWallet1)
+	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(iotasForGas, nil), iscp.NewAgentID(wallet3Addr), iotaWallet1)
 
 	_, err = storage.store(125, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet3,

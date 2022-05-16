@@ -346,7 +346,7 @@ func TestEstimateGas(t *testing.T) {
 					accounts.Contract.Name,
 					accounts.FuncTransferAllowanceTo.Name,
 					dict.Dict{
-						accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewAgentID(addr, 0)),
+						accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewAgentID(addr)),
 						accounts.ParamForceOpenAccount: codec.EncodeBool(true),
 					},
 				).AddAllowance(iscp.NewAllowanceIotas(testCase.L2Balance)).
