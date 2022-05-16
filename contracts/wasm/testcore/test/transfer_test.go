@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
@@ -15,11 +16,11 @@ func TestDoNothing(t *testing.T) {
 		bal := ctx.Balances()
 
 		nop := testcore.ScFuncs.DoNothing(ctx)
-		nop.Func.TransferIotas(1234).Post()
+		nop.Func.TransferIotas(1 * iscp.Mi).Post()
 		require.NoError(t, ctx.Err)
 
 		bal.Chain += ctx.GasFee
-		bal.Originator += 1234 - ctx.GasFee
+		bal.Originator += 1*iscp.Mi - ctx.GasFee
 		bal.VerifyBalances(t)
 	})
 }
@@ -32,11 +33,11 @@ func TestDoNothingUser(t *testing.T) {
 		bal := ctx.Balances(user)
 
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
-		nop.Func.TransferIotas(1234).Post()
+		nop.Func.TransferIotas(1 * iscp.Mi).Post()
 		require.NoError(t, ctx.Err)
 
 		bal.Chain += ctx.GasFee
-		bal.Add(user, 1234-ctx.GasFee)
+		bal.Add(user, 1*iscp.Mi-ctx.GasFee)
 		bal.VerifyBalances(t)
 	})
 }
@@ -50,11 +51,11 @@ func TestDoNothingUser(t *testing.T) {
 //		bal := ctx.Balances(user)
 //
 //		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
-//		nop.Func.TransferIotas(1234).Post()
+//		nop.Func.TransferIotas(1*iscp.Mi).Post()
 //		require.NoError(t, ctx.Err)
 //
 //		bal.Chain += ctx.GasFee
-//		bal.Add(user, 1234-ctx.GasFee)
+//		bal.Add(user, 1*iscp.Mi-ctx.GasFee)
 //		bal.VerifyBalances(t)
 //
 //		// TODO
@@ -83,12 +84,12 @@ func TestDoPanicUser(t *testing.T) {
 		userL1 := user.Balance()
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-		f.Func.TransferIotas(1234).Post()
+		f.Func.TransferIotas(1 * iscp.Mi).Post()
 		require.Error(t, ctx.Err)
-		require.EqualValues(t, userL1-1234, user.Balance())
+		require.EqualValues(t, userL1-1*iscp.Mi, user.Balance())
 
 		bal.Chain += ctx.GasFee
-		bal.Add(user, 1234-ctx.GasFee)
+		bal.Add(user, 1*iscp.Mi-ctx.GasFee)
 		bal.VerifyBalances(t)
 	})
 }
@@ -108,7 +109,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 		chainAccountBalances(ctx, w, 2, 2)
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-		f.Func.TransferIotas(1234).Post()
+		f.Func.TransferIotas(1 * iscp.Mi).Post()
 		require.Error(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -156,7 +157,7 @@ func TestDoPanicUserFee(t *testing.T) {
 	//	chainAccountBalances(ctx, w, 3, 3)
 	//
 	//	f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-	//	f.Func.TransferIotas(1234).Post()
+	//	f.Func.TransferIotas(1*iscp.Mi).Post()
 	//	require.Error(t, ctx.Err)
 	//
 	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -179,19 +180,19 @@ func TestRequestToView(t *testing.T) {
 		// SoloContext prevents Sign()/Post() to a view
 		// Therefore we cannot simply do the following:
 		// f := testcore.ScFuncs.JustView(ctx.Sign(user))
-		// f.Func.TransferIotas(1234).Post()
+		// f.Func.TransferIotas(1*iscp.Mi).Post()
 		// require.Error(t, ctx.Err)
 
 		// sending request to the view entry point should
 		// return an error and leave tokens in L2 minus gas fee
 		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddIotas(1234), user.Pair)
+		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddIotas(1*iscp.Mi), user.Pair)
 		require.Error(t, ctx.Err)
-		require.EqualValues(t, userL1-1234, user.Balance())
+		require.EqualValues(t, userL1-1*iscp.Mi, user.Balance())
 		ctx.UpdateGasFees()
 
 		bal.Chain += ctx.GasFee
-		bal.Add(user, 1234-ctx.GasFee)
+		bal.Add(user, 1*iscp.Mi-ctx.GasFee)
 		bal.VerifyBalances(t)
 	})
 }

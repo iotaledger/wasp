@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -78,12 +79,13 @@ func TestDivide1Member(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1001)
+	toDivide := 1*iscp.Mi + 1
+	dividendDivide(ctx, toDivide)
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
 	bal.Originator -= ctx.GasFee
-	bal.Add(member1, 1001)
+	bal.Add(member1, toDivide)
 	bal.VerifyBalances(t)
 }
 
@@ -110,14 +112,15 @@ func TestDivide2Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1999)
+	toDivide := 5*iscp.Mi + 1
+	dividendDivide(ctx, toDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := uint64(1999) - 1999*250/1000 - 1999*750/1000
+	remain := uint64(toDivide) - toDivide*250/1000 - toDivide*750/1000
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, 1999*250/1000)
-	bal.Add(member2, 1999*750/1000)
+	bal.Add(member1, toDivide*250/1000)
+	bal.Add(member2, toDivide*750/1000)
 	bal.VerifyBalances(t)
 }
 
@@ -154,26 +157,28 @@ func TestDivide3Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1999)
+	toDivide := 1*iscp.Mi + 1
+	dividendDivide(ctx, toDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := uint64(1999) - 1999*250/1500 - 1999*500/1500 - 1999*750/1500
+	remain := uint64(toDivide) - toDivide*250/1500 - toDivide*500/1500 - toDivide*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, 1999*250/1500)
-	bal.Add(member2, 1999*500/1500)
-	bal.Add(member3, 1999*750/1500)
+	bal.Add(member1, toDivide*250/1500)
+	bal.Add(member2, toDivide*500/1500)
+	bal.Add(member3, toDivide*750/1500)
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1234)
+	toDivide2 := 2*iscp.Mi + 1
+	dividendDivide(ctx, toDivide2)
 	require.NoError(t, ctx.Err)
 
-	remain = uint64(1234) - 1234*250/1500 - 1234*500/1500 - 1234*750/1500
+	remain = uint64(toDivide2) - toDivide2*250/1500 - toDivide2*500/1500 - toDivide2*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, 1234*250/1500)
-	bal.Add(member2, 1234*500/1500)
-	bal.Add(member3, 1234*750/1500)
+	bal.Add(member1, toDivide2*250/1500)
+	bal.Add(member2, toDivide2*500/1500)
+	bal.Add(member3, toDivide2*750/1500)
 	bal.VerifyBalances(t)
 }
 

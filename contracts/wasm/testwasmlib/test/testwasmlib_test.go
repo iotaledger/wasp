@@ -223,10 +223,11 @@ func TestTakeAllowance(t *testing.T) {
 	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	f.Func.TransferIotas(1234).Post()
+	iotasToSend := 1 * iscp.Mi
+	f.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
-	bal.Account += 1234
+	bal.Account += iotasToSend
 	bal.Chain += ctx.GasFee
 	bal.Originator -= ctx.GasFee
 	bal.VerifyBalances(t)
@@ -243,7 +244,7 @@ func TestTakeAllowance(t *testing.T) {
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
+	bal = ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
 
@@ -257,12 +258,13 @@ func TestTakeNoAllowance(t *testing.T) {
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	f.Func.TransferIotas(1234).Post()
+	iotasToSend := 1 * iscp.Mi
+	f.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += 1234 - ctx.GasFee
+	bal.Originator += iotasToSend - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
@@ -277,7 +279,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
+	bal = ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
 
