@@ -26,12 +26,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// requires hornet, inx-mqtt and inx-indexer binaries to be in PATH
-// https://github.com/gohornet/hornet
-// https://github.com/gohornet/inx-mqtt
-// https://github.com/gohornet/inx-indexer
-// https://github.com/gohornet/inx-coordinator
-// https://github.com/gohornet/inx-faucet (requires `git submodule update --init --recursive` before building )
+// requires hornet, and inx plugins binaries to be in PATH
+// https://github.com/gohornet/hornet (b49384a)
+// https://github.com/gohornet/inx-mqtt (f40e16a)
+// https://github.com/gohornet/inx-indexer (1fd5def)
+// https://github.com/gohornet/inx-coordinator (9aa5a6c)
+// https://github.com/gohornet/inx-faucet (944e565) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
