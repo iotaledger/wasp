@@ -449,6 +449,13 @@ func TestWasmTypes(t *testing.T) {
 	require.Equal(t, byteHash, wasmtypes.HashToBytes(wasmtypes.HashFromBytes(byteHash)))
 	require.Equal(t, byteHash, wasmtypes.HashFromBytes(byteHash).Bytes())
 
+	base58RequestID := "JPP5jbApWDwvCFBNrVtqSqEPqZRPe9bYPWCKQ8o2HmfiUo"
+	require.Equal(t, base58RequestID, wasmtypes.RequestIDToString(wasmtypes.RequestIDFromString(base58RequestID)))
+	require.Equal(t, base58RequestID, wasmtypes.RequestIDFromString(base58RequestID).String())
+	byteRequestID := []byte{0x0d, 0x42, 0x83, 0x18, 0x0d, 0xb6, 0x11, 0x20, 0xad, 0x43, 0x79, 0xe2, 0xdc, 0x4a, 0x15, 0x6f, 0x0c, 0x7b, 0x24, 0x3b, 0x45, 0x2e, 0x4a, 0xc1, 0xd0, 0x31, 0x6c, 0x33, 0x63, 0xe0, 0x2b, 0x64, 0x12, 0x00}
+	require.Equal(t, byteRequestID, wasmtypes.RequestIDToBytes(wasmtypes.RequestIDFromBytes(byteRequestID)))
+	require.Equal(t, byteRequestID, wasmtypes.RequestIDFromBytes(byteRequestID).Bytes())
+
 	base58TokenID := "Vv68WiBtnqeVUZrBd8S7PG5RbwWDVPgGfi47Xnb5bYmNsnGVJw6h"
 	require.Equal(t, base58TokenID, wasmtypes.TokenIDToString(wasmtypes.TokenIDFromString(base58TokenID)))
 	require.Equal(t, base58TokenID, wasmtypes.TokenIDFromString(base58TokenID).String())
