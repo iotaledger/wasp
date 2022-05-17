@@ -116,7 +116,7 @@ func TestDivide2Members(t *testing.T) {
 	dividendDivide(ctx, toDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := uint64(toDivide) - toDivide*250/1000 - toDivide*750/1000
+	remain := toDivide - toDivide*250/1000 - toDivide*750/1000
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
 	bal.Add(member1, toDivide*250/1000)
@@ -161,7 +161,7 @@ func TestDivide3Members(t *testing.T) {
 	dividendDivide(ctx, toDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := uint64(toDivide) - toDivide*250/1500 - toDivide*500/1500 - toDivide*750/1500
+	remain := toDivide - toDivide*250/1500 - toDivide*500/1500 - toDivide*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
 	bal.Add(member1, toDivide*250/1500)
@@ -173,7 +173,7 @@ func TestDivide3Members(t *testing.T) {
 	dividendDivide(ctx, toDivide2)
 	require.NoError(t, ctx.Err)
 
-	remain = uint64(toDivide2) - toDivide2*250/1500 - toDivide2*500/1500 - toDivide2*750/1500
+	remain = toDivide2 - toDivide2*250/1500 - toDivide2*500/1500 - toDivide2*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
 	bal.Add(member1, toDivide2*250/1500)

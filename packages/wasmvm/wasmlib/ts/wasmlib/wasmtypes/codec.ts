@@ -254,7 +254,7 @@ export function hexEncode(buf: u8[]): string {
         const b: u8 = buf[i];
         const b1: u8 = b >> 4;
         hex[i * 2] = b1 + ((b1 > 9) ? alpha : digit);
-        const b2: u8 = b & 0xff;
+        const b2: u8 = b & 0x0f;
         hex[i * 2 + 1] = b2 + ((b2 > 9) ? alpha : digit);
     }
     return wasmtypes.stringFromBytes(hex);
