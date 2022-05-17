@@ -173,7 +173,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
-	requiredDustDeposit := o.VByteCost(txb.l1Params.RentStructure(), nil)
+	requiredDustDeposit := txb.l1Params.RentStructure().VByteCost * o.VBytes(txb.l1Params.RentStructure(), nil)
 	if o.Deposit() < requiredDustDeposit {
 		panic(xerrors.Errorf("%v: available %d < required %d iotas",
 			transaction.ErrNotEnoughIotasForDustDeposit, o.Deposit(), requiredDustDeposit))
@@ -203,7 +203,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
-		NetworkID: txb.l1Params.NetworkID,
+		NetworkID: txb.l1Params.Protocol.NetworkID(),
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs:   txb.outputs(l1Commitment),
 		Payload:   nil,

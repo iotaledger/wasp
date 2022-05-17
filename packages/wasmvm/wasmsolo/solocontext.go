@@ -45,11 +45,11 @@ var (
 )
 
 const (
-	L2FundsContract   = 1_000_000
-	L2FundsCreator    = 2_000_000
-	L2FundsOriginator = 3_000_000
+	L2FundsContract   = 10 * iscp.Mi
+	L2FundsCreator    = 20 * iscp.Mi
+	L2FundsOriginator = 30 * iscp.Mi
 
-	WasmDustDeposit = 1000
+	WasmDustDeposit = 1 * iscp.Mi
 )
 
 type SoloContext struct {
@@ -361,7 +361,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 // tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 	agent := NewSoloAgent(ctx.Chain.Env)
-	ctx.Chain.MustDepositIotasToL2(10_000_000, agent.Pair)
+	ctx.Chain.MustDepositIotasToL2(10*iscp.Mi, agent.Pair)
 	return agent
 }
 

@@ -17,11 +17,12 @@ func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 		// claim 200 iotas from allowance at a time
 		// send back to caller's address
 		// depending on the amount of iotas, it will exceed number of outputs or not
-		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(200, nil, nil))
+		iotasToSend := 1 * iscp.Mi
+		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(iotasToSend, nil, nil))
 		ctx.Send(
 			iscp.RequestParameters{
 				TargetAddress:  addr,
-				FungibleTokens: iscp.NewTokensIotas(200),
+				FungibleTokens: iscp.NewTokensIotas(iotasToSend),
 			},
 		)
 	}

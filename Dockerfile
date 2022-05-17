@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE_TAG=1.17-buster
+ARG GOLANG_IMAGE_TAG=1.18-buster
 
 # Build stage
 FROM golang:${GOLANG_IMAGE_TAG} AS build

@@ -11,7 +11,7 @@ const (
 	NodePortOffsetPrometheus
 	NodePortOffsetFaucet
 	NodePortOffsetMQTT
-	NodePortOffsetMQTTWebSocket
 	NodePortOffsetIndexer
 	NodePortOffsetINX
+	NodePortOffsetCoordinator
 )

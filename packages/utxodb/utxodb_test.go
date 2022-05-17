@@ -71,7 +71,7 @@ func TestDoubleSpend(t *testing.T) {
 	tx1ID, err := tx1.ID()
 	require.NoError(t, err)
 
-	spend2, err := builder.NewTransactionBuilder(0).
+	spend2, err := builder.NewTransactionBuilder(tpkg.TestNetworkID).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  addr1,
 			Output:   tx1.Essence.Outputs[0],
@@ -83,12 +83,12 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr2},
 			},
 		}).
-		Build(u.deSeriParams(), key1Signer)
+		Build(u.l1Params.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
 
-	spend3, err := builder.NewTransactionBuilder(0).
+	spend3, err := builder.NewTransactionBuilder(tpkg.TestNetworkID).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  addr1,
 			Output:   tx1.Essence.Outputs[0],
@@ -100,7 +100,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr3},
 			},
 		}).
-		Build(u.deSeriParams(), key1Signer)
+		Build(u.l1Params.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend3)
 	require.Error(t, err)

@@ -16,13 +16,13 @@ struct IotaNativeToken {
 	uint256 amount;
 }
 
-type IotaNFTID is bytes20;
+type IotaNFTID is bytes32;
 
 type IotaTransactionID is bytes32;
 
 type ISCHname is uint32;
 
-type ISCChainID is bytes20;
+type ISCChainID is bytes32;
 
 struct ISCAgentID {
 	bytes data;

@@ -80,7 +80,11 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 	if db == nil {
 		return nil
 	}
-	return db.WithRealm(append(db.Realm(), realm...))
+	ret, err := db.WithRealm(append(db.Realm(), realm...))
+	if err != nil {
+		panic(fmt.Errorf("error creating subRealm: %w", err))
+	}
+	return ret
 }
 
 func (vs *virtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {

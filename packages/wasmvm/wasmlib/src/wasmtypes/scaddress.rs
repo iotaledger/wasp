@@ -11,9 +11,9 @@ pub const SC_ADDRESS_ALIAS: u8 = 8;
 pub const SC_ADDRESS_ED25519: u8 = 0;
 pub const SC_ADDRESS_NFT: u8 = 16;
 
-pub const SC_LENGTH_ALIAS: usize = 21;
+pub const SC_LENGTH_ALIAS: usize = 33;
 pub const SC_LENGTH_ED25519: usize = 33;
-pub const SC_LENGTH_NFT: usize = 21;
+pub const SC_LENGTH_NFT: usize = 33;
 
 pub const SC_ADDRESS_LENGTH: usize = SC_LENGTH_ED25519;
 

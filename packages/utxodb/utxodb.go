@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -18,12 +19,10 @@ import (
 )
 
 const (
-	DefaultIOTASupply = iotago.TokenSupply
-
-	Mi = 1_000_000
+	DefaultIOTASupply = tpkg.TestTokenSupply
 
 	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * Mi
+	FundsFromFaucetAmount = 1000 * iscp.Mi
 )
 
 var (
@@ -129,12 +128,8 @@ func (u *UtxoDB) RentStructure() *iotago.RentStructure {
 	return u.l1Params.RentStructure()
 }
 
-func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
-	return u.l1Params.DeSerializationParameters
-}
-
 func (u *UtxoDB) genesisInit() {
-	genesisTx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
+	genesisTx, err := builder.NewTransactionBuilder(u.l1Params.Protocol.NetworkID()).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address: genesisAddress,
 			Output: &iotago.BasicOutput{
@@ -150,7 +145,7 @@ func (u *UtxoDB) genesisInit() {
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(u.deSeriParams(), genesisSigner)
+		Build(u.l1Params.Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -237,7 +232,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 		fundsAmount = amount[0]
 	}
 
-	tx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
+	tx, err := builder.NewTransactionBuilder(u.l1Params.Protocol.NetworkID()).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  genesisAddress,
 			Output:   inputOutput,
@@ -255,7 +250,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(u.deSeriParams(), genesisSigner)
+		Build(u.l1Params.Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -323,7 +318,7 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 
 func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	// serialize for syntactic check
-	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.deSeriParams()); err != nil {
+	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.l1Params.Protocol); err != nil {
 		return err
 	}
 

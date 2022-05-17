@@ -119,7 +119,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	o.requestsCache.Set(reqID, true)
 
 	if assets.IsEmpty() {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String(o.l1Params.Bech32Prefix)))
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String(o.l1Params.Protocol.Bech32HRP)))
 	}
 	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{

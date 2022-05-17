@@ -5,7 +5,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScChainIDLength = 20
+const ScChainIDLength = 32
 
 type ScChainID struct {
 	id [ScChainIDLength]byte
