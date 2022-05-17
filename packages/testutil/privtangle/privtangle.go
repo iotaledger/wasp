@@ -26,10 +26,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// requires hornet, inx-mqtt and inx-indexer binaries to be in PATH
-// https://github.com/gohornet/hornet
-// https://github.com/gohornet/inx-mqtt
-// https://github.com/gohornet/inx-indexer
+// requires hornet, and inx plugins binaries to be in PATH
+// https://github.com/gohornet/hornet (b49384a)
+// https://github.com/gohornet/inx-mqtt (f40e16a)
+// https://github.com/gohornet/inx-indexer (1fd5def)
+// https://github.com/gohornet/inx-coordinator (9aa5a6c)
+// https://github.com/gohornet/inx-faucet (944e565) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -37,7 +39,7 @@ type PrivTangle struct {
 	CooKeyPair1   *cryptolib.KeyPair
 	CooKeyPair2   *cryptolib.KeyPair
 	FaucetKeyPair *cryptolib.KeyPair
-	NetworkID     string
+	NetworkName   string
 	SnapshotInit  string
 	ConfigFile    string
 	BaseDir       string
@@ -54,7 +56,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		CooKeyPair1:   cryptolib.NewKeyPair(),
 		CooKeyPair2:   cryptolib.NewKeyPair(),
 		FaucetKeyPair: cryptolib.NewKeyPair(),
-		NetworkID:     "private_tangle_wasp_cluster",
+		NetworkName:   "private_tangle_wasp_cluster",
 		SnapshotInit:  "snapshot.init",
 		ConfigFile:    "config.json",
 		BaseDir:       baseDir,
@@ -79,10 +81,17 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		pt.startNode(i)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
-	pt.logf("Starting... Done, all nodes started.")
+	pt.logf("Starting... all nodes started.")
 
-	pt.WaitAllAlive()
-	pt.logf("Starting... Done, all nodes alive.")
+	pt.waitAllReady()
+	pt.logf("Starting... all nodes are up and running, starting coordinator.")
+	pt.startCoordinator(0)
+	pt.startFaucet(0)
+	pt.waitAllHealthy()
+	pt.logf("Starting... coordinator started, all nodes are healthy.")
+
+	pt.waitAllReturnTips()
+	pt.logf("Starting... Done, all nodes alive and returning tips.")
 
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
@@ -99,7 +108,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	}
 	snapGenArgs := []string{
 		"tool", "snap-gen",
-		fmt.Sprintf("--networkID=%s", pt.NetworkID),
+		fmt.Sprintf("--networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsEd25519Address().String()[2:]), // Dropping 0x from HEX.
 		fmt.Sprintf("--outputPath=%s", filepath.Join(pt.BaseDir, pt.SnapshotInit)),
 	}
@@ -114,15 +123,6 @@ func (pt *PrivTangle) startNode(i int) {
 	plugins := "INX,Debug,Prometheus"
 	if i == 0 {
 		plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
-		env = append(env,
-			fmt.Sprintf("COO_PRV_KEYS=%s,%s",
-				hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
-				hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
-			),
-			fmt.Sprintf("FAUCET_PRV_KEY=%s",
-				hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
-			),
-		)
 	}
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
 	nodePathDB := "db"               // Relative from nodePath.
@@ -157,30 +157,24 @@ func (pt *PrivTangle) startNode(i int) {
 
 	args := []string{
 		"-c", pt.ConfigFile,
-		fmt.Sprintf("--protocol.networkID=%s", pt.NetworkID),
+		fmt.Sprintf("--protocol.parameters.networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortRestAPI(i)),
 		fmt.Sprintf("--dashboard.bindAddress=localhost:%d", pt.NodePortDashboard(i)),
 		fmt.Sprintf("--db.path=%s", nodePathDB),
-		fmt.Sprintf("--node.disablePlugins=%s", "Autopeering"),
-		fmt.Sprintf("--node.enablePlugins=%s", plugins),
+		fmt.Sprintf("--app.disablePlugins=%s", "Autopeering"),
+		fmt.Sprintf("--app.enablePlugins=%s", plugins),
 		fmt.Sprintf("--snapshots.fullPath=%s", nodePathSnapFull),
 		fmt.Sprintf("--snapshots.deltaPath=%s", nodePathSnapDelta),
 		fmt.Sprintf("--p2p.bindMultiAddresses=/ip4/127.0.0.1/tcp/%d", pt.NodePortPeering(i)),
 		fmt.Sprintf("--profiling.bindAddress=127.0.0.1:%d", pt.NodePortProfiling(i)),
 		fmt.Sprintf("--prometheus.bindAddress=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
-		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
-	if i == 0 {
-		args = append(args,
-			"--cooBootstrap",
-			"--cooStartIndex", "0",
-		)
-	}
+
 	hornetCmd := exec.CommandContext(pt.ctx, "hornet", args...)
 	// kill hornet cmd if the go test process is killed
 	util.TerminateCmdWhenTestStops(hornetCmd)
@@ -197,62 +191,68 @@ func (pt *PrivTangle) startNode(i int) {
 	}
 }
 
+func (pt *PrivTangle) startCoordinator(i int) {
+	env := []string{
+		fmt.Sprintf("COO_PRV_KEYS=%s,%s",
+			hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
+			hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
+		),
+	}
+	args := []string{
+		"--cooBootstrap",
+		"--cooStartIndex=0",
+		"--coordinator.interval=1s",
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+	}
+	pt.startINXPlugin(i, "inx-coordinator", args, env)
+}
+
+func (pt *PrivTangle) startFaucet(i int) {
+	env := []string{
+		fmt.Sprintf("FAUCET_PRV_KEY=%s",
+			hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
+		),
+	}
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
+	}
+	pt.startINXPlugin(i, "inx-faucet", args, env)
+}
+
 func (pt *PrivTangle) startIndexer(i int) {
-	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-indexer")
-
-	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
-	}
-
-	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
-	}
-
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--indexer.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
 	}
-
-	indexerCmd := exec.CommandContext(pt.ctx, "inx-indexer", args...)
-	// kill indexer cmd if the go test process is killed
-	util.TerminateCmdWhenTestStops(indexerCmd)
-
-	indexerCmd.Dir = indexerPath
-
-	writeOutputToFiles(indexerPath, indexerCmd)
-
-	if err := indexerCmd.Start(); err != nil {
-		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
-	}
+	pt.startINXPlugin(i, "inx-indexer", args, nil)
 }
 
 func (pt *PrivTangle) startMqtt(i int) {
-	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-mqtt")
-
-	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
-	}
-
-	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
-	}
-
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
-		fmt.Sprintf("--mqtt.wsPort=%d", pt.NodePortMQTTWebSocket(i)),
+		fmt.Sprintf("--mqtt.websocket.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+	}
+	pt.startINXPlugin(i, "inx-mqtt", args, nil)
+}
+
+func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) {
+	path := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), plugin)
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", path, err))
 	}
 
-	mqttCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
-	// kill indexer cmd if the go test process is killed
-	util.TerminateCmdWhenTestStops(mqttCmd)
+	cmd := exec.CommandContext(pt.ctx, plugin, args...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, env...)
+	cmd.Dir = path
+	writeOutputToFiles(path, cmd)
 
-	mqttCmd.Dir = indexerPath
+	// kill cmd if the go test process is killed
+	util.TerminateCmdWhenTestStops(cmd)
 
-	writeOutputToFiles(indexerPath, mqttCmd)
-
-	if err := mqttCmd.Start(); err != nil {
-		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
+	if err := cmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start %s [%d]: %w", plugin, i, err))
 	}
 }
 
@@ -278,13 +278,6 @@ func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
 	return nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
 }
 
-// The health endpoint is not working for now.
-// So we are using other endpoint for this check.
-func (pt *PrivTangle) WaitAllAlive() {
-	pt.waitAllHealthy()
-	pt.waitAllReturnTips()
-}
-
 func (pt *PrivTangle) waitAllReturnTips() {
 	for {
 		allOK := true
@@ -292,6 +285,26 @@ func (pt *PrivTangle) waitAllReturnTips() {
 			_, err := pt.nodeClient(i).Tips(pt.ctx)
 			if err != nil {
 				pt.logf("Node[%d] is not ready yet: %v", i, err)
+			}
+			if err != nil {
+				allOK = false
+			}
+		}
+		if allOK {
+			break
+		}
+		pt.logf("Waiting to all nodes to startup.")
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (pt *PrivTangle) waitAllReady() {
+	for {
+		allOK := true
+		for i := range pt.NodeCommands {
+			_, err := pt.nodeClient(i).Info(pt.ctx)
+			if err != nil {
+				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
 			if err != nil {
 				allOK = false
@@ -376,43 +389,43 @@ func (pt *PrivTangle) NodeMultiAddrsWoIndex(x int) []string {
 }
 
 func (pt *PrivTangle) NodePortRestAPI(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetRestAPI
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetRestAPI
 }
 
 func (pt *PrivTangle) NodePortPeering(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetPeering
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetPeering
 }
 
 func (pt *PrivTangle) NodePortDashboard(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetDashboard
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetDashboard
 }
 
 func (pt *PrivTangle) NodePortProfiling(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetProfiling
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetProfiling
 }
 
 func (pt *PrivTangle) NodePortPrometheus(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetPrometheus
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetPrometheus
 }
 
 func (pt *PrivTangle) NodePortFaucet(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetFaucet
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetFaucet
 }
 
 func (pt *PrivTangle) NodePortMQTT(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetMQTT
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetMQTT
 }
 
-func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetMQTTWebSocket
+func (pt *PrivTangle) NodePortCoordinator(i int) int {
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetCoordinator
 }
 
 func (pt *PrivTangle) NodePortIndexer(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetIndexer
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetIndexer
 }
 
 func (pt *PrivTangle) NodePortINX(i int) int {
-	return pt.BasePort + i*10 + privtangledefaults.NodePortOffsetINX
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetINX
 }
 
 func (pt *PrivTangle) logf(msg string, args ...interface{}) {
@@ -443,12 +456,12 @@ func writeOutputToFiles(path string, cmd *exec.Cmd) {
 	if err != nil {
 		panic(xerrors.Errorf("Unable to get stdout for HORNET[path: %s]: %w", path, err))
 	}
-	outFilePath := filepath.Join(path, "log.txt")
+	outFilePath := filepath.Join(path, "stdout.log")
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
 		panic(err)
 	}
-	errFilePath := filepath.Join(path, "errors.txt")
+	errFilePath := filepath.Join(path, "stderr.log")
 	errFile, err := os.Create(errFilePath)
 	if err != nil {
 		panic(err)

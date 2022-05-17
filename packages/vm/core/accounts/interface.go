@@ -61,7 +61,6 @@ const (
 	ParamFoundrySN                 = "s"
 	ParamFoundryOutputBin          = "b"
 	ParamTokenScheme               = "t"
-	ParamTokenTag                  = "g"
 	ParamSupplyDeltaAbs            = "d"
 	ParamDestroyTokens             = "y"
 	ParamDustDepositAssumptionsBin = "u"

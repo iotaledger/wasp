@@ -6,7 +6,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScNftIDLength = 20
+const ScNftIDLength = 32
 
 type ScNftID struct {
 	id [ScNftIDLength]byte

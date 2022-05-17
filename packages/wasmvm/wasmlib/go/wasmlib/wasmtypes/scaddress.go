@@ -12,9 +12,9 @@ const (
 	ScAddressEd25519 byte = 0
 	ScAddressNFT     byte = 16
 
-	ScLengthAlias   = 21
+	ScLengthAlias   = 33
 	ScLengthEd25519 = 33
-	ScLengthNFT     = 21
+	ScLengthNFT     = 33
 
 	ScAddressLength = ScLengthEd25519
 )

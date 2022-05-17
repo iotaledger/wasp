@@ -158,23 +158,35 @@ func TestGasLimit(t *testing.T) {
 	t.Logf("gas: %d, fee: %d", gas, fee)
 
 	// send again with same gas limit but not enough iotas
-	iotaWallet2, _ := evmChain.solo.NewKeyPairWithFunds()
+	iotaWallet2, wallet2Addr := evmChain.solo.NewKeyPairWithFunds()
+	notEnoughIotasForGas := fee * 9 / 10
+	// use wallet1 to charge wallet2Addr (to be used via offledger requests)
+	// this way we can have the exact amount of funds to test, if we do a on-ledger request and the storage deposit > gas fee, this test won't be possible
+	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(notEnoughIotasForGas, nil), iscp.NewAgentID(wallet2Addr), iotaWallet1)
+
 	_, err = storage.store(124, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet2,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas).AddIotas(fee * 9 / 10)
+			req.WithGasBudget(gas).AddIotas(notEnoughIotasForGas)
 		},
+		offledger: true,
 	}})
 	require.Error(t, err)
 	require.Regexp(t, `\bgas\b`, err.Error())
 
 	// send again with gas limit not enough for transaction
-	iotaWallet3, _ := evmChain.solo.NewKeyPairWithFunds()
+	iotaWallet3, wallet3Addr := evmChain.solo.NewKeyPairWithFunds()
+	iotasForGas := fee
+	// use wallet1 to charge wallet3Addr (to be used via offledger requests)
+	// this way we can have the exact amount of funds to test, if we do a on-ledger request and the storage deposit > gas fee, this test won't be possible
+	evmChain.soloChain.TransferAllowanceTo(iscp.NewFungibleTokens(iotasForGas, nil), iscp.NewAgentID(wallet3Addr), iotaWallet1)
+
 	_, err = storage.store(125, ethCallOptions{iota: iotaCallOptions{
 		wallet: iotaWallet3,
 		before: func(req *solo.CallParams) {
-			req.WithGasBudget(gas / 2).AddIotas(fee)
+			req.WithGasBudget(gas / 2).AddIotas(iotasForGas)
 		},
+		offledger: true,
 	}})
 	require.Error(t, err)
 	require.Regexp(t, `\bgas\b`, err.Error())
@@ -469,7 +481,7 @@ func TestRevert(t *testing.T) {
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
 	// mint some native tokens
-	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	evmChain.soloChain.MustDepositIotasToL2(10*iscp.Mi, nil) // for gas
 	sn, _, err := evmChain.soloChain.NewFoundryParams(10000).
 		WithUser(evmChain.soloChain.OriginatorPrivateKey).
 		CreateFoundry()
@@ -496,7 +508,7 @@ func TestSend(t *testing.T) {
 	err := evmChain.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
-	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	evmChain.soloChain.MustDepositIotasToL2(10*iscp.Mi, nil) // for gas
 
 	iscTest.callFnExpectEvent([]ethCallOptions{{iota: iotaCallOptions{
 		before: func(req *solo.CallParams) {
@@ -514,7 +526,7 @@ func TestSendAsNFT(t *testing.T) {
 	require.NoError(t, err)
 
 	// mint an NFT and send to chain
-	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	evmChain.soloChain.MustDepositIotasToL2(10*iscp.Mi, nil) // for gas
 	issuerWallet, issuerAddress := evmChain.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
 	nftInfo, err := evmChain.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
@@ -543,7 +555,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
 	// mint some native tokens
-	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gaz
+	evmChain.soloChain.MustDepositIotasToL2(10*iscp.Mi, nil) // for gas
 	sn, tokenID, err := evmChain.soloChain.NewFoundryParams(10000).
 		WithUser(evmChain.soloChain.OriginatorPrivateKey).
 		CreateFoundry()
@@ -569,7 +581,7 @@ func TestISCGetAllowanceNFTs(t *testing.T) {
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
 	// mint an NFT and send to chain
-	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	evmChain.soloChain.MustDepositIotasToL2(10*iscp.Mi, nil) // for gas
 	issuerWallet, issuerAddress := evmChain.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
 	nftInfo, err := evmChain.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
@@ -580,7 +592,7 @@ func TestISCGetAllowanceNFTs(t *testing.T) {
 		iota: iotaCallOptions{
 			wallet: issuerWallet,
 			before: func(cp *solo.CallParams) {
-				cp.AddIotas(10000).
+				cp.AddIotas(1 * iscp.Mi).
 					WithNFT(&iscp.NFT{
 						ID:       nftInfo.NFTID,
 						Issuer:   issuerAddress,
@@ -605,7 +617,7 @@ func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
 	iscTest := evmChain.deployISCTestContract(evmChain.faucetKey)
 
 	// mint an NFT and send to chain
-	evmChain.soloChain.MustDepositIotasToL2(10_000, nil) // for gas
+	evmChain.soloChain.MustDepositIotasToL2(10*iscp.Mi, nil) // for gas
 	issuerWallet, issuerAddress := evmChain.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
 	nftInfo, err := evmChain.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
@@ -616,7 +628,7 @@ func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
 		iota: iotaCallOptions{
 			wallet: issuerWallet,
 			before: func(cp *solo.CallParams) {
-				cp.AddIotas(10000).
+				cp.AddIotas(1 * iscp.Mi).
 					WithNFT(&iscp.NFT{
 						ID:       nftInfo.NFTID,
 						Issuer:   issuerAddress,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -104,7 +105,7 @@ func nextState(
 	aliasID := consumedOutput.AliasID
 	inputs := iotago.OutputIDs{consumedOutputID}
 	txEssence := &iotago.TransactionEssence{
-		NetworkID: 0,
+		NetworkID: tpkg.TestNetworkID,
 		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{

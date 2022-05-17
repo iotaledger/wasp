@@ -126,7 +126,7 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestonePointer) {
+	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
 		ret.timeData = &iscp.TimeData{
 			MilestoneIndex: milestonePointer.Index,
 			Time:           time.Unix(int64(milestonePointer.Timestamp), 0),

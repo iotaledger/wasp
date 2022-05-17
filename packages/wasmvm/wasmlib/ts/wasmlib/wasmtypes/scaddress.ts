@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import { panic } from "../sandbox";
 import * as wasmtypes from "./index"
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -10,9 +10,9 @@ export const ScAddressAlias: u8 = 8;
 export const ScAddressEd25519: u8 = 0;
 export const ScAddressNFT: u8 = 16;
 
-export const ScLengthAlias = 21;
+export const ScLengthAlias = 33;
 export const ScLengthEd25519 = 33;
-export const ScLengthNFT = 21;
+export const ScLengthNFT = 33;
 
 export const ScAddressLength = ScLengthEd25519;
 

@@ -90,7 +90,7 @@ type (
 	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
 	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
 	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
-	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestonePointer)
+	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
 )
 
 type NodeConnection interface {

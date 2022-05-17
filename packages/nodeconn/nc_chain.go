@@ -121,10 +121,10 @@ func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
-	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Bech32Prefix)
+	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
-		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
@@ -182,7 +182,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
 			ncc.chainID.AsAddress(),
-			ncc.nc.l1params.Bech32Prefix,
+			ncc.nc.l1params.Protocol.Bech32HRP,
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {
@@ -202,12 +202,16 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 					ncc.log.Warnf("error while receiving unspent output: %v", err)
 					continue
 				}
-				tid, err := outResponse.TxID()
+				if outResponse.Metadata == nil {
+					ncc.log.Warnf("error while receiving unspent output, metadata is nil")
+					continue
+				}
+				tid, err := outResponse.Metadata.TxID()
 				if err != nil {
 					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
 					continue
 				}
-				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
 				ncc.log.Debugf("received UTXO, outputID: %s", outID.ToHex())
 				ncc.outputHandler(outID, out)
 			case <-ncc.nc.ctx.Done():
@@ -251,12 +255,16 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
 				continue
 			}
-			tid, err := outResponse.TxID()
+			if outResponse.Metadata == nil {
+				ncc.log.Warnf("error while receiving chain state unspent output, metadata is nil")
+				continue
+			}
+			tid, err := outResponse.Metadata.TxID()
 			if err != nil {
 				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
 				continue
 			}
-			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
 			ncc.log.Debugf("received chain state update, outputID: %s", outID.ToHex())
 			ncc.stateOutputHandler(outID, out)
 		case <-ncc.nc.ctx.Done():

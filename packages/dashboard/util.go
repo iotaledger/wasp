@@ -81,11 +81,11 @@ func (d *Dashboard) exploreAddressURL(address iotago.Address) string {
 }
 
 func (d *Dashboard) addressToString(a iotago.Address) string {
-	return a.Bech32(d.wasp.L1Params().Bech32Prefix)
+	return a.Bech32(d.wasp.L1Params().Protocol.Bech32HRP)
 }
 
 func (d *Dashboard) agentIDToString(a iscp.AgentID) string {
-	return a.String(d.wasp.L1Params().Bech32Prefix)
+	return a.String(d.wasp.L1Params().Protocol.Bech32HRP)
 }
 
 func (d *Dashboard) addressFromAgentID(a iscp.AgentID) iotago.Address {
