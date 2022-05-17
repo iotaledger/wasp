@@ -449,6 +449,12 @@ func TestWasmTypes(t *testing.T) {
 	require.Equal(t, byteHash, wasmtypes.HashToBytes(wasmtypes.HashFromBytes(byteHash)))
 	require.Equal(t, byteHash, wasmtypes.HashFromBytes(byteHash).Bytes())
 
+	scHname := wasmtypes.ScHname(1231231)
+	require.Equal(t, scHname, wasmtypes.HnameFromString(wasmtypes.HnameToString(scHname)))
+	require.Equal(t, scHname.String(), wasmtypes.HnameToString(scHname))
+	require.Equal(t, scHname, wasmtypes.HnameFromBytes(wasmtypes.HnameToBytes(scHname)))
+	require.Equal(t, scHname.Bytes(), wasmtypes.HnameToBytes(scHname))
+
 	base58RequestID := "JPP5jbApWDwvCFBNrVtqSqEPqZRPe9bYPWCKQ8o2HmfiUo"
 	require.Equal(t, base58RequestID, wasmtypes.RequestIDToString(wasmtypes.RequestIDFromString(base58RequestID)))
 	require.Equal(t, base58RequestID, wasmtypes.RequestIDFromString(base58RequestID).String())
