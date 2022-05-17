@@ -229,7 +229,22 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
-	nc.log.Debugf("Posted transaction: %v", tx)
+	inIDs := make([]string, len(tx.Essence.Inputs))
+	for i := range inIDs {
+		input := tx.Essence.Inputs[i]
+		utxoIn, ok := input.(*iotago.UTXOInput)
+		if ok {
+			inIDs[i] = iscp.OID(utxoIn)
+		} else {
+			inIDs[i] = fmt.Sprintf("%v=%T", input.Type(), input)
+		}
+	}
+	txID, err := tx.ID()
+	if err == nil {
+		nc.log.Debugf("Posted transaction id %v, inputs: %v output count: %v", iscp.TxID(txID), inIDs, len(tx.Essence.Outputs))
+	} else {
+		nc.log.Debugf("Posted transaction, inputs: %v output count: %v", inIDs, len(tx.Essence.Outputs))
+	}
 	return txMsg, nil
 }
 
