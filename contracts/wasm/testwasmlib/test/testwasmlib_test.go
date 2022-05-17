@@ -456,6 +456,10 @@ func TestWasmTypes(t *testing.T) {
 	require.Equal(t, byteRequestID, wasmtypes.RequestIDToBytes(wasmtypes.RequestIDFromBytes(byteRequestID)))
 	require.Equal(t, byteRequestID, wasmtypes.RequestIDFromBytes(byteRequestID).Bytes())
 
+	goString := "this is a go string example"
+	require.Equal(t, goString, wasmtypes.StringToString(wasmtypes.StringFromString(goString)))
+	require.Equal(t, []byte(goString), wasmtypes.StringToBytes(wasmtypes.StringFromBytes([]byte(goString))))
+
 	base58TokenID := "Vv68WiBtnqeVUZrBd8S7PG5RbwWDVPgGfi47Xnb5bYmNsnGVJw6h"
 	require.Equal(t, base58TokenID, wasmtypes.TokenIDToString(wasmtypes.TokenIDFromString(base58TokenID)))
 	require.Equal(t, base58TokenID, wasmtypes.TokenIDFromString(base58TokenID).String())
