@@ -15,16 +15,12 @@ func New(store kvstore.KVStore) kvstore.KVStore {
 	return &RegistryKVStore{store}
 }
 
-func (s *RegistryKVStore) WithRealm(realm kvstore.Realm) kvstore.KVStore {
+func (s *RegistryKVStore) WithRealm(realm kvstore.Realm) (kvstore.KVStore, error) {
 	return s.store.WithRealm(realm)
 }
 
 func (s *RegistryKVStore) Realm() kvstore.Realm {
 	return s.store.Realm()
-}
-
-func (s *RegistryKVStore) Shutdown() {
-	s.store.Shutdown()
 }
 
 func (s *RegistryKVStore) Iterate(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyValueConsumerFunc, direction ...kvstore.IterDirection) error {
@@ -73,7 +69,7 @@ func (s *RegistryKVStore) DeletePrefix(prefix kvstore.KeyPrefix) error {
 	return s.store.DeletePrefix(prefix)
 }
 
-func (s *RegistryKVStore) Batched() kvstore.BatchedMutations {
+func (s *RegistryKVStore) Batched() (kvstore.BatchedMutations, error) {
 	return s.store.Batched()
 }
 

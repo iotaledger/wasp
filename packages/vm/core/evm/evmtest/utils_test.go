@@ -71,8 +71,9 @@ type loopContractInstance struct {
 }
 
 type iotaCallOptions struct {
-	wallet *cryptolib.KeyPair
-	before func(*solo.CallParams)
+	wallet    *cryptolib.KeyPair
+	before    func(*solo.CallParams)
+	offledger bool
 }
 
 type ethCallOptions struct {
@@ -139,6 +140,13 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 			return nil, fmt.Errorf("could not estimate gas: %w", e.resolveError(err))
 		}
 		req.WithGasBudget(gasBudget).AddIotas(gasFee)
+	}
+	if opt.offledger {
+		ret, err := e.soloChain.PostRequestOffLedger(req, opt.wallet)
+		if err != nil {
+			return nil, fmt.Errorf("PostRequestSync failed: %w", e.resolveError(err))
+		}
+		return ret, nil
 	}
 	ret, err := e.soloChain.PostRequestSync(req, opt.wallet)
 	if err != nil {

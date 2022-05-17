@@ -17,8 +17,8 @@ import (
 type ISCChainID [iscp.ChainIDLength]byte
 
 func init() {
-	if iscp.ChainIDLength != 20 {
-		panic("static check: ChainID length does not match bytes20 in ISC.sol")
+	if iscp.ChainIDLength != 32 {
+		panic("static check: ChainID length does not match bytes32 in ISC.sol")
 	}
 }
 
@@ -120,8 +120,8 @@ func (a ISCAgentID) MustUnwrap() iscp.AgentID {
 type IotaNFTID [iotago.NFTIDLength]byte
 
 func init() {
-	if iotago.NFTIDLength != 20 {
-		panic("static check: NFTID length does not match bytes20 in ISC.sol")
+	if iotago.NFTIDLength != 32 {
+		panic("static check: NFTID length does not match bytes32 in ISC.sol")
 	}
 }
 

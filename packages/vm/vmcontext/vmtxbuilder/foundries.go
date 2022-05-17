@@ -15,7 +15,6 @@ import (
 
 func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	scheme iotago.TokenScheme,
-	tag iotago.TokenTag,
 	metadata []byte,
 ) (uint32, uint64) {
 	// TODO does it make sense to keep these max supply checks?
@@ -32,7 +31,6 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		Amount:       0,
 		NativeTokens: nil,
 		SerialNumber: txb.nextFoundrySerialNumber(),
-		TokenTag:     tag,
 		TokenScheme:  scheme,
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
@@ -44,7 +42,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 			Data: metadata,
 		}}
 	}
-	f.Amount = f.VByteCost(txb.l1Params.RentStructure(), nil)
+	f.Amount = txb.l1Params.RentStructure().VByteCost * f.VBytes(txb.l1Params.RentStructure(), nil)
 	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)
@@ -261,8 +259,6 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
 	case !equalTokenScheme(simpleTokenSchemeF1, simpleTokenSchemeF2):
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
-	case f1.TokenTag != f2.TokenTag:
-		panic("identicalFoundries: inconsistency, if serial numbers are equal, token tags must be equal")
 	case len(f1.Blocks) != 0 || len(f2.Blocks) != 0:
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}

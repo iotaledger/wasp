@@ -62,7 +62,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
 	}
 
-	requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
+	requiredDustDeposit := par.L1.RentStructure().VByteCost * out.VBytes(par.L1.RentStructure(), nil)
 	if out.Deposit() < requiredDustDeposit {
 		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 			ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
@@ -86,7 +86,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, par.L1.NetworkID)
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, par.L1.Protocol.NetworkID())
 }
 
 func outputMatchesSendAsAddress(output iotago.Output, oID iotago.OutputID, address iotago.Address) bool {

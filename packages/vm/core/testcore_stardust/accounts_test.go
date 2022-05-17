@@ -40,12 +40,12 @@ func TestDeposit(t *testing.T) {
 
 // allowance shouldnt allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: false})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := iscp.NewAgentID(senderAddr)
 	ch := env.NewChain(nil, "chain1")
 
-	iotasSent := uint64(1000)
+	iotasSent := uint64(1 * iscp.Mi)
 
 	// send a request where allowance == assets - so that no iotas are available outside allowance
 	_, err := ch.PostRequestSync(
@@ -110,13 +110,13 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+		ch, _, _ = env.NewChainExt(nil, 10*iscp.Mi, "chain1")
 		defer ch.Log().Sync()
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = iscp.NewAgentID(senderAddr)
 
-		ch.MustDepositIotasToL2(10_000, senderKeyPair)
+		ch.MustDepositIotasToL2(10*iscp.Mi, senderKeyPair)
 	}
 	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -126,11 +126,11 @@ func TestFoundries(t *testing.T) {
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: util.Big0, MeltedTokens: util.Big0},
 			),
-		).AddIotas(10000).WithGasBudget(math.MaxUint64)
+		).AddIotas(2 * iscp.Mi).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		// it succeeds when allowance is added
-		_, err = ch.PostRequestSync(req.AddAllowanceIotas(500), nil)
+		_, err = ch.PostRequestSync(req.AddAllowanceIotas(1*iscp.Mi), nil)
 		require.NoError(t, err)
 	})
 	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
@@ -141,8 +141,8 @@ func TestFoundries(t *testing.T) {
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: big.NewInt(10), MeltedTokens: big.NewInt(10)},
 			),
-		).AddIotas(10000).WithGasBudget(math.MaxUint64)
-		_, err := ch.PostRequestSync(req.AddAllowanceIotas(500), nil)
+		).AddIotas(2 * iscp.Mi).WithGasBudget(math.MaxUint64)
+		_, err := ch.PostRequestSync(req.AddAllowanceIotas(1*iscp.Mi), nil)
 		require.NoError(t, err)
 	})
 	t.Run("supply 10", func(t *testing.T) {
@@ -372,11 +372,8 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		ch.MustDepositIotasToL2(50_000_000, senderKeyPair)
 		for sn := uint32(1); sn <= 10; sn++ {
-			var tag iotago.TokenTag
-			copy(tag[:], util.Uint32To4Bytes(sn))
 			snBack, tokenID, err := ch.NewFoundryParams(uint64(sn + 1)).
 				WithUser(senderKeyPair).
-				WithTag(&tag).
 				CreateFoundry()
 			require.NoError(t, err)
 			require.EqualValues(t, int(sn), int(snBack))
@@ -564,9 +561,8 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	return ret
 }
 
-func (v *testParams) createFoundryAndMint(tag *iotago.TokenTag, maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
+func (v *testParams) createFoundryAndMint(maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
 	sn, tokenID, err := v.ch.NewFoundryParams(maxSupply).
-		WithTag(tag).
 		WithUser(v.user).
 		CreateFoundry()
 	require.NoError(v.env.T, err)
@@ -596,7 +592,7 @@ func TestDepositIotas(t *testing.T) {
 			require.NoError(t, err)
 			rec := v.ch.LastReceipt()
 
-			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
+			byteCost := v.env.RentStructure().VByteCost * tx.Essence.Outputs[0].VBytes(v.env.RentStructure(), nil)
 			t.Logf("byteCost = %d", byteCost)
 
 			adjusted := addIotas
@@ -612,9 +608,9 @@ func TestDepositIotas(t *testing.T) {
 // initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
 func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	v := initDepositTest(t, initLoad...)
-	v.ch.MustDepositIotasToL2(10_000, v.user)
+	v.ch.MustDepositIotasToL2(2*iscp.Mi, v.user)
 	// create foundry and mint 100 tokens
-	v.sn, v.tokenID = v.createFoundryAndMint(nil, 1_000_000, 100)
+	v.sn, v.tokenID = v.createFoundryAndMint(1_000_000, 100)
 	// prepare request parameters to withdraw everything what is in the account
 	// do not run the request yet
 	v.req = solo.NewCallParams("accounts", "withdraw").
@@ -633,21 +629,21 @@ func (v *testParams) printBalances(prefix string) {
 
 func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "can't be empty")
 	})
 	t.Run("withdraw not enough for dust", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		v.req.AddAllowanceNativeTokensVect(&iotago.NativeToken{
 			ID:     *v.tokenID,
-			Amount: big.NewInt(100),
+			Amount: new(big.Int).SetUint64(1 * iscp.Mi),
 		})
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughIotasForDustDeposit)
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		// we want to withdraw as many iotas as possible, so we add 300 because some more will come
 		// with assets attached to the 'withdraw' request. However, withdraw all is not possible due to gas
 		toWithdraw := v.ch.L2Assets(v.userAgentID).AddIotas(200)
@@ -660,7 +656,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("END")
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddIotas(IotasDepositFee)
@@ -677,7 +673,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("AFTER DESTROY")
 	})
 	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
@@ -702,7 +698,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("AFTER DESTROY")
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddIotas(IotasDepositFee)
@@ -724,7 +720,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddIotas(IotasDepositFee)
@@ -742,7 +738,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 51)
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		v := initWithdrawTest(t, 10_000)
+		v := initWithdrawTest(t, 2*iscp.Mi)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(iscp.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddIotas(IotasDepositFee)
@@ -810,7 +806,7 @@ func TestTransferAndHarvest(t *testing.T) {
 func TestFoundryDestroy(t *testing.T) {
 	t.Run("destroy existing", func(t *testing.T) {
 		v := initDepositTest(t)
-		v.ch.MustDepositIotasToL2(10_000, v.user)
+		v.ch.MustDepositIotasToL2(2*iscp.Mi, v.user)
 		sn, _, err := v.ch.NewFoundryParams(1_000_000).
 			WithUser(v.user).
 			CreateFoundry()
@@ -830,7 +826,7 @@ func TestFoundryDestroy(t *testing.T) {
 
 func TestTransferPartialAssets(t *testing.T) {
 	v := initDepositTest(t)
-	v.ch.MustDepositIotasToL2(10_000, v.user)
+	v.ch.MustDepositIotasToL2(10*iscp.Mi, v.user)
 	// setup a chain with some iotas and native tokens for user1
 	sn, tokenID, err := v.ch.NewFoundryParams(10).
 		WithUser(v.user).
@@ -839,9 +835,9 @@ func TestTransferPartialAssets(t *testing.T) {
 	require.EqualValues(t, 1, int(sn))
 
 	// deposit iotas for the chain owner (needed for L1 dust byte cost to mint tokens)
-	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 10000, v.ch.CommonAccount(), v.chainOwner)
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1*iscp.Mi, v.ch.CommonAccount(), v.chainOwner)
 	require.NoError(t, err)
-	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 10000, v.userAgentID, v.user)
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1*iscp.Mi, v.userAgentID, v.user)
 	require.NoError(t, err)
 
 	err = v.ch.MintTokens(sn, big.NewInt(10), v.user)
@@ -856,16 +852,17 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2Iotas(user2AgentID, 0)
-	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 300, user2AgentID, user2)
+	iotasToSend := 3 * iscp.Mi
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, iotasToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
 	v.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
-	expectedUser2 := IotasDepositFee + 300 - rec.GasFeeCharged
+	expectedUser2 := IotasDepositFee + iotasToSend - rec.GasFeeCharged
 	v.ch.AssertL2Iotas(user2AgentID, expectedUser2)
 	// -----------------------------
 	err = v.ch.SendFromL2ToL2Account(
 		iscp.NewAllowance(
-			300,
+			iotasToSend,
 			iotago.NativeTokens{
 				&iotago.NativeToken{
 					ID:     tokenID,
@@ -882,7 +879,7 @@ func TestTransferPartialAssets(t *testing.T) {
 	// assert that balances are correct
 	v.ch.AssertL2NativeTokens(v.userAgentID, &tokenID, big.NewInt(1))
 	v.ch.AssertL2NativeTokens(user2AgentID, &tokenID, big.NewInt(9))
-	v.ch.AssertL2Iotas(user2AgentID, expectedUser2+300)
+	v.ch.AssertL2Iotas(user2AgentID, expectedUser2+iotasToSend)
 	v.ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
 }
 
@@ -892,8 +889,6 @@ func TestMintedTokensBurn(t *testing.T) {
 
 	_, ident1, ident1AddrKeys := tpkg.RandEd25519Identity()
 	aliasIdent1 := tpkg.RandAliasAddress()
-
-	tokenTag := tpkg.Rand12ByteArray()
 
 	inputIDs := tpkg.RandOutputIDs(3)
 	inputs := iotago.OutputSet{
@@ -920,7 +915,6 @@ func TestMintedTokensBurn(t *testing.T) {
 			Amount:       OneMi,
 			NativeTokens: nil,
 			SerialNumber: 1,
-			TokenTag:     tokenTag,
 			TokenScheme: &iotago.SimpleTokenScheme{
 				MintedTokens:  big.NewInt(50),
 				MeltedTokens:  util.Big0,
@@ -943,7 +937,7 @@ func TestMintedTokensBurn(t *testing.T) {
 	}
 
 	essence := &iotago.TransactionEssence{
-		NetworkID: 0,
+		NetworkID: tpkg.TestNetworkID,
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs: iotago.Outputs{
 			&iotago.AliasOutput{
@@ -963,7 +957,6 @@ func TestMintedTokensBurn(t *testing.T) {
 				Amount:       2 * OneMi,
 				NativeTokens: nil,
 				SerialNumber: 1,
-				TokenTag:     tokenTag,
 				TokenScheme: &iotago.SimpleTokenScheme{
 					// burn supply by -50
 					MintedTokens:  big.NewInt(50),
@@ -1009,7 +1002,7 @@ func TestNFTAccount(t *testing.T) {
 	nftAddress := nftInfo.NFTID.ToAddress()
 
 	// deposit funds on behalf of the NFT
-	iotasToSend := uint64(100_000)
+	iotasToSend := uint64(10 * iscp.Mi)
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddFungibleTokens(iscp.NewTokensIotas(iotasToSend)).
 		WithMaxAffordableGasBudget().
@@ -1029,7 +1022,7 @@ func TestNFTAccount(t *testing.T) {
 	require.True(t, ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID))
 
 	// withdraw to the NFT on L1
-	iotasToWithdrawal := uint64(1000)
+	iotasToWithdrawal := uint64(1 * iscp.Mi)
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		AddAllowanceIotas(iotasToWithdrawal).
 		WithMaxAffordableGasBudget()

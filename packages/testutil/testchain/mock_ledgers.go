@@ -23,7 +23,7 @@ func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	result := &MockedLedgers{
 		ledgers: make(map[string]*MockedLedger),
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestonePointer))
+			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
 		}),
 		log: log.Named("mls"),
 	}
@@ -67,9 +67,9 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 			mlT.log.Debugf("Milestone %v reached", milestone)
 		}
 		time.Sleep(100 * time.Millisecond)
-		mlT.milestones.Trigger(&nodeclient.MilestonePointer{
+		mlT.milestones.Trigger(&nodeclient.MilestoneInfo{
 			Index:     milestone,
-			Timestamp: uint64(time.Now().Unix()),
+			Timestamp: uint32(time.Now().Unix()),
 		})
 		milestone++
 	}

@@ -40,7 +40,7 @@ func TestHornetStartup(t *testing.T) {
 	l1Info, err := nc.Info(ctx)
 	require.NoError(t, err)
 
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
 	client := nodeconn.NewL1Client(l1.Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
@@ -62,7 +62,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	tx, err := nodeconn.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 50000)
+	tx, err := nodeconn.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
 	require.NoError(t, err)
 	err = client.PostTx(tx)
 	require.NoError(t, err)

@@ -20,10 +20,6 @@ impl ImmutableFoundryCreateNewParams {
     pub fn token_scheme(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
 	}
-
-    pub fn token_tag(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_TAG))
-	}
 }
 
 #[derive(Clone)]
@@ -34,10 +30,6 @@ pub struct MutableFoundryCreateNewParams {
 impl MutableFoundryCreateNewParams {
     pub fn token_scheme(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
-	}
-
-    pub fn token_tag(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_TAG))
 	}
 }
 

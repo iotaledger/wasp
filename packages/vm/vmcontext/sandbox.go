@@ -136,8 +136,8 @@ func (s *contractSandbox) TryLoadContract(programHash hashing.HashValue) error {
 	return s.Ctx.(*VMContext).TryLoadContract(programHash)
 }
 
-func (s *contractSandbox) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, metadata []byte) (uint32, uint64) {
-	return s.Ctx.(*VMContext).CreateNewFoundry(scheme, tag, metadata)
+func (s *contractSandbox) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
+	return s.Ctx.(*VMContext).CreateNewFoundry(scheme, metadata)
 }
 
 func (s *contractSandbox) DestroyFoundry(sn uint32) uint64 {

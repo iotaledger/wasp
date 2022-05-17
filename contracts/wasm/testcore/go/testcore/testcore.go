@@ -61,7 +61,6 @@ func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFu
 	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
-//nolint:unparam
 func funcDoNothing(ctx wasmlib.ScFuncContext, f *DoNothingContext) {
 	ctx.Log(MsgDoNothing)
 }
@@ -81,9 +80,7 @@ func funcIncCounter(ctx wasmlib.ScFuncContext, f *IncCounterContext) {
 	counter.SetValue(counter.Value() + 1)
 }
 
-//nolint:unparam
 func funcInfiniteLoop(ctx wasmlib.ScFuncContext, f *InfiniteLoopContext) {
-	//nolint:staticcheck
 	for {
 		// do nothing, just waste gas
 	}
@@ -142,13 +139,11 @@ func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 	}
 }
 
-//nolint:unparam
 func funcTestCallPanicFullEP(ctx wasmlib.ScFuncContext, f *TestCallPanicFullEPContext) {
 	ctx.Log("will be calling entry point '" + FuncTestPanicFullEP + "' from full EP")
 	ScFuncs.TestPanicFullEP(ctx).Func.Call()
 }
 
-//nolint:unparam
 func funcTestCallPanicViewEPFromFull(ctx wasmlib.ScFuncContext, f *TestCallPanicViewEPFromFullContext) {
 	ctx.Log("will be calling entry point '" + ViewTestPanicViewEP + "' from full EP")
 	ScFuncs.TestPanicViewEP(ctx).Func.Call()
@@ -158,14 +153,12 @@ func funcTestChainOwnerIDFull(ctx wasmlib.ScFuncContext, f *TestChainOwnerIDFull
 	f.Results.ChainOwnerID().SetValue(ctx.ChainOwnerID())
 }
 
-//nolint:unparam
 func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, f *TestEventLogDeployContext) {
 	// deploy the same contract with another name
 	programHash := ctx.Utility().HashBlake2b([]byte(ScName))
 	ctx.DeployContract(programHash, ContractNameDeployed, "test contract deploy log", nil)
 }
 
-//nolint:unparam
 func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, f *TestEventLogEventDataContext) {
 	ctx.Event(MsgTestingEvent)
 }
@@ -175,7 +168,6 @@ func funcTestEventLogGenericData(ctx wasmlib.ScFuncContext, f *TestEventLogGener
 	ctx.Event(event)
 }
 
-//nolint:unparam
 func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, f *TestPanicFullEPContext) {
 	ctx.Panic(MsgFullPanic)
 }
@@ -250,7 +242,6 @@ func viewGetInt(ctx wasmlib.ScViewContext, f *GetIntContext) {
 	f.Results.Values().GetInt64(name).SetValue(value.Value())
 }
 
-//nolint:unparam
 func viewJustView(ctx wasmlib.ScViewContext, f *JustViewContext) {
 	ctx.Log(MsgJustView)
 }
@@ -267,7 +258,6 @@ func viewPassTypesView(ctx wasmlib.ScViewContext, f *PassTypesViewContext) {
 	// TODO more?
 }
 
-//nolint:unparam
 func viewTestCallPanicViewEPFromView(ctx wasmlib.ScViewContext, f *TestCallPanicViewEPFromViewContext) {
 	ctx.Log("will be calling entry point '" + ViewTestPanicViewEP + "' from view EP")
 	ScFuncs.TestPanicViewEP(ctx).Func.Call()
@@ -277,7 +267,6 @@ func viewTestChainOwnerIDView(ctx wasmlib.ScViewContext, f *TestChainOwnerIDView
 	f.Results.ChainOwnerID().SetValue(ctx.ChainOwnerID())
 }
 
-//nolint:unparam
 func viewTestPanicViewEP(ctx wasmlib.ScViewContext, f *TestPanicViewEPContext) {
 	ctx.Panic(MsgViewPanic)
 }
@@ -288,17 +277,14 @@ func viewTestSandboxCall(ctx wasmlib.ScViewContext, f *TestSandboxCallContext) {
 	f.Results.SandboxCall().SetValue(getChainInfo.Results.Description().Value())
 }
 
-//nolint:unparam
 func funcTestBlockContext1(ctx wasmlib.ScFuncContext, f *TestBlockContext1Context) {
 	ctx.Panic(MsgCoreOnlyPanic)
 }
 
-//nolint:unparam
 func funcTestBlockContext2(ctx wasmlib.ScFuncContext, f *TestBlockContext2Context) {
 	ctx.Panic(MsgCoreOnlyPanic)
 }
 
-//nolint:unparam
 func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
 	ctx.Panic(MsgCoreOnlyPanic)
 	// varName := f.Params.VarName().Value()
@@ -306,22 +292,18 @@ func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
 	// f.Results.Vars().GetString(varName).SetValue(value)
 }
 
-//nolint:unparam
 func viewInfiniteLoopView(ctx wasmlib.ScViewContext, f *InfiniteLoopViewContext) {
-	//nolint:staticcheck
 	for {
 		// do nothing, just waste gas
 	}
 }
 
-//nolint:unparam
 func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
 	allowance := ctx.Allowance()
 	transfer := wasmlib.NewScTransferFromBalances(allowance)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 }
 
-//nolint:unparam
 func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
 	provided := ctx.Allowance().Iotas()
 	dummy := ScFuncs.EstimateMinDust(ctx)
@@ -329,7 +311,6 @@ func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
 	ctx.Require(provided >= required, "not enough funds")
 }
 
-//nolint:unparam
 func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContext) {
 	caller := ctx.Caller()
 	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
@@ -341,7 +322,6 @@ func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContex
 func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext) {
 }
 
-//nolint:unparam
 func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
 	address := ctx.Caller().Address()
 	allowance := ctx.Allowance()
@@ -353,7 +333,6 @@ func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
 	}
 }
 
-//nolint:unparam
 func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
 	iotas := ctx.Allowance().Iotas()
 	address := ctx.Caller().Address()
@@ -364,7 +343,6 @@ func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
 	}
 }
 
-//nolint:unparam
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
 	iotas := ctx.Allowance().Iotas()
 	address := ctx.Caller().Address()

@@ -19,7 +19,6 @@ export const ParamFoundrySN         = "s";
 export const ParamNftID             = "z";
 export const ParamSupplyDeltaAbs    = "d";
 export const ParamTokenScheme       = "t";
-export const ParamTokenTag          = "g";
 
 export const ResultAccountNonce     = "n";
 export const ResultAllAccounts      = "this";

@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common/math"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -22,15 +23,13 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 
 	// send 1 tx will 1_000_000 iotas which should result in too many outputs, so the request must fail
-	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
-	_, err := ch.Env.GetFundsFromFaucet(address, 10_000_000)
-	require.NoError(t, err)
+	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddIotas(10_000_000).
-		AddAllowanceIotas(40_000). // 40k iotas = 200 outputs
-		WithGasBudget(10_000_000)
-	_, err = ch.PostRequestSync(req, wallet)
+		AddIotas(1000 * iscp.Mi).
+		AddAllowanceIotas(999 * iscp.Mi). // contract is sending 1Mi per output
+		WithGasBudget(math.MaxUint64)
+	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -49,11 +48,12 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	beforeWallet := ch.L1L2Funds(walletAddr)
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
-	// this will SUCCEED because it will result in 4 = 800/200 outputs in the single call
-	const allowance = 800
+	// this will SUCCEED because it will result in 4 outputs in the single call
+	const allowance = 4 * iscp.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAllowanceIotas(allowance).
-		WithGasBudget(200_000)
+		AddIotas(allowance + 1*iscp.Mi).
+		WithGasBudget(math.MaxUint64)
 	tx, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
 
@@ -74,11 +74,13 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	beforeWallet := ch.L1L2Funds(walletAddr)
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
-	// this will FAIL because it will result in 1000/200 = 5 outputs in the single call
-	const allowance = 1000
+	// this will FAIL because it will result in  5 outputs in the single call
+	const allowance = 5 * iscp.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAllowanceIotas(allowance).
-		WithGasBudget(400_000)
+		AddIotas(allowance + 1*iscp.Mi).
+		WithGasBudget(math.MaxUint64)
+
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -91,7 +93,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	err := ch.DepositIotasToL2(100_000, wallet)
+	err := ch.DepositIotasToL2(2*iscp.Mi, wallet)
 	require.NoError(t, err)
 
 	sn, tokenID, err := ch.NewFoundryParams(100).
@@ -102,11 +104,11 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := iscp.NewAllowanceIotas(100_000).AddNativeTokens(tokenID, 100)
+	allowance := iscp.NewAllowanceIotas(100*iscp.Mi).AddNativeTokens(tokenID, 100)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddIotas(100_000).
-		WithGasBudget(400_000)
+		AddIotas(200 * iscp.Mi).
+		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -120,7 +122,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 	agentID := iscp.NewAgentID(addr)
 
-	err := ch.DepositIotasToL2(100_000, wallet)
+	err := ch.DepositIotasToL2(2*iscp.Mi, wallet)
 	require.NoError(t, err)
 
 	amountMintedTokens := int64(100)
@@ -132,22 +134,20 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	amountTokensToSend := int64(3)
-	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := iscp.NewAllowanceIotas(100_000).AddNativeTokens(tokenID, amountTokensToSend)
+	allowance := iscp.NewAllowanceIotas(2*iscp.Mi).AddNativeTokens(tokenID, amountTokensToSend)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddIotas(100_000).
-		WithGasBudget(400_000)
+		AddIotas(2 * iscp.Mi).
+		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 	require.Equal(t, ch.L2NativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
 	require.Equal(t, ch.Env.L1NativeTokens(addr, &tokenID).Int64(), amountTokensToSend)
 }
 
-// TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
 func TestPingIotas1(t *testing.T) { run2(t, testPingIotas1) }
-
 func testPingIotas1(t *testing.T, w bool) {
+	// TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
@@ -157,7 +157,7 @@ func testPingIotas1(t *testing.T, w bool) {
 	commonBefore := ch.L2CommonAccountAssets()
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
-	const expectedBack = 1_000
+	const expectedBack = 1 * iscp.Mi
 	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).

@@ -117,7 +117,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
-	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String(ctx.L1Params().Bech32Prefix))
+	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String(ctx.L1Params().Protocol.Bech32HRP))
 
 	progHash := ctx.Params().MustGetHashValue(root.ParamProgramHash)
 	description := ctx.Params().MustGetString(root.ParamDescription, "N/A")
@@ -160,7 +160,7 @@ func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(deployer.Kind() != iscp.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
-	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String(ctx.L1Params().Bech32Prefix)))
+	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String(ctx.L1Params().Protocol.Bech32HRP)))
 	return nil
 }
 

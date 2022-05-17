@@ -17,20 +17,12 @@ func (s ImmutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScImmutableByte
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamTokenScheme))
 }
 
-func (s ImmutableFoundryCreateNewParams) TokenTag() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamTokenTag))
-}
-
 type MutableFoundryCreateNewParams struct {
 	proxy wasmtypes.Proxy
 }
 
 func (s MutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamTokenScheme))
-}
-
-func (s MutableFoundryCreateNewParams) TokenTag() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamTokenTag))
 }
 
 type ImmutableFoundryDestroyParams struct {

@@ -48,7 +48,7 @@ func AddEndpoints(
 		echoGroup.Use(protected(adminWhitelist))
 	}
 
-	networkPrefix := nodeconn.NodeConnection().L1Params().Bech32Prefix
+	networkPrefix := nodeconn.NodeConnection().L1Params().Protocol.Bech32HRP
 
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)

@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_NFT_ID_LENGTH: usize = 20;
+pub const SC_NFT_ID_LENGTH: usize = 32;
 
 #[derive(PartialEq, Clone, Copy, Eq, Hash)]
 pub struct ScNftID {

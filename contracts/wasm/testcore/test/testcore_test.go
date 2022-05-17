@@ -106,7 +106,7 @@ func TestDeployTestCoreWithCreator(t *testing.T) {
 
 // chainAccountBalances checks the balance of the chain account and the total
 // balance of all accounts, taking any extra uploadWasm() into account
-//nolint:unparam
+
 func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64) {
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()

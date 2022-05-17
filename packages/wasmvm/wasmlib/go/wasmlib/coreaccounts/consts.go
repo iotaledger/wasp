@@ -24,7 +24,6 @@ const (
 	ParamNftID             = "z"
 	ParamSupplyDeltaAbs    = "d"
 	ParamTokenScheme       = "t"
-	ParamTokenTag          = "g"
 )
 
 const (

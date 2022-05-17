@@ -167,7 +167,7 @@ func TestConcurrency2(t *testing.T) {
 		require.EqualValues(t, sum, v.Results.Counter().Value())
 
 		for i, user := range users {
-			require.EqualValues(t, utxodb.FundsFromFaucetAmount-repeats[i], user.Balance())
+			require.EqualValues(t, utxodb.FundsFromFaucetAmount-uint64(repeats[i]), user.Balance())
 			require.EqualValues(t, 0, ctx.Balance(user))
 		}
 

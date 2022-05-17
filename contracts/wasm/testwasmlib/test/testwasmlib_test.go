@@ -117,10 +117,10 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Int16().SetValue(-12345)
 	pt.Params.Int32().SetValue(-1234567890)
 	pt.Params.Int64().SetValue(-1234567890123456789)
-	pt.Params.NftID().SetValue(wasmtypes.NftIDFromBytes([]byte("01234567890123456789")))
+	pt.Params.NftID().SetValue(wasmtypes.NftIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456")))
 	pt.Params.RequestID().SetValue(wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
 	pt.Params.String().SetValue("this is a string")
-	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple")))
+	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890\x00\x00")))
 	pt.Params.Uint8().SetValue(123)
 	pt.Params.Uint16().SetValue(12345)
 	pt.Params.Uint32().SetValue(1234567890)
@@ -213,7 +213,7 @@ func TestViewBlockRecords(t *testing.T) {
 	rec.Func.Call()
 	require.NoError(t, ctx.Err)
 	require.True(t, rec.Results.Record().Exists())
-	require.EqualValues(t, 218, len(rec.Results.Record().Value()))
+	require.EqualValues(t, 230, len(rec.Results.Record().Value()))
 }
 
 func TestTakeAllowance(t *testing.T) {
@@ -221,10 +221,11 @@ func TestTakeAllowance(t *testing.T) {
 	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	f.Func.TransferIotas(1234).Post()
+	iotasToSend := 1 * iscp.Mi
+	f.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
-	bal.Account += 1234
+	bal.Account += iotasToSend
 	bal.Chain += ctx.GasFee
 	bal.Originator -= ctx.GasFee
 	bal.VerifyBalances(t)
@@ -241,7 +242,7 @@ func TestTakeAllowance(t *testing.T) {
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
+	bal = ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
 
@@ -255,12 +256,13 @@ func TestTakeNoAllowance(t *testing.T) {
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	f.Func.TransferIotas(1234).Post()
+	iotasToSend := 1 * iscp.Mi
+	f.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += 1234 - ctx.GasFee
+	bal.Originator += iotasToSend - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
@@ -275,7 +277,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	v := testwasmlib.ScFuncs.IotaBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	ctx.Balances()
+	bal = ctx.Balances()
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
 

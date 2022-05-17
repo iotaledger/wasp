@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
@@ -28,7 +29,7 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	depositAmount := uint64(1000)
+	depositAmount := 1 * iscp.Mi
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
@@ -106,7 +107,7 @@ func TestHarvest(t *testing.T) {
 func TestFoundryCreateNew(t *testing.T) {
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1_000
+	var dustAllowance uint64 = 1 * iscp.Mi
 
 	user := ctx.NewSoloAgent()
 	f := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -115,7 +116,6 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	f.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
 	f.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -127,7 +127,6 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(2002),
 		MaximumSupply: big.NewInt(2003),
 	}))
-	f.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
 	f.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	assert.Equal(t, uint32(2), f.Results.FoundrySN().Value())
@@ -136,7 +135,7 @@ func TestFoundryCreateNew(t *testing.T) {
 func TestFoundryDestroy(t *testing.T) {
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1_000
+	var dustAllowance uint64 = 1 * iscp.Mi
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -145,7 +144,6 @@ func TestFoundryDestroy(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	fnew.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -160,7 +158,7 @@ func TestFoundryDestroy(t *testing.T) {
 func TestFoundryModifySupply(t *testing.T) {
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1_000
+	var dustAllowance uint64 = 1 * iscp.Mi
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -169,7 +167,6 @@ func TestFoundryModifySupply(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	fnew.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -328,7 +325,7 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 func TestFoundryOutput(t *testing.T) {
 	ctx := setupAccounts(t)
 	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1000
+	var dustAllowance uint64 = 1 * iscp.Mi
 
 	user := ctx.NewSoloAgent()
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
@@ -337,7 +334,6 @@ func TestFoundryOutput(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	fnew.Params.TokenTag().SetValue(codec.EncodeTokenTag(iotago.TokenTag{}))
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
