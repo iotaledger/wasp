@@ -3,6 +3,7 @@ package wallet
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ var addressCmd = &cobra.Command{
 		log.Printf("Address index %d\n", addressIndex)
 		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().AsString())
 		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().AsString())
-		log.Printf("  Address:     %s\n", wallet.Address().Bech32(config.L1NetworkPrefix()))
+		log.Printf("  Address:     %s\n", wallet.Address().Bech32(parameters.L1.Protocol.Bech32HRP))
 	},
 }
 
@@ -33,7 +34,7 @@ var balanceCmd = &cobra.Command{
 		log.Check(err)
 
 		log.Printf("Address index %d\n", addressIndex)
-		log.Printf("  Address: %s\n", address.Bech32(config.L1NetworkPrefix()))
+		log.Printf("  Address: %s\n", address.Bech32(parameters.L1.Protocol.Bech32HRP))
 		log.Printf("  Balance:\n")
 		if log.VerboseFlag {
 			printOutputsByOutputID(outs)

@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -35,7 +34,6 @@ func AddEndpoints(
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
 	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
-	l1Params *parameters.L1,
 	log *logger.Logger,
 ) {
 	instance := &offLedgerReqAPI{
@@ -44,7 +42,6 @@ func AddEndpoints(
 		hasRequestBeenProcessed: hasRequestBeenProcessed,
 		requestsCache:           expiringcache.New(cacheTTL),
 		nodePubKey:              nodePubKey,
-		l1Params:                l1Params,
 		log:                     log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
@@ -64,7 +61,6 @@ type offLedgerReqAPI struct {
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
 	requestsCache           *expiringcache.ExpiringCache
 	nodePubKey              *cryptolib.PublicKey
-	l1Params                *parameters.L1
 	log                     *logger.Logger
 }
 
@@ -119,7 +115,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	o.requestsCache.Set(reqID, true)
 
 	if assets.IsEmpty() {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String(o.l1Params.Protocol.Bech32HRP)))
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String()))
 	}
 	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{

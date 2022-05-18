@@ -97,7 +97,6 @@ func (c *Client) Post1Request(
 				},
 			},
 			NFT: par.NFT,
-			L1:  c.Layer1Client.L1Params(),
 		},
 	)
 	if err != nil {

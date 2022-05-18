@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -121,7 +122,7 @@ func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
-	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Protocol.Bech32HRP)
+	bech32Addr := ncc.chainID.AsAddress().Bech32(parameters.L1.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
 		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
@@ -182,7 +183,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
 			ncc.chainID.AsAddress(),
-			ncc.nc.l1params.Protocol.Bech32HRP,
+			parameters.L1.Protocol.Bech32HRP,
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {

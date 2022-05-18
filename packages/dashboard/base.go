@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/labstack/echo/v4"
@@ -40,7 +39,6 @@ type BaseTemplateParams struct {
 }
 
 type WaspServices interface {
-	L1Params() *parameters.L1
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	PeeringStats() (*PeeringStats, error)

@@ -3,9 +3,7 @@ package config
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -87,13 +85,8 @@ func L1Client() nodeconn.L1Client {
 			APIPort:    L1APIPort(),
 			FaucetPort: L1FaucetPort(),
 		},
-		nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		log.HiveLogger(),
 	)
-}
-
-func L1NetworkPrefix() iotago.NetworkPrefix {
-	return L1Client().L1Params().Protocol.Bech32HRP
 }
 
 func WaspClient() *client.WaspClient {

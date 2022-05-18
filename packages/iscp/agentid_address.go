@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // AddressAgentID is an AgentID backed by a non-alias address.
@@ -49,8 +50,8 @@ func (a *AddressAgentID) Bytes() []byte {
 	return mu.Bytes()
 }
 
-func (a *AddressAgentID) String(networkPrefix iotago.NetworkPrefix) string {
-	return a.a.Bech32(networkPrefix)
+func (a *AddressAgentID) String() string {
+	return a.a.Bech32(parameters.L1.Protocol.Bech32HRP)
 }
 
 func (a *AddressAgentID) Equals(other AgentID) bool {

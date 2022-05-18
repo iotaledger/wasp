@@ -39,7 +39,6 @@ type nodeConn struct {
 	mqttClient    *nodeclient.EventAPIClient
 	indexerClient nodeclient.IndexerClient
 	milestones    *events.Event
-	l1params      *parameters.L1
 	metrics       nodeconnmetrics.NodeConnectionMetrics
 	log           *logger.Logger
 	config        L1Config
@@ -47,8 +46,8 @@ type nodeConn struct {
 
 var _ chain.NodeConnection = &nodeConn{}
 
-func L1ParamsFromInfoResp(info *nodeclient.InfoResponse) *parameters.L1 {
-	return &parameters.L1{
+func setL1ProtocolParams(info *nodeclient.InfoResponse) {
+	parameters.L1 = &parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
 		Protocol:           &info.Protocol,
@@ -63,11 +62,11 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 	return context.WithTimeout(ctx, t)
 }
 
-func New(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	return newNodeConn(config, metrics, log, timeout...)
+func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
+	return newNodeConn(config, log, timeout...)
 }
 
-func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) *nodeConn {
+func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeAPIClient := nodeclient.New(fmt.Sprintf("%s:%d", config.Hostname, config.APIPort))
 
@@ -77,6 +76,7 @@ func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics,
 	if err != nil {
 		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
 	}
+	setL1ProtocolParams(l1Info)
 
 	mqttClient, err := nodeAPIClient.EventAPI(ctxWithTimeout)
 	if err != nil {
@@ -98,17 +98,16 @@ func newNodeConn(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
 		}),
-		l1params: L1ParamsFromInfoResp(l1Info),
-		metrics:  metrics,
-		log:      log.Named("nc"),
-		config:   config,
+		metrics: nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		log:     log.Named("nc"),
+		config:  config,
 	}
 	go nc.run()
 	return &nc
 }
 
-func (nc *nodeConn) L1Params() *parameters.L1 {
-	return nc.l1params
+func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
+	nc.metrics = metrics
 }
 
 // RegisterChain implements chain.NodeConnection.
@@ -217,11 +216,11 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Message, error) {
 	// Build a message and post it.
-	txMsg, err := builder.NewMessageBuilder(nc.l1params.Protocol.Version).Payload(tx).Build()
+	txMsg, err := builder.NewMessageBuilder(parameters.L1.Protocol.Version).Payload(tx).Build()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
 	}
-	txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, nc.l1params.Protocol)
+	txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, parameters.L1.Protocol)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
 	}
@@ -272,11 +271,11 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 			for _, tip := range tips {
 				parents = append(parents, tip[:])
 			}
-			promotionMsg, err := builder.NewMessageBuilder(nc.l1params.Protocol.Version).Parents(parents).Build()
+			promotionMsg, err := builder.NewMessageBuilder(parameters.L1.Protocol.Version).Parents(parents).Build()
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion message: %w", err)
 			}
-			_, err = nc.nodeAPIClient.SubmitMessage(ctx, promotionMsg, nc.l1params.Protocol)
+			_, err = nc.nodeAPIClient.SubmitMessage(ctx, promotionMsg, parameters.L1.Protocol)
 			if err != nil {
 				return xerrors.Errorf("failed to promote msg: %w", err)
 			}
@@ -286,7 +285,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 			// remote PoW: Take the message, clear parents, clear nonce, send to node
 			txMsg.Parents = nil
 			txMsg.Nonce = 0
-			txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, nc.l1params.Protocol)
+			txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, parameters.L1.Protocol)
 			if err != nil {
 				return xerrors.Errorf("failed to get re-attach msg: %w", err)
 			}

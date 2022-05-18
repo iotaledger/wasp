@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,7 +84,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr2},
 			},
 		}).
-		Build(u.l1Params.Protocol, key1Signer)
+		Build(parameters.L1.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
@@ -100,7 +101,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr3},
 			},
 		}).
-		Build(u.l1Params.Protocol, key1Signer)
+		Build(parameters.L1.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend3)
 	require.Error(t, err)

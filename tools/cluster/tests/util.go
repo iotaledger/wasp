@@ -153,7 +153,7 @@ func (e *ChainEnv) printAccounts(title string) {
 	for k, bals := range allBalances {
 		aid, err := iscp.AgentIDFromBytes([]byte(k))
 		require.NoError(e.t, err)
-		s += fmt.Sprintf("     %s\n", aid.String(e.Clu.GetL1NetworkPrefix()))
+		s += fmt.Sprintf("     %s\n", aid.String())
 		s += fmt.Sprintf("%s\n", bals.String())
 	}
 	fmt.Println(s)

@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
@@ -67,7 +66,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), lg),
+		l1:               nodeconn.NewL1Client(config.L1, lg),
 	}
 }
 
@@ -246,7 +245,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	if err != nil {
 		return nil, err
 	}
-	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), clu.l1.L1Params().Protocol.Bech32HRP)
+	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), parameters.L1.Protocol.Bech32HRP)
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +323,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			waspNodeDataPath(dataPath, i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), clu.l1.L1Params().Protocol.Bech32HRP),
+			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), parameters.L1.Protocol.Bech32HRP),
 			i,
 			modifyConfig,
 		)
@@ -626,8 +625,4 @@ func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.Fu
 
 func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
 	return clu.l1.OutputMap(addr)
-}
-
-func (clu *Cluster) GetL1NetworkPrefix() iotago.NetworkPrefix {
-	return clu.l1.L1Params().Protocol.Bech32HRP
 }

@@ -1,11 +1,8 @@
 package iscp
 
-import iotago "github.com/iotaledger/iota.go/v3"
-
 const nilAgentIDString = "-"
 
-type NilAgentID struct {
-}
+type NilAgentID struct{}
 
 var _ AgentID = &NilAgentID{}
 
@@ -17,7 +14,7 @@ func (a *NilAgentID) Bytes() []byte {
 	return []byte{byte(a.Kind())}
 }
 
-func (a *NilAgentID) String(networkPrefix iotago.NetworkPrefix) string {
+func (a *NilAgentID) String() string {
 	return nilAgentIDString
 }
 

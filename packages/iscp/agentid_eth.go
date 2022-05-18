@@ -45,7 +45,7 @@ func (a *EthereumAddressAgentID) Bytes() []byte {
 	return append([]byte{byte(a.Kind())}, a.eth.Bytes()...)
 }
 
-func (a *EthereumAddressAgentID) String(networkPrefix iotago.NetworkPrefix) string {
+func (a *EthereumAddressAgentID) String() string {
 	return a.eth.String() // includes "0x"
 }
 
