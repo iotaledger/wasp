@@ -5,6 +5,7 @@ package test
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"testing"
@@ -338,7 +339,10 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scAliasAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAliasAddress)))
 	require.True(t, scAliasAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAliasAddress)))
 	require.EqualValues(t, scAliasAddress.Bytes(), iscp.BytesFromAddress(aliasAddress))
-	// TODO require.EqualValues(t, scAddress.String(), address.String())
+	// FIXME In iota.go v3 we mixedly use AliasAddressBytesLength and AliasAddressSerializedBytesSize in AliasAddress.String()
+	// and AliasAddress.Serialize() respectively which results the result of stringification function is not
+	// equal between wasmtypes.ScAddress and iota.Address.
+	// require.EqualValues(t, scAliasAddress.String(), aliasAddress.String())
 
 	// check ed25519 address
 	scEd25519Address := ctx.Originator().ScAgentID().Address()
@@ -346,7 +350,9 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scEd25519Address == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scEd25519Address)))
 	require.True(t, scEd25519Address == wasmtypes.AddressFromString(wasmtypes.AddressToString(scEd25519Address)))
 	require.EqualValues(t, scEd25519Address.Bytes(), iscp.BytesFromAddress(ed25519Address))
-	// TODO require.EqualValues(t, scAddress.String(), address.String())
+	// scEd25519Address is `ScAddress` datatype which is 33 bytes long
+	// ed25519Address is Ed25519Address datatype which is the Blake2b-256 hash of an Ed25519 public key which is 32 bytes long
+	// FIXME require.EqualValues(t, scEd25519Address.String(), ed25519Address.String())
 
 	// check nft address (currently simply use
 	// serialized alias address and overwrite the kind byte)
@@ -358,37 +364,114 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scNftAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scNftAddress)))
 	require.True(t, scNftAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scNftAddress)))
 	require.EqualValues(t, scNftAddress.Bytes(), iscp.BytesFromAddress(nftAddress))
-	// TODO require.EqualValues(t, scAddress.String(), address.String())
+	// FIXME require.EqualValues(t, scNftAddress.String(), nftAddress.String())
 
 	// check agent id of alias address (hname zero)
 	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
 	agentID := iscp.NewAgentID(aliasAddress)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
 
 	// check agent id of ed25519 address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
 	agentID = iscp.NewAgentID(ed25519Address)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
 
 	// check agent id of NFT address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
 	agentID = iscp.NewAgentID(nftAddress)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
 
 	// check agent id of contract (hname non-zero)
 	scAgentID = wasmtypes.NewScAgentID(scAliasAddress, testwasmlib.HScName)
 	agentID = iscp.NewContractAgentID(chainID, iscp.Hname(testwasmlib.HScName))
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	//	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// TODO require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+
+	goInt8 := int8(123)
+	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
+	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))
+	goUint8 := uint8(123)
+	require.Equal(t, goUint8, wasmtypes.Uint8FromBytes(wasmtypes.Uint8ToBytes(goUint8)))
+	require.Equal(t, goUint8, wasmtypes.Uint8FromString(wasmtypes.Uint8ToString(goUint8)))
+
+	goInt16 := int16(32767)
+	require.Equal(t, goInt16, wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)))
+	require.Equal(t, goInt16, wasmtypes.Int16FromString(wasmtypes.Int16ToString(goInt16)))
+	goUint16 := uint16(32767)
+	require.Equal(t, goUint16, wasmtypes.Uint16FromBytes(wasmtypes.Uint16ToBytes(goUint16)))
+	require.Equal(t, goUint16, wasmtypes.Uint16FromString(wasmtypes.Uint16ToString(goUint16)))
+
+	goInt32 := int32(2147483647)
+	require.Equal(t, goInt32, wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)))
+	require.Equal(t, goInt32, wasmtypes.Int32FromString(wasmtypes.Int32ToString(goInt32)))
+	goUint32 := uint32(2147483647)
+	require.Equal(t, goUint32, wasmtypes.Uint32FromBytes(wasmtypes.Uint32ToBytes(goUint32)))
+	require.Equal(t, goUint32, wasmtypes.Uint32FromString(wasmtypes.Uint32ToString(goUint32)))
+
+	goInt64 := int64(9_223_372_036_854_775_807)
+	require.Equal(t, goInt64, wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)))
+	require.Equal(t, goInt64, wasmtypes.Int64FromString(wasmtypes.Int64ToString(goInt64)))
+	goUint64 := uint64(9_223_372_036_854_775_807)
+	require.Equal(t, goUint64, wasmtypes.Uint64FromBytes(wasmtypes.Uint64ToBytes(goUint64)))
+	require.Equal(t, goUint64, wasmtypes.Uint64FromString(wasmtypes.Uint64ToString(goUint64)))
+
+	scBigInt := wasmtypes.NewScBigInt(123213)
+	goBigInt := big.NewInt(123213)
+	require.Equal(t, scBigInt, wasmtypes.BigIntFromBytes(wasmtypes.BigIntToBytes(scBigInt)))
+	require.Equal(t, goBigInt.Bytes(), scBigInt.Bytes())
+	require.Equal(t, scBigInt, wasmtypes.BigIntFromString(wasmtypes.BigIntToString(scBigInt)))
+	require.Equal(t, goBigInt.String(), scBigInt.String())
+
+	goBool := true
+	require.Equal(t, goBool, wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(goBool)))
+	require.Equal(t, goBool, wasmtypes.BoolFromString(wasmtypes.BoolToString(goBool)))
+	goBool = false
+	require.Equal(t, goBool, wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(goBool)))
+	require.Equal(t, goBool, wasmtypes.BoolFromString(wasmtypes.BoolToString(goBool)))
+
+	goBytes := []byte{0xc3, 0x77, 0xf3, 0xf1}
+	require.Equal(t, goBytes, wasmtypes.BytesFromBytes(wasmtypes.BytesToBytes(goBytes)))
+	require.Equal(t, goBytes, wasmtypes.BytesFromString(wasmtypes.BytesToString(goBytes)))
+
+	base58Hash := "EWwNqZ8At5o9jV2Yqp7ajPxdSjzHVY6MmerKF3Z42rZy"
+	require.Equal(t, base58Hash, wasmtypes.HashToString(wasmtypes.HashFromString(base58Hash)))
+	require.Equal(t, base58Hash, wasmtypes.HashFromString(base58Hash).String())
+	byteHash := []byte{0xc8, 0xd3, 0x41, 0xd8, 0xb5, 0x66, 0x92, 0x1b, 0xb3, 0x0c, 0xf6, 0xbe, 0x4d, 0xd9, 0x41, 0xca, 0x7c, 0xe0, 0x60, 0xff, 0xb6, 0x39, 0x1d, 0x5d, 0x34, 0xd2, 0x61, 0x38, 0xb2, 0xf7, 0x40, 0x34}
+	require.Equal(t, byteHash, wasmtypes.HashToBytes(wasmtypes.HashFromBytes(byteHash)))
+	require.Equal(t, byteHash, wasmtypes.HashFromBytes(byteHash).Bytes())
+
+	scHname := wasmtypes.ScHname(1231231)
+	require.Equal(t, scHname, wasmtypes.HnameFromString(wasmtypes.HnameToString(scHname)))
+	require.Equal(t, scHname.String(), wasmtypes.HnameToString(scHname))
+	require.Equal(t, scHname, wasmtypes.HnameFromBytes(wasmtypes.HnameToBytes(scHname)))
+	require.Equal(t, scHname.Bytes(), wasmtypes.HnameToBytes(scHname))
+
+	base58RequestID := "JPP5jbApWDwvCFBNrVtqSqEPqZRPe9bYPWCKQ8o2HmfiUo"
+	require.Equal(t, base58RequestID, wasmtypes.RequestIDToString(wasmtypes.RequestIDFromString(base58RequestID)))
+	require.Equal(t, base58RequestID, wasmtypes.RequestIDFromString(base58RequestID).String())
+	byteRequestID := []byte{0x0d, 0x42, 0x83, 0x18, 0x0d, 0xb6, 0x11, 0x20, 0xad, 0x43, 0x79, 0xe2, 0xdc, 0x4a, 0x15, 0x6f, 0x0c, 0x7b, 0x24, 0x3b, 0x45, 0x2e, 0x4a, 0xc1, 0xd0, 0x31, 0x6c, 0x33, 0x63, 0xe0, 0x2b, 0x64, 0x12, 0x00}
+	require.Equal(t, byteRequestID, wasmtypes.RequestIDToBytes(wasmtypes.RequestIDFromBytes(byteRequestID)))
+	require.Equal(t, byteRequestID, wasmtypes.RequestIDFromBytes(byteRequestID).Bytes())
+
+	goString := "this is a go string example"
+	require.Equal(t, goString, wasmtypes.StringToString(wasmtypes.StringFromString(goString)))
+	require.Equal(t, []byte(goString), wasmtypes.StringToBytes(wasmtypes.StringFromBytes([]byte(goString))))
+
+	base58TokenID := "Vv68WiBtnqeVUZrBd8S7PG5RbwWDVPgGfi47Xnb5bYmNsnGVJw6h"
+	require.Equal(t, base58TokenID, wasmtypes.TokenIDToString(wasmtypes.TokenIDFromString(base58TokenID)))
+	require.Equal(t, base58TokenID, wasmtypes.TokenIDFromString(base58TokenID).String())
+	byteTokenID := []byte{0xc3, 0x77, 0xf3, 0xf1, 0xea, 0x0f, 0x57, 0x13, 0x4d, 0x64, 0x4f, 0x2f, 0x29, 0x1d, 0x49, 0xf4, 0x8b, 0x11, 0x6d, 0x68, 0x17, 0x4f, 0x73, 0xec, 0x13, 0x09, 0xdd, 0x85, 0xb0, 0x09, 0xea, 0x85, 0xdb, 0x80, 0x26, 0x6a, 0x94, 0xea}
+	require.Equal(t, byteTokenID, wasmtypes.TokenIDToBytes(wasmtypes.TokenIDFromBytes(byteTokenID)))
+	require.Equal(t, byteTokenID, wasmtypes.TokenIDFromBytes(byteTokenID).Bytes())
 }
