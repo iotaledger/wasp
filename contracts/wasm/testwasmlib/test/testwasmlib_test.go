@@ -5,6 +5,7 @@ package test
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -396,31 +397,91 @@ func TestWasmTypes(t *testing.T) {
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
 	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
 
-	goInt8 := int8(123)
+	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
 	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))
-	goUint8 := uint8(123)
+	goInt8 = math.MinInt8
+	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
+	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))
+	goInt8 = 1
+	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
+	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))
+	goInt8 = 0
+	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
+	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))
+	goInt8 = -1
+	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
+	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))
+	goUint8 := uint8(0)
+	require.Equal(t, goUint8, wasmtypes.Uint8FromBytes(wasmtypes.Uint8ToBytes(goUint8)))
+	require.Equal(t, goUint8, wasmtypes.Uint8FromString(wasmtypes.Uint8ToString(goUint8)))
+	goUint8 = math.MaxUint8
 	require.Equal(t, goUint8, wasmtypes.Uint8FromBytes(wasmtypes.Uint8ToBytes(goUint8)))
 	require.Equal(t, goUint8, wasmtypes.Uint8FromString(wasmtypes.Uint8ToString(goUint8)))
 
-	goInt16 := int16(32767)
+	goInt16 := int16(math.MaxInt16)
 	require.Equal(t, goInt16, wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)))
 	require.Equal(t, goInt16, wasmtypes.Int16FromString(wasmtypes.Int16ToString(goInt16)))
-	goUint16 := uint16(32767)
+	goInt16 = math.MinInt16
+	require.Equal(t, goInt16, wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)))
+	require.Equal(t, goInt16, wasmtypes.Int16FromString(wasmtypes.Int16ToString(goInt16)))
+	goInt16 = 1
+	require.Equal(t, goInt16, wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)))
+	require.Equal(t, goInt16, wasmtypes.Int16FromString(wasmtypes.Int16ToString(goInt16)))
+	goInt16 = 0
+	require.Equal(t, goInt16, wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)))
+	require.Equal(t, goInt16, wasmtypes.Int16FromString(wasmtypes.Int16ToString(goInt16)))
+	goInt16 = -1
+	require.Equal(t, goInt16, wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)))
+	require.Equal(t, goInt16, wasmtypes.Int16FromString(wasmtypes.Int16ToString(goInt16)))
+	goUint16 := uint16(0)
+	require.Equal(t, goUint16, wasmtypes.Uint16FromBytes(wasmtypes.Uint16ToBytes(goUint16)))
+	require.Equal(t, goUint16, wasmtypes.Uint16FromString(wasmtypes.Uint16ToString(goUint16)))
+	goUint16 = math.MaxUint16
 	require.Equal(t, goUint16, wasmtypes.Uint16FromBytes(wasmtypes.Uint16ToBytes(goUint16)))
 	require.Equal(t, goUint16, wasmtypes.Uint16FromString(wasmtypes.Uint16ToString(goUint16)))
 
-	goInt32 := int32(2147483647)
+	goInt32 := int32(math.MaxInt32)
 	require.Equal(t, goInt32, wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)))
 	require.Equal(t, goInt32, wasmtypes.Int32FromString(wasmtypes.Int32ToString(goInt32)))
-	goUint32 := uint32(2147483647)
+	goInt32 = math.MinInt32
+	require.Equal(t, goInt32, wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)))
+	require.Equal(t, goInt32, wasmtypes.Int32FromString(wasmtypes.Int32ToString(goInt32)))
+	goInt32 = 1
+	require.Equal(t, goInt32, wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)))
+	require.Equal(t, goInt32, wasmtypes.Int32FromString(wasmtypes.Int32ToString(goInt32)))
+	goInt32 = 0
+	require.Equal(t, goInt32, wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)))
+	require.Equal(t, goInt32, wasmtypes.Int32FromString(wasmtypes.Int32ToString(goInt32)))
+	goInt32 = -1
+	require.Equal(t, goInt32, wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)))
+	require.Equal(t, goInt32, wasmtypes.Int32FromString(wasmtypes.Int32ToString(goInt32)))
+	goUint32 := uint32(0)
+	require.Equal(t, goUint32, wasmtypes.Uint32FromBytes(wasmtypes.Uint32ToBytes(goUint32)))
+	require.Equal(t, goUint32, wasmtypes.Uint32FromString(wasmtypes.Uint32ToString(goUint32)))
+	goUint32 = math.MaxUint32
 	require.Equal(t, goUint32, wasmtypes.Uint32FromBytes(wasmtypes.Uint32ToBytes(goUint32)))
 	require.Equal(t, goUint32, wasmtypes.Uint32FromString(wasmtypes.Uint32ToString(goUint32)))
 
-	goInt64 := int64(9_223_372_036_854_775_807)
+	goInt64 := int64(math.MaxInt64)
 	require.Equal(t, goInt64, wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)))
 	require.Equal(t, goInt64, wasmtypes.Int64FromString(wasmtypes.Int64ToString(goInt64)))
-	goUint64 := uint64(9_223_372_036_854_775_807)
+	goInt64 = math.MinInt64
+	require.Equal(t, goInt64, wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)))
+	require.Equal(t, goInt64, wasmtypes.Int64FromString(wasmtypes.Int64ToString(goInt64)))
+	goInt64 = 1
+	require.Equal(t, goInt64, wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)))
+	require.Equal(t, goInt64, wasmtypes.Int64FromString(wasmtypes.Int64ToString(goInt64)))
+	goInt64 = 0
+	require.Equal(t, goInt64, wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)))
+	require.Equal(t, goInt64, wasmtypes.Int64FromString(wasmtypes.Int64ToString(goInt64)))
+	goInt64 = -1
+	require.Equal(t, goInt64, wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)))
+	require.Equal(t, goInt64, wasmtypes.Int64FromString(wasmtypes.Int64ToString(goInt64)))
+	goUint64 := uint64(0)
+	require.Equal(t, goUint64, wasmtypes.Uint64FromBytes(wasmtypes.Uint64ToBytes(goUint64)))
+	require.Equal(t, goUint64, wasmtypes.Uint64FromString(wasmtypes.Uint64ToString(goUint64)))
+	goUint64 = math.MaxUint64
 	require.Equal(t, goUint64, wasmtypes.Uint64FromBytes(wasmtypes.Uint64ToBytes(goUint64)))
 	require.Equal(t, goUint64, wasmtypes.Uint64FromString(wasmtypes.Uint64ToString(goUint64)))
 
