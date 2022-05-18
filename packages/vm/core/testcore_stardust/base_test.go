@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/hive.go/logger"
 	"math"
 	"strings"
 	"testing"
@@ -31,9 +32,12 @@ func TestInitLoad(t *testing.T) {
 	_ = ch.Log().Sync()
 
 	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
-	assets := ch.L2CommonAccountAssets()
-	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, assets.Iotas)
-	require.EqualValues(t, 0, len(assets.Tokens))
+	cassets := ch.L2CommonAccountAssets()
+	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, cassets.Iotas)
+	require.EqualValues(t, 0, len(cassets.Tokens))
+
+	t.Logf("common iotas: %d", ch.L2CommonAccountIotas())
+	require.True(t, cassets.Iotas >= accounts.MinimumIotasOnCommonAccount)
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
@@ -45,7 +49,12 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	// create chain
 	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
-	defer ch.Log().Sync()
+	defer func(log *logger.Logger) {
+		err := log.Sync()
+		if err != nil {
+
+		}
+	}(ch.Log())
 	ch.AssertControlAddresses()
 	t.Logf("originator address iotas: %d (spent %d)",
 		env.L1Iotas(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1Iotas(ch.OriginatorAddress))
@@ -98,7 +107,12 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func(log *logger.Logger) {
+			err := log.Sync()
+			if err != nil {
+
+			}
+		}(ch.Log())
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -129,7 +143,12 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func(log *logger.Logger) {
+			err := log.Sync()
+			if err != nil {
+
+			}
+		}(ch.Log())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr)
@@ -168,7 +187,12 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func(log *logger.Logger) {
+			err := log.Sync()
+			if err != nil {
+
+			}
+		}(ch.Log())
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -199,7 +223,12 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func(log *logger.Logger) {
+			err := log.Sync()
+			if err != nil {
+
+			}
+		}(ch.Log())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr)
