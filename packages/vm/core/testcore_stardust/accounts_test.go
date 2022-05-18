@@ -2,6 +2,7 @@ package testcore
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/logger"
 	"math"
 	"math/big"
 	"strconv"
@@ -38,7 +39,30 @@ func TestDeposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
-// allowance shouldnt allow you to bypass gas fees.
+func TestHarvest(t *testing.T) {
+	env := solo.New(t)
+	ch, _, _ := env.NewChainExt(nil, 10_000, "chain1")
+	_ = ch.Log().Sync()
+
+	t.Logf("common iotas BEFORE: %d", ch.L2CommonAccountIotas())
+	err := ch.DepositIotasToL2(100_000, nil)
+	require.NoError(t, err)
+	userAgentID := ch.OriginatorAgentID
+	t.Logf("userAgentID iotas: %d", ch.L2Iotas(userAgentID))
+
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncHarvest.Name).
+			AddIotas(10_000).
+			WithGasBudget(100_000),
+		nil)
+	require.NoError(t, err)
+	t.Logf("common iotas AFTER: %d", ch.L2CommonAccountIotas())
+	require.True(t, ch.L2CommonAccountIotas() > accounts.MinimumIotasOnCommonAccount)
+}
+
+// allowance shouldn't allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: false})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
@@ -111,7 +135,12 @@ func TestFoundries(t *testing.T) {
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch, _, _ = env.NewChainExt(nil, 10*iscp.Mi, "chain1")
-		defer ch.Log().Sync()
+		defer func(log *logger.Logger) {
+			err := log.Sync()
+			if err != nil {
+
+			}
+		}(ch.Log())
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = iscp.NewAgentID(senderAddr)
@@ -171,7 +200,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("supply negative", func(t *testing.T) {
 		initTest()
 		require.Panics(t, func() {
-			ch.NewFoundryParams(-1).
+			_, _, _ = ch.NewFoundryParams(-1).
 				WithUser(senderKeyPair).
 				CreateFoundry()
 		})
@@ -189,7 +218,7 @@ func TestFoundries(t *testing.T) {
 		maxSupply := new(big.Int).Set(util.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
 		require.Panics(t, func() {
-			ch.NewFoundryParams(maxSupply).CreateFoundry()
+			_, _, _ = ch.NewFoundryParams(maxSupply).CreateFoundry()
 		})
 	})
 	// TODO cover all parameter options
