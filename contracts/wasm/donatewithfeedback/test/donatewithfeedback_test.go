@@ -41,7 +41,7 @@ func TestDonateOnce(t *testing.T) {
 
 	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
 	donate.Params.Feedback().SetValue("Nice work!")
-	iotasToSend := 1 * iscp.Mi
+	const iotasToSend = 1 * iscp.Mi
 	donate.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
@@ -68,34 +68,34 @@ func TestDonateTwice(t *testing.T) {
 	donator2L1 := donator2.Balance()
 	bal := ctx.Balances(donator1, donator2)
 
-	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
-	donate.Params.Feedback().SetValue("Nice work!")
-	iotasToSend1 := 1 * iscp.Mi
-	donate.Func.TransferIotas(iotasToSend1).Post()
+	donate1 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
+	donate1.Params.Feedback().SetValue("Nice work!")
+	const donation1 = 1 * iscp.Mi
+	donate1.Func.TransferIotas(donation1).Post()
 	require.NoError(t, ctx.Err)
 
-	bal.Account += iotasToSend1
+	bal.Account += donation1
 	bal.Chain += ctx.GasFee
 	bal.Add(donator1, -ctx.GasFee)
 	bal.VerifyBalances(t)
-	require.EqualValues(t, donator1L1-iotasToSend1, donator1.Balance())
+	require.EqualValues(t, donator1L1-donation1, donator1.Balance())
 
 	donate2 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator2))
 	donate2.Params.Feedback().SetValue("Nice work!")
-	iotasToSend2 := 2 * iscp.Mi
-	donate2.Func.TransferIotas(iotasToSend2).Post()
+	const donation2 = 2 * iscp.Mi
+	donate2.Func.TransferIotas(donation2).Post()
 	require.NoError(t, ctx.Err)
 
-	bal.Account += iotasToSend2
+	bal.Account += donation2
 	bal.Chain += ctx.GasFee
 	bal.Add(donator2, -ctx.GasFee)
 	bal.VerifyBalances(t)
-	require.EqualValues(t, donator2L1-iotasToSend2, donator2.Balance())
+	require.EqualValues(t, donator2L1-donation2, donator2.Balance())
 
 	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
 	donationInfo.Func.Call()
 
 	require.EqualValues(t, 2, donationInfo.Results.Count().Value())
-	require.EqualValues(t, iotasToSend2, donationInfo.Results.MaxDonation().Value())
-	require.EqualValues(t, iotasToSend1+iotasToSend2, donationInfo.Results.TotalDonation().Value())
+	require.EqualValues(t, donation2, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, donation1+donation2, donationInfo.Results.TotalDonation().Value())
 }

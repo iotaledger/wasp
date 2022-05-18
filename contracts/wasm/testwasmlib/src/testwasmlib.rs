@@ -42,7 +42,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
     }
     if f.params.nft_id().exists() {
-        let nft_id = nft_id_from_bytes("01234567890123456789".as_bytes());
+        let nft_id = nft_id_from_bytes("abcdefghijklmnopqrstuvwxyz123456".as_bytes());
         ctx.require(f.params.nft_id().value() == nft_id, "mismatch: NftID");
     }
     if f.params.request_id().exists() {
@@ -53,7 +53,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
     }
     if f.params.token_id().exists() {
-        let token_id = token_id_from_bytes("RedGreenBlueYellowCyanBlackWhitePurple".as_bytes());
+        let token_id = token_id_from_bytes("abcdefghijklmnopqrstuvwxyz1234567890AB".as_bytes());
         ctx.require(f.params.token_id().value() == token_id, "mismatch: TokenID");
     }
     if f.params.uint8().exists() {

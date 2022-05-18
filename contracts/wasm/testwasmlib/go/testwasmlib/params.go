@@ -368,7 +368,6 @@ func (s ImmutableParamTypesParams) NftID() wasmtypes.ScImmutableNftID {
 
 // special hook to be able to pass key/values as raw bytes
 func (s ImmutableParamTypesParams) Param() MapStringToImmutableBytes {
-	//nolint:gosimple
 	return MapStringToImmutableBytes{proxy: s.proxy}
 }
 
@@ -466,7 +465,6 @@ func (s MutableParamTypesParams) NftID() wasmtypes.ScMutableNftID {
 
 // special hook to be able to pass key/values as raw bytes
 func (s MutableParamTypesParams) Param() MapStringToMutableBytes {
-	//nolint:gosimple
 	return MapStringToMutableBytes{proxy: s.proxy}
 }
 
