@@ -26,6 +26,9 @@ func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
 	if _, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]; ok {
 		return true, nil
 	}
+	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations().Dels[name]; wasDeleted {
+		return false, nil
+	}
 	return s.vmctx.virtualState.KVStore().Has(name)
 }
 
@@ -115,6 +118,9 @@ func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
 	v, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
 	if ok {
 		return v, nil
+	}
+	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations().Dels[name]; wasDeleted {
+		return nil, nil
 	}
 	ret, err := s.vmctx.virtualState.KVStore().Get(name)
 	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1

@@ -116,11 +116,14 @@ func (m *Map) MustSetAt(key, value []byte) {
 }
 
 func (m *Map) DelAt(key []byte) error {
-	ok, err := m.HasAt(key)
+	keyExist, err := m.HasAt(key)
+	if !keyExist {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	if ok {
+	if keyExist {
 		err = m.addToSize(-1)
 		if err != nil {
 			return err
