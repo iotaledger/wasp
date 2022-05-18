@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -143,7 +144,7 @@ func (c *consensus) runVMIfNeeded() {
 			"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
 			"block index", vmTask.AnchorOutput.StateIndex,
 			"entropy", vmTask.Entropy.String(),
-			"validator fee target", vmTask.ValidatorFeeTarget.String(vmTask.L1Params.Protocol.Bech32HRP),
+			"validator fee target", vmTask.ValidatorFeeTarget.String(),
 			"num req", len(vmTask.Requests),
 			"estimate gas mode", vmTask.EstimateGasMode,
 			"state commitment", trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
@@ -247,7 +248,6 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		TimeAssumption:     c.consensusBatch.TimeData,
 		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		L1Params:           c.chain.L1Params(),
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
@@ -778,7 +778,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
-	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(c.nodeConn.L1Params().Protocol.Bech32HRP))
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(

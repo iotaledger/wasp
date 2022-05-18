@@ -42,7 +42,7 @@ type ViewContext struct {
 	gasBurnLog  *gas.BurnLog
 	gasBudget   uint64
 	callStack   []*callContext
-	l1Params    *parameters.L1
+	l1Params    *parameters.L1Params
 }
 
 var _ execution.WaspContext = &ViewContext{}
@@ -53,7 +53,6 @@ func New(ch chain.ChainCore) *ViewContext {
 		stateReader: ch.GetStateReader(),
 		chainID:     ch.ID(),
 		log:         ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		l1Params:    ch.L1Params(),
 	}
 }
 
@@ -262,10 +261,6 @@ func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
 		ret = nil
 	}
 	return ret, err
-}
-
-func (ctx *ViewContext) L1Params() *parameters.L1 {
-	return ctx.l1Params
 }
 
 // GetContractStateCommitment returns commitment to the contract's state, if possible.

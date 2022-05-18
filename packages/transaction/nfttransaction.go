@@ -11,7 +11,6 @@ type MintNFTTransactionParams struct {
 	Target            iotago.Address
 	UnspentOutputs    iotago.OutputSet
 	UnspentOutputIDs  iotago.OutputIDs
-	L1Params          *parameters.L1
 	ImmutableMetadata []byte
 }
 
@@ -28,12 +27,12 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 			&iotago.MetadataFeatureBlock{Data: par.ImmutableMetadata},
 		},
 	}
-	requiredDust := par.L1Params.RentStructure().VByteCost * out.VBytes(par.L1Params.RentStructure(), nil)
+	requiredDust := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	out.Amount = requiredDust
 
 	outputs := iotago.Outputs{out}
 
-	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, nil, par.UnspentOutputs, par.UnspentOutputIDs, par.L1Params.RentStructure())
+	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, nil, par.UnspentOutputs, par.UnspentOutputIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -42,5 +41,5 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair, par.L1Params.Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair, parameters.L1.Protocol.NetworkID())
 }

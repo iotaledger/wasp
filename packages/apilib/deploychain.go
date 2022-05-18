@@ -128,7 +128,6 @@ func CreateChainOrigin(layer1Client nodeconn.L1Client, originator *cryptolib.Key
 		0,
 		utxoMap,
 		utxoIDsFromUtxoMap(utxoMap),
-		layer1Client.L1Params(),
 	)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
@@ -153,7 +152,6 @@ func CreateChainOrigin(layer1Client nodeconn.L1Client, originator *cryptolib.Key
 		dscr,
 		utxoMap,
 		utxoIDsFromUtxoMap(utxoMap),
-		layer1Client.L1Params(),
 		initParams,
 	)
 	if err != nil {

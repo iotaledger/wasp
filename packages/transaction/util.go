@@ -7,6 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -90,7 +91,6 @@ func computeInputsAndRemainder(
 	nftsOut map[iotago.NFTID]bool,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	rentStructure *iotago.RentStructure,
 ) (
 	iotago.OutputIDs,
 	*iotago.BasicOutput,
@@ -140,7 +140,7 @@ func computeInputsAndRemainder(
 			tokensIn[nativeToken.ID] = nativeTokenAmountSum
 		}
 		// calculate remainder. It will return  err != nil if inputs not enough.
-		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
+		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut)
 		if errLast == nil && len(NFTsIn) == len(nftsOut) {
 			break
 		}
@@ -157,7 +157,7 @@ func computeInputsAndRemainder(
 // - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
 // Returns (nil, error) if inputs are not enough (taking into account dust deposit requirements)
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
-func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) (*iotago.BasicOutput, error) {
+func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
 	if inIotas < outIotas {
 		return nil, ErrNotEnoughIotas
 	}
@@ -221,7 +221,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	bc := rentStructure.VByteCost * ret.VBytes(rentStructure, nil)
+	bc := parameters.L1.Protocol.RentStructure.VByteCost * ret.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	if ret.Amount < bc {
 		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, bc)
 	}
@@ -259,10 +259,10 @@ func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signat
 	}
 }
 
-func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
+func GetVByteCosts(tx *iotago.Transaction) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {
-		ret[i] = rentStructure.VByteCost * out.VBytes(rentStructure, nil)
+		ret[i] = parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	}
 	return ret
 }

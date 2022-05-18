@@ -38,7 +38,6 @@ func Init(
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
 	w *wal.WAL,
-	l1Params *parameters.L1,
 ) {
 	log = logger.NewLogger("WebAPI")
 
@@ -58,7 +57,6 @@ func Init(
 		webapiutil.HasRequestBeenProcessed,
 		network.Self().PubKey(),
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
-		l1Params,
 		log,
 	)
 

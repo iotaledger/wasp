@@ -8,7 +8,6 @@ import (
 	"sort"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +37,7 @@ func NewSoloBalances(ctx *SoloContext, agents ...*SoloAgent) *SoloBalances {
 		accounts:   make(map[string]uint64),
 	}
 	for _, agent := range agents {
-		bal.accounts[agent.AgentID().String(iotago.PrefixTestnet)] = ctx.Balance(agent)
+		bal.accounts[agent.AgentID().String()] = ctx.Balance(agent)
 	}
 	bal.dumpBalances()
 	return bal
@@ -59,7 +58,7 @@ func (bal *SoloBalances) dumpBalances() {
 		}
 	}
 	sort.Slice(accs, func(i, j int) bool {
-		return accs[i].String(iotago.PrefixTestnet) < accs[j].String(iotago.PrefixTestnet)
+		return accs[i].String() < accs[j].String()
 	})
 	txt := "ACCOUNTS:"
 	for _, acc := range accs {
@@ -69,7 +68,7 @@ func (bal *SoloBalances) dumpBalances() {
 		if ok {
 			l1 = ctx.Chain.Env.L1Assets(addr)
 		}
-		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(iotago.PrefixTestnet), l2.Iotas)
+		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.Iotas)
 		hname, _ := iscp.HnameFromAgentID(acc)
 		if hname == 0 {
 			txt += fmt.Sprintf(",\tL1: %10d", l1.Iotas)
@@ -98,7 +97,7 @@ func (bal *SoloBalances) dumpBalances() {
 }
 
 func (bal *SoloBalances) Add(agent *SoloAgent, balance uint64) {
-	bal.accounts[agent.AgentID().String(iotago.PrefixTestnet)] += balance
+	bal.accounts[agent.AgentID().String()] += balance
 }
 
 func (bal *SoloBalances) VerifyBalances(t *testing.T) {
@@ -108,7 +107,7 @@ func (bal *SoloBalances) VerifyBalances(t *testing.T) {
 	require.EqualValues(t, bal.Chain, ctx.Balance(ctx.ChainAccount()))
 	require.EqualValues(t, bal.Originator, ctx.Balance(ctx.Originator()))
 	for _, agent := range bal.agents {
-		expected := bal.accounts[agent.AgentID().String(iotago.PrefixTestnet)]
+		expected := bal.accounts[agent.AgentID().String()]
 		actual := ctx.Balance(agent)
 		require.EqualValues(t, expected, actual)
 	}

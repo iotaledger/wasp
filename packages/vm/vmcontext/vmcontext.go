@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/parameters"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -70,7 +69,7 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             iscp.AgentID   // calling agent
+	caller             iscp.AgentID    // calling agent
 	contract           iscp.Hname      // called contract
 	params             iscp.Params     // params passed
 	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
@@ -130,7 +129,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
 			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewDepositEstimate(task.L1Params.RentStructure())
+		currentDustDepositValues := transaction.NewDepositEstimate()
 		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
 			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
 			panic(vm.ErrInconsistentDustAssumptions)
@@ -145,7 +144,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		ret.dustAssumptions = transaction.NewDepositEstimate(task.L1Params.RentStructure())
+		ret.dustAssumptions = transaction.NewDepositEstimate()
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
@@ -164,14 +163,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		foundryLoader,
 		nftLoader,
 		*ret.dustAssumptions,
-		task.L1Params,
 	)
 
 	return ret
-}
-
-func (vmctx *VMContext) L1Params() *parameters.L1 {
-	return vmctx.task.L1Params
 }
 
 // CloseVMContext does the closing actions on the block

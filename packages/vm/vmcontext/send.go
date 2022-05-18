@@ -23,7 +23,6 @@ func (vmctx *VMContext) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFTID
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
-		vmctx.task.L1Params.RentStructure(),
 		nft,
 	)
 	vmctx.debitNFTFromAccount(vmctx.AccountID(), nftID)
@@ -37,7 +36,6 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
-		vmctx.task.L1Params.RentStructure(),
 	)
 	vmctx.sendOutput(out)
 }

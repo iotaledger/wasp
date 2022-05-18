@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type MockedNodeConn struct {
@@ -99,6 +98,9 @@ func (mncT *MockedNodeConn) DetachMilestones(attachID *events.Closure) {
 	mncT.ledgers.DetachMilestones(attachID)
 }
 
+func (mncT *MockedNodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
+}
+
 func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nodeconnmetrics.NewEmptyNodeConnectionMetrics()
 }
@@ -133,10 +135,6 @@ func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
-}
-
-func (mncT *MockedNodeConn) L1Params() *parameters.L1 {
-	return parameters.L1ForTesting()
 }
 
 /*func (m *MockedNodeConn) PullLatestOutput() {

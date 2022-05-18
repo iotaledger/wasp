@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -38,7 +37,6 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 func now() iscp.TimeData { return iscp.TimeData{Time: time.Now()} }
 
 func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestParameters)) []*iscp.OnLedgerRequestData {
-	utxo := utxodb.New(utxodb.DefaultInitParams().WithInitialTime(time.Now()))
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {
 		requestParams := iscp.RequestParameters{
@@ -60,7 +58,6 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestP
 			tpkg.RandEd25519Address(),
 			iscp.Hn("dummySenderContract"),
 			requestParams,
-			utxo.RentStructure(),
 		)
 		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
 		var err error

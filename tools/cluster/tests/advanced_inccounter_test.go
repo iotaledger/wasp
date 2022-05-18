@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -37,7 +38,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	t.Logf("generated state address: %s", addr.Bech32(clu.L1Client().L1Params().Protocol.Bech32HRP))
+	t.Logf("generated state address: %s", addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
@@ -277,8 +278,8 @@ func TestRotation(t *testing.T) {
 	addr2, err := clu.RunDKG(cmt2, 3)
 	require.NoError(t, err)
 
-	t.Logf("addr1: %s", addr1.Bech32(clu.L1Client().L1Params().Protocol.Bech32HRP))
-	t.Logf("addr2: %s", addr2.Bech32(clu.L1Client().L1Params().Protocol.Bech32HRP))
+	t.Logf("addr1: %s", addr1.Bech32(parameters.L1.Protocol.Bech32HRP))
+	t.Logf("addr2: %s", addr2.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
@@ -386,7 +387,7 @@ func TestRotationMany(t *testing.T) {
 	for i := range cmt {
 		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
 		require.NoError(t, err)
-		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(clu.L1Client().L1Params().Protocol.Bech32HRP))
+		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(parameters.L1.Protocol.Bech32HRP))
 	}
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])

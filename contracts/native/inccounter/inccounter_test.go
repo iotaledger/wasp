@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -142,7 +141,6 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 		Debug:                 false,
 		PrintStackTrace:       false,
 		Seed:                  cryptolib.Seed{},
-		L1Params:              parameters.L1ForTesting(),
 		AutoAdjustDustDeposit: false, // is OFF by default
 	}
 	opts.Log = log

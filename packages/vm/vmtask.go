@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -27,7 +26,6 @@ type VMTask struct {
 	Processors         *processors.Cache
 	AnchorOutput       *iotago.AliasOutput
 	AnchorOutputID     iotago.OutputID
-	L1Params           *parameters.L1
 	SolidStateBaseline coreutil.StateBaseline
 	Requests           []iscp.Request
 	TimeAssumption     iscp.TimeData

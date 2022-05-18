@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -25,7 +24,7 @@ import (
 
 func createChain(t *testing.T) *iscp.ChainID {
 	originator := cryptolib.NewKeyPair()
-	layer1Client := nodeconn.NewL1Client(l1.Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), testlogger.NewLogger(t))
+	layer1Client := nodeconn.NewL1Client(l1.Config, testlogger.NewLogger(t))
 	layer1Client.RequestFunds(originator.Address())
 	utxoMap, err := layer1Client.OutputMap(originator.Address())
 	require.NoError(t, err)
@@ -42,7 +41,6 @@ func createChain(t *testing.T) *iscp.ChainID {
 		0,
 		utxoMap,
 		utxoIDs,
-		layer1Client.L1Params(),
 	)
 	require.NoError(t, err)
 	err = layer1Client.PostTx(originTx)
@@ -71,7 +69,7 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	nc := nodeconn.New(l1.Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
+	nc := nodeconn.New(l1.Config, log)
 
 	//
 	// Check milestone attach/detach.
@@ -100,7 +98,7 @@ func TestNodeConn(t *testing.T) {
 			chainOICh <- oi
 		})
 
-	client := nodeconn.NewL1Client(l1.Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
+	client := nodeconn.NewL1Client(l1.Config, log)
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
 	err := client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)

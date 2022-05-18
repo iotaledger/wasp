@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -29,10 +28,6 @@ type waspServicesMock struct {
 }
 
 var _ WaspServices = &waspServicesMock{}
-
-func (*waspServicesMock) L1Params() *parameters.L1 {
-	return parameters.L1ForTesting()
-}
 
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
