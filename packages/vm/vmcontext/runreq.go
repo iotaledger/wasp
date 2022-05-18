@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -372,7 +373,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 func (vmctx *VMContext) mustCheckTransactionSize() {
 	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
-	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
+	if tx.Size() > parameters.L1.MaxTransactionSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
 	}
 }

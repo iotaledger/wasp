@@ -2,11 +2,12 @@ package testcore
 
 import (
 	"fmt"
-	"github.com/iotaledger/hive.go/logger"
 	"math"
 	"math/big"
 	"strconv"
 	"testing"
+
+	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -138,7 +140,6 @@ func TestFoundries(t *testing.T) {
 		defer func(log *logger.Logger) {
 			err := log.Sync()
 			if err != nil {
-
 			}
 		}(ch.Log())
 
@@ -621,7 +622,8 @@ func TestDepositIotas(t *testing.T) {
 			require.NoError(t, err)
 			rec := v.ch.LastReceipt()
 
-			byteCost := v.env.RentStructure().VByteCost * tx.Essence.Outputs[0].VBytes(v.env.RentStructure(), nil)
+			byteCost := parameters.L1.Protocol.RentStructure.VByteCost *
+				tx.Essence.Outputs[0].VBytes(&parameters.L1.Protocol.RentStructure, nil)
 			t.Logf("byteCost = %d", byteCost)
 
 			adjusted := addIotas
@@ -795,7 +797,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 func TestTransferAndHarvest(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
-	dustCosts := transaction.NewDepositEstimate(v.env.RentStructure())
+	dustCosts := transaction.NewDepositEstimate()
 	commonAssets := v.ch.L2CommonAccountAssets()
 	require.True(t, commonAssets.Iotas+dustCosts.AnchorOutput > 10_000)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))

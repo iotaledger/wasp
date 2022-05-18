@@ -36,7 +36,7 @@ func TestDeployChain(t *testing.T) {
 	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
-	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
 	chEnv.checkCoreContracts()
 	chEnv.checkRootsOutside()

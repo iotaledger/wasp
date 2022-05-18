@@ -68,7 +68,7 @@ var infoCmd = &cobra.Command{
 			log.Check(err)
 			log.Printf("#Contracts: %d\n", len(contracts))
 
-			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String(config.L1NetworkPrefix()))
+			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String())
 
 			if govInfo.GasFeePolicy != nil {
 				gasFeeToken := "iota"

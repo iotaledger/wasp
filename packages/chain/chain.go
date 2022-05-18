@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -40,7 +39,6 @@ type ChainCore interface {
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
 	EnqueueAliasOutput(*iscp.AliasOutputWithID)
-	L1Params() *parameters.L1
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -107,7 +105,7 @@ type NodeConnection interface {
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 
-	L1Params() *parameters.L1
+	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
 }
@@ -121,7 +119,6 @@ type ChainNodeConnection interface {
 	DetachFromTxInclusionState()
 	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
 	DetachFromMilestones()
-	L1Params() *parameters.L1
 	Close()
 
 	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error

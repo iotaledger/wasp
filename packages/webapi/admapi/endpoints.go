@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wal"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -48,7 +47,7 @@ func AddEndpoints(
 		echoGroup.Use(protected(adminWhitelist))
 	}
 
-	networkPrefix := nodeconn.NodeConnection().L1Params().Protocol.Bech32HRP
+	networkPrefix := parameters.L1.Protocol.Bech32HRP
 
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)

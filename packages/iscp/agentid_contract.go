@@ -67,7 +67,7 @@ func (a *ContractAgentID) Bytes() []byte {
 	return mu.Bytes()
 }
 
-func (a *ContractAgentID) String(networkPrefix iotago.NetworkPrefix) string {
+func (a *ContractAgentID) String() string {
 	return a.h.String() + "@" + a.chainID.String()
 }
 

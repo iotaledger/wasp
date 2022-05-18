@@ -42,7 +42,6 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		assets,
 		nil,
 		iscp.SendOptions{},
-		parameters.L1ForTesting().RentStructure(),
 	)
 	if len(addIotasToDustMinimum) > 0 {
 		out.Amount += addIotasToDustMinimum[0]
@@ -75,7 +74,6 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			Options:                    iscp.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
 		},
-		parameters.L1ForTesting().RentStructure(),
 	)
 	txb.AddOutput(exout)
 	_, _, err := txb.Totals()
@@ -118,8 +116,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		totals, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -145,8 +142,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		txb.addDeltaIotasToTotal(42)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalIotasInL2Accounts))
@@ -156,8 +152,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
 			anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -183,8 +178,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -261,8 +255,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -299,8 +292,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -630,7 +622,7 @@ func TestDustDeposit(t *testing.T) {
 		GasBudget:      0,
 	}
 	t.Run("calc dust assumptions", func(t *testing.T) {
-		d := transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure())
+		d := transaction.NewDepositEstimate()
 		t.Logf("dust deposit assumptions:\n%s", d.String())
 
 		d1, err := transaction.DustDepositAssumptionFromBytes(d.Bytes())
@@ -646,9 +638,8 @@ func TestDustDeposit(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			parameters.L1ForTesting().RentStructure(),
 		)
-		expected := parameters.L1ForTesting().RentStructure().VByteCost * out.VBytes(parameters.L1ForTesting().RentStructure(), nil)
+		expected := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
@@ -659,9 +650,8 @@ func TestDustDeposit(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			parameters.L1ForTesting().RentStructure(),
 		)
-		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(parameters.L1ForTesting().RentStructure(), nil))
+		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(&parameters.L1.Protocol.RentStructure, nil))
 	})
 }
 
@@ -701,8 +691,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(parameters.L1ForTesting().RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
@@ -767,7 +756,6 @@ func TestSerDe(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			parameters.L1ForTesting().RentStructure(),
 		)
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

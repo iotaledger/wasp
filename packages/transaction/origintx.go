@@ -21,7 +21,6 @@ func NewChainOriginTransaction(
 	deposit uint64,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	l1Params *parameters.L1,
 ) (*iotago.Transaction, *iscp.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
@@ -43,7 +42,7 @@ func NewChainOriginTransaction(
 		},
 	}
 	{
-		aliasDustDeposit := NewDepositEstimate(l1Params.RentStructure()).AnchorOutput
+		aliasDustDeposit := NewDepositEstimate().AnchorOutput
 		if aliasOutput.Amount < aliasDustDeposit {
 			aliasOutput.Amount = aliasDustDeposit
 		}
@@ -55,7 +54,6 @@ func NewChainOriginTransaction(
 		nil,
 		unspentOutputs,
 		unspentOutputIDs,
-		l1Params.RentStructure(),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -65,7 +63,7 @@ func NewChainOriginTransaction(
 		outputs = append(outputs, remainderOutput)
 	}
 	essence := &iotago.TransactionEssence{
-		NetworkID: l1Params.Protocol.NetworkID(),
+		NetworkID: parameters.L1.Protocol.NetworkID(),
 		Inputs:    txInputs.UTXOInputs(),
 		Outputs:   outputs,
 	}
@@ -99,11 +97,10 @@ func NewRootInitRequestTransaction(
 	description string,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	l1Params *parameters.L1,
 	initParams ...dict.Dict,
 ) (*iotago.Transaction, error) {
 	params := dict.Dict{
-		root.ParamDustDepositAssumptionsBin: NewDepositEstimate(l1Params.RentStructure()).Bytes(),
+		root.ParamDustDepositAssumptionsBin: NewDepositEstimate().Bytes(),
 		governance.ParamDescription:         codec.EncodeString(description),
 	}
 	for _, p := range initParams {
@@ -123,7 +120,6 @@ func NewRootInitRequestTransaction(
 				Params:         params,
 			},
 		},
-		L1: l1Params,
 	})
 	if err != nil {
 		return nil, err

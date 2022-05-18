@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
@@ -45,7 +44,6 @@ func TestCreateOrigin(t *testing.T) {
 			1000,
 			allOutputs,
 			ids,
-			parameters.L1ForTesting(),
 		)
 		require.NoError(t, err)
 
@@ -71,7 +69,6 @@ func TestCreateOrigin(t *testing.T) {
 			"test chain",
 			allOutputs,
 			ids,
-			parameters.L1ForTesting(),
 		)
 		require.NoError(t, err)
 

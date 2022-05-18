@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -24,7 +25,7 @@ const (
 type AgentID interface {
 	Kind() AgentIDKind
 
-	String(networkPrefix iotago.NetworkPrefix) string
+	String() string
 	Bytes() []byte
 	Equals(other AgentID) bool
 }
@@ -100,7 +101,7 @@ func AgentIDFromBytes(data []byte) (AgentID, error) {
 }
 
 // NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (AgentID, error) {
+func NewAgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}
@@ -119,13 +120,13 @@ func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (AgentID
 	}
 
 	if hnamePart != "" {
-		return contractAgentIDFromString(hnamePart, addrPart, networkPrefix)
+		return contractAgentIDFromString(hnamePart, addrPart, parameters.L1.Protocol.Bech32HRP)
 	}
-	if strings.HasPrefix(addrPart, string(networkPrefix)) {
-		return addressAgentIDFromString(s, networkPrefix)
+	if strings.HasPrefix(addrPart, string(parameters.L1.Protocol.Bech32HRP)) {
+		return addressAgentIDFromString(s, parameters.L1.Protocol.Bech32HRP)
 	}
 	if strings.HasPrefix(addrPart, "0x") {
-		return ethAgentIDFromString(s, networkPrefix)
+		return ethAgentIDFromString(s, parameters.L1.Protocol.Bech32HRP)
 	}
 	return nil, xerrors.New("NewAgentIDFromString: wrong format")
 }

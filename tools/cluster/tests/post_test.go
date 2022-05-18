@@ -114,14 +114,14 @@ func (e *ChainEnv) waitUntilCounterEquals(hname iscp.Hname, expected int64, dura
 func TestPostDeployInccounter(t *testing.T) {
 	e := SetupWithChain(t)
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 }
 
 func TestPost1Request(t *testing.T) {
 	e := SetupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestPost3Recursive(t *testing.T) {
 	e := SetupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestPost5Requests(t *testing.T) {
 	e := SetupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -197,7 +197,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	e := SetupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/metrics"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/wal"
@@ -135,6 +134,5 @@ func initWebAPI() {
 		gracefulshutdown.Shutdown,
 		allMetrics,
 		wal.GetWAL(),
-		nodeconn.NodeConnection().L1Params(),
 	)
 }

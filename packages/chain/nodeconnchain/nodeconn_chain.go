@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -66,10 +65,6 @@ func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log 
 	}
 	result.log.Debugf("chain nodeconnection created")
 	return &result, nil
-}
-
-func (nccT *nodeconnChain) L1Params() *parameters.L1 {
-	return nccT.nc.L1Params()
 }
 
 func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output iotago.Output) {

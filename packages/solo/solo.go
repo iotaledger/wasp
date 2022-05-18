@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/trie"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -21,8 +19,8 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
@@ -118,7 +116,6 @@ type InitOptions struct {
 	Debug                 bool
 	PrintStackTrace       bool
 	Seed                  cryptolib.Seed
-	L1Params              *parameters.L1
 	Log                   *logger.Logger
 }
 
@@ -127,7 +124,6 @@ func defaultInitOptions() *InitOptions {
 		Debug:                 false,
 		PrintStackTrace:       false,
 		Seed:                  cryptolib.Seed{},
-		L1Params:              parameters.L1ForTesting(),
 		AutoAdjustDustDeposit: false, // is OFF by default
 	}
 }
@@ -149,11 +145,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
 		}
 	}
-	if opt.L1Params == nil {
-		opt.L1Params = parameters.L1ForTesting()
-	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithL1Params(opt.L1Params)
+	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:])
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
@@ -178,10 +171,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}))
 
 	return ret
-}
-
-func (env *Solo) L1Params() *parameters.L1 {
-	return env.utxoDB.L1Params()
 }
 
 func (env *Solo) SyncLog() {
@@ -238,7 +227,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		initIotas, // will be adjusted to min dust deposit
 		outs,
 		outIDs,
-		env.utxoDB.L1Params(),
 	)
 	require.NoError(env.T, err)
 
@@ -292,7 +280,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		"'solo' testing chain",
 		outs,
 		ids,
-		env.utxoDB.L1Params(),
 		initParams...,
 	)
 	require.NoError(env.T, err)
@@ -555,10 +542,6 @@ func (env *Solo) L1Ledger() *utxodb.UtxoDB {
 	return env.utxoDB
 }
 
-func (env *Solo) RentStructure() *iotago.RentStructure {
-	return env.utxoDB.RentStructure()
-}
-
 type NFTMintedInfo struct {
 	Output   iotago.Output
 	OutputID iotago.OutputID
@@ -575,7 +558,6 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		Target:            target,
 		UnspentOutputs:    allOuts,
 		UnspentOutputIDs:  allOutIDs,
-		L1Params:          env.L1Params(),
 		ImmutableMetadata: immutableMetadata,
 	})
 	if err != nil {

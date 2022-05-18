@@ -3,6 +3,7 @@ package transaction
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // BasicOutputFromPostData creates extended output object from parameters.
@@ -11,7 +12,6 @@ func BasicOutputFromPostData(
 	senderAddress iotago.Address,
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,
-	rentStructure *iotago.RentStructure,
 ) *iotago.BasicOutput {
 	metadata := par.Metadata
 	if metadata == nil {
@@ -32,7 +32,6 @@ func BasicOutputFromPostData(
 			GasBudget:      metadata.GasBudget,
 		},
 		par.Options,
-		rentStructure,
 		!par.AdjustToMinimumDustDeposit,
 	)
 	return ret
@@ -47,7 +46,6 @@ func MakeBasicOutput(
 	assets *iscp.FungibleTokens,
 	metadata *iscp.RequestMetadata,
 	options iscp.SendOptions,
-	rentStructure *iotago.RentStructure,
 	disableAutoAdjustDustDeposit ...bool,
 ) *iotago.BasicOutput {
 	if assets == nil {
@@ -95,7 +93,7 @@ func MakeBasicOutput(
 		return out
 	}
 
-	requiredDustDeposit := rentStructure.VByteCost * out.VBytes(rentStructure, nil)
+	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	if out.Deposit() < requiredDustDeposit {
 		// adjust the amount to the minimum required
 		out.Amount = requiredDustDeposit
@@ -108,16 +106,15 @@ func NFTOutputFromPostData(
 	senderAddress iotago.Address,
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,
-	rentStructure *iotago.RentStructure,
 	nft *iscp.NFT,
 ) *iotago.NFTOutput {
-	basicOutput := BasicOutputFromPostData(senderAddress, senderContract, par, rentStructure)
+	basicOutput := BasicOutputFromPostData(senderAddress, senderContract, par)
 	out := NftOutputFromBasicOutput(basicOutput, nft)
 
 	if !par.AdjustToMinimumDustDeposit {
 		return out
 	}
-	requiredDustDeposit := rentStructure.VByteCost * out.VBytes(rentStructure, nil)
+	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	if out.Deposit() < requiredDustDeposit {
 		// adjust the amount to the minimum required
 		out.Amount = requiredDustDeposit
