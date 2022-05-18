@@ -137,7 +137,7 @@ func TestPost1Request(t *testing.T) {
 	e.expectCounter(contractID.Hname(), 43)
 }
 
-func TestPost53Recursive(t *testing.T) {
+func TestPost3Recursive(t *testing.T) {
 	e := SetupWithChain(t)
 
 	contractID := e.deployInccounter42(42)
@@ -149,8 +149,8 @@ func TestPost53Recursive(t *testing.T) {
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer:  iscp.NewTokensIotas(10000),
-		Allowance: iscp.NewAllowanceIotas(9000),
+		Transfer:  iscp.NewTokensIotas(10 * iscp.Mi),
+		Allowance: iscp.NewAllowanceIotas(9 * iscp.Mi),
 		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
@@ -177,7 +177,7 @@ func TestPost5Requests(t *testing.T) {
 	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
 	onChainBalance := uint64(0)
 	for i := 0; i < 5; i++ {
-		iotasSent := uint64(1000)
+		iotasSent := 1 * iscp.Mi
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
 			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
 		})
@@ -207,7 +207,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	tx := [5]*iotago.Transaction{}
 	onChainBalance := uint64(0)
-	iotasSent := uint64(1000)
+	iotasSent := 1 * iscp.Mi
 	for i := 0; i < 5; i++ {
 		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
 			Transfer: iscp.NewFungibleTokens(iotasSent, nil),

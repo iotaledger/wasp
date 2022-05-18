@@ -93,7 +93,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	transferIotas := uint64(42000)
+	transferIotas := 1 * iscp.Mi
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
@@ -181,7 +181,7 @@ func TestBasic2Accounts(t *testing.T) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	transferIotas := uint64(42_000)
+	transferIotas := 1 * iscp.Mi
 	myWalletClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
@@ -207,9 +207,10 @@ func TestBasic2Accounts(t *testing.T) {
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.Clu.L1Client().L1Params().Protocol.Bech32HRP))
 	origL1Balance := e.Clu.AddressBalances(originatorAddress).Iotas
 	originatorClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	allowanceIotas := uint64(800_000)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
-			Allowance: iscp.NewAllowanceIotas(500),
+			Allowance: iscp.NewAllowanceIotas(allowanceIotas),
 		},
 	)
 	require.NoError(t, err)
@@ -221,5 +222,5 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv.printAccounts("withdraw after")
 
-	require.Equal(t, e.Clu.AddressBalances(originatorAddress).Iotas, origL1Balance+500)
+	require.Equal(t, e.Clu.AddressBalances(originatorAddress).Iotas, origL1Balance+allowanceIotas)
 }
