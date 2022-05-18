@@ -60,7 +60,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.String().Value() == "this is a string", "mismatch: String")
 	}
 	if f.Params.TokenID().Exists() {
-		tokenID := wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890\x00\x00"))
+		tokenID := wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890AB"))
 		ctx.Require(f.Params.TokenID().Value() == tokenID, "mismatch: TokenID")
 	}
 	if f.Params.Uint8().Exists() {

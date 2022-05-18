@@ -277,11 +277,12 @@ pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
 pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
     let mut iotas = ctx.allowance().iotas();
     let address = ctx.caller().address();
-    let transfer = wasmlib::ScTransfer::iotas(1000000);
-    while iotas >= 1000000 {
+    let iotas_to_transfer : u64 = 1_000_000;
+    let transfer = wasmlib::ScTransfer::iotas(iotas_to_transfer);
+    while iotas >= iotas_to_transfer {
         ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
         ctx.send(&address, &transfer);
-        iotas -= 1000000;
+        iotas -= iotas_to_transfer;
     }
 }
 

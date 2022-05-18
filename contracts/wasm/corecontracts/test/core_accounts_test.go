@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const dustAllowance = 1 * iscp.Mi
+
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
 	ctx = ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
@@ -29,7 +31,7 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	depositAmount := 1 * iscp.Mi
+	const depositAmount = 1 * iscp.Mi
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
@@ -106,16 +108,15 @@ func TestHarvest(t *testing.T) {
 
 func TestFoundryCreateNew(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	f := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	f.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	f.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -134,16 +135,15 @@ func TestFoundryCreateNew(t *testing.T) {
 
 func TestFoundryDestroy(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -157,16 +157,15 @@ func TestFoundryDestroy(t *testing.T) {
 
 func TestFoundryModifySupply(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -324,16 +323,15 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 
 func TestFoundryOutput(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -353,6 +351,12 @@ func TestFoundryOutput(t *testing.T) {
 	assert.Equal(t, soloFoundry, outFoundry)
 }
 
-func TestAccountNFTs(t *testing.T) {}
+func TestAccountNFTs(t *testing.T) {
+	// TODO
+	t.SkipNow()
+}
 
-func TestNFTData(t *testing.T) {}
+func TestNFTData(t *testing.T) {
+	// TODO
+	t.SkipNow()
+}

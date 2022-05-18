@@ -79,13 +79,13 @@ func TestDivide1Member(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	toDivide := 1*iscp.Mi + 1
-	dividendDivide(ctx, toDivide)
+	const dividendToDivide = 1*iscp.Mi + 1
+	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
 	bal.Originator -= ctx.GasFee
-	bal.Add(member1, toDivide)
+	bal.Add(member1, dividendToDivide)
 	bal.VerifyBalances(t)
 }
 
@@ -112,15 +112,15 @@ func TestDivide2Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	toDivide := 5*iscp.Mi + 1
-	dividendDivide(ctx, toDivide)
+	const dividendToDivide = 2*iscp.Mi - 1
+	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := toDivide - toDivide*250/1000 - toDivide*750/1000
+	remain := dividendToDivide - dividendToDivide*250/1000 - dividendToDivide*750/1000
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, toDivide*250/1000)
-	bal.Add(member2, toDivide*750/1000)
+	bal.Add(member1, dividendToDivide*250/1000)
+	bal.Add(member2, dividendToDivide*750/1000)
 	bal.VerifyBalances(t)
 }
 
@@ -157,28 +157,28 @@ func TestDivide3Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	toDivide := 1*iscp.Mi + 1
-	dividendDivide(ctx, toDivide)
+	const dividendToDivide = 2*iscp.Mi - 1
+	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := toDivide - toDivide*250/1500 - toDivide*500/1500 - toDivide*750/1500
+	remain := dividendToDivide - dividendToDivide*250/1500 - dividendToDivide*500/1500 - dividendToDivide*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, toDivide*250/1500)
-	bal.Add(member2, toDivide*500/1500)
-	bal.Add(member3, toDivide*750/1500)
+	bal.Add(member1, dividendToDivide*250/1500)
+	bal.Add(member2, dividendToDivide*500/1500)
+	bal.Add(member3, dividendToDivide*750/1500)
 	bal.VerifyBalances(t)
 
-	toDivide2 := 2*iscp.Mi + 1
-	dividendDivide(ctx, toDivide2)
+	const dividendToDivide2 = 2*iscp.Mi + 234
+	dividendDivide(ctx, dividendToDivide2)
 	require.NoError(t, ctx.Err)
 
-	remain = toDivide2 - toDivide2*250/1500 - toDivide2*500/1500 - toDivide2*750/1500
+	remain = dividendToDivide2 - dividendToDivide2*250/1500 - dividendToDivide2*500/1500 - dividendToDivide2*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, toDivide2*250/1500)
-	bal.Add(member2, toDivide2*500/1500)
-	bal.Add(member3, toDivide2*750/1500)
+	bal.Add(member1, dividendToDivide2*250/1500)
+	bal.Add(member2, dividendToDivide2*500/1500)
+	bal.Add(member3, dividendToDivide2*750/1500)
 	bal.VerifyBalances(t)
 }
 

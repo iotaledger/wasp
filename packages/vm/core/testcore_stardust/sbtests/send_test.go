@@ -74,7 +74,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	beforeWallet := ch.L1L2Funds(walletAddr)
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
-	// this will FAIL because it will result in  5 outputs in the single call
+	// this will FAIL because it will result in 5 outputs in the single call
 	const allowance = 5 * iscp.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAllowanceIotas(allowance).

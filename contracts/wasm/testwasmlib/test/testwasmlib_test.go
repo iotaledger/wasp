@@ -120,7 +120,7 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.NftID().SetValue(wasmtypes.NftIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456")))
 	pt.Params.RequestID().SetValue(wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
 	pt.Params.String().SetValue("this is a string")
-	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890\x00\x00")))
+	pt.Params.TokenID().SetValue(wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890AB")))
 	pt.Params.Uint8().SetValue(123)
 	pt.Params.Uint16().SetValue(12345)
 	pt.Params.Uint32().SetValue(1234567890)
@@ -221,7 +221,7 @@ func TestTakeAllowance(t *testing.T) {
 	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	iotasToSend := 1 * iscp.Mi
+	const iotasToSend = 1 * iscp.Mi
 	f.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
@@ -256,7 +256,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	iotasToSend := 1 * iscp.Mi
+	const iotasToSend = 1 * iscp.Mi
 	f.Func.TransferIotas(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()

@@ -36,7 +36,6 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
 func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
-	//nolint:gosimple
 	return Map$FldMapKey$+To$mut$FldType{proxy: s.proxy}
 }
 `,

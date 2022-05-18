@@ -45,7 +45,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 	senderAgentID := iscp.NewAgentID(senderAddr)
 	ch := env.NewChain(nil, "chain1")
 
-	iotasSent := uint64(1 * iscp.Mi)
+	const iotasSent = 1 * iscp.Mi
 
 	// send a request where allowance == assets - so that no iotas are available outside allowance
 	_, err := ch.PostRequestSync(
@@ -765,7 +765,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 
 func TestTransferAndHarvest(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, 10_1000)
+	v := initWithdrawTest(t, 10_000)
 	dustCosts := transaction.NewDepositEstimate(v.env.RentStructure())
 	commonAssets := v.ch.L2CommonAccountAssets()
 	require.True(t, commonAssets.Iotas+dustCosts.AnchorOutput > 10_000)
@@ -852,7 +852,7 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2Iotas(user2AgentID, 0)
-	iotasToSend := 3 * iscp.Mi
+	const iotasToSend = 3 * iscp.Mi
 	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, iotasToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
@@ -1002,7 +1002,7 @@ func TestNFTAccount(t *testing.T) {
 	nftAddress := nftInfo.NFTID.ToAddress()
 
 	// deposit funds on behalf of the NFT
-	iotasToSend := uint64(10 * iscp.Mi)
+	const iotasToSend = 10 * iscp.Mi
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddFungibleTokens(iscp.NewTokensIotas(iotasToSend)).
 		WithMaxAffordableGasBudget().
@@ -1022,7 +1022,7 @@ func TestNFTAccount(t *testing.T) {
 	require.True(t, ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID))
 
 	// withdraw to the NFT on L1
-	iotasToWithdrawal := uint64(1 * iscp.Mi)
+	const iotasToWithdrawal = 1 * iscp.Mi
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		AddAllowanceIotas(iotasToWithdrawal).
 		WithMaxAffordableGasBudget()

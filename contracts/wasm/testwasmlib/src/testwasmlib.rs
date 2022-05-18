@@ -53,7 +53,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
     }
     if f.params.token_id().exists() {
-        let token_id = token_id_from_bytes("abcdefghijklmnopqrstuvwxyz1234567890\x00\x00".as_bytes());
+        let token_id = token_id_from_bytes("abcdefghijklmnopqrstuvwxyz1234567890AB".as_bytes());
         ctx.require(f.params.token_id().value() == token_id, "mismatch: TokenID");
     }
     if f.params.uint8().exists() {

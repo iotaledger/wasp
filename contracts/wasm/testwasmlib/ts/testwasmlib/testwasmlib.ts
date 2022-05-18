@@ -54,7 +54,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
     }
     if ((f.params.tokenID().exists())) {
-        const color = wasmlib.tokenIDFromBytes(wasmtypes.stringToBytes("abcdefghijklmnopqrstuvwxyz1234567890\x00\x00"));
+        const color = wasmlib.tokenIDFromBytes(wasmtypes.stringToBytes("abcdefghijklmnopqrstuvwxyz1234567890AB"));
         ctx.require(f.params.tokenID().value().equals(color), "mismatch: TokenID");
     }
     if ((f.params.uint8().exists())) {
