@@ -425,7 +425,8 @@ func (r *OnLedgerRequestData) SenderAccount() AgentID {
 	if r.SenderAddress() == nil || r.requestMetadata == nil {
 		return nil
 	}
-	return NewAgentIDFromAddressAndHname(r.SenderAddress(), r.requestMetadata.SenderContract)
+	chainID := ChainIDFromAddress(r.SenderAddress().(*iotago.AliasAddress))
+	return NewContractAgentID(&chainID, r.requestMetadata.SenderContract)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {

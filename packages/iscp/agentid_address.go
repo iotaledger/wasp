@@ -23,7 +23,7 @@ func addressAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error)
 	return NewAgentID(addr), nil
 }
 
-func addressAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (AgentID, error) {
+func addressAgentIDFromString(s string) (AgentID, error) {
 	_, addr, err := iotago.ParseBech32(s)
 	if err != nil {
 		return nil, err
