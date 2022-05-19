@@ -422,11 +422,11 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OnLedgerRequestData) SenderAccount() AgentID {
-	if r.SenderAddress() == nil || r.requestMetadata == nil {
+	sender := r.SenderAddress()
+	if sender == nil || r.requestMetadata == nil {
 		return nil
 	}
-	chainID := ChainIDFromAddress(r.SenderAddress().(*iotago.AliasAddress))
-	return NewContractAgentID(&chainID, r.requestMetadata.SenderContract)
+	return NewAgentID(sender)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
