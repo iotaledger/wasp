@@ -62,6 +62,7 @@ const (
 )
 
 const (
+	// TODO shouldn't this be different between chain, to prevent replay attacks? (maybe derived from ISC ChainID)
 	DefaultChainID = 1074 // IOTA -- get it?
 
 	BlockGasLimitDefault = uint64(15000000)

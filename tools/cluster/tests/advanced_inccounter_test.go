@@ -323,7 +323,7 @@ func TestRotation(t *testing.T) {
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	reqid := iscp.NewRequestID(*txID, 0)
+	reqid := iscp.NewRequestID(txID, 0)
 
 	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
@@ -347,7 +347,7 @@ func TestRotation(t *testing.T) {
 
 	txID, err = tx.ID()
 	require.NoError(t, err)
-	reqid = iscp.NewRequestID(*txID, 0)
+	reqid = iscp.NewRequestID(txID, 0)
 	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
 
@@ -402,7 +402,7 @@ func TestRotationMany(t *testing.T) {
 		require.NoError(t, err)
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		reqid := iscp.NewRequestID(*txID, 0)
+		reqid := iscp.NewRequestID(txID, 0)
 		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 5, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
@@ -446,7 +446,7 @@ func TestRotationMany(t *testing.T) {
 		require.NoError(t, err)
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		reqid := iscp.NewRequestID(*txID, 0)
+		reqid := iscp.NewRequestID(txID, 0)
 		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 4, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))

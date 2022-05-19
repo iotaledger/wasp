@@ -22,8 +22,10 @@ var configFileContentTemplate = `
 			"/api/plugins/*"
 		],
 		"protectedRoutes": [],
-		"powEnabled": true,
-		"powWorkerCount": 1,
+		"pow":{
+			"enabled": true,
+			"workerCount": 1
+		},
 		"limits": {
 			"bodyLength": "1M",
 			"maxResults": 1000

@@ -22,9 +22,9 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: par.Target},
 		},
-		ImmutableBlocks: iotago.FeatureBlocks{
-			&iotago.IssuerFeatureBlock{Address: issuerAddress},
-			&iotago.MetadataFeatureBlock{Data: par.ImmutableMetadata},
+		ImmutableFeatures: iotago.Features{
+			&iotago.IssuerFeature{Address: issuerAddress},
+			&iotago.MetadataFeature{Data: par.ImmutableMetadata},
 		},
 	}
 	requiredDust := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)

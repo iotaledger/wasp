@@ -118,7 +118,7 @@ func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago
 }
 
 func (nccT *nodeconnChain) txInclusionStateHandler(txID iotago.TransactionID, state string) {
-	txIDStr := iscp.TxID(&txID)
+	txIDStr := iscp.TxID(txID)
 	nccT.log.Debugf("handling inclusion state of tx ID %v: %v", txIDStr, state)
 	nccT.txInclusionStateCh <- &txInclusionStateMsg{
 		txID:  txID,

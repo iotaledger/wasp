@@ -8,8 +8,10 @@ import (
 	"bufio"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,11 +29,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (b49384a)
-// https://github.com/gohornet/inx-mqtt (f40e16a)
-// https://github.com/gohornet/inx-indexer (1fd5def)
-// https://github.com/gohornet/inx-coordinator (9aa5a6c)
-// https://github.com/gohornet/inx-faucet (944e565) (requires `git submodule update --init --recursive` before building )
+// https://github.com/gohornet/hornet (33dca81)
+// https://github.com/gohornet/inx-mqtt (bba54ea)
+// https://github.com/gohornet/inx-indexer (0ad8ea9)
+// https://github.com/gohornet/inx-coordinator (64d4ab1)
+// https://github.com/gohornet/inx-faucet (abb1f8d) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -86,7 +88,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	pt.waitAllReady()
 	pt.logf("Starting... all nodes are up and running, starting coordinator.")
 	pt.startCoordinator(0)
-	pt.startFaucet(0)
 	pt.waitAllHealthy()
 	pt.logf("Starting... coordinator started, all nodes are healthy.")
 
@@ -97,7 +98,8 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		pt.startIndexer(i)
 		pt.startMqtt(i)
 	}
-	pt.WaitInxPlugins()
+	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
+	pt.waitInxPlugins()
 
 	return &pt
 }
@@ -338,7 +340,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 	}
 }
 
-func (pt *PrivTangle) WaitInxPlugins() {
+func (pt *PrivTangle) waitInxPlugins() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
@@ -354,6 +356,12 @@ func (pt *PrivTangle) WaitInxPlugins() {
 				allOK = false
 				continue
 			}
+			// faucet
+			err = pt.queryFaucetInfo()
+			if err != nil {
+				allOK = false
+				continue
+			}
 		}
 		if allOK {
 			return
@@ -361,6 +369,34 @@ func (pt *PrivTangle) WaitInxPlugins() {
 		pt.logf("Waiting to all nodes INX plugings to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+type FaucetInfoResponse struct {
+	Balance uint64 `json:"balance"`
+}
+
+func (pt *PrivTangle) queryFaucetInfo() error {
+	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
+	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
+	if err != nil {
+		return xerrors.Errorf("unable to create request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
+	}
+	resBody, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
+	}
+	var parsedResp FaucetInfoResponse
+	json.Unmarshal(resBody, &parsedResp)
+	if parsedResp.Balance == 0 {
+		return fmt.Errorf("faucet has 0 balance")
+	}
+	return nil
 }
 
 func (pt *PrivTangle) NodeMultiAddr(i int) string {
@@ -440,10 +476,9 @@ func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 		nodeIndex = i[0]
 	}
 	return nodeconn.L1Config{
-		Hostname:   "localhost",
-		APIPort:    pt.NodePortRestAPI(nodeIndex),
-		FaucetPort: pt.NodePortFaucet(nodeIndex),
-		FaucetKey:  pt.FaucetKeyPair,
+		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
+		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),
+		FaucetKey:     pt.FaucetKeyPair,
 	}
 }
 

@@ -70,7 +70,7 @@ func (mncT *MockedNodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iot
 	if mncT.pullTxInclusionStateAllowedFun(chainID, txid) {
 		mncT.ledgers.GetLedger(chainID).PullTxInclusionState(mncT.id, txid)
 	} else {
-		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, iscp.TxID(&txid))
+		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, iscp.TxID(txid))
 	}
 }
 

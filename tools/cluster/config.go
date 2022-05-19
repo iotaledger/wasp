@@ -145,12 +145,8 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) L1Host(nodeIndex int) string {
-	return c.L1.Hostname
-}
-
-func (c *ClusterConfig) L1Port(nodeIndex int) int {
-	return c.L1.APIPort
+func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
+	return c.L1.APIAddress
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
@@ -168,8 +164,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Addr
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
-		L1Host:                       c.L1Host(i),
-		L1Port:                       c.L1Port(i),
+		L1APIAddress:                 c.L1APIAddress(i),
 		MetricsPort:                  c.PrometheusPort(i),
 		OwnerAddress:                 ownerAddress.Bech32(parameters.L1.Protocol.Bech32HRP),
 		OffledgerBroadcastUpToNPeers: 10,

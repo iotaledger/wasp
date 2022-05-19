@@ -77,11 +77,11 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 
 	txMsgID, err := txMsg.ID()
 	if err != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to extract a tx message ID: %w", iscp.TxID(txID), err)
+		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", iscp.TxID(txID), err)
 	}
 	//
 	// TODO: Move it to `nc_transaction.go`
-	msgMetaChanges, subInfo := ncc.nc.mqttClient.MessageMetadataChange(*txMsgID)
+	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
 	if subInfo.Error() != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", iscp.TxID(txID), subInfo.Error())
 	}
@@ -95,7 +95,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 				} else {
 					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", iscp.TxID(txID), str)
 				}
-				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
+				ncc.inclusionStates.Trigger(txID, *msgMetaChange.LedgerInclusionState)
 			}
 		}
 		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", iscp.TxID(txID))

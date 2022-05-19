@@ -116,7 +116,7 @@ func nextState(
 				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), hashing.HashData(block.EssenceBytes())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
-				Blocks:         consumedOutput.Blocks,
+				Features:       consumedOutput.Features,
 			},
 		},
 		Payload: nil,
@@ -146,13 +146,13 @@ func NextState(
 	)
 	require.NoError(t, err)
 	tx := &iotago.Transaction{
-		Essence:      txEssence,
-		UnlockBlocks: []iotago.UnlockBlock{&iotago.SignatureUnlockBlock{Signature: signatures[0]}},
+		Essence: txEssence,
+		Unlocks: []iotago.Unlock{&iotago.SignatureUnlock{Signature: signatures[0]}},
 	}
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(*txID, 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(txID, 0).UTXOInput()
 
 	return nextvs, tx, aliasOutputID
 }

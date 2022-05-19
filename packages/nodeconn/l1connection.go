@@ -19,10 +19,9 @@ import (
 )
 
 type L1Config struct {
-	Hostname   string
-	APIPort    int
-	FaucetPort int
-	FaucetKey  *cryptolib.KeyPair
+	APIAddress    string
+	FaucetAddress string
+	FaucetKey     *cryptolib.KeyPair
 }
 
 // nodeconn implements L1Client
@@ -118,7 +117,7 @@ func (nc *nodeConn) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durat
 	defer cancelContext()
 
 	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(parameters.L1.Protocol.Bech32HRP))
-	faucetURL := fmt.Sprintf("%s:%d/api/plugins/faucet/v1/enqueue", nc.config.Hostname, nc.config.APIPort)
+	faucetURL := fmt.Sprintf("%s/api/enqueue", nc.config.FaucetAddress)
 	httpReq, err := http.NewRequestWithContext(ctxWithTimeout, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
 	if err != nil {
 		return xerrors.Errorf("unable to create request: %w", err)
@@ -136,7 +135,7 @@ func (nc *nodeConn) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durat
 	if err != nil {
 		return xerrors.Errorf("faucet status=%v, unable to read response body: %w", res.Status, err)
 	}
-	return xerrors.Errorf("faucet call failed, responPrivateKeyse status=%v, body=%v", res.Status, resBody)
+	return xerrors.Errorf("faucet call failed, response status=%v, body=%v", res.Status, string(resBody))
 }
 
 // PostSimpleValueTX submits a simple value transfer TX.
