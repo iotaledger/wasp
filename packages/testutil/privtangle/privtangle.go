@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -86,7 +87,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	pt.waitAllReady()
 	pt.logf("Starting... all nodes are up and running, starting coordinator.")
 	pt.startCoordinator(0)
-	pt.startFaucet(0)
 	pt.waitAllHealthy()
 	pt.logf("Starting... coordinator started, all nodes are healthy.")
 
@@ -97,6 +97,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		pt.startIndexer(i)
 		pt.startMqtt(i)
 	}
+	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
 	pt.WaitInxPlugins()
 
 	return &pt
@@ -354,6 +355,12 @@ func (pt *PrivTangle) WaitInxPlugins() {
 				allOK = false
 				continue
 			}
+			// faucet
+			err = pt.queryFaucetInfo()
+			if err != nil {
+				allOK = false
+				continue
+			}
 		}
 		if allOK {
 			return
@@ -361,6 +368,25 @@ func (pt *PrivTangle) WaitInxPlugins() {
 		pt.logf("Waiting to all nodes INX plugings to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func (pt *PrivTangle) queryFaucetInfo() error {
+	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
+	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
+	if err != nil {
+		return xerrors.Errorf("unable to create request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
+	}
+	if res.StatusCode == 200 {
+		return nil
+	}
+	resBody, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
 }
 
 func (pt *PrivTangle) NodeMultiAddr(i int) string {

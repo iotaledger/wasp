@@ -43,6 +43,8 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 	w.Run("set", "l1.apiaddress", clu.Config.L1.APIAddress)
 	w.Run("set", "l1.faucetaddress", clu.Config.L1.FaucetAddress)
 
+	// time.Sleep(1 * time.Second) // TODO remove
+
 	w.Run("request-funds")
 	return w
 }
