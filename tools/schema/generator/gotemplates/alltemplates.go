@@ -18,6 +18,7 @@ var Templates = []map[string]string{
 	constsGo,
 	contractGo,
 	eventsGo,
+	eventhandlersGo,
 	funcsGo,
 	libGo,
 	mainGo,
@@ -33,18 +34,20 @@ var TypeDependent = model.StringMapMap{
 	"fldLangType": {
 		"Address":   "wasmtypes.ScAddress",
 		"AgentID":   "wasmtypes.ScAgentID",
+		"BigInt":    "wasmtypes.ScBigInt",
 		"Bool":      "bool",
 		"Bytes":     "[]byte",
 		"ChainID":   "wasmtypes.ScChainID",
-		"Color":     "wasmtypes.ScColor",
 		"Hash":      "wasmtypes.ScHash",
 		"Hname":     "wasmtypes.ScHname",
 		"Int8":      "int8",
 		"Int16":     "int16",
 		"Int32":     "int32",
 		"Int64":     "int64",
+		"NftID":     "wasmtypes.ScNftID",
 		"RequestID": "wasmtypes.ScRequestID",
 		"String":    "string",
+		"TokenID":   "wasmtypes.ScTokenID",
 		"Uint8":     "uint8",
 		"Uint16":    "uint16",
 		"Uint32":    "uint32",
@@ -70,5 +73,37 @@ package $package
 $#emit goPackage
 
 $#emit importWasmLib
+`,
+	// *******************************
+	"_eventComment": `
+$nextLine
+`,
+	// *******************************
+	"_eventParamComment": `
+	$nextLine
+`,
+	// *******************************
+	"_fldComment": `
+$nextLine
+`,
+	// *******************************
+	"_funcComment": `
+$nextLine
+`,
+	// *******************************
+	"_funcAccessComment": `
+	$nextLine
+`,
+	// *******************************
+	"_structComment": `
+$nextLine
+`,
+	// *******************************
+	"_structFieldComment": `
+	$nextLine
+`,
+	// *******************************
+	"_typedefComment": `
+$nextLine
 `,
 }

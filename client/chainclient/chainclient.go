@@ -1,49 +1,57 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/goshimmer"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	GoshimmerClient *goshimmer.Client
-	WaspClient      *client.WaspClient
-	ChainID         *iscp.ChainID
-	KeyPair         *ed25519.KeyPair
-	nonces          map[ed25519.PublicKey]uint64
+	Layer1Client nodeconn.L1Client
+	WaspClient   *client.WaspClient
+	ChainID      *iscp.ChainID
+	KeyPair      *cryptolib.KeyPair
+	nonces       map[string]uint64
 }
 
 // New creates a new chainclient.Client
 func New(
-	goshimmerClient *goshimmer.Client,
+	layer1Client nodeconn.L1Client,
 	waspClient *client.WaspClient,
 	chainID *iscp.ChainID,
-	keyPair *ed25519.KeyPair,
+	keyPair *cryptolib.KeyPair,
 ) *Client {
 	return &Client{
-		GoshimmerClient: goshimmerClient,
-		WaspClient:      waspClient,
-		ChainID:         chainID,
-		KeyPair:         keyPair,
-		nonces:          make(map[ed25519.PublicKey]uint64),
+		Layer1Client: layer1Client,
+		WaspClient:   waspClient,
+		ChainID:      chainID,
+		KeyPair:      keyPair,
+		nonces:       make(map[string]uint64),
 	}
 }
 
 type PostRequestParams struct {
-	Transfer colored.Balances
-	Args     requestargs.RequestArgs
-	Nonce    uint64
+	Transfer  *iscp.FungibleTokens
+	Args      dict.Dict
+	Nonce     uint64
+	NFT       *iscp.NFT
+	Allowance *iscp.Allowance
+	GasBudget *uint64
+}
+
+func defaultParams(params ...PostRequestParams) PostRequestParams {
+	if len(params) > 0 {
+		return params[0]
+	}
+	return PostRequestParams{}
 }
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
@@ -51,21 +59,51 @@ func (c *Client) Post1Request(
 	contractHname iscp.Hname,
 	entryPoint iscp.Hname,
 	params ...PostRequestParams,
-) (*ledgerstate.Transaction, error) {
-	par := PostRequestParams{}
-	if len(params) > 0 {
-		par = params[0]
+) (*iotago.Transaction, error) {
+	par := defaultParams(params...)
+	outputs, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
+	if err != nil {
+		return nil, err
 	}
-	return c.GoshimmerClient.PostRequestTransaction(transaction.NewRequestTransactionParams{
-		SenderKeyPair: c.KeyPair,
-		Requests: []transaction.RequestParams{{
-			ChainID:    c.ChainID,
-			Contract:   contractHname,
-			EntryPoint: entryPoint,
-			Transfer:   par.Transfer,
-			Args:       par.Args,
-		}},
-	})
+	outputIDs := make(iotago.OutputIDs, len(outputs))
+	i := 0
+	for id := range outputs {
+		outputIDs[i] = id
+		i++
+	}
+
+	var gasBudget uint64
+	if par.GasBudget == nil {
+		gasBudget = gas.MaxGasPerCall
+	} else {
+		gasBudget = *par.GasBudget
+	}
+	tx, err := transaction.NewRequestTransaction(
+		transaction.NewRequestTransactionParams{
+			SenderKeyPair:    c.KeyPair,
+			SenderAddress:    c.KeyPair.Address(),
+			UnspentOutputs:   outputs,
+			UnspentOutputIDs: outputIDs,
+			Request: &iscp.RequestParameters{
+				TargetAddress:              c.ChainID.AsAddress(),
+				FungibleTokens:             par.Transfer,
+				AdjustToMinimumDustDeposit: false,
+				Metadata: &iscp.SendMetadata{
+					TargetContract: contractHname,
+					EntryPoint:     entryPoint,
+					Params:         par.Args,
+					Allowance:      par.Allowance,
+					GasBudget:      gasBudget,
+				},
+			},
+			NFT: par.NFT,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = c.Layer1Client.PostTx((tx))
+	return tx, err
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
@@ -73,75 +111,55 @@ func (c *Client) PostOffLedgerRequest(
 	contractHname iscp.Hname,
 	entrypoint iscp.Hname,
 	params ...PostRequestParams,
-) (*request.OffLedger, error) {
-	par := PostRequestParams{}
-	if len(params) > 0 {
-		par = params[0]
-	}
+) (*iscp.OffLedgerRequestData, error) {
+	par := defaultParams(params...)
 	if par.Nonce == 0 {
-		c.nonces[c.KeyPair.PublicKey]++
-		par.Nonce = c.nonces[c.KeyPair.PublicKey]
+		c.nonces[c.KeyPair.Address().Key()]++
+		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 	}
-	offledgerReq := request.NewOffLedger(c.ChainID, contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	var gasBudget uint64
+	if par.GasBudget == nil {
+		gasBudget = gas.MaxGasPerCall
+	} else {
+		gasBudget = *par.GasBudget
+	}
+	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	offledgerReq.WithAllowance(par.Allowance)
+	if par.GasBudget != nil {
+		offledgerReq = offledgerReq.WithGasBudget(gasBudget)
+	}
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
 }
 
-func (c *Client) DepositFunds(n uint64) (*ledgerstate.Transaction, error) {
+func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(n),
+		Transfer: iscp.NewFungibleTokens(n, nil),
 	})
 }
 
 // NewPostRequestParams simplifies encoding of request parameters
 func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	return &PostRequestParams{
-		Args: requestargs.New(nil).AddEncodeSimpleMany(parseParams(p)),
+		Args:     parseParams(p),
+		Transfer: iscp.NewFungibleTokens(0, nil),
 	}
 }
 
-func (par *PostRequestParams) WithTransfer(transfer colored.Balances) *PostRequestParams {
+func (par *PostRequestParams) WithTransfer(transfer *iscp.FungibleTokens) *PostRequestParams {
 	par.Transfer = transfer
 	return par
 }
 
-func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRequestParams {
-	if len(colval) == 0 {
-		return par
-	}
-	if len(colval)%2 != 0 {
-		panic("WithTransferEncode: len(params) % 2 != 0")
-	}
-	par.Transfer = colored.NewBalances()
-	for i := 0; i < len(colval)/2; i++ {
-		key, ok := colval[2*i].(colored.Color)
-		if !ok {
-			panic("toMap: color.Color expected")
-		}
-		par.Transfer.Set(key, encodeIntToUint64(colval[2*i+1]))
-	}
+func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
+	par.Transfer.AddIotas(i)
 	return par
 }
 
-func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
-	return par.WithTransferEncoded(colored.IOTA, i)
-}
-
-func encodeIntToUint64(i interface{}) uint64 {
-	switch i := i.(type) {
-	case int:
-	case byte:
-	case int8:
-	case int16:
-	case uint16:
-	case int32:
-	case uint32:
-	case int64:
-	case uint64:
-		return i
-	}
-	panic("integer type expected")
+func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
+	par.GasBudget = &budget
+	return par
 }
 
 func parseParams(params []interface{}) dict.Dict {

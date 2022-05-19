@@ -33,6 +33,10 @@ pub fn uint8_to_bytes(value: u8) -> Vec<u8> {
     [value].to_vec()
 }
 
+pub fn uint8_from_string(value: &str) -> u8 {
+    value.parse::<u8>().unwrap()
+}
+
 pub fn uint8_to_string(value: u8) -> String {
     value.to_string()
 }

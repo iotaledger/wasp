@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
+func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *iscp.AliasOutputWithID, stateTimestamp time.Time) {
 	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
 		State:          virtualState,
 		StateOutput:    stateOutput,
@@ -52,16 +53,16 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 	c.takeAction()
 }
 
-func (c *consensus) EnqueueInclusionsStateMsg(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
+func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclusionState string) {
+	c.eventInclusionStateMsgPipe.In() <- &messages.TxInclusionStateMsg{
 		TxID:  txID,
 		State: inclusionState,
 	}
 }
 
-func (c *consensus) handleInclusionState(msg *messages.InclusionStateMsg) {
-	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
-	c.processInclusionState(msg)
+func (c *consensus) handleTxInclusionState(msg *messages.TxInclusionStateMsg) {
+	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", iscp.TxID(&msg.TxID), msg.State)
+	c.processTxInclusionState(msg)
 
 	c.takeAction()
 }
@@ -86,10 +87,15 @@ func (c *consensus) handleVMResultMsg(msg *messages.VMResultMsg) {
 	if msg.Task.ResultTransactionEssence == nil {
 		essenceString = "essence is nil"
 	} else {
-		essenceString = fmt.Sprintf("essence hash: %s", hashing.HashData(msg.Task.ResultTransactionEssence.Bytes()))
+		signingMsg, err := msg.Task.ResultTransactionEssence.SigningMessage()
+		if err != nil {
+			essenceString = fmt.Sprintf("essence signing message not retrievable: %v", err)
+		} else {
+			essenceString = fmt.Sprintf("essence signing message hash: %s", hashing.HashData(signingMsg))
+		}
 	}
-	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
-		msg.Task.VirtualStateAccess.BlockIndex(), msg.Task.VirtualStateAccess.StateCommitment(), essenceString)
+	c.log.Debugf("VMResultMsg received: state index: %d state commitment: %s %s",
+		msg.Task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(msg.Task.VirtualStateAccess.TrieNodeStore()), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }
@@ -103,8 +109,8 @@ func (c *consensus) handleTimerMsg(msg messages.TimerTick) {
 	c.refreshConsensusInfo()
 	if msg%40 == 0 {
 		if snap := c.GetStatusSnapshot(); snap != nil {
-			c.log.Infof("timer tick #%d: state index: %d, mempool = (%d, %d, %d)",
-				snap.TimerTick, snap.StateIndex, snap.Mempool.InPoolCounter, snap.Mempool.OutPoolCounter, snap.Mempool.TotalPool)
+			c.log.Infof("timer tick #%d: state index: %d, mempool = (total: %d, ready: %d, in: %d, out: %d)",
+				snap.TimerTick, snap.StateIndex, snap.Mempool.TotalPool, snap.Mempool.ReadyCounter, snap.Mempool.InPoolCounter, snap.Mempool.OutPoolCounter)
 		}
 	}
 	c.takeAction()

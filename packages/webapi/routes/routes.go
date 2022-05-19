@@ -8,7 +8,7 @@ func Info() string {
 }
 
 func NewRequest(chainID string) string {
-	return "/request/" + chainID
+	return "chain/" + chainID + "/request"
 }
 
 func CallViewByName(chainID, contractHname, functionName string) string {
@@ -19,8 +19,8 @@ func CallViewByHname(chainID, contractHname, functionHname string) string {
 	return "chain/" + chainID + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
 }
 
-func RequestStatus(chainID, reqID string) string {
-	return "/chain/" + chainID + "/request/" + reqID + "/status"
+func RequestReceipt(chainID, reqID string) string {
+	return "/chain/" + chainID + "/request/" + reqID + "/receipt"
 }
 
 func WaitRequestProcessed(chainID, reqID string) string {

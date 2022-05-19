@@ -13,38 +13,43 @@ type ImmutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFinalizeAuctionParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+// token identifies the auction
+func (s ImmutableFinalizeAuctionParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableFinalizeAuctionParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+// token identifies the auction
+func (s MutableFinalizeAuctionParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePlaceBidParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+// token identifies the auction
+func (s ImmutablePlaceBidParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutablePlaceBidParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+// token identifies the auction
+func (s MutablePlaceBidParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutableSetOwnerMarginParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// new SC owner margin in promilles
 func (s ImmutableSetOwnerMarginParams) OwnerMargin() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamOwnerMargin))
 }
@@ -53,6 +58,7 @@ type MutableSetOwnerMarginParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// new SC owner margin in promilles
 func (s MutableSetOwnerMarginParams) OwnerMargin() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamOwnerMargin))
 }
@@ -61,54 +67,64 @@ type ImmutableStartAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStartAuctionParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
-}
-
+// description of the tokens being auctioned
 func (s ImmutableStartAuctionParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
 
+// duration of auction in minutes
 func (s ImmutableStartAuctionParams) Duration() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamDuration))
 }
 
+// minimum required amount for any bid
 func (s ImmutableStartAuctionParams) MinimumBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamMinimumBid))
+}
+
+// token of the tokens being auctioned
+func (s ImmutableStartAuctionParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableStartAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableStartAuctionParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
-}
-
+// description of the tokens being auctioned
 func (s MutableStartAuctionParams) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
 
+// duration of auction in minutes
 func (s MutableStartAuctionParams) Duration() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamDuration))
 }
 
+// minimum required amount for any bid
 func (s MutableStartAuctionParams) MinimumBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamMinimumBid))
+}
+
+// token of the tokens being auctioned
+func (s MutableStartAuctionParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type ImmutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetInfoParams) Color() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
+// token identifies the auction
+func (s ImmutableGetInfoParams) Token() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
 }
 
 type MutableGetInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetInfoParams) Color() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
+// token identifies the auction
+func (s MutableGetInfoParams) Token() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
 }

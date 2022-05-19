@@ -22,13 +22,55 @@ type (
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 var host ScHost
 
+const hexDigits = "0123456789abcdef"
+
 func init() {
+	wasmtypes.Base58Decode = func(base58 string) []byte {
+		return Sandbox(FnUtilsBase58Decode, []byte(base58))
+	}
+
 	wasmtypes.Base58Encode = func(buf []byte) string {
 		return string(Sandbox(FnUtilsBase58Encode, buf))
 	}
+
+	wasmtypes.HexDecode = func(hex string) []byte {
+		digits := len(hex)
+		if (digits & 1) != 0 {
+			panic("odd hex string length")
+		}
+		buf := make([]byte, digits/2)
+		for i := 0; i < digits; i += 2 {
+			buf[i/2] = (hexer(hex[i]) << 4) | hexer(hex[i+1])
+		}
+		return buf
+	}
+
+	wasmtypes.HexEncode = func(buf []byte) string {
+		bytes := len(buf)
+		hex := make([]byte, bytes*2)
+		for i, b := range buf {
+			hex[i*2] = hexDigits[b>>4]
+			hex[i*2+1] = hexDigits[b&0x0f]
+		}
+		return string(hex)
+	}
+
 	wasmtypes.NewScHname = func(name string) wasmtypes.ScHname {
 		return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(name)))
 	}
+}
+
+func hexer(hexDigit byte) byte {
+	if hexDigit >= '0' && hexDigit <= '9' {
+		return hexDigit - '0'
+	}
+	if hexDigit >= 'a' && hexDigit <= 'f' {
+		return hexDigit - 'a' + 10
+	}
+	if hexDigit >= 'A' && hexDigit <= 'F' {
+		return hexDigit - 'A' + 10
+	}
+	panic("invalid hex digit")
 }
 
 func ConnectHost(h ScHost) ScHost {

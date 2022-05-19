@@ -1,4 +1,3 @@
-// Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
 package chain
@@ -7,19 +6,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -27,7 +29,7 @@ import (
 type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
+	StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput)
 	TriggerChainTransition(*ChainTransitionEventData)
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
@@ -35,30 +37,23 @@ type ChainCore interface {
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
-
-	// Most of these methods are made public for mocking in tests
-	EnqueueDismissChain(reason string) // This one should really be public
-	EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
-	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
-	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
-	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
-	EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg)
-	EnqueueTimerTick(tick int)
+	EnqueueDismissChain(reason string)
+	EnqueueAliasOutput(*iscp.AliasOutputWithID)
 }
 
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
-	ReceiveTransaction(*ledgerstate.Transaction)
-	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	Dismiss(reason string)
 	IsDismissed() bool
 }
 
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
-	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
+	GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestReceipt, error)
+	TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error)
 	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
 	DetachFromRequestProcessed(attachID *events.Closure)
+	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 }
 
 type ChainMetrics interface {
@@ -76,81 +71,82 @@ type Chain interface {
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus
 type Committee interface {
-	Address() ledgerstate.Address
+	Address() iotago.Address
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16
-	DKShare() *tcrypto.DKShare
+	DKShare() tcrypto.DKShare
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-	GetRandomValidators(upToN int) []*ed25519.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
+	GetRandomValidators(upToN int) []*cryptolib.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
 type (
-	NodeConnectionHandleTransactionFun        func(*ledgerstate.Transaction)
-	NodeConnectionHandleInclusionStateFun     func(ledgerstate.TransactionID, ledgerstate.InclusionState)
-	NodeConnectionHandleOutputFun             func(ledgerstate.Output)
-	NodeConnectionHandleUnspentAliasOutputFun func(*ledgerstate.AliasOutput, time.Time)
+	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
+	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
+	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
+	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
 )
 
 type NodeConnection interface {
-	Subscribe(addr ledgerstate.Address)
-	Unsubscribe(addr ledgerstate.Address)
-	AttachToTransactionReceived(*ledgerstate.AliasAddress, NodeConnectionHandleTransactionFun)
-	AttachToInclusionStateReceived(*ledgerstate.AliasAddress, NodeConnectionHandleInclusionStateFun)
-	AttachToOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleOutputFun)
-	AttachToUnspentAliasOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-	PullState(addr *ledgerstate.AliasAddress)
-	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction)
+	RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
+	UnregisterChain(chainID *iscp.ChainID)
+
+	PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
+	PullLatestOutput(chainID *iscp.ChainID)
+	PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID)
+	PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
+
+	AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
+	DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error
+	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
+	DetachMilestones(attachID *events.Closure)
+
+	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	DetachFromTransactionReceived(*ledgerstate.AliasAddress)
-	DetachFromInclusionStateReceived(*ledgerstate.AliasAddress)
-	DetachFromOutputReceived(*ledgerstate.AliasAddress)
-	DetachFromUnspentAliasOutputReceived(*ledgerstate.AliasAddress)
 	Close()
 }
 
 type ChainNodeConnection interface {
-	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
-	AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)
-	AttachToOutputReceived(NodeConnectionHandleOutputFun)
-	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-	PullState()
-	PullTransactionInclusionState(txid ledgerstate.TransactionID)
-	PullConfirmedOutput(outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction)
-	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-	DetachFromTransactionReceived()
-	DetachFromInclusionStateReceived()
-	DetachFromOutputReceived()
-	DetachFromUnspentAliasOutputReceived()
+	AttachToAliasOutput(NodeConnectionAliasOutputHandlerFun)
+	DetachFromAliasOutput()
+	AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
+	DetachFromOnLedgerRequest()
+	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun)
+	DetachFromTxInclusionState()
+	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
+	DetachFromMilestones()
 	Close()
+
+	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PullLatestOutput()
+	PullTxInclusionState(txid iotago.TransactionID)
+	PullStateOutputByID(*iotago.UTXOInput)
+
+	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 
 type StateManager interface {
 	Ready() *ready.Ready
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
-	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(msg ledgerstate.Output)
-	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
+	EnqueueAliasOutput(*iscp.AliasOutputWithID)
+	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
-	SetChainPeers(peers []*ed25519.PublicKey)
+	SetChainPeers(peers []*cryptolib.PublicKey)
 	Close()
 }
 
 type Consensus interface {
-	EnqueueStateTransitionMsg(state.VirtualStateAccess, *ledgerstate.AliasOutput, time.Time)
+	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iscp.AliasOutputWithID, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
-	EnqueueInclusionsStateMsg(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	EnqueueTxInclusionsStateMsg(iotago.TransactionID, string)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EnqueueVMResultMsg(msg *messages.VMResultMsg)
 	EnqueueTimerMsg(messages.TimerTick)
@@ -160,20 +156,6 @@ type Consensus interface {
 	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
 	GetPipeMetrics() ConsensusPipeMetrics
-}
-
-type Mempool interface {
-	ReceiveRequests(reqs ...iscp.Request)
-	ReceiveRequest(req iscp.Request) bool
-	RemoveRequests(reqs ...iscp.RequestID)
-	ReadyNow(nowis ...time.Time) []iscp.Request
-	ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
-	HasRequest(id iscp.RequestID) bool
-	GetRequest(id iscp.RequestID) iscp.Request
-	Info() MempoolInfo
-	WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool // for testing
-	WaitInBufferEmpty(timeout ...time.Duration) bool                       // for testing
-	Close()
 }
 
 type AsynchronousCommonSubsetRunner interface {
@@ -187,29 +169,20 @@ type WAL interface {
 	Read(i uint32) ([]byte, error)
 }
 
-type MempoolInfo struct {
-	TotalPool      int
-	ReadyCounter   int
-	InBufCounter   int
-	OutBufCounter  int
-	InPoolCounter  int
-	OutPoolCounter int
-}
-
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
-	SyncedStateHash       hashing.HashValue
+	SyncedStateCommitment trie.VCommitment
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
-	StateOutputID         ledgerstate.OutputID
-	StateOutputHash       hashing.HashValue
+	StateOutputID         *iotago.UTXOInput
+	StateOutputCommitment trie.VCommitment
 	StateOutputTimestamp  time.Time
 }
 
 type ConsensusInfo struct {
 	StateIndex uint32
-	Mempool    MempoolInfo
+	Mempool    mempool.MempoolInfo
 	TimerTick  int
 }
 
@@ -245,12 +218,12 @@ type ConsensusPipeMetrics interface {
 }
 
 type ReadyListRecord struct {
-	Request iscp.Request
+	Request iscp.Calldata
 	Seen    map[uint16]bool
 }
 
 type CommitteeInfo struct {
-	Address       ledgerstate.Address
+	Address       iotago.Address
 	Size          uint16
 	Quorum        uint16
 	QuorumIsAlive bool
@@ -259,14 +232,14 @@ type CommitteeInfo struct {
 
 type PeerStatus struct {
 	Index     int
-	PubKey    *ed25519.PublicKey
+	PubKey    *cryptolib.PublicKey
 	NetID     string
 	Connected bool
 }
 
 type ChainTransitionEventData struct {
 	VirtualState    state.VirtualStateAccess
-	ChainOutput     *ledgerstate.AliasOutput
+	ChainOutput     *iscp.AliasOutputWithID
 	OutputTimestamp time.Time
 }
 

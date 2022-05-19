@@ -29,12 +29,12 @@ const (
 )
 
 func TestIncSoloInc(t *testing.T) {
-	al := solo.New(t, false, false)
+	al := solo.New(t)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "increment").
-		WithIotas(1)
+		AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	ret, err := chain.CallView(incName, "getCounter")
@@ -45,12 +45,12 @@ func TestIncSoloInc(t *testing.T) {
 }
 
 func TestIncSoloRepeatMany(t *testing.T) {
-	al := solo.New(t, false, false)
+	al := solo.New(t)
 	chain := al.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "repeatMany", varNumRepeats, 2).
-		WithIotas(1)
+		AddIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	require.True(t, chain.WaitForRequestsThrough(6))
@@ -72,20 +72,19 @@ func TestSpamCallViewWasm(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
 
-	e := &env{t: t, clu: clu}
-	chEnv := &chainEnv{
+	e := &env{t: t, Clu: clu}
+	chEnv := &ChainEnv{
 		env:   e,
-		chain: chain,
+		Chain: chain,
 	}
 
-	chEnv.requestFunds(scOwnerAddr, "client")
 	chEnv.deployContract(incName, incDescription, nil)
 
 	{
 		// increment counter once
 		tx, err := chEnv.chainClient().Post1Request(incHname, iscp.Hn("increment"))
 		require.NoError(t, err)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 

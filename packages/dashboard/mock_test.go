@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -23,7 +24,7 @@ import (
 // waspServicesMock is a mock implementation of the WaspServices interface
 type waspServicesMock struct {
 	solo   *solo.Solo
-	chains map[[ledgerstate.AddressLength]byte]*solo.Chain
+	chains map[[iotago.AliasIDLength]byte]*solo.Chain
 }
 
 var _ WaspServices = &waspServicesMock{}
@@ -60,11 +61,11 @@ func (w *waspServicesMock) PeeringStats() (*PeeringStats, error) {
 		TrustedPeers: []TrustedPeer{
 			{
 				NetID:  "127.0.0.1:4000",
-				PubKey: [32]byte{},
+				PubKey: cryptolib.PublicKey{},
 			},
 			{
 				NetID:  "127.0.0.1:4001",
-				PubKey: [32]byte{},
+				PubKey: cryptolib.PublicKey{},
 			},
 		},
 	}, nil
@@ -88,13 +89,13 @@ func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
 
 func (w *waspServicesMock) GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error) {
 	return &registry.ChainRecord{
-		ChainID: chainID,
+		ChainID: *chainID,
 		Active:  true,
 	}, nil
 }
 
 func (w *waspServicesMock) CallView(chainID *iscp.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
-	ch, ok := w.chains[chainID.Array()]
+	ch, ok := w.chains[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
@@ -102,20 +103,23 @@ func (w *waspServicesMock) CallView(chainID *iscp.ChainID, scName, fname string,
 }
 
 func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error) {
-	_, ok := w.chains[chainID.Array()]
+	_, ok := w.chains[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
-	pubKey0, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey0, err := cryptolib.NewPublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
-	pubKey1, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey1, err := cryptolib.NewPublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
+
+	address := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
+
 	return &chain.CommitteeInfo{
-		Address:       ledgerstate.NewED25519Address(ed25519.PublicKey{}),
+		Address:       address,
 		Size:          2,
 		Quorum:        1,
 		QuorumIsAlive: true,
@@ -123,13 +127,13 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 			{
 				Index:     0,
 				NetID:     "localhost:2000",
-				PubKey:    &pubKey0,
+				PubKey:    pubKey0,
 				Connected: true,
 			},
 			{
 				Index:     1,
 				NetID:     "localhost:2001",
-				PubKey:    &pubKey1,
+				PubKey:    pubKey1,
 				Connected: true,
 			},
 		},
@@ -160,17 +164,18 @@ type dashboardTestEnv struct {
 }
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
-	ch := e.solo.NewChain(nil, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[ch.ChainID.Array()] = ch
+	kp, _ := e.solo.NewKeyPairWithFunds()
+	ch := e.solo.NewChain(kp, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, false, true)
+	s := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true})
 	w := &waspServicesMock{
 		solo:   s,
-		chains: make(map[[ledgerstate.AddressLength]byte]*solo.Chain),
+		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
 	}
 	d := Init(e, w, testlogger.NewLogger(t))
 	return &dashboardTestEnv{

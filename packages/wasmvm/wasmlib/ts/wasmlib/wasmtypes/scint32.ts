@@ -38,6 +38,10 @@ export function int32ToBytes(value: i32): u8[] {
     ];
 }
 
+export function int32FromString(value: string): i32 {
+    return wasmtypes.intFromString(value, 32) as i32;
+}
+
 export function int32ToString(value: i32): string {
     return value.toString();
 }

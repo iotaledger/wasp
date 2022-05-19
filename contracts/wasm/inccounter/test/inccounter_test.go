@@ -130,7 +130,7 @@ func TestIncrementLocalStatePost(t *testing.T) {
 	ctx := setupTest(t)
 
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
-	localStatePost.Func.TransferIotas(3).Post()
+	localStatePost.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	require.True(t, ctx.WaitForPendingRequests(3))
@@ -144,58 +144,6 @@ func TestIncrementLocalStatePost(t *testing.T) {
 	// when using WasmGoVM the 3 posts are run only after
 	// the LocalStateMustIncrement has been set to true
 	checkStateCounter(t, ctx, 3)
-}
-
-func TestIncrementWithDelayBug(t *testing.T) {
-	ctx := setupTest(t)
-
-	// info1 := ctx.Chain.MempoolInfo()
-	// require.EqualValues(t, info1.InBufCounter, info1.OutBufCounter)
-
-	incWithDelay := inccounter.ScFuncs.IncrementWithDelay(ctx)
-	incWithDelay.Params.Delay().SetValue(5)
-	incWithDelay.Func.TransferIotas(3).Post()
-	require.NoError(t, ctx.Err)
-
-	//info2 := ctx.Chain.MempoolInfo()
-	//// posted 1 request, which posted 1 delayed request
-	//// first one has been processed completely, second one is only in inBuf
-	//require.EqualValues(t, info1.InBufCounter+2, info2.InBufCounter)
-	//require.EqualValues(t, info1.OutBufCounter+1, info2.OutBufCounter)
-	//require.EqualValues(t, info1.InPoolCounter+1, info2.InPoolCounter)
-	//require.EqualValues(t, info1.OutPoolCounter+1, info2.OutPoolCounter)
-	//checkStateCounter(t, ctx, nil)
-	//
-	//ctx.AdvanceClockBy(1 * time.Second)
-	//// time.Sleep(100 * time.Millisecond)
-	//
-	//info3 := ctx.Chain.MempoolInfo()
-	//// advanced timer a bit, but no changes as long as thread does not relinquish control
-	//require.EqualValues(t, info1.InBufCounter+2, info3.InBufCounter)
-	//require.EqualValues(t, info1.OutBufCounter+1, info3.OutBufCounter)
-	//require.EqualValues(t, info1.InPoolCounter+1, info3.InPoolCounter)
-	//require.EqualValues(t, info1.OutPoolCounter+1, info3.OutPoolCounter)
-	//checkStateCounter(t, ctx, nil)
-
-	ctx.AdvanceClockBy(5 * time.Second)
-
-	//info4 := ctx.Chain.MempoolInfo()
-	//// advanced timer enough to trigger delayed request, but still no relinquished control
-	//require.EqualValues(t, info1.InBufCounter+2, info4.InBufCounter)
-	//require.EqualValues(t, info1.OutBufCounter+1, info4.OutBufCounter)
-	//require.EqualValues(t, info1.InPoolCounter+1, info4.InPoolCounter)
-	//require.EqualValues(t, info1.OutPoolCounter+1, info4.OutPoolCounter)
-	//checkStateCounter(t, ctx, nil)
-
-	// relinquish control until delayed request has been processed
-	ctx.WaitForPendingRequests(1)
-
-	// info5 := ctx.Chain.MempoolInfo()
-	// require.EqualValues(t, info1.InBufCounter+2, info5.InBufCounter)
-	// require.EqualValues(t, info1.OutBufCounter+2, info5.OutBufCounter)
-	// require.EqualValues(t, info1.InPoolCounter+2, info5.InPoolCounter)
-	// require.EqualValues(t, info1.OutPoolCounter+2, info5.OutPoolCounter)
-	checkStateCounter(t, ctx, 2)
 }
 
 func TestVliCodec(t *testing.T) {
@@ -263,7 +211,7 @@ func TestLoop(t *testing.T) {
 	endlessLoop := inccounter.ScFuncs.EndlessLoop(ctx)
 	endlessLoop.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "interrupt")
+	require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
 	wasmhost.DisableWasmTimeout = save
 
 	inccounter.ScFuncs.Increment(ctx).Func.Post()

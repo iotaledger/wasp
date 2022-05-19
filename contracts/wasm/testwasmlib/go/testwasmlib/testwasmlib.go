@@ -18,6 +18,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.AgentID().Exists() {
 		ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "mismatch: AgentID")
 	}
+	// TODO big.Int
 	if f.Params.Bool().Exists() {
 		ctx.Require(f.Params.Bool().Value(), "mismatch: Bool")
 	}
@@ -27,10 +28,6 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	}
 	if f.Params.ChainID().Exists() {
 		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
-	}
-	if f.Params.Color().Exists() {
-		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
-		ctx.Require(f.Params.Color().Value() == color, "mismatch: Color")
 	}
 	if f.Params.Hash().Exists() {
 		hash := wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210"))
@@ -51,12 +48,20 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.Int64().Exists() {
 		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
+	if f.Params.NftID().Exists() {
+		nftID := wasmtypes.NftIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456"))
+		ctx.Require(f.Params.NftID().Value() == nftID, "mismatch: NftID")
+	}
 	if f.Params.RequestID().Exists() {
 		requestID := wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
 		ctx.Require(f.Params.RequestID().Value() == requestID, "mismatch: RequestID")
 	}
 	if f.Params.String().Exists() {
 		ctx.Require(f.Params.String().Value() == "this is a string", "mismatch: String")
+	}
+	if f.Params.TokenID().Exists() {
+		tokenID := wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890AB"))
+		ctx.Require(f.Params.TokenID().Value() == tokenID, "mismatch: TokenID")
 	}
 	if f.Params.Uint8().Exists() {
 		ctx.Require(f.Params.Uint8().Value() == 123, "mismatch: Uint8")
@@ -74,6 +79,15 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 
 func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 	f.State.Random().SetValue(ctx.Random(1000))
+}
+
+func funcTakeAllowance(ctx wasmlib.ScFuncContext, f *TakeAllowanceContext) {
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()), false)
+	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Iotas())))
+}
+
+func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
+	f.Results.Iotas().SetValue(ctx.Balances().Iotas())
 }
 
 func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
@@ -101,20 +115,20 @@ func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
 }
 
 func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
-	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmtypes.IOTA))
+	f.Results.Iotas().SetValue(ctx.Balances().Iotas())
 }
 
-//////////////////// array of array \\\\\\\\\\\\\\\\\\\\
+//////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\
 
-func funcArrayOfArraysAppend(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAppendContext) {
+func funcArrayOfStringArrayAppend(ctx wasmlib.ScFuncContext, f *ArrayOfStringArrayAppendContext) {
 	index := f.Params.Index().Value()
 	valLen := f.Params.Value().Length()
 
 	var sa ArrayOfMutableString
-	if f.State.StringArrayOfArrays().Length() <= index {
-		sa = f.State.StringArrayOfArrays().AppendStringArray()
+	if f.State.ArrayOfStringArray().Length() <= index {
+		sa = f.State.ArrayOfStringArray().AppendStringArray()
 	} else {
-		sa = f.State.StringArrayOfArrays().GetStringArray(index)
+		sa = f.State.ArrayOfStringArray().GetStringArray(index)
 	}
 
 	for i := uint32(0); i < valLen; i++ {
@@ -123,124 +137,314 @@ func funcArrayOfArraysAppend(ctx wasmlib.ScFuncContext, f *ArrayOfArraysAppendCo
 	}
 }
 
-func funcArrayOfArraysClear(ctx wasmlib.ScFuncContext, f *ArrayOfArraysClearContext) {
-	length := f.State.StringArrayOfArrays().Length()
+func funcArrayOfStringArrayClear(ctx wasmlib.ScFuncContext, f *ArrayOfStringArrayClearContext) {
+	length := f.State.ArrayOfStringArray().Length()
 	for i := uint32(0); i < length; i++ {
-		array := f.State.StringArrayOfArrays().GetStringArray(i)
+		array := f.State.ArrayOfStringArray().GetStringArray(i)
 		array.Clear()
 	}
-	f.State.StringArrayOfArrays().Clear()
+	f.State.ArrayOfStringArray().Clear()
 }
 
-func funcArrayOfArraysSet(ctx wasmlib.ScFuncContext, f *ArrayOfArraysSetContext) {
+func funcArrayOfStringArraySet(ctx wasmlib.ScFuncContext, f *ArrayOfStringArraySetContext) {
 	index0 := f.Params.Index0().Value()
 	index1 := f.Params.Index1().Value()
-	array := f.State.StringArrayOfArrays().GetStringArray(index0)
+	array := f.State.ArrayOfStringArray().GetStringArray(index0)
 	value := f.Params.Value().Value()
 	array.GetString(index1).SetValue(value)
 }
 
-func viewArrayOfArraysLength(ctx wasmlib.ScViewContext, f *ArrayOfArraysLengthContext) {
-	length := f.State.StringArrayOfArrays().Length()
+func viewArrayOfStringArrayLength(ctx wasmlib.ScViewContext, f *ArrayOfStringArrayLengthContext) {
+	length := f.State.ArrayOfStringArray().Length()
 	f.Results.Length().SetValue(length)
 }
 
-func viewArrayOfArraysValue(ctx wasmlib.ScViewContext, f *ArrayOfArraysValueContext) {
+func viewArrayOfStringArrayValue(ctx wasmlib.ScViewContext, f *ArrayOfStringArrayValueContext) {
 	index0 := f.Params.Index0().Value()
 	index1 := f.Params.Index1().Value()
 
-	elt := f.State.StringArrayOfArrays().GetStringArray(index0).GetString(index1).Value()
+	elt := f.State.ArrayOfStringArray().GetStringArray(index0).GetString(index1).Value()
 	f.Results.Value().SetValue(elt)
 }
 
-//////////////////// array of map \\\\\\\\\\\\\\\\\\\\
+//////////////////// array of StringMap \\\\\\\\\\\\\\\\\\\\
 
-func funcArrayOfMapsClear(ctx wasmlib.ScFuncContext, f *ArrayOfMapsClearContext) {
-	length := f.State.StringArrayOfArrays().Length()
+func funcArrayOfStringMapClear(ctx wasmlib.ScFuncContext, f *ArrayOfStringMapClearContext) {
+	length := f.State.ArrayOfStringArray().Length()
 	for i := uint32(0); i < length; i++ {
-		mmap := f.State.StringArrayOfMaps().GetStringMap(i)
+		mmap := f.State.ArrayOfStringMap().GetStringMap(i)
 		mmap.Clear()
 	}
-	f.State.StringArrayOfMaps().Clear()
+	f.State.ArrayOfStringMap().Clear()
 }
 
-func funcArrayOfMapsSet(ctx wasmlib.ScFuncContext, f *ArrayOfMapsSetContext) {
+func funcArrayOfStringMapSet(ctx wasmlib.ScFuncContext, f *ArrayOfStringMapSetContext) {
 	index := f.Params.Index().Value()
 	value := f.Params.Value().Value()
 	key := f.Params.Key().Value()
-	if f.State.StringArrayOfMaps().Length() <= index {
-		mmap := f.State.StringArrayOfMaps().AppendStringMap()
+	if f.State.ArrayOfStringMap().Length() <= index {
+		mmap := f.State.ArrayOfStringMap().AppendStringMap()
 		mmap.GetString(key).SetValue(value)
 		return
 	}
-	mmap := f.State.StringArrayOfMaps().GetStringMap(index)
+	mmap := f.State.ArrayOfStringMap().GetStringMap(index)
 	mmap.GetString(key).SetValue(value)
 }
 
-func viewArrayOfMapsValue(ctx wasmlib.ScViewContext, f *ArrayOfMapsValueContext) {
+func viewArrayOfStringMapValue(ctx wasmlib.ScViewContext, f *ArrayOfStringMapValueContext) {
 	index := f.Params.Index().Value()
 	key := f.Params.Key().Value()
-	mmap := f.State.StringArrayOfMaps().GetStringMap(index)
+	mmap := f.State.ArrayOfStringMap().GetStringMap(index)
 	f.Results.Value().SetValue(mmap.GetString(key).Value())
 }
 
-//////////////////// map of array \\\\\\\\\\\\\\\\\\\\
+//////////////////// StringMap of StringArray \\\\\\\\\\\\\\\\\\\\
 
-func funcMapOfArraysAppend(ctx wasmlib.ScFuncContext, f *MapOfArraysAppendContext) {
+func funcStringMapOfStringArrayAppend(ctx wasmlib.ScFuncContext, f *StringMapOfStringArrayAppendContext) {
 	name := f.Params.Name().Value()
-	array := f.State.StringMapOfArrays().GetStringArray(name)
+	array := f.State.StringMapOfStringArray().GetStringArray(name)
 	value := f.Params.Value().Value()
 	array.AppendString().SetValue(value)
 }
 
-func funcMapOfArraysClear(ctx wasmlib.ScFuncContext, f *MapOfArraysClearContext) {
+func funcStringMapOfStringArrayClear(ctx wasmlib.ScFuncContext, f *StringMapOfStringArrayClearContext) {
 	name := f.Params.Name().Value()
-	array := f.State.StringMapOfArrays().GetStringArray(name)
+	array := f.State.StringMapOfStringArray().GetStringArray(name)
 	array.Clear()
 }
 
-func funcMapOfArraysSet(ctx wasmlib.ScFuncContext, f *MapOfArraysSetContext) {
+func funcStringMapOfStringArraySet(ctx wasmlib.ScFuncContext, f *StringMapOfStringArraySetContext) {
 	name := f.Params.Name().Value()
-	array := f.State.StringMapOfArrays().GetStringArray(name)
+	array := f.State.StringMapOfStringArray().GetStringArray(name)
 	index := f.Params.Index().Value()
 	value := f.Params.Value().Value()
 	array.GetString(index).SetValue(value)
 }
 
-func viewMapOfArraysLength(ctx wasmlib.ScViewContext, f *MapOfArraysLengthContext) {
+func viewStringMapOfStringArrayLength(ctx wasmlib.ScViewContext, f *StringMapOfStringArrayLengthContext) {
 	name := f.Params.Name().Value()
-	array := f.State.StringMapOfArrays().GetStringArray(name)
+	array := f.State.StringMapOfStringArray().GetStringArray(name)
 	length := array.Length()
 	f.Results.Length().SetValue(length)
 }
 
-func viewMapOfArraysValue(ctx wasmlib.ScViewContext, f *MapOfArraysValueContext) {
+func viewStringMapOfStringArrayValue(ctx wasmlib.ScViewContext, f *StringMapOfStringArrayValueContext) {
 	name := f.Params.Name().Value()
-	array := f.State.StringMapOfArrays().GetStringArray(name)
+	array := f.State.StringMapOfStringArray().GetStringArray(name)
 	index := f.Params.Index().Value()
 	value := array.GetString(index).Value()
 	f.Results.Value().SetValue(value)
 }
 
-//////////////////// map of map \\\\\\\\\\\\\\\\\\\\
+//////////////////// StringMap of StringMap \\\\\\\\\\\\\\\\\\\\
 
-func funcMapOfMapsClear(ctx wasmlib.ScFuncContext, f *MapOfMapsClearContext) {
+func funcStringMapOfStringMapClear(ctx wasmlib.ScFuncContext, f *StringMapOfStringMapClearContext) {
 	name := f.Params.Name().Value()
-	mmap := f.State.StringMapOfMaps().GetStringMap(name)
+	mmap := f.State.StringMapOfStringMap().GetStringMap(name)
 	mmap.Clear()
 }
 
-func funcMapOfMapsSet(ctx wasmlib.ScFuncContext, f *MapOfMapsSetContext) {
+func funcStringMapOfStringMapSet(ctx wasmlib.ScFuncContext, f *StringMapOfStringMapSetContext) {
 	name := f.Params.Name().Value()
-	mmap := f.State.StringMapOfMaps().GetStringMap(name)
+	mmap := f.State.StringMapOfStringMap().GetStringMap(name)
 	key := f.Params.Key().Value()
 	value := f.Params.Value().Value()
 	mmap.GetString(key).SetValue(value)
 }
 
-func viewMapOfMapsValue(ctx wasmlib.ScViewContext, f *MapOfMapsValueContext) {
+func viewStringMapOfStringMapValue(ctx wasmlib.ScViewContext, f *StringMapOfStringMapValueContext) {
 	name := f.Params.Name().Value()
-	mmap := f.State.StringMapOfMaps().GetStringMap(name)
+	mmap := f.State.StringMapOfStringMap().GetStringMap(name)
 	key := f.Params.Key().Value()
 	f.Results.Value().SetValue(mmap.GetString(key).Value())
+}
+
+//////////////////// array of AddressArray \\\\\\\\\\\\\\\\\\\\
+
+func funcArrayOfAddressArrayAppend(ctx wasmlib.ScFuncContext, f *ArrayOfAddressArrayAppendContext) {
+	index := f.Params.Index().Value()
+	valLen := f.Params.ValueAddr().Length()
+
+	var sa ArrayOfMutableAddress
+	if f.State.ArrayOfStringArray().Length() <= index {
+		sa = f.State.ArrayOfAddressArray().AppendAddressArray()
+	} else {
+		sa = f.State.ArrayOfAddressArray().GetAddressArray(index)
+	}
+
+	for i := uint32(0); i < valLen; i++ {
+		elt := f.Params.ValueAddr().GetAddress(i).Value()
+		sa.AppendAddress().SetValue(elt)
+	}
+}
+
+func funcArrayOfAddressArrayClear(ctx wasmlib.ScFuncContext, f *ArrayOfAddressArrayClearContext) {
+	length := f.State.ArrayOfAddressArray().Length()
+	for i := uint32(0); i < length; i++ {
+		array := f.State.ArrayOfAddressArray().GetAddressArray(i)
+		array.Clear()
+	}
+	f.State.ArrayOfAddressArray().Clear()
+}
+
+func funcArrayOfAddressArraySet(ctx wasmlib.ScFuncContext, f *ArrayOfAddressArraySetContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+	array := f.State.ArrayOfAddressArray().GetAddressArray(index0)
+	value := f.Params.ValueAddr().Value()
+	array.GetAddress(index1).SetValue(value)
+}
+
+func viewArrayOfAddressArrayLength(ctx wasmlib.ScViewContext, f *ArrayOfAddressArrayLengthContext) {
+	length := f.State.ArrayOfAddressArray().Length()
+	f.Results.Length().SetValue(length)
+}
+
+func viewArrayOfAddressArrayValue(ctx wasmlib.ScViewContext, f *ArrayOfAddressArrayValueContext) {
+	index0 := f.Params.Index0().Value()
+	index1 := f.Params.Index1().Value()
+
+	elt := f.State.ArrayOfAddressArray().GetAddressArray(index0).GetAddress(index1).Value()
+	f.Results.ValueAddr().SetValue(elt)
+}
+
+//////////////////// array of AddressMap \\\\\\\\\\\\\\\\\\\\
+
+func funcArrayOfAddressMapClear(ctx wasmlib.ScFuncContext, f *ArrayOfAddressMapClearContext) {
+	length := f.State.ArrayOfAddressArray().Length()
+	for i := uint32(0); i < length; i++ {
+		mmap := f.State.ArrayOfAddressMap().GetAddressMap(i)
+		mmap.Clear()
+	}
+	f.State.ArrayOfAddressMap().Clear()
+}
+
+func funcArrayOfAddressMapSet(ctx wasmlib.ScFuncContext, f *ArrayOfAddressMapSetContext) {
+	index := f.Params.Index().Value()
+	value := f.Params.ValueAddr().Value()
+	key := f.Params.KeyAddr().Value()
+	if f.State.ArrayOfAddressMap().Length() <= index {
+		mmap := f.State.ArrayOfAddressMap().AppendAddressMap()
+		mmap.GetAddress(key).SetValue(value)
+		return
+	}
+	mmap := f.State.ArrayOfAddressMap().GetAddressMap(index)
+	mmap.GetAddress(key).SetValue(value)
+}
+
+func viewArrayOfAddressMapValue(ctx wasmlib.ScViewContext, f *ArrayOfAddressMapValueContext) {
+	index := f.Params.Index().Value()
+	key := f.Params.KeyAddr().Value()
+	mmap := f.State.ArrayOfAddressMap().GetAddressMap(index)
+	f.Results.ValueAddr().SetValue(mmap.GetAddress(key).Value())
+}
+
+//////////////////// AddressMap of AddressArray \\\\\\\\\\\\\\\\\\\\
+
+func funcAddressMapOfAddressArrayAppend(ctx wasmlib.ScFuncContext, f *AddressMapOfAddressArrayAppendContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddressMapOfAddressArray().GetAddressArray(addr)
+	value := f.Params.ValueAddr().Value()
+	array.AppendAddress().SetValue(value)
+}
+
+func funcAddressMapOfAddressArrayClear(ctx wasmlib.ScFuncContext, f *AddressMapOfAddressArrayClearContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddressMapOfAddressArray().GetAddressArray(addr)
+	array.Clear()
+}
+
+func funcAddressMapOfAddressArraySet(ctx wasmlib.ScFuncContext, f *AddressMapOfAddressArraySetContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddressMapOfAddressArray().GetAddressArray(addr)
+	index := f.Params.Index().Value()
+	value := f.Params.ValueAddr().Value()
+	array.GetAddress(index).SetValue(value)
+}
+
+func viewAddressMapOfAddressArrayLength(ctx wasmlib.ScViewContext, f *AddressMapOfAddressArrayLengthContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddressMapOfAddressArray().GetAddressArray(addr)
+	length := array.Length()
+	f.Results.Length().SetValue(length)
+}
+
+func viewAddressMapOfAddressArrayValue(ctx wasmlib.ScViewContext, f *AddressMapOfAddressArrayValueContext) {
+	addr := f.Params.NameAddr().Value()
+	array := f.State.AddressMapOfAddressArray().GetAddressArray(addr)
+	index := f.Params.Index().Value()
+	value := array.GetAddress(index).Value()
+	f.Results.ValueAddr().SetValue(value)
+}
+
+//////////////////// AddressMap of AddressMap \\\\\\\\\\\\\\\\\\\\
+
+func funcAddressMapOfAddressMapClear(ctx wasmlib.ScFuncContext, f *AddressMapOfAddressMapClearContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddressMapOfAddressMap().GetAddressMap(name)
+	myMap.Clear()
+}
+
+func funcAddressMapOfAddressMapSet(ctx wasmlib.ScFuncContext, f *AddressMapOfAddressMapSetContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddressMapOfAddressMap().GetAddressMap(name)
+	key := f.Params.KeyAddr().Value()
+	value := f.Params.ValueAddr().Value()
+	myMap.GetAddress(key).SetValue(value)
+}
+
+func viewAddressMapOfAddressMapValue(ctx wasmlib.ScViewContext, f *AddressMapOfAddressMapValueContext) {
+	name := f.Params.NameAddr().Value()
+	myMap := f.State.AddressMapOfAddressMap().GetAddressMap(name)
+	key := f.Params.KeyAddr().Value()
+	f.Results.ValueAddr().SetValue(myMap.GetAddress(key).Value())
+}
+
+func viewBigIntAdd(ctx wasmlib.ScViewContext, f *BigIntAddContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Add(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntDiv(ctx wasmlib.ScViewContext, f *BigIntDivContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Div(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntMod(ctx wasmlib.ScViewContext, f *BigIntModContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Modulo(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntMul(ctx wasmlib.ScViewContext, f *BigIntMulContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Mul(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntSub(ctx wasmlib.ScViewContext, f *BigIntSubContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	res := lhs.Sub(rhs)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntShl(ctx wasmlib.ScViewContext, f *BigIntShlContext) {
+	lhs := f.Params.Lhs().Value()
+	shift := f.Params.Shift().Value()
+	res := lhs.Shl(shift)
+	f.Results.Res().SetValue(res)
+}
+
+func viewBigIntShr(ctx wasmlib.ScViewContext, f *BigIntShrContext) {
+	lhs := f.Params.Lhs().Value()
+	shift := f.Params.Shift().Value()
+	res := lhs.Shr(shift)
+	f.Results.Res().SetValue(res)
 }

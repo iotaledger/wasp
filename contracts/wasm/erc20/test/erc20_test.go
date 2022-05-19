@@ -5,7 +5,8 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -23,21 +24,21 @@ func setupTest(t *testing.T) {
 func setupErc20(t *testing.T) *wasmsolo.SoloContext {
 	setupTest(t)
 	init := erc20.ScFuncs.Init(nil)
-	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Supply().SetValue(utxodb.FundsFromFaucetAmount)
 	init.Params.Creator().SetValue(creator.ScAgentID())
 	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
+	require.EqualValues(t, len(corecontracts.All)+1, len(rec))
 
 	totalSupply := erc20.ScFuncs.TotalSupply(ctx)
 	totalSupply.Func.Call()
 	require.NoError(t, ctx.Err)
 	supply := totalSupply.Results.Supply()
 	require.True(t, supply.Exists())
-	require.EqualValues(t, solo.Saldo, supply.Value())
+	require.EqualValues(t, utxodb.FundsFromFaucetAmount, supply.Value())
 
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	return ctx
 }
 
@@ -98,7 +99,7 @@ func TestTransferOk1(t *testing.T) {
 	user := ctx.NewSoloAgent()
 
 	require.NoError(t, transfer(ctx, creator, user, 42))
-	checkErc20Balance(ctx, creator, solo.Saldo-42)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount-42)
 	checkErc20Balance(ctx, user, 42)
 }
 
@@ -107,11 +108,11 @@ func TestTransferOk2(t *testing.T) {
 	user := ctx.NewSoloAgent()
 
 	require.NoError(t, transfer(ctx, creator, user, 42))
-	checkErc20Balance(ctx, creator, solo.Saldo-42)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount-42)
 	checkErc20Balance(ctx, user, 42)
 
 	require.NoError(t, transfer(ctx, user, creator, 42))
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
 }
 
@@ -119,12 +120,12 @@ func TestTransferNotEnoughFunds1(t *testing.T) {
 	ctx := setupErc20(t)
 	user := ctx.NewSoloAgent()
 
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
 
-	require.Error(t, transfer(ctx, creator, user, solo.Saldo+1))
+	require.Error(t, transfer(ctx, creator, user, utxodb.FundsFromFaucetAmount+1))
 
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
 }
 
@@ -132,12 +133,12 @@ func TestTransferNotEnoughFunds2(t *testing.T) {
 	ctx := setupErc20(t)
 	user := ctx.NewSoloAgent()
 
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
 
 	require.Error(t, transfer(ctx, user, creator, 1))
 
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
 }
 
@@ -154,7 +155,7 @@ func TestApprove(t *testing.T) {
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 }
 
@@ -165,13 +166,13 @@ func TestTransferFromOk1(t *testing.T) {
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 
 	require.NoError(t, transferFrom(ctx, delegate, creator, delegate, 50))
 
 	checkErc20Allowance(ctx, creator, delegate, 50)
-	checkErc20Balance(ctx, creator, solo.Saldo-50)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount-50)
 	checkErc20Balance(ctx, delegate, 50)
 }
 
@@ -182,13 +183,13 @@ func TestTransferFromOk2(t *testing.T) {
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 
 	require.NoError(t, transferFrom(ctx, delegate, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 0)
-	checkErc20Balance(ctx, creator, solo.Saldo-100)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount-100)
 	checkErc20Balance(ctx, delegate, 100)
 }
 
@@ -199,14 +200,14 @@ func TestTransferFromFailNoDelegate(t *testing.T) {
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 
 	noDelegate := ctx.NewSoloAgent()
 	require.Error(t, transferFrom(ctx, noDelegate, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 	checkErc20Balance(ctx, noDelegate, 0)
 }
@@ -218,12 +219,12 @@ func TestTransferFromFailTooMuch(t *testing.T) {
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 
 	require.Error(t, transferFrom(ctx, delegate, creator, delegate, 101))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
-	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 }

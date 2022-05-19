@@ -31,7 +31,7 @@ pub fn request_id_decode(dec: &mut WasmDecoder) -> ScRequestID {
 }
 
 pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID) {
-    enc.fixed_bytes(&value.to_bytes(), SC_REQUEST_ID_LENGTH);
+    enc.fixed_bytes(&value.id, SC_REQUEST_ID_LENGTH);
 }
 
 pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
@@ -50,6 +50,10 @@ pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
 
 pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
     value.id.to_vec()
+}
+
+pub fn request_id_from_string(value: &str) -> ScRequestID {
+    request_id_from_bytes(&base58_decode(value))
 }
 
 pub fn request_id_to_string(value: &ScRequestID) -> String {

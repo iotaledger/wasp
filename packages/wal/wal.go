@@ -53,7 +53,7 @@ func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
 	if w == nil {
 		return &defaultWAL{}, nil
 	}
-	w.dir = filepath.Join(w.dir, chainID.Base58())
+	w.dir = filepath.Join(w.dir, chainID.String())
 	if err := os.MkdirAll(w.dir, 0o777); err != nil {
 		return nil, fmt.Errorf("create dir: %w", err)
 	}

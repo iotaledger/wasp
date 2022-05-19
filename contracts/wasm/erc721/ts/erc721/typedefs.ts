@@ -15,6 +15,7 @@ export class MapAgentIDToImmutableBool extends wasmtypes.ScProxy {
 	}
 }
 
+// approval status of each operator
 export class ImmutableOperators extends MapAgentIDToImmutableBool {
 }
 
@@ -29,5 +30,6 @@ export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
 	}
 }
 
+// approval status of each operator
 export class MutableOperators extends MapAgentIDToMutableBool {
 }

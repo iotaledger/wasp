@@ -37,7 +37,8 @@ const (
 	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
-	NodeAddress = "nodeconn.address"
+	L1Host    = "L1.host"
+	L1APIPort = "L1.apiport"
 
 	PeeringMyNetID                   = "peering.netid"
 	PeeringPort                      = "peering.port"
@@ -61,6 +62,8 @@ const (
 	WALEnabled   = "wal.enabled"
 	WALDirectory = "wal.directory"
 
+	RawBlocksEnabled = "debug.rawblocksEnabled"
+	RawBlocksDir     = "debug.rawblocksDirectory"
 	RegistryUseText = "registry.useText"
 	RegistryFile    = "registry.file"
 )
@@ -90,7 +93,8 @@ func Init() *configuration.Configuration {
 	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
 
-	flag.String(NodeAddress, "127.0.0.1:5000", "node host address")
+	flag.String(L1Host, "http://127.0.0.1", "l1 node host URL")
+	flag.String(L1APIPort, "5000", "l1 node api port")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")
@@ -115,10 +119,16 @@ func Init() *configuration.Configuration {
 	flag.Bool(WALEnabled, true, "enabled wal")
 	flag.String(WALDirectory, "wal", "path to logs folder")
 
+	flag.Bool(RawBlocksEnabled, false, "enable raw blocks to be written to disk on a separate dir")
+	flag.String(RawBlocksDir, "blocks", "path to the directory where the blocks should be written to")
 	flag.Bool(RegistryUseText, false, "enable text key/value store for registry db.")
 	flag.String(RegistryFile, "chain-registry.json", "registry filename. Ignored if registry.useText is false.")
 
 	return all
+}
+
+func IsLoaded() bool {
+	return all != nil
 }
 
 func GetBool(name string) bool {

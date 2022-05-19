@@ -6,10 +6,9 @@ package messages
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -20,22 +19,22 @@ func TestMarshalling(t *testing.T) {
 	// construct a dummy offledger request
 	contract := iscp.Hn("somecontract")
 	entrypoint := iscp.Hn("someentrypoint")
-	args := requestargs.New(
-		dict.Dict{foo: []byte("bar")},
-	)
+	args := dict.Dict{foo: []byte("bar")}
+	nonce := uint64(time.Now().UnixNano())
+	chainID := iscp.RandomChainID()
 
-	msg := &OffLedgerRequestMsg{
-		ChainID: iscp.RandomChainID(),
-		Req:     request.NewOffLedger(iscp.RandomChainID(), contract, entrypoint, args),
-	}
+	msg := NewOffLedgerRequestMsg(
+		chainID,
+		iscp.NewOffLedgerRequest(iscp.RandomChainID(), contract, entrypoint, args, nonce).WithGasBudget(1000),
+	)
 
 	// marshall the msg
 	msgBytes := msg.Bytes()
 
 	// unmashal the message from bytes and ensure everything checks out
-	unmarshalledMsg, err := NewOffLedgerRequestMsg(msgBytes)
+	unmarshalledMsg, err := OffLedgerRequestMsgFromBytes(msgBytes)
 	require.NoError(t, err)
 
-	require.True(t, unmarshalledMsg.ChainID.AliasAddress.Equals(msg.ChainID.AliasAddress))
+	require.Equal(t, unmarshalledMsg.ChainID.AsAliasAddress(), msg.ChainID.AsAliasAddress())
 	require.True(t, bytes.Equal(unmarshalledMsg.Req.Bytes(), msg.Req.Bytes()))
 }

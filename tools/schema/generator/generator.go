@@ -15,7 +15,6 @@ import (
 
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
-// TODO take copyright from schema?
 
 type GenBase struct {
 	currentEvent  *model.Struct
@@ -86,10 +85,12 @@ func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err
 }
 
 func (g *GenBase) createSourceFile(name string, condition bool) error {
+	path := g.folder + name + g.extension
 	if !condition {
+		_ = os.Remove(path)
 		return nil
 	}
-	return g.createFile(g.folder+name+g.extension, true, func() {
+	return g.createFile(path, true, func() {
 		g.emit("copyright")
 		g.emit("warning")
 		g.emit(name + g.extension)
@@ -157,6 +158,10 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
+	err = g.createSourceFile("eventhandlers", len(g.s.Events) != 0)
+	if err != nil {
+		return err
+	}
 	err = g.createSourceFile("structs", len(g.s.Structs) != 0)
 	if err != nil {
 		return err
@@ -173,7 +178,7 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("state", !g.s.CoreContracts)
+	err = g.createSourceFile("state", !g.s.CoreContracts && len(g.s.StateVars) != 0)
 	if err != nil {
 		return err
 	}

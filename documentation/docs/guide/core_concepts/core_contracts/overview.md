@@ -22,9 +22,6 @@ provide infrastructure for all other smart contracts:
 
 - [__root__](root.md) - Responsible for the initialization of the chain, maintains registry of deployed contracts.
 
-- [___default__](default.md): Any request that cannot be handled by any of the
-  other deployed contracts ends up here.
-
 - [__accounts__](accounts.md): Responsible for the on-chain ledger of accounts (who owns what).
 
 - [__blob__](blob.md): Responsible for the immutable registry of binary objects of arbitrary size. One blob is a collection of named binary chunks of data. For

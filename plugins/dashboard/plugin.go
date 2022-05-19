@@ -42,10 +42,12 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 type waspServices struct{}
+
+var _ dashboard.WaspServices = &waspServices{}
 
 func (w *waspServices) ConfigDump() map[string]interface{} {
 	return parameters.Dump()
@@ -56,7 +58,8 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 	if baseURL != "" {
 		return baseURL
 	}
-	return exploreAddressURLFromGoshimmerURI(parameters.GetString(parameters.NodeAddress))
+	// TODO what should be this URL?
+	return exploreAddressURLFromL1URI(parameters.GetString("TODO"))
 }
 
 func (w *waspServices) PeeringStats() (*dashboard.PeeringStats, error) {
@@ -78,7 +81,7 @@ func (w *waspServices) PeeringStats() (*dashboard.PeeringStats, error) {
 	for i, t := range tpeers {
 		ret.TrustedPeers[i] = dashboard.TrustedPeer{
 			NetID:  t.NetID,
-			PubKey: t.PubKey,
+			PubKey: *t.PubKey,
 		}
 	}
 	return ret, nil
@@ -145,17 +148,17 @@ func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, p
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
-	vctx := viewcontext.NewFromChain(ch)
+	vctx := viewcontext.New(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), params)
+		ret, err = vctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), params)
 		return err
 	})
 	return ret, err
 }
 
-func exploreAddressURLFromGoshimmerURI(uri string) string {
+func exploreAddressURLFromL1URI(uri string) string {
 	url := strings.Split(uri, ":")[0] + ":8081/explorer/address"
 	if !strings.HasPrefix(url, "http") {
 		return "http://" + url
@@ -186,11 +189,11 @@ func configure(*node.Plugin) {
 func run(_ *node.Plugin) {
 	log.Infof("Starting %s ...", PluginName)
 	if err := daemon.BackgroundWorker(PluginName, worker); err != nil {
-		log.Errorf("Error starting as daemon: %s", err)
+		log.Errorf("error starting as daemon: %s", err)
 	}
 }
 
-func worker(shutdownSignal <-chan struct{}) {
+func worker(ctx context.Context) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
@@ -198,13 +201,13 @@ func worker(shutdownSignal <-chan struct{}) {
 		log.Infof("%s started, bind address=%s", PluginName, bindAddr)
 		if err := Server.Start(bindAddr); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				log.Errorf("Error serving: %s", err)
+				log.Errorf("error serving: %s", err)
 			}
 		}
 	}()
 
 	select {
-	case <-shutdownSignal:
+	case <-ctx.Done():
 	case <-stopped:
 	}
 
@@ -216,6 +219,6 @@ func worker(shutdownSignal <-chan struct{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := Server.Shutdown(ctx); err != nil {
-		log.Errorf("Error stopping: %s", err)
+		log.Errorf("error stopping: %s", err)
 	}
 }

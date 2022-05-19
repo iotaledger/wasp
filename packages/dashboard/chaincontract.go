@@ -6,11 +6,9 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/labstack/echo/v4"
 )
@@ -25,14 +23,14 @@ func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainContract(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("chainid: %v", err))
 	}
 
 	hname, err := iscp.HnameFromString(c.Param("hname"))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("hname: %v", err))
 	}
 
 	result := &ChainContractTemplateParams{
@@ -45,37 +43,25 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		Hname:   hname,
 	}
 
-	r, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
+	r, err := d.wasp.CallView(chainID, root.Contract.Name, root.ViewFindContract.Name, codec.MakeDict(map[string]interface{}{
 		root.ParamHname: codec.EncodeHname(hname),
 	}))
 	if err != nil {
-		return err
+		return fmt.Errorf("call view failed: %v", err)
+	}
+	if r[root.ParamContractRecData] == nil {
+		return fmt.Errorf("contract not found")
 	}
 	result.ContractRecord, err = root.ContractRecordFromBytes(r[root.ParamContractRecData])
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot decode contract record: %v", err)
 	}
 
-	fees, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetFeeInfo.Name, codec.MakeDict(map[string]interface{}{
-		governance.ParamHname: codec.EncodeHname(hname),
-	}))
-	if err != nil {
-		return err
-	}
-	result.OwnerFee, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
-	if err != nil {
-		return err
-	}
-	result.ValidatorFee, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
-	if err != nil {
-		return err
-	}
-
-	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
+	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: codec.EncodeHname(hname),
 	}))
 	if err != nil {
-		return err
+		return fmt.Errorf("call view failed: %v", err)
 	}
 
 	recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)
@@ -88,11 +74,6 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		result.Log[i] = string(data)
 	}
 
-	result.RootInfo, err = d.fetchRootInfo(chainID)
-	if err != nil {
-		return err
-	}
-
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
@@ -103,9 +84,5 @@ type ChainContractTemplateParams struct {
 	Hname   iscp.Hname
 
 	ContractRecord *root.ContractRecord
-	OwnerFee       uint64
-	ValidatorFee   uint64
-	FeeColor       colored.Color
 	Log            []string
-	RootInfo       RootInfo
 }

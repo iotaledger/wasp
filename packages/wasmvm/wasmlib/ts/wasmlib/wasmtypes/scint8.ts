@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {hashToBytes, ScHash} from "./index";
 
 export const ScInt8Length = 1;
 
@@ -28,6 +29,10 @@ export function int8FromBytes(buf: u8[]): i8 {
 
 export function int8ToBytes(value: i8): u8[] {
     return [value as u8];
+}
+
+export function int8FromString(value: string): i8 {
+    return wasmtypes.intFromString(value, 8) as i8;
 }
 
 export function int8ToString(value: i8): string {

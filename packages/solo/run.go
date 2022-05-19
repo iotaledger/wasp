@@ -7,22 +7,20 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/identity"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/rotate"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
-func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -32,106 +30,118 @@ func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, 
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict, error) {
-	ch.Log.Debugf("runRequestsSync ('%s')", trace)
+func (ch *Chain) estimateGas(req iscp.Request) (result *vm.RequestResult) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
 
-	for _, r := range reqs {
-		_, solidArgs := r.Params()
-		require.True(ch.Env.T, solidArgs)
-	}
+	task := ch.runTaskNoLock([]iscp.Request{req}, true)
+	require.Len(ch.Env.T, task.Results, 1, "cannot estimate gas: request was skipped")
+	return task.Results[0]
+}
+
+func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask {
+	anchorOutput := ch.GetAnchorOutput()
 	task := &vm.VMTask{
 		Processors:         ch.proc,
-		ChainInput:         ch.GetChainOutput(),
+		AnchorOutput:       anchorOutput.GetAliasOutput(),
+		AnchorOutputID:     anchorOutput.OutputID(),
 		Requests:           reqs,
-		Timestamp:          ch.Env.LogicalTime(),
+		TimeAssumption:     ch.Env.GlobalTime(),
 		VirtualStateAccess: ch.State.Copy(),
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
-		Log:                ch.Log,
-	}
-	var err error
-	var callRes dict.Dict
-	var callErr error
-	// state baseline always valid in Solo
-	task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
-	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(ch.Env.T, err)
-		callRes = callResult
-		callErr = callError
+		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		// state baseline is always valid in Solo
+		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
+		EnableGasBurnLogging: true,
+		EstimateGasMode:      estimateGas,
 	}
 
 	ch.Env.vmRunner.Run(task)
+	require.NoError(ch.Env.T, task.VMError)
 
-	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
+	return task
+}
 
-	var essence *ledgerstate.TransactionEssence
+func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
+	task := ch.runTaskNoLock(reqs, false)
+
+	var essence *iotago.TransactionEssence
+	var inputsCommitment []byte
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
+		inputsCommitment = task.ResultInputsCommitment
 	} else {
-		essence, err = rotate.MakeRotateStateControllerTransaction(
-			task.RotationAddress,
-			task.ChainInput,
-			task.Timestamp.Add(2*time.Nanosecond),
-			identity.ID{},
-			identity.ID{},
-		)
-		require.NoError(ch.Env.T, err)
+		panic("not implemented")
+		//essence, err = rotate.MakeRotateStateControllerTransaction(
+		//	task.RotationAddress,
+		//	task.AnchorOutput,
+		//	task.Timestamp.Add(2*time.Nanosecond),
+		//	identity.ID{},
+		//	identity.ID{},
+		//)
+		//require.NoError(ch.Env.T, err)
 	}
-
-	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(essence)
+	sigs, err := essence.Sign(
+		inputsCommitment,
+		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
+	)
 	require.NoError(ch.Env.T, err)
-	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, essence, ch.StateControllerKeyPair)
-	require.NoError(ch.Env.T, err)
 
-	tx := ledgerstate.NewTransaction(essence, unlockBlocks)
+	tx := transaction.MakeAnchorTransaction(essence, sigs[0])
+
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
 
-	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
-	require.NoError(ch.Env.T, err)
+	anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualStateAccess
-		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
+		ch.settleStateTransition(tx, task.GetProcessedRequestIDs())
 	} else {
-		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
+		require.NoError(ch.Env.T, err)
+
+		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
 
-	return callRes, callErr
+	rootC := ch.GetRootCommitment()
+	l1C := ch.GetL1Commitment()
+	require.True(ch.Env.T, trie.EqualCommitments(rootC, l1C.StateCommitment))
+
+	return task.Results
 }
 
-//nolint // TODO check this function, the `stateOutput` param is unused, and its re-assigned on the first line
-func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOutput *ledgerstate.AliasOutput, reqids []iscp.RequestID) {
-	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
+func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []iscp.RequestID) {
+	anchor, stateOutput, err := transaction.GetAnchorFromTransaction(stateTx)
 	require.NoError(ch.Env.T, err)
 
 	// saving block just to check consistency. Otherwise, saved blocks are not used in Solo
 	block, err := ch.State.ExtractBlock()
 	require.NoError(ch.Env.T, err)
 	require.NotNil(ch.Env.T, block)
-	block.SetApprovingOutputID(stateOutput.ID())
+	block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
 
-	err = ch.State.Commit(block)
+	err = ch.State.Save(block)
 	require.NoError(ch.Env.T, err)
 
 	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
-	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
+	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
 
-	chain.PublishStateTransition(ch.ChainID, stateOutput, len(reqids))
-	chain.PublishRequestsSettled(ch.ChainID, stateOutput.GetStateIndex(), reqids)
+	chain.PublishStateTransition(ch.ChainID, iscp.NewAliasOutputWithID(stateOutput, anchor.OutputID.UTXOInput()), len(reqids))
+	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
-	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))
-	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqids))
+	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
+		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
+	ch.Log().Debugf("Batch processed: %s", batchShortStr(reqids))
 
 	ch.mempool.RemoveRequests(reqids...)
 
 	go ch.Env.EnqueueRequests(stateTx)
-	ch.Env.ClockStep()
 }
 
 func batchShortStr(reqIds []iscp.RequestID) string {
@@ -145,6 +155,6 @@ func batchShortStr(reqIds []iscp.RequestID) string {
 func (ch *Chain) logRequestLastBlock() {
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
-		ch.Log.Infof("REQ: '%s'", rec.Short())
+		ch.Log().Infof("REQ: '%s'", rec.Short())
 	}
 }

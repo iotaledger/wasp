@@ -15,8 +15,8 @@ var checkVersionsCmd = &cobra.Command{
 		// query every wasp node info endpoint and ensure the `VersionHash` matches
 		for i := 0; i < totalNumberOfWaspNodes(); i++ {
 			client := client.NewWaspClient(committeeHost(HostKindAPI, i))
-			waspServerInfo, error := client.Info()
-			log.Check(error)
+			waspServerInfo, err := client.Info()
+			log.Check(err)
 			if wasp.VersionHash == waspServerInfo.VersionHash {
 				log.Printf("Wasp-cli version matches Wasp #%d\n", i)
 			} else {

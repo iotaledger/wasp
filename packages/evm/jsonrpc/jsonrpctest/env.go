@@ -20,17 +20,15 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
 	T         *testing.T
-	EVMFlavor *coreutil.ContractInfo
 	Server    *rpc.Server
 	Client    *ethclient.Client
 	RawClient *rpc.Client
@@ -325,7 +323,7 @@ func (e *Env) TestRPCGasLimit() {
 
 	err = e.Client.SendTransaction(context.Background(), tx)
 	require.Error(e.T, err)
-	require.Regexp(e.T, `insufficient funds for gas \* price \+ value: address 0x\w+ have \d+ want \d+`, err.Error())
+	require.Contains(e.T, err.Error(), "insufficient funds for gas")
 }
 
 func (e *Env) TestRPCInvalidNonce() {

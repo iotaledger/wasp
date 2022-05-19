@@ -44,6 +44,7 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+    // divide tokens over members
     pub fn divide(_ctx: &dyn ScFuncCallContext) -> DivideCall {
         DivideCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DIVIDE),

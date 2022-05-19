@@ -9,17 +9,17 @@ import (
 func TestChainID(t *testing.T) {
 	chid := RandomChainID()
 
-	chid58 := chid.Base58()
-	t.Logf("chid58 = %s", chid58)
+	chidStr := chid.String()
+	t.Logf("chidStr = %s", chidStr)
 
-	chidString := chid.String()
-	t.Logf("chidString = %s", chidString)
+	chidHex := chid.String()
+	t.Logf("childString = %s", chidHex)
 
 	chidback, err := ChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	chidback, err = ChainIDFromBase58(chid58)
+	chidback, err = ChainIDFromString(chidHex)
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 }

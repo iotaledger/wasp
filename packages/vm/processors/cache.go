@@ -6,9 +6,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"golang.org/x/xerrors"
 )
 
 // Cache stores all initialized VMProcessor instances used by a single chain
@@ -50,9 +50,8 @@ func (cps *Cache) newProcessor(programHash hashing.HashValue, programCode []byte
 	}
 	switch vmtype {
 	case vmtypes.Core:
-		proc, err = core.GetProcessor(programHash)
-		if err != nil {
-			return err
+		if proc, ok = cps.Config.GetCoreProcessor(programHash); !ok {
+			return fmt.Errorf("can't find builtin processor with hash %s", programHash)
 		}
 
 	case vmtypes.Native:
@@ -75,11 +74,13 @@ func (cps *Cache) ExistsProcessor(h hashing.HashValue) bool {
 	return ok
 }
 
-func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (iscp.VMProcessor, error) {
+type GetBinaryFunc func(hashing.HashValue) (string, []byte, error)
+
+func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary GetBinaryFunc) (iscp.VMProcessor, error) {
 	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
 }
 
-func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (iscp.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary GetBinaryFunc) (iscp.VMProcessor, error) {
 	cps.mutex.Lock()
 	defer cps.mutex.Unlock()
 
@@ -88,7 +89,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	}
 	vmtype, binary, err := getBinary(progHash)
 	if err != nil {
-		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
+		return nil, xerrors.Errorf("internal error: can't get the binary for the program: %w", err)
 	}
 	if err := cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
@@ -96,7 +97,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
-	return nil, fmt.Errorf("internal error: can't get the deployed processor")
+	return nil, xerrors.Errorf("internal error: can't get the deployed processor")
 }
 
 // RemoveProcessor deletes processor from cache

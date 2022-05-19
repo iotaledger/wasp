@@ -1,57 +1,80 @@
 package iscp
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
-// region Request //////////////////////////////////////////////////////
-// Request has two main implementations
-// - RequestOnLedger
-// - RequestOffLedger
+func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
+	data, err := mu.ReadBytes(iotago.OutputIDLength)
+	if err != nil {
+		return nil, err
+	}
+	id, err := DecodeOutputID(data)
+	if err != nil {
+		return nil, err
+	}
+	return id.UTXOInput(), nil
+}
+
+func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
+	mu.WriteBytes(EncodeOutputID(id.ID()))
+}
+
+// Request wraps any data which can be potentially be interpreted as a request
 type Request interface {
-	// index == 0 for off ledger requests
-	ID() RequestID
-	// is request on transaction of not
+	Calldata
+
 	IsOffLedger() bool
-	// true or false for on-ledger requests, always true for off-ledger
-	IsFeePrepaid() bool
-	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
-	Params() (dict.Dict, bool)
-	// account of the sender
-	SenderAccount() *AgentID
-	// address of the sender for all requests,
-	SenderAddress() ledgerstate.Address
-	// returns contract/entry point pair
-	Target() RequestTarget
-	// Timestamp returns a request TX timestamp, if such TX exist, otherwise zero is returned.
-	Timestamp() time.Time
-	// Bytes returns binary representation of the request
+	AsOffLedger() AsOffLedger
+	AsOnLedger() AsOnLedger
+
 	Bytes() []byte
-	// Hash returns the hash of the request (used for consensus)
-	Hash() [32]byte
-	// String representation of the request (humanly readable)
 	String() string
 }
 
-type RequestTarget struct {
-	Contract   Hname
-	EntryPoint Hname
+type TimeData struct {
+	MilestoneIndex uint32
+	Time           time.Time
 }
 
-func NewRequestTarget(contract, entryPoint Hname) RequestTarget {
-	return RequestTarget{
-		Contract:   contract,
-		EntryPoint: entryPoint,
-	}
+type Calldata interface {
+	ID() RequestID
+	Params() dict.Dict
+	SenderAccount() AgentID // returns nil if sender address is not available
+	SenderAddress() iotago.Address
+	CallTarget() CallTarget
+	TargetAddress() iotago.Address   // TODO implement properly. Target depends on time assumptions and UTXO type
+	FungibleTokens() *FungibleTokens // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	NFT() *NFT                       // Not nil if the request is an NFT request
+	Allowance() *Allowance           // transfer of assets to the smart contract. Debited from sender account
+	GasBudget() uint64
+}
+
+type Features interface {
+	TimeLock() *TimeData
+	Expiry() (*TimeData, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
+	ReturnAmount() (uint64, bool)
+}
+
+type AsOffLedger interface {
+	Nonce() uint64
+}
+
+type AsOnLedger interface {
+	Output() iotago.Output
+	IsInternalUTXO(*ChainID) bool
+	UTXOInput() iotago.UTXOInput
+	Features() Features
+}
+
+type ReturnAmountOptions interface {
+	ReturnTo() iotago.Address
+	Amount() uint64
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {
@@ -62,102 +85,74 @@ func TakeRequestIDs(reqs ...Request) []RequestID {
 	return ret
 }
 
-// endregion ///////////////////////////////////////////////////////////
-
-// region RequestID ///////////////////////////////////////////////////////////////
-type RequestID ledgerstate.OutputID
-
-const RequestIDDigestLen = 6
-
-// RequestLookupDigest is shortened version of the request id. It is guaranteed to be uniques
-// within one block, however it may collide globally. Used for quick checking for most requests
-// if it was never seen
-type RequestLookupDigest [RequestIDDigestLen + 2]byte
-
-func NewRequestID(txid ledgerstate.TransactionID, index uint16) RequestID {
-	return RequestID(ledgerstate.NewOutputID(txid, index))
-}
-
-func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
-	ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
-	return RequestID(ret), err
-}
-
-func RequestIDFromBytes(data []byte) (RequestID, error) {
-	return RequestIDFromMarshalUtil(marshalutil.New(data))
-}
-
-func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
-	var oid ledgerstate.OutputID
-	oid, err = ledgerstate.OutputIDFromBase58(b58)
+// RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
+func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error) {
+	txid, err := tx.ID()
 	if err != nil {
-		return
+		return nil, err
 	}
-	ret = RequestID(oid)
-	return
-}
 
-func RequestIDFromString(s string) (ret RequestID, err error) {
-	if !strings.HasPrefix(s, "[") {
-		return RequestIDFromBase58(s)
+	ret := make(map[ChainID][]Request)
+	for i, out := range tx.Essence.Outputs {
+		switch out.(type) {
+		case *iotago.BasicOutput, *iotago.NFTOutput:
+			// process it
+		default:
+			// only BasicOutputs and NFTs are interpreted right now, // TODO other outputs
+			continue
+		}
+		// wrap output into the iscp.Request
+		odata, err := OnLedgerFromUTXO(out, &iotago.UTXOInput{
+			TransactionID:          *txid,
+			TransactionOutputIndex: uint16(i),
+		})
+		if err != nil {
+			return nil, err // TODO: maybe log the error and keep processing?
+		}
+
+		addr := odata.TargetAddress()
+		if addr.Type() != iotago.AddressAlias {
+			continue
+		}
+
+		chainID := ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
+
+		if odata.IsInternalUTXO(&chainID) {
+			continue
+		}
+
+		ret[chainID] = append(ret[chainID], odata)
 	}
-	parts := strings.Split(s[1:], "]")
-	if len(parts) != 2 {
-		err = xerrors.New("RequestIDFromString: wrong format")
-		return
+	return ret, nil
+}
+
+// don't process any request which deadline will expire within 1 minute
+const RequestConsideredExpiredWindow = time.Minute * 1
+
+func RequestIsExpired(req AsOnLedger, currentTime TimeData) bool {
+	expiry, _ := req.Features().Expiry()
+	if expiry == nil {
+		return false
 	}
-	index, err2 := strconv.ParseUint(parts[0], 10, 16)
-	if err2 != nil {
-		err = xerrors.Errorf("RequestIDFromString: %v", err2)
-		return
+	if expiry.MilestoneIndex != 0 && currentTime.MilestoneIndex >= expiry.MilestoneIndex {
+		return false
 	}
-	txid, err3 := ledgerstate.TransactionIDFromBase58(parts[1])
-	if err3 != nil {
-		err = xerrors.Errorf("RequestIDFromString: %v", err3)
-		return
+	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-RequestConsideredExpiredWindow))
+}
+
+func RequestIsUnlockable(req AsOnLedger, chainAddress iotago.Address, currentTime TimeData) bool {
+	if RequestIsExpired(req, currentTime) {
+		return false
 	}
-	return NewRequestID(txid, uint16(index)), nil
+
+	output, _ := req.Output().(iotago.TransIndepIdentOutput)
+
+	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{
+		ConfMsIndex: currentTime.MilestoneIndex,
+		ConfUnix:    uint32(currentTime.Time.Unix()),
+	})
 }
 
-func (rid RequestID) OutputID() ledgerstate.OutputID {
-	return ledgerstate.OutputID(rid)
+func RequestHash(req Request) hashing.HashValue {
+	return hashing.HashData(req.Bytes())
 }
-
-func (rid RequestID) LookupDigest() RequestLookupDigest {
-	ret := RequestLookupDigest{}
-	copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
-	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
-	return ret
-}
-
-// Base58 returns a base58 encoded version of the request id.
-func (rid RequestID) Base58() string {
-	return ledgerstate.OutputID(rid).Base58()
-}
-
-func (rid RequestID) Bytes() []byte {
-	return rid[:]
-}
-
-func (rid RequestID) String() string {
-	return OID(rid.OutputID())
-}
-
-func (rid RequestID) Short() string {
-	txid := rid.OutputID().TransactionID().Base58()
-	return fmt.Sprintf("[%d]%s", rid.OutputID().OutputIndex(), txid[:6]+"..")
-}
-
-func OID(o ledgerstate.OutputID) string {
-	return fmt.Sprintf("[%d]%s", o.OutputIndex(), o.TransactionID().Base58())
-}
-
-func ShortRequestIDs(ids []RequestID) []string {
-	ret := make([]string, len(ids))
-	for i := range ret {
-		ret[i] = ids[i].Short()
-	}
-	return ret
-}
-
-// endregion ////////////////////////////////////////////////////////////////////////////////////

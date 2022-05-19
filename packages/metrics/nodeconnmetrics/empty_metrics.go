@@ -1,28 +1,36 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type emptyNodeConnectionMetrics struct {
-	NodeConnectionMessagesMetrics
+	*emptyNodeConnectionMessagesMetrics
+	emptyMessageMetrics NodeConnectionMessageMetrics
 }
 
 var _ NodeConnectionMetrics = &emptyNodeConnectionMetrics{}
 
 func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 	return &emptyNodeConnectionMetrics{
-		NodeConnectionMessagesMetrics: NewEmptyNodeConnectionMessagesMetrics(),
+		emptyNodeConnectionMessagesMetrics: newEmptyNodeConnectionMessagesMetrics(),
+		emptyMessageMetrics:                newEmptyNodeConnectionMessageMetrics(),
 	}
 }
 
-func (ncmi *emptyNodeConnectionMetrics) RegisterMetrics() {}
-func (ncmi *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
-	return NewEmptyNodeConnectionMessagesMetrics()
+func (encmT *emptyNodeConnectionMetrics) RegisterMetrics() {}
+
+func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+	return newEmptyNodeConnectionMessagesMetrics()
 }
-func (ncmi *emptyNodeConnectionMetrics) SetSubscribed(address ledgerstate.Address)   {}
-func (ncmi *emptyNodeConnectionMetrics) SetUnsubscribed(address ledgerstate.Address) {}
-func (ncmi *emptyNodeConnectionMetrics) GetSubscribed() []ledgerstate.Address {
-	return []ledgerstate.Address{}
+
+func (encmT *emptyNodeConnectionMetrics) SetRegistered(*iscp.ChainID)   {}
+func (encmT *emptyNodeConnectionMetrics) SetUnregistered(*iscp.ChainID) {}
+
+func (encmT *emptyNodeConnectionMetrics) GetRegistered() []*iscp.ChainID {
+	return []*iscp.ChainID{}
+}
+
+func (encmT *emptyNodeConnectionMetrics) GetInMilestone() NodeConnectionMessageMetrics {
+	return encmT.emptyMessageMetrics
 }

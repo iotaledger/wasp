@@ -8,19 +8,19 @@ use crate::host::*;
 
 // @formatter:off
 pub const FN_ACCOUNT_ID            : i32 = -1;
-pub const FN_BALANCE               : i32 = -2;
-pub const FN_BALANCES              : i32 = -3;
-pub const FN_BLOCK_CONTEXT         : i32 = -4;
-pub const FN_CALL                  : i32 = -5;
-pub const FN_CALLER                : i32 = -6;
-pub const FN_CHAIN_ID              : i32 = -7;
-pub const FN_CHAIN_OWNER_ID        : i32 = -8;
-pub const FN_CONTRACT              : i32 = -9;
-pub const FN_CONTRACT_CREATOR      : i32 = -10;
-pub const FN_DEPLOY_CONTRACT       : i32 = -11;
-pub const FN_ENTROPY               : i32 = -12;
-pub const FN_EVENT                 : i32 = -13;
-pub const FN_INCOMING_TRANSFER     : i32 = -14;
+pub const FN_ALLOWANCE             : i32 = -2;
+pub const FN_BALANCE               : i32 = -3;
+pub const FN_BALANCES              : i32 = -4;
+pub const FN_BLOCK_CONTEXT         : i32 = -5;
+pub const FN_CALL                  : i32 = -6;
+pub const FN_CALLER                : i32 = -7;
+pub const FN_CHAIN_ID              : i32 = -8;
+pub const FN_CHAIN_OWNER_ID        : i32 = -9;
+pub const FN_CONTRACT              : i32 = -10;
+pub const FN_CONTRACT_CREATOR      : i32 = -11;
+pub const FN_DEPLOY_CONTRACT       : i32 = -12;
+pub const FN_ENTROPY               : i32 = -13;
+pub const FN_EVENT                 : i32 = -14;
 pub const FN_LOG                   : i32 = -15;
 pub const FN_MINTED                : i32 = -16;
 pub const FN_PANIC                 : i32 = -17;
@@ -43,6 +43,8 @@ pub const FN_UTILS_ED25519_VALID   : i32 = -33;
 pub const FN_UTILS_HASH_BLAKE2B    : i32 = -34;
 pub const FN_UTILS_HASH_NAME       : i32 = -35;
 pub const FN_UTILS_HASH_SHA3       : i32 = -36;
+pub const FN_TRANSFER_ALLOWED      : i32 = -37;
+pub const FN_ESTIMATE_DUST         : i32 = -38;
 // @formatter:on
 
 // Direct logging of informational text to host log
@@ -79,8 +81,8 @@ pub trait ScSandbox {
         agent_id_from_bytes(&sandbox(FN_ACCOUNT_ID, &[]))
     }
 
-    fn balance(&self, color: ScColor) -> u64 {
-        uint64_from_bytes(&sandbox(FN_BALANCE, &color.to_bytes()))
+    fn balance(&self, token_id: ScTokenID) -> u64 {
+        uint64_from_bytes(&sandbox(FN_BALANCE, &token_id.to_bytes()))
     }
 
     // access the current balances for all assets
@@ -89,18 +91,18 @@ pub trait ScSandbox {
     }
 
     // calls a smart contract function
-    fn call_with_transfer(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfers>) -> ScImmutableDict {
+    fn call_with_allowance(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, allowance: Option<ScTransfer>) -> ScImmutableDict {
         let mut req = wasmrequests::CallRequest {
             contract: h_contract,
             function: h_function,
             params: vec![0; SC_UINT32_LENGTH],
-            transfer: vec![0; SC_UINT32_LENGTH],
+            allowance: vec![0; SC_UINT32_LENGTH],
         };
         if let Some(params) = params {
             req.params = params.to_bytes();
         }
-        if let Some(transfer) = transfer {
-            req.transfer = transfer.to_bytes();
+        if let Some(allowance) = allowance {
+            req.allowance = allowance.to_bytes();
         }
         let buf = sandbox(FN_CALL, &req.to_bytes());
         ScImmutableDict::new(ScDict::new(&buf))
@@ -172,7 +174,7 @@ pub trait ScSandbox {
 pub trait ScSandboxView: ScSandbox {
     // calls a smart contract view
     fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>) -> ScImmutableDict {
-        return self.call_with_transfer(h_contract, h_function, params, None);
+        return self.call_with_allowance(h_contract, h_function, params, None);
     }
 
     fn raw_state(&self) -> ScImmutableDict {
@@ -181,13 +183,19 @@ pub trait ScSandboxView: ScSandbox {
 }
 
 pub trait ScSandboxFunc: ScSandbox {
+    // access the allowance assets
+    fn allowance(&self) -> ScBalances {
+        let buf = sandbox(FN_ALLOWANCE, &[]);
+        return ScAssets::new(&buf).balances();
+    }
+
     //fn blockContext(&self, construct func(sandbox: ScSandbox) interface{}, onClose func(interface{})) -> interface{} {
     //	panic("implement me")
     //}
 
     // calls a smart contract func or view
-    fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, transfer: Option<ScTransfers>) -> ScImmutableDict {
-        return self.call_with_transfer(h_contract, h_function, params, transfer);
+    fn call(&self, h_contract: ScHname, h_function: ScHname, params: Option<ScDict>, allowance: Option<ScTransfer>) -> ScImmutableDict {
+        return self.call_with_allowance(h_contract, h_function, params, allowance);
     }
 
     // retrieve the agent id of the caller of the smart contract
@@ -214,15 +222,14 @@ pub trait ScSandboxFunc: ScSandbox {
         return hash_from_bytes(&sandbox(FN_ENTROPY, &[]));
     }
 
+    fn estimate_dust(&self, f: &ScFunc) -> u64 {
+        let req = f.post_request(ScFuncContext {}.chain_id());
+        uint64_from_bytes(&sandbox(FN_ESTIMATE_DUST, &req.to_bytes()))
+    }
+
     // signals an event on the node that external entities can subscribe to
     fn event(&self, msg: &str) {
         sandbox(FN_EVENT, &string_to_bytes(msg));
-    }
-
-    // access the incoming balances for all assets
-    fn incoming_transfer(&self) -> ScBalances {
-        let buf = sandbox(FN_INCOMING_TRANSFER, &[]);
-        return ScAssets::new(&buf).balances();
     }
 
     // retrieve the assets that were minted in self transaction
@@ -231,13 +238,14 @@ pub trait ScSandboxFunc: ScSandbox {
         return ScAssets::new(&buf).balances();
     }
 
-    // (delayed) posts a smart contract function request
-    fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, transfer: ScTransfers, delay: u32) {
+    // Post (delayed) posts a SC function request
+    fn post(&self, chain_id: ScChainID, h_contract: ScHname, h_function: ScHname, params: ScDict, allowance: ScTransfer, transfer: ScTransfer, delay: u32) {
         let req = wasmrequests::PostRequest {
             chain_id,
             contract: h_contract,
             function: h_function,
             params: params.to_bytes(),
+            allowance: allowance.to_bytes(),
             transfer: transfer.to_bytes(),
             delay: delay,
         };
@@ -282,8 +290,8 @@ pub trait ScSandboxFunc: ScSandbox {
         return request_id_from_bytes(&sandbox(FN_REQUEST_ID, &[]));
     }
 
-    // transfer assets to the specified Tangle ledger address
-    fn send(&self, address: &ScAddress, transfer: &ScTransfers) {
+    // Send transfers SC assets to the specified address
+    fn send(&self, address: &ScAddress, transfer: &ScTransfer) {
         // we need some assets to send
         if transfer.is_empty() {
             return;
@@ -299,4 +307,19 @@ pub trait ScSandboxFunc: ScSandbox {
     //fn stateAnchor(&self) -> interface{} {
     //	panic("implement me")
     //}
+
+    // TransferAllowed transfers allowed assets from caller to the specified account
+    fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfer, create: bool) {
+        // we need some assets to send
+        if transfer.is_empty() {
+            return;
+        }
+
+        let req = wasmrequests::TransferRequest {
+            agent_id: agent_id.clone(),
+            create: create,
+            transfer: transfer.to_bytes(),
+        };
+        sandbox(FN_TRANSFER_ALLOWED, &req.to_bytes());
+    }
 }

@@ -48,11 +48,20 @@ pub fn bool_to_bytes(value: bool) -> Vec<u8> {
     [SC_BOOL_FALSE].to_vec()
 }
 
+pub fn bool_from_string(value: &str) -> bool {
+    match value {
+        "0" => return false,
+        "1" => return true,
+        _ => panic("invalid Bool string")
+    }
+    false
+}
+
 pub fn bool_to_string(value: bool) -> String {
     if value {
-        return "1".to_string();
+        return String::from("1");
     }
-    "0".to_string()
+    String::from("0")
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

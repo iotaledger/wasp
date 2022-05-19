@@ -3,72 +3,43 @@
 
 import * as wasmtypes from "./wasmtypes"
 
-// interface WasmLib to the VM host
+export interface ScHost {
+    exportName(index: i32, name: string): void;
+    sandbox(funcNr: i32, params: u8[] | null): u8[];
+    stateDelete(key: u8[]): void;
+    stateExists(key: u8[]): bool;
+    stateGet(key: u8[]): u8[] | null;
+    stateSet(key: u8[], value: u8[]): void;
+}
 
-// These 2 external functions are funneling the entire WasmLib functionality
-// to their counterparts on the host.
+export var host:ScHost;
 
-@external("WasmLib", "hostStateGet")
-export declare function hostStateGet(keyRef: usize, keyLen: i32, valRef: usize, valLen: i32): i32;
-
-@external("WasmLib", "hostStateSet")
-export declare function hostStateSet(keyRef: usize, keyLen: i32, valRef: usize, valLen: i32): void;
+export function connectHost(h: ScHost): ScHost {
+    const oldHost = host;
+    host = h;
+    return oldHost;
+}
 
 export function exportName(index: i32, name: string): void {
-    const buf = wasmtypes.stringToBytes(name);
-    hostStateSet(0, index, buf.dataStart, buf.length as i32);
+    host.exportName(index, name);
 }
 
 export function sandbox(funcNr: i32, params: u8[] | null): u8[] {
-    if (params === null) {
-        params = [];
-    }
-    // call sandbox function, result value will be cached by host
-    // always negative funcNr as keyLen indicates sandbox call
-    // this removes the need for a separate hostSandbox function
-    let size = hostStateGet(0, funcNr, params.dataStart, params.length as i32);
-
-    // zero length, no need to retrieve cached value
-    if (size == 0) {
-        return [];
-    }
-
-    // retrieve cached value from host
-    let result: u8[] = new Array(size);
-    hostStateGet(0, 0, result.dataStart, size);
-    return result;
+    return host.sandbox(funcNr, params);
 }
 
 export function stateDelete(key: u8[]): void {
-    hostStateSet(key.dataStart, key.length as i32, 0, -1);
+    host.stateDelete(key);
 }
 
 export function stateExists(key: u8[]): bool {
-    return hostStateGet(key.dataStart, key.length as i32, 0, -1) >= 0;
+    return host.stateExists(key);
 }
 
 export function stateGet(key: u8[]): u8[] | null {
-    // variable sized result expected,
-    // query size first by passing zero length buffer
-    // value will be cached by host
-    let size = hostStateGet(key.dataStart, key.length as i32, 0, 0);
-
-    // -1 means non-existent
-    if (size < 0) {
-        return null;
-    }
-
-    // zero length, no need to retrieve cached value
-    if (size == 0) {
-        return [];
-    }
-
-    // retrieve cached value from host
-    let result: u8[] = new Array(size);
-    hostStateGet(0, 0, result.dataStart, size);
-    return result;
+    return host.stateGet(key);
 }
 
 export function stateSet(key: u8[], value: u8[]): void {
-    hostStateSet(key.dataStart, key.length as i32, value.dataStart, value.length as i32);
+    host.stateSet(key, value);
 }

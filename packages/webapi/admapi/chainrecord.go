@@ -28,7 +28,7 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry
 
 	adm.GET(routes.GetChainRecord(":chainID"), s.handleGetChainRecord).
 		SetSummary("Find the chain record for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (hex)").
 		AddResponse(http.StatusOK, "Chain Record", example, nil)
 
 	adm.GET(routes.ListChainRecords(), s.handleGetChainRecordList).
@@ -50,7 +50,7 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 	reg := s.registry()
 	bd := req.Record()
 
-	bd2, err := reg.GetChainRecordByChainID(bd.ChainID)
+	bd2, err := reg.GetChainRecordByChainID(&bd.ChainID)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 }
 
 func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

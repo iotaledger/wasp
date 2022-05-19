@@ -1,0 +1,8 @@
+name: CoreContracts
+description: Tests core contract interfaces
+events: {}
+structs: {}
+typedefs: {}
+state:
+funcs:
+views:

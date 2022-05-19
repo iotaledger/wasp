@@ -17,50 +17,62 @@ pub struct ImmutableGetInfoResults {
 }
 
 impl ImmutableGetInfoResults {
+    // nr of bidders
     pub fn bidders(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_BIDDERS))
 	}
 
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(RESULT_COLOR))
-	}
-
+    // issuer of start_auction transaction
     pub fn creator(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(RESULT_CREATOR))
 	}
 
+    // deposit by auction owner to cover the SC fees
     pub fn deposit(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_DEPOSIT))
 	}
 
+    // auction description
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(RESULT_DESCRIPTION))
 	}
 
+    // auction duration in minutes
     pub fn duration(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_DURATION))
 	}
 
+    // the current highest bid amount
     pub fn highest_bid(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_HIGHEST_BID))
 	}
 
+    // the current highest bidder
     pub fn highest_bidder(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(RESULT_HIGHEST_BIDDER))
 	}
 
+    // minimum bid amount
     pub fn minimum_bid(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_MINIMUM_BID))
 	}
 
+    // number of tokens for sale
     pub fn num_tokens(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_NUM_TOKENS))
 	}
 
+    // auction owner's margin in promilles
     pub fn owner_margin(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
 	}
 
+    // token of tokens for sale
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(RESULT_TOKEN))
+	}
+
+    // timestamp when auction started
     pub fn when_started(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_WHEN_STARTED))
 	}
@@ -72,50 +84,62 @@ pub struct MutableGetInfoResults {
 }
 
 impl MutableGetInfoResults {
+    // nr of bidders
     pub fn bidders(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_BIDDERS))
 	}
 
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(RESULT_COLOR))
-	}
-
+    // issuer of start_auction transaction
     pub fn creator(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(RESULT_CREATOR))
 	}
 
+    // deposit by auction owner to cover the SC fees
     pub fn deposit(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_DEPOSIT))
 	}
 
+    // auction description
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(RESULT_DESCRIPTION))
 	}
 
+    // auction duration in minutes
     pub fn duration(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_DURATION))
 	}
 
+    // the current highest bid amount
     pub fn highest_bid(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_HIGHEST_BID))
 	}
 
+    // the current highest bidder
     pub fn highest_bidder(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(RESULT_HIGHEST_BIDDER))
 	}
 
+    // minimum bid amount
     pub fn minimum_bid(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_MINIMUM_BID))
 	}
 
+    // number of tokens for sale
     pub fn num_tokens(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_NUM_TOKENS))
 	}
 
+    // auction owner's margin in promilles
     pub fn owner_margin(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
 	}
 
+    // token of tokens for sale
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(RESULT_TOKEN))
+	}
+
+    // timestamp when auction started
     pub fn when_started(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_WHEN_STARTED))
 	}

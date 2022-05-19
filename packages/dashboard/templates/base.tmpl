@@ -7,21 +7,30 @@
 {{end}}
 
 {{define "address"}}
-	<code>{{.Base58}}</code> {{ template "exploreAddressInTangle" . }}
+	<code>{{(addressToString .)}}</code> {{ template "exploreAddressInTangle" . }}
 {{end}}
 
 {{define "agentid"}}
 	{{ $chainid := (index . 0) }}
 	{{ $agentid := (index . 1) }}
-	<a href="{{ uri "chainAccount" $chainid.Base58 (replace $agentid.String "/" ":" 1) }}"><code>{{ $agentid }}</code></a>
-	{{ template "exploreAddressInTangle" $agentid.Address }}
+    {{ $agentidStr := (agentIDToString $agentid) }}
+    {{ $addr := (addressFromAgentID $agentid) }}
+    {{ if $addr }}
+        <a href="{{ uri "chainAccount" $chainid $agentidStr }}"><code>{{ $agentidStr }}</code></a>
+        {{ template "exploreAddressInTangle" $addr }}
+    {{ else }}
+        <code>{{ $agentidStr }}</code>
+    {{ end  }}
 {{end}}
 
 {{define "balances"}}
 	<dl>
-		{{range $color, $bal := .}}
-			<dt><code>{{ colorref $color }}</code></dt>
-			<dd>{{ $bal }}</dd>
+        {{if gt .Iotas 0}}
+            <dt>Iotas</dt><dd>{{ .Iotas }}</dd>
+        {{end}}
+		{{range $_, $token := .Tokens}}
+			<dt><code>{{ $token.ID }}</code></dt>
+			<dd>{{ $token.Amount }}</dd>
 		{{end}}
 	</dl>
 {{end}}

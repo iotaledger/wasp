@@ -6,6 +6,7 @@ package gotemplates
 var resultsGo = map[string]string{
 	// *******************************
 	"results.go": `
+//nolint:revive
 $#emit goPackage
 
 $#emit importWasmTypes

@@ -34,6 +34,10 @@ func Uint16ToBytes(value uint16) []byte {
 	return []byte{byte(value), byte(value >> 8)}
 }
 
+func Uint16FromString(value string) uint16 {
+	return uint16(UintFromString(value, 16))
+}
+
 func Uint16ToString(value uint16) string {
 	return strconv.FormatUint(uint64(value), 10)
 }

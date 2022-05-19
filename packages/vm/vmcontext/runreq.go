@@ -2,363 +2,378 @@ package vmcontext
 
 import (
 	"errors"
-	"fmt"
+	"math"
+	"math/big"
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
-// TODO temporary place for the constant. In the future must be shared with pruning module
-//  the number is approximate assumed maximum number of requests in the batch
-//  The node must guarantee at least this number of last requests processed recorded in the state
-//  for each address
-const OffLedgerNonceStrictOrderTolerance = 10000
-
-// RunTheRequest processes any request based on the Extended output, even if it
-// doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
-	defer vmctx.mustFinalizeRequestCall()
-
-	// snapshot tx builder to be able to rollbck and not include this request in the current block
-	snapshotTxBuilderWithoutInput := vmctx.txBuilder.Clone()
-	vmctx.mustSetUpRequestContext(req, requestIndex)
-
-	// guard against replaying off-ledger requests here to prevent replaying fee deduction
-	// also verifies that account for off-ledger request exists
-	if !vmctx.validateRequest() {
-		vmctx.log.Debugw("vmctx.RunTheRequest: request failed validation", "id", vmctx.req.ID())
-		return
-	}
-
-	if vmctx.isInitChainRequest() {
-		vmctx.chainOwnerID = vmctx.req.SenderAccount().Clone()
-	} else {
-		vmctx.getChainConfigFromState()
-		enoughFees := vmctx.mustHandleFees()
-		if !enoughFees {
-			return
-		}
-	}
-
-	// snapshot state baseline for rollback in case of panic
-	snapshotTxBuilder := vmctx.txBuilder.Clone()
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	// request run updates will be collected to the new state update
-	vmctx.currentStateUpdate = state.NewStateUpdate()
-
-	vmctx.lastError = nil
-	func() {
-		// panic catcher for the whole call from request to the VM
-		defer func() {
-			r := recover()
-			if r == nil {
-				return
-			}
-
-			switch err := r.(type) {
-			case *kv.DBError:
-				panic(err)
-			case error:
-				if errors.Is(err, coreutil.ErrorStateInvalidated) {
-					panic(err)
-				}
-			}
-			vmctx.lastResult = nil
-			vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
-			vmctx.Debugf("%v", vmctx.lastError)
-			vmctx.Debugf(string(debug.Stack()))
-		}()
-		vmctx.mustCallFromRequest()
-	}()
-
-	if vmctx.blockOutputCount > MaxBlockOutputCount {
-		vmctx.exceededBlockOutputLimit = true
-		vmctx.blockOutputCount -= vmctx.requestOutputCount
-		vmctx.Debugf("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
-		// rollback request processing, don't consume output or send funds back as this request should be processed in a following batch
-		vmctx.txBuilder = snapshotTxBuilderWithoutInput
-		vmctx.currentStateUpdate = state.NewStateUpdate()
-	}
-
-	if vmctx.lastError != nil {
-		// treating panic and error returned from request the same way
-		// restore the txbuilder and dispose mutations in the last state update
-		vmctx.txBuilder = snapshotTxBuilder
-		vmctx.currentStateUpdate = state.NewStateUpdate()
-
-		vmctx.mustSendBack(vmctx.remainingAfterFees)
-	}
-}
-
-// mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex uint16) {
-	if _, ok := req.Params(); !ok {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
-	}
+// RunTheRequest processes each iscp.Request in the batch
+func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
+	// prepare context for the request
 	vmctx.req = req
+	vmctx.NumPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
-	vmctx.requestOutputCount = 0
-	vmctx.exceededBlockOutputLimit = false
-
-	if !req.IsOffLedger() {
-		vmctx.txBuilder.AddConsumable(vmctx.req.(*request.OnLedger).Output())
-		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
-			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
-		}
-	}
-	ts := vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond)
-	vmctx.currentStateUpdate = state.NewStateUpdate(ts)
-
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
+	vmctx.gasBudgetAdjusted = 0
+	vmctx.gasBurned = 0
+	vmctx.gasFeeCharged = 0
+	vmctx.gasBurnEnable(false)
 
-	if isRequestTimeLockedNow(req, ts) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
+	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
+	defer func() { vmctx.currentStateUpdate = nil }()
+
+	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
+		return nil, err
 	}
-	if !req.IsOffLedger() {
-		// on-ledger request
-		reqt := req.(*request.OnLedger)
-		if input, ok := reqt.Output().(*ledgerstate.ExtendedLockedOutput); ok {
-			// it is an on-ledger request
-			if !input.UnlockAddressNow(ts).Equals(vmctx.chainID.AsAddress()) {
-				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-					ts, input.String(), vmctx.chainID.String())
+	vmctx.loadChainConfig()
+
+	// at this point state update is empty
+	// so far there were no panics except optimistic reader
+	txsnapshot := vmctx.createTxBuilderSnapshot()
+
+	// catches protocol exception error which is not the request or contract fault
+	// If it occurs, the request is just skipped
+	err = panicutil.CatchPanicReturnError(
+		func() {
+			// transfer all attached assets to the sender's account
+			vmctx.creditAssetsToChain()
+			// load gas and fee policy, calculate and set gas budget
+			vmctx.prepareGasBudget()
+			// run the contract program
+			receipt, callRet, callErr := vmctx.callTheContract()
+			vmctx.mustCheckTransactionSize()
+			result = &vm.RequestResult{
+				Request: req,
+				Receipt: receipt,
+				Return:  callRet,
+				Error:   callErr,
 			}
-		} else {
-			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
-		}
-		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(reqt.Output().Balances())
-	} else {
-		// off-ledger request
-		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
-	}
-
-	targetContract := req.Target().Contract
-	var ok bool
-	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
-	if !ok {
-		vmctx.log.Warnf("contract not found: %s", targetContract)
-	}
-	if vmctx.contractRecord.Hname() == 0 {
-		vmctx.log.Warn("default contract will be called")
-	}
-}
-
-func (vmctx *VMContext) adjustOffLedgerTransfer() colored.Balances {
-	req, ok := vmctx.req.(*request.OffLedger)
-	if !ok {
-		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
-	}
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	// take sender-provided token transfer info and adjust it to
-	// reflect what is actually available in the local sender account
-	sender := req.SenderAccount()
-	transfers := colored.NewBalances()
-	// deterministic order of iteration is not necessary
-	req.Tokens().ForEachRandomly(func(col colored.Color, bal uint64) bool {
-		available := accounts.GetBalance(vmctx.State(), sender, col)
-		if bal > available {
-			vmctx.log.Warn(
-				"adjusting transfer from ", bal,
-				" to available ", available,
-				" for ", sender.String(),
-				" req ", vmctx.Request().ID().String(),
-			)
-			bal = available
-		}
-		if bal > 0 {
-			transfers.Set(col, bal)
-		}
-		return true
-	})
-	return transfers
-}
-
-func (vmctx *VMContext) validateRequest() bool {
-	req, ok := vmctx.req.(*request.OffLedger)
-	if !ok {
-		// on-ledger request is always valid
-		return true
-	}
-
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	// off-ledger account must exist, i.e. it should have non zero balance on the chain
-	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
-		vmctx.lastError = fmt.Errorf("validateRequest: unverified account %s for %s", req.SenderAccount(), req.ID().String())
-		return false
-	}
-
-	// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
-	// See rfc [replay-off-ledger.md]
-
-	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), req.SenderAddress())
-
-	vmctx.log.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
-		maxAssumed, OffLedgerNonceStrictOrderTolerance, req.Nonce())
-
-	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
-		return true
-	}
-	return req.Nonce() > maxAssumed-OffLedgerNonceStrictOrderTolerance
-}
-
-// mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
-// Return false if not enough fees
-func (vmctx *VMContext) mustHandleFees() bool {
-	totalFee := vmctx.ownerFee + vmctx.validatorFee
-	if totalFee == 0 || vmctx.requesterIsLocal() {
-		// no fees enabled or the caller is the chain owner
-		vmctx.log.Debugf("mustHandleFees: no fees charged")
-		return true
-	}
-
-	// process fees for owner and validator
-	if vmctx.grabFee(vmctx.commonAccount(), vmctx.ownerFee) &&
-		vmctx.grabFee(vmctx.validatorFeeTarget, vmctx.validatorFee) {
-		// there were enough fees for both
-		return true
-	}
-
-	// not enough fees available
-	vmctx.mustSendBack(vmctx.remainingAfterFees)
-	vmctx.remainingAfterFees = nil
-	vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Remaining tokens were sent back to %s",
-		vmctx.req.ID(), vmctx.req.SenderAddress().Base58())
-	return false
-}
-
-// Return false if not enough fees
-func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
-	if amount == 0 {
-		return true
-	}
-
-	// determine how much fees we can actually take
-	available := vmctx.remainingAfterFees.Get(vmctx.feeColor)
-	if available == 0 {
-		return false
-	}
-	enoughFees := available >= amount
-	if !enoughFees {
-		// just take whatever is there
-		amount = available
-	}
-	vmctx.remainingAfterFees.SubNoOverflow(vmctx.feeColor, amount)
-
-	// get ready to transfer the fees
-	transfer := colored.NewBalancesForColor(vmctx.feeColor, amount)
-
-	if !vmctx.req.IsFeePrepaid() {
-		vmctx.creditToAccount(account, transfer)
-		return enoughFees
-	}
-
-	// fees should have been deposited in sender account on chain
-	sender := vmctx.req.SenderAccount()
-	return vmctx.moveBetweenAccounts(sender, account, transfer) && enoughFees
-}
-
-func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
-	if len(tokens) == 0 || vmctx.req.IsOffLedger() {
-		return
-	}
-	sender := vmctx.req.SenderAccount()
-	if sender.Address().Equals(vmctx.chainID.AsAddress()) {
-		// if sender is on the same chain, just accrue tokens back to it
-		vmctx.creditToAccount(vmctx.adjustAccount(sender), tokens)
-		return
-	}
-	// send tokens back
-	// the logic is to send to original aliasAddress and to original contract is any
-	// otherwise will be sent to _default contract. In case if sender
-	// is ordinary wallet the tokens (less fees) will be returned back
-	backToAddress := sender.Address()
-	backToContract := sender.Hname()
-	metadata := request.NewMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens), nil)
+		}, vmexceptions.AllProtocolLimits...,
+	)
 	if err != nil {
-		vmctx.log.Errorf("mustSendBack: %v", err)
+		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
+		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		return nil, err
 	}
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
+	return result, nil
 }
 
-// mustCallFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) mustCallFromRequest() {
-	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
+// creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
+func (vmctx *VMContext) creditAssetsToChain() {
+	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
 
-	vmctx.mustUpdateOffledgerRequestMaxAssumedNonce()
-
-	// calling only non view entry points. Calling the view will trigger error and fallback
-	entryPoint := vmctx.req.Target().EntryPoint
-	targetContract := vmctx.contractRecord.Hname()
-	params, _ := vmctx.req.Params()
-	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		targetContract, entryPoint, params, vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
-}
-
-func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
-	if offl, ok := vmctx.req.(*request.OffLedger); ok {
-		vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-		defer vmctx.popCallContext()
-
-		accounts.RecordMaxAssumedNonce(vmctx.State(), offl.SenderAddress(), offl.Nonce())
-	}
-}
-
-func (vmctx *VMContext) mustFinalizeRequestCall() {
-	if vmctx.exceededBlockOutputLimit {
+	if vmctx.req.IsOffLedger() {
+		// off ledger request does not bring any deposit
 		return
 	}
-	vmctx.mustLogRequestToBlockLog(vmctx.lastError) // panic not caught
-	vmctx.lastTotalAssets = vmctx.totalAssets()
+	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
+	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req)
+	if dustAdjustment > 0 {
+		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
+	}
 
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil
+	// if sender is specified, all assets goes to sender's account
+	// Otherwise it all goes to the common account and panics is logged in the SC call
+	account := vmctx.req.SenderAccount()
+	if account == nil {
+		account = vmctx.ChainID().CommonAccount()
+	}
+	vmctx.creditToAccount(account, vmctx.req.FungibleTokens())
+	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
-	vmctx.log.Debug("runTheRequest OUT. ",
-		"reqId: ", vmctx.req.ID().Short(),
-		" entry point: ", vmctx.req.Target().EntryPoint.String(),
+	// adjust the sender's account with the dust consumed or returned by internal UTXOs
+	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
+	// it will panic with exceptions.ErrNotEnoughFundsForInternalDustDeposit
+	// TNT outputs will use dust deposit from the caller
+	// TODO remove attack vector when iotas for dust deposit is not enough and the request keeps being skipped
+	vmctx.adjustL2IotasIfNeeded(dustAdjustment, account)
+
+	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
+	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
+}
+
+func (vmctx *VMContext) prepareGasBudget() {
+	if vmctx.req.SenderAccount() == nil {
+		return
+	}
+	if vmctx.isInitChainRequest() {
+		return
+	}
+	vmctx.calculateAffordableGasBudget()
+	vmctx.gasSetBudget(vmctx.gasBudgetAdjusted)
+	vmctx.gasBurnEnable(true)
+}
+
+// callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
+func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr error) {
+	vmctx.txsnapshot = vmctx.createTxBuilderSnapshot()
+	snapMutations := vmctx.currentStateUpdate.Clone()
+
+	if vmctx.req.IsOffLedger() {
+		vmctx.updateOffLedgerRequestMaxAssumedNonce()
+	}
+	func() {
+		defer func() {
+			panicErr := vmctx.checkVMPluginPanic(recover())
+			if panicErr == nil {
+				return
+			}
+			callErr = panicErr
+			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
+			vmctx.Debugf(string(debug.Stack()))
+		}()
+		callRet = vmctx.callFromRequest()
+		// ensure at least the minimum amount of gas is charged
+		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
+			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
+		}
+	}()
+	if callErr != nil {
+		// panic happened during VM plugin call. Restore the state
+		vmctx.restoreTxBuilderSnapshot(vmctx.txsnapshot)
+		vmctx.currentStateUpdate = snapMutations
+	}
+	// charge gas fee no matter what
+	vmctx.chargeGasFee()
+	// write receipt no matter what
+	receipt = vmctx.writeReceiptToBlockLog(callErr)
+	return receipt, callRet, callErr
+}
+
+func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
+	if r == nil {
+		return nil
+	}
+	// re-panic-ing if error it not user nor VM plugin fault.
+	if vmexceptions.IsSkipRequestException(r) {
+		panic(r)
+	}
+	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
+	switch err := r.(type) {
+	case *iscp.VMError:
+		return r.(*iscp.VMError)
+	case iscp.VMError:
+		e := r.(iscp.VMError)
+		return &e
+	case *kv.DBError:
+		panic(err)
+	case string:
+		return coreerrors.ErrUntypedError.Create(err)
+	case error:
+		if errors.Is(err, coreutil.ErrorStateInvalidated) {
+			panic(err)
+		}
+
+		return coreerrors.ErrUntypedError.Create(err.Error())
+	}
+	return nil
+}
+
+// callFromRequest is the call itself. Assumes sc exists
+func (vmctx *VMContext) callFromRequest() dict.Dict {
+	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
+
+	if vmctx.req.SenderAccount() == nil {
+		// if sender unknown, follow panic path
+		panic(vm.ErrSenderUnknown)
+	}
+	// TODO check if the comment below holds true
+	// calling only non view entry points. Calling the view will trigger error and fallback
+	contract := vmctx.req.CallTarget().Contract
+	entryPoint := vmctx.req.CallTarget().EntryPoint
+
+	return vmctx.callProgram(
+		contract,
+		entryPoint,
+		vmctx.req.Params(),
+		vmctx.req.Allowance(),
 	)
 }
 
-// getChainConfigFromState only makes sense if chain is already deployed
-func (vmctx *VMContext) getChainConfigFromState() {
-	cfg := vmctx.getChainInfo()
-	if !cfg.ChainID.Equals(vmctx.chainID) {
-		vmctx.log.Panicf("getChainConfigFromState: major inconsistency of chainID")
+// calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
+// Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
+// how many tokens the sender has in its account and how many are allowed for the target.
+// Safe arithmetics is used
+func (vmctx *VMContext) calculateAffordableGasBudget() {
+	// when estimating gas, if maxUint64 is provided, use the maximum gas budget possible
+	if vmctx.task.EstimateGasMode && vmctx.req.GasBudget() == math.MaxUint64 {
+		vmctx.gasBudgetAdjusted = gas.MaxGasPerCall
+		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
+		return
 	}
-	vmctx.chainOwnerID = cfg.ChainOwnerID
-	vmctx.maxEventSize = cfg.MaxEventSize
-	vmctx.maxEventsPerReq = cfg.MaxEventsPerReq
-	vmctx.feeColor, vmctx.ownerFee, vmctx.validatorFee = vmctx.getFeeInfo()
+
+	if vmctx.req.SenderAddress() == nil {
+		panic("inconsistency: vmctx.req.SenderAddress() == nil")
+	}
+	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
+	guaranteedFeeTokens := vmctx.calcGuaranteedFeeTokens()
+	// calculate how many tokens maximum will be charged taking into account the budget
+	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.req.GasBudget(), guaranteedFeeTokens)
+	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
+	// calculate affordable gas budget
+	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
+	// adjust gas budget to what is affordable
+	affordable = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	// cap gas to the maximum allowed per tx
+	vmctx.gasBudgetAdjusted = util.MinUint64(affordable, gas.MaxGasPerCall)
+}
+
+// calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
+// taking into account allowance (which must be 'reserved')
+func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
+	var tokensGuaranteed uint64
+
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
+		// iotas are used as gas tokens
+		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+		// safely subtract the allowed from the sender to the target
+		if allowed := vmctx.req.Allowance(); allowed != nil {
+			if tokensGuaranteed < allowed.Assets.Iotas {
+				tokensGuaranteed = 0
+			} else {
+				tokensGuaranteed -= allowed.Assets.Iotas
+			}
+		}
+		return tokensGuaranteed
+	}
+	// native tokens are used for gas fee
+	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
+	// to pay for gas chain is configured to use some native token, not IOTA
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
+	if tokensAvailableBig != nil {
+		// safely subtract the transfer from the sender to the target
+		if transfer := vmctx.req.Allowance(); transfer != nil {
+			if transferTokens := iscp.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
+				if tokensAvailableBig.Cmp(transferTokens) < 0 {
+					tokensAvailableBig.SetUint64(0)
+				} else {
+					tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
+				}
+			}
+		}
+		if tokensAvailableBig.IsUint64() {
+			tokensGuaranteed = tokensAvailableBig.Uint64()
+		} else {
+			tokensGuaranteed = math.MaxUint64
+		}
+	}
+	return tokensGuaranteed
+}
+
+// chargeGasFee takes burned tokens from the sender's account
+// It should always be enough because gas budget is set affordable
+func (vmctx *VMContext) chargeGasFee() {
+	// disable gas burn
+	vmctx.gasBurnEnable(false)
+	if vmctx.req.SenderAccount() == nil {
+		// no charging if sender is unknown
+		return
+	}
+	if vmctx.isInitChainRequest() {
+		// do not charge gas fees if init request
+		return
+	}
+
+	availableToPayFee := vmctx.gasMaxTokensToSpendForGasFee
+	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
+		// user didn't specify enough iotas to cover the minimum request fee, charge whatever is present in the user's account
+		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
+	}
+
+	// total fees to charge
+	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), availableToPayFee)
+	vmctx.gasFeeCharged = sendToOwner + sendToValidator
+
+	// calc gas totals
+	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
+
+	if vmctx.task.EstimateGasMode {
+		// If estimating gas, compute the gas fee but do not attempt to charge
+		return
+	}
+
+	transferToValidator := &iscp.FungibleTokens{}
+	transferToOwner := &iscp.FungibleTokens{}
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+		transferToValidator.Tokens = iotago.NativeTokens{
+			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
+		}
+		transferToOwner.Tokens = iotago.NativeTokens{
+			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
+		}
+	} else {
+		transferToValidator.Iotas = sendToValidator
+		transferToOwner.Iotas = sendToOwner
+	}
+	sender := vmctx.req.SenderAccount()
+
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator, nil)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner, nil)
+}
+
+func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+	ret = vmctx.findContractByHname(contractHname)
+	if ret == nil {
+		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
+		panic(vm.ErrContractNotFound.Create(contractHname))
+	}
+	return ret
+}
+
+func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
+		return root.ContractRecordFromContractInfo(root.Contract)
+	}
+	return vmctx.GetContractRecord(contractHname)
+}
+
+// loadChainConfig only makes sense if chain is already deployed
+func (vmctx *VMContext) loadChainConfig() {
+	if vmctx.isInitChainRequest() {
+		vmctx.chainOwnerID = vmctx.req.SenderAccount()
+		vmctx.chainInfo = nil
+		return
+	}
+	vmctx.chainInfo = vmctx.getChainInfo()
+	vmctx.chainOwnerID = vmctx.chainInfo.ChainOwnerID
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
-	target := vmctx.req.Target()
+	if vmctx.req == nil {
+		return false
+	}
+	target := vmctx.req.CallTarget()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
 }
 
-func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {
-	if req.IsOffLedger() {
-		return false
+// mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
+func (vmctx *VMContext) mustCheckTransactionSize() {
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
+	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
+	if tx.Size() > parameters.L1.MaxTransactionSize {
+		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
 	}
-	if req.(*request.OnLedger).TimeLock().IsZero() {
-		return false
-	}
-	return req.(*request.OnLedger).TimeLock().After(nowis)
 }

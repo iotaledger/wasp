@@ -33,10 +33,12 @@ impl ImmutableErc20State {
 		MapAgentIDToImmutableAllowancesForAgent { proxy: self.proxy.root(STATE_ALL_ALLOWANCES) }
 	}
 
+    // balances per account
     pub fn balances(&self) -> MapAgentIDToImmutableUint64 {
 		MapAgentIDToImmutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
 
+    // total supply of the token
     pub fn supply(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(STATE_SUPPLY))
 	}
@@ -71,10 +73,12 @@ impl MutableErc20State {
 		MapAgentIDToMutableAllowancesForAgent { proxy: self.proxy.root(STATE_ALL_ALLOWANCES) }
 	}
 
+    // balances per account
     pub fn balances(&self) -> MapAgentIDToMutableUint64 {
 		MapAgentIDToMutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
 
+    // total supply of the token
     pub fn supply(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(STATE_SUPPLY))
 	}

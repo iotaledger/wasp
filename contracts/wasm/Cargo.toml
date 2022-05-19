@@ -3,6 +3,7 @@
 
 [workspace]
 members = [
+    "corecontracts",
     "dividend",
     "donatewithfeedback",
     "erc20",
@@ -11,6 +12,7 @@ members = [
     "fairroulette",
     "helloworld",
     "inccounter",
+    "schemacomment",
     "testcore",
     "testwasmlib",
     "timestamp",

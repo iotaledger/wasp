@@ -36,8 +36,6 @@ func (i *ContractInfo) Processor(init Handler, eps ...ProcessorEntryPoint) *Cont
 		init = defaultInitFunc
 	}
 	handlers := map[iscp.Hname]ProcessorEntryPoint{
-		// under hname == 0 always resides default handler:
-		0: FuncFallback.WithHandler(fallbackHandler),
 		// constructor:
 		iscp.EntryPointInit: FuncDefaultInitializer.WithHandler(init),
 	}
@@ -56,6 +54,11 @@ func (i *ContractInfo) Hname() iscp.Hname {
 	return CoreHname(i.Name)
 }
 
+// FullKey concatenates 4 bytes of hname with postfix
+func (i *ContractInfo) FullKey(postfix []byte) []byte {
+	return kv.Concat(i.Hname(), postfix)
+}
+
 type (
 	ProcessorEntryPoint interface {
 		iscp.VMProcessorEntryPoint
@@ -63,7 +66,7 @@ type (
 		Hname() iscp.Hname
 	}
 
-	Handler func(ctx iscp.Sandbox) (dict.Dict, error)
+	Handler func(ctx iscp.Sandbox) dict.Dict
 
 	// EntryPointInfo holds basic information about a full entry point
 	EntryPointInfo struct{ Name string }
@@ -73,7 +76,7 @@ type (
 		Handler Handler
 	}
 
-	ViewHandler func(ctx iscp.SandboxView) (dict.Dict, error)
+	ViewHandler func(ctx iscp.SandboxView) dict.Dict
 
 	// ViewEntryPointInfo holds basic information about a view entry point
 	ViewEntryPointInfo struct {
@@ -105,7 +108,7 @@ func (ep *EntryPointInfo) Hname() iscp.Hname {
 	return iscp.Hn(ep.Name)
 }
 
-func (h *EntryPointHandler) Call(ctx interface{}) (dict.Dict, error) {
+func (h *EntryPointHandler) Call(ctx interface{}) dict.Dict {
 	return h.Handler(ctx.(iscp.Sandbox))
 }
 
@@ -135,7 +138,7 @@ func (ep *ViewEntryPointInfo) Hname() iscp.Hname {
 	return iscp.Hn(ep.Name)
 }
 
-func (h *ViewEntryPointHandler) Call(ctx interface{}) (dict.Dict, error) {
+func (h *ViewEntryPointHandler) Call(ctx interface{}) dict.Dict {
 	return h.Handler(ctx.(iscp.SandboxView))
 }
 
@@ -156,19 +159,9 @@ var (
 	FuncDefaultInitializer = Func("initializer")
 )
 
-func defaultInitFunc(ctx iscp.Sandbox) (dict.Dict, error) {
+func defaultInitFunc(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
-	return nil, nil
-}
-
-func fallbackHandler(ctx iscp.Sandbox) (dict.Dict, error) {
-	transferStr := "(empty)"
-	if ctx.IncomingTransfer() != nil {
-		transferStr = ctx.IncomingTransfer().String()
-	}
-	ctx.Log().Debugf("default full entry point handler invoked for contract %s from caller %s\nTransfer: %s",
-		ctx.Contract(), ctx.Caller(), transferStr)
-	return nil, nil
+	return nil
 }
 
 type ContractProcessor struct {
@@ -182,10 +175,6 @@ func (p *ContractProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntr
 		return nil, false
 	}
 	return f, true
-}
-
-func (p *ContractProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
-	return p.Handlers[0]
 }
 
 func (p *ContractProcessor) GetDescription() string {

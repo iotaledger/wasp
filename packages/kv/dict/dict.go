@@ -9,9 +9,7 @@ import (
 	"sort"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-
 	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/mr-tron/base58"
 )

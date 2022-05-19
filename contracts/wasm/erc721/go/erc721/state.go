@@ -45,14 +45,17 @@ type ImmutableErc721State struct {
 	proxy wasmtypes.Proxy
 }
 
+// approved token controller agents
 func (s ImmutableErc721State) ApprovedAccounts() MapHashToImmutableAgentID {
 	return MapHashToImmutableAgentID{proxy: s.proxy.Root(StateApprovedAccounts)}
 }
 
+// approved operators per owner
 func (s ImmutableErc721State) ApprovedOperators() MapAgentIDToImmutableOperators {
 	return MapAgentIDToImmutableOperators{proxy: s.proxy.Root(StateApprovedOperators)}
 }
 
+// number of tokens held by owners
 func (s ImmutableErc721State) Balances() MapAgentIDToImmutableUint64 {
 	return MapAgentIDToImmutableUint64{proxy: s.proxy.Root(StateBalances)}
 }
@@ -61,6 +64,7 @@ func (s ImmutableErc721State) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(StateName))
 }
 
+// 1:1 mapping of owners to token IDs
 func (s ImmutableErc721State) Owners() MapHashToImmutableAgentID {
 	return MapHashToImmutableAgentID{proxy: s.proxy.Root(StateOwners)}
 }
@@ -69,6 +73,7 @@ func (s ImmutableErc721State) Symbol() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(StateSymbol))
 }
 
+// token uri per token id
 func (s ImmutableErc721State) TokenURIs() MapHashToImmutableString {
 	return MapHashToImmutableString{proxy: s.proxy.Root(StateTokenURIs)}
 }
@@ -129,14 +134,17 @@ func (s MutableErc721State) AsImmutable() ImmutableErc721State {
 	return ImmutableErc721State(s)
 }
 
+// approved token controller agents
 func (s MutableErc721State) ApprovedAccounts() MapHashToMutableAgentID {
 	return MapHashToMutableAgentID{proxy: s.proxy.Root(StateApprovedAccounts)}
 }
 
+// approved operators per owner
 func (s MutableErc721State) ApprovedOperators() MapAgentIDToMutableOperators {
 	return MapAgentIDToMutableOperators{proxy: s.proxy.Root(StateApprovedOperators)}
 }
 
+// number of tokens held by owners
 func (s MutableErc721State) Balances() MapAgentIDToMutableUint64 {
 	return MapAgentIDToMutableUint64{proxy: s.proxy.Root(StateBalances)}
 }
@@ -145,6 +153,7 @@ func (s MutableErc721State) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(StateName))
 }
 
+// 1:1 mapping of owners to token IDs
 func (s MutableErc721State) Owners() MapHashToMutableAgentID {
 	return MapHashToMutableAgentID{proxy: s.proxy.Root(StateOwners)}
 }
@@ -153,6 +162,7 @@ func (s MutableErc721State) Symbol() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(StateSymbol))
 }
 
+// token uri per token id
 func (s MutableErc721State) TokenURIs() MapHashToMutableString {
 	return MapHashToMutableString{proxy: s.proxy.Root(StateTokenURIs)}
 }

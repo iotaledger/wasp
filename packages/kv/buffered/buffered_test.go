@@ -13,7 +13,8 @@ func TestBufferedKVStore(t *testing.T) {
 	db := mapdb.NewMapDB()
 	_ = db.Set([]byte("abcd"), []byte("v1"))
 
-	realm := db.WithRealm([]byte("ab"))
+	realm, err := db.WithRealm([]byte("ab"))
+	require.NoError(t, err)
 
 	v, err := realm.Get([]byte("cd"))
 	assert.NoError(t, err)
@@ -92,7 +93,8 @@ func TestIterateSorted(t *testing.T) {
 	_ = db.Set([]byte("1323"), []byte("v1323"))
 	_ = db.Set([]byte("1245"), []byte("v1245"))
 
-	realm := db.WithRealm([]byte("1"))
+	realm, err := db.WithRealm([]byte("1"))
+	require.NoError(t, err)
 	b := NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(realm))
 
 	b.Del("246")

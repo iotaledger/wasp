@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -44,30 +43,38 @@ func TestNanoPublisher(t *testing.T) {
 
 	// spawn many NANOMSG nanoClients and subscribe to everything from the node
 	nanoClients := make([]nanoClientTest, 10)
-	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", env.clu.Config.NanomsgPort(0))
+	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", env.Clu.Config.NanomsgPort(0))
 	for i := range nanoClients {
 		nanoClients[i] = nanoClientTest{id: i, messages: []string{}}
 		go nanoClients[i].start(t, nanoURL)
 	}
 
 	// deposit funds for offledger requests
-	keyPair, myAddress := env.getOrCreateAddress()
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
-	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(10000),
+	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	reqTx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_000_000),
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 10000), util.MakeRange(0, 1), 60*time.Second, "send 100i")
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, reqTx, 30*time.Second)
+	require.NoError(t, err)
 
 	// send 100 requests
 	numRequests := 100
-	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
+	reqIDs := make([]iscp.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		reqIDs[i] = req.ID()
+		require.NoError(t, err)
+	}
+
+	for _, reqID := range reqIDs {
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 30*time.Second)
 		require.NoError(t, err)
 	}
 

@@ -4,30 +4,26 @@
 // encapsulates standard host entities into a simple interface
 
 import * as wasmtypes from "./wasmtypes"
-import {ScBalances, ScTransfers} from "./assets";
 import {ScFuncCallContext, ScViewCallContext} from "./contract";
-import {panic, ScSandboxFunc, ScSandboxView} from "./sandbox";
+import {ScSandboxFunc, ScSandboxView} from "./sandbox";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // smart contract interface with mutable access to state
-export class ScFuncContext extends ScSandboxFunc implements ScViewCallContext, ScFuncCallContext {
-    canCallFunc(): void {
-        panic("canCallFunc");
+export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
+    // host(): ScHost | null {
+    //     return null;
+    // }
+
+    chainID(): wasmtypes.ScChainID {
+        return this.currentChainID();
     }
 
-    canCallView(): void {
-        panic("canCallView");
+    initFuncCallContext(): void {
     }
 
-    // TODO deprecated
-    incoming(): ScBalances {
-        return super.incomingTransfer();
-    }
-
-    // TODO deprecated
-    transferToAddress(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
-        super.send(address, transfer);
+    initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname {
+        return hContract;
     }
 }
 
@@ -35,7 +31,11 @@ export class ScFuncContext extends ScSandboxFunc implements ScViewCallContext, S
 
 // smart contract view interface which has only immutable access to state
 export class ScViewContext extends ScSandboxView implements ScViewCallContext {
-    canCallView(): void {
-        panic("canCallView");
+
+    chainID(): wasmtypes.ScChainID {
+        return this.currentChainID();
+    }
+    initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname {
+        return hContract;
     }
 }

@@ -13,14 +13,6 @@ type ImmutableAddAllowedStateControllerAddressParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwner))
-}
-
-func (s ImmutableAddAllowedStateControllerAddressParams) FeeColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamFeeColor))
-}
-
 func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -29,16 +21,84 @@ type MutableAddAllowedStateControllerAddressParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableAddAllowedStateControllerAddressParams) ChainOwner() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwner))
-}
-
-func (s MutableAddAllowedStateControllerAddressParams) FeeColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamFeeColor))
-}
-
 func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamStateControllerAddress))
+}
+
+type ImmutableAddCandidateNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamAccessNodeInfoAccessAPI))
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoForCommittee() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamAccessNodeInfoForCommittee))
+}
+
+func (s ImmutableAddCandidateNodeParams) AccessNodeInfoPubKey() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
+type MutableAddCandidateNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamAccessNodeInfoAccessAPI))
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoCertificate() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoForCommittee() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamAccessNodeInfoForCommittee))
+}
+
+func (s MutableAddCandidateNodeParams) AccessNodeInfoPubKey() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
+type MapBytesToImmutableUint8 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToImmutableUint8) GetUint8(key []byte) wasmtypes.ScImmutableUint8 {
+	return wasmtypes.NewScImmutableUint8(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
+type ImmutableChangeAccessNodesParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableChangeAccessNodesParams) ChangeAccessNodesActions() MapBytesToImmutableUint8 {
+	return MapBytesToImmutableUint8{proxy: s.proxy.Root(ParamChangeAccessNodesActions)}
+}
+
+type MapBytesToMutableUint8 struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToMutableUint8) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapBytesToMutableUint8) GetUint8(key []byte) wasmtypes.ScMutableUint8 {
+	return wasmtypes.NewScMutableUint8(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
+type MutableChangeAccessNodesParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableChangeAccessNodesParams) ChangeAccessNodesActions() MapBytesToMutableUint8 {
+	return MapBytesToMutableUint8{proxy: s.proxy.Root(ParamChangeAccessNodesActions)}
 }
 
 type ImmutableDelegateChainOwnershipParams struct {
@@ -73,6 +133,30 @@ func (s MutableRemoveAllowedStateControllerAddressParams) StateControllerAddress
 	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
 
+type ImmutableRevokeAccessNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoPubKey() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
+type MutableRevokeAccessNodeParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoCertificate))
+}
+
+func (s MutableRevokeAccessNodeParams) AccessNodeInfoPubKey() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAccessNodeInfoPubKey))
+}
+
 type ImmutableRotateStateControllerParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -93,118 +177,52 @@ type ImmutableSetChainInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScImmutableInt32 {
-	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ParamMaxBlobSize))
+// default maximum size of a blob
+func (s ImmutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamMaxBlobSize))
 }
 
-func (s ImmutableSetChainInfoParams) MaxEventSize() wasmtypes.ScImmutableInt16 {
-	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ParamMaxEventSize))
+// default maximum size of a single event
+func (s ImmutableSetChainInfoParams) MaxEventSize() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ParamMaxEventSize))
 }
 
-func (s ImmutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScImmutableInt16 {
-	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ParamMaxEventsPerReq))
-}
-
-func (s ImmutableSetChainInfoParams) OwnerFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
-}
-
-func (s ImmutableSetChainInfoParams) ValidatorFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamValidatorFee))
+// default maximum number of events per request
+func (s ImmutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ParamMaxEventsPerReq))
 }
 
 type MutableSetChainInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScMutableInt32 {
-	return wasmtypes.NewScMutableInt32(s.proxy.Root(ParamMaxBlobSize))
+// default maximum size of a blob
+func (s MutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamMaxBlobSize))
 }
 
-func (s MutableSetChainInfoParams) MaxEventSize() wasmtypes.ScMutableInt16 {
-	return wasmtypes.NewScMutableInt16(s.proxy.Root(ParamMaxEventSize))
+// default maximum size of a single event
+func (s MutableSetChainInfoParams) MaxEventSize() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ParamMaxEventSize))
 }
 
-func (s MutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScMutableInt16 {
-	return wasmtypes.NewScMutableInt16(s.proxy.Root(ParamMaxEventsPerReq))
+// default maximum number of events per request
+func (s MutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ParamMaxEventsPerReq))
 }
 
-func (s MutableSetChainInfoParams) OwnerFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
-}
-
-func (s MutableSetChainInfoParams) ValidatorFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamValidatorFee))
-}
-
-type ImmutableSetContractFeeParams struct {
+type ImmutableSetFeePolicyParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSetContractFeeParams) Hname() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
+func (s ImmutableSetFeePolicyParams) FeePolicyBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamFeePolicyBytes))
 }
 
-func (s ImmutableSetContractFeeParams) OwnerFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
-}
-
-func (s ImmutableSetContractFeeParams) ValidatorFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamValidatorFee))
-}
-
-type MutableSetContractFeeParams struct {
+type MutableSetFeePolicyParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableSetContractFeeParams) Hname() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
-}
-
-func (s MutableSetContractFeeParams) OwnerFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
-}
-
-func (s MutableSetContractFeeParams) ValidatorFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamValidatorFee))
-}
-
-type ImmutableSetDefaultFeeParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableSetDefaultFeeParams) OwnerFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamOwnerFee))
-}
-
-func (s ImmutableSetDefaultFeeParams) ValidatorFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamValidatorFee))
-}
-
-type MutableSetDefaultFeeParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableSetDefaultFeeParams) OwnerFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamOwnerFee))
-}
-
-func (s MutableSetDefaultFeeParams) ValidatorFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamValidatorFee))
-}
-
-type ImmutableGetFeeInfoParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableGetFeeInfoParams) Hname() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
-}
-
-type MutableGetFeeInfoParams struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableGetFeeInfoParams) Hname() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
+func (s MutableSetFeePolicyParams) FeePolicyBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamFeePolicyBytes))
 }

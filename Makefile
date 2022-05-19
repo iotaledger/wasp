@@ -11,10 +11,18 @@ TEST_ARG=
 
 all: build-lint
 
-build:
+compile-solidity:
+ifeq (, $(shell which solc))
+	@echo "no solc found in PATH, evm contracts won't be compiled"
+else
+	cd packages/vm/core/evm/isccontract && if ! git diff --quiet *.sol; then go generate; fi
+	cd packages/evm/evmtest && if ! git diff --quiet *.sol; then go generate; fi
+endif
+
+build: compile-solidity
 	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
-build-windows:
+build-windows: compile-solidity
 	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
 
 build-lint: build lint
@@ -28,10 +36,10 @@ test: install
 test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast ./...
 
-install:
+install: compile-solidity
 	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
-install-windows:
+install-windows: compile-solidity
 	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
 
 lint:

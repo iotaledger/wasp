@@ -12,7 +12,22 @@ use crate::*;
 
 pub struct DepositCall {
 	pub func: ScFunc,
-	pub params: MutableDepositParams,
+}
+
+pub struct FoundryCreateNewCall {
+	pub func: ScFunc,
+	pub params: MutableFoundryCreateNewParams,
+	pub results: ImmutableFoundryCreateNewResults,
+}
+
+pub struct FoundryDestroyCall {
+	pub func: ScFunc,
+	pub params: MutableFoundryDestroyParams,
+}
+
+pub struct FoundryModifySupplyCall {
+	pub func: ScFunc,
+	pub params: MutableFoundryModifySupplyParams,
 }
 
 pub struct HarvestCall {
@@ -20,8 +35,19 @@ pub struct HarvestCall {
 	pub params: MutableHarvestParams,
 }
 
+pub struct TransferAllowanceToCall {
+	pub func: ScFunc,
+	pub params: MutableTransferAllowanceToParams,
+}
+
 pub struct WithdrawCall {
 	pub func: ScFunc,
+}
+
+pub struct AccountNFTsCall {
+	pub func: ScView,
+	pub params: MutableAccountNFTsParams,
+	pub results: ImmutableAccountNFTsResults,
 }
 
 pub struct AccountsCall {
@@ -35,10 +61,27 @@ pub struct BalanceCall {
 	pub results: ImmutableBalanceResults,
 }
 
+pub struct FoundryOutputCall {
+	pub func: ScView,
+	pub params: MutableFoundryOutputParams,
+	pub results: ImmutableFoundryOutputResults,
+}
+
 pub struct GetAccountNonceCall {
 	pub func: ScView,
 	pub params: MutableGetAccountNonceParams,
 	pub results: ImmutableGetAccountNonceResults,
+}
+
+pub struct GetNativeTokenIDRegistryCall {
+	pub func: ScView,
+	pub results: ImmutableGetNativeTokenIDRegistryResults,
+}
+
+pub struct NftDataCall {
+	pub func: ScView,
+	pub params: MutableNftDataParams,
+	pub results: ImmutableNftDataResults,
 }
 
 pub struct TotalAssetsCall {
@@ -51,9 +94,35 @@ pub struct ScFuncs {
 
 impl ScFuncs {
     pub fn deposit(_ctx: &dyn ScFuncCallContext) -> DepositCall {
-        let mut f = DepositCall {
+        DepositCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DEPOSIT),
-            params: MutableDepositParams { proxy: Proxy::nil() },
+        }
+    }
+
+    pub fn foundry_create_new(_ctx: &dyn ScFuncCallContext) -> FoundryCreateNewCall {
+        let mut f = FoundryCreateNewCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_FOUNDRY_CREATE_NEW),
+            params: MutableFoundryCreateNewParams { proxy: Proxy::nil() },
+            results: ImmutableFoundryCreateNewResults { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        ScFunc::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn foundry_destroy(_ctx: &dyn ScFuncCallContext) -> FoundryDestroyCall {
+        let mut f = FoundryDestroyCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_FOUNDRY_DESTROY),
+            params: MutableFoundryDestroyParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn foundry_modify_supply(_ctx: &dyn ScFuncCallContext) -> FoundryModifySupplyCall {
+        let mut f = FoundryModifySupplyCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_FOUNDRY_MODIFY_SUPPLY),
+            params: MutableFoundryModifySupplyParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
@@ -68,10 +137,30 @@ impl ScFuncs {
         f
     }
 
+    pub fn transfer_allowance_to(_ctx: &dyn ScFuncCallContext) -> TransferAllowanceToCall {
+        let mut f = TransferAllowanceToCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TRANSFER_ALLOWANCE_TO),
+            params: MutableTransferAllowanceToParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
     pub fn withdraw(_ctx: &dyn ScFuncCallContext) -> WithdrawCall {
         WithdrawCall {
             func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW),
         }
+    }
+
+    pub fn account_nf_ts(_ctx: &dyn ScViewCallContext) -> AccountNFTsCall {
+        let mut f = AccountNFTsCall {
+            func: ScView::new(HSC_NAME, HVIEW_ACCOUNT_NF_TS),
+            params: MutableAccountNFTsParams { proxy: Proxy::nil() },
+            results: ImmutableAccountNFTsResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
     }
 
     pub fn accounts(_ctx: &dyn ScViewCallContext) -> AccountsCall {
@@ -94,11 +183,42 @@ impl ScFuncs {
         f
     }
 
+    pub fn foundry_output(_ctx: &dyn ScViewCallContext) -> FoundryOutputCall {
+        let mut f = FoundryOutputCall {
+            func: ScView::new(HSC_NAME, HVIEW_FOUNDRY_OUTPUT),
+            params: MutableFoundryOutputParams { proxy: Proxy::nil() },
+            results: ImmutableFoundryOutputResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
     pub fn get_account_nonce(_ctx: &dyn ScViewCallContext) -> GetAccountNonceCall {
         let mut f = GetAccountNonceCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_ACCOUNT_NONCE),
             params: MutableGetAccountNonceParams { proxy: Proxy::nil() },
             results: ImmutableGetAccountNonceResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn get_native_token_id_registry(_ctx: &dyn ScViewCallContext) -> GetNativeTokenIDRegistryCall {
+        let mut f = GetNativeTokenIDRegistryCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_NATIVE_TOKEN_ID_REGISTRY),
+            results: ImmutableGetNativeTokenIDRegistryResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn nft_data(_ctx: &dyn ScViewCallContext) -> NftDataCall {
+        let mut f = NftDataCall {
+            func: ScView::new(HSC_NAME, HVIEW_NFT_DATA),
+            params: MutableNftDataParams { proxy: Proxy::nil() },
+            results: ImmutableNftDataResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

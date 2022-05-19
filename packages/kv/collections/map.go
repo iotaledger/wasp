@@ -1,12 +1,8 @@
 package collections
 
 import (
-	"bytes"
 	"errors"
 
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -23,7 +19,14 @@ type ImmutableMap struct {
 	name string
 }
 
-const mapElemKeyCode = byte('#')
+// For easy distinction between arrays and map collections
+// we use '#' as separator for arrays and '.' for maps.
+// Do not change this value unless you want to break how
+// WasmLib maps these collections in the exact same way
+const (
+	mapElemKeyCode = byte('.')
+	mapSizeKeyCode = byte('#')
+)
 
 func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
@@ -39,24 +42,25 @@ func NewMapReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableMap {
 	}
 }
 
+func MapSizeKey(mapName string) []byte {
+	ret := make([]byte, 0, len(mapName)+1)
+	ret = append(ret, []byte(mapName)...)
+	return append(ret, mapSizeKeyCode)
+}
+
+func MapElemKey(mapName string, keyInMap []byte) []byte {
+	ret := make([]byte, 0, len(mapName)+len(keyInMap)+1)
+	ret = append(ret, []byte(mapName)...)
+	ret = append(ret, mapElemKeyCode)
+	return append(ret, keyInMap...)
+}
+
 func (m *Map) Immutable() *ImmutableMap {
 	return m.ImmutableMap
 }
 
 func (m *ImmutableMap) Name() string {
 	return m.name
-}
-
-func (m *ImmutableMap) getSizeKey() kv.Key {
-	return kv.Key(m.name)
-}
-
-func (m *ImmutableMap) getElemKey(key []byte) kv.Key {
-	var buf bytes.Buffer
-	buf.Write([]byte(m.name))
-	buf.WriteByte(mapElemKeyCode)
-	buf.Write(key)
-	return kv.Key(buf.Bytes())
 }
 
 func (m *Map) addToSize(amount int) error {
@@ -66,15 +70,15 @@ func (m *Map) addToSize(amount int) error {
 	}
 	n = uint32(int(n) + amount)
 	if n == 0 {
-		m.kvw.Del(m.getSizeKey())
+		m.kvw.Del(kv.Key(MapSizeKey(m.name)))
 	} else {
-		m.kvw.Set(m.getSizeKey(), util.Uint32To4Bytes(n))
+		m.kvw.Set(kv.Key(MapSizeKey(m.name)), util.Uint32To4Bytes(n))
 	}
 	return nil
 }
 
 func (m *ImmutableMap) GetAt(key []byte) ([]byte, error) {
-	ret, err := m.kvr.Get(m.getElemKey(key))
+	ret, err := m.kvr.Get(kv.Key(MapElemKey(m.name, key)))
 	if err != nil {
 		return nil, err
 	}
@@ -90,17 +94,17 @@ func (m *ImmutableMap) MustGetAt(key []byte) []byte {
 }
 
 func (m *Map) SetAt(key, value []byte) error {
-	ok, err := m.HasAt(key)
+	keyExists, err := m.HasAt(key)
 	if err != nil {
 		return err
 	}
-	if !ok {
+	if !keyExists {
 		err = m.addToSize(1)
 		if err != nil {
 			return err
 		}
 	}
-	m.kvw.Set(m.getElemKey(key), value)
+	m.kvw.Set(kv.Key(MapElemKey(m.name, key)), value)
 	return nil
 }
 
@@ -112,17 +116,20 @@ func (m *Map) MustSetAt(key, value []byte) {
 }
 
 func (m *Map) DelAt(key []byte) error {
-	ok, err := m.HasAt(key)
+	keyExist, err := m.HasAt(key)
+	if !keyExist {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	if ok {
+	if keyExist {
 		err = m.addToSize(-1)
 		if err != nil {
 			return err
 		}
 	}
-	m.kvw.Del(m.getElemKey(key))
+	m.kvw.Del(kv.Key(MapElemKey(m.name, key)))
 	return nil
 }
 
@@ -134,7 +141,7 @@ func (m *Map) MustDelAt(key []byte) {
 }
 
 func (m *ImmutableMap) HasAt(key []byte) (bool, error) {
-	return m.kvr.Has(m.getElemKey(key))
+	return m.kvr.Has(kv.Key(MapElemKey(m.name, key)))
 }
 
 func (m *ImmutableMap) MustHasAt(key []byte) bool {
@@ -154,7 +161,7 @@ func (m *ImmutableMap) MustLen() uint32 {
 }
 
 func (m *ImmutableMap) Len() (uint32, error) {
-	v, err := m.kvr.Get(m.getSizeKey())
+	v, err := m.kvr.Get(kv.Key(MapSizeKey(m.name)))
 	if err != nil {
 		return 0, err
 	}
@@ -168,7 +175,6 @@ func (m *ImmutableMap) Len() (uint32, error) {
 }
 
 // Erase the map.
-// TODO: Improve by using DelPrefix method in KVStore.
 func (m *Map) Erase() {
 	m.MustIterateKeys(func(elemKey []byte) bool {
 		m.MustDelAt(elemKey)
@@ -178,22 +184,21 @@ func (m *Map) Erase() {
 
 // Iterate non-deterministic
 func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) error {
-	prefix := m.getElemKey(nil)
+	prefix := kv.Key(MapElemKey(m.name, nil))
 	return m.kvr.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
-		// return f([]byte(key), value)
 	})
 }
 
-// Iterate non-deterministic
+// IterateKeys non-deterministic
 func (m *ImmutableMap) IterateKeys(f func(elemKey []byte) bool) error {
-	prefix := m.getElemKey(nil)
+	prefix := kv.Key(MapElemKey(m.name, nil))
 	return m.kvr.IterateKeys(prefix, func(key kv.Key) bool {
 		return f([]byte(key)[len(prefix):])
 	})
 }
 
-// Iterate non-deterministic
+// MustIterate non-deterministic
 func (m *ImmutableMap) MustIterate(f func(elemKey []byte, value []byte) bool) {
 	err := m.Iterate(f)
 	if err != nil {
@@ -201,24 +206,10 @@ func (m *ImmutableMap) MustIterate(f func(elemKey []byte, value []byte) bool) {
 	}
 }
 
-// Iterate non-deterministic
+// MustIterateKeys non-deterministic
 func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
 	err := m.IterateKeys(f)
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (m *ImmutableMap) MustIterateBalances(f func(color colored.Color, bal uint64) bool) {
-	m.MustIterate(func(elemKey []byte, value []byte) bool {
-		col, err := colored.ColorFromBytes(elemKey)
-		if err != nil {
-			panic(xerrors.Errorf("MustIterateBalances: %w", err))
-		}
-		v, err := util.Uint64From8Bytes(value)
-		if err != nil {
-			panic(xerrors.Errorf("MustIterateBalances: %w", err))
-		}
-		return f(col, v)
-	})
 }

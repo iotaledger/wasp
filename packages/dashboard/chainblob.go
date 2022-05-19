@@ -28,12 +28,12 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainBlob(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
+	hash, err := hashing.HashValueFromHex(c.Param("hash"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -48,7 +48,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		Hash:    hash,
 	}
 
-	fields, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
+	fields, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash: hash,
 	}))
 	if err != nil {
@@ -59,7 +59,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	fields.MustIterateKeysSorted("", func(key kv.Key) bool {
 		field := []byte(key)
 		var value dict.Dict
-		value, err = d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
+		value, err = d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash:  hash,
 			blob.ParamField: field,
 		}))
@@ -81,12 +81,12 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 }
 
 func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
+	hash, err := hashing.HashValueFromHex(c.Param("hash"))
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	value, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))

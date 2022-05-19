@@ -3,17 +3,32 @@
 
 package wasmtypes
 
+import "strings"
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScAgentIDLength = ScAddressLength + ScHnameLength
+const (
+	ScAgentIDNil      byte = 0
+	ScAgentIDAddress  byte = 1
+	ScAgentIDContract byte = 2
+	ScAgentIDEthereum byte = 3
+)
 
 type ScAgentID struct {
+	kind    byte
 	address ScAddress
 	hname   ScHname
 }
 
 func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
-	return ScAgentID{address: address, hname: hname}
+	return ScAgentID{kind: ScAgentIDContract, address: address, hname: hname}
+}
+
+func NewScAgentIDFromAddress(address ScAddress) ScAgentID {
+	if address.id[0] == ScAddressAlias {
+		return NewScAgentID(address, 0)
+	}
+	return ScAgentID{kind: ScAgentIDAddress, address: address, hname: 0}
 }
 
 func (o ScAgentID) Address() ScAddress {
@@ -29,7 +44,11 @@ func (o ScAgentID) Hname() ScHname {
 }
 
 func (o ScAgentID) IsAddress() bool {
-	return o.hname == 0
+	return o.kind == ScAgentIDAddress
+}
+
+func (o ScAgentID) IsContract() bool {
+	return o.kind == ScAgentIDContract
 }
 
 func (o ScAgentID) String() string {
@@ -39,42 +58,65 @@ func (o ScAgentID) String() string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func AgentIDDecode(dec *WasmDecoder) ScAgentID {
-	return ScAgentID{
-		address: AddressDecode(dec),
-		hname:   HnameDecode(dec),
-	}
+	return AgentIDFromBytes(dec.Bytes())
 }
 
 func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
-	AddressEncode(enc, value.address)
-	HnameEncode(enc, value.hname)
+	enc.Bytes(AgentIDToBytes(value))
 }
 
-func AgentIDFromBytes(buf []byte) ScAgentID {
+func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 	if len(buf) == 0 {
-		return ScAgentID{}
+		return a
 	}
-	if len(buf) != ScAgentIDLength {
-		panic("invalid AgentID length")
+	a.kind = buf[0]
+	buf = buf[1:]
+	switch a.kind {
+	case ScAgentIDAddress:
+		if len(buf) != ScLengthAlias && len(buf) != ScLengthEd25519 {
+			panic("invalid AgentID length: address agentID")
+		}
+		a.address = AddressFromBytes(buf)
+	case ScAgentIDContract:
+		if len(buf) != ScChainIDLength+ScHnameLength {
+			panic("invalid AgentID length: contract agentID")
+		}
+		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
+		a.hname = HnameFromBytes(buf[ScChainIDLength:])
+	case ScAgentIDEthereum:
+		panic("AgentIDFromBytes: unsupported ScAgentIDEthereum")
+	default:
+		panic("AgentIDFromBytes: invalid AgentID type")
 	}
-	if buf[0] > ScAddressAlias {
-		panic("invalid AgentID address type")
-	}
-	return ScAgentID{
-		address: AddressFromBytes(buf[:ScAddressLength]),
-		hname:   HnameFromBytes(buf[ScAddressLength:]),
-	}
+	return a
 }
 
 func AgentIDToBytes(value ScAgentID) []byte {
-	enc := NewWasmEncoder()
-	AgentIDEncode(enc, value)
-	return enc.Buf()
+	buf := []byte{value.kind}
+	switch value.kind {
+	case ScAgentIDAddress:
+		return append(buf, AddressToBytes(value.address)...)
+	case ScAgentIDContract:
+		buf = append(buf, AddressToBytes(value.address)[1:]...)
+		return append(buf, HnameToBytes(value.hname)...)
+	case ScAgentIDEthereum:
+		panic("AgentIDToBytes: unsupported ScAgentIDEthereum")
+	default:
+		panic("AgentIDToBytes: invalid AgentID type")
+	}
+}
+
+func AgentIDFromString(value string) ScAgentID {
+	parts := strings.Split(value, "::")
+	if len(parts) != 2 {
+		panic("invalid AgentID string")
+	}
+	return ScAgentID{address: AddressFromString(parts[0]), hname: HnameFromString(parts[1])}
 }
 
 func AgentIDToString(value ScAgentID) string {
 	// TODO standardize human readable string
-	return value.address.String() + "::" + value.hname.String()
+	return AddressToString(value.address) + "::" + HnameToString(value.hname)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

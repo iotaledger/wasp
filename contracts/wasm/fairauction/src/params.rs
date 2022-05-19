@@ -17,8 +17,9 @@ pub struct ImmutableFinalizeAuctionParams {
 }
 
 impl ImmutableFinalizeAuctionParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token identifies the auction
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -28,8 +29,9 @@ pub struct MutableFinalizeAuctionParams {
 }
 
 impl MutableFinalizeAuctionParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token identifies the auction
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -39,8 +41,9 @@ pub struct ImmutablePlaceBidParams {
 }
 
 impl ImmutablePlaceBidParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token identifies the auction
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -50,8 +53,9 @@ pub struct MutablePlaceBidParams {
 }
 
 impl MutablePlaceBidParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token identifies the auction
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -61,6 +65,7 @@ pub struct ImmutableSetOwnerMarginParams {
 }
 
 impl ImmutableSetOwnerMarginParams {
+    // new SC owner margin in promilles
     pub fn owner_margin(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_OWNER_MARGIN))
 	}
@@ -72,6 +77,7 @@ pub struct MutableSetOwnerMarginParams {
 }
 
 impl MutableSetOwnerMarginParams {
+    // new SC owner margin in promilles
     pub fn owner_margin(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_OWNER_MARGIN))
 	}
@@ -83,20 +89,24 @@ pub struct ImmutableStartAuctionParams {
 }
 
 impl ImmutableStartAuctionParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
-	}
-
+    // description of the tokens being auctioned
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
+    // duration of auction in minutes
     pub fn duration(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(PARAM_DURATION))
 	}
 
+    // minimum required amount for any bid
     pub fn minimum_bid(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_MINIMUM_BID))
+	}
+
+    // token of the tokens being auctioned
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -106,20 +116,24 @@ pub struct MutableStartAuctionParams {
 }
 
 impl MutableStartAuctionParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
-	}
-
+    // description of the tokens being auctioned
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
+    // duration of auction in minutes
     pub fn duration(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(PARAM_DURATION))
 	}
 
+    // minimum required amount for any bid
     pub fn minimum_bid(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_MINIMUM_BID))
+	}
+
+    // token of the tokens being auctioned
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -129,8 +143,9 @@ pub struct ImmutableGetInfoParams {
 }
 
 impl ImmutableGetInfoParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token identifies the auction
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -140,7 +155,8 @@ pub struct MutableGetInfoParams {
 }
 
 impl MutableGetInfoParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token identifies the auction
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }

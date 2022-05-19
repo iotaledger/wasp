@@ -4,13 +4,13 @@
 package registry
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/mr-tron/base58"
 )
 
 // region Registry /////////////////////////////////////////////////////////
@@ -27,28 +26,45 @@ import (
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	log   *logger.Logger
-	store kvstore.KVStore
+	log          *logger.Logger
+	store        kvstore.KVStore
+	nodeIdentity *cryptolib.KeyPair
 }
 
-type Config struct {
-	UseText  bool
-	Filename string
-}
-
-func DefaultConfig() *Config {
-	return &Config{
-		UseText:  false,
-		Filename: "",
-	}
-}
+var (
+	_ NodeIdentityProvider        = &Impl{}
+	_ DKShareRegistryProvider     = &Impl{}
+	_ ChainRecordRegistryProvider = &Impl{}
+)
 
 // New creates new instance of the registry implementation.
 func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
-	return &Impl{
+	result := &Impl{
 		log:   log.Named("registry"),
 		store: store,
 	}
+	// Read or create node identity - private/public key pair
+	dbKey := dbKeyForNodeIdentity()
+	exists, _ := result.store.Has(dbKey)
+	if !exists {
+		result.nodeIdentity = cryptolib.NewKeyPair()
+		data := result.nodeIdentity.GetPrivateKey().AsBytes()
+		result.log.Infof("Node identity key pair generated. PublicKey: %s", result.nodeIdentity.GetPublicKey())
+		if err := result.store.Set(dbKey, data); err != nil {
+			result.log.Error("Generated node identity cannot be stored: %v", err)
+		}
+	}
+	data, err := result.store.Get(dbKey)
+	if err != nil {
+		result.log.Panicf("Cannot read node identity: %v", err)
+	}
+	privateKey, err := cryptolib.NewPrivateKeyFromBytes(data)
+	if err != nil {
+		result.log.Panicf("Cannot read create private key from read node identity: %v", err)
+	}
+	result.nodeIdentity = cryptolib.NewKeyPairFromPrivateKey(privateKey)
+
+	return result
 }
 
 // endregion ////////////////////////////////////////////////////////
@@ -60,28 +76,21 @@ func MakeChainRecordDbKey(chainID *iscp.ChainID) []byte {
 }
 
 func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error) {
-	key := MakeChainRecordDbKey(chainID)
-	data, err := r.store.Get(key)
+	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	var ch ChainRecord
-	err = json.Unmarshal(data, &ch)
-	if err != nil {
-		return nil, err
-	}
-	return &ch, nil
+	return ChainRecordFromBytes(data)
 }
 
 func (r *Impl) GetChainRecords() ([]*ChainRecord, error) {
 	ret := make([]*ChainRecord, 0)
 
-	prefix := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord)
-	err := r.store.Iterate(prefix, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := ChainRecordFromText(value); err1 == nil {
+	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
+		if rec, err1 := ChainRecordFromBytes(value); err1 == nil {
 			ret = append(ret, rec)
 		}
 		return true
@@ -128,11 +137,7 @@ func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error
 
 func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
-	data, err := json.Marshal(rec)
-	if err != nil {
-		return err
-	}
-	return r.store.Set(k, data)
+	return r.store.Set(k, rec.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////
@@ -140,10 +145,12 @@ func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 // region DKShareRegistryProvider ////////////////////////////////////////////////////
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
+func (r *Impl) SaveDKShare(dkShare tcrypto.DKShare) error {
 	var err error
 	var exists bool
-	dbKey := dbKeyForDKShare(dkShare.Address)
+	dbKey := dbKeyForDKShare(dkShare.GetAddress())
+
+	r.log.Infof("Saving DKShare for address=%v as key %v", dkShare.GetAddress().String(), dbKey)
 
 	if exists, err = r.store.Has(dbKey); err != nil {
 		return err
@@ -151,15 +158,11 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	if exists {
 		return fmt.Errorf("attempt to overwrite existing DK key share")
 	}
-	marshaled, err := json.Marshal(dkShare)
-	if err != nil {
-		return err
-	}
-	return r.store.Set(dbKey, marshaled)
+	return r.store.Set(dbKey, dkShare.Bytes())
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
+func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
@@ -167,16 +170,11 @@ func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare,
 		}
 		return nil, err
 	}
-	var dkShare tcrypto.DKShare
-	err = json.Unmarshal(data, &dkShare)
-	if err != nil {
-		return nil, err
-	}
-	return &dkShare, nil
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), r.nodeIdentity.GetPrivateKey())
 }
 
-func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
+func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
+	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, iscp.BytesFromAddress(sharedAddress))
 }
 
 // endregion //////////////////////////////////////////////////////////////
@@ -184,7 +182,7 @@ func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {
 // region TrustedNetworkManager ////////////////////////////////////////////////////
 
 // IsTrustedPeer implements TrustedNetworkManager interface.
-func (r *Impl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
+func (r *Impl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
 	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -195,13 +193,13 @@ func (r *Impl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
 }
 
 // TrustPeer implements TrustedNetworkManager interface.
-func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (r *Impl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	tp := &peering.TrustedPeer{PubKey: pubKey, NetID: netID}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
 		return nil, err
 	}
-	tpBinary, err := json.Marshal(tp)
+	tpBinary, err := tp.Bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +212,7 @@ func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.Trust
 
 // DistrustPeer implements TrustedNetworkManager interface.
 // Get is kind of optional, so we ignore errors related to it.
-func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
+func (r *Impl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -228,9 +226,9 @@ func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, err
 	if getErr != nil {
 		return nil, nil
 	}
-	err = json.Unmarshal(tpBinary, tp)
+	tp, err = peering.TrustedPeerFromBytes(tpBinary)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 	return tp, nil
 }
@@ -238,14 +236,10 @@ func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, err
 // TrustedPeers implements TrustedNetworkManager interface.
 func (r *Impl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	ret := make([]*peering.TrustedPeer, 0)
-	prefix := dbkeys.MakeKey(dbkeys.ObjectTypeTrustedPeer)
-	err := r.store.Iterate(prefix, func(key kvstore.Key, value kvstore.Value) bool {
-		var tp peering.TrustedPeer
-		err := json.Unmarshal(value, &tp)
-		if err != nil {
-			return false
+	err := r.store.Iterate([]byte{dbkeys.ObjectTypeTrustedPeer}, func(key kvstore.Key, value kvstore.Value) bool {
+		if tp, recErr := peering.TrustedPeerFromBytes(value); recErr == nil {
+			ret = append(ret, tp)
 		}
-		ret = append(ret, &tp)
 		return true
 	})
 	if err != nil {
@@ -286,10 +280,10 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	nowis := time.Now()
-	cleanAfter := nowis.Add(BlobCacheDefaultTTL).UnixNano()
+	currentTime := time.Now()
+	cleanAfter := currentTime.Add(BlobCacheDefaultTTL).UnixNano()
 	if len(ttl) > 0 {
-		cleanAfter = nowis.Add(ttl[0]).UnixNano()
+		cleanAfter = currentTime.Add(ttl[0]).UnixNano()
 	}
 	if cleanAfter > 0 {
 		err = r.store.Set(dbKeyForBlobTTL(h), codec.EncodeInt64(cleanAfter))
@@ -319,65 +313,13 @@ func (r *Impl) HasBlob(h hashing.HashValue) (bool, error) {
 // region NodeIdentity //////////////////////////////////////////
 
 // GetNodeIdentity implements NodeIdentityProvider.
-func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
-	var err error
-	var pair ed25519.KeyPair
-	dbKey := dbKeyForNodeIdentity()
-	var exists bool
-	var data []byte
-	exists, _ = r.store.Has(dbKey)
-	if !exists {
-		pair = ed25519.GenerateKeyPair()
-		data, err = base58Text(pair.PrivateKey.Bytes())
-		if err != nil {
-			return nil, err
-		}
-		if err := r.store.Set(dbKey, data); err != nil {
-			return nil, err
-		}
-		r.log.Info("Node identity key pair generated.")
-		return &pair, nil
-	}
-	if data, err = r.store.Get(dbKey); err != nil {
-		return nil, err
-	}
-	data, err = decodeBase58Text(data)
-	if err != nil {
-		panic(err)
-	}
-	if pair.PrivateKey, err, _ = ed25519.PrivateKeyFromBytes(data); err != nil {
-		return nil, err
-	}
-	pair.PublicKey = pair.PrivateKey.Public()
-	return &pair, nil
+func (r *Impl) GetNodeIdentity() *cryptolib.KeyPair {
+	return r.nodeIdentity
 }
 
 // GetNodePublicKey implements NodeIdentityProvider.
-func (r *Impl) GetNodePublicKey() (*ed25519.PublicKey, error) {
-	var err error
-	var pair *ed25519.KeyPair
-	if pair, err = r.GetNodeIdentity(); err != nil {
-		return nil, err
-	}
-	return &pair.PublicKey, nil
-}
-
-func base58Text(in []byte) ([]byte, error) {
-	base58Str := base58.Encode(in)
-	return json.Marshal(base58Str)
-}
-
-func decodeBase58Text(in []byte) ([]byte, error) {
-	var base58Str string
-	err := json.Unmarshal(in, &base58Str)
-	if err != nil {
-		return nil, err
-	}
-	data, err := base58.Decode(base58Str)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+func (r *Impl) GetNodePublicKey() *cryptolib.PublicKey {
+	return r.GetNodeIdentity().GetPublicKey()
 }
 
 func dbKeyForNodeIdentity() []byte {

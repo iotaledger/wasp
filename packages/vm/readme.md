@@ -50,21 +50,22 @@ Upon completion the VM notifies the calling code through the callback.
 The _MustRunVMTaskAsync_ takes as a parameter [vm.VMTask](taskcontext.go#L19):
 ```go
 type VMTask struct {
-	Processors         *processors.ProcessorCache
-	ChainInput         *ledgerstate.AliasOutput
-	VirtualState       state.VirtualState 
-	Requests           []iscp.Request
-	Timestamp          time.Time
-	Entropy            hashing.HashValue
-	ValidatorFeeTarget *iscp.AgentID
-	Log                *logger.Logger
-	// call when finished
-	OnFinish           func(callResult dict.Dict, callError error, vmError error)
-	// result
-	ResultTransaction  *ledgerstate.TransactionEssence
-	ResultBlock        state.Block
-}
-```
+	ACSSessionID             uint64
+	Processors               *processors.Cache
+	ChainInput               *ledgerstate.AliasOutput
+	VirtualStateAccess       state.VirtualStateAccess
+	SolidStateBaseline       coreutil.StateBaseline
+	Requests                 []iscp.Request
+	ProcessedRequestsCount   uint16
+	Timestamp                time.Time
+	Entropy                  hashing.HashValue
+	ValidatorFeeTarget       *iscp.AgentID
+	Log                      *logger.Logger
+	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
+	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block
+	RotationAddress          ledgerstate.Address             // if not nil, it is a rotation
+	StartTime                time.Time
+}```
 At input, the most important parameters are:
 ```
 	Requests           []iscp.Request
@@ -136,7 +137,7 @@ new `iscp.Processor` object from the binary data of the program.
 
 The following _VM types_ are pre-defined in the current release of the Wasp:
 * `core` represents core contracts
-* `native` represents example and other contracts (e.g. the `evmchain` contract) which conform to the native interface and are hardcoded before run
+* `native` represents example and other contracts (e.g. the `evm` contract) which conform to the native interface and are hardcoded before run
 * `wasmtime` represents Wasmtime WebAssembly interpreter and native `Rust/Wasm` environment to create smart contracts.
 
 To implement new types of interpreters, other languages or interpreters, a new _VM Type_

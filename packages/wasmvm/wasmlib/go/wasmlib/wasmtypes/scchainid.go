@@ -5,7 +5,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScChainIDLength = 33
+const ScChainIDLength = 32
 
 type ScChainID struct {
 	id [ScChainIDLength]byte
@@ -13,7 +13,8 @@ type ScChainID struct {
 
 // Address returns the alias address that the chain ID actually represents
 func (o ScChainID) Address() ScAddress {
-	return AddressFromBytes(o.id[:])
+	buf := []byte{ScAddressAlias}
+	return AddressFromBytes(append(buf, o.id[:]...))
 }
 
 func (o ScChainID) Bytes() []byte {
@@ -31,20 +32,15 @@ func ChainIDDecode(dec *WasmDecoder) ScChainID {
 }
 
 func ChainIDEncode(enc *WasmEncoder, value ScChainID) {
-	enc.FixedBytes(value.Bytes(), ScChainIDLength)
+	enc.FixedBytes(value.id[:], ScChainIDLength)
 }
 
 func ChainIDFromBytes(buf []byte) ScChainID {
 	if len(buf) == 0 {
-		chainID := ScChainID{}
-		chainID.id[0] = ScAddressAlias
-		return chainID
+		return ScChainID{}
 	}
 	if len(buf) != ScChainIDLength {
 		panic("invalid ChainID length")
-	}
-	if buf[0] != ScAddressAlias {
-		panic("invalid ChainID: not an alias address")
 	}
 	return chainIDFromBytesUnchecked(buf)
 }
@@ -53,9 +49,13 @@ func ChainIDToBytes(value ScChainID) []byte {
 	return value.id[:]
 }
 
+func ChainIDFromString(value string) ScChainID {
+	return ChainIDFromBytes(HexDecode(value))
+}
+
 func ChainIDToString(value ScChainID) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return HexEncode(ChainIDToBytes(value))
 }
 
 func chainIDFromBytesUnchecked(buf []byte) ScChainID {

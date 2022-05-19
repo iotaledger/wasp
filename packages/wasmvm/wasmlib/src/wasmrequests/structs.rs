@@ -12,29 +12,30 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct CallRequest {
-    pub contract : ScHname, 
-    pub function : ScHname, 
-    pub params   : Vec<u8>, 
-    pub transfer : Vec<u8>, 
+    // caller assets that the call is allowed to access
+    pub allowance : Vec<u8>,
+    pub contract  : ScHname,
+    pub function  : ScHname,
+    pub params    : Vec<u8>,
 }
 
 impl CallRequest {
     pub fn from_bytes(bytes: &[u8]) -> CallRequest {
         let mut dec = WasmDecoder::new(bytes);
         CallRequest {
-            contract : hname_decode(&mut dec),
-            function : hname_decode(&mut dec),
-            params   : bytes_decode(&mut dec),
-            transfer : bytes_decode(&mut dec),
+            allowance : bytes_decode(&mut dec),
+            contract  : hname_decode(&mut dec),
+            function  : hname_decode(&mut dec),
+            params    : bytes_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
+		bytes_encode(&mut enc, &self.allowance);
 		hname_encode(&mut enc, self.contract);
 		hname_encode(&mut enc, self.function);
 		bytes_encode(&mut enc, &self.params);
-		bytes_encode(&mut enc, &self.transfer);
         enc.buf()
     }
 }
@@ -79,10 +80,10 @@ impl MutableCallRequest {
 
 #[derive(Clone)]
 pub struct DeployRequest {
-    pub description : String, 
-    pub name        : String, 
-    pub params      : Vec<u8>, 
-    pub prog_hash   : ScHash, 
+    pub description : String,
+    pub name        : String,
+    pub params      : Vec<u8>,
+    pub prog_hash   : ScHash,
 }
 
 impl DeployRequest {
@@ -146,29 +147,34 @@ impl MutableDeployRequest {
 
 #[derive(Clone)]
 pub struct PostRequest {
-    pub chain_id : ScChainID, 
-    pub contract : ScHname, 
-    pub delay    : u32, 
-    pub function : ScHname, 
-    pub params   : Vec<u8>, 
-    pub transfer : Vec<u8>, 
+    // caller assets that the call is allowed to access
+    pub allowance : Vec<u8>,
+    pub chain_id  : ScChainID,
+    pub contract  : ScHname,
+    pub delay     : u32,
+    pub function  : ScHname,
+    pub params    : Vec<u8>,
+    // assets that are transferred into caller account
+    pub transfer  : Vec<u8>,
 }
 
 impl PostRequest {
     pub fn from_bytes(bytes: &[u8]) -> PostRequest {
         let mut dec = WasmDecoder::new(bytes);
         PostRequest {
-            chain_id : chain_id_decode(&mut dec),
-            contract : hname_decode(&mut dec),
-            delay    : uint32_decode(&mut dec),
-            function : hname_decode(&mut dec),
-            params   : bytes_decode(&mut dec),
-            transfer : bytes_decode(&mut dec),
+            allowance : bytes_decode(&mut dec),
+            chain_id  : chain_id_decode(&mut dec),
+            contract  : hname_decode(&mut dec),
+            delay     : uint32_decode(&mut dec),
+            function  : hname_decode(&mut dec),
+            params    : bytes_decode(&mut dec),
+            transfer  : bytes_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
+		bytes_encode(&mut enc, &self.allowance);
 		chain_id_encode(&mut enc, &self.chain_id);
 		hname_encode(&mut enc, self.contract);
 		uint32_encode(&mut enc, self.delay);
@@ -219,8 +225,8 @@ impl MutablePostRequest {
 
 #[derive(Clone)]
 pub struct SendRequest {
-    pub address  : ScAddress, 
-    pub transfer : Vec<u8>, 
+    pub address  : ScAddress,
+    pub transfer : Vec<u8>,
 }
 
 impl SendRequest {
@@ -280,9 +286,9 @@ impl MutableSendRequest {
 
 #[derive(Clone)]
 pub struct TransferRequest {
-    pub agent_id : ScAgentID, 
-    pub create   : bool, 
-    pub transfer : Vec<u8>, 
+    pub agent_id : ScAgentID,
+    pub create   : bool,
+    pub transfer : Vec<u8>,
 }
 
 impl TransferRequest {

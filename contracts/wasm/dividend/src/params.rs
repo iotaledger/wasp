@@ -17,6 +17,7 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
+    // optional owner of contract, defaults to contract creator
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
@@ -28,6 +29,7 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
+    // optional owner of contract, defaults to contract creator
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
@@ -39,10 +41,12 @@ pub struct ImmutableMemberParams {
 }
 
 impl ImmutableMemberParams {
+    // address of dividend recipient
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 
+    // relative division factor
     pub fn factor(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_FACTOR))
 	}
@@ -54,10 +58,12 @@ pub struct MutableMemberParams {
 }
 
 impl MutableMemberParams {
+    // address of dividend recipient
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
 
+    // relative division factor
     pub fn factor(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_FACTOR))
 	}
@@ -69,6 +75,7 @@ pub struct ImmutableSetOwnerParams {
 }
 
 impl ImmutableSetOwnerParams {
+    // new owner of smart contract
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
@@ -80,6 +87,7 @@ pub struct MutableSetOwnerParams {
 }
 
 impl MutableSetOwnerParams {
+    // new owner of smart contract
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_OWNER))
 	}
@@ -91,6 +99,7 @@ pub struct ImmutableGetFactorParams {
 }
 
 impl ImmutableGetFactorParams {
+    // address of dividend recipient
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}
@@ -102,6 +111,7 @@ pub struct MutableGetFactorParams {
 }
 
 impl MutableGetFactorParams {
+    // address of dividend recipient
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
 	}

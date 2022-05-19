@@ -72,7 +72,7 @@ fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_finalize_auction(ctx, &f);
 	ctx.log("fairauction.funcFinalizeAuction ok");
 }
@@ -88,7 +88,7 @@ fn func_place_bid_thunk(ctx: &ScFuncContext) {
 		params: ImmutablePlaceBidParams { proxy: params_proxy() },
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_place_bid(ctx, &f);
 	ctx.log("fairauction.funcPlaceBid ok");
 }
@@ -124,8 +124,8 @@ fn func_start_auction_thunk(ctx: &ScFuncContext) {
 		params: ImmutableStartAuctionParams { proxy: params_proxy() },
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.color().exists(), "missing mandatory color");
 	ctx.require(f.params.minimum_bid().exists(), "missing mandatory minimumBid");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_start_auction(ctx, &f);
 	ctx.log("fairauction.funcStartAuction ok");
 }
@@ -143,7 +143,7 @@ fn view_get_info_thunk(ctx: &ScViewContext) {
 		results: MutableGetInfoResults { proxy: results_proxy() },
 		state: ImmutableFairAuctionState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	view_get_info(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("fairauction.viewGetInfo ok");

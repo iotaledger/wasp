@@ -1,6 +1,6 @@
-import { Buffer } from '../../buffer';
-import { Base58 } from '../../crypto';
-import { IFaucetRequest } from './faucet_models';
+import {Buffer} from '../../buffer';
+import {Base58} from '../../crypto';
+import {IFaucetRequest} from './faucet_models';
 
 export class FaucetHelper {
     public static ToBuffer(faucetRequest: IFaucetRequest): Buffer {

@@ -7,7 +7,9 @@ use crate::*;
 use crate::structs::*;
 
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
-    let amount = ctx.incoming().balance(&ScColor::IOTA);
+    let amount = ctx.allowance().iotas();
+    let transfer = ScTransfer::iotas(amount);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     let mut donation = Donation {
         amount: amount,
         donator: ctx.caller(),
@@ -17,10 +19,6 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
     };
     if donation.amount == 0 || donation.feedback.len() == 0 {
         donation.error = "error: empty feedback or donated amount = 0".to_string();
-        if donation.amount > 0 {
-            ctx.send(&donation.donator.address(), &ScTransfers::iotas(donation.amount));
-            donation.amount = 0;
-        }
     }
     let log = f.state.log();
     log.append_donation().set_value(&donation);
@@ -34,7 +32,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
 }
 
 pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
-    let balance = ctx.balances().balance(&ScColor::IOTA);
+    let balance = ctx.balances().iotas();
     let mut amount = f.params.amount().value();
     if amount == 0 || amount > balance {
         amount = balance;
@@ -45,7 +43,7 @@ pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
     }
 
     let sc_creator = ctx.contract_creator().address();
-    ctx.send(&sc_creator, &ScTransfers::iotas(amount));
+    ctx.send(&sc_creator, &ScTransfer::iotas(amount));
 }
 
 pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {

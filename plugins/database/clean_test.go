@@ -1,3 +1,4 @@
+//go:build rocksdb
 // +build rocksdb
 
 package database
@@ -7,7 +8,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/stretchr/testify/assert"
 )

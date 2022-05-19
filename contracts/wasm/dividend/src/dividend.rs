@@ -137,10 +137,10 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
     // Create an ScBalances map proxy to the account balances for this
     // smart contract. Note that ScBalances wraps an ScImmutableMap of
     // token color/amount combinations in a simpler to use interface.
-    let balances: ScBalances = ctx.balances();
+    let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens from the account balance.
-    let amount: u64 = balances.balance(&ScColor::IOTA);
+    let amount: u64 = allowance.iotas();
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
     let total_factor: u64 = f.state.total_factor().value();
@@ -174,13 +174,13 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
             // interface. The constructor we use here creates and initializes a
             // single token color transfer in a single statement. The actual color
             // and amount values passed in will be stored in a new map on the host.
-            let transfers: ScTransfers = ScTransfers::iotas(share);
+            let transfers: ScTransfer = ScTransfer::iotas(share);
 
             // Perform the actual transfer of tokens from the smart contract to the
             // member address. The transfer_to_address() method receives the address
             // value and the proxy to the new transfers map on the host, and will
             // call the corresponding host sandbox function with these values.
-            ctx.send(&address, &transfers);
+            ctx.transfer_allowed(&address.as_agent_id(), &transfers, true);
         }
     }
 }

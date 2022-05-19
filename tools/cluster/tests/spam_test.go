@@ -5,37 +5,61 @@ import (
 	"testing"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
 )
 
-const numRequests = 100000
+const numRequests = 100_000
 
+// TODO this is currently broken - the indexer can't keep up and returns UTXOs that were already spent. - to revisit after updating L1 dependencies
 func TestSpamOnledger(t *testing.T) {
 	testutil.RunHeavy(t)
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
-	keyPair, _ := env.getOrCreateAddress()
-	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	// send requests from many different wallets to speed things up
+	numAccounts := 100
+	numRequestsPerAccount := numRequests / numAccounts
+	errCh := make(chan error, numRequests)
+	txCh := make(chan iotago.Transaction, numRequests)
+	for i := 0; i < numAccounts; i++ {
+		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
+		go func() {
+			chainClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+			for i := 0; i < numRequestsPerAccount; i++ {
+				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
+				errCh <- err
+				txCh <- *tx
+				time.Sleep(300 * time.Millisecond) // give time for the indexer to get the new UTXOs (so we don't issue conflicting txs)
+			}
+		}()
+	}
+
+	// wait for all requests to be sent
+	for i := 0; i < numRequests; i++ {
+		err := <-errCh
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	for i := 0; i < numRequests; i++ {
-		args := chainclient.NewPostRequestParams().WithIotas(1)
-		_, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, *args)
+		tx := <-txCh
+		_, err := env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, &tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
+	res, err := env.Chain.Cluster.WaspClient(0).CallView(env.Chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Name, dict.Dict{})
 	require.NoError(t, err)
 	events, err := testcore.EventsViewResultToStringArray(res)
 	require.NoError(t, err)
@@ -52,18 +76,18 @@ func TestSpamOffledger(t *testing.T) {
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	// deposit funds for offledger requests
-	keyPair, myAddress := env.getOrCreateAddress()
-	myAgentID := iscp.NewAgentID(myAddress, 0)
-
-	accountsClient := env.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(1000000),
-	})
+	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
+	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(100_000_000),
+	})
+	require.NoError(t, err)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
-	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	maxChan := make(chan int, maxParallelRequests)
 	reqSuccessChan := make(chan uint64, numRequests)
@@ -80,12 +104,9 @@ func TestSpamOffledger(t *testing.T) {
 			}
 
 			// wait for the request to be processed
-			err = env.chain.CommitteeMultiClient().WaitUntilRequestProcessed(env.chain.ChainID, req.ID(), 30*time.Second)
-
-			// check receipt
-			er = env.chain.OriginatorClient().CheckRequestResult(req.ID())
-			if er != nil {
-				reqErrorChan <- er
+			_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
+			if err != nil {
+				reqErrorChan <- err
 				return
 			}
 			reqSuccessChan <- nonce
@@ -101,7 +122,7 @@ func TestSpamOffledger(t *testing.T) {
 		case e := <-reqErrorChan:
 			// no request should fail
 			fmt.Printf("ERROR sending offledger request, err: %v\n", e)
-			t.FailNow()
+			t.Fatal()
 		}
 		if n == numRequests {
 			break
@@ -110,7 +131,7 @@ func TestSpamOffledger(t *testing.T) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
+	res, err := env.Chain.Cluster.WaspClient(0).CallView(env.Chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Name, dict.Dict{})
 	require.NoError(t, err)
 	events, err := testcore.EventsViewResultToStringArray(res)
 	require.NoError(t, err)

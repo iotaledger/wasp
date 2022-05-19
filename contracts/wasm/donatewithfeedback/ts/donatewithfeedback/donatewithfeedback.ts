@@ -6,7 +6,9 @@ import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
-    const amount = ctx.incoming().balance(wasmtypes.IOTA);
+    const amount = ctx.allowance().iotas();
+    const transfer = wasmlib.ScTransfer.iotas(amount);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
     let donation = new sc.Donation();
     donation.amount = amount;
     donation.donator = ctx.caller();
@@ -15,10 +17,6 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
     donation.timestamp = ctx.timestamp();
     if (donation.amount == 0 || donation.feedback.length == 0) {
         donation.error = "error: empty feedback or donated amount = 0".toString();
-        if (donation.amount > 0) {
-            ctx.send(donation.donator.address(), wasmlib.ScTransfers.iotas(donation.amount));
-            donation.amount = 0;
-        }
     }
     let log = f.state.log();
     log.appendDonation().setValue(donation);
@@ -32,7 +30,7 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
 }
 
 export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext): void {
-    let balance = ctx.balances().balance(wasmtypes.IOTA);
+    let balance = ctx.balances().iotas();
     let amount = f.params.amount().value();
     if (amount == 0 || amount > balance) {
         amount = balance;
@@ -43,7 +41,7 @@ export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext):
     }
 
     let scCreator = ctx.contractCreator().address();
-    ctx.send(scCreator, wasmlib.ScTransfers.iotas(amount));
+    ctx.send(scCreator, wasmlib.ScTransfer.iotas(amount));
 }
 
 export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext): void {

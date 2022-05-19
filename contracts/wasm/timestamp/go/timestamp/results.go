@@ -13,6 +13,7 @@ type ImmutableGetTimestampResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// last official timestamp generated
 func (s ImmutableGetTimestampResults) Timestamp() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultTimestamp))
 }
@@ -21,6 +22,7 @@ type MutableGetTimestampResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// last official timestamp generated
 func (s MutableGetTimestampResults) Timestamp() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultTimestamp))
 }

@@ -1,16 +1,16 @@
 package dbmanager
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/database"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/database/textdb"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -22,10 +22,10 @@ type ChainKVStoreProvider func(chainID *iscp.ChainID) kvstore.KVStore
 
 type DBManager struct {
 	log           *logger.Logger
-	registryDB    database.DB
+	registryDB    DB
 	registryStore kvstore.KVStore
-	databases     map[[ledgerstate.AddressLength]byte]database.DB
-	stores        map[[ledgerstate.AddressLength]byte]kvstore.KVStore
+	databases     map[*iotago.AliasID]DB
+	stores        map[*iotago.AliasID]kvstore.KVStore
 	mutex         sync.RWMutex
 	inMemory      bool
 }
@@ -33,8 +33,8 @@ type DBManager struct {
 func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Config) *DBManager {
 	dbm := DBManager{
 		log:       log,
-		databases: make(map[[ledgerstate.AddressLength]byte]database.DB),
-		stores:    make(map[[ledgerstate.AddressLength]byte]kvstore.KVStore),
+		databases: make(map[*iotago.AliasID]DB),
+		stores:    make(map[*iotago.AliasID]kvstore.KVStore),
 		mutex:     sync.RWMutex{},
 		inMemory:  inMemory,
 	}
@@ -48,22 +48,22 @@ func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Co
 	return &dbm
 }
 
-func getChainBase58(chainID *iscp.ChainID) string {
+func getChainString(chainID *iscp.ChainID) string {
 	if chainID != nil {
-		return chainID.Base58()
+		return chainID.String()
 	}
 	return "CHAIN_REGISTRY"
 }
 
-func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
+func (m *DBManager) createDB(chainID *iscp.ChainID) DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	chainIDBase58 := getChainBase58(chainID)
+	chainIDStr := getChainString(chainID)
 
 	if m.inMemory {
-		m.log.Infof("creating new in-memory database for: %s.", chainIDBase58)
-		db, err := database.NewMemDB()
+		m.log.Infof("creating new in-memory database for: %s", chainIDStr)
+		db, err := NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
 		}
@@ -80,14 +80,14 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 		}
 	}
 
-	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDBase58)
+	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDStr)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
-		m.log.Infof("creating new database for: %s.", chainIDBase58)
+		m.log.Infof("creating new database for: %s.", chainIDStr)
 	} else {
-		m.log.Infof("using existing database for: %s.", chainIDBase58)
+		m.log.Infof("using existing database for: %s.", chainIDStr)
 	}
 
-	db, err := database.NewDB(instanceDir)
+	db, err := NewDB(instanceDir)
 	if err != nil {
 		m.log.Fatal(err)
 	}
@@ -107,13 +107,13 @@ func (m *DBManager) GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
 	// create a new database / store
 	db := m.createDB(chainID)
 	store = db.NewStore()
-	m.databases[chainID.Array()] = db
-	m.stores[chainID.Array()] = db.NewStore()
+	m.databases[chainID.AsAliasID()] = db
+	m.stores[chainID.AsAliasID()] = db.NewStore()
 	return store
 }
 
 func (m *DBManager) GetKVStore(chainID *iscp.ChainID) kvstore.KVStore {
-	return m.stores[chainID.Array()]
+	return m.stores[chainID.AsAliasID()]
 }
 
 func (m *DBManager) Close() {
@@ -123,14 +123,14 @@ func (m *DBManager) Close() {
 	}
 }
 
-func (m *DBManager) RunGC(shutdownSignal <-chan struct{}) {
-	m.gc(m.registryDB, shutdownSignal)
+func (m *DBManager) RunGC(_ context.Context) {
+	m.gc(m.registryDB)
 	for _, db := range m.databases {
-		m.gc(db, shutdownSignal)
+		m.gc(db)
 	}
 }
 
-func (m *DBManager) gc(db database.DB, shutdownSignal <-chan struct{}) {
+func (m *DBManager) gc(db DB) {
 	if !db.RequiresGC() {
 		return
 	}
@@ -140,5 +140,5 @@ func (m *DBManager) gc(db database.DB, shutdownSignal <-chan struct{}) {
 		if err := db.GC(); err != nil {
 			m.log.Warnf("Garbage collection failed: %s", err)
 		}
-	}, gcTimeInterval, shutdownSignal)
+	}, gcTimeInterval)
 }

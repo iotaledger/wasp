@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/state"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"golang.org/x/xerrors"
@@ -16,23 +18,47 @@ import (
 
 // SaveNextBlockInfo appends block info and returns its index
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
-	registry := collections.NewArray32(partition, StateVarBlockRegistry)
+	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
 	ret := registry.MustLen() - 1
 	return ret
 }
 
+// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
+func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxId iotago.TransactionID, l1Commitment *state.L1Commitment) {
+	registry := collections.NewArray32(partition, prefixBlockRegistry)
+	lastBlockIndex := registry.MustLen() - 1
+	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
+	blockInfo, _ := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
+
+	blockInfo.AnchorTransactionID = anchorTxId
+	blockInfo.L1Commitment = l1Commitment
+
+	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
+}
+
+func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32) iotago.TransactionID {
+	registry := collections.NewArray32(partition, prefixBlockRegistry)
+	blockInfoBuffer := registry.MustGetAt(blockIndex)
+	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
+	if err != nil {
+		panic("Failed to parse blockinfo")
+	}
+
+	return blockInfo.AnchorTransactionID
+}
+
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
 // If state address does not change, it does nothing
-func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress ledgerstate.Address, blockIndex uint32) {
-	registry := collections.NewArray32(partition, StateVarControlAddresses)
+func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
+	registry := collections.NewArray32(partition, prefixControlAddresses)
 	l := registry.MustLen()
 	if l != 0 {
 		addrs, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
 		if err != nil {
 			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
 		}
-		if addrs.StateAddress.Equals(stateAddress) && addrs.GoverningAddress.Equals(governingAddress) {
+		if addrs.StateAddress.Equal(stateAddress) && addrs.GoverningAddress.Equal(governingAddress) {
 			return
 		}
 	}
@@ -44,15 +70,15 @@ func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governi
 	registry.MustPush(rec.Bytes())
 }
 
-// SaveRequestLogRecord appends request record to the record log and creates records for fast lookup
-func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
+// SaveRequestReceipt appends request record to the record log and creates records for fast lookup
+func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
 	// save lookup record for fast lookup
-	lookupTable := collections.NewMap(partition, StateVarRequestLookupIndex)
+	lookupTable := collections.NewMap(partition, prefixRequestLookupIndex)
 	digest := rec.Request.ID().LookupDigest()
 	var lst RequestLookupKeyList
 	digestExists, err := lookupTable.HasAt(digest[:])
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	if !digestExists {
 		// new digest, most common
@@ -61,49 +87,50 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 		// existing digest (should happen not often)
 		bin, err := lookupTable.GetAt(digest[:])
 		if err != nil {
-			return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+			return xerrors.Errorf("SaveRequestReceipt: %w", err)
 		}
 		if lst, err = RequestLookupKeyListFromBytes(bin); err != nil {
-			return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+			return xerrors.Errorf("SaveRequestReceipt: %w", err)
 		}
 	}
 	for i := range lst {
 		if lst[i] == key {
 			// already in list. Not normal
-			return xerrors.New("SaveRequestLogRecord: inconsistency: duplicate lookup key")
+			return xerrors.New("SaveRequestReceipt: inconsistency: duplicate lookup key")
 		}
 	}
 	lst = append(lst, key)
 	if err := lookupTable.SetAt(digest[:], lst.Bytes()); err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	// save the record. Key is a LookupKey
-	if err = collections.NewMap(partition, StateVarRequestReceipts).SetAt(key.Bytes(), rec.Bytes()); err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+	data := rec.Bytes()
+	if err = collections.NewMap(partition, prefixRequestReceipts).SetAt(key.Bytes(), data); err != nil {
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	return nil
 }
 
 func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
 	text := fmt.Sprintf("%s: %s", contract.String(), msg)
-	if err := collections.NewMap(partition, StateVarRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+	if err := collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
-	scLut := collections.NewMap(partition, StateVarSmartContractEventsLookup)
+	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
 	entries, err := scLut.GetAt(contract.Bytes())
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	entries = append(entries, key.Bytes()...)
 	err = scLut.SetAt(contract.Bytes(), entries)
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	return nil
 }
 
 func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.RequestID) (RequestLookupKeyList, error) {
-	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(partition, prefixRequestLookupIndex)
 	digest := reqID.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
 	if err != nil {
@@ -123,7 +150,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
 func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestReceipt, error) {
-	records := collections.NewMapReadOnly(partition, StateVarRequestReceipts)
+	records := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
 		if err != nil {
@@ -133,7 +160,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 		if err != nil {
 			return nil, err
 		}
-		if rec.Request.ID() == *reqID {
+		if rec.Request.ID().Equals(*reqID) {
 			rec.BlockIndex = lookupKey.BlockIndex()
 			rec.RequestIndex = lookupKey.RequestIndex()
 			return rec, nil
@@ -166,7 +193,7 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 	}
 	ret := []string{}
 	eventIndex := uint16(0)
-	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	for {
 		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex)
 		msg, err := events.GetAt(key.Bytes())
@@ -182,13 +209,13 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 }
 
 func getSmartContractEventsInternal(partition kv.KVStoreReader, contract iscp.Hname, fromBlock, toBlock uint32) ([]string, error) {
-	scLut := collections.NewMapReadOnly(partition, StateVarSmartContractEventsLookup)
+	scLut := collections.NewMapReadOnly(partition, prefixSmartContractEventsLookup)
 	ret := []string{}
 	entries, err := scLut.GetAt(contract.Bytes())
 	if err != nil {
 		return nil, err
 	}
-	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	keysBuf := bytes.NewBuffer(entries)
 	for {
 		key, err := EventLookupKeyFromBytes(keysBuf)
@@ -219,7 +246,7 @@ func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]st
 		return nil, err
 	}
 	ret := make([]string, 0)
-	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
@@ -273,13 +300,32 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 }
 
 func getBlockInfoDataInternal(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool, error) {
-	data, err := collections.NewArray32ReadOnly(partition, StateVarBlockRegistry).GetAt(blockIndex)
+	data, err := collections.NewArray32ReadOnly(partition, prefixBlockRegistry).GetAt(blockIndex)
 	return data, err == nil, err
+}
+
+func mustGetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) *BlockInfo {
+	data, ok, err := getBlockInfoDataInternal(partition, blockIndex)
+	if err != nil {
+		panic(xerrors.Errorf("mustGetBlockInfo: %w", err))
+	}
+	if !ok {
+		panic(xerrors.Errorf("mustGetBlockInfo: can't find block recird #%d", blockIndex))
+	}
+	ret, err := BlockInfoFromBytes(blockIndex, data)
+	if err != nil {
+		panic(xerrors.Errorf("mustGetBlockInfo: %w", err))
+	}
+	return ret
+}
+
+func RequestReceiptKey(rkey RequestLookupKey) []byte {
+	return collections.MapElemKey(prefixRequestReceipts, rkey.Bytes())
 }
 
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
 	lookupKey := NewRequestLookupKey(blockIndex, requestIndex)
-	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestReceipts)
+	lookupTable := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	recBin := lookupTable.MustGetAt(lookupKey[:])
 	if recBin == nil {
 		return nil, false
@@ -287,24 +333,19 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 	return recBin, true
 }
 
-func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
-	lookupDigest := reqID.LookupDigest()
-	lookupTable := collections.NewMapReadOnly(ctx.State(), StateVarRequestLookupIndex)
-	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
-	if lookupKeyListBin == nil {
-		return nil, 0, 0, false
+func GetUTXOInput(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {
+	return &iotago.UTXOInput{
+		TransactionID:          mustGetBlockInfo(state, stateIndex).AnchorTransactionID,
+		TransactionOutputIndex: outputIndex,
 	}
-	a := assert.NewAssert(ctx.Log())
-	lookupKeyList, err := RequestLookupKeyListFromBytes(lookupKeyListBin)
-	a.RequireNoError(err)
-	for i := range lookupKeyList {
-		recBin, found := getRequestRecordDataByRef(ctx.State(), lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
-		a.Require(found, "inconsistency: request log record wasn't found by exact reference")
-		rec, err := RequestReceiptFromBytes(recBin)
-		a.RequireNoError(err)
-		if rec.Request.ID() == reqID {
-			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
-		}
+}
+
+// tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
+func getBlockIndexParams(ctx iscp.SandboxView) uint32 {
+	ret := ctx.Params().MustGetUint32(ParamBlockIndex, math.MaxUint32)
+	if ret != math.MaxUint32 {
+		return ret
 	}
-	return nil, 0, 0, false
+	registry := collections.NewArray32ReadOnly(ctx.State(), prefixBlockRegistry)
+	return registry.MustLen() - 1
 }

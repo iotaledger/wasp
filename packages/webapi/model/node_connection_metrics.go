@@ -14,46 +14,50 @@ type NodeConnectionMessageMetrics struct {
 }
 
 type NodeConnectionMessagesMetrics struct {
-	OutPullState                     *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullState messages)"`
-	OutPullTransactionInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullTransactionInclusionState messages)"`
-	OutPullConfirmedOutput           *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullConfirmedOutput messages)"`
-	OutPostTransaction               *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PostTransaction messages)"`
+	OutPublishTransaction   *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PublishTransaction messages)"`
+	OutPullLatestOutput     *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullLatestOutput messages)"`
+	OutPullTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullTxInclusionState messages)"`
+	OutPullOutputByID       *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullOutputByID messages)"`
 
-	InTransaction        *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Transaction messages)"`
-	InInclusionState     *NodeConnectionMessageMetrics `swagger:"desc(Stats of received InclusionState messages)"`
-	InOutput             *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Output messages)"`
-	InUnspentAliasOutput *NodeConnectionMessageMetrics `swagger:"desc(Stats of received UnspentAliasOutput messages)"`
+	InStateOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received State output messages)"`
+	InAliasOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received AliasOutput messages)"`
+	InOutput           *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Output messages)"`
+	InOnLedgerRequest  *NodeConnectionMessageMetrics `swagger:"desc(Stats of received OnLedgerRequest messages)"`
+	InTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of received TxInclusionState messages)"`
 }
 
 type NodeConnectionMetrics struct {
 	NodeConnectionMessagesMetrics
-	Subscribed []Address
+	InMilestone *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Milestone messages)"`
+	Registered  []ChainID                     `swagger:"desc(Chain IDs of the chains registered to receiving L1 events)"`
 }
 
 func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) *NodeConnectionMetrics {
 	ncmm := NewNodeConnectionMessagesMetrics(metrics)
-	subscribed := metrics.GetSubscribed()
-	s := make([]Address, len(subscribed))
-	for i := range s {
-		s[i] = NewAddress(subscribed[i])
+	registered := metrics.GetRegistered()
+	r := make([]ChainID, len(registered))
+	for i := range r {
+		r[i] = NewChainID(registered[i])
 	}
 	return &NodeConnectionMetrics{
 		NodeConnectionMessagesMetrics: *ncmm,
-		Subscribed:                    s,
+		InMilestone:                   NewNodeConnectionMessageMetrics(metrics.GetInMilestone()),
+		Registered:                    r,
 	}
 }
 
 func NewNodeConnectionMessagesMetrics(metrics nodeconnmetrics.NodeConnectionMessagesMetrics) *NodeConnectionMessagesMetrics {
 	return &NodeConnectionMessagesMetrics{
-		OutPullState:                     NewNodeConnectionMessageMetrics(metrics.GetOutPullState()),
-		OutPullTransactionInclusionState: NewNodeConnectionMessageMetrics(metrics.GetOutPullTransactionInclusionState()),
-		OutPullConfirmedOutput:           NewNodeConnectionMessageMetrics(metrics.GetOutPullConfirmedOutput()),
-		OutPostTransaction:               NewNodeConnectionMessageMetrics(metrics.GetOutPostTransaction()),
+		OutPublishTransaction:   NewNodeConnectionMessageMetrics(metrics.GetOutPublishTransaction()),
+		OutPullLatestOutput:     NewNodeConnectionMessageMetrics(metrics.GetOutPullLatestOutput()),
+		OutPullTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetOutPullTxInclusionState()),
+		OutPullOutputByID:       NewNodeConnectionMessageMetrics(metrics.GetOutPullOutputByID()),
 
-		InTransaction:        NewNodeConnectionMessageMetrics(metrics.GetInTransaction()),
-		InInclusionState:     NewNodeConnectionMessageMetrics(metrics.GetInInclusionState()),
-		InOutput:             NewNodeConnectionMessageMetrics(metrics.GetInOutput()),
-		InUnspentAliasOutput: NewNodeConnectionMessageMetrics(metrics.GetInUnspentAliasOutput()),
+		InStateOutput:      NewNodeConnectionMessageMetrics(metrics.GetInStateOutput()),
+		InAliasOutput:      NewNodeConnectionMessageMetrics(metrics.GetInAliasOutput()),
+		InOutput:           NewNodeConnectionMessageMetrics(metrics.GetInOutput()),
+		InOnLedgerRequest:  NewNodeConnectionMessageMetrics(metrics.GetInOnLedgerRequest()),
+		InTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetInTxInclusionState()),
 	}
 }
 

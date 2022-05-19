@@ -13,6 +13,7 @@ type ImmutablePlaceBetParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// the number a better bets on
 func (s ImmutablePlaceBetParams) Number() wasmtypes.ScImmutableUint16 {
 	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ParamNumber))
 }
@@ -21,6 +22,7 @@ type MutablePlaceBetParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// the number a better bets on
 func (s MutablePlaceBetParams) Number() wasmtypes.ScMutableUint16 {
 	return wasmtypes.NewScMutableUint16(s.proxy.Root(ParamNumber))
 }
@@ -29,6 +31,7 @@ type ImmutablePlayPeriodParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// number of minutes in one playing round
 func (s ImmutablePlayPeriodParams) PlayPeriod() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamPlayPeriod))
 }
@@ -37,6 +40,7 @@ type MutablePlayPeriodParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// number of minutes in one playing round
 func (s MutablePlayPeriodParams) PlayPeriod() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamPlayPeriod))
 }

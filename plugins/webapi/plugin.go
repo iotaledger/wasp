@@ -37,13 +37,59 @@ var (
 )
 
 func Init() *node.Plugin {
-	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
-	return Plugin
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
+}
 
+func adminWhitelist() []net.IP {
+	r := make([]net.IP, 0)
+	for _, ip := range parameters.GetStringSlice(parameters.WebAPIAdminWhitelist) {
+		r = append(r, net.ParseIP(ip))
+	}
+	return r
+}
+
+func run(_ *node.Plugin) {
+	log.Infof("Starting %s ...", PluginName)
+	if err := daemon.BackgroundWorker("WebAPI Server", worker, parameters.PriorityWebAPI); err != nil {
+		log.Errorf("error starting as daemon: %s", err)
+	}
+}
+
+func worker(ctx context.Context) {
+	initWebAPI()
+	stopped := make(chan struct{})
+	server := Server.Echo()
+	go func() {
+		defer close(stopped)
+		bindAddr := parameters.GetString(parameters.WebAPIBindAddress)
+		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
+		if err := server.Start(bindAddr); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				log.Errorf("error serving: %s", err)
+			}
+		}
+	}()
+
+	// stop if we are shutting down or the server could not be started
+	select {
+	case <-ctx.Done():
+	case <-stopped:
+	}
+
+	log.Infof("Stopping %s ...", PluginName)
+	defer log.Infof("Stopping %s ... done", PluginName)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Errorf("error stopping: %s", err)
+	}
+}
+
+func initWebAPI() {
 	Server = echoswagger.New(echo.New(), "/doc", &echoswagger.Info{
 		Title:       "Wasp API",
 		Description: "REST API for the IOTA Wasp node",
@@ -84,40 +130,4 @@ func configure(*node.Plugin) {
 		allMetrics,
 		wal.GetWAL(),
 	)
-}
-
-func run(_ *node.Plugin) {
-	log.Infof("Starting %s ...", PluginName)
-	if err := daemon.BackgroundWorker("WebAPI Server", worker, parameters.PriorityWebAPI); err != nil {
-		log.Errorf("Error starting as daemon: %s", err)
-	}
-}
-
-func worker(shutdownSignal <-chan struct{}) {
-	stopped := make(chan struct{})
-	server := Server.Echo()
-	go func() {
-		defer close(stopped)
-		bindAddr := parameters.GetString(parameters.WebAPIBindAddress)
-		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
-		if err := server.Start(bindAddr); err != nil {
-			if !errors.Is(err, http.ErrServerClosed) {
-				log.Errorf("Error serving: %s", err)
-			}
-		}
-	}()
-
-	// stop if we are shutting down or the server could not be started
-	select {
-	case <-shutdownSignal:
-	case <-stopped:
-	}
-
-	log.Infof("Stopping %s ...", PluginName)
-	defer log.Infof("Stopping %s ... done", PluginName)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Errorf("Error stopping: %s", err)
-	}
 }

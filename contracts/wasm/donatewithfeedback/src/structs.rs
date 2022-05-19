@@ -12,11 +12,16 @@ use wasmlib::*;
 
 #[derive(Clone)]
 pub struct Donation {
-    pub amount    : u64,  // amount donated
-    pub donator   : ScAgentID,  // who donated
-    pub error     : String,  // error to be reported to donator if anything goes wrong
-    pub feedback  : String,  // the feedback for the person donated to
-    pub timestamp : u64,  // when the donation took place
+    // amount donated
+    pub amount    : u64,
+    // who donated
+    pub donator   : ScAgentID,
+    // error to be reported to donator if anything goes wrong
+    pub error     : String,
+    // the feedback for the person donated to
+    pub feedback  : String,
+    // when the donation took place
+    pub timestamp : u64,
 }
 
 impl Donation {

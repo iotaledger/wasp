@@ -1,39 +1,38 @@
 package runvm
 
 import (
-	"errors"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-	"golang.org/x/xerrors"
 )
 
 type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
-	// panic catcher for the whole VM task
-	// it returns gracefully if the panic was about invalidated state during optimistic read otherwise it panics again
-	// The smart contract panics are processed inside and do not reach this point
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
+	// optimistic read panic catcher for the whole VM task
+	err := panicutil.CatchPanicReturnError(
+		func() { runTask(task) },
+		coreutil.ErrorStateInvalidated,
+	)
+	if err != nil {
+		switch e := err.(type) {
+		case *iscp.VMError:
+			task.VMError = e
+		case error:
+			// May require a different error type here?
+			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
+		default:
+			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
 		}
-		if err, ok := r.(error); ok && errors.Is(err, coreutil.ErrorStateInvalidated) {
-			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
-			return
-		}
-		panic(r)
-	}()
-	runTask(task)
+		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+	}
 }
 
-func NewVMRunner() VMRunner {
+func NewVMRunner() vm.VMRunner {
 	return VMRunner{}
 }
 
@@ -41,95 +40,76 @@ func NewVMRunner() VMRunner {
 func runTask(task *vm.VMTask) {
 	vmctx := vmcontext.CreateVMContext(task)
 
-	var lastResult dict.Dict
-	var lastErr error
-	var lastTotalAssets colored.Balances
-	var exceededBlockOutputLimit bool
-
-	// loop over the batch of requests and run each request on the VM.
-	// the result accumulates in the VMContext and in the list of stateUpdates
 	var numOffLedger, numSuccess uint16
-	var numOnLedger uint8
-	for i, req := range task.Requests {
-		if req.IsOffLedger() {
-			numOffLedger++
-		} else {
-			if numOnLedger == vmcontext.MaxBlockInputCount {
-				continue // max number of inputs to be included in state transition reached, do not process more on-ledger requests
-			}
-			numOnLedger++
-		}
+	reqIndexInTheBlock := 0
 
-		vmctx.RunTheRequest(req, uint16(i))
-		lastResult, lastTotalAssets, lastErr, exceededBlockOutputLimit = vmctx.GetResult()
-
-		if exceededBlockOutputLimit {
-			// current request exceeded the number of output limit and will be re-run next batch
-			if req.IsOffLedger() {
-				numOffLedger--
-			} else {
-				numOnLedger--
-			}
+	// main loop over the batch of requests
+	for _, req := range task.Requests {
+		result, skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock))
+		if skipReason != nil {
+			// some requests are just ignored (deterministically)
+			task.Log.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
+				req.ID().String(), skipReason)
 			continue
 		}
-		task.ProcessedRequestsCount++
-		if lastErr == nil {
+		task.Results = append(task.Results, result)
+		reqIndexInTheBlock++
+		if req.IsOffLedger() {
+			numOffLedger++
+		}
+
+		if result.Error == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().Base58(), lastErr)
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Error)
 		}
+		vmctx.AssertConsistentGasTotals()
 	}
 
-	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", task.ProcessedRequestsCount, numSuccess, numOffLedger)
+	numProcessed := uint16(len(task.Results))
 
-	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(task.ProcessedRequestsCount, numSuccess, numOffLedger)
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
+		numProcessed, numSuccess, numOffLedger)
+
+	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.CloseVMContext(
+		numProcessed, numSuccess, numOffLedger)
 
 	task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
-		blockIndex, stateCommitment, timestamp, rotationAddr)
+		blockIndex, l1Commitment, timestamp, rotationAddr)
 
 	if rotationAddr == nil {
-		var err error
 		// rotation does not happen
-		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(stateCommitment, timestamp)
-		if err != nil {
-			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %w", err))
-			return
-		}
-		if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
-			task.Log.Panic(xerrors.Errorf("RunVM.checkTotalAssets: %w", err))
-		}
-		task.Log.Debug("runTask OUT. ",
-			"block index: ", blockIndex,
-			" variable state hash: ", stateCommitment,
-			" tx essence hash: ", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
-			" tx timestamp: ", task.ResultTransactionEssence.Timestamp(),
-		)
+		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment)
+
+		// TODO extract latest total assets
+		checkTotalAssets(task.ResultTransactionEssence, nil)
+
+		task.Log.Debugf("runTask OUT. block index: %d, %s", blockIndex, l1Commitment.String())
 	} else {
 		// rotation happens
 		task.RotationAddress = rotationAddr
 		task.ResultTransactionEssence = nil
-		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.Base58())
+		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-	// call callback closure
-	task.OnFinish(lastResult, lastErr, nil)
 }
 
-func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalOnChainAssets colored.Balances) error {
-	var chainOutput *ledgerstate.AliasOutput
-	for _, o := range essence.Outputs() {
-		if out, ok := o.(*ledgerstate.AliasOutput); ok {
-			chainOutput = out
-		}
-	}
-	if chainOutput == nil {
-		return xerrors.New("inconsistency: chain output not found")
-	}
-	balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
-	diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
-	// we expect assets in the chain output and total assets on-chain differs only in the amount of
-	// anti-dust tokens locked in the output. Otherwise it is inconsistency
-	if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
-		return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
-	}
-	return nil
+// checkTotalAssets asserts if assets on transaction equals assets on ledger
+func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.FungibleTokens) {
+	// TODO
+	//var chainOutput *ledgerstate.AliasOutput
+	//for _, o := range essence.Outputs() {
+	//	if out, ok := o.(*ledgerstate.AliasOutput); ok {
+	//		chainOutput = out
+	//	}
+	//}
+	//if chainOutput == nil {
+	//	return xerrors.New("inconsistency: chain output not found")
+	//}
+	//balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
+	//diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
+	//// we expect assets in the chain output and total assets on-chain differs only in the amount of
+	//// anti-dust tokens locked in the output. Otherwise it is inconsistency
+	//if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
+	//	return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
+	//}
 }

@@ -12,6 +12,7 @@ const (
 	CoreContractBlob            = "blob"
 	CoreContractEventlog        = "eventlog"
 	CoreContractBlocklog        = "blocklog"
+	CoreContractErrors          = "errors"
 	CoreContractGovernance      = "governance"
 	CoreEPRotateStateController = "rotateStateController"
 )
@@ -23,6 +24,7 @@ var (
 	CoreContractBlobHname            = iscp.Hn(CoreContractBlob)
 	CoreContractEventlogHname        = iscp.Hn(CoreContractEventlog)
 	CoreContractBlocklogHname        = iscp.Hn(CoreContractBlocklog)
+	CoreContractErrorsHname          = iscp.Hn(CoreContractErrors)
 	CoreContractGovernanceHname      = iscp.Hn(CoreContractGovernance)
 	CoreEPRotateStateControllerHname = iscp.Hn(CoreEPRotateStateController)
 
@@ -34,6 +36,7 @@ var (
 		CoreContractEventlog:   CoreContractEventlogHname,
 		CoreContractBlocklog:   CoreContractBlocklogHname,
 		CoreContractGovernance: CoreContractGovernanceHname,
+		CoreContractErrors:     CoreContractErrorsHname,
 	}
 )
 
@@ -41,15 +44,15 @@ var (
 const (
 	StateVarTimestamp           = "T"
 	StateVarBlockIndex          = "I"
-	StateVarPrevStateHash       = "H"
+	StateVarPrevL1Commitment    = "H"
 	ParamStateControllerAddress = "S"
 )
 
 // used in 'state' package as key for timestamp and block index
 var (
-	StatePrefixTimestamp     = string(CoreContractBlocklogHname.Bytes()) + StateVarTimestamp
-	StatePrefixBlockIndex    = string(CoreContractBlocklogHname.Bytes()) + StateVarBlockIndex
-	StatePrefixPrevStateHash = string(CoreContractBlocklogHname.Bytes()) + StateVarPrevStateHash
+	StatePrefixTimestamp        = string(CoreContractBlocklogHname.Bytes()) + StateVarTimestamp
+	StatePrefixBlockIndex       = string(CoreContractBlocklogHname.Bytes()) + StateVarBlockIndex
+	StatePrefixPrevL1Commitment = string(CoreContractBlocklogHname.Bytes()) + StateVarPrevL1Commitment
 )
 
 func CoreHname(name string) iscp.Hname {

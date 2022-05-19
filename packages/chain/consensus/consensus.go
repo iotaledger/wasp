@@ -7,9 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -28,12 +30,13 @@ type consensus struct {
 	chain                            chain.ChainCore
 	committee                        chain.Committee
 	committeePeerGroup               peering.GroupProvider
-	mempool                          chain.Mempool
+	mempool                          mempool_pkg.Mempool
 	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
-	stateOutput                      *ledgerstate.AliasOutput
+	stateOutput                      *iscp.AliasOutputWithID
 	stateTimestamp                   time.Time
+	timeData                         *iscp.TimeData
 	acsSessionID                     uint64
 	consensusBatch                   *BatchProposal
 	consensusEntropy                 hashing.HashValue
@@ -44,11 +47,11 @@ type consensus struct {
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
-	resultTxEssence                  *ledgerstate.TransactionEssence
+	resultTxEssence                  *iotago.TransactionEssence
 	resultState                      state.VirtualStateAccess
 	resultSignatures                 []*messages.SignedResultMsgIn
 	resultSigAck                     []uint16
-	finalTx                          *ledgerstate.Transaction
+	finalTx                          *iotago.Transaction
 	postTxDeadline                   time.Time
 	pullInclusionStateDeadline       time.Time
 	lastTimerTick                    atomic.Int64
@@ -62,7 +65,7 @@ type consensus struct {
 	eventACSMsgPipe                  pipe.Pipe
 	eventVMResultMsgPipe             pipe.Pipe
 	eventTimerMsgPipe                pipe.Pipe
-	assert                           assert.Assert
+	assert                           *assert.Assert
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
@@ -82,7 +85,7 @@ const (
 
 func New(
 	chainCore chain.ChainCore,
-	mempool chain.Mempool,
+	mempool mempool_pkg.Mempool,
 	committee chain.Committee,
 	peerGroup peering.GroupProvider,
 	nodeConn chain.ChainNodeConnection,
@@ -123,8 +126,14 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
+	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
+		ret.timeData = &iscp.TimeData{
+			MilestoneIndex: milestonePointer.Index,
+			Time:           time.Unix(int64(milestonePointer.Timestamp), 0),
+		}
+	})
+	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {
+		ret.EnqueueTxInclusionsStateMsg(txID, inclusionState)
 	})
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
@@ -163,7 +172,7 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
-	c.nodeConn.DetachFromInclusionStateReceived()
+	c.nodeConn.DetachFromTxInclusionState()
 	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
 
 	c.eventStateTransitionMsgPipe.Close()
@@ -230,9 +239,9 @@ func (c *consensus) recvLoop() {
 			}
 		case msg, ok := <-eventInclusionStateMsgCh:
 			if ok {
-				c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
-				c.handleInclusionState(msg.(*messages.InclusionStateMsg))
-				c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
+				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState...")
+				c.handleTxInclusionState(msg.(*messages.TxInclusionStateMsg))
+				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState... Done")
 			} else {
 				eventInclusionStateMsgCh = nil
 			}
@@ -272,9 +281,15 @@ func (c *consensus) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
+	var timeData iscp.TimeData
+	if c.timeData == nil {
+		timeData = iscp.TimeData{Time: time.Now()}
+	} else {
+		timeData = *c.timeData
+	}
 	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
-		Mempool:    c.mempool.Info(),
+		Mempool:    c.mempool.Info(timeData),
 		TimerTick:  int(c.lastTimerTick.Load()),
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+

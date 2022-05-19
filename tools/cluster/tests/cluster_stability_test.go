@@ -20,20 +20,20 @@ import (
 const OSWindows string = "windows"
 
 type SabotageEnv struct {
-	chainEnv      *chainEnv
+	chainEnv      *ChainEnv
 	NumValidators int
 	SabotageList  []int
 }
 
 func InitializeStabilityTest(t *testing.T, numValidators, clusterSize int) *SabotageEnv {
 	progHash := inccounter.Contract.ProgramHash
-	env := setupWithChain(t, clusterSize)
-	_, _, err := env.clu.InitDKG(numValidators)
+	env := SetupWithChain(t, waspClusterOpts{nNodes: clusterSize})
+	_, _, err := env.Clu.InitDKG(numValidators)
 
 	require.NoError(t, err)
 
-	_, _ = env.chain.DeployContract(incCounterSCName, progHash.String(), "testing with inccounter", nil)
-	waitUntil(t, env.contractIsDeployed(incCounterSCName), env.clu.Config.AllNodes(), 50*time.Second, "contract is deployed")
+	_, _ = env.Chain.DeployContract(incCounterSCName, progHash.String(), "testing with inccounter", nil)
+	waitUntil(t, env.contractIsDeployed(incCounterSCName), env.Clu.Config.AllNodes(), 50*time.Second, "contract is deployed")
 
 	return &SabotageEnv{
 		chainEnv:      env,
@@ -54,7 +54,7 @@ func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) 
 }
 
 func (e *SabotageEnv) setSabotageValidators(breakCount int) {
-	clusterSize := e.chainEnv.clu.Config.Wasp.NumNodes
+	clusterSize := e.chainEnv.Clu.Config.Wasp.NumNodes
 
 	from := clusterSize - e.NumValidators
 	to := from + breakCount - 1
@@ -95,9 +95,9 @@ func (e *SabotageEnv) sabotageNodes(sabotageOption SabotageOption, startDelay, i
 			var err error
 
 			if sabotageOption == SabotageByKill {
-				err = e.chainEnv.clu.KillNode(nodeID)
+				err = e.chainEnv.Clu.KillNode(nodeID)
 			} else if sabotageOption == SabotageByFreeze {
-				err = e.chainEnv.clu.FreezeNode(nodeID)
+				err = e.chainEnv.Clu.FreezeNode(nodeID)
 			}
 
 			require.NoError(e.chainEnv.t, err)
@@ -114,7 +114,7 @@ func (e *SabotageEnv) sabotageNodes(sabotageOption SabotageOption, startDelay, i
 func (e *SabotageEnv) unfreezeNodes() {
 	for _, nodeID := range e.SabotageList {
 		e.chainEnv.t.Logf("Unfreezing node %v (%s)", nodeID, time.Now())
-		err := e.chainEnv.clu.UnfreezeNode(nodeID)
+		err := e.chainEnv.Clu.UnfreezeNode(nodeID)
 
 		require.NoError(e.chainEnv.t, err)
 	}
@@ -133,7 +133,7 @@ func (e *SabotageEnv) getActiveNodeList() []int {
 
 	activeNodeList := []int{}
 
-	for _, n := range e.chainEnv.clu.Config.AllNodes() {
+	for _, n := range e.chainEnv.Clu.Config.AllNodes() {
 		if !contains(n) {
 			activeNodeList = append(activeNodeList, n)
 		}
@@ -145,7 +145,7 @@ func (e *SabotageEnv) getActiveNodeList() []int {
 func runTestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T, clusterSize, numValidators, numRequests int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.sendRequests(numRequests, time.Millisecond*250)
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.chainEnv.clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.chainEnv.Clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
 }
 
 func TestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T) {
@@ -339,7 +339,7 @@ func testConsenseusReconnectingNodesNoQuorum(t *testing.T, clusterSize, numValid
 	// unfreeze nodes, after bootstrapping it is expected to reach a full quorum leading to an equal incCounter
 	env.unfreezeNodes()
 
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.chainEnv.clu.Config.AllNodes(), 60*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.chainEnv.Clu.Config.AllNodes(), 60*time.Second, "incCounter matches expectation")
 }
 
 func testConsenseusReconnectingNodesHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
@@ -494,7 +494,7 @@ func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators
 		go env.sendRequests(numRequestsEachStep, time.Millisecond*1)
 
 		time.Sleep(time.Millisecond * 1000)
-		env.chainEnv.clu.FreezeNode(nodeID)
+		env.chainEnv.Clu.FreezeNode(nodeID)
 		brokenNodes++
 
 		t.Logf("on broken node: %v(%v), quorum=%v, match=%v", nodeID, brokenNodes, numValidators-quorum, brokenNodes >= numValidators-quorum)
@@ -528,7 +528,7 @@ func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators
 	t.Logf("Counter does not match requestCounter: %v", requestCounter)
 
 	for _, nodeID := range env.SabotageList {
-		env.chainEnv.clu.UnfreezeNode(nodeID)
+		env.chainEnv.Clu.UnfreezeNode(nodeID)
 
 		time.Sleep(time.Second * 15)
 		counter = env.chainEnv.getCounter(incCounterSCHname)

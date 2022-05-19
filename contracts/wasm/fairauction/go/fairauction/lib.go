@@ -56,7 +56,7 @@ func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcFinalizeAuction(ctx, f)
 	ctx.Log("fairauction.funcFinalizeAuction ok")
 }
@@ -76,7 +76,7 @@ func funcPlaceBidThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcPlaceBid(ctx, f)
 	ctx.Log("fairauction.funcPlaceBid ok")
 }
@@ -120,8 +120,8 @@ func funcStartAuctionThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
 	ctx.Require(f.Params.MinimumBid().Exists(), "missing mandatory minimumBid")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcStartAuction(ctx, f)
 	ctx.Log("fairauction.funcStartAuction ok")
 }
@@ -146,7 +146,7 @@ func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
+	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	viewGetInfo(ctx, f)
 	ctx.Results(results)
 	ctx.Log("fairauction.viewGetInfo ok")

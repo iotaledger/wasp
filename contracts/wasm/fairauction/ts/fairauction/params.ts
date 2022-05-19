@@ -9,85 +9,101 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	// token identifies the auction
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	// token identifies the auction
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutablePlaceBidParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	// token identifies the auction
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutablePlaceBidParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	// token identifies the auction
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutableSetOwnerMarginParams extends wasmtypes.ScProxy {
+	// new SC owner margin in promilles
 	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamOwnerMargin));
 	}
 }
 
 export class MutableSetOwnerMarginParams extends wasmtypes.ScProxy {
+	// new SC owner margin in promilles
 	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamOwnerMargin));
 	}
 }
 
 export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
-	}
-
+	// description of the tokens being auctioned
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
 
+	// duration of auction in minutes
 	duration(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamDuration));
 	}
 
+	// minimum required amount for any bid
 	minimumBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamMinimumBid));
+	}
+
+	// token of the tokens being auctioned
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableStartAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
-	}
-
+	// description of the tokens being auctioned
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
 
+	// duration of auction in minutes
 	duration(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamDuration));
 	}
 
+	// minimum required amount for any bid
 	minimumBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamMinimumBid));
+	}
+
+	// token of the tokens being auctioned
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	// token identifies the auction
+	token(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }
 
 export class MutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	// token identifies the auction
+	token(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
 	}
 }

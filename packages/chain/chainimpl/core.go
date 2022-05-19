@@ -6,8 +6,8 @@
 package chainimpl
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -27,7 +27,7 @@ func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
 		return nil
 	}
 	return &chain.CommitteeInfo{
-		Address:       cmt.DKShare().Address,
+		Address:       cmt.DKShare().GetAddress(),
 		Size:          cmt.Size(),
 		Quorum:        cmt.Quorum(),
 		QuorumIsAlive: cmt.QuorumIsAlive(),
@@ -35,7 +35,7 @@ func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
 	}
 }
 
-func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID *iotago.UTXOInput) {
 	c.stateMgr.EnqueueStateCandidateMsg(virtualState, outputID)
 }
 

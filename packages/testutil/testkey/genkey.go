@@ -1,17 +1,17 @@
 package testkey
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-func GenKeyAddr(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, ledgerstate.Address) {
-	var keyPair ed25519.KeyPair
+func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
+	var keyPair *cryptolib.KeyPair
 	if len(seedOpt) > 0 {
-		keyPair = *seedOpt[0].KeyPair(1)
+		keyPair = cryptolib.NewKeyPairFromSeed(*seedOpt[0])
 	} else {
-		keyPair = ed25519.GenerateKeyPair()
+		keyPair = cryptolib.NewKeyPair()
 	}
-	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	return &keyPair, addr
+	addr := keyPair.GetPublicKey().AsEd25519Address()
+	return keyPair, addr
 }
