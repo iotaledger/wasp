@@ -6,14 +6,11 @@ package tests
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -26,6 +23,9 @@ type clusterTestEnv struct {
 }
 
 func newClusterTestEnv(t *testing.T) *clusterTestEnv {
+	// TODO these tests need to be re-written, since the RPC server will be an integral part of wasp, rather than spawned by wasp-cli
+	t.Skip()
+
 	evmtest.InitGoEthLogger(t)
 
 	clu := newCluster(t)
@@ -34,19 +34,6 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	require.NoError(t, err)
 
 	chainID := evm.DefaultChainID
-
-	_, err = chain.DeployContract(
-		evm.Contract.Name,
-		evm.Contract.ProgramHash.String(),
-		"EVM chain on top of ISC",
-		map[string]interface{}{
-			evm.FieldChainID: codec.EncodeUint16(uint16(chainID)),
-			evm.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
-				evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
-			}),
-		},
-	)
-	require.NoError(t, err)
 
 	signer, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
