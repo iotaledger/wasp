@@ -19,12 +19,12 @@ var consensusMetricsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := config.WaspClient()
-		_, chainAddress, err := iotago.ParseBech32(chainIDStr)
+		_, chainAddress, err := iotago.ParseBech32(chainAlias)
 		log.Check(err)
 		chid := iscp.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
 		workflowStatus, err := client.GetChainConsensusWorkflowStatus(&chid)
 		log.Check(err)
-		pipeMetrics, err := client.GetChainConsensusPipeMetrics(chid)
+		pipeMetrics, err := client.GetChainConsensusPipeMetrics(&chid)
 		log.Check(err)
 		header := []string{"Flag name", "Value", "Last time set"}
 		table := make([][]string, 17)

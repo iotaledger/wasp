@@ -83,13 +83,13 @@ func NewTextKV(log *logger.Logger, filename string) kvstore.KVStore {
 }
 
 // WithRealm is a factory method for using the same underlying storage with a different realm.
-func (s *textKV) WithRealm(realm kvstore.Realm) kvstore.KVStore {
+func (s *textKV) WithRealm(realm kvstore.Realm) (kvstore.KVStore, error) {
 	return &textKV{
 		filename:      s.filename,
 		log:           s.log,
 		realm:         realm,
 		inMemoryStore: s.inMemoryStore,
-	}
+	}, nil
 }
 
 // Realm returns the configured realm.
@@ -115,17 +115,17 @@ func (s *textKV) load() (map[string]interface{}, error) {
 }
 
 // Iterate iterates over all keys and values with the provided prefix. You can pass kvstore.EmptyPrefix to iterate over all keys and values.
-func (s *textKV) Iterate(prefix kvstore.KeyPrefix, kvConsumerFunc kvstore.IteratorKeyValueConsumerFunc) error {
+func (s *textKV) Iterate(prefix kvstore.KeyPrefix, kvConsumerFunc kvstore.IteratorKeyValueConsumerFunc, direction ...kvstore.IterDirection) error {
 	s.RLock()
 	defer s.RUnlock()
-	return s.inMemoryStore.Iterate(byteutils.ConcatBytes(s.realm, prefix), kvConsumerFunc)
+	return s.inMemoryStore.Iterate(byteutils.ConcatBytes(s.realm, prefix), kvConsumerFunc, direction...)
 }
 
 // IterateKeys iterates over all keys with the provided prefix. You can pass kvstore.EmptyPrefix to iterate over all keys.
-func (s *textKV) IterateKeys(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyConsumerFunc) error {
+func (s *textKV) IterateKeys(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyConsumerFunc, direction ...kvstore.IterDirection) error {
 	s.RLock()
 	defer s.RUnlock()
-	return s.inMemoryStore.IterateKeys(byteutils.ConcatBytes(s.realm, prefix), consumerFunc)
+	return s.inMemoryStore.IterateKeys(byteutils.ConcatBytes(s.realm, prefix), consumerFunc, direction...)
 }
 
 // clear the key/value store
@@ -215,12 +215,12 @@ func (s *textKV) flush() error {
 }
 
 // Batched returns a BatchedMutations interface to execute batched mutations.
-func (s *textKV) Batched() kvstore.BatchedMutations {
+func (s *textKV) Batched() (kvstore.BatchedMutations, error) {
 	return &batchedMutations{
 		kvStore:          s,
 		deleteOperations: make(map[string]types.Empty),
 		setOperations:    make(map[string]kvstore.Value),
-	}
+	}, nil
 }
 
 // Flush persists all outstanding write operations to disc.

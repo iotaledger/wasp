@@ -4,51 +4,48 @@
 package solo
 
 import (
+	"math/big"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
 )
 
-// DefaultTimeStep is a default step for the logical clock for each PostRequestSync call.
-const DefaultTimeStep = 1 * time.Millisecond
-
-// Saldo is the default amount of tokens returned by the UTXODB faucet
-// which is therefore the amount returned by NewKeyPairWithFunds() and such
+// utxodb.FundsFromFaucetAmount is the default amount of tokens returned by the UTXODB faucet
+// which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
-	Saldo              = utxodb.RequestFundsAmount
-	DustThresholdIotas = uint64(1)
-	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
 )
@@ -56,23 +53,16 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T           TestContext
-	logger      *logger.Logger
-	dbmanager   *dbmanager.DBManager
-	utxoDB      *utxodb.UtxoDB
-	seed        *ed25519.Seed
-	blobCache   registry.BlobCache
-	glbMutex    sync.RWMutex
-	ledgerMutex sync.RWMutex
-	clockMutex  sync.RWMutex
-	logicalTime time.Time
-	timeStep    time.Duration
-	chains      map[[33]byte]*Chain
-	vmRunner    vm.VMRunner
-	// publisher wait group
-	publisherWG      sync.WaitGroup
-	publisherEnabled atomic.Bool
-	processorConfig  *processors.Config
+	T                            TestContext
+	logger                       *logger.Logger
+	dbmanager                    *dbmanager.DBManager
+	utxoDB                       *utxodb.UtxoDB
+	glbMutex                     sync.RWMutex
+	ledgerMutex                  sync.RWMutex
+	chains                       map[iscp.ChainID]*Chain
+	vmRunner                     vm.VMRunner
+	processorConfig              *processors.Config
+	disableAutoAdjustDustDeposit bool
 }
 
 // Chain represents state of individual chain.
@@ -86,90 +76,101 @@ type Chain struct {
 
 	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	StateControllerKeyPair *ed25519.KeyPair
-	StateControllerAddress ledgerstate.Address
-
-	// OriginatorKeyPair the signature scheme used to create the chain (origin transaction).
-	// It is a default signature scheme in many of 'solo' calls which require private key.
-	OriginatorKeyPair *ed25519.KeyPair
+	StateControllerKeyPair *cryptolib.KeyPair
+	StateControllerAddress iotago.Address
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID *iscp.ChainID
 
-	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
-	OriginatorAddress ledgerstate.Address
-
+	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
+	// It is a default key pair in many of Solo calls which require private key.
+	OriginatorPrivateKey *cryptolib.KeyPair
+	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID *iscp.AgentID
+	OriginatorAgentID iscp.AgentID
 
-	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
-	ValidatorFeeTarget *iscp.AgentID
+	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
+	ValidatorFeeTarget iscp.AgentID
 
-	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State       state.VirtualStateAccess
-	GlobalSync  coreutil.ChainStateSync
+	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
+	State state.VirtualStateAccess
+	// GlobalSync represents global atomic flag for the optimistic state reader. In Solo it has no function
+	GlobalSync coreutil.ChainStateSync
+	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
-
 	// Log is the named logger of the chain
-	Log *logger.Logger
-
-	// processor cache
+	log *logger.Logger
+	// global processor cache
 	proc *processors.Cache
-
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
-	mempool    chain.Mempool
+	// mempool of the chain is used in Solo to mimic a real node
+	mempool mempool.Mempool
+	// receipt of the last call
+	lastReceipt *blocklog.RequestReceipt
 }
 
-// New creates an instance of the `solo` environment.
-//
-// If solo is used for unit testing, 't' should be the *testing.T instance;
-// otherwise it can be either nil or an instance created with NewTestContext.
-//
-// 'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
-// 'printStackTrace' controls printing stack trace in case of errors
-func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *Solo {
-	log := testlogger.NewNamedLogger(t.Name(), timeLayout)
-	if !debug {
-		log = testlogger.WithLevel(log, zapcore.InfoLevel, printStackTrace)
+var _ chain.ChainCore = &Chain{}
+
+type InitOptions struct {
+	AutoAdjustDustDeposit bool
+	Debug                 bool
+	PrintStackTrace       bool
+	Seed                  cryptolib.Seed
+	Log                   *logger.Logger
+}
+
+func defaultInitOptions() *InitOptions {
+	return &InitOptions{
+		Debug:                 false,
+		PrintStackTrace:       false,
+		Seed:                  cryptolib.Seed{},
+		AutoAdjustDustDeposit: false, // is OFF by default
 	}
-	return NewWithLogger(t, log, seedOpt...)
 }
 
-// New creates an instance of the `solo` environment with the given logger.
-//
+// New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) *Solo {
+func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
-	var seed *ed25519.Seed
-	if len(seedOpt) > 0 {
-		seed = seedOpt[0]
+	opt := defaultInitOptions()
+	if len(initOptions) > 0 {
+		opt = initOptions[0]
+	}
+	if opt.Log == nil {
+		opt.Log = testlogger.NewNamedLogger(t.Name(), timeLayout)
+		if !opt.Debug {
+			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+		}
 	}
 
-	processorConfig := processors.NewConfig()
-	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-		return wasmhost.GetProcessor(binary, log)
+	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:])
+	ret := &Solo{
+		T:                            t,
+		logger:                       opt.Log,
+		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
+		utxoDB:                       utxodb.New(utxoDBinitParams),
+		chains:                       make(map[iscp.ChainID]*Chain),
+		vmRunner:                     runvm.NewVMRunner(),
+		processorConfig:              coreprocessors.Config(),
+		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
+	}
+	globalTime := ret.utxoDB.GlobalTime()
+	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
+		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
+
+	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
+		return wasmhost.GetProcessor(binaryCode, opt.Log)
 	})
 	require.NoError(t, err)
 
-	initialTime := time.Unix(1, 0)
-	ret := &Solo{
-		T:               t,
-		logger:          log,
-		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true, registry.DefaultConfig()),
-		utxoDB:          utxodb.NewWithTimestamp(initialTime),
-		seed:            seed,
-		blobCache:       iscp.NewInMemoryBlobCache(),
-		logicalTime:     initialTime,
-		timeStep:        DefaultTimeStep,
-		chains:          make(map[[33]byte]*Chain),
-		vmRunner:        runvm.NewVMRunner(),
-		processorConfig: processorConfig,
-	}
-	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime.Format(timeLayout))
+	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
+	}))
+
 	return ret
 }
 
@@ -185,8 +186,8 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 
 // NewChain deploys new chain instance.
 //
-// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
-// If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
+// If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (=1337) iotas are loaded from the UTXODB faucet.
+// ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
 //  - empty virtual state is initialized
@@ -195,113 +196,101 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - backlog processing threads (goroutines) are started
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
-//nolint:funlen
-func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
-	env.logger.Debugf("deploying new chain '%s'", name)
-	var stateController ed25519.KeyPair
-	if env.seed == nil {
-		stateController = ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
-	} else {
-		stateController = *env.seed.KeyPair(2)
-	}
-	stateAddr := ledgerstate.NewED25519Address(stateController.PublicKey)
+func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initParams ...dict.Dict) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initParams...)
+	return ret
+}
 
-	var originatorAddr ledgerstate.Address
+// NewChainExt returns also origin and init transactions. Used for core testing
+//nolint:funlen
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initParams ...dict.Dict) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+	env.logger.Debugf("deploying new chain '%s'", name)
+
+	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
+
+	var originatorAddr iotago.Address
 	if chainOriginator == nil {
-		if env.seed == nil {
-			kp := ed25519.GenerateKeyPair()
-			chainOriginator = &kp
-			originatorAddr = ledgerstate.NewED25519Address(kp.PublicKey)
-		} else {
-			chainOriginator = env.seed.KeyPair(1)
-			originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
-		}
-		_, err := env.utxoDB.RequestFunds(originatorAddr, env.LogicalTime())
+		chainOriginator = cryptolib.NewKeyPair()
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
+		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
-		originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
+		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
-	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
-	feeTarget := originatorAgentID
-	if len(validatorFeeTarget) > 0 {
-		feeTarget = validatorFeeTarget[0]
-	}
+	originatorAgentID := iscp.NewAgentID(originatorAddr)
 
-	bals := colored.NewBalancesForIotas(100)
+	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
+	originTx, chainID, err := transaction.NewChainOriginTransaction(
+		chainOriginator,
+		stateAddr,
+		stateAddr,
+		initIotas, // will be adjusted to min dust deposit
+		outs,
+		outIDs,
+	)
+	require.NoError(env.T, err)
 
-	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
-	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
+	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
 	require.NoError(env.T, err)
-	err = env.utxoDB.AddTransaction(originTx)
+
+	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, colored.IOTA, Saldo-100)
+	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Base58())
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Base58())
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
+		name, chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state hash: %s", chainID.String(), vs.StateCommitment().String())
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieNodeStore()))
 
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
 	glbSync := coreutil.NewChainStateSync().SetSolidIndex(0)
-	srdr := state.NewOptimisticStateReader(store, glbSync)
 
 	ret := &Chain{
 		Env:                    env,
 		Name:                   name,
 		ChainID:                chainID,
-		StateControllerKeyPair: &stateController,
+		StateControllerKeyPair: stateController,
 		StateControllerAddress: stateAddr,
-		OriginatorKeyPair:      chainOriginator,
+		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
-		ValidatorFeeTarget:     feeTarget,
+		ValidatorFeeTarget:     originatorAgentID,
 		State:                  vs,
-		StateReader:            srdr,
 		GlobalSync:             glbSync,
+		StateReader:            vs.OptimisticStateReader(glbSync),
 		proc:                   processors.MustNew(env.processorConfig),
-		Log:                    chainlog,
+		log:                    chainlog,
 	}
-	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog, metrics.DefaultChainMetrics())
+	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
-		if !env.publisherEnabled.Load() {
-			return
-		}
-		msg := msgType + " " + strings.Join(parts, " ")
-		env.publisherWG.Add(1)
-		go func() {
-			chainlog.Infof("SOLO PUBLISHER (test %s):: '%s'", env.T.Name(), msg)
-			env.publisherWG.Done()
-		}()
-	}))
-
+	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
-		ret.OriginatorKeyPair,
+		ret.OriginatorPrivateKey,
 		chainID,
 		"'solo' testing chain",
-		env.LogicalTime(),
-		env.utxoDB.GetAddressOutputs(ret.OriginatorAddress)...,
+		outs,
+		ids,
+		initParams...,
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
 
-	err = env.utxoDB.AddTransaction(initTx)
+	err = env.utxoDB.AddToLedger(initTx)
 	require.NoError(env.T, err)
 
 	env.glbMutex.Lock()
-	env.chains[chainID.Array()] = ret
+	env.chains[*chainID] = ret
 	env.glbMutex.Unlock()
 
 	go ret.batchLoop()
@@ -309,62 +298,65 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
-	// put to mempool and take back to solidify
-	ret.solidifyRequest(initReq[0])
-
-	_, err = ret.runRequestsSync(initReq, "new")
-	require.NoError(env.T, err)
+	results := ret.runRequestsSync(initReq, "new")
+	for _, res := range results {
+		require.NoError(env.T, res.Error)
+	}
 	ret.logRequestLastBlock()
 
-	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
-	return ret
+	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
+	return ret, originTx, initTx
 }
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
 // invalid or double spend
-func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
-	return env.utxoDB.AddTransaction(tx)
+func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
+	return env.utxoDB.AddToLedger(tx)
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID *iscp.ChainID) ([]iscp.Request, error) {
+func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID) ([]iscp.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
 	m := env.requestsByChain(tx)
-	ret, ok := m[chainID.Array()]
+	ret, ok := m[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain %s does not exist", chainID.String())
 	}
 	return ret, nil
 }
 
-func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]iscp.Request {
-	sender, err := utxoutil.GetSingleSender(tx)
+// requestsByChain parses the transaction and extracts those outputs which are interpreted as a request to a chain
+func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.Request {
+	ret, err := iscp.RequestsInTransaction(tx)
 	require.NoError(env.T, err)
-	ret := make(map[[33]byte][]iscp.Request)
-	for _, out := range tx.Essence().Outputs() {
-		o, ok := out.(*ledgerstate.ExtendedLockedOutput)
-		if !ok {
-			continue
-		}
-		arr := o.Address().Array()
-		if _, ok = env.chains[arr]; !ok {
-			// not a chain
-			continue
-		}
-		lst, ok := ret[arr]
-		if !ok {
-			lst = make([]iscp.Request, 0)
-		}
-		mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
-		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, tx.Essence().Timestamp(), mintedAmounts))
-	}
 	return ret
 }
 
+func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	ch.mempool.ReceiveRequests(reqs...)
+}
+
+// AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
+// then waits for the in-buffer to be empty, before resuming VM execution
+func (env *Solo) AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch *Chain, reqs []iscp.Request, timeout ...time.Duration) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	ch.mempool.ReceiveRequests(reqs...)
+	ch.mempool.WaitInBufferEmpty(timeout...)
+}
+
 // EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
-func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
+func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -386,21 +378,13 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	}
 }
 
-// EnablePublisher enables Solo publisher
-func (env *Solo) EnablePublisher(enable bool) {
-	env.publisherEnabled.Store(enable)
-}
-
-// WaitPublisher waits until all messages are published
-func (env *Solo) WaitPublisher() {
-	env.publisherWG.Wait()
-}
-
-func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
+func (ch *Chain) GetAnchorOutput() *iscp.AliasOutputWithID {
 	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
-
-	return outs[0]
+	for id, out := range outs {
+		return iscp.NewAliasOutputWithID(out, id.UTXOInput())
+	}
+	panic("unreachable")
 }
 
 // collateBatch selects requests which are not time locked
@@ -409,25 +393,21 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	ret := make([]iscp.Request, 0)
-	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
+	now := ch.Env.GlobalTime()
+	ready := ch.mempool.ReadyNow(now)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
 	}
-	ready = ready[:batchSize]
-	for _, req := range ready {
-		// using logical clock
-		if onLegderRequest, ok := req.(*request.OnLedger); ok {
-			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
-				if !onLegderRequest.TimeLock().IsZero() {
-					ch.Log.Infof("unlocked time-locked request %s", req.ID())
-				}
-				ret = append(ret, req)
+	ret := make([]iscp.Request, 0)
+	for _, req := range ready[:batchSize] {
+		if !req.IsOffLedger() {
+			onLedgerReq := req.AsOnLedger()
+			if !iscp.RequestIsUnlockable(onLedgerReq, ch.ChainID.AsAddress(), now) {
+				continue
 			}
-		} else {
-			ret = append(ret, req)
 		}
+		ret = append(ret, req)
 	}
 	return ret
 }
@@ -455,9 +435,11 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 	batch := ch.collateBatch()
 	if len(batch) > 0 {
-		_, err := ch.runRequestsNolock(batch, "batchLoop")
-		if err != nil {
-			ch.Log.Errorf("runRequestsSync: %v", err)
+		results := ch.runRequestsNolock(batch, "batchLoop")
+		for _, res := range results {
+			if res.Error != nil {
+				ch.log.Errorf("runRequestsSync: %v", res.Error)
+			}
 		}
 		return true
 	}
@@ -466,13 +448,141 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 // BacklogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) BacklogLen() int {
-	mstats := ch.mempool.Info()
+	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 
-// solidifies request arguments without mempool (only for solo)
-func (ch *Chain) solidifyRequest(req iscp.Request) {
-	ok, err := request.SolidifyArgs(req, ch.Env.blobCache)
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
+func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GetChainNodes() []peering.PeerStatusProvider {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
+	// not used, just to implement ChainCore interface
+	return nil
+}
+
+func (ch *Chain) GlobalStateSync() coreutil.ChainStateSync {
+	return ch.GlobalSync
+}
+
+func (ch *Chain) StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) GetStateReader() state.OptimisticStateReader {
+	return ch.StateReader
+}
+
+func (ch *Chain) ID() *iscp.ChainID {
+	return ch.ChainID
+}
+
+func (ch *Chain) Log() *logger.Logger {
+	return ch.log
+}
+
+func (ch *Chain) Processors() *processors.Cache {
+	return ch.proc
+}
+
+func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
+	return ch.State.Copy()
+}
+
+func (ch *Chain) EnqueueDismissChain(reason string) {
+	// not used, just to implement ChainCore interface
+}
+
+func (ch *Chain) EnqueueAliasOutput(_ *iscp.AliasOutputWithID) {
+	// not used, just to implement ChainCore interface
+}
+
+// ---------------------------------------------
+
+func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+	allOuts, _ := env.utxoDB.GetUnspentOutputs(addr)
+	ids := make(iotago.OutputIDs, len(allOuts))
+	i := 0
+	for id := range allOuts {
+		ids[i] = id
+		i++
+	}
+	return allOuts, ids
+}
+
+func (env *Solo) L1NFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+	return env.utxoDB.GetAddressNFTs(addr)
+}
+
+// L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
+func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
+	assets := env.L1Assets(addr)
+	return assets.AmountNativeToken(tokenID)
+}
+
+func (env *Solo) L1Iotas(addr iotago.Address) uint64 {
+	return env.utxoDB.GetAddressBalances(addr).Iotas
+}
+
+// L1Assets returns all ftokens of the address contained in the UTXODB ledger
+func (env *Solo) L1Assets(addr iotago.Address) *iscp.FungibleTokens {
+	return env.utxoDB.GetAddressBalances(addr)
+}
+
+func (env *Solo) L1Ledger() *utxodb.UtxoDB {
+	return env.utxoDB
+}
+
+type NFTMintedInfo struct {
+	Output   iotago.Output
+	OutputID iotago.OutputID
+	NFTID    iotago.NFTID
+}
+
+// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
+// Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*NFTMintedInfo, error) {
+	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
+
+	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
+		IssuerKeyPair:     issuer,
+		Target:            target,
+		UnspentOutputs:    allOuts,
+		UnspentOutputIDs:  allOutIDs,
+		ImmutableMetadata: immutableMetadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = env.AddToLedger(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	outSet, err := tx.OutputsSet()
+	if err != nil {
+		return nil, err
+	}
+	for id, out := range outSet {
+		// we know that the tx will only produce 1 NFT output
+		if _, ok := out.(*iotago.NFTOutput); ok {
+			return &NFTMintedInfo{
+				OutputID: id,
+				Output:   out,
+				NFTID:    iotago.NFTIDFromOutputID(id),
+			}, nil
+		}
+	}
+
+	return nil, xerrors.Errorf("NFT output not found in resulting tx")
 }

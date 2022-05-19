@@ -77,12 +77,9 @@ func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, config
 	case AuthBasic:
 		AddBasicAuth(webAPI, userMap)
 	case AuthJWT:
-		nodeIdentity, err := registryProvider().GetNodeIdentity()
-		if err != nil {
-			panic(err)
-		}
+		nodeIdentity := registryProvider().GetNodeIdentity()
 
-		privateKey := nodeIdentity.PrivateKey.Bytes()
+		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
 		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, userMap, claimValidator)

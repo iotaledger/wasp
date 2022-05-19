@@ -5,7 +5,6 @@ package tcrypto
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
@@ -13,7 +12,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"

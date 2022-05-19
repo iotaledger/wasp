@@ -37,7 +37,7 @@ func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *iscp.ChainID) (*model
 
 func (c *WaspClient) GetChainConsensusPipeMetrics(chID *iscp.ChainID) (*model.ConsensusPipeMetrics, error) {
 	ncmm := &model.ConsensusPipeMetrics{}
-	if err := c.do(http.MethodGet, routes.GetChainConsensusPipeMetrics(chID.Base58()), nil, ncmm); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainConsensusPipeMetrics(chID.String()), nil, ncmm); err != nil {
 		return nil, err
 	}
 	return ncmm, nil
