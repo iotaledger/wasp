@@ -158,10 +158,10 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-// TODO refactor owner of the chain moves all tokens balance the common account to its own account
+// harvest moves all the L2 balances of chain commmon account to chain owner's account
 // Params:
-//   ParamForceMinimumIotas specify the number of IOTAs left on the common account
-//   will be not less than MinimumIotasOnCommonAccount constant
+//   ParamForceMinimumIotas: specify the number of IOTAs left on the common account will be not less than MinimumIotasOnCommonAccount constant
+// TODO refactor owner of the chain moves all tokens balance the common account to its own account
 func harvest(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
@@ -181,7 +181,6 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	}
 	ctx.Requiref(toWithdraw.Iotas > bottomIotas, "assertion failed: toWithdraw.Iotas > bottomIotas")
 	toWithdraw.Iotas -= bottomIotas
-
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
 	return nil
 }
