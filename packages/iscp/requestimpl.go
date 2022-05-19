@@ -426,6 +426,13 @@ func (r *OnLedgerRequestData) SenderAccount() AgentID {
 	if sender == nil || r.requestMetadata == nil {
 		return nil
 	}
+	if r.requestMetadata.SenderContract != 0 {
+		if sender.Type() != iotago.AddressAlias {
+			panic("inconsistency: non-alias address cannot have hname != 0")
+		}
+		chid := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+		return NewContractAgentID(&chid, r.requestMetadata.SenderContract)
+	}
 	return NewAgentID(sender)
 }
 
