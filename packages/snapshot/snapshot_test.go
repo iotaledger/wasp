@@ -39,7 +39,7 @@ func Test1(t *testing.T) {
 	t.Logf("write %d kv pairs, %d Mbytes, to in-memory state took %v", count, totalBytes/(1024*1024), tm.Duration())
 
 	require.NoError(t, err)
-	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), testmisc.RandVectorCommitment())
+	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), state.RandL1Commitment())
 	st.ApplyStateUpdate(upd)
 
 	tm = util.NewTimer()
