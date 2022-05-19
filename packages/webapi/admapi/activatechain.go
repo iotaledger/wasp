@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -25,12 +24,11 @@ import (
 )
 
 type chainWebAPI struct {
-	registry      registry.Provider
-	chains        chains.Provider
-	network       peering.NetworkProvider
-	allMetrics    *metrics.Metrics
-	w             *wal.WAL
-	networkPrefix iotago.NetworkPrefix
+	registry   registry.Provider
+	chains     chains.Provider
+	network    peering.NetworkProvider
+	allMetrics *metrics.Metrics
+	w          *wal.WAL
 }
 
 func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {
@@ -135,7 +133,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	res := model.ChainInfo{
 		ChainID:        model.ChainID(chainID.String()),
 		Active:         chainRecord.Active,
-		StateAddress:   model.NewAddress(committeeInfo.Address, w.networkPrefix),
+		StateAddress:   model.NewAddress(committeeInfo.Address),
 		CommitteeNodes: cmtNodes,
 		AccessNodes:    acnNodes,
 		CandidateNodes: cndNodes,

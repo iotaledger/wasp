@@ -47,21 +47,18 @@ func AddEndpoints(
 		echoGroup.Use(protected(adminWhitelist))
 	}
 
-	networkPrefix := parameters.L1.Protocol.Bech32HRP
-
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
-	addChainMetricsEndpoints(adm, chainsProvider, networkPrefix)
+	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{
-		registry:      registryProvider,
-		chains:        chainsProvider,
-		network:       network,
-		allMetrics:    metrics,
-		networkPrefix: networkPrefix,
-		w:             w,
+		registry:   registryProvider,
+		chains:     chainsProvider,
+		network:    network,
+		allMetrics: metrics,
+		w:          w,
 	})
-	addDKSharesEndpoints(adm, registryProvider, nodeProvider, networkPrefix)
+	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }
 

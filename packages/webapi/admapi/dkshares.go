@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -24,7 +25,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider, networkPrefix iotago.NetworkPrefix) {
+func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) {
 	requestExample := model.DKSharesPostRequest{
 		PeerPubKeys: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:   3,
@@ -32,7 +33,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	}
 	addr1 := iscp.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
-		Address:      addr1.Bech32(networkPrefix),
+		Address:      addr1.Bech32(parameters.L1.Protocol.Bech32HRP),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		PeerPubKeys:  []string{base64.StdEncoding.EncodeToString([]byte("key"))},
@@ -41,9 +42,8 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	}
 
 	s := &dkSharesService{
-		registry:      registryProvider,
-		dkgNode:       nodeProvider,
-		networkPrefix: networkPrefix,
+		registry: registryProvider,
+		dkgNode:  nodeProvider,
 	}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
@@ -58,9 +58,8 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 }
 
 type dkSharesService struct {
-	registry      registry.Provider
-	dkgNode       dkg.NodeProvider
-	networkPrefix iotago.NetworkPrefix
+	registry registry.Provider
+	dkgNode  dkg.NodeProvider
 }
 
 func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
@@ -102,7 +101,7 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 	}
 
 	var response *model.DKSharesInfo
-	if response, err = makeDKSharesInfo(dkShare, s.networkPrefix); err != nil {
+	if response, err = makeDKSharesInfo(dkShare); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, response)
@@ -119,13 +118,13 @@ func (s *dkSharesService) handleDKSharesGet(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	var response *model.DKSharesInfo
-	if response, err = makeDKSharesInfo(dkShare, s.networkPrefix); err != nil {
+	if response, err = makeDKSharesInfo(dkShare); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, response)
 }
 
-func makeDKSharesInfo(dkShare tcrypto.DKShare, networkPrefix iotago.NetworkPrefix) (*model.DKSharesInfo, error) {
+func makeDKSharesInfo(dkShare tcrypto.DKShare) (*model.DKSharesInfo, error) {
 	var err error
 
 	b, err := dkShare.DSSSharedPublic().MarshalBinary()
@@ -149,7 +148,7 @@ func makeDKSharesInfo(dkShare tcrypto.DKShare, networkPrefix iotago.NetworkPrefi
 	}
 
 	return &model.DKSharesInfo{
-		Address:      dkShare.GetAddress().Bech32(networkPrefix),
+		Address:      dkShare.GetAddress().Bech32(parameters.L1.Protocol.Bech32HRP),
 		SharedPubKey: sharedPubKey,
 		PubKeyShares: pubKeyShares,
 		PeerPubKeys:  peerPubKeys,
