@@ -85,16 +85,6 @@ func contains(s []iscp.AgentID, e iscp.AgentID) bool {
 	return false
 }
 
-//nolint:unused,deadcode
-func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
-	for _, a := range s {
-		if a.Equals(e) {
-			return true
-		}
-	}
-	return false
-}
-
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
 // with minimal information and will verify successful creation before returning ctx.
 // It will start a default chain "chain1" before initializing the smart contract.
