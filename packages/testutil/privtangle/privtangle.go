@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -98,7 +99,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		pt.startMqtt(i)
 	}
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
-	pt.WaitInxPlugins()
+	pt.waitInxPlugins()
 
 	return &pt
 }
@@ -339,7 +340,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 	}
 }
 
-func (pt *PrivTangle) WaitInxPlugins() {
+func (pt *PrivTangle) waitInxPlugins() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
@@ -370,6 +371,10 @@ func (pt *PrivTangle) WaitInxPlugins() {
 	}
 }
 
+type FaucetInfoResponse struct {
+	Balance uint64 `json:"balance"`
+}
+
 func (pt *PrivTangle) queryFaucetInfo() error {
 	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
 	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
@@ -381,12 +386,17 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 	if err != nil {
 		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
 	}
-	if res.StatusCode == 200 {
-		return nil
-	}
 	resBody, err := io.ReadAll(res.Body)
 	res.Body.Close()
-	return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
+	if res.StatusCode != 200 {
+		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
+	}
+	var parsedResp FaucetInfoResponse
+	json.Unmarshal(resBody, &parsedResp)
+	if parsedResp.Balance == 0 {
+		return fmt.Errorf("faucet has 0 balance")
+	}
+	return nil
 }
 
 func (pt *PrivTangle) NodeMultiAddr(i int) string {
