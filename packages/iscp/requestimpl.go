@@ -422,10 +422,18 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OnLedgerRequestData) SenderAccount() AgentID {
-	if r.SenderAddress() == nil || r.requestMetadata == nil {
+	sender := r.SenderAddress()
+	if sender == nil || r.requestMetadata == nil {
 		return nil
 	}
-	return NewAgentIDFromAddressAndHname(r.SenderAddress(), r.requestMetadata.SenderContract)
+	if r.requestMetadata.SenderContract != 0 {
+		if sender.Type() != iotago.AddressAlias {
+			panic("inconsistency: non-alias address cannot have hname != 0")
+		}
+		chid := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+		return NewContractAgentID(&chid, r.requestMetadata.SenderContract)
+	}
+	return NewAgentID(sender)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {

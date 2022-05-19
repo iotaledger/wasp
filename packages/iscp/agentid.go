@@ -4,6 +4,7 @@
 package iscp
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -24,7 +25,6 @@ const (
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
 	Kind() AgentIDKind
-
 	String() string
 	Bytes() []byte
 	Equals(other AgentID) bool
@@ -64,19 +64,6 @@ func NewAgentID(addr iotago.Address) AgentID {
 	return &AddressAgentID{a: addr}
 }
 
-// Deprecated: NewAgentIDFromAddressAndHname is a utility constructor for backwards compatibility.
-// Use NewAgentID / NewContractAgentID / NewEthereumAddressAgentID instead.
-func NewAgentIDFromAddressAndHname(addr iotago.Address, hname Hname) AgentID {
-	if hname != 0 {
-		if addr.Type() != iotago.AddressAlias {
-			panic("inconsistency: non-alias address cannot have hname != 0")
-		}
-		chid := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(&chid, hname)
-	}
-	return NewAgentID(addr)
-}
-
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
 	var err error
 	kind, err := mu.ReadByte()
@@ -93,7 +80,7 @@ func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
 	case AgentIDKindEthereumAddress:
 		return ethAgentIDFromMarshalUtil(mu)
 	}
-	return nil, xerrors.Errorf("no handler for AgentID kind %d", kind)
+	return nil, fmt.Errorf("no handler for AgentID kind %d", kind)
 }
 
 func AgentIDFromBytes(data []byte) (AgentID, error) {
