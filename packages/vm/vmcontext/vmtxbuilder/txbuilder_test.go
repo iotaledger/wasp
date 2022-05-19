@@ -99,8 +99,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		StateIndex:     0,
 		StateMetadata:  stateMetadata[:],
 		FoundryCounter: 0,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},
@@ -221,8 +221,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		StateIndex:     0,
 		StateMetadata:  stateMetadata[:],
 		FoundryCounter: 0,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},
@@ -671,8 +671,8 @@ func TestFoundries(t *testing.T) {
 		StateIndex:     0,
 		StateMetadata:  stateMetadata[:],
 		FoundryCounter: 0,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},
@@ -767,7 +767,7 @@ func TestSerDe(t *testing.T) {
 		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
 		require.EqualValues(t, out.Deposit(), outBack.Amount)
 		require.EqualValues(t, 0, len(outBack.NativeTokens))
-		require.True(t, outBack.Blocks.Equal(out.Blocks))
+		require.True(t, outBack.Features.Equal(out.Features))
 	})
 	t.Run("serde FoundryOutput", func(t *testing.T) {
 		out := &iotago.FoundryOutput{
@@ -782,7 +782,7 @@ func TestSerDe(t *testing.T) {
 				MeltedTokens:  big.NewInt(0),
 				MaximumSupply: big.NewInt(2000),
 			},
-			Blocks: nil,
+			Features: nil,
 		}
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

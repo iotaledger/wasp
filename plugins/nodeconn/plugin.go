@@ -38,8 +38,7 @@ func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 	nc = nodeconn.New(
 		nodeconn.L1Config{
-			Hostname: parameters.GetString(parameters.L1Host),
-			APIPort:  parameters.GetInt(parameters.L1APIPort),
+			APIAddress: parameters.GetString(parameters.L1APIAddress),
 		},
 		log,
 	)

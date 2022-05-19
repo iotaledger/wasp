@@ -27,11 +27,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (b49384a)
-// https://github.com/gohornet/inx-mqtt (f40e16a)
-// https://github.com/gohornet/inx-indexer (1fd5def)
-// https://github.com/gohornet/inx-coordinator (9aa5a6c)
-// https://github.com/gohornet/inx-faucet (944e565) (requires `git submodule update --init --recursive` before building )
+// https://github.com/gohornet/hornet (33dca81)
+// https://github.com/gohornet/inx-mqtt (bba54ea)
+// https://github.com/gohornet/inx-indexer (0ad8ea9)
+// https://github.com/gohornet/inx-coordinator (64d4ab1)
+// https://github.com/gohornet/inx-faucet (abb1f8d) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -440,10 +440,9 @@ func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 		nodeIndex = i[0]
 	}
 	return nodeconn.L1Config{
-		Hostname:   "localhost",
-		APIPort:    pt.NodePortRestAPI(nodeIndex),
-		FaucetPort: pt.NodePortFaucet(nodeIndex),
-		FaucetKey:  pt.FaucetKeyPair,
+		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
+		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),
+		FaucetKey:     pt.FaucetKeyPair,
 	}
 }
 

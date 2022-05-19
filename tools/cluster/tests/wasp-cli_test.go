@@ -20,9 +20,6 @@ const srcFile = "wasm/" + file
 func TestWaspCLINoChains(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	w.Run("init")
-	w.Run("request-funds")
-
 	out := w.Run("address")
 
 	ownerAddr := regexp.MustCompile(`(?m)Address:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
@@ -34,9 +31,6 @@ func TestWaspCLINoChains(t *testing.T) {
 
 func TestWaspCLI1Chain(t *testing.T) {
 	w := newWaspCLITest(t)
-
-	w.Run("init")
-	w.Run("request-funds")
 
 	alias := "chain1"
 
@@ -87,8 +81,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 func TestWaspCLIContract(t *testing.T) {
 	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
+
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
@@ -150,8 +143,7 @@ func findRequestIDInOutput(out []string) string {
 
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
+
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
@@ -213,8 +205,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
+
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
@@ -254,9 +245,6 @@ func TestWaspCLIMint(t *testing.T) {
 	panic("TODO implement")
 	// w := newWaspCLITest(t)
 
-	// w.Run("init")
-	// w.Run("request-funds")
-
 	// out := w.Run("mint", "1000")
 	// colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
 	// color, err := ledgerstate.ColorFromBase58EncodedString(colorb58)
@@ -278,8 +266,6 @@ func TestWaspCLIMint(t *testing.T) {
 func TestWaspCLIBalance(t *testing.T) {
 	panic("TODO implement")
 	// w := newWaspCLITest(t)
-	// w.Run("init")
-	// w.Run("request-funds")
 	// w.Run("mint", "1000")
 
 	// out := w.Run("balance")
@@ -309,9 +295,6 @@ func TestWaspCLIBalance(t *testing.T) {
 
 func TestWaspCLIRejoinChain(t *testing.T) {
 	w := newWaspCLITest(t)
-
-	w.Run("init")
-	w.Run("request-funds")
 
 	alias := "chain1"
 

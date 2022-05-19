@@ -5,7 +5,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -32,7 +31,7 @@ func TestHornetStartup(t *testing.T) {
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nc := nodeclient.New(fmt.Sprintf("%s:%d", l1.Config.Hostname, l1.Config.APIPort))
+	nc := nodeclient.New(l1.Config.APIAddress)
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))

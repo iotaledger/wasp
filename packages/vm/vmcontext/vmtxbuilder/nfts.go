@@ -96,8 +96,8 @@ func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput i
 			Address: chainAddr,
 		},
 	}
-	out.Blocks = iotago.FeatureBlocks{
-		&iotago.SenderFeatureBlock{
+	out.Features = iotago.Features{
+		&iotago.SenderFeature{
 			Address: chainAddr,
 		},
 	}

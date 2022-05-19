@@ -451,7 +451,7 @@ func (c *consensus) pullInclusionStateIfNeeded() {
 	if err != nil {
 		c.log.Panicf("pullInclusionState: cannot calculate final transaction id: %v", err)
 	}
-	c.nodeConn.PullTxInclusionState(*finalTxID)
+	c.nodeConn.PullTxInclusionState(finalTxID)
 	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
 	c.log.Debugf("pullInclusionState: request for inclusion state sent")
 }
@@ -613,9 +613,9 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 	if err != nil {
 		c.log.Panicf("processTxInclusionState: cannot calculate final transaction id: %v", err)
 	}
-	if msg.TxID != *finalTxID {
+	if msg.TxID != finalTxID {
 		c.log.Debugf("processTxInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-			finalTxIDStr, iscp.TxID(&msg.TxID))
+			finalTxIDStr, iscp.TxID(msg.TxID))
 		return
 	}
 	switch msg.State {
@@ -665,8 +665,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 		Signature: signatureArray,
 	}
 	tx := &iotago.Transaction{
-		Essence:      c.resultTxEssence,
-		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(c.resultTxEssence.Inputs), signatureForUnlock),
+		Essence: c.resultTxEssence,
+		Unlocks: transaction.MakeSignatureAndAliasUnlockFeatures(len(c.resultTxEssence.Inputs), signatureForUnlock),
 	}
 	chained, err := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
 	if err != nil {

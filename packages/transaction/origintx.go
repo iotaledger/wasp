@@ -35,8 +35,8 @@ func NewChainOriginTransaction(
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
 		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: walletAddr,
 			},
 		},
@@ -75,14 +75,14 @@ func NewChainOriginTransaction(
 		return nil, nil, err
 	}
 	tx := &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(txInputs), sigs[0]),
+		Essence: essence,
+		Unlocks: MakeSignatureAndReferenceUnlocks(len(txInputs), sigs[0]),
 	}
 	txid, err := tx.ID()
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID := iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0)))
+	chainID := iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0)))
 	return tx, &chainID, nil
 }
 

@@ -59,12 +59,12 @@ func MakeBasicOutput(
 		},
 	}
 	if senderAddress != nil {
-		out.Blocks = append(out.Blocks, &iotago.SenderFeatureBlock{
+		out.Features = append(out.Features, &iotago.SenderFeature{
 			Address: senderAddress,
 		})
 	}
 	if metadata != nil {
-		out.Blocks = append(out.Blocks, &iotago.MetadataFeatureBlock{
+		out.Features = append(out.Features, &iotago.MetadataFeature{
 			Data: metadata.Bytes(),
 		})
 	}
@@ -126,12 +126,12 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTO
 	return &iotago.NFTOutput{
 		Amount:       o.Amount,
 		NativeTokens: o.NativeTokens,
-		Blocks:       o.Blocks,
+		Features:     o.Features,
 		Conditions:   o.Conditions,
 		NFTID:        nft.ID,
-		ImmutableBlocks: iotago.FeatureBlocks{
-			&iotago.IssuerFeatureBlock{Address: nft.Issuer},
-			&iotago.MetadataFeatureBlock{Data: nft.Metadata},
+		ImmutableFeatures: iotago.Features{
+			&iotago.IssuerFeature{Address: nft.Issuer},
+			&iotago.MetadataFeature{Data: nft.Metadata},
 		},
 	}
 }

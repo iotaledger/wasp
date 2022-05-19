@@ -38,7 +38,12 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
-	w.Run("set", "utxodb", "true")
+	w.Run("init")
+
+	w.Run("set", "l1.apiaddress", clu.Config.L1.APIAddress)
+	w.Run("set", "l1.faucetaddress", clu.Config.L1.FaucetAddress)
+
+	w.Run("request-funds")
 	return w
 }
 
