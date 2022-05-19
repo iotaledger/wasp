@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -16,10 +15,9 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider, networkPrefix iotago.NetworkPrefix) {
+func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
 	cms := &chainMetricsService{
 		chainsProvider,
-		networkPrefix,
 	}
 	addChainNodeConnMetricsEndpoints(adm, cms)
 	addChainConsensusMetricsEndpoints(adm, cms)
@@ -129,13 +127,12 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 }
 
 type chainMetricsService struct {
-	chains        chains.Provider
-	networkPrefix iotago.NetworkPrefix
+	chains chains.Provider
 }
 
 func (cssT *chainMetricsService) handleGetChainsNodeConnMetrics(c echo.Context) error {
 	metrics := cssT.chains().GetNodeConnectionMetrics()
-	metricsModel := model.NewNodeConnectionMetrics(metrics, cssT.networkPrefix)
+	metricsModel := model.NewNodeConnectionMetrics(metrics)
 
 	return c.JSON(http.StatusOK, metricsModel)
 }

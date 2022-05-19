@@ -120,13 +120,13 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 	}
 
 	if hnamePart != "" {
-		return contractAgentIDFromString(hnamePart, addrPart, parameters.L1.Protocol.Bech32HRP)
+		return contractAgentIDFromString(hnamePart, addrPart)
 	}
 	if strings.HasPrefix(addrPart, string(parameters.L1.Protocol.Bech32HRP)) {
-		return addressAgentIDFromString(s, parameters.L1.Protocol.Bech32HRP)
+		return addressAgentIDFromString(s)
 	}
 	if strings.HasPrefix(addrPart, "0x") {
-		return ethAgentIDFromString(s, parameters.L1.Protocol.Bech32HRP)
+		return ethAgentIDFromString(s)
 	}
 	return nil, xerrors.New("NewAgentIDFromString: wrong format")
 }

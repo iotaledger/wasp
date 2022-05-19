@@ -245,7 +245,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	if err != nil {
 		return nil, err
 	}
-	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), parameters.L1.Protocol.Bech32HRP)
+	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			waspNodeDataPath(dataPath, i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), parameters.L1.Protocol.Bech32HRP),
+			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress()),
 			i,
 			modifyConfig,
 		)

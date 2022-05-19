@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
@@ -46,7 +47,6 @@ import (
 const (
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
-	NetworkPrefix      = "solo"
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -238,9 +238,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(NetworkPrefix))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(NetworkPrefix))
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(NetworkPrefix))
+		name, chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
