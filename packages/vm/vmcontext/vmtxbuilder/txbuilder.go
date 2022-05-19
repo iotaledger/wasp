@@ -281,8 +281,8 @@ func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) i
 			&iotago.StateControllerAddressUnlockCondition{Address: txb.anchorOutput.StateController()},
 			&iotago.GovernorAddressUnlockCondition{Address: txb.anchorOutput.GovernorAddress()},
 		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},

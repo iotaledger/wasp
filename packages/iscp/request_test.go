@@ -47,9 +47,9 @@ func TestSerializeRequestData(t *testing.T) {
 					Amount: big.NewInt(100),
 				},
 			},
-			Blocks: iotago.FeatureBlocks{
-				&iotago.MetadataFeatureBlock{Data: requestMetadata.Bytes()},
-				&iotago.SenderFeatureBlock{Address: sender},
+			Features: iotago.Features{
+				&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
+				&iotago.SenderFeature{Address: sender},
 			},
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: sender},

@@ -149,12 +149,12 @@ func (u *UtxoDB) addTransaction(tx *iotago.Transaction, isGenesis bool) {
 		delete(u.utxo, outID)
 	}
 	// store transaction
-	u.transactions[*txid] = tx
+	u.transactions[txid] = tx
 
 	// add unspent outputs to the ledger
 	for i := range tx.Essence.Outputs {
 		utxo := &iotago.UTXOInput{
-			TransactionID:          *txid,
+			TransactionID:          txid,
 			TransactionOutputIndex: uint16(i),
 		}
 		u.utxo[utxo.ID()] = struct{}{}

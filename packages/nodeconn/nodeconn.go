@@ -4,14 +4,13 @@
 // nodeconn package provides an interface to the L1 node (Hornet).
 // This component is responsible for:
 //   - Protocol details.
-//   - Message reattachments and promotions.
+//   - Block reattachments and promotions.
 //   - Management of PoW.
 //
 package nodeconn
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -48,7 +47,7 @@ var _ chain.NodeConnection = &nodeConn{}
 
 func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 	parameters.L1 = &parameters.L1Params{
-		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
+		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
 		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
 		Protocol:           &info.Protocol,
 	}
@@ -68,7 +67,7 @@ func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.No
 
 func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeAPIClient := nodeclient.New(fmt.Sprintf("%s:%d", config.Hostname, config.APIPort))
+	nodeAPIClient := nodeclient.New(config.APIAddress)
 
 	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
@@ -214,15 +213,15 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nc.metrics
 }
 
-func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Message, error) {
-	// Build a message and post it.
-	txMsg, err := builder.NewMessageBuilder(parameters.L1.Protocol.Version).Payload(tx).Build()
+func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
+	// Build a Block and post it.
+	txMsg, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).Payload(tx).Build()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx message: %w", err)
+		return nil, xerrors.Errorf("failed to build a tx Block: %w", err)
 	}
-	txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, parameters.L1.Protocol)
+	txMsg, err = nc.nodeAPIClient.SubmitBlock(ctx, txMsg, parameters.L1.Protocol)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx message: %w", err)
+		return nil, xerrors.Errorf("failed to submit a tx Block: %w", err)
 	}
 	nc.log.Debugf("Posted transaction: %v", tx)
 	return txMsg, nil
@@ -230,17 +229,17 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
-// waitUntilConfirmed waits until a given tx message is confirmed, it takes care of promotions/re-attachments for that message
-func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Message) error {
+// waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Block) error {
 	// wait until tx is confirmed
 	msgID, err := txMsg.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to get msg ID: %w", err)
 	}
 
-	// poll the node by getting `MessageMetadataByMessageID`
+	// poll the node by getting `BlockMetadataByBlockID`
 	for {
-		metadataResp, err := nc.nodeAPIClient.MessageMetadataByMessageID(ctx, *msgID)
+		metadataResp, err := nc.nodeAPIClient.BlockMetadataByBlockID(ctx, msgID)
 		if err != nil {
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
@@ -255,7 +254,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
 			nc.log.Debugf("promoting msgID: %s", msgID)
-			// create an empty message and the messageID as one of the parents
+			// create an empty Block and the BlockID as one of the parents
 			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
 			if err != nil {
 				return xerrors.Errorf("failed to fetch Tips: %w", err)
@@ -271,21 +270,21 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Messag
 			for _, tip := range tips {
 				parents = append(parents, tip[:])
 			}
-			promotionMsg, err := builder.NewMessageBuilder(parameters.L1.Protocol.Version).Parents(parents).Build()
+			promotionMsg, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).Parents(parents).Build()
 			if err != nil {
-				return xerrors.Errorf("failed to build promotion message: %w", err)
+				return xerrors.Errorf("failed to build promotion Block: %w", err)
 			}
-			_, err = nc.nodeAPIClient.SubmitMessage(ctx, promotionMsg, parameters.L1.Protocol)
+			_, err = nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1.Protocol)
 			if err != nil {
 				return xerrors.Errorf("failed to promote msg: %w", err)
 			}
 		}
 		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
 			nc.log.Debugf("reattaching txMsg: %s", txMsg)
-			// remote PoW: Take the message, clear parents, clear nonce, send to node
+			// remote PoW: Take the Block, clear parents, clear nonce, send to node
 			txMsg.Parents = nil
 			txMsg.Nonce = 0
-			txMsg, err = nc.nodeAPIClient.SubmitMessage(ctx, txMsg, parameters.L1.Protocol)
+			txMsg, err = nc.nodeAPIClient.SubmitBlock(ctx, txMsg, parameters.L1.Protocol)
 			if err != nil {
 				return xerrors.Errorf("failed to get re-attach msg: %w", err)
 			}

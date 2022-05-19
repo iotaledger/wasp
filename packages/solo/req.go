@@ -305,7 +305,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	txid, err := tx.ID()
 	require.NoError(ch.Env.T, err)
 
-	return tx, iscp.NewRequestID(*txid, 0), nil
+	return tx, iscp.NewRequestID(txid, 0), nil
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:

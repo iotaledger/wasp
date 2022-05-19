@@ -660,7 +660,7 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
 		},
-		Blocks: nil,
+		Features: nil,
 	}
 	return ret, rec.BlockIndex, rec.OutputIndex
 }
@@ -794,8 +794,8 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
 		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: chainID.AsAddress(),
 			},
 		},

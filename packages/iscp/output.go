@@ -85,7 +85,7 @@ func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 			return false
 		}
 	}
-	return ao1.Blocks.Equal(ao2.Blocks)
+	return ao1.Features.Equal(ao2.Features)
 }
 
 func UTXOInputIDFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
