@@ -26,7 +26,6 @@ func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
 	if SkipWasm {
 		return nil
 	}
-	// *wasmsolo.TsWasm = true
 	return setupTest(t)
 }
 

@@ -57,12 +57,12 @@ export function chainIDToBytes(value: ScChainID): u8[] {
 }
 
 export function chainIDFromString(value: string): ScChainID {
-    return chainIDFromBytes(wasmtypes.base58Decode(value));
+    return chainIDFromBytes(wasmtypes.hexDecode(value));
 }
 
 export function chainIDToString(value: ScChainID): string {
     // TODO standardize human readable string
-    return wasmtypes.base58Encode(chainIDToBytes(value));
+    return wasmtypes.hexEncode(chainIDToBytes(value));
 }
 
 function chainIDFromBytesUnchecked(buf: u8[]): ScChainID {

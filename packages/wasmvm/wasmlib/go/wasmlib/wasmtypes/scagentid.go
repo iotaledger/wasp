@@ -107,16 +107,22 @@ func AgentIDToBytes(value ScAgentID) []byte {
 }
 
 func AgentIDFromString(value string) ScAgentID {
-	parts := strings.Split(value, "::")
-	if len(parts) != 2 {
+	parts := strings.Split(value, "@")
+	switch len(parts) {
+	case 1:
+		return NewScAgentIDFromAddress(AddressFromString(parts[0]))
+	case 2:
+		return NewScAgentID(AddressFromString(parts[1]), HnameFromString(parts[0]))
+	default:
 		panic("invalid AgentID string")
 	}
-	return ScAgentID{address: AddressFromString(parts[0]), hname: HnameFromString(parts[1])}
 }
 
 func AgentIDToString(value ScAgentID) string {
-	// TODO standardize human readable string
-	return AddressToString(value.address) + "::" + HnameToString(value.hname)
+	if value.kind == ScAgentIDContract {
+		return HnameToString(value.Hname()) + "@" + AddressToString(value.Address())
+	}
+	return AddressToString(value.Address())
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

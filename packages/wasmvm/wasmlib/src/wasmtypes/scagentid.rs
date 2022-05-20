@@ -100,7 +100,7 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
             let hname = hname_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
             return ScAgentID::new(&chain_id.address(), hname);
         }
-         _ =>
+        _ =>
             panic("AgentIDFromoBytes: invalid AgentID type"),
     }
     ScAgentID {
@@ -111,7 +111,7 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
 }
 
 pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
-    let mut buf:Vec<u8> = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.push(value.kind);
     match value.kind {
         SC_AGENT_ID_ADDRESS => {
@@ -128,12 +128,22 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
 }
 
 pub fn agent_id_from_string(value: &str) -> ScAgentID {
-    agent_id_from_bytes(&base58_decode(value))
+    let parts: Vec<&str> = value.split("@").collect();
+    match parts.len() {
+        1 => return ScAgentID::from_address(&address_from_string(&parts[0])),
+        2 => return ScAgentID::new(&address_from_string(&parts[1]), hname_from_string(&parts[0])),
+        _ => {
+            panic("invalid AgentID string");
+            return agent_id_from_bytes(&[]);
+        }
+    }
 }
 
 pub fn agent_id_to_string(value: &ScAgentID) -> String {
-    // TODO standardize human readable string
-    value.address.to_string() + "::" + &value.hname.to_string()
+    if value.kind == SC_AGENT_ID_CONTRACT {
+        return value.hname().to_string() + "@" + &value.address().to_string();
+    }
+    value.address().to_string()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

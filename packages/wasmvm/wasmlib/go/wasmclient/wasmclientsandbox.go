@@ -1,9 +1,12 @@
 package wasmclient
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 )
@@ -23,6 +26,10 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 		return Base58Decode(string(args))
 	case wasmlib.FnUtilsBase58Encode:
 		return []byte(Base58Encode(args))
+	case wasmlib.FnUtilsBech32Decode:
+		return s.fnUtilsBech32Decode(args)
+	case wasmlib.FnUtilsBech32Encode:
+		return s.fnUtilsBech32Encode(args)
 	}
 	panic("implement me")
 }
@@ -88,6 +95,25 @@ func (s *WasmClientContext) fnPost(args []byte) []byte {
 	hFunction := s.cvt.IscpHname(req.Function)
 	s.ReqID, s.Err = s.svcClient.PostRequest(s.chainID, s.scHname, hFunction, params, allowance, s.keyPair)
 	return nil
+}
+
+func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
+	hrp, addr, err := iotago.ParseBech32(string(args))
+	if err != nil {
+		s.Err = err
+		return nil
+	}
+	if hrp != parameters.L1.Protocol.Bech32HRP {
+		s.Err = errors.Errorf("Invalid protocol prefix: %s", string(hrp))
+		return nil
+	}
+	return s.cvt.ScAddress(addr).Bytes()
+}
+
+func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
+	scAddress := wasmtypes.AddressFromBytes(args)
+	addr := s.cvt.IscpAddress(&scAddress)
+	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 
 /////////////////////////////////////////////////////////////////
