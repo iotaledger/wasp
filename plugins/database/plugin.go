@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 const pluginName = "Database"
@@ -26,7 +27,7 @@ func Init() *node.Plugin {
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(pluginName)
-	dbm = dbmanager.NewDBManager(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory))
+	dbm = dbmanager.NewDBManager(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory), registryConfig())
 
 	// we open the database in the configure, so we must also make sure it's closed here
 	err := daemon.BackgroundWorker(pluginName, func(ctx context.Context) {
@@ -45,6 +46,12 @@ func run(_ *node.Plugin) {
 	if err != nil {
 		log.Errorf("failed to start as daemon: %s", err)
 	}
+}
+
+func registryConfig() *registry.Config {
+	useText := parameters.GetBool(parameters.RegistryUseText)
+	filename := parameters.GetString(parameters.RegistryFile)
+	return &registry.Config{UseText: useText, Filename: filename}
 }
 
 func GetRegistryKVStore() kvstore.KVStore {

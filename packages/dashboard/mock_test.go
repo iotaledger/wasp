@@ -152,6 +152,10 @@ func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID
 	panic("Not implemented")
 }
 
+func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID *iscp.ChainID) (chain.ConsensusPipeMetrics, error) {
+	panic("Not implemented")
+}
+
 type dashboardTestEnv struct {
 	wasp      *waspServicesMock
 	echo      *echo.Echo

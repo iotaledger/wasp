@@ -1,16 +1,17 @@
 ---
+description: Create, fund and, deploy a new EVM Chain using IOTA Smart Contracts.
+image: /img/logo/WASP_logo_dark.png
 keywords:
 - create
-- Chain
+- chain
 - EVM
 - Solidity
-- Deploy
+- deploy
 - hardhat
 - metamask
 - JSON
 - RPC
-description: Create, fund and deploy a new EVM Chain using IOTA Smart Contracts.
-image: /img/logo/WASP_logo_dark.png
+- how to
 ---
 # Creating an EVM Chain
 

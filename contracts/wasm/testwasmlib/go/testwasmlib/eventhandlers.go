@@ -7,12 +7,10 @@
 
 package testwasmlib
 
-import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-var testWasmLibHandlers = map[string]func(*TestWasmLibEventHandlers, []string){
+var testWasmLibHandlers = map[string]func(*TestWasmLibEventHandlers, []string) {
 	"testwasmlib.test": func(evt *TestWasmLibEventHandlers, msg []string) { evt.onTestWasmLibTestThunk(msg) },
 }
 
@@ -33,16 +31,16 @@ func (h *TestWasmLibEventHandlers) OnTestWasmLibTest(handler func(e *EventTest))
 
 type EventTest struct {
 	Timestamp uint64
-	Address   wasmtypes.ScAddress
-	Name      string
+  	Address wasmtypes.ScAddress
+  	Name string
 }
 
 func (h *TestWasmLibEventHandlers) onTestWasmLibTestThunk(msg []string) {
-	if h.test == nil {
+    if h.test == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventTest{Timestamp: evt.Timestamp()}
+	e := &EventTest{ Timestamp: evt.Timestamp() }
 	e.Address = wasmtypes.AddressFromString(evt.Decode())
 	e.Name = wasmtypes.StringFromString(evt.Decode())
 	h.test(e)

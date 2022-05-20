@@ -2,14 +2,15 @@
 description: The root contract is the first smart contract deployed on the chain. It functions as a smart contract factory for the chain, and manages chain ownership and fees.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-- ISCP
+- smart contracts
 - core
 - root
 - initialization
 - entry points
 - fees
 - ownership
-- Views
+- views
+- reference
 --- 
 # The `root` Contract
 

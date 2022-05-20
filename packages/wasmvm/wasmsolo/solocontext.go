@@ -22,9 +22,9 @@ import (
 )
 
 const ( // TODO set back to false
-	SoloDebug        = true
-	SoloHostTracing  = true
-	SoloStackTracing = true
+	SoloDebug        = false
+	SoloHostTracing  = false
+	SoloStackTracing = false
 )
 
 var (

@@ -9,6 +9,7 @@ keywords:
 - request status
 - receipts
 - events
+- reference
 --- 
 # The `blocklog` Contract
 

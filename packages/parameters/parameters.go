@@ -15,6 +15,7 @@ import (
 var all *configuration.Configuration
 
 const (
+	UserList           = "users"
 	NodeOwnerAddresses = "node.ownerAddresses"
 
 	LoggerLevel             = "logger.level"
@@ -62,6 +63,8 @@ const (
 
 	RawBlocksEnabled = "debug.rawblocksEnabled"
 	RawBlocksDir     = "debug.rawblocksDirectory"
+	RegistryUseText = "registry.useText"
+	RegistryFile    = "registry.file"
 )
 
 func Init() *configuration.Configuration {
@@ -116,6 +119,8 @@ func Init() *configuration.Configuration {
 
 	flag.Bool(RawBlocksEnabled, false, "enable raw blocks to be written to disk on a separate dir")
 	flag.String(RawBlocksDir, "blocks", "path to the directory where the blocks should be written to")
+	flag.Bool(RegistryUseText, false, "enable text key/value store for registry db.")
+	flag.String(RegistryFile, "chain-registry.json", "registry filename. Ignored if registry.useText is false.")
 
 	return all
 }
@@ -144,6 +149,14 @@ func GetStringToString(name string) map[string]string {
 	return all.StringMap(name)
 }
 
+func GetStruct(path string, object interface{}) error {
+	return all.Unmarshal(path, object)
+}
+
+func GetStructWithConf(path string, object interface{}, uc koanf.UnmarshalConf) error {
+	return all.UnmarshalWithConf(path, object, uc)
+}
+
 func Dump() map[string]interface{} {
 	// hack to access private member Node.config
 	rf := reflect.ValueOf(all).Elem().FieldByName("config")
@@ -152,6 +165,7 @@ func Dump() map[string]interface{} {
 
 	m := map[string]interface{}{}
 	flatten(m, tree, "")
+
 	return m
 }
 

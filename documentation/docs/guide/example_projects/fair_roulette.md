@@ -1,4 +1,6 @@
 ---
+description: An example game project with frontend and contract, demonstrating the development, setup, and interaction with a smart contract.
+image: /img/logo/WASP_logo_dark.png
 keywords:
 - Smart Contracts
 - Rust
@@ -6,12 +8,10 @@ keywords:
 - proof of concept
 - node
 - nvm
-- tutorial
 - JavaScript
 - TypeScript
 - Wasm
-description: An example game project with frontend and contract, demonstrating the development, setup, and interaction with a smart contract.
-image: /img/logo/WASP_logo_dark.png
+- tutorial
 ---
 
 # Fair Roulette
@@ -52,13 +52,13 @@ There are two ways to interact with smart contracts.
 
 #### On Ledger Requests
 
-See: [On-ledger Requests](../core_concepts/smartcontract-interaction/on-ledger-requests.md)
+See: [On-ledger Requests](../core_concepts/invocation.md#on-ledger)
 
 On-ledger requests are sent to GoShimmer nodes. Wasp periodically requests new On-ledger requests from GoShimmer nodes, and handles them accordingly. These messages are validated through the network and take some time to be processed. 
 
 #### Off Ledger Requests
 
-See: [Off-ledger Requests](../core_concepts/smartcontract-interaction/off-ledger-requests.md)
+See: [Off-ledger Requests](../core_concepts/invocation.md#off-ledger)
 
 Off-ledger requests are directly sent to Wasp nodes and do not require validation through GoShimmer nodes. They are therefore faster. However, they require an initial deposit of funds to a chain account as this account will initiate required On-ledger requests on behalf of the desired contract or player.
 

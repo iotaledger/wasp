@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/profiling"
 	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/iotaledger/wasp/plugins/users"
 	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -27,6 +28,7 @@ func main() {
 	params := parameters.Init()
 
 	plugins := node.Plugins(
+		users.Init(params),
 		banner.Init(),
 		config.Init(params),
 		logger.Init(params),

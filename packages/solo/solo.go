@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -150,7 +151,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
-		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true),
+		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
 		vmRunner:                     runvm.NewVMRunner(),

@@ -41,12 +41,11 @@ outside that memory by design, Wasm code is ideally suited for secure smart cont
 The Wasm runtime system will only provide access to external functionality that is needed
 for the smart contracts to be able to do their thing, but nothing more. In our case, we
 only provide access to the IOTA Smart Contracts host's sandbox API environment. The way we do that is by
-providing a simple library that can be linked to the Wasm code. This library, for
-obvious reasons, has been named `WasmLib` for now.
+providing a simple library that can be linked to the Wasm code. This library is called `WasmLib`.
 
-[![Wasm VM](/img/wasm_vm/WasmVM.png)](/img/wasm_vm/WasmVM.png)
+![Wasm VM](/img/wasm_vm/WasmVM.png)
 
-As you can see we can have any number of smart contracts running in our Wasm VM. Each
+As you can see, we can have any number of smart contracts running in our Wasm VM. Each
 smart contract is a separately compiled Wasm code unit that contains its own copy of
 WasmLib embedded into it. Each WasmLib provides the IOTA Smart Contracts sandbox functionality to its
 corresponding smart contract and knows how to access the underlying smart contract state

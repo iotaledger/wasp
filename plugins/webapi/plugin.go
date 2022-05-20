@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -110,8 +109,6 @@ func initWebAPI() {
 		AllowMethods: []string{"*"},
 	}))
 
-	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
-
 	network := peering.DefaultNetworkProvider()
 	if network == nil {
 		panic("dependency NetworkProvider is missing in WebAPI")
@@ -125,7 +122,6 @@ func initWebAPI() {
 	}
 	webapi.Init(
 		Server,
-		adminWhitelist(),
 		network,
 		tnm,
 		registry.DefaultRegistry,
