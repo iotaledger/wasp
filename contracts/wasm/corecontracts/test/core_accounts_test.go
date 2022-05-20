@@ -98,11 +98,30 @@ func TestWithdraw(t *testing.T) {
 
 func TestHarvest(t *testing.T) {
 	ctx := setupAccounts(t)
-	var withdrawAmount uint64 = 10_000
+	var transferAmount uint64 = 10_000
+	var minimumIotasOnCommonAccount uint64 = 3000
+	user0 := ctx.NewSoloAgent()
+	creatorAgentID := ctx.Creator().AgentID()
+	commonAccount := ctx.Chain.CommonAccount()
+	commonAccountBal0 := ctx.Chain.L2Iotas(commonAccount)
+	// TODO mint new tokens and harvest them
+
+	fTransfer := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
+	fTransfer.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
+	fTransfer.Func.AllowanceIotas(transferAmount).Post()
+	require.NoError(t, ctx.Err)
+	commonAccountBal1 := ctx.Chain.L2Iotas(commonAccount)
+	assert.Equal(t, commonAccountBal0+transferAmount+ctx.GasFee, commonAccountBal1)
+	creatorBalance0 := ctx.Chain.L2Iotas(creatorAgentID)
+	wasmsolo.NewSoloBalances(ctx, ctx.Creator(), ctx.Originator())
 
 	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
-	f.Func.TransferIotas(withdrawAmount).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
+	commonAccountBal2 := ctx.Chain.L2Iotas(commonAccount)
+	assert.Equal(t, minimumIotasOnCommonAccount+ctx.GasFee, commonAccountBal2)
+	creatorBalance1 := ctx.Chain.L2Iotas(creatorAgentID)
+	assert.Equal(t, creatorBalance0+commonAccountBal1-commonAccountBal2+iscp.Mi, creatorBalance1)
 }
 
 func TestFoundryCreateNew(t *testing.T) {

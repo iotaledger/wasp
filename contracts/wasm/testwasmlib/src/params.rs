@@ -637,8 +637,8 @@ impl ImmutableStringMapOfStringArraySetParams {
 		ScImmutableUint32::new(self.proxy.root(PARAM_INDEX))
 	}
 
-    pub fn key(&self) -> ScImmutableString {
-		ScImmutableString::new(self.proxy.root(PARAM_KEY))
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
     pub fn value(&self) -> ScImmutableString {
@@ -656,8 +656,8 @@ impl MutableStringMapOfStringArraySetParams {
 		ScMutableUint32::new(self.proxy.root(PARAM_INDEX))
 	}
 
-    pub fn key(&self) -> ScMutableString {
-		ScMutableString::new(self.proxy.root(PARAM_KEY))
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
     pub fn value(&self) -> ScMutableString {

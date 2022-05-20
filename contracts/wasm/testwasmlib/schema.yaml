@@ -84,9 +84,6 @@ funcs:
   stringMapOfStringArrayClear:
     params:
       name: String
-  
-  # Clear all the arrays of the array
-  arrayOfArraysClear:
 
   addressMapOfAddressArrayClear:
     params:
@@ -254,27 +251,6 @@ views:
     params:
       index0: Uint32
       index1: Uint32
-    results:
-      value: String
-  
-  arrayOfArraysValue:
-    params:
-      index0: Uint32
-      index1: Uint32
-    results:
-      value: String
-
-  mapOfMapsValue:
-    params:
-      name: String
-      key: String
-    results:
-      value: String
-
-  arrayOfMapsValue:
-    params:
-      index: Uint32
-      key: String
     results:
       value: String
 
