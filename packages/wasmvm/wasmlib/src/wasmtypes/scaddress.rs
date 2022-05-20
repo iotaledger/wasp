@@ -96,12 +96,13 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
 }
 
 pub fn address_from_string(value: &str) -> ScAddress {
-    let hex = value.strip_prefix("0x").unwrap_or(value);
-    address_from_bytes(&hex_decode(&hex))
+    let utils = ScSandboxUtils{};
+    utils.bech32_decode(value)
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
-    "0x".to_string() + &hex_encode(&address_to_bytes(value))
+    let utils = ScSandboxUtils{};
+    utils.bech32_encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

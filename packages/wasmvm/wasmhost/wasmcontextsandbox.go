@@ -6,10 +6,12 @@ package wasmhost
 import (
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
@@ -32,6 +34,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnContractCreator,
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
+	(*WasmContextSandbox).fnEstimateDust,
 	(*WasmContextSandbox).fnEvent,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
@@ -45,8 +48,11 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnStateAnchor,
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
+	(*WasmContextSandbox).fnTransferAllowed,
 	(*WasmContextSandbox).fnUtilsBase58Decode,
 	(*WasmContextSandbox).fnUtilsBase58Encode,
+	(*WasmContextSandbox).fnUtilsBech32Decode,
+	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
 	(*WasmContextSandbox).fnUtilsBlsAggregate,
 	(*WasmContextSandbox).fnUtilsBlsValid,
@@ -55,8 +61,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnUtilsHashBlake2b,
 	(*WasmContextSandbox).fnUtilsHashName,
 	(*WasmContextSandbox).fnUtilsHashSha3,
-	(*WasmContextSandbox).fnTransferAllowed,
-	(*WasmContextSandbox).fnEstimateDust,
 }
 
 // '$' prefix indicates a string param
@@ -78,6 +82,7 @@ var sandboxFuncNames = []string{
 	"FnContractCreator",
 	"#FnDeployContract",
 	"FnEntropy",
+	"#FnEstimateDust",
 	"$FnEvent",
 	"$FnLog",
 	"FnMinted",
@@ -91,8 +96,11 @@ var sandboxFuncNames = []string{
 	"#FnStateAnchor",
 	"FnTimestamp",
 	"$FnTrace",
+	"#FnTransferAllowed",
 	"$FnUtilsBase58Decode",
 	"#FnUtilsBase58Encode",
+	"$FnUtilsBech32Decode",
+	"#FnUtilsBech32Encode",
 	"#FnUtilsBlsAddress",
 	"#FnUtilsBlsAggregate",
 	"#FnUtilsBlsValid",
@@ -101,8 +109,6 @@ var sandboxFuncNames = []string{
 	"#FnUtilsHashBlake2b",
 	"$FnUtilsHashName",
 	"#FnUtilsHashSha3",
-	"#FnTransferAllowed",
-	"#FnEstimateDust",
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
@@ -407,6 +413,21 @@ func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
 
 func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
 	return []byte(s.common.Utils().Base58().Encode(args))
+}
+
+func (s WasmContextSandbox) fnUtilsBech32Decode(args []byte) []byte {
+	hrp, addr, err := iotago.ParseBech32(string(args))
+	s.checkErr(err)
+	if hrp != parameters.L1.Protocol.Bech32HRP {
+		s.Panicf("Invalid protocol prefix: %s", string(hrp))
+	}
+	return s.cvt.ScAddress(addr).Bytes()
+}
+
+func (s WasmContextSandbox) fnUtilsBech32Encode(args []byte) []byte {
+	scAddress := wasmtypes.AddressFromBytes(args)
+	addr := s.cvt.IscpAddress(&scAddress)
+	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 
 func (s WasmContextSandbox) fnUtilsBlsAddress(args []byte) []byte {

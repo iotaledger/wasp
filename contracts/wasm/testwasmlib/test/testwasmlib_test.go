@@ -14,6 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -340,10 +341,7 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scAliasAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAliasAddress)))
 	require.True(t, scAliasAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAliasAddress)))
 	require.EqualValues(t, scAliasAddress.Bytes(), iscp.BytesFromAddress(aliasAddress))
-	// FIXME In iota.go v3 we mixedly use AliasAddressBytesLength and AliasAddressSerializedBytesSize in AliasAddress.String()
-	// and AliasAddress.Serialize() respectively which results the result of stringification function is not
-	// equal between wasmtypes.ScAddress and iota.Address.
-	// require.EqualValues(t, scAliasAddress.String(), aliasAddress.String())
+	require.EqualValues(t, scAliasAddress.String(), aliasAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	// check ed25519 address
 	scEd25519Address := ctx.Originator().ScAgentID().Address()
@@ -351,9 +349,7 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scEd25519Address == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scEd25519Address)))
 	require.True(t, scEd25519Address == wasmtypes.AddressFromString(wasmtypes.AddressToString(scEd25519Address)))
 	require.EqualValues(t, scEd25519Address.Bytes(), iscp.BytesFromAddress(ed25519Address))
-	// scEd25519Address is `ScAddress` datatype which is 33 bytes long
-	// ed25519Address is Ed25519Address datatype which is the Blake2b-256 hash of an Ed25519 public key which is 32 bytes long
-	// FIXME require.EqualValues(t, scEd25519Address.String(), ed25519Address.String())
+	require.EqualValues(t, scEd25519Address.String(), ed25519Address.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	// check nft address (currently simply use
 	// serialized alias address and overwrite the kind byte)
@@ -365,39 +361,39 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scNftAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scNftAddress)))
 	require.True(t, scNftAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scNftAddress)))
 	require.EqualValues(t, scNftAddress.Bytes(), iscp.BytesFromAddress(nftAddress))
-	// FIXME require.EqualValues(t, scNftAddress.String(), nftAddress.String())
+	require.EqualValues(t, scNftAddress.String(), nftAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	// check agent id of alias address (hname zero)
 	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
 	agentID := iscp.NewAgentID(aliasAddress)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	// TODO require.EqualValues(t, scAgentID.String(), agentID.String())
 
 	// check agent id of ed25519 address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
 	agentID = iscp.NewAgentID(ed25519Address)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	require.EqualValues(t, scAgentID.String(), agentID.String())
 
 	// check agent id of NFT address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
 	agentID = iscp.NewAgentID(nftAddress)
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	require.EqualValues(t, scAgentID.String(), agentID.String())
 
 	// check agent id of contract (hname non-zero)
 	scAgentID = wasmtypes.NewScAgentID(scAliasAddress, testwasmlib.HScName)
 	agentID = iscp.NewContractAgentID(chainID, iscp.Hname(testwasmlib.HScName))
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	// FIXME require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// FIXME require.EqualValues(t, scAgentID.String(), agentID.String("atoi"))
+	// TODO require.EqualValues(t, scAgentID.String(), agentID.String())
 
 	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
