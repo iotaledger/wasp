@@ -45,9 +45,9 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return b
 	case "chainid":
-		_, chainid, err := iotago.ParseBech32(s)
+		chainid, err := iscp.ChainIDFromString(s)
 		log.Check(err)
-		return iscp.BytesFromAddress(chainid)
+		return chainid.Bytes()
 	case "file":
 		return ReadFile(s)
 	case "hash":

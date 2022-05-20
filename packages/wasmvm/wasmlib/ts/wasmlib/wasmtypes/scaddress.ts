@@ -99,12 +99,12 @@ export function addressToBytes(value: ScAddress): u8[] {
 
 export function addressFromString(value: string): ScAddress {
     const utils = new ScSandboxUtils();
-    return utils.bech32Decode(value)
+    return utils.bech32Decode(value);
 }
 
 export function addressToString(value: ScAddress): string {
     const utils = new ScSandboxUtils();
-    return utils.bech32Encode(value)
+    return utils.bech32Encode(value);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
