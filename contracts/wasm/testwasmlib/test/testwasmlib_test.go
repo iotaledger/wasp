@@ -369,7 +369,7 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
 	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// TODO require.EqualValues(t, scAgentID.String(), agentID.String())
+	require.EqualValues(t, scAgentID.String(), agentID.String())
 
 	// check agent id of ed25519 address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
@@ -393,7 +393,7 @@ func TestWasmTypes(t *testing.T) {
 	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
 	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	// TODO require.EqualValues(t, scAgentID.String(), agentID.String())
+	require.EqualValues(t, scAgentID.String(), agentID.String())
 
 	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))

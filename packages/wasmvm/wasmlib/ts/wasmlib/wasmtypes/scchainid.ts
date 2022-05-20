@@ -4,6 +4,7 @@
 import { panic } from "../sandbox";
 import * as wasmtypes from "./index";
 import {addressToBytes} from "./index";
+import {ScSandboxUtils} from "../sandboxutils";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -57,12 +58,15 @@ export function chainIDToBytes(value: ScChainID): u8[] {
 }
 
 export function chainIDFromString(value: string): ScChainID {
-    return chainIDFromBytes(wasmtypes.hexDecode(value));
+    const addr = wasmtypes.addressFromString(value);
+    if (addr.id[0] != wasmtypes.ScAddressAlias) {
+        panic("invalid ChainID address type");
+    }
+    return chainIDFromBytes(addr.id.slice(1));
 }
 
 export function chainIDToString(value: ScChainID): string {
-    // TODO standardize human readable string
-    return wasmtypes.hexEncode(chainIDToBytes(value));
+    return wasmtypes.addressToString(value.address());
 }
 
 function chainIDFromBytesUnchecked(buf: u8[]): ScChainID {
