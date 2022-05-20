@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -98,30 +99,41 @@ func TestWithdraw(t *testing.T) {
 
 func TestHarvest(t *testing.T) {
 	ctx := setupAccounts(t)
-	var transferAmount uint64 = 10_000
+	var transferAmount, mintAmount uint64 = 10_000, 20_000
 	var minimumIotasOnCommonAccount uint64 = 3000
-	user0 := ctx.NewSoloAgent()
+
+	user := ctx.NewSoloAgent()
 	creatorAgentID := ctx.Creator().AgentID()
 	commonAccount := ctx.Chain.CommonAccount()
-	commonAccountBal0 := ctx.Chain.L2Iotas(commonAccount)
-	// TODO mint new tokens and harvest them
+	commonAccountBal0 := ctx.Chain.L2Assets(commonAccount)
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
+	require.NoError(t, err)
+	err = foundry.Mint(mintAmount)
+	require.NoError(t, err)
+	tokenID := foundry.TokenID()
 
-	fTransfer := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
-	fTransfer.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
-	fTransfer.Func.AllowanceIotas(transferAmount).Post()
+	fTransfer0 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
+	fTransfer0.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
+	fTransfer0.Func.AllowanceIotas(transferAmount).Post()
 	require.NoError(t, ctx.Err)
-	commonAccountBal1 := ctx.Chain.L2Iotas(commonAccount)
-	assert.Equal(t, commonAccountBal0+transferAmount+ctx.GasFee, commonAccountBal1)
-	creatorBalance0 := ctx.Chain.L2Iotas(creatorAgentID)
-	wasmsolo.NewSoloBalances(ctx, ctx.Creator(), ctx.Originator())
+	fTransfer1 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
+	fTransfer1.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&tokenID, wasmtypes.BigIntFromString(fmt.Sprint(transferAmount)))
+	fTransfer1.Func.Allowance(transfer).Post()
+	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
+	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
+	// create foundry, mint token, transfer IOTA and transfer token each charge GasFee, so there 4*GasFee in common account
+	assert.Equal(t, commonAccountBal0.Iotas+transferAmount+ctx.GasFee*4, commonAccountBal1.Iotas)
 
 	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
-	commonAccountBal2 := ctx.Chain.L2Iotas(commonAccount)
-	assert.Equal(t, minimumIotasOnCommonAccount+ctx.GasFee, commonAccountBal2)
-	creatorBalance1 := ctx.Chain.L2Iotas(creatorAgentID)
-	assert.Equal(t, creatorBalance0+commonAccountBal1-commonAccountBal2+iscp.Mi, creatorBalance1)
+	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
+	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
+	assert.Equal(t, minimumIotasOnCommonAccount+ctx.GasFee, commonAccountBal2.Iotas)
+	assert.Equal(t, creatorBal0.Iotas+(commonAccountBal1.Iotas-commonAccountBal2.Iotas)+iscp.Mi, creatorBal1.Iotas)
+	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
 }
 
 func TestFoundryCreateNew(t *testing.T) {
