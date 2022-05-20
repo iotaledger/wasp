@@ -86,7 +86,7 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 		return nil
 	}
 
-	wc.tracef("Calling " + wc.funcName)
+	wc.log().Debugf("Calling " + wc.funcName)
 	wc.results = nil
 	err := wc.callFunction()
 	if err != nil {
