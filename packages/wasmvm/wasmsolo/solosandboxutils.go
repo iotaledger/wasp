@@ -3,6 +3,12 @@
 
 package wasmsolo
 
+import (
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
+
 func (s *SoloSandbox) fnUtilsBase58Decode(args []byte) []byte {
 	bytes, err := s.utils.Base58().Decode(string(args))
 	s.checkErr(err)
@@ -11,6 +17,21 @@ func (s *SoloSandbox) fnUtilsBase58Decode(args []byte) []byte {
 
 func (s *SoloSandbox) fnUtilsBase58Encode(args []byte) []byte {
 	return []byte(s.utils.Base58().Encode(args))
+}
+
+func (s *SoloSandbox) fnUtilsBech32Decode(args []byte) []byte {
+	hrp, addr, err := iotago.ParseBech32(string(args))
+	s.checkErr(err)
+	if hrp != parameters.L1.Protocol.Bech32HRP {
+		s.Panicf("Invalid protocol prefix: %s", string(hrp))
+	}
+	return s.cvt.ScAddress(addr).Bytes()
+}
+
+func (s *SoloSandbox) fnUtilsBech32Encode(args []byte) []byte {
+	scAddress := wasmtypes.AddressFromBytes(args)
+	addr := s.cvt.IscpAddress(&scAddress)
+	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 
 //func (s *SoloSandbox) fnUtilsBlsAddress(args []byte) []byte {

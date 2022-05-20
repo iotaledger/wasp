@@ -54,12 +54,11 @@ pub fn chain_id_to_bytes(value: &ScChainID) -> Vec<u8> {
 }
 
 pub fn chain_id_from_string(value: &str) -> ScChainID {
-    chain_id_from_bytes(&base58_decode(value))
+    chain_id_from_bytes(&hex_decode(value))
 }
 
 pub fn chain_id_to_string(value: &ScChainID) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    hex_encode(&value.id)
 }
 
 fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainID {

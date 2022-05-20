@@ -35,10 +35,10 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
 		},
-		Blocks: nil,
+		Features: nil,
 	}
 	if len(metadata) > 0 {
-		f.Blocks = iotago.FeatureBlocks{&iotago.MetadataFeatureBlock{
+		f.Features = iotago.Features{&iotago.MetadataFeature{
 			Data: metadata,
 		}}
 	}
@@ -259,7 +259,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
 	case !equalTokenScheme(simpleTokenSchemeF1, simpleTokenSchemeF2):
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
-	case len(f1.Blocks) != 0 || len(f2.Blocks) != 0:
+	case len(f1.Features) != 0 || len(f2.Features) != 0:
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true

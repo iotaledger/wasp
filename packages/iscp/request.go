@@ -103,7 +103,7 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 		}
 		// wrap output into the iscp.Request
 		odata, err := OnLedgerFromUTXO(out, &iotago.UTXOInput{
-			TransactionID:          *txid,
+			TransactionID:          txid,
 			TransactionOutputIndex: uint16(i),
 		})
 		if err != nil {

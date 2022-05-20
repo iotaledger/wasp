@@ -21,7 +21,7 @@ func TestCreateOrigin(t *testing.T) {
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
 	var chainID *iscp.ChainID
-	var originTxID *iotago.TransactionID
+	var originTxID iotago.TransactionID
 
 	initTest := func() {
 		u = utxodb.New()
@@ -53,11 +53,11 @@ func TestCreateOrigin(t *testing.T) {
 		originTxID, err = originTx.ID()
 		require.NoError(t, err)
 
-		txBack, ok := u.GetTransaction(*originTxID)
+		txBack, ok := u.GetTransaction(originTxID)
 		require.True(t, ok)
 		txidBack, err := txBack.ID()
 		require.NoError(t, err)
-		require.EqualValues(t, *originTxID, *txidBack)
+		require.EqualValues(t, originTxID, txidBack)
 
 		t.Logf("New chain ID: %s", chainID.String())
 	}
@@ -166,9 +166,9 @@ func TestConsumeRequest(t *testing.T) {
 
 	tx := &iotago.Transaction{
 		Essence: essence,
-		UnlockBlocks: iotago.UnlockBlocks{
-			&iotago.SignatureUnlockBlock{Signature: sigs[0]},
-			&iotago.AliasUnlockBlock{Reference: 0},
+		Unlocks: iotago.Unlocks{
+			&iotago.SignatureUnlock{Signature: sigs[0]},
+			&iotago.AliasUnlock{Reference: 0},
 		},
 	}
 	semValCtx := &iotago.SemanticValidationContext{

@@ -940,7 +940,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				&iotago.StateControllerAddressUnlockCondition{Address: ident1},
 				&iotago.GovernorAddressUnlockCondition{Address: ident1},
 			},
-			Blocks: nil,
+			Features: nil,
 		},
 		inputIDs[2]: &iotago.FoundryOutput{
 			Amount:       OneMi,
@@ -954,7 +954,7 @@ func TestMintedTokensBurn(t *testing.T) {
 			Conditions: iotago.UnlockConditions{
 				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 			},
-			Blocks: nil,
+			Features: nil,
 		},
 	}
 
@@ -982,7 +982,7 @@ func TestMintedTokensBurn(t *testing.T) {
 					&iotago.StateControllerAddressUnlockCondition{Address: ident1},
 					&iotago.GovernorAddressUnlockCondition{Address: ident1},
 				},
-				Blocks: nil,
+				Features: nil,
 			},
 			&iotago.FoundryOutput{
 				Amount:       2 * OneMi,
@@ -997,7 +997,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				Conditions: iotago.UnlockConditions{
 					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 				},
-				Blocks: nil,
+				Features: nil,
 			},
 		},
 	}
@@ -1007,10 +1007,10 @@ func TestMintedTokensBurn(t *testing.T) {
 
 	tx := &iotago.Transaction{
 		Essence: essence,
-		UnlockBlocks: iotago.UnlockBlocks{
-			&iotago.SignatureUnlockBlock{Signature: sigs[0]},
-			&iotago.ReferenceUnlockBlock{Reference: 0},
-			&iotago.AliasUnlockBlock{Reference: 1},
+		Unlocks: iotago.Unlocks{
+			&iotago.SignatureUnlock{Signature: sigs[0]},
+			&iotago.ReferenceUnlock{Reference: 0},
+			&iotago.AliasUnlock{Reference: 1},
 		},
 	}
 

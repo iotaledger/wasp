@@ -65,11 +65,11 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 
 	if aliasID == nilAliasID {
 		isOrigin = true
-		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0))
+		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0))
 	}
 	return &iscp.StateAnchor{
 		IsOrigin:             isOrigin,
-		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(*txid, 0),
+		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(txid, 0),
 		ChainID:              iscp.ChainIDFromAliasID(aliasID),
 		StateController:      anchorOutput.StateController(),
 		GovernanceController: anchorOutput.GovernorAddress(),
@@ -228,34 +228,34 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 	return ret, nil
 }
 
-func MakeSignatureAndReferenceUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {
-	ret := make(iotago.UnlockBlocks, totalInputs)
+func MakeSignatureAndReferenceUnlocks(totalInputs int, sig iotago.Signature) iotago.Unlocks {
+	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlockBlock{Signature: sig}
+			ret[0] = &iotago.SignatureUnlock{Signature: sig}
 			continue
 		}
-		ret[i] = &iotago.ReferenceUnlockBlock{Reference: 0}
+		ret[i] = &iotago.ReferenceUnlock{Reference: 0}
 	}
 	return ret
 }
 
-func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {
-	ret := make(iotago.UnlockBlocks, totalInputs)
+func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig iotago.Signature) iotago.Unlocks {
+	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlockBlock{Signature: sig}
+			ret[0] = &iotago.SignatureUnlock{Signature: sig}
 			continue
 		}
-		ret[i] = &iotago.AliasUnlockBlock{Reference: 0}
+		ret[i] = &iotago.AliasUnlock{Reference: 0}
 	}
 	return ret
 }
 
 func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signature) *iotago.Transaction {
 	return &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sig),
+		Essence: essence,
+		Unlocks: MakeSignatureAndAliasUnlockFeatures(len(essence.Inputs), sig),
 	}
 }
 
@@ -283,8 +283,8 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 	}
 
 	return &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+		Essence: essence,
+		Unlocks: MakeSignatureAndReferenceUnlocks(len(inputs), sigs[0]),
 	}, nil
 }
 
@@ -297,7 +297,7 @@ func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.Ali
 		if out, ok := o.(*iotago.AliasOutput); ok { //nolint:gocritic // reducing nesting would damage readability
 			aliasID := out.AliasID
 			oid := &iotago.UTXOInput{
-				TransactionID:          *txID,
+				TransactionID:          txID,
 				TransactionOutputIndex: uint16(index),
 			}
 			var found bool
