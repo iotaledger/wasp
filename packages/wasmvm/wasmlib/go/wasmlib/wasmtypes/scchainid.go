@@ -3,6 +3,8 @@
 
 package wasmtypes
 
+import "github.com/iotaledger/wasp/packages/iscp"
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const ScChainIDLength = 32
@@ -50,12 +52,21 @@ func ChainIDToBytes(value ScChainID) []byte {
 }
 
 func ChainIDFromString(value string) ScChainID {
-	return ChainIDFromBytes(HexDecode(value))
+	iscpCID, err := iscp.ChainIDFromString(value)
+	if err != nil {
+		panic(err)
+	}
+	return ScChainID{
+		id: *iscpCID,
+	}
 }
 
 func ChainIDToString(value ScChainID) string {
-	// TODO standardize human readable string
-	return HexEncode(ChainIDToBytes(value))
+	cid, err := iscp.ChainIDFromBytes(value.id[:])
+	if err != nil {
+		panic(err)
+	}
+	return cid.String()
 }
 
 func chainIDFromBytesUnchecked(buf []byte) ScChainID {

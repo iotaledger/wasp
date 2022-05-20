@@ -1,6 +1,7 @@
 package iscp
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -63,7 +64,9 @@ func TestAgentID(t *testing.T) {
 		{
 			s := a.String()
 			require.Contains(t, s, "@")
-			require.NotContains(t, s, string(networkPrefix))
+			parts := strings.Split(s, "@")
+			require.Len(t, parts, 2)
+			require.Equal(t, string(networkPrefix), parts[1][:len(networkPrefix)])
 			a2, err := NewAgentIDFromString(s)
 			require.NoError(t, err)
 			require.EqualValues(t, a, a2)
