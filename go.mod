@@ -8,6 +8,7 @@ require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/ethereum/go-ethereum v1.10.17
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go v0.0.0-20220506133510-ef2e113d6665
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220516114042-6c0ad76bc65f
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220519065828-65c6a3023210
@@ -37,7 +38,6 @@ require (
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7
 )
@@ -76,7 +76,6 @@ require (
 	github.com/godbus/dbus/v5 v5.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gohornet/grocksdb v1.7.1-0.20220426081058-60f50d7c59e8 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
@@ -199,6 +198,7 @@ require (
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace (
