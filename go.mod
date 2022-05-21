@@ -8,6 +8,7 @@ require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.36.0
 	github.com/ethereum/go-ethereum v1.10.17
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go v0.0.0-20220506133510-ef2e113d6665
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220516114042-6c0ad76bc65f
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220519065828-65c6a3023210
@@ -76,7 +77,6 @@ require (
 	github.com/godbus/dbus/v5 v5.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gohornet/grocksdb v1.7.1-0.20220426081058-60f50d7c59e8 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
