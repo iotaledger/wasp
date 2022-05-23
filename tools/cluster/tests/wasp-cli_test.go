@@ -55,7 +55,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	// test chain list-contracts command
 	out = w.Run("chain", "list-contracts")
-	require.Regexp(t, `Total \d+ contracts`, out[0])
+	require.Regexp(t, `Total \d+ contracts in chain .{64}`, out[0])
 
 	// test chain list-accounts command
 	out = w.Run("chain", "list-accounts")
@@ -66,13 +66,21 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	// test chain balance command
 	out = w.Run("chain", "balance", agentID)
-	// check that the chain balance of owner is 1 IOTA
-	require.Regexp(t, `(?m)IOTA\s+1$`, out[3])
+	// check that the chain balance of owner is > 0
+	r := regexp.MustCompile(`(?m)iota\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
+	require.Len(t, r, 2)
+	bal, err := strconv.ParseInt(r[1], 10, 64)
+	require.NoError(t, err)
+	require.Positive(t, bal)
 
 	// same test, this time calling the view function manually
 	out = w.Run("chain", "call-view", "accounts", "balance", "string", "a", "agentid", agentID)
-	out = w.Pipe(out, "decode", "color", "int")
-	require.Regexp(t, `(?m)IOTA:\s+1$`, out[0])
+	out = w.Pipe(out, "decode", "bytes", "bigint")
+
+	r = regexp.MustCompile(`(?m):\s+(\d+)$`).FindStringSubmatch(out[0])
+	bal2, err := strconv.ParseInt(r[1], 10, 64)
+	require.NoError(t, err)
+	require.EqualValues(t, bal, bal2)
 
 	// test the chainlog
 	out = w.Run("chain", "events", "root")

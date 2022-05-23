@@ -42,9 +42,15 @@ const WaspConfig = `
     "ownerAddresses": ["{{.OwnerAddress}}"]
   },
   "webapi": {
+    "auth": {
+      "scheme": "none"
+    },
     "bindAddress": "0.0.0.0:{{.APIPort}}"
   },
   "dashboard": {
+    "auth": {
+      "scheme": "none"
+    },
     "bindAddress": "0.0.0.0:{{.DashboardPort}}"
   },
   "peering":{
@@ -72,7 +78,7 @@ const WaspConfig = `
     "enabled": true
   },
   "debug": {
-    "rawblocksEnabled": true,
+    "rawblocksEnabled": false,
     "rawblocksDirectory": "blocks"
   }
 }
