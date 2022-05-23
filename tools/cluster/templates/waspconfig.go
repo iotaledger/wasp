@@ -78,7 +78,7 @@ const WaspConfig = `
     "enabled": true
   },
   "debug": {
-    "rawblocksEnabled": true,
+    "rawblocksEnabled": false,
     "rawblocksDirectory": "blocks"
   }
 }
