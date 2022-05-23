@@ -217,11 +217,11 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	// Build a Block and post it.
 	txMsg, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).Payload(tx).Build()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx Block: %w", err)
+		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
 	txMsg, err = nc.nodeAPIClient.SubmitBlock(ctx, txMsg, parameters.L1.Protocol)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx Block: %w", err)
+		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
 	nc.log.Debugf("Posted transaction: %v", tx)
 	return txMsg, nil
