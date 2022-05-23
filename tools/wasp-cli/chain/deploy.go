@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -75,7 +74,6 @@ func deployCmd() *cobra.Command {
 					return SCClient(evm.Contract.Hname()).PostRequest(
 						evm.FuncSetBlockTime.Name,
 						chainclient.PostRequestParams{
-							Transfer: iscp.NewFungibleTokens(1, nil),
 							Args: dict.Dict{
 								evm.FieldBlockTime: codec.EncodeUint32(evmParams.BlockTime),
 							},
