@@ -6,7 +6,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -40,6 +42,9 @@ var balanceCmd = &cobra.Command{
 	Short: "Show balance of on-chain account",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		if parameters.L1 == nil {
+			config.L1Client() // this will fill parameters.L1 with data from the L1 node
+		}
 		agentID, err := iscp.NewAgentIDFromString(args[0])
 		log.Check(err)
 

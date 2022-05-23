@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"strconv"
 
@@ -74,6 +75,12 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseInt(s, 10, 64)
 		log.Check(err)
 		return codec.EncodeInt64(n)
+	case "bigint":
+		n, ok := new(big.Int).SetString(s, 10)
+		if !ok {
+			log.Fatalf("error converting to bigint")
+		}
+		return n.Bytes()
 	case "requestid":
 		rid, err := iscp.RequestIDFromString(s)
 		log.Check(err)
@@ -152,6 +159,9 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeInt64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
+	case "bigint":
+		n := new(big.Int).SetBytes(v)
+		return n.String()
 	case "requestid":
 		rid, err := codec.DecodeRequestID(v)
 		log.Check(err)
