@@ -42,7 +42,7 @@ type L1Client interface {
 var _ L1Client = &nodeConn{}
 
 func NewL1Client(config L1Config, log *logger.Logger, timeout ...time.Duration) L1Client {
-	return newNodeConn(config, log, timeout...)
+	return newNodeConn(config, log, false, timeout...)
 }
 
 const defaultTimeout = 1 * time.Minute

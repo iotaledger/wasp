@@ -62,10 +62,10 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 }
 
 func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	return newNodeConn(config, log, timeout...)
+	return newNodeConn(config, log, true, timeout...)
 }
 
-func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) *nodeConn {
+func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	nodeAPIClient := nodeclient.New(config.APIAddress)
 
@@ -101,7 +101,9 @@ func newNodeConn(config L1Config, log *logger.Logger, timeout ...time.Duration) 
 		log:     log.Named("nc"),
 		config:  config,
 	}
-	go nc.run()
+	if initMqttClient {
+		go nc.run()
+	}
 	return &nc
 }
 
