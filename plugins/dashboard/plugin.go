@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+
+	"github.com/iotaledger/wasp/packages/authentication"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -21,10 +25,8 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
@@ -35,10 +37,8 @@ const PluginName = "Dashboard"
 
 var (
 	Server = echo.New()
-
-	log *logger.Logger
-
-	d *dashboard.Dashboard
+	log    *logger.Logger
+	d      *dashboard.Dashboard
 )
 
 func Init() *node.Plugin {
@@ -48,10 +48,6 @@ func Init() *node.Plugin {
 type waspServices struct{}
 
 var _ dashboard.WaspServices = &waspServices{}
-
-func (*waspServices) L1Params() *parameters.L1 {
-	return nodeconn.NodeConnection().L1Params()
-}
 
 func (w *waspServices) ConfigDump() map[string]interface{} {
 	return parameters.Dump()
@@ -139,6 +135,14 @@ func (w *waspServices) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (c
 	return ch.GetConsensusWorkflowStatus(), nil
 }
 
+func (w *waspServices) GetChainConsensusPipeMetrics(chainID *iscp.ChainID) (chain.ConsensusPipeMetrics, error) {
+	ch := chains.AllChains().Get(chainID)
+	if ch == nil {
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
+	}
+	return ch.GetConsensusPipeMetrics(), nil
+}
+
 func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
@@ -171,7 +175,13 @@ func configure(*node.Plugin) {
 		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
 	}))
 	Server.Use(middleware.Recover())
-	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.DashboardAuth))
+
+	claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The Dashboard will be accessible if the token has a 'Dashboard' claim
+		return claims.HasPermission(permissions.Dashboard)
+	}
+
+	authentication.AddAuthentication(Server, registry.DefaultRegistry, parameters.DashboardAuth, claimValidator)
 
 	d = dashboard.Init(Server, &waspServices{}, log)
 }

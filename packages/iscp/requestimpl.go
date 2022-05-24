@@ -327,22 +327,18 @@ type OnLedgerRequestData struct {
 
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
-	featureBlocks    iotago.FeatureBlocksSet
+	featureBlocks    iotago.FeaturesSet
 	unlockConditions iotago.UnlockConditionsSet
 	requestMetadata  *RequestMetadata
 }
 
 func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestData, error) {
-	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbSet, err = o.FeatureBlocks().Set()
-	if err != nil {
-		return nil, err
-	}
+	fbSet := o.FeaturesSet()
 
-	reqMetadata, err = RequestMetadataFromFeatureBlocksSet(fbSet)
+	reqMetadata, err = RequestMetadataFromFeatureSet(fbSet)
 	if err != nil {
 		return nil, err
 	}
@@ -351,16 +347,11 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		reqMetadata.Allowance.fillEmptyNFTIDs(o, id)
 	}
 
-	ucSet, err := o.UnlockConditions().Set()
-	if err != nil {
-		return nil, err
-	}
-
 	return &OnLedgerRequestData{
 		output:           o,
 		inputID:          *id,
 		featureBlocks:    fbSet,
-		unlockConditions: ucSet,
+		unlockConditions: o.UnlockConditionsSet(),
 		requestMetadata:  reqMetadata,
 	}, nil
 }
@@ -422,14 +413,22 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OnLedgerRequestData) SenderAccount() AgentID {
-	if r.SenderAddress() == nil || r.requestMetadata == nil {
+	sender := r.SenderAddress()
+	if sender == nil || r.requestMetadata == nil {
 		return nil
 	}
-	return NewAgentIDFromAddressAndHname(r.SenderAddress(), r.requestMetadata.SenderContract)
+	if r.requestMetadata.SenderContract != 0 {
+		if sender.Type() != iotago.AddressAlias {
+			panic("inconsistency: non-alias address cannot have hname != 0")
+		}
+		chid := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+		return NewContractAgentID(&chid, r.requestMetadata.SenderContract)
+	}
+	return NewAgentID(sender)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
-	senderBlock := r.featureBlocks.SenderFeatureBlock()
+	senderBlock := r.featureBlocks.SenderFeature()
 	if senderBlock == nil {
 		return nil
 	}
@@ -472,11 +471,11 @@ func (r *OnLedgerRequestData) NFT() *NFT {
 	utxoInput := r.UTXOInput()
 	ret.ID = util.NFTIDFromNFTOutput(out, utxoInput.ID())
 
-	for _, featureBlock := range out.ImmutableBlocks {
-		if block, ok := featureBlock.(*iotago.IssuerFeatureBlock); ok {
+	for _, featureBlock := range out.ImmutableFeatures {
+		if block, ok := featureBlock.(*iotago.IssuerFeature); ok {
 			ret.Issuer = block.Address
 		}
-		if block, ok := featureBlock.(*iotago.MetadataFeatureBlock); ok {
+		if block, ok := featureBlock.(*iotago.MetadataFeature); ok {
 			ret.Metadata = block.Data
 		}
 	}
@@ -682,7 +681,7 @@ func (rid RequestID) String() string {
 
 func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
-	txid := TxID(&oid.TransactionID)
+	txid := TxID(oid.TransactionID)
 	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
 }
 
@@ -694,10 +693,10 @@ func (rid RequestID) Equals(reqID2 RequestID) bool {
 }
 
 func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("%d%s%s", o.TransactionOutputIndex, RequestIDSeparator, TxID(&o.TransactionID))
+	return fmt.Sprintf("%d%s%s", o.TransactionOutputIndex, RequestIDSeparator, TxID(o.TransactionID))
 }
 
-func TxID(txID *iotago.TransactionID) string {
+func TxID(txID iotago.TransactionID) string {
 	return hex.EncodeToString(txID[:])
 }
 
@@ -735,8 +734,8 @@ type RequestMetadata struct {
 	GasBudget uint64
 }
 
-func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestMetadata, error) {
-	metadataFeatBlock := set.MetadataFeatureBlock()
+func RequestMetadataFromFeatureSet(set iotago.FeaturesSet) (*RequestMetadata, error) {
+	metadataFeatBlock := set.MetadataFeature()
 	if metadataFeatBlock == nil {
 		return nil, nil
 	}

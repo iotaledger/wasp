@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -38,7 +39,28 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
-	w.Run("set", "utxodb", "true")
+	w.Run("init")
+
+	w.Run("set", "l1.apiaddress", clu.Config.L1.APIAddress)
+	w.Run("set", "l1.faucetaddress", clu.Config.L1.FaucetAddress)
+
+	requestFundstext := w.Run("request-funds")
+	// latest line should print something like: "Request funds for address atoi...: success"
+	expectedRegexp := regexp.MustCompile("Request funds for address (.{64}): success")
+	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
+	require.Len(t, rs, 2)
+	_, addr, err := iotago.ParseBech32(rs[1])
+	require.NoError(t, err)
+	// requested funds will take some time to be available
+	for {
+		outputs, err := clu.L1Client().OutputMap(addr)
+		require.NoError(t, err)
+		if len(outputs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	return w
 }
 

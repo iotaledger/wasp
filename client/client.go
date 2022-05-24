@@ -16,6 +16,7 @@ import (
 type WaspClient struct {
 	httpClient http.Client
 	baseURL    string
+	token      string
 }
 
 // NewWaspClient returns a new *WaspClient with the given baseURL and httpClient.
@@ -27,6 +28,12 @@ func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 		return &WaspClient{baseURL: baseURL, httpClient: httpClient[0]}
 	}
 	return &WaspClient{baseURL: baseURL}
+}
+
+func (c *WaspClient) WithToken(token string) *WaspClient {
+	c.token = token
+
+	return c
 }
 
 func processResponse(res *http.Response, decodeTo interface{}) error {
@@ -77,6 +84,10 @@ func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error 
 
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", c.token))
 	}
 
 	// make the request

@@ -31,7 +31,7 @@ func contractAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error
 	return NewContractAgentID(chID, h), nil
 }
 
-func contractAgentIDFromString(hnamePart, addrPart string, networkPrefix iotago.NetworkPrefix) (AgentID, error) {
+func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	chID, err := ChainIDFromString(addrPart)
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
@@ -67,7 +67,7 @@ func (a *ContractAgentID) Bytes() []byte {
 	return mu.Bytes()
 }
 
-func (a *ContractAgentID) String(networkPrefix iotago.NetworkPrefix) string {
+func (a *ContractAgentID) String() string {
 	return a.h.String() + "@" + a.chainID.String()
 }
 

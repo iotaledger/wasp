@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -16,13 +15,13 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider, networkPrefix iotago.NetworkPrefix) {
+func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
 	cms := &chainMetricsService{
 		chainsProvider,
-		networkPrefix,
 	}
 	addChainNodeConnMetricsEndpoints(adm, cms)
 	addChainConsensusMetricsEndpoints(adm, cms)
+	addChainConcensusPipeMetricsEndpoints(adm, cms)
 }
 
 func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
@@ -93,7 +92,7 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 
 	adm.GET(routes.GetChainNodeConnectionMetrics(":chainID"), cms.handleGetChainNodeConnMetrics).
 		SetSummary("Get chain node connection metrics for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (hex)").
+		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain metrics", chainExample, nil)
 }
 
@@ -123,19 +122,36 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 
 	adm.GET(routes.GetChainConsensusWorkflowStatus(":chainID"), cms.handleGetChainConsensusWorkflowStatus).
 		SetSummary("Get chain state statistics for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (hex)").
+		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain consensus stats", example, nil).
 		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
 }
 
+func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
+	example := &model.ConsensusPipeMetrics{
+		EventStateTransitionMsgPipeSize: 0,
+		EventSignedResultMsgPipeSize:    0,
+		EventSignedResultAckMsgPipeSize: 0,
+		EventInclusionStateMsgPipeSize:  0,
+		EventACSMsgPipeSize:             0,
+		EventVMResultMsgPipeSize:        0,
+		EventTimerMsgPipeSize:           0,
+	}
+
+	adm.GET(routes.GetChainConsensusPipeMetrics(":chainID"), cms.handleGetChainConsensusPipeMetrics).
+		SetSummary("Get consensus pipe metrics").
+		AddParamPath("", "chainID", "CHAINid (base58)").
+		AddResponse(http.StatusOK, "Chain consensus pipe metrics", example, nil).
+		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
+}
+
 type chainMetricsService struct {
-	chains        chains.Provider
-	networkPrefix iotago.NetworkPrefix
+	chains chains.Provider
 }
 
 func (cssT *chainMetricsService) handleGetChainsNodeConnMetrics(c echo.Context) error {
 	metrics := cssT.chains().GetNodeConnectionMetrics()
-	metricsModel := model.NewNodeConnectionMetrics(metrics, cssT.networkPrefix)
+	metricsModel := model.NewNodeConnectionMetrics(metrics)
 
 	return c.JSON(http.StatusOK, metricsModel)
 }
@@ -167,6 +183,19 @@ func (cssT *chainMetricsService) handleGetChainConsensusWorkflowStatus(c echo.Co
 	statusModel := model.NewConsensusWorkflowStatus(status)
 
 	return c.JSON(http.StatusOK, statusModel)
+}
+
+func (cssT *chainMetricsService) handleGetChainConsensusPipeMetrics(c echo.Context) error {
+	theChain, err := cssT.getChain(c)
+	if err != nil {
+		return err
+	}
+	pipeMetrics := theChain.GetConsensusPipeMetrics()
+	if pipeMetrics == nil {
+		return c.NoContent(http.StatusNotFound)
+	}
+	pipeMetricsModel := model.NewConsensusPipeMetrics(pipeMetrics)
+	return c.JSON(http.StatusOK, pipeMetricsModel)
 }
 
 func (cssT *chainMetricsService) getChain(c echo.Context) (chain.Chain, error) {

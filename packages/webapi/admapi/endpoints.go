@@ -4,10 +4,9 @@
 package admapi
 
 import (
-	"net"
-	"strings"
-
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
@@ -15,8 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wal"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
@@ -28,7 +25,6 @@ func initLogger() {
 
 func AddEndpoints(
 	adm echoswagger.ApiGroup,
-	adminWhitelist []net.IP,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
 	registryProvider registry.Provider,
@@ -40,57 +36,23 @@ func AddEndpoints(
 ) {
 	initLogger()
 
-	isWhitelistEnabled := !parameters.GetBool(parameters.WebAPIAdminWhitelistDisabled)
-
-	echoGroup := adm.EchoGroup()
-
-	if isWhitelistEnabled {
-		echoGroup.Use(protected(adminWhitelist))
+	claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The API will be accessible if the token has an 'API' claim
+		return claims.HasPermission(permissions.API)
 	}
 
-	networkPrefix := nodeconn.NodeConnection().L1Params().Protocol.Bech32HRP
-
+	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, claimValidator)
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
-	addChainMetricsEndpoints(adm, chainsProvider, networkPrefix)
+	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{
-		registry:      registryProvider,
-		chains:        chainsProvider,
-		network:       network,
-		allMetrics:    metrics,
-		networkPrefix: networkPrefix,
-		w:             w,
+		registry:   registryProvider,
+		chains:     chainsProvider,
+		network:    network,
+		allMetrics: metrics,
+		w:          w,
 	})
-	addDKSharesEndpoints(adm, registryProvider, nodeProvider, networkPrefix)
+	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
-}
-
-// allow only if the remote address is private or in whitelist
-// TODO this is a very basic/limited form of protection
-func protected(whitelist []net.IP) echo.MiddlewareFunc {
-	isAllowed := func(ip net.IP) bool {
-		if ip.IsLoopback() {
-			return true
-		}
-		for _, whitelistedIP := range whitelist {
-			if ip.Equal(whitelistedIP) {
-				return true
-			}
-		}
-		return false
-	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			parts := strings.Split(c.Request().RemoteAddr, ":")
-			if len(parts) == 2 {
-				ip := net.ParseIP(parts[0])
-				if ip != nil && isAllowed(ip) {
-					return next(c)
-				}
-			}
-			log.Warnf("Blocking request from %s: %s %s", c.Request().RemoteAddr, c.Request().Method, c.Request().RequestURI)
-			return echo.ErrUnauthorized
-		}
-	}
 }

@@ -5,14 +5,12 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -33,17 +31,17 @@ func TestHornetStartup(t *testing.T) {
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nc := nodeclient.New(fmt.Sprintf("%s:%d", l1.Config.Hostname, l1.Config.APIPort))
+	nc := nodeclient.New(l1.Config.APIAddress)
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
 	l1Info, err := nc.Info(ctx)
 	require.NoError(t, err)
 
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, l1Info.Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
-	client := nodeconn.NewL1Client(l1.Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
+	client := nodeconn.NewL1Client(l1.Config, log)
 
 	initialOutputCount := mustOutputCount(client, myAddress)
 	//

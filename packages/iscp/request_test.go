@@ -47,9 +47,9 @@ func TestSerializeRequestData(t *testing.T) {
 					Amount: big.NewInt(100),
 				},
 			},
-			Blocks: iotago.FeatureBlocks{
-				&iotago.MetadataFeatureBlock{Data: requestMetadata.Bytes()},
-				&iotago.SenderFeatureBlock{Address: sender},
+			Features: iotago.Features{
+				&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
+				&iotago.SenderFeature{Address: sender},
 			},
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: sender},
@@ -61,7 +61,8 @@ func TestSerializeRequestData(t *testing.T) {
 		serialized := req.Bytes()
 		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
-		require.True(t, req2.SenderAccount().Equals(NewAgentIDFromAddressAndHname(sender, requestMetadata.SenderContract)))
+		chainID := ChainIDFromAddress(sender)
+		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(&chainID, requestMetadata.SenderContract)))
 		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 		require.EqualValues(t, req.ID(), req2.ID())
 		require.True(t, req.SenderAddress().Equal(req2.SenderAddress()))

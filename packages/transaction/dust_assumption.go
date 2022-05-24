@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -47,15 +48,15 @@ func (d *DustDepositAssumption) String() string {
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 
-func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
+func NewDepositEstimate() *DustDepositAssumption {
 	return &DustDepositAssumption{
-		AnchorOutput:      aliasOutputDustDeposit(rent),
-		NativeTokenOutput: nativeTokenOutputDustDeposit(rent),
-		NFTOutput:         nftOutputDustDeposit(rent),
+		AnchorOutput:      aliasOutputDustDeposit(),
+		NativeTokenOutput: nativeTokenOutputDustDeposit(),
+		NFTOutput:         nftOutputDustDeposit(),
 	}
 }
 
-func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
+func aliasOutputDustDeposit() uint64 {
 	keyPair := cryptolib.NewKeyPairFromSeed([32]byte{})
 	addr := keyPair.GetPublicKey().AsEd25519Address()
 
@@ -67,16 +68,16 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			&iotago.StateControllerAddressUnlockCondition{Address: addr},
 			&iotago.GovernorAddressUnlockCondition{Address: addr},
 		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: addr,
 			},
 		},
 	}
-	return rent.VByteCost * aliasOutput.VBytes(rent, nil)
+	return parameters.L1.Protocol.RentStructure.VByteCost * aliasOutput.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 }
 
-func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
+func nativeTokenOutputDustDeposit() uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
 	o := MakeBasicOutput(
 		&addr,
@@ -90,12 +91,11 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		},
 		nil,
 		iscp.SendOptions{},
-		rent,
 	)
-	return rent.VByteCost * o.VBytes(rent, nil)
+	return parameters.L1.Protocol.RentStructure.VByteCost * o.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 }
 
-func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
+func nftOutputDustDeposit() uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
 	basicOut := MakeBasicOutput(
 		&addr,
@@ -109,7 +109,6 @@ func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		},
 		nil,
 		iscp.SendOptions{},
-		rent,
 	)
 	out := NftOutputFromBasicOutput(basicOut, &iscp.NFT{
 		ID:       iotago.NFTID{0},
@@ -117,5 +116,5 @@ func nftOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 		Metadata: make([]byte, iotago.MaxMetadataLength),
 	})
 
-	return rent.VByteCost * out.VBytes(rent, nil)
+	return parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 }

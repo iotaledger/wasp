@@ -102,7 +102,6 @@ type ImmutableGetIntResults struct {
 }
 
 func (s ImmutableGetIntResults) Values() MapStringToImmutableInt64 {
-	//nolint:gosimple
 	return MapStringToImmutableInt64{proxy: s.proxy}
 }
 
@@ -123,7 +122,6 @@ type MutableGetIntResults struct {
 }
 
 func (s MutableGetIntResults) Values() MapStringToMutableInt64 {
-	//nolint:gosimple
 	return MapStringToMutableInt64{proxy: s.proxy}
 }
 
@@ -140,7 +138,6 @@ type ImmutableGetStringValueResults struct {
 }
 
 func (s ImmutableGetStringValueResults) Vars() MapStringToImmutableString {
-	//nolint:gosimple
 	return MapStringToImmutableString{proxy: s.proxy}
 }
 
@@ -161,7 +158,6 @@ type MutableGetStringValueResults struct {
 }
 
 func (s MutableGetStringValueResults) Vars() MapStringToMutableString {
-	//nolint:gosimple
 	return MapStringToMutableString{proxy: s.proxy}
 }
 

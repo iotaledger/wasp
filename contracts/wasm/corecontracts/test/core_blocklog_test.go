@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -173,6 +174,12 @@ func TestIsRequestProcessed(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	require.Equal(t, ctx.Chain.IsRequestProcessed(reqs[0]), f.Results.RequestProcessed().Value())
+
+	notExistReqID := wasmtypes.RequestIDFromString("JPP5jbApWDwvCFBNrVtqSqEPqZRPe9bYPWCKQ8o2HmfiUo")
+	f.Params.RequestID().SetValue(notExistReqID)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.False(t, f.Results.RequestProcessed().Value())
 }
 
 func TestGetEventsForRequest(t *testing.T) {
@@ -199,17 +206,17 @@ func TestGetEventsForBlock(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	blockIndex := uint32(3)
-	f := coreblocklog.ScFuncs.GetEventsForBlock(ctx)
-	f.Params.BlockIndex().SetValue(blockIndex)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
-
-	events, err := ctx.Chain.GetEventsForBlock(blockIndex)
-	require.NoError(t, err)
-	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
-	for i := uint32(0); i < uint32(len(events)); i++ {
-		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+	for blockIndex := uint32(0); blockIndex < 5; blockIndex++ {
+		f := coreblocklog.ScFuncs.GetEventsForBlock(ctx)
+		f.Params.BlockIndex().SetValue(blockIndex)
+		f.Func.Call()
+		require.NoError(t, ctx.Err)
+		events, err := ctx.Chain.GetEventsForBlock(blockIndex)
+		require.NoError(t, err)
+		assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
+		for i := uint32(0); i < uint32(len(events)); i++ {
+			assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+		}
 	}
 }
 
@@ -226,7 +233,7 @@ func TestGetEventsForContract(t *testing.T) {
 
 	events, err := ctx.Chain.GetEventsForContract(coreblocklog.ScName)
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, uint32(len(events)), f.Results.Event().Length())
+	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
 	for i := uint32(0); i < uint32(len(events)); i++ {
 		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
 	}

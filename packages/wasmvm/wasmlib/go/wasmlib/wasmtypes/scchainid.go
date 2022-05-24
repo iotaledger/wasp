@@ -28,7 +28,9 @@ func (o ScChainID) String() string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func ChainIDDecode(dec *WasmDecoder) ScChainID {
-	return chainIDFromBytesUnchecked(dec.FixedBytes(ScChainIDLength))
+	o := ScChainID{}
+	copy(o.id[:], dec.FixedBytes(ScChainIDLength))
+	return o
 }
 
 func ChainIDEncode(enc *WasmEncoder, value ScChainID) {
@@ -36,13 +38,15 @@ func ChainIDEncode(enc *WasmEncoder, value ScChainID) {
 }
 
 func ChainIDFromBytes(buf []byte) ScChainID {
+	o := ScChainID{}
 	if len(buf) == 0 {
-		return ScChainID{}
+		return o
 	}
 	if len(buf) != ScChainIDLength {
 		panic("invalid ChainID length")
 	}
-	return chainIDFromBytesUnchecked(buf)
+	copy(o.id[:], buf)
+	return o
 }
 
 func ChainIDToBytes(value ScChainID) []byte {
@@ -50,18 +54,15 @@ func ChainIDToBytes(value ScChainID) []byte {
 }
 
 func ChainIDFromString(value string) ScChainID {
-	return ChainIDFromBytes(HexDecode(value))
+	addr := AddressFromString(value)
+	if addr.id[0] != ScAddressAlias {
+		panic("invalid ChainID address type")
+	}
+	return ChainIDFromBytes(addr.id[1:])
 }
 
 func ChainIDToString(value ScChainID) string {
-	// TODO standardize human readable string
-	return HexEncode(ChainIDToBytes(value))
-}
-
-func chainIDFromBytesUnchecked(buf []byte) ScChainID {
-	o := ScChainID{}
-	copy(o.id[:], buf)
-	return o
+	return AddressToString(value.Address())
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -66,7 +66,7 @@ func (ch *Chain) L2LedgerString() string {
 	return ret
 }
 
-// L2Assets return all ftokens contained in the on-chain account controlled by the 'agentID'
+// L2Assets return all tokens contained in the on-chain account controlled by the 'agentID'
 func (ch *Chain) L2Assets(agentID iscp.AgentID) *iscp.FungibleTokens {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.ViewBalance.Name, accounts.ParamAgentID, agentID),

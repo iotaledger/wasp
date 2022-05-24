@@ -13,16 +13,16 @@ import (
 func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
-	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.Iotas >= 200 {
-		// claim 200 iotas from allowance at a time
+	// claim 1Mi iotas from allowance at a time
+	iotasToTransfer := 1 * iscp.Mi
+	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.Iotas >= iotasToTransfer {
 		// send back to caller's address
 		// depending on the amount of iotas, it will exceed number of outputs or not
-		iotasToSend := 1 * iscp.Mi
-		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(iotasToSend, nil, nil))
+		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(iotasToTransfer, nil, nil))
 		ctx.Send(
 			iscp.RequestParameters{
 				TargetAddress:  addr,
-				FungibleTokens: iscp.NewTokensIotas(iotasToSend),
+				FungibleTokens: iscp.NewTokensIotas(iotasToTransfer),
 			},
 		)
 	}

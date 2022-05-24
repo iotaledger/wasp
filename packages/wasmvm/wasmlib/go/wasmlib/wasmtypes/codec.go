@@ -11,6 +11,8 @@ import "strconv"
 var (
 	Base58Decode func(base58 string) []byte
 	Base58Encode func(buf []byte) string
+	Bech32Decode func(bech32 string) ScAddress
+	Bech32Encode func(addr ScAddress) string
 	HexDecode    func(base58 string) []byte
 	HexEncode    func(buf []byte) string
 )

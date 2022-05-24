@@ -1,7 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//nolint:unparam,unused
 package wasmsolo
 
 import (
@@ -18,49 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"golang.org/x/xerrors"
 )
-
-//// NOTE: These functions correspond to the Sandbox fnXxx constants in WasmLib
-//var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
-//	nil,
-//	(*SoloSandbox).fnAccountID,
-//	nil, // (*SoloSandbox).fnAllowance,
-//	nil, // (*SoloSandbox).fnBalance,
-//	nil, // (*SoloSandbox).fnBalances,
-//	nil, // (*SoloSandbox).fnBlockContext,
-//	(*SoloSandbox).fnCall,
-//	nil, // (*SoloSandbox).fnCaller,
-//	(*SoloSandbox).fnChainID,
-//	(*SoloSandbox).fnChainOwnerID,
-//	nil, // (*SoloSandbox).fnContract,
-//	(*SoloSandbox).fnContractCreator,
-//	nil, // (*SoloSandbox).fnDeployContract,
-//	nil, // (*SoloSandbox).fnEntropy,
-//	nil, // (*SoloSandbox).fnEvent,
-//	(*SoloSandbox).fnLog,
-//	nil, // (*SoloSandbox).fnMinted,
-//	(*SoloSandbox).fnPanic,
-//	(*SoloSandbox).fnParams,
-//	(*SoloSandbox).fnPost,
-//	nil, // (*SoloSandbox).fnRequest,
-//	nil, // (*SoloSandbox).fnRequestID,
-//	nil, // (*SoloSandbox).fnResults,
-//	nil, // (*SoloSandbox).fnSend,
-//	nil, // (*SoloSandbox).fnStateAnchor,
-//	nil, // (*SoloSandbox).fnTimestamp,
-//	(*SoloSandbox).fnTrace,
-//	(*SoloSandbox).fnUtilsBase58Decode,
-//	(*SoloSandbox).fnUtilsBase58Encode,
-//	nil, // (*SoloSandbox).fnUtilsBlsAddress,
-//	nil, // (*SoloSandbox).fnUtilsBlsAggregate,
-//	nil, // (*SoloSandbox).fnUtilsBlsValid,
-//	nil, // (*SoloSandbox).fnUtilsEd25519Address,
-//	nil, // (*SoloSandbox).fnUtilsEd25519Valid,
-//	nil, // (*SoloSandbox).fnUtilsHashBlake2b,
-//	nil, // (*SoloSandbox).fnUtilsHashName,
-//	nil, // (*SoloSandbox).fnUtilsHashSha3,
-//	nil, // (*SoloSandbox).fnTransferAllowed,
-//	nil, // (*SoloSandbox).fnEstimateDust,
-//}
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
 // It acts as a change-resistant layer to wrap changes to the Solo environment,
@@ -124,9 +80,12 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 		return s.fnUtilsBase58Decode(args)
 	case wasmlib.FnUtilsBase58Encode:
 		return s.fnUtilsBase58Encode(args)
+	case wasmlib.FnUtilsBech32Decode:
+		return s.fnUtilsBech32Decode(args)
+	case wasmlib.FnUtilsBech32Encode:
+		return s.fnUtilsBech32Encode(args)
 	}
 	panic("implement solo sandbox")
-	// return sandboxFunctions[-funcNr](s, args)
 }
 
 func (s *SoloSandbox) checkErr(err error) {

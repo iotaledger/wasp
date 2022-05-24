@@ -20,10 +20,6 @@ impl ImmutableFoundryCreateNewParams {
     pub fn token_scheme(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
 	}
-
-    pub fn token_tag(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_TAG))
-	}
 }
 
 #[derive(Clone)]
@@ -34,10 +30,6 @@ pub struct MutableFoundryCreateNewParams {
 impl MutableFoundryCreateNewParams {
     pub fn token_scheme(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
-	}
-
-    pub fn token_tag(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_TAG))
 	}
 }
 
@@ -107,8 +99,8 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
-    pub fn force_minimum_iotas(&self) -> ScImmutableBigInt {
-		ScImmutableBigInt::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+    pub fn force_minimum_iotas(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
 	}
 }
 
@@ -118,8 +110,8 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
-    pub fn force_minimum_iotas(&self) -> ScMutableBigInt {
-		ScMutableBigInt::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+    pub fn force_minimum_iotas(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
 	}
 }
 

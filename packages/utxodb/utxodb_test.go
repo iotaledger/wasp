@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +37,7 @@ func TestRequestFunds(t *testing.T) {
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	require.Same(t, tx, u.MustGetTransaction(*txID))
+	require.Same(t, tx, u.MustGetTransaction(txID))
 
 	gtime := u.GlobalTime()
 	require.EqualValues(t, 2, gtime.MilestoneIndex)
@@ -75,7 +76,7 @@ func TestDoubleSpend(t *testing.T) {
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  addr1,
 			Output:   tx1.Essence.Outputs[0],
-			OutputID: iotago.OutputIDFromTransactionIDAndIndex(*tx1ID, 0),
+			OutputID: iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
@@ -83,7 +84,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr2},
 			},
 		}).
-		Build(u.l1Params.Protocol, key1Signer)
+		Build(parameters.L1.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
@@ -92,7 +93,7 @@ func TestDoubleSpend(t *testing.T) {
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  addr1,
 			Output:   tx1.Essence.Outputs[0],
-			OutputID: iotago.OutputIDFromTransactionIDAndIndex(*tx1ID, 0),
+			OutputID: iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
@@ -100,7 +101,7 @@ func TestDoubleSpend(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: addr3},
 			},
 		}).
-		Build(u.l1Params.Protocol, key1Signer)
+		Build(parameters.L1.Protocol, key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend3)
 	require.Error(t, err)
@@ -115,14 +116,14 @@ func TestGetOutput(t *testing.T) {
 	txID, err := tx.ID()
 	require.NoError(t, err)
 
-	outid0 := iotago.OutputIDFromTransactionIDAndIndex(*txID, 0)
+	outid0 := iotago.OutputIDFromTransactionIDAndIndex(txID, 0)
 	out0 := u.GetOutput(outid0)
 	require.EqualValues(t, FundsFromFaucetAmount, out0.Deposit())
 
-	outid1 := iotago.OutputIDFromTransactionIDAndIndex(*txID, 1)
+	outid1 := iotago.OutputIDFromTransactionIDAndIndex(txID, 1)
 	out1 := u.GetOutput(outid1)
 	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, out1.Deposit())
 
-	outidFail := iotago.OutputIDFromTransactionIDAndIndex(*txID, 5)
+	outidFail := iotago.OutputIDFromTransactionIDAndIndex(txID, 5)
 	require.Nil(t, u.GetOutput(outidFail))
 }

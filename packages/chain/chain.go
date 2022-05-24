@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -40,7 +39,6 @@ type ChainCore interface {
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
 	EnqueueAliasOutput(*iscp.AliasOutputWithID)
-	L1Params() *parameters.L1
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -61,6 +59,7 @@ type ChainRequests interface {
 type ChainMetrics interface {
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
+	GetConsensusPipeMetrics() ConsensusPipeMetrics
 }
 
 type Chain interface {
@@ -107,7 +106,7 @@ type NodeConnection interface {
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 
-	L1Params() *parameters.L1
+	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	Close()
 }
@@ -121,7 +120,6 @@ type ChainNodeConnection interface {
 	DetachFromTxInclusionState()
 	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
 	DetachFromMilestones()
-	L1Params() *parameters.L1
 	Close()
 
 	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
@@ -157,6 +155,7 @@ type Consensus interface {
 	GetStatusSnapshot() *ConsensusInfo
 	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
+	GetPipeMetrics() ConsensusPipeMetrics
 }
 
 type AsynchronousCommonSubsetRunner interface {
@@ -206,6 +205,16 @@ type ConsensusWorkflowStatus interface {
 	GetTransactionSeenTime() time.Time
 	GetCompletedTime() time.Time
 	GetCurrentStateIndex() uint32
+}
+
+type ConsensusPipeMetrics interface {
+	GetEventStateTransitionMsgPipeSize() int
+	GetEventSignedResultMsgPipeSize() int
+	GetEventSignedResultAckMsgPipeSize() int
+	GetEventInclusionStateMsgPipeSize() int
+	GetEventACSMsgPipeSize() int
+	GetEventVMResultMsgPipeSize() int
+	GetEventTimerMsgPipeSize() int
 }
 
 type ReadyListRecord struct {

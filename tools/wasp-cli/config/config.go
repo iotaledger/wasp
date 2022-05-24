@@ -3,9 +3,7 @@ package config
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -54,52 +52,55 @@ func Read() {
 	_ = viper.ReadInConfig()
 }
 
-func L1Host() string {
-	host := viper.GetString("l1.host")
+func L1APIAddress() string {
+	host := viper.GetString("l1.apiaddress")
 	if host != "" {
 		return host
 	}
-	return privtangledefaults.Host
+	return fmt.Sprintf(
+		"%s,%d",
+		privtangledefaults.Host,
+		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetRestAPI,
+	)
 }
 
-func L1APIPort() int {
-	port := viper.GetInt("l1.apiport")
-	if port != 0 {
-		return port
+func L1FaucetAddress() string {
+	address := viper.GetString("l1.faucetaddress")
+	if address != "" {
+		return address
 	}
-	return privtangledefaults.BasePort + privtangledefaults.NodePortOffsetRestAPI
-}
-
-func L1FaucetPort() int {
-	port := viper.GetInt("l1.faucetport")
-	if port != 0 {
-		return port
-	}
-	return privtangledefaults.BasePort + privtangledefaults.NodePortOffsetFaucet
+	return fmt.Sprintf(
+		"%s,%d",
+		privtangledefaults.Host,
+		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetFaucet,
+	)
 }
 
 func L1Client() nodeconn.L1Client {
-	log.Verbosef("using L1 host %s\n", L1Host())
+	log.Verbosef("using L1 API %s\n", L1APIAddress())
 
 	return nodeconn.NewL1Client(
 		nodeconn.L1Config{
-			Hostname:   L1Host(),
-			APIPort:    L1APIPort(),
-			FaucetPort: L1FaucetPort(),
+			APIAddress:    L1APIAddress(),
+			FaucetAddress: L1FaucetAddress(),
 		},
-		nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		log.HiveLogger(),
 	)
 }
 
-func L1NetworkPrefix() iotago.NetworkPrefix {
-	return L1Client().L1Params().Protocol.Bech32HRP
+func GetToken() string {
+	return viper.GetString("authentication.token")
+}
+
+func SetToken(token string) {
+	Set("authentication.token", token)
 }
 
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())
-	return client.NewWaspClient(WaspAPI())
+	L1Client() // this will fill parameters.L1 with data from the L1 node
+	return client.NewWaspClient(WaspAPI()).WithToken(GetToken())
 }
 
 func WaspAPI() string {

@@ -1,0 +1,5 @@
+Hi!
+
+We technical writers are currently reworking the ISC documentation so it would follow the [diataxis](https://diataxis.fr/) framework. In short, every article should clearly fall under one of four categories: explanation, reference, how to, and tutorials. The old off-ledger-requests.md and on-ledger-requests.md were a mix of an explanation, reference, and how to. I have written the [explanation](../../../docs/guide/core_concepts/invocation.md) article already, but I would need your help to write how to and reference articles.
+
+How to means step-by-step instructions to complete some atomic tasks: how to call a view, how to send an on-ledger request. [Invoking](invoking.md) is similar to it if you cut explanations. A reference could be a cheat sheet or API reference or a program module description. [off-ledger-requests.md](off-ledger-requests.md) and [on-ledger-requests.md](on-ledger-requests.md) are similar if you cut explanations and describe all request parameters instead of only nonces and fallback and timelock options.

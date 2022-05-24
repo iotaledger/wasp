@@ -59,8 +59,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain2TotalIotas := chain2.L2TotalIotas()
 
 	// send iotas to contractAgentID (that is an entity of chain2) on chain1
-	iotasToSend := uint64(11 * iscp.Mi)
-	iotasCreditedToScOnChain1 := uint64(10 * iscp.Mi)
+	const iotasToSend = 11 * iscp.Mi
+	const iotasCreditedToScOnChain1 = 10 * iscp.Mi
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,

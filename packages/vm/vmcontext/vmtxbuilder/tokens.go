@@ -78,7 +78,7 @@ func (n *nativeTokenBalance) identicalInOut() bool {
 		return false
 	case !n.in.NativeTokens.Equal(n.out.NativeTokens):
 		return false
-	case !n.in.Blocks.Equal(n.out.Blocks):
+	case !n.in.Features.Equal(n.out.Features):
 		return false
 	case len(n.in.NativeTokens) != 1:
 		panic("identicalBasicOutputs: internal inconsistency 2")
@@ -109,8 +109,8 @@ func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.Alias
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: aliasID.ToAddress()},
 		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},

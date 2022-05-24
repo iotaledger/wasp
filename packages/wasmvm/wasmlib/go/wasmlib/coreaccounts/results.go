@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-
 package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -55,7 +54,6 @@ type ImmutableAccountsResults struct {
 }
 
 func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBool {
-	//nolint:gosimple
 	return MapAgentIDToImmutableBool{proxy: s.proxy}
 }
 
@@ -76,7 +74,6 @@ type MutableAccountsResults struct {
 }
 
 func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBool {
-	//nolint:gosimple
 	return MapAgentIDToMutableBool{proxy: s.proxy}
 }
 
@@ -93,7 +90,6 @@ type ImmutableBalanceResults struct {
 }
 
 func (s ImmutableBalanceResults) Balances() MapTokenIDToImmutableBigInt {
-	//nolint:gosimple
 	return MapTokenIDToImmutableBigInt{proxy: s.proxy}
 }
 
@@ -114,7 +110,6 @@ type MutableBalanceResults struct {
 }
 
 func (s MutableBalanceResults) Balances() MapTokenIDToMutableBigInt {
-	//nolint:gosimple
 	return MapTokenIDToMutableBigInt{proxy: s.proxy}
 }
 
@@ -163,7 +158,6 @@ type ImmutableGetNativeTokenIDRegistryResults struct {
 }
 
 func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBool {
-	//nolint:gosimple
 	return MapTokenIDToImmutableBool{proxy: s.proxy}
 }
 
@@ -184,7 +178,6 @@ type MutableGetNativeTokenIDRegistryResults struct {
 }
 
 func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
-	//nolint:gosimple
 	return MapTokenIDToMutableBool{proxy: s.proxy}
 }
 
@@ -209,7 +202,6 @@ type ImmutableTotalAssetsResults struct {
 }
 
 func (s ImmutableTotalAssetsResults) Assets() MapTokenIDToImmutableBigInt {
-	//nolint:gosimple
 	return MapTokenIDToImmutableBigInt{proxy: s.proxy}
 }
 
@@ -218,6 +210,5 @@ type MutableTotalAssetsResults struct {
 }
 
 func (s MutableTotalAssetsResults) Assets() MapTokenIDToMutableBigInt {
-	//nolint:gosimple
 	return MapTokenIDToMutableBigInt{proxy: s.proxy}
 }

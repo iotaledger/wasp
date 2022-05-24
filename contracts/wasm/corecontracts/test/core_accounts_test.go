@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -19,6 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const dustAllowance = 1 * iscp.Mi
+
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
 	ctx = ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
@@ -29,7 +32,7 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	depositAmount := 1 * iscp.Mi
+	const depositAmount = 1 * iscp.Mi
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
@@ -95,27 +98,55 @@ func TestWithdraw(t *testing.T) {
 }
 
 func TestHarvest(t *testing.T) {
-	t.SkipNow()
 	ctx := setupAccounts(t)
-	var withdrawAmount uint64 = 10_000
+	var transferAmount, mintAmount uint64 = 10_000, 20_000
+	var minimumIotasOnCommonAccount uint64 = 3000
+
+	user := ctx.NewSoloAgent()
+	creatorAgentID := ctx.Creator().AgentID()
+	commonAccount := ctx.Chain.CommonAccount()
+	commonAccountBal0 := ctx.Chain.L2Assets(commonAccount)
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
+	require.NoError(t, err)
+	err = foundry.Mint(mintAmount)
+	require.NoError(t, err)
+	tokenID := foundry.TokenID()
+
+	fTransfer0 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
+	fTransfer0.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
+	fTransfer0.Func.AllowanceIotas(transferAmount).Post()
+	require.NoError(t, ctx.Err)
+	fTransfer1 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
+	fTransfer1.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&tokenID, wasmtypes.BigIntFromString(fmt.Sprint(transferAmount)))
+	fTransfer1.Func.Allowance(transfer).Post()
+	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
+	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
+	// create foundry, mint token, transfer IOTA and transfer token each charge GasFee, so there 4*GasFee in common account
+	assert.Equal(t, commonAccountBal0.Iotas+transferAmount+ctx.GasFee*4, commonAccountBal1.Iotas)
 
 	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
-	f.Func.TransferIotas(withdrawAmount).Post()
+	f.Func.Post()
 	require.NoError(t, ctx.Err)
+	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
+	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
+	assert.Equal(t, minimumIotasOnCommonAccount+ctx.GasFee, commonAccountBal2.Iotas)
+	assert.Equal(t, creatorBal0.Iotas+(commonAccountBal1.Iotas-commonAccountBal2.Iotas)+iscp.Mi, creatorBal1.Iotas)
+	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
 }
 
 func TestFoundryCreateNew(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	f := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	f.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	f.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -134,16 +165,15 @@ func TestFoundryCreateNew(t *testing.T) {
 
 func TestFoundryDestroy(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -157,16 +187,15 @@ func TestFoundryDestroy(t *testing.T) {
 
 func TestFoundryModifySupply(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -324,16 +353,15 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 
 func TestFoundryOutput(t *testing.T) {
 	ctx := setupAccounts(t)
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	var dustAllowance uint64 = 1 * iscp.Mi
-
 	user := ctx.NewSoloAgent()
+
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
+	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
 	fnew.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
@@ -353,6 +381,12 @@ func TestFoundryOutput(t *testing.T) {
 	assert.Equal(t, soloFoundry, outFoundry)
 }
 
-func TestAccountNFTs(t *testing.T) {}
+func TestAccountNFTs(t *testing.T) {
+	// TODO
+	t.SkipNow()
+}
 
-func TestNFTData(t *testing.T) {}
+func TestNFTData(t *testing.T) {
+	// TODO
+	t.SkipNow()
+}

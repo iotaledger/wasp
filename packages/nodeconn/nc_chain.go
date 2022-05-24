@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -76,11 +77,11 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 
 	txMsgID, err := txMsg.ID()
 	if err != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to extract a tx message ID: %w", iscp.TxID(txID), err)
+		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", iscp.TxID(txID), err)
 	}
 	//
 	// TODO: Move it to `nc_transaction.go`
-	msgMetaChanges, subInfo := ncc.nc.mqttClient.MessageMetadataChange(*txMsgID)
+	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
 	if subInfo.Error() != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", iscp.TxID(txID), subInfo.Error())
 	}
@@ -94,7 +95,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 				} else {
 					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", iscp.TxID(txID), str)
 				}
-				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
+				ncc.inclusionStates.Trigger(txID, *msgMetaChange.LedgerInclusionState)
 			}
 		}
 		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", iscp.TxID(txID))
@@ -121,7 +122,7 @@ func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
-	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Protocol.Bech32HRP)
+	bech32Addr := ncc.chainID.AsAddress().Bech32(parameters.L1.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
 		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
@@ -182,7 +183,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
 			ncc.chainID.AsAddress(),
-			ncc.nc.l1params.Protocol.Bech32HRP,
+			parameters.L1.Protocol.Bech32HRP,
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {

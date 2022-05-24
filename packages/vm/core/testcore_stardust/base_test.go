@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -30,10 +31,13 @@ func TestInitLoad(t *testing.T) {
 	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
 	_ = ch.Log().Sync()
 
-	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
-	assets := ch.L2CommonAccountAssets()
-	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, assets.Iotas)
-	require.EqualValues(t, 0, len(assets.Tokens))
+	dustCosts := transaction.NewDepositEstimate()
+	cassets := ch.L2CommonAccountAssets()
+	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, cassets.Iotas)
+	require.EqualValues(t, 0, len(cassets.Tokens))
+
+	t.Logf("common iotas: %d", ch.L2CommonAccountIotas())
+	require.True(t, cassets.Iotas >= accounts.MinimumIotasOnCommonAccount)
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
@@ -45,7 +49,9 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	// create chain
 	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
-	defer ch.Log().Sync()
+	defer func() {
+		_ = ch.Log().Sync()
+	}()
 	ch.AssertControlAddresses()
 	t.Logf("originator address iotas: %d (spent %d)",
 		env.L1Iotas(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1Iotas(ch.OriginatorAddress))
@@ -65,8 +71,8 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	env.AssertL1Iotas(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-totalSpent)
 
 	// let's analise dust deposit on origin and init transactions
-	vByteCostInit := transaction.GetVByteCosts(initTx, env.RentStructure())[0]
-	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
+	vByteCostInit := transaction.GetVByteCosts(initTx)[0]
+	dustCosts := transaction.NewDepositEstimate()
 	// what we spent is only for dust deposits for those 2 transactions
 	require.EqualValues(t, int(totalSpent), int(dustCosts.AnchorOutput+vByteCostInit))
 
@@ -98,7 +104,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func() {
+			_ = ch.Log().Sync()
+		}()
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -114,7 +122,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
@@ -129,7 +137,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func() {
+			_ = ch.Log().Sync()
+		}()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr)
@@ -149,7 +159,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
@@ -168,7 +178,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func() {
+			_ = ch.Log().Sync()
+		}()
 
 		totalIotasBefore := ch.L2TotalIotas()
 		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
@@ -184,7 +196,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
@@ -199,7 +211,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		defer ch.Log().Sync()
+		defer func() {
+			_ = ch.Log().Sync()
+		}()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr)
@@ -219,7 +233,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
 		rec := ch.LastReceipt()
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
@@ -512,7 +526,7 @@ func TestMessageSize(t *testing.T) {
 	reqSize := 5_000 // bytes
 	dust := 1 * iscp.Mi
 
-	maxRequestsPerBlock := env.L1Params().MaxTransactionSize / reqSize
+	maxRequestsPerBlock := parameters.L1.MaxTransactionSize / reqSize
 
 	reqs := make([]iscp.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {

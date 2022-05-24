@@ -31,8 +31,8 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'ISCP Architecture',
-                    id: 'guide/core_concepts/iscp-architecture',
+                    label: 'ISC Architecture',
+                    id: 'guide/core_concepts/isc-architecture',
                 },
                 {
                     type: 'doc',
@@ -53,6 +53,11 @@ module.exports = {
                     type: 'doc',
                     label: 'Anatomy of a Smart Contract',
                     id: 'guide/core_concepts/smart-contract-anatomy'
+                },
+                {
+                    type: 'doc',
+                    label: 'Smart Contracts Invocation',
+                    id: 'guide/core_concepts/invocation',
                 },
                 {
                     type: 'doc',
@@ -128,22 +133,6 @@ module.exports = {
                 },
                 {
                     type: 'category',
-                    label: 'Interacting With Smart Contracts',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'On-ledger Requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/on-ledger-requests',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Off-ledger Requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/off-ledger-requests',
-                        }
-                    ]
-                },
-                {
-                    type: 'category',
                     label: 'Solo',
                     items: [
                         {
@@ -193,7 +182,7 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Sending tokens from ISCP to the Tangle',
+                            label: 'Sending tokens from ISC to the Tangle',
                             id: 'guide/solo/sending-funds-sc'
                         },
                     ]
@@ -202,7 +191,7 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'ISCP Chains and Nodes',
+            label: 'ISC Chains and Nodes',
             items: [
                 {
                     type: 'doc',
@@ -246,7 +235,7 @@ module.exports = {
                     items: [
                         {
                             type: 'doc',
-                            label: 'Wasm VM for ISCP',
+                            label: 'Wasm VM for ISC',
                             id: 'guide/wasm_vm/intro',
                         },
                         {
@@ -411,6 +400,11 @@ module.exports = {
                             type: 'doc',
                             label: 'ERC20',
                             id: 'guide/evm/examples/ERC20',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'ERC721',
+                            id: 'guide/evm/examples/ERC721',
                         },
                     ]
                 },

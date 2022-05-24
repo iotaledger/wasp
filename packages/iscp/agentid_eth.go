@@ -3,7 +3,6 @@ package iscp
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/iotaledger/hive.go/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // EthereumAddressAgentID is an AgentID formed by an Ethereum address
@@ -28,7 +27,7 @@ func ethAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
 	return NewEthereumAddressAgentID(eth), nil
 }
 
-func ethAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (AgentID, error) {
+func ethAgentIDFromString(s string) (AgentID, error) {
 	eth := common.HexToAddress(s)
 	return NewEthereumAddressAgentID(eth), nil
 }
@@ -45,7 +44,7 @@ func (a *EthereumAddressAgentID) Bytes() []byte {
 	return append([]byte{byte(a.Kind())}, a.eth.Bytes()...)
 }
 
-func (a *EthereumAddressAgentID) String(networkPrefix iotago.NetworkPrefix) string {
+func (a *EthereumAddressAgentID) String() string {
 	return a.eth.String() // includes "0x"
 }
 

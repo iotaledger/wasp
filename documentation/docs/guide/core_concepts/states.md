@@ -1,13 +1,14 @@
 ---
+description: The state of the chain consists of balances of native IOTA digital assets and a collection of key/value pairs which represents use case-specific data stored in the chain by its smart contracts outside the UTXO ledger. 
+image: /img/chain0.png
 keywords:
 - state
 - transitions
-- Balances
-- Digital assets
+- balances
+- digital assets
 - UTXO
-- Transitions
-description: The state of the chain consists of balances of native IOTA digital assets and a collection of key/value pairs which represents use case-specific data stored in the chain by its smart contracts outside the UTXO ledger. 
-image: /img/chain0.png
+- transitions
+- explanation
 ---
 # State, Transitions, and State Anchoring
 

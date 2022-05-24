@@ -51,7 +51,6 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		L1Params:           ch.Env.utxoDB.L1Params(),
 		// state baseline is always valid in Solo
 		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
 		EnableGasBurnLogging: true,

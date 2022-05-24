@@ -65,10 +65,10 @@ func (sc Funcs) ListBlobs(ctx wasmlib.ScViewCallContext) *ListBlobsCall {
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-    	FuncStoreBlob,
-    	ViewGetBlobField,
-    	ViewGetBlobInfo,
-    	ViewListBlobs,
+		FuncStoreBlob,
+		ViewGetBlobField,
+		ViewGetBlobInfo,
+		ViewListBlobs,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

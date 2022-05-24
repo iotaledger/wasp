@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
@@ -55,8 +54,6 @@ type AnchorTransactionBuilder struct {
 	invokedFoundries map[uint32]*foundryInvoked
 	// requests posted by smart contracts
 	postedOutputs []iotago.Output
-	// parameters coming from the L1 node
-	l1Params *parameters.L1
 }
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
@@ -67,7 +64,6 @@ func NewAnchorTransactionBuilder(
 	foundryLoader foundryLoader,
 	nftLoader NFTOutputLoader,
 	dustDepositAssumptions transaction.DustDepositAssumption,
-	l1Params *parameters.L1,
 ) *AnchorTransactionBuilder {
 	if anchorOutput.Amount < dustDepositAssumptions.AnchorOutput {
 		panic("internal inconsistency")
@@ -85,7 +81,6 @@ func NewAnchorTransactionBuilder(
 		postedOutputs:          make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:       make(map[uint32]*foundryInvoked),
 		nftsIncluded:           make(map[iotago.NFTID]*nftIncluded),
-		l1Params:               l1Params,
 	}
 }
 
@@ -103,7 +98,6 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		postedOutputs:          make([]iotago.Output, 0, cap(txb.postedOutputs)),
 		invokedFoundries:       make(map[uint32]*foundryInvoked),
 		nftsIncluded:           make(map[iotago.NFTID]*nftIncluded),
-		l1Params:               txb.l1Params,
 	}
 
 	ret.consumed = append(ret.consumed, txb.consumed...)
@@ -173,7 +167,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
-	requiredDustDeposit := txb.l1Params.RentStructure().VByteCost * o.VBytes(txb.l1Params.RentStructure(), nil)
+	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * o.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	if o.Deposit() < requiredDustDeposit {
 		panic(xerrors.Errorf("%v: available %d < required %d iotas",
 			transaction.ErrNotEnoughIotasForDustDeposit, o.Deposit(), requiredDustDeposit))
@@ -203,7 +197,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
-		NetworkID: txb.l1Params.Protocol.NetworkID(),
+		NetworkID: parameters.L1.Protocol.NetworkID(),
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs:   txb.outputs(l1Commitment),
 		Payload:   nil,
@@ -287,8 +281,8 @@ func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) i
 			&iotago.StateControllerAddressUnlockCondition{Address: txb.anchorOutput.StateController()},
 			&iotago.GovernorAddressUnlockCondition{Address: txb.anchorOutput.GovernorAddress()},
 		},
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},

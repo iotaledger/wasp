@@ -1,23 +1,24 @@
 package iscp
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/stretchr/testify/require"
 )
 
-var networkPrefix = iotago.PrefixDevnet
-
 func TestAgentID(t *testing.T) {
+	networkPrefix := parameters.L1.Protocol.Bech32HRP
+
 	{
 		n := &NilAgentID{}
 
 		{
-			require.Equal(t, "-", n.String(networkPrefix))
-			n2, err := NewAgentIDFromString("-", networkPrefix)
+			require.Equal(t, "-", n.String())
+			n2, err := NewAgentIDFromString("-")
 			require.NoError(t, err)
 			require.EqualValues(t, n, n2)
 			require.True(t, n.Equals(n2))
@@ -37,11 +38,11 @@ func TestAgentID(t *testing.T) {
 		a := NewAgentID(tpkg.RandEd25519Address())
 
 		{
-			s := a.String(networkPrefix)
+			s := a.String()
 			require.NotEqual(t, "-", s)
 			require.NotContains(t, s, "@")
 			require.Equal(t, string(networkPrefix), s[:len(networkPrefix)])
-			a2, err := NewAgentIDFromString(s, networkPrefix)
+			a2, err := NewAgentIDFromString(s)
 			require.NoError(t, err)
 			require.EqualValues(t, a, a2)
 			require.True(t, a.Equals(a2))
@@ -61,10 +62,12 @@ func TestAgentID(t *testing.T) {
 		a := NewContractAgentID(&chid, 42)
 
 		{
-			s := a.String(networkPrefix)
+			s := a.String()
 			require.Contains(t, s, "@")
-			require.NotContains(t, s, string(networkPrefix))
-			a2, err := NewAgentIDFromString(s, networkPrefix)
+			parts := strings.Split(s, "@")
+			require.Len(t, parts, 2)
+			require.Equal(t, string(networkPrefix), parts[1][:len(networkPrefix)])
+			a2, err := NewAgentIDFromString(s)
 			require.NoError(t, err)
 			require.EqualValues(t, a, a2)
 			require.True(t, a.Equals(a2))
@@ -83,10 +86,10 @@ func TestAgentID(t *testing.T) {
 		a := NewEthereumAddressAgentID(common.HexToAddress("1074"))
 
 		{
-			s := a.String(networkPrefix)
+			s := a.String()
 			require.NotContains(t, s, "@")
 			require.Regexp(t, `^0x[^@]+`, s)
-			a2, err := NewAgentIDFromString(s, networkPrefix)
+			a2, err := NewAgentIDFromString(s)
 			require.NoError(t, err)
 			require.EqualValues(t, a, a2)
 			require.True(t, a.Equals(a2))

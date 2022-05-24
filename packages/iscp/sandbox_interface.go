@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -43,8 +42,6 @@ type SandboxBase interface {
 	Gas() Gas
 	// GetNFTInfo returns information about a NFTID (issuer and metadata)
 	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
-	// L1Params returns the L1 parameters
-	L1Params() *parameters.L1
 }
 
 type Params struct {

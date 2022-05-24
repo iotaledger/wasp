@@ -24,7 +24,6 @@ type ImmutableStoreBlobParams struct {
 
 // set of named blobs
 func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
-	//nolint:gosimple
 	return MapStringToImmutableBytes{proxy: s.proxy}
 }
 
@@ -61,7 +60,6 @@ type MutableStoreBlobParams struct {
 
 // set of named blobs
 func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
-	//nolint:gosimple
 	return MapStringToMutableBytes{proxy: s.proxy}
 }
 

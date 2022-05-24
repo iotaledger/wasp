@@ -37,6 +37,18 @@ var (
 	_ ChainRecordRegistryProvider = &Impl{}
 )
 
+type Config struct {
+	UseText  bool
+	Filename string
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		UseText:  false,
+		Filename: "",
+	}
+}
+
 // New creates new instance of the registry implementation.
 func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
 	result := &Impl{

@@ -36,7 +36,7 @@ func TestDeployChain(t *testing.T) {
 	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
-	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.Clu.GetL1NetworkPrefix()))
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
 	chEnv.checkCoreContracts()
 	chEnv.checkRootsOutside()
@@ -85,7 +85,7 @@ func TestDeployContractOnly(t *testing.T) {
 	{
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(*txID, 0))
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(txID, 0))
 		require.NoError(t, err)
 		require.Nil(t, rec.Error)
 	}

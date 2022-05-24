@@ -4,6 +4,8 @@
 import {sandbox} from "../host";
 import {FnUtilsBase58Decode, FnUtilsBase58Encode, panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {ScSandboxUtils} from "../sandboxutils";
+import {ScAddress} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -207,12 +209,14 @@ export class WasmEncoder {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // wrapper for simplified use by hashtypes
-export function base58Decode(buf: string): u8[] {
-    return sandbox(FnUtilsBase58Decode, wasmtypes.stringToBytes(buf));
+export function base58Decode(value: string): u8[] {
+    const utils = new ScSandboxUtils();
+    return utils.base58Decode(value)
 }
 
 export function base58Encode(buf: u8[]): string {
-    return wasmtypes.stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
+    const utils = new ScSandboxUtils();
+    return utils.base58Encode(buf)
 }
 
 function hexer(hexDigit: u8): u8 {
@@ -254,7 +258,7 @@ export function hexEncode(buf: u8[]): string {
         const b: u8 = buf[i];
         const b1: u8 = b >> 4;
         hex[i * 2] = b1 + ((b1 > 9) ? alpha : digit);
-        const b2: u8 = b & 0xff;
+        const b2: u8 = b & 0x0f;
         hex[i * 2 + 1] = b2 + ((b2 > 9) ? alpha : digit);
     }
     return wasmtypes.stringFromBytes(hex);

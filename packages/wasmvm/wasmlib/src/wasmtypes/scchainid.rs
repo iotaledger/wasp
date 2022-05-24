@@ -54,12 +54,15 @@ pub fn chain_id_to_bytes(value: &ScChainID) -> Vec<u8> {
 }
 
 pub fn chain_id_from_string(value: &str) -> ScChainID {
-    chain_id_from_bytes(&base58_decode(value))
+    let addr = address_from_string(value);
+    if addr.id[0] != SC_ADDRESS_ALIAS {
+        panic("invalid ChainID address type");
+    }
+    chain_id_from_bytes(&addr.id[1..])
 }
 
 pub fn chain_id_to_string(value: &ScChainID) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    address_to_string(&value.address())
 }
 
 fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainID {

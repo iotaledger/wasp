@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -143,7 +144,7 @@ func (c *consensus) runVMIfNeeded() {
 			"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
 			"block index", vmTask.AnchorOutput.StateIndex,
 			"entropy", vmTask.Entropy.String(),
-			"validator fee target", vmTask.ValidatorFeeTarget.String(vmTask.L1Params.Protocol.Bech32HRP),
+			"validator fee target", vmTask.ValidatorFeeTarget.String(),
 			"num req", len(vmTask.Requests),
 			"estimate gas mode", vmTask.EstimateGasMode,
 			"state commitment", trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
@@ -247,7 +248,6 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		TimeAssumption:     c.consensusBatch.TimeData,
 		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		L1Params:           c.chain.L1Params(),
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
@@ -451,7 +451,7 @@ func (c *consensus) pullInclusionStateIfNeeded() {
 	if err != nil {
 		c.log.Panicf("pullInclusionState: cannot calculate final transaction id: %v", err)
 	}
-	c.nodeConn.PullTxInclusionState(*finalTxID)
+	c.nodeConn.PullTxInclusionState(finalTxID)
 	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
 	c.log.Debugf("pullInclusionState: request for inclusion state sent")
 }
@@ -613,9 +613,9 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 	if err != nil {
 		c.log.Panicf("processTxInclusionState: cannot calculate final transaction id: %v", err)
 	}
-	if msg.TxID != *finalTxID {
+	if msg.TxID != finalTxID {
 		c.log.Debugf("processTxInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-			finalTxIDStr, iscp.TxID(&msg.TxID))
+			finalTxIDStr, iscp.TxID(msg.TxID))
 		return
 	}
 	switch msg.State {
@@ -665,8 +665,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 		Signature: signatureArray,
 	}
 	tx := &iotago.Transaction{
-		Essence:      c.resultTxEssence,
-		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(c.resultTxEssence.Inputs), signatureForUnlock),
+		Essence: c.resultTxEssence,
+		Unlocks: transaction.MakeSignatureAndAliasUnlockFeatures(len(c.resultTxEssence.Inputs), signatureForUnlock),
 	}
 	chained, err := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
 	if err != nil {
@@ -778,7 +778,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
-	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(c.nodeConn.L1Params().Protocol.Bech32HRP))
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(

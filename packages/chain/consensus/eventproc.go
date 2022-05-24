@@ -61,7 +61,7 @@ func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclu
 }
 
 func (c *consensus) handleTxInclusionState(msg *messages.TxInclusionStateMsg) {
-	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", iscp.TxID(&msg.TxID), msg.State)
+	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", iscp.TxID(msg.TxID), msg.State)
 	c.processTxInclusionState(msg)
 
 	c.takeAction()

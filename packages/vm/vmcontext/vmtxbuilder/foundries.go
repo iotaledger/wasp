@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"sort"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
@@ -35,14 +35,14 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		Conditions: iotago.UnlockConditions{
 			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
 		},
-		Blocks: nil,
+		Features: nil,
 	}
 	if len(metadata) > 0 {
-		f.Blocks = iotago.FeatureBlocks{&iotago.MetadataFeatureBlock{
+		f.Features = iotago.Features{&iotago.MetadataFeature{
 			Data: metadata,
 		}}
 	}
-	f.Amount = txb.l1Params.RentStructure().VByteCost * f.VBytes(txb.l1Params.RentStructure(), nil)
+	f.Amount = parameters.L1.Protocol.RentStructure.VByteCost * f.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)
@@ -259,7 +259,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
 	case !equalTokenScheme(simpleTokenSchemeF1, simpleTokenSchemeF2):
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
-	case len(f1.Blocks) != 0 || len(f2.Blocks) != 0:
+	case len(f1.Features) != 0 || len(f2.Features) != 0:
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true

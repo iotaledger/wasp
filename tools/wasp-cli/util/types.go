@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"strconv"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
@@ -23,13 +25,16 @@ func ValueFromString(vtype, s string) []byte {
 	case "address":
 		prefix, addr, err := iotago.ParseBech32(s)
 		log.Check(err)
-		l1Prefix := config.L1NetworkPrefix()
+		if parameters.L1 == nil {
+			config.L1Client() // this will fill parameters.L1 with data from the L1 node
+		}
+		l1Prefix := parameters.L1.Protocol.Bech32HRP
 		if prefix != l1Prefix {
 			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
 		}
 		return iscp.BytesFromAddress(addr)
 	case "agentid":
-		agentid, err := iscp.NewAgentIDFromString(s, config.L1NetworkPrefix())
+		agentid, err := iscp.NewAgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
 	case "bool":
@@ -41,9 +46,9 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return b
 	case "chainid":
-		_, chainid, err := iotago.ParseBech32(s)
+		chainid, err := iscp.ChainIDFromString(s)
 		log.Check(err)
-		return iscp.BytesFromAddress(chainid)
+		return chainid.Bytes()
 	case "file":
 		return ReadFile(s)
 	case "hash":
@@ -70,6 +75,12 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseInt(s, 10, 64)
 		log.Check(err)
 		return codec.EncodeInt64(n)
+	case "bigint":
+		n, ok := new(big.Int).SetString(s, 10)
+		if !ok {
+			log.Fatalf("error converting to bigint")
+		}
+		return n.Bytes()
 	case "requestid":
 		rid, err := iscp.RequestIDFromString(s)
 		log.Check(err)
@@ -103,11 +114,14 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		return addr.Bech32(config.L1NetworkPrefix())
+		if parameters.L1 == nil {
+			config.L1Client() // this will fill parameters.L1 with data from the L1 node
+		}
+		return addr.Bech32(parameters.L1.Protocol.Bech32HRP)
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
-		return aid.String(config.L1NetworkPrefix())
+		return aid.String()
 	case "bool":
 		b, err := codec.DecodeBool(v)
 		log.Check(err)
@@ -145,6 +159,9 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeInt64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
+	case "bigint":
+		n := new(big.Int).SetBytes(v)
+		return n.String()
 	case "requestid":
 		rid, err := codec.DecodeRequestID(v)
 		log.Check(err)

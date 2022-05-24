@@ -4,7 +4,6 @@
 package webapi
 
 import (
-	"net"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -29,7 +28,6 @@ var log *logger.Logger
 
 func Init(
 	server echoswagger.ApiRoot,
-	adminWhitelist []net.IP,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
 	registryProvider registry.Provider,
@@ -38,7 +36,6 @@ func Init(
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
 	w *wal.WAL,
-	l1Params *parameters.L1,
 ) {
 	log = logger.NewLogger("WebAPI")
 
@@ -58,14 +55,13 @@ func Init(
 		webapiutil.HasRequestBeenProcessed,
 		network.Self().PubKey(),
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
-		l1Params,
 		log,
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
+
 	admapi.AddEndpoints(
 		adm,
-		adminWhitelist,
 		network,
 		tnm,
 		registryProvider,

@@ -7,12 +7,15 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -38,14 +41,37 @@ func TestDeposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
-// allowance shouldnt allow you to bypass gas fees.
+func TestHarvest(t *testing.T) {
+	env := solo.New(t)
+	ch, _, _ := env.NewChainExt(nil, 10_000, "chain1")
+	_ = ch.Log().Sync()
+
+	t.Logf("common iotas BEFORE: %d", ch.L2CommonAccountIotas())
+	err := ch.DepositIotasToL2(100_000, nil)
+	require.NoError(t, err)
+	userAgentID := ch.OriginatorAgentID
+	t.Logf("userAgentID iotas: %d", ch.L2Iotas(userAgentID))
+
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncHarvest.Name).
+			AddIotas(10_000).
+			WithGasBudget(100_000),
+		nil)
+	require.NoError(t, err)
+	t.Logf("common iotas AFTER: %d", ch.L2CommonAccountIotas())
+	require.True(t, ch.L2CommonAccountIotas() > accounts.MinimumIotasOnCommonAccount)
+}
+
+// allowance shouldn't allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: false})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := iscp.NewAgentID(senderAddr)
 	ch := env.NewChain(nil, "chain1")
 
-	iotasSent := uint64(1 * iscp.Mi)
+	const iotasSent = 1 * iscp.Mi
 
 	// send a request where allowance == assets - so that no iotas are available outside allowance
 	_, err := ch.PostRequestSync(
@@ -111,7 +137,11 @@ func TestFoundries(t *testing.T) {
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch, _, _ = env.NewChainExt(nil, 10*iscp.Mi, "chain1")
-		defer ch.Log().Sync()
+		defer func(log *logger.Logger) {
+			err := log.Sync()
+			if err != nil {
+			}
+		}(ch.Log())
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = iscp.NewAgentID(senderAddr)
@@ -171,7 +201,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("supply negative", func(t *testing.T) {
 		initTest()
 		require.Panics(t, func() {
-			ch.NewFoundryParams(-1).
+			_, _, _ = ch.NewFoundryParams(-1).
 				WithUser(senderKeyPair).
 				CreateFoundry()
 		})
@@ -189,7 +219,7 @@ func TestFoundries(t *testing.T) {
 		maxSupply := new(big.Int).Set(util.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
 		require.Panics(t, func() {
-			ch.NewFoundryParams(maxSupply).CreateFoundry()
+			_, _, _ = ch.NewFoundryParams(maxSupply).CreateFoundry()
 		})
 	})
 	// TODO cover all parameter options
@@ -592,7 +622,8 @@ func TestDepositIotas(t *testing.T) {
 			require.NoError(t, err)
 			rec := v.ch.LastReceipt()
 
-			byteCost := v.env.RentStructure().VByteCost * tx.Essence.Outputs[0].VBytes(v.env.RentStructure(), nil)
+			byteCost := parameters.L1.Protocol.RentStructure.VByteCost *
+				tx.Essence.Outputs[0].VBytes(&parameters.L1.Protocol.RentStructure, nil)
 			t.Logf("byteCost = %d", byteCost)
 
 			adjusted := addIotas
@@ -765,8 +796,8 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 
 func TestTransferAndHarvest(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, 10_1000)
-	dustCosts := transaction.NewDepositEstimate(v.env.RentStructure())
+	v := initWithdrawTest(t, 10_000)
+	dustCosts := transaction.NewDepositEstimate()
 	commonAssets := v.ch.L2CommonAccountAssets()
 	require.True(t, commonAssets.Iotas+dustCosts.AnchorOutput > 10_000)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
@@ -852,7 +883,7 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2Iotas(user2AgentID, 0)
-	iotasToSend := 3 * iscp.Mi
+	const iotasToSend = 3 * iscp.Mi
 	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, iotasToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
@@ -909,7 +940,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				&iotago.StateControllerAddressUnlockCondition{Address: ident1},
 				&iotago.GovernorAddressUnlockCondition{Address: ident1},
 			},
-			Blocks: nil,
+			Features: nil,
 		},
 		inputIDs[2]: &iotago.FoundryOutput{
 			Amount:       OneMi,
@@ -923,7 +954,7 @@ func TestMintedTokensBurn(t *testing.T) {
 			Conditions: iotago.UnlockConditions{
 				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 			},
-			Blocks: nil,
+			Features: nil,
 		},
 	}
 
@@ -951,7 +982,7 @@ func TestMintedTokensBurn(t *testing.T) {
 					&iotago.StateControllerAddressUnlockCondition{Address: ident1},
 					&iotago.GovernorAddressUnlockCondition{Address: ident1},
 				},
-				Blocks: nil,
+				Features: nil,
 			},
 			&iotago.FoundryOutput{
 				Amount:       2 * OneMi,
@@ -966,7 +997,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				Conditions: iotago.UnlockConditions{
 					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
 				},
-				Blocks: nil,
+				Features: nil,
 			},
 		},
 	}
@@ -976,10 +1007,10 @@ func TestMintedTokensBurn(t *testing.T) {
 
 	tx := &iotago.Transaction{
 		Essence: essence,
-		UnlockBlocks: iotago.UnlockBlocks{
-			&iotago.SignatureUnlockBlock{Signature: sigs[0]},
-			&iotago.ReferenceUnlockBlock{Reference: 0},
-			&iotago.AliasUnlockBlock{Reference: 1},
+		Unlocks: iotago.Unlocks{
+			&iotago.SignatureUnlock{Signature: sigs[0]},
+			&iotago.ReferenceUnlock{Reference: 0},
+			&iotago.AliasUnlock{Reference: 1},
 		},
 	}
 
@@ -1002,7 +1033,7 @@ func TestNFTAccount(t *testing.T) {
 	nftAddress := nftInfo.NFTID.ToAddress()
 
 	// deposit funds on behalf of the NFT
-	iotasToSend := uint64(10 * iscp.Mi)
+	const iotasToSend = 10 * iscp.Mi
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddFungibleTokens(iscp.NewTokensIotas(iotasToSend)).
 		WithMaxAffordableGasBudget().
@@ -1022,7 +1053,7 @@ func TestNFTAccount(t *testing.T) {
 	require.True(t, ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID))
 
 	// withdraw to the NFT on L1
-	iotasToWithdrawal := uint64(1 * iscp.Mi)
+	const iotasToWithdrawal = 1 * iscp.Mi
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		AddAllowanceIotas(iotasToWithdrawal).
 		WithMaxAffordableGasBudget()

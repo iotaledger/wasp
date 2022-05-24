@@ -11,16 +11,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
-
-func (c *chainObj) L1Params() *parameters.L1 {
-	return c.nodeConn.L1Params()
-}
 
 func (c *chainObj) ID() *iscp.ChainID {
 	return c.chainID

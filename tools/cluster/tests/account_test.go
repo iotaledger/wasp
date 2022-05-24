@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -93,7 +94,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	transferIotas := uint64(42000)
+	transferIotas := 1 * iscp.Mi
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
@@ -181,7 +182,7 @@ func TestBasic2Accounts(t *testing.T) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	transferIotas := uint64(42_000)
+	transferIotas := 1 * iscp.Mi
 	myWalletClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
@@ -204,12 +205,13 @@ func TestBasic2Accounts(t *testing.T) {
 	chEnv.printAccounts("withdraw before")
 
 	// withdraw back 500 iotas to originator address
-	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(e.Clu.L1Client().L1Params().Protocol.Bech32HRP))
+	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
 	origL1Balance := e.Clu.AddressBalances(originatorAddress).Iotas
 	originatorClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	allowanceIotas := uint64(800_000)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
-			Allowance: iscp.NewAllowanceIotas(500),
+			Allowance: iscp.NewAllowanceIotas(allowanceIotas),
 		},
 	)
 	require.NoError(t, err)
@@ -221,5 +223,5 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv.printAccounts("withdraw after")
 
-	require.Equal(t, e.Clu.AddressBalances(originatorAddress).Iotas, origL1Balance+500)
+	require.Equal(t, e.Clu.AddressBalances(originatorAddress).Iotas, origL1Balance+allowanceIotas)
 }

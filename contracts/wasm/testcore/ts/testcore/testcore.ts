@@ -283,8 +283,9 @@ export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackC
 export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
     let iotas = ctx.allowance().iotas();
     const address = ctx.caller().address();
-    const transfer = wasmlib.ScTransfer.iotas(1000000);
-    for (; iotas >= 1000000; iotas -= 1000000) {
+    let iotasToTransfer: u64 = 1_000_000;
+    const transfer = wasmlib.ScTransfer.iotas(iotasToTransfer);
+    for (; iotas >= iotasToTransfer; iotas -= iotasToTransfer) {
         ctx.transferAllowed(ctx.accountID(), transfer, false);
         ctx.send(address, transfer);
     }

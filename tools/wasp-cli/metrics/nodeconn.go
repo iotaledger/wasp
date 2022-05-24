@@ -19,7 +19,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := config.WaspClient()
-		if chainIDStr == "" {
+		if chainAlias == "" {
 			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 			log.Check(err)
 			log.Printf("Following chains are registered for L1 events:\n")
@@ -31,7 +31,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
 			)
 		} else {
-			chid, err := iscp.ChainIDFromString(chainIDStr)
+			chid, err := iscp.ChainIDFromString(chainAlias)
 			log.Check(err)
 			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
 			log.Check(err)

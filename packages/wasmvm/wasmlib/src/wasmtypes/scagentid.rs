@@ -23,15 +23,19 @@ impl ScAgentID {
     pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         ScAgentID {
             kind: SC_AGENT_ID_CONTRACT,
-            address: address_from_bytes(&address.to_bytes()),
-            hname: hname_from_bytes(&hname.to_bytes()),
+            address: address.clone(),
+            hname: hname,
         }
     }
 
     pub fn from_address(address: &ScAddress) -> ScAgentID {
+        let mut kind = SC_AGENT_ID_ADDRESS;
+        if address.id[0] == SC_ADDRESS_ALIAS {
+            kind = SC_AGENT_ID_CONTRACT;
+        }
         ScAgentID {
-            kind: SC_AGENT_ID_ADDRESS,
-            address: address_from_bytes(&address.to_bytes()),
+            kind: kind,
+            address: address.clone(),
             hname: ScHname(0),
         }
     }
@@ -82,21 +86,21 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
     match buf[0] {
         SC_AGENT_ID_ADDRESS => {
             let buf: &[u8] = &buf[1..];
-            if buf.len() != SC_LENGTH_ED25519 {
-                panic("invalid AgentID length: Ed25519 address");
+            if buf.len() != SC_LENGTH_ALIAS && buf.len() != SC_LENGTH_ED25519 {
+                panic("invalid AgentID length: address agendID");
             }
             return ScAgentID::from_address(&address_from_bytes(&buf));
         }
         SC_AGENT_ID_CONTRACT => {
             let buf: &[u8] = &buf[1..];
             if buf.len() != SC_CHAIN_ID_LENGTH + SC_HNAME_LENGTH {
-                panic("invalid AgentID length: Alias address");
+                panic("invalid AgentID length: contract agendID");
             }
             let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
             let hname = hname_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
             return ScAgentID::new(&chain_id.address(), hname);
         }
-         _ =>
+        _ =>
             panic("AgentIDFromoBytes: invalid AgentID type"),
     }
     ScAgentID {
@@ -107,7 +111,7 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
 }
 
 pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
-    let mut buf:Vec<u8> = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.push(value.kind);
     match value.kind {
         SC_AGENT_ID_ADDRESS => {
@@ -124,12 +128,22 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
 }
 
 pub fn agent_id_from_string(value: &str) -> ScAgentID {
-    agent_id_from_bytes(&base58_decode(value))
+    let parts: Vec<&str> = value.split("@").collect();
+    match parts.len() {
+        1 => return ScAgentID::from_address(&address_from_string(&parts[0])),
+        2 => return ScAgentID::new(&address_from_string(&parts[1]), hname_from_string(&parts[0])),
+        _ => {
+            panic("invalid AgentID string");
+            return agent_id_from_bytes(&[]);
+        }
+    }
 }
 
 pub fn agent_id_to_string(value: &ScAgentID) -> String {
-    // TODO standardize human readable string
-    value.address.to_string() + "::" + &value.hname.to_string()
+    if value.kind == SC_AGENT_ID_CONTRACT {
+        return value.hname().to_string() + "@" + &value.address().to_string();
+    }
+    value.address().to_string()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

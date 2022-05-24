@@ -3,6 +3,7 @@
 
 import { panic } from "../sandbox";
 import * as wasmtypes from "./index"
+import {ScSandboxUtils} from "../sandboxutils";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -97,14 +98,13 @@ export function addressToBytes(value: ScAddress): u8[] {
 }
 
 export function addressFromString(value: string): ScAddress {
-    if (value.startsWith("0x")) {
-        value = value.slice(2);
-    }
-    return addressFromBytes(wasmtypes.hexDecode(value));
+    const utils = new ScSandboxUtils();
+    return utils.bech32Decode(value);
 }
 
 export function addressToString(value: ScAddress): string {
-    return "0x" + wasmtypes.hexEncode(addressToBytes(value));
+    const utils = new ScSandboxUtils();
+    return utils.bech32Encode(value);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

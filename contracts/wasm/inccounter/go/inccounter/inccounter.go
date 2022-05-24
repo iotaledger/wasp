@@ -39,9 +39,7 @@ func funcCallIncrementRecurse5x(ctx wasmlib.ScFuncContext, f *CallIncrementRecur
 	}
 }
 
-//nolint:unparam
 func funcEndlessLoop(ctx wasmlib.ScFuncContext, f *EndlessLoopContext) {
-	//nolint:staticcheck
 	for {
 		// intentional endless loop to see if Wasm VM can be interrupted
 	}
@@ -67,7 +65,6 @@ func funcLocalStateInternalCall(ctx wasmlib.ScFuncContext, f *LocalStateInternal
 	// counter ends up as 2
 }
 
-//nolint:unparam
 func funcLocalStatePost(ctx wasmlib.ScFuncContext, f *LocalStatePostContext) {
 	LocalStateMustIncrement = false
 	// prevent multiple identical posts, need a dummy param to differentiate them
@@ -78,7 +75,6 @@ func funcLocalStatePost(ctx wasmlib.ScFuncContext, f *LocalStatePostContext) {
 	// counter ends up as 0
 }
 
-//nolint:unparam
 func funcLocalStateSandboxCall(ctx wasmlib.ScFuncContext, f *LocalStateSandboxCallContext) {
 	LocalStateMustIncrement = false
 	ScFuncs.WhenMustIncrement(ctx).Func.Call()
@@ -113,7 +109,6 @@ func funcRepeatMany(ctx wasmlib.ScFuncContext, f *RepeatManyContext) {
 	ScFuncs.RepeatMany(ctx).Func.Post()
 }
 
-//nolint:unparam
 func funcTestVliCodec(ctx wasmlib.ScFuncContext, f *TestVliCodecContext) {
 	vliSave(ctx, "v-129", -129)
 	vliSave(ctx, "v-128", -128)
@@ -138,7 +133,6 @@ func funcTestVliCodec(ctx wasmlib.ScFuncContext, f *TestVliCodecContext) {
 	vliSave(ctx, "v+129", 129)
 }
 
-//nolint:unparam
 func funcTestVluCodec(ctx wasmlib.ScFuncContext, f *TestVluCodecContext) {
 	vluSave(ctx, "v 0", 0)
 	vluSave(ctx, "v+1", 1)

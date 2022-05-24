@@ -21,7 +21,6 @@ pub(crate) const PARAM_FOUNDRY_SN          : &str = "s";
 pub(crate) const PARAM_NFT_ID              : &str = "z";
 pub(crate) const PARAM_SUPPLY_DELTA_ABS    : &str = "d";
 pub(crate) const PARAM_TOKEN_SCHEME        : &str = "t";
-pub(crate) const PARAM_TOKEN_TAG           : &str = "g";
 
 pub(crate) const RESULT_ACCOUNT_NONCE      : &str = "n";
 pub(crate) const RESULT_ALL_ACCOUNTS       : &str = "this";

@@ -20,18 +20,19 @@ type (
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-var host ScHost
+var (
+	host  ScHost
+	utils ScSandboxUtils
+)
 
 const hexDigits = "0123456789abcdef"
 
 func init() {
-	wasmtypes.Base58Decode = func(base58 string) []byte {
-		return Sandbox(FnUtilsBase58Decode, []byte(base58))
-	}
-
-	wasmtypes.Base58Encode = func(buf []byte) string {
-		return string(Sandbox(FnUtilsBase58Encode, buf))
-	}
+	wasmtypes.Base58Decode = utils.Base58Decode
+	wasmtypes.Base58Encode = utils.Base58Encode
+	wasmtypes.Bech32Decode = utils.Bech32Decode
+	wasmtypes.Bech32Encode = utils.Bech32Encode
+	wasmtypes.NewScHname = utils.Hname
 
 	wasmtypes.HexDecode = func(hex string) []byte {
 		digits := len(hex)
@@ -53,10 +54,6 @@ func init() {
 			hex[i*2+1] = hexDigits[b&0x0f]
 		}
 		return string(hex)
-	}
-
-	wasmtypes.NewScHname = func(name string) wasmtypes.ScHname {
-		return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(name)))
 	}
 }
 

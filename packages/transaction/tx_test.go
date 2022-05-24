@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
@@ -22,7 +21,7 @@ func TestCreateOrigin(t *testing.T) {
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
 	var chainID *iscp.ChainID
-	var originTxID *iotago.TransactionID
+	var originTxID iotago.TransactionID
 
 	initTest := func() {
 		u = utxodb.New()
@@ -45,7 +44,6 @@ func TestCreateOrigin(t *testing.T) {
 			1000,
 			allOutputs,
 			ids,
-			parameters.L1ForTesting(),
 		)
 		require.NoError(t, err)
 
@@ -55,11 +53,11 @@ func TestCreateOrigin(t *testing.T) {
 		originTxID, err = originTx.ID()
 		require.NoError(t, err)
 
-		txBack, ok := u.GetTransaction(*originTxID)
+		txBack, ok := u.GetTransaction(originTxID)
 		require.True(t, ok)
 		txidBack, err := txBack.ID()
 		require.NoError(t, err)
-		require.EqualValues(t, *originTxID, *txidBack)
+		require.EqualValues(t, originTxID, txidBack)
 
 		t.Logf("New chain ID: %s", chainID.String())
 	}
@@ -71,7 +69,6 @@ func TestCreateOrigin(t *testing.T) {
 			"test chain",
 			allOutputs,
 			ids,
-			parameters.L1ForTesting(),
 		)
 		require.NoError(t, err)
 
@@ -169,9 +166,9 @@ func TestConsumeRequest(t *testing.T) {
 
 	tx := &iotago.Transaction{
 		Essence: essence,
-		UnlockBlocks: iotago.UnlockBlocks{
-			&iotago.SignatureUnlockBlock{Signature: sigs[0]},
-			&iotago.AliasUnlockBlock{Reference: 0},
+		Unlocks: iotago.Unlocks{
+			&iotago.SignatureUnlock{Signature: sigs[0]},
+			&iotago.AliasUnlock{Reference: 0},
 		},
 	}
 	semValCtx := &iotago.SemanticValidationContext{
