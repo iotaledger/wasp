@@ -20,15 +20,45 @@ export class MutableFoundryCreateNewResults extends wasmtypes.ScProxy {
 	}
 }
 
+export class ArrayOfImmutableNftID extends wasmtypes.ScProxy {
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getNftID(index: u32): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.index(index));
+	}
+}
+
 export class ImmutableAccountNFTsResults extends wasmtypes.ScProxy {
-	nftIDs(): wasmtypes.ScImmutableBytes {
-		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultNftIDs));
+	nftIDs(): sc.ArrayOfImmutableNftID {
+		return new sc.ArrayOfImmutableNftID(this.proxy.root(sc.ResultNftIDs));
+	}
+}
+
+export class ArrayOfMutableNftID extends wasmtypes.ScProxy {
+
+	appendNftID(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.append());
+	}
+
+	clear(): void {
+		this.proxy.clearArray();
+	}
+
+	length(): u32 {
+		return this.proxy.length();
+	}
+
+	getNftID(index: u32): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.index(index));
 	}
 }
 
 export class MutableAccountNFTsResults extends wasmtypes.ScProxy {
-	nftIDs(): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultNftIDs));
+	nftIDs(): sc.ArrayOfMutableNftID {
+		return new sc.ArrayOfMutableNftID(this.proxy.root(sc.ResultNftIDs));
 	}
 }
 
