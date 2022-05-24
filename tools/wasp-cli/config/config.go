@@ -53,7 +53,7 @@ func Read() {
 }
 
 func L1APIAddress() string {
-	host := viper.GetString("l1.apiaddress")
+	host := viper.GetString("L1APIAddress")
 	if host != "" {
 		return host
 	}
@@ -65,7 +65,7 @@ func L1APIAddress() string {
 }
 
 func L1FaucetAddress() string {
-	address := viper.GetString("l1.faucetaddress")
+	address := viper.GetString("L1FaucetAddress")
 	if address != "" {
 		return address
 	}

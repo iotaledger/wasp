@@ -1,4 +1,6 @@
 {
+  "L1APIAddress": "http://localhost:14265",
+  "L1FaucetAddress": "http://localhost:8191",
   "database": {
     "directory": "waspdb"
   },
@@ -60,9 +62,6 @@
   "peering":{
     "port": 4000,
     "netid": "127.0.0.1:4000"
-  },
-  "nodeconn": {
-    "address": "127.0.0.1:5000"
   },
   "nanomsg":{
     "port": 5550
