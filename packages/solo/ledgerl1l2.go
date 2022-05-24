@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
@@ -81,11 +82,11 @@ func (ch *Chain) L2NFTs(agentID iscp.AgentID) []iotago.NFTID {
 	ret := make([]iotago.NFTID, 0)
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
-	nftIDsBin, err := res.Get(accounts.ParamNFTIDs)
-	require.NoError(ch.Env.T, err)
-	for i := 0; i < len(nftIDsBin); i += iotago.NFTIDLength {
+	nftIDs := collections.NewArray16ReadOnly(res, accounts.ParamNFTIDs)
+	nftLen := nftIDs.MustLen()
+	for i := uint16(0); i < nftLen; i++ {
 		nftID := iotago.NFTID{}
-		copy(nftID[:], nftIDsBin[i:i+iotago.NFTIDLength])
+		copy(nftID[:], nftIDs.MustGetAt(i))
 		ret = append(ret, nftID)
 	}
 	return ret

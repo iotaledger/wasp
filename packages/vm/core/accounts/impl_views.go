@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -69,13 +70,13 @@ func viewAccountNFTs(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
 	nftIDs := getAccountNFTs(getAccountR(ctx.State(), aid))
-	ret := []byte{}
-	for _, nftid := range nftIDs {
-		ret = append(ret, nftid[:]...)
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamNFTIDs)
+	for _, nftID := range nftIDs {
+		arr.MustPush(nftID[:])
 	}
-	return dict.Dict{
-		ParamNFTIDs: ret,
-	}
+	return ret
 }
 
 // viewNFTData returns the NFT data for a given NFTID

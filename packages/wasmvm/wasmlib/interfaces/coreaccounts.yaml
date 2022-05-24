@@ -56,7 +56,7 @@ views:
     params:
       agentID=a: AgentID
     results:
-      nftIDs=i: Bytes
+      nftIDs=i: NftID[]
   nftData:
     params:
       nftID=z: Bytes

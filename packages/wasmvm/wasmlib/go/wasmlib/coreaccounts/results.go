@@ -25,20 +25,52 @@ func (s MutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultFoundrySN))
 }
 
+type ArrayOfImmutableNftID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfImmutableNftID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfImmutableNftID) GetNftID(index uint32) wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(a.proxy.Index(index))
+}
+
 type ImmutableAccountNFTsResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableAccountNFTsResults) NftIDs() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultNftIDs))
+func (s ImmutableAccountNFTsResults) NftIDs() ArrayOfImmutableNftID {
+	return ArrayOfImmutableNftID{proxy: s.proxy.Root(ResultNftIDs)}
+}
+
+type ArrayOfMutableNftID struct {
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableNftID) AppendNftID() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(a.proxy.Append())
+}
+
+func (a ArrayOfMutableNftID) Clear() {
+	a.proxy.ClearArray()
+}
+
+func (a ArrayOfMutableNftID) Length() uint32 {
+	return a.proxy.Length()
+}
+
+func (a ArrayOfMutableNftID) GetNftID(index uint32) wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(a.proxy.Index(index))
 }
 
 type MutableAccountNFTsResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableAccountNFTsResults) NftIDs() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultNftIDs))
+func (s MutableAccountNFTsResults) NftIDs() ArrayOfMutableNftID {
+	return ArrayOfMutableNftID{proxy: s.proxy.Root(ResultNftIDs)}
 }
 
 type MapAgentIDToImmutableBool struct {
