@@ -17,28 +17,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const numRequests = 100_000
-
-// TODO this is currently broken - the indexer can't keep up and returns UTXOs that were already spent. - to revisit after updating L1 dependencies
 func TestSpamOnledger(t *testing.T) {
 	testutil.RunHeavy(t)
+	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
+	const numRequests = 10_000
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	// send requests from many different wallets to speed things up
-	numAccounts := 100
+	numAccounts := 1000
 	numRequestsPerAccount := numRequests / numAccounts
 	errCh := make(chan error, numRequests)
 	txCh := make(chan iotago.Transaction, numRequests)
 	for i := 0; i < numAccounts; i++ {
 		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
-		require.NoError(t, err)
+		createWalletRetries := 0
+		if err != nil {
+			if createWalletRetries >= 5 {
+				t.Fatal("failed to create wallet, got an error 5 times, %w", err)
+			}
+			// wait and re-try
+			createWalletRetries++
+			i--
+			time.Sleep(1 * time.Second)
+			continue
+		}
 		go func() {
 			chainClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+			retries := 0
 			for i := 0; i < numRequestsPerAccount; i++ {
 				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
+				if err != nil {
+					if retries >= 5 {
+						errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
+						break
+					}
+					// wait and re-try the tx
+					retries++
+					i--
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				retries = 0
 				errCh <- err
 				txCh <- *tx
-				time.Sleep(300 * time.Millisecond) // give time for the indexer to get the new UTXOs (so we don't issue conflicting txs)
+				time.Sleep(1 * time.Second) // give time for the indexer to get the new UTXOs (so we don't issue conflicting txs)
 			}
 		}()
 	}
@@ -66,12 +88,14 @@ func TestSpamOnledger(t *testing.T) {
 	println(events)
 }
 
-// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
-const maxParallelRequests = 700
-
 // !! WARNING !! - this test should only be run with `database.inMemory` set to `false`. Otherwise it is WAY slower, and will probably time out or take a LONG time
-func TestSpamOffledger(t *testing.T) {
+func TestSpamOffLedger(t *testing.T) {
 	testutil.RunHeavy(t)
+
+	// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
+	const maxParallelRequests = 700
+	const numRequests = 100_000
+
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
