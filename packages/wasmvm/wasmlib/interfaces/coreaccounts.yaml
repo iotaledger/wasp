@@ -59,6 +59,6 @@ views:
       nftIDs=i: NftID[]
   nftData:
     params:
-      nftID=z: Bytes
+      nftID=z: NftID
     results:
       nftData=e: Bytes

@@ -120,7 +120,16 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		transfer.Assets.Iotas = 1 * iscp.Mi
 	}
 	req.AddFungibleTokens(transfer.Assets)
-	// TODO NFT
+	if len(transfer.NFTs) != 0 {
+		if len(transfer.NFTs) != 1 {
+			panic("cannot transfer multiple NFTs")
+		}
+		nftID := transfer.NFTs[0]
+		if ctx.nfts == nil || ctx.nfts[nftID] == nil {
+			panic("unknown nftID, did you use the wrong SoloContext?")
+		}
+		req.WithNFT(ctx.nfts[nftID])
+	}
 	req.WithMaxAffordableGasBudget()
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
