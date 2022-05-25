@@ -155,7 +155,7 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
 	attachID := d.netProvider.Attach(&d.peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		if recv.SenderPubKey.Equals(d.netProvider.Self().PubKey()) {
-			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
+			d.log.Debugf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
 				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.AsString())
 			return
 		}

@@ -48,7 +48,7 @@ func runTask(task *vm.VMTask) {
 		result, skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock))
 		if skipReason != nil {
 			// some requests are just ignored (deterministically)
-			task.Log.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
+			task.Log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
 			continue
 		}
