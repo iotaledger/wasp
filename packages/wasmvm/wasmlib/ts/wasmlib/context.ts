@@ -16,7 +16,7 @@ export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
     // }
 
     chainID(): wasmtypes.ScChainID {
-        return this.currentChainID();
+        return super.currentChainID();
     }
 
     initFuncCallContext(): void {
@@ -33,7 +33,7 @@ export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
 export class ScViewContext extends ScSandboxView implements ScViewCallContext {
 
     chainID(): wasmtypes.ScChainID {
-        return this.currentChainID();
+        return super.currentChainID();
     }
     initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname {
         return hContract;

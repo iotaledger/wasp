@@ -181,14 +181,14 @@ type ImmutableNftDataParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableNftDataParams) NftID() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamNftID))
+func (s ImmutableNftDataParams) NftID() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNftID))
 }
 
 type MutableNftDataParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableNftDataParams) NftID() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamNftID))
+func (s MutableNftDataParams) NftID() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNftID))
 }

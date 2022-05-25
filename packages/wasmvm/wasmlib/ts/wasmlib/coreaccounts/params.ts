@@ -141,13 +141,13 @@ export class MutableGetAccountNonceParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableNftDataParams extends wasmtypes.ScProxy {
-	nftID(): wasmtypes.ScImmutableBytes {
-		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamNftID));
+	nftID(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 }
 
 export class MutableNftDataParams extends wasmtypes.ScProxy {
-	nftID(): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamNftID));
+	nftID(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 }

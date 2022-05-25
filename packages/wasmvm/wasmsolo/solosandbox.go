@@ -120,7 +120,16 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		transfer.Assets.Iotas = 1 * iscp.Mi
 	}
 	req.AddFungibleTokens(transfer.Assets)
-	// TODO NFT
+	if len(transfer.NFTs) != 0 {
+		if len(transfer.NFTs) != 1 {
+			panic("cannot transfer multiple NFTs")
+		}
+		nftID := transfer.NFTs[0]
+		if ctx.nfts == nil || ctx.nfts[nftID] == nil {
+			panic("unknown nftID, did you use the wrong SoloContext?")
+		}
+		req.WithNFT(ctx.nfts[nftID])
+	}
 	req.WithMaxAffordableGasBudget()
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
@@ -145,10 +154,6 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 }
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
-
-func (s *SoloSandbox) fnAccountID(args []byte) []byte {
-	return s.ctx.AccountID().Bytes()
-}
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
 	ctx := s.ctx
@@ -182,29 +187,12 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnChainID(args []byte) []byte {
-	return s.ctx.ChainID().Bytes()
-}
-
-func (s *SoloSandbox) fnChainOwnerID(args []byte) []byte {
-	return s.ctx.ChainOwnerID().Bytes()
-}
-
-func (s *SoloSandbox) fnContractCreator(args []byte) []byte {
-	return s.ctx.ContractCreator().Bytes()
+	return s.ctx.CurrentChainID().Bytes()
 }
 
 func (s *SoloSandbox) fnLog(args []byte) []byte {
 	s.ctx.Chain.Log().Infof(string(args))
 	return nil
-}
-
-func (s *SoloSandbox) fnPanic(args []byte) []byte {
-	s.ctx.Chain.Log().Panicf("SOLO panic: %s", string(args))
-	return nil
-}
-
-func (s *SoloSandbox) fnParams(args []byte) []byte {
-	return make(dict.Dict).Bytes()
 }
 
 func (s *SoloSandbox) fnPost(args []byte) []byte {
@@ -230,9 +218,4 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
 	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
 	return s.postSync(s.ctx.scName, funcName, params, allowance, transfer)
-}
-
-func (s *SoloSandbox) fnTrace(args []byte) []byte {
-	s.ctx.Chain.Log().Debugf(string(args))
-	return nil
 }
