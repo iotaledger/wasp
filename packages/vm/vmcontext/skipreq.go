@@ -1,16 +1,14 @@
 package vmcontext
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
@@ -79,8 +77,8 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
 		return nil
 	}
-	if nonce > maxAssumed-OffLedgerNonceStrictOrderTolerance {
-		return xerrors.Errorf("nonce %d is too old", nonce)
+	if nonce <= maxAssumed-OffLedgerNonceStrictOrderTolerance {
+		return fmt.Errorf("nonce %d is too old", nonce)
 	}
 	return nil
 }
