@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
@@ -105,7 +107,7 @@ func TestSpamOffLedger(t *testing.T) {
 
 	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(100_000_000),
+		Transfer: iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount),
 	})
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
@@ -113,30 +115,45 @@ func TestSpamOffLedger(t *testing.T) {
 
 	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
+	durationsMutex := sync.Mutex{}
+	processingDurationsSum := uint64(0)
+	maxProcessingDuration := uint64(0)
+
 	maxChan := make(chan int, maxParallelRequests)
 	reqSuccessChan := make(chan uint64, numRequests)
 	reqErrorChan := make(chan error, 1)
 
-	for i := 0; i < numRequests; i++ {
-		maxChan <- i
-		go func(nonce uint64) {
-			// send the request
-			req, er := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: nonce})
-			if er != nil {
-				reqErrorChan <- er
-				return
-			}
+	go func() {
+		for i := 0; i < numRequests; i++ {
+			maxChan <- i
+			nonce := uint64(i + 1)
+			go func() {
+				// send the request
+				req, er := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: nonce})
+				if er != nil {
+					reqErrorChan <- er
+					return
+				}
+				reqSentTime := time.Now()
+				// wait for the request to be processed
+				_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 5*time.Minute)
+				if err != nil {
+					reqErrorChan <- err
+					return
+				}
+				processingDuration := uint64(time.Since(reqSentTime).Seconds())
+				reqSuccessChan <- nonce
+				<-maxChan
 
-			// wait for the request to be processed
-			_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
-			if err != nil {
-				reqErrorChan <- err
-				return
-			}
-			reqSuccessChan <- nonce
-			<-maxChan
-		}(uint64(i + 1))
-	}
+				durationsMutex.Lock()
+				defer durationsMutex.Unlock()
+				processingDurationsSum += processingDuration
+				if processingDuration > maxProcessingDuration {
+					maxProcessingDuration = processingDuration
+				}
+			}()
+		}
+	}()
 
 	n := 0
 	for {
@@ -146,7 +163,7 @@ func TestSpamOffLedger(t *testing.T) {
 		case e := <-reqErrorChan:
 			// no request should fail
 			fmt.Printf("ERROR sending offledger request, err: %v\n", e)
-			t.Fatal()
+			t.Fatal(e)
 		}
 		if n == numRequests {
 			break
@@ -159,5 +176,7 @@ func TestSpamOffLedger(t *testing.T) {
 	require.NoError(t, err)
 	events, err := testcore.EventsViewResultToStringArray(res)
 	require.NoError(t, err)
-	println(events)
+	require.Regexp(t, "counter = 100000", events[len(events)-1])
+	avgProcessingDuration := processingDurationsSum / numRequests
+	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
 }
