@@ -44,7 +44,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
 pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFromFullEPContext) {
     ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
     ctx.require(f.params.caller().value() == ctx.caller(), "fail: caller");
-    ctx.require(f.params.chain_id().value() == ctx.chain_id(), "fail: chainID");
+    ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
     ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
     ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
@@ -161,7 +161,7 @@ pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext)
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {
     ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
-    ctx.require(f.params.chain_id().value() == ctx.chain_id(), "fail: chainID");
+    ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
     ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
     ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }

@@ -284,10 +284,6 @@ func (ctx *SoloContext) ChainAccount() *SoloAgent {
 	}
 }
 
-func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
-	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
-}
-
 func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
 	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
@@ -300,6 +296,10 @@ func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
 func (ctx *SoloContext) ContractExists(scName string) error {
 	_, err := ctx.Chain.FindContract(scName)
 	return err
+}
+
+func (ctx *SoloContext) CurrentChainID() wasmtypes.ScChainID {
+	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 // Creator returns a SoloAgent representing the contract creator

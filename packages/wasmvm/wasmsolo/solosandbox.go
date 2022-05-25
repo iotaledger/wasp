@@ -146,10 +146,6 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *SoloSandbox) fnAccountID(args []byte) []byte {
-	return s.ctx.AccountID().Bytes()
-}
-
 func (s *SoloSandbox) fnCall(args []byte) []byte {
 	ctx := s.ctx
 	req := wasmrequests.NewCallRequestFromBytes(args)
@@ -182,29 +178,12 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnChainID(args []byte) []byte {
-	return s.ctx.ChainID().Bytes()
-}
-
-func (s *SoloSandbox) fnChainOwnerID(args []byte) []byte {
-	return s.ctx.ChainOwnerID().Bytes()
-}
-
-func (s *SoloSandbox) fnContractCreator(args []byte) []byte {
-	return s.ctx.ContractCreator().Bytes()
+	return s.ctx.CurrentChainID().Bytes()
 }
 
 func (s *SoloSandbox) fnLog(args []byte) []byte {
 	s.ctx.Chain.Log().Infof(string(args))
 	return nil
-}
-
-func (s *SoloSandbox) fnPanic(args []byte) []byte {
-	s.ctx.Chain.Log().Panicf("SOLO panic: %s", string(args))
-	return nil
-}
-
-func (s *SoloSandbox) fnParams(args []byte) []byte {
-	return make(dict.Dict).Bytes()
 }
 
 func (s *SoloSandbox) fnPost(args []byte) []byte {
@@ -230,9 +209,4 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
 	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
 	return s.postSync(s.ctx.scName, funcName, params, allowance, transfer)
-}
-
-func (s *SoloSandbox) fnTrace(args []byte) []byte {
-	s.ctx.Chain.Log().Debugf(string(args))
-	return nil
 }

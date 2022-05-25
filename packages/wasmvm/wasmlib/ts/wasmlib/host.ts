@@ -12,7 +12,7 @@ export interface ScHost {
     stateSet(key: u8[], value: u8[]): void;
 }
 
-export var host:ScHost;
+let host:ScHost;
 
 export function connectHost(h: ScHost): ScHost {
     const oldHost = host;

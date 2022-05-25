@@ -47,7 +47,7 @@ func NewWasmClientContext(svcClient IClientService, chainID *wasmtypes.ScChainID
 	return s
 }
 
-func (s *WasmClientContext) ChainID() wasmtypes.ScChainID {
+func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
 	return s.cvt.ScChainID(s.chainID)
 }
 

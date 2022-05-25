@@ -109,11 +109,11 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setupTest(t)
 
 	pt := testwasmlib.ScFuncs.ParamTypes(ctx)
-	pt.Params.Address().SetValue(ctx.ChainID().Address())
+	pt.Params.Address().SetValue(ctx.CurrentChainID().Address())
 	pt.Params.AgentID().SetValue(ctx.AccountID())
 	pt.Params.Bool().SetValue(true)
 	pt.Params.Bytes().SetValue([]byte("these are bytes"))
-	pt.Params.ChainID().SetValue(ctx.ChainID())
+	pt.Params.ChainID().SetValue(ctx.CurrentChainID())
 	pt.Params.Hash().SetValue(wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210")))
 	pt.Params.Hname().SetValue(testwasmlib.HScName)
 	pt.Params.Int8().SetValue(-123)
@@ -328,7 +328,7 @@ func TestWasmTypes(t *testing.T) {
 	ctx := setupTest(t)
 
 	// check chain id
-	scChainID := ctx.ChainID()
+	scChainID := ctx.CurrentChainID()
 	chainID := ctx.Chain.ChainID
 	require.True(t, scChainID == wasmtypes.ChainIDFromBytes(wasmtypes.ChainIDToBytes(scChainID)))
 	require.True(t, scChainID == wasmtypes.ChainIDFromString(wasmtypes.ChainIDToString(scChainID)))

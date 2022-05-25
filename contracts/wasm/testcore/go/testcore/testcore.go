@@ -56,7 +56,7 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFullEPContext) {
 	ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "fail: agentID")
 	ctx.Require(f.Params.Caller().Value() == ctx.Caller(), "fail: caller")
-	ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "fail: chainID")
+	ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "fail: chainID")
 	ctx.Require(f.Params.ChainOwnerID().Value() == ctx.ChainOwnerID(), "fail: chainOwnerID")
 	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
@@ -207,7 +207,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {
 	ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "fail: agentID")
-	ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "fail: chainID")
+	ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "fail: chainID")
 	ctx.Require(f.Params.ChainOwnerID().Value() == ctx.ChainOwnerID(), "fail: chainOwnerID")
 	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
