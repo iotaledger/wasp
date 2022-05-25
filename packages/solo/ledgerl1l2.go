@@ -168,9 +168,10 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and ftokens for the call
 const (
-	DestroyTokensGasBudgetIotas   = 1 * iscp.Mi
-	SendToL2AccountGasBudgetIotas = 1 * iscp.Mi
-	DestroyFoundryGasBudgetIotas  = 1 * iscp.Mi
+	DestroyTokensGasBudgetIotas       = 1 * iscp.Mi
+	SendToL2AccountGasBudgetIotas     = 1 * iscp.Mi
+	DestroyFoundryGasBudgetIotas      = 1 * iscp.Mi
+	TransferAllowanceToGasBudgetIotas = 1 * iscp.Mi
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -309,13 +310,14 @@ func (ch *Chain) DepositAssetsToL2(assets *iscp.FungibleTokens, user *cryptolib.
 }
 
 // TransferAllowanceTo sends an on-ledger request to transfer funds to target account (sends extra iotas to the sender account to cover gas)
-func (ch *Chain) TransferAllowanceTo(allowance *iscp.FungibleTokens, targetAccount iscp.AgentID, wallet *cryptolib.KeyPair) error {
+func (ch *Chain) TransferAllowanceTo(allowance *iscp.FungibleTokens, targetAccount iscp.AgentID, forceOpenAccount bool, wallet *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
-			accounts.ParamAgentID: codec.EncodeAgentID(targetAccount),
+			accounts.ParamAgentID:          codec.EncodeAgentID(targetAccount),
+			accounts.ParamForceOpenAccount: codec.EncodeBool(forceOpenAccount),
 		}).
 			WithAllowance(iscp.NewAllowanceFungibleTokens(allowance)).
-			WithFungibleTokens(allowance.Clone().AddIotas(1*iscp.Mi)).
+			WithFungibleTokens(allowance.Clone().AddIotas(TransferAllowanceToGasBudgetIotas)).
 			WithGasBudget(math.MaxUint64),
 		wallet,
 	)

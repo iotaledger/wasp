@@ -15,7 +15,7 @@ func init() {
 	// setup testing parameters when running in the context of tests
 	if strings.HasSuffix(os.Args[0], ".test") ||
 		strings.HasSuffix(os.Args[0], ".test.exe") {
-		L1 = l1ForTesting()
+		InitL1ForTesting()
 	}
 }
 
@@ -25,8 +25,8 @@ type L1Params struct {
 	Protocol           *iotago.ProtocolParameters
 }
 
-func l1ForTesting() *L1Params {
-	return &L1Params{
+func InitL1ForTesting() {
+	L1 = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxTransactionSize: 32000,
 		// https://github.com/muXxer/protocol-rfcs/blob/master/text/0032-dust-protection/0032-dust-protection.md

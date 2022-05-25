@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -62,11 +63,18 @@ type ChainMetrics interface {
 	GetConsensusPipeMetrics() ConsensusPipeMetrics
 }
 
+type ChainRunner interface {
+	GetAnchorOutput() *iscp.AliasOutputWithID
+	GetTimeData() iscp.TimeData
+	GetDB() kvstore.KVStore
+}
+
 type Chain interface {
 	ChainCore
 	ChainRequests
 	ChainEntry
 	ChainMetrics
+	ChainRunner
 }
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus
@@ -174,8 +182,7 @@ type SyncInfo struct {
 	SyncedBlockIndex      uint32
 	SyncedStateCommitment trie.VCommitment
 	SyncedStateTimestamp  time.Time
-	StateOutputBlockIndex uint32
-	StateOutputID         *iotago.UTXOInput
+	StateOutput           *iscp.AliasOutputWithID
 	StateOutputCommitment trie.VCommitment
 	StateOutputTimestamp  time.Time
 }
@@ -184,6 +191,7 @@ type ConsensusInfo struct {
 	StateIndex uint32
 	Mempool    mempool.MempoolInfo
 	TimerTick  int
+	TimeData   iscp.TimeData
 }
 
 type ConsensusWorkflowStatus interface {

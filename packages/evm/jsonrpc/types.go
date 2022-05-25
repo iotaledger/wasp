@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
@@ -161,7 +161,7 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]inter
 		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
 		"blockHash":         r.BlockHash,
 		"blockNumber":       (*hexutil.Big)(r.BlockNumber),
-		"from":              evmtypes.GetSender(tx),
+		"from":              evmutil.MustGetSender(tx),
 		"to":                tx.To(),
 		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
 		"gasUsed":           hexutil.Uint64(r.GasUsed),
@@ -280,7 +280,7 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 			Value:    (*big.Int)(args.Value),
 			Data:     data,
 		}
-		estimated, err := e.evmChain.EstimateGas(callArgs)
+		estimated, err := e.evmChain.EstimateGas(callArgs, nil)
 		if err != nil {
 			return err
 		}

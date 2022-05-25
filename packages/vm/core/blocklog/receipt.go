@@ -93,7 +93,7 @@ func (r *RequestReceipt) String() string {
 	ret += fmt.Sprintf("Err: %v\n", r.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
-	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())
+	ret += fmt.Sprintf("Call data: %s\n", r.Request)
 	return ret
 }
 

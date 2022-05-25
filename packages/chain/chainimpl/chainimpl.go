@@ -38,10 +38,6 @@ const maxMsgBuffer = 1000
 
 var (
 	_ chain.Chain                     = &chainObj{}
-	_ chain.ChainCore                 = &chainObj{}
-	_ chain.ChainEntry                = &chainObj{}
-	_ chain.ChainRequests             = &chainObj{}
-	_ chain.ChainMetrics              = &chainObj{}
 	_ map[cryptolib.PublicKeyKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 

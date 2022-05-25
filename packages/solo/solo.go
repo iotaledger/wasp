@@ -43,8 +43,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// utxodb.FundsFromFaucetAmount is the default amount of tokens returned by the UTXODB faucet
-// which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"

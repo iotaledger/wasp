@@ -111,9 +111,11 @@ func (a *AccessNodeInfo) Bytes() []byte {
 }
 
 func NewAccessNodeInfoFromAddCandidateNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
+	validatorAddr, _ := iscp.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
+	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
 	ani := AccessNodeInfo{
 		NodePubKey:    ctx.Params().MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: iscp.BytesFromAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
+		ValidatorAddr: iscp.BytesFromAddress(validatorAddr),
 		Certificate:   ctx.Params().MustGetBytes(ParamAccessNodeInfoCertificate),
 		ForCommittee:  ctx.Params().MustGetBool(ParamAccessNodeInfoForCommittee, false),
 		AccessAPI:     ctx.Params().MustGetString(ParamAccessNodeInfoAccessAPI, ""),
@@ -131,9 +133,11 @@ func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 }
 
 func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
+	validatorAddr, _ := iscp.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
+	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
 	ani := AccessNodeInfo{
 		NodePubKey:    ctx.Params().MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: iscp.BytesFromAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
+		ValidatorAddr: iscp.BytesFromAddress(validatorAddr), // Not from params, to have it validated.
 		Certificate:   ctx.Params().MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani
