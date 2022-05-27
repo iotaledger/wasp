@@ -12,13 +12,30 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"golang.org/x/xerrors"
 )
+
+func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
+	defer ch.logRequestLastBlock()
+	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	if len(results) == 0 {
+		return nil, xerrors.Errorf("request was skipped")
+	}
+	res := results[0]
+	return res.Return, res.Error
+}
+
+func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {
+	defer ch.logRequestLastBlock()
+	return ch.runRequestsSync(reqs, "off-ledger")
+}
 
 func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()

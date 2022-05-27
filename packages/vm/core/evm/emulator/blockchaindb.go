@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -328,7 +329,7 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i ui
 	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
 	r.TxHash = tx.Hash()
 	if tx.To() == nil {
-		from, _ := types.Sender(evmtypes.Signer(big.NewInt(int64(bc.GetChainID()))), tx)
+		from, _ := types.Sender(evmutil.Signer(big.NewInt(int64(bc.GetChainID()))), tx)
 		r.ContractAddress = crypto.CreateAddress(from, tx.Nonce())
 	}
 	r.GasUsed = r.CumulativeGasUsed

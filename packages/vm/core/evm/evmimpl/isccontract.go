@@ -86,9 +86,6 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "getSenderAccount":
 		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Request().SenderAccount())}
 
-	case "getSenderAddress":
-		outs = []interface{}{isccontract.WrapIotaAddress(c.ctx.Request().SenderAddress())}
-
 	case "getAllowanceIotas":
 		outs = []interface{}{c.ctx.Request().Allowance().Assets.Iotas}
 

@@ -21,41 +21,26 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
-	T         *testing.T
-	Server    *rpc.Server
-	Client    *ethclient.Client
-	RawClient *rpc.Client
-	ChainID   int
+	T               *testing.T
+	Client          *ethclient.Client
+	RawClient       *rpc.Client
+	ChainID         uint16
+	accountManager  *jsonrpc.AccountManager
+	WaitTxConfirmed func(common.Hash) error
 }
 
 func (e *Env) signer() types.Signer {
-	return evmtypes.Signer(big.NewInt(int64(e.ChainID)))
+	return evmutil.Signer(big.NewInt(int64(e.ChainID)))
 }
 
-var RequestFundsAmount = big.NewInt(1e18) // 1 ETH
-
-func (e *Env) RequestFunds(target common.Address) *types.Transaction {
-	nonce, err := e.Client.NonceAt(context.Background(), evmtest.FaucetAddress, nil)
-	require.NoError(e.T, err)
-	tx, err := types.SignTx(
-		types.NewTransaction(nonce, target, RequestFundsAmount, params.TxGas, evm.GasPrice, nil),
-		e.signer(),
-		evmtest.FaucetKey,
-	)
-	require.NoError(e.T, err)
-	err = e.Client.SendTransaction(context.Background(), tx)
-	require.NoError(e.T, err)
-	return tx
-}
-
-func (e *Env) DeployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (*types.Transaction, common.Address) {
+func (e *Env) DeployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (*types.Transaction, *types.Receipt, common.Address) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := e.NonceAt(creatorAddress)
@@ -82,10 +67,39 @@ func (e *Env) DeployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 	)
 	require.NoError(e.T, err)
 
-	err = e.Client.SendTransaction(context.Background(), tx)
-	require.NoError(e.T, err)
+	receipt := e.mustSendTransactionAndWait(tx)
 
-	return tx, crypto.CreateAddress(creatorAddress, nonce)
+	addr := crypto.CreateAddress(creatorAddress, nonce)
+
+	e.T.Logf("deployed EVM contract %s", addr)
+	return tx, receipt, addr
+}
+
+func (e *Env) mustSendTransactionAndWait(tx *types.Transaction) *types.Receipt {
+	r, err := e.sendTransactionAndWait(tx)
+	require.NoError(e.T, err)
+	return r
+}
+
+func (e *Env) sendTransactionAndWait(tx *types.Transaction) (*types.Receipt, error) {
+	if err := e.Client.SendTransaction(context.Background(), tx); err != nil {
+		return nil, err
+	}
+
+	if e.WaitTxConfirmed != nil {
+		if err := e.WaitTxConfirmed(tx.Hash()); err != nil {
+			return nil, err
+		}
+	}
+
+	return e.TxReceipt(tx.Hash())
+}
+
+func (e *Env) deployStorageContract(creator *ecdsa.PrivateKey, initialValue uint32) (*types.Transaction, common.Address, abi.ABI) {
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(e.T, err)
+	tx, _, addr := e.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, initialValue)
+	return tx, addr, contractABI
 }
 
 func concatenate(a, b []byte) []byte {
@@ -262,8 +276,10 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	return logs
 }
 
-func (e *Env) TestRPCGetLogs() {
-	creator, creatorAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
+type FuncNewAccountWithL2Funds func(iotas ...uint64) (*ecdsa.PrivateKey, common.Address)
+
+func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
+	creator, creatorAddress := newAccountWithL2Funds()
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(e.T, err)
 	contractAddress := crypto.CreateAddress(creatorAddress, e.NonceAt(creatorAddress))
@@ -274,43 +290,35 @@ func (e *Env) TestRPCGetLogs() {
 
 	require.Empty(e.T, e.getLogs(filterQuery))
 
-	tx, _ := e.DeployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
-
-	receipt := e.MustTxReceipt(tx.Hash())
+	_, receipt, _ := e.DeployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 	require.Equal(e.T, 1, len(receipt.Logs))
 
 	require.Equal(e.T, 1, len(e.getLogs(filterQuery)))
 
-	recipientAddress := evmtest.AccountAddress(1)
-	nonce := hexutil.Uint64(e.NonceAt(creatorAddress))
+	_, recipientAddress := newAccountWithL2Funds()
 	callArguments, err := contractABI.Pack("transfer", recipientAddress, big.NewInt(1337))
 	value := big.NewInt(0)
-	gas := hexutil.Uint64(e.estimateGas(ethereum.CallMsg{
+	gas := e.estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
 		To:    &contractAddress,
 		Value: value,
 		Data:  callArguments,
-	}))
-	require.NoError(e.T, err)
-	txHash := e.MustSendTransaction(&jsonrpc.SendTxArgs{
-		From:     creatorAddress,
-		To:       &contractAddress,
-		Gas:      &gas,
-		GasPrice: (*hexutil.Big)(evm.GasPrice),
-		Value:    (*hexutil.Big)(value),
-		Nonce:    &nonce,
-		Data:     (*hexutil.Bytes)(&callArguments),
 	})
-
-	receipt = e.MustTxReceipt(txHash)
-	require.Equal(e.T, 1, len(receipt.Logs))
-
+	require.NoError(e.T, err)
+	transferTx, err := types.SignTx(
+		types.NewTransaction(e.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
+		e.signer(),
+		creator,
+	)
+	require.NoError(e.T, err)
+	transferReceipt := e.mustSendTransactionAndWait(transferTx)
+	require.Equal(e.T, 1, len(transferReceipt.Logs))
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
 }
 
-func (e *Env) TestRPCGasLimit() {
-	from, fromAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
-	toAddress := evmtest.AccountAddress(1)
+func (e *Env) TestRPCGasLimit(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
+	from, fromAddress := newAccountWithL2Funds()
+	_, toAddress := newAccountWithL2Funds()
 	value := big.NewInt(1)
 	nonce := e.NonceAt(fromAddress)
 	gasLimit := params.TxGas - 1
@@ -321,14 +329,14 @@ func (e *Env) TestRPCGasLimit() {
 	)
 	require.NoError(e.T, err)
 
-	err = e.Client.SendTransaction(context.Background(), tx)
+	_, err = e.sendTransactionAndWait(tx)
 	require.Error(e.T, err)
 	require.Contains(e.T, err.Error(), "insufficient funds for gas")
 }
 
-func (e *Env) TestRPCInvalidNonce() {
-	from, fromAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
-	toAddress := evmtest.AccountAddress(1)
+func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
+	from, fromAddress := newAccountWithL2Funds()
+	_, toAddress := newAccountWithL2Funds()
 	value := big.NewInt(1)
 	nonce := e.NonceAt(fromAddress) + 1
 	gasLimit := params.TxGas - 1
@@ -339,7 +347,7 @@ func (e *Env) TestRPCInvalidNonce() {
 	)
 	require.NoError(e.T, err)
 
-	err = e.Client.SendTransaction(context.Background(), tx)
+	_, err = e.sendTransactionAndWait(tx)
 	require.Error(e.T, err)
 	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
 }

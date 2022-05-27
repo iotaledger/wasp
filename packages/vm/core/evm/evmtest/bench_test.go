@@ -6,48 +6,55 @@ package evmtest
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
 
-func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
+func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
 	// setup: deploy the EVM chain
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	env := solo.New(b, &solo.InitOptions{AutoAdjustDustDeposit: true, Log: log})
-	evmChain := initEVMWithSolo(b, env)
+	s := solo.New(b, &solo.InitOptions{AutoAdjustDustDeposit: true, Log: log})
+	env := initEVMWithSolo(b, s)
 	// setup: deploy the `storage` EVM contract
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	storage := env.deployStorageContract(ethKey, 42)
+
+	gasLimit := uint64(100000)
 
 	// setup: prepare N requests that call FuncSendTransaction with an EVM tx
 	// that calls `storage.store()`
-	reqs := make([]*solo.CallParams, b.N)
+	reqs := make([]iscp.Request, b.N)
+	gasRatio := env.soloChain.EVMGasRatio()
 	for i := 0; i < b.N; i++ {
-		sender, err := crypto.GenerateKey() // send from a new address so that nonce is always 0
+		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+		tx, _ := storage.buildEthTx([]ethCallOptions{{
+			sender:   ethKey,
+			gasLimit: gasLimit,
+		}}, "store", uint32(i))
+		var err error
+		reqs[i], err = iscp.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx, &gasRatio)
 		require.NoError(b, err)
-
-		txdata, _, _ := storage.buildEthTxData([]ethCallOptions{{sender: sender}}, "store", uint32(i))
-		reqs[i] = storage.chain.buildSoloRequest(evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata)
-		reqs[i].WithMaxAffordableGasBudget()
 	}
 
-	return evmChain.soloChain, reqs
+	return env.soloChain, reqs
 }
 
 // run benchmarks with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 
-func doBenchmark(b *testing.B, f solobench.Func) {
+// BenchmarkEVMSingle sends a single Ethereum tx and waits until it is processed, N times
+func BenchmarkEVMSingle(b *testing.B) {
 	ch, reqs := initBenchmark(b)
-	f(b, ch, reqs, nil)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ch.RunOffLedgerRequest(reqs[i])
+	}
 }
 
-func BenchmarkEVMSync(b *testing.B) {
-	doBenchmark(b, solobench.RunBenchmarkSync)
-}
-
-func BenchmarkEVMAsync(b *testing.B) {
-	doBenchmark(b, solobench.RunBenchmarkAsync)
+// BenchmarkEVMMulti sends N Ethereum txs and waits for them to be processed
+func BenchmarkEVMMulti(b *testing.B) {
+	ch, reqs := initBenchmark(b)
+	b.ResetTimer()
+	ch.RunOffLedgerRequests(reqs)
 }

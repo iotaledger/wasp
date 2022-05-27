@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"golang.org/x/xerrors"
@@ -109,22 +109,42 @@ func (e *EVMEmulator) GasLimit() uint64 {
 	return e.BlockchainDB().GetGasLimit()
 }
 
-// CallContract executes a contract call, without committing changes to the state
-func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
-	res, err := e.callContract(call)
-	if err != nil {
-		return nil, err
-	}
-	return res.Return(), res.Err
-}
-
 func (e *EVMEmulator) ChainContext() core.ChainContext {
 	return &chainContext{
 		engine: ethash.NewFaker(),
 	}
 }
 
-func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+	lo := params.TxGas
+	hi := e.GasLimit()
+	lastOk := uint64(0)
+	var lastErr error
+	for hi >= lo {
+		callMsg.Gas = (lo + hi) / 2
+		res, err := e.CallContract(callMsg)
+		if err != nil {
+			return 0, err
+		}
+		if res.Err != nil {
+			lastErr = res.Err
+			lo = callMsg.Gas + 1
+		} else {
+			lastOk = callMsg.Gas
+			hi = callMsg.Gas - 1
+		}
+	}
+	if lastOk == 0 {
+		if lastErr != nil {
+			return 0, xerrors.Errorf("estimateGas failed: %s", lastErr.Error())
+		}
+		return 0, xerrors.Errorf("estimateGas failed")
+	}
+	return lastOk, nil
+}
+
+// CallContract executes a contract call, without committing changes to the state
+func (e *EVMEmulator) CallContract(call ethereum.CallMsg) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
 	if call.GasPrice == nil {
 		call.GasPrice = big.NewInt(0)
@@ -142,44 +162,40 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	result, _, err := e.applyMessage(msg, statedb, pendingHeader, msg.Gas())
-	return result, err
+	return e.applyMessage(msg, statedb, pendingHeader)
 }
 
-func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasLimit uint64) (*core.ExecutionResult, uint64, error) {
+func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header) (*core.ExecutionResult, error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
-
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
-	gasPool := core.GasPool(gasLimit)
+	gasPool := core.GasPool(msg.Gas())
 	vmEnv.Reset(txContext, statedb)
-	result, err := core.ApplyMessage(vmEnv, &messageWithGasOverride{msg, gasLimit}, &gasPool)
-	gasUsed := gasLimit - gasPool.Gas()
-	return result, gasUsed, err
+	return core.ApplyMessage(vmEnv, msg, &gasPool)
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*types.Receipt, uint64, *core.ExecutionResult, error) {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, 0, nil, xerrors.Errorf("invalid transaction: %w", err)
+		return nil, nil, xerrors.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, 0, nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, nil, err
 	}
 
-	result, gasUsed, err := e.applyMessage(msg, statedb, pendingHeader, gasLimit)
+	result, err := e.applyMessage(msg, statedb, pendingHeader)
 	if err != nil {
-		return nil, gasUsed, nil, err
+		return nil, result, err
 	}
 
 	cumulativeGasUsed := result.UsedGas
@@ -214,7 +230,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasLimit uint64) (*
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, gasUsed, result, nil
+	return receipt, result, nil
 }
 
 func (e *EVMEmulator) MintBlock() {
@@ -339,7 +355,7 @@ func logMatches(log *types.Log, addresses []common.Address, topics [][]common.Ha
 }
 
 func (e *EVMEmulator) Signer() types.Signer {
-	return evmtypes.Signer(e.chainConfig.ChainID)
+	return evmutil.Signer(e.chainConfig.ChainID)
 }
 
 // callMsg implements core.Message to allow passing it as a transaction simulator.
@@ -371,14 +387,4 @@ func (c *chainContext) Engine() consensus.Engine {
 
 func (c *chainContext) GetHeader(common.Hash, uint64) *types.Header {
 	panic("not implemented")
-}
-
-// messageWithGasOverride implements core.Message overriding the Gas() function
-type messageWithGasOverride struct {
-	core.Message
-	gas uint64
-}
-
-func (m *messageWithGasOverride) Gas() uint64 {
-	return m.gas
 }

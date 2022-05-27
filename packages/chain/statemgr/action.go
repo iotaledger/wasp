@@ -166,8 +166,7 @@ func (sm *stateManager) storeSyncingData() {
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
 		SyncedStateCommitment: solidStateCommitment,
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
-		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
-		StateOutputID:         sm.stateOutput.ID(),
+		StateOutput:           sm.stateOutput,
 		StateOutputCommitment: outputStateCommitment,
 		StateOutputTimestamp:  sm.stateOutputTimestamp,
 	})

@@ -291,6 +291,7 @@ func (c *consensus) refreshConsensusInfo() {
 		StateIndex: index,
 		Mempool:    c.mempool.Info(timeData),
 		TimerTick:  int(c.lastTimerTick.Load()),
+		TimeData:   timeData,
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
 		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v, "+
