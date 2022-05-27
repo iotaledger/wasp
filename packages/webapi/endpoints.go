@@ -53,6 +53,7 @@ func Init(
 		chainsProvider.ChainProvider(),
 		webapiutil.GetAccountBalance,
 		webapiutil.HasRequestBeenProcessed,
+		webapiutil.CheckNonce,
 		network.Self().PubKey(),
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
 		log,

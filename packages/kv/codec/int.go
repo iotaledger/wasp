@@ -206,7 +206,7 @@ func DecodeUint64(b []byte, def ...uint64) (uint64, error) {
 	return util.Uint64From8Bytes(b)
 }
 
-func MustDecodeUnt64(b []byte, def ...uint64) uint64 {
+func MustDecodeUint64(b []byte, def ...uint64) uint64 {
 	n, err := DecodeUint64(b, def...)
 	if err != nil {
 		panic(err)

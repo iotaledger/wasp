@@ -14,7 +14,8 @@ var L1 *L1Params
 func init() {
 	// setup testing parameters when running in the context of tests
 	if strings.HasSuffix(os.Args[0], ".test") ||
-		strings.HasSuffix(os.Args[0], ".test.exe") {
+		strings.HasSuffix(os.Args[0], ".test.exe") ||
+		strings.HasSuffix(os.Args[0], "__debug_bin") {
 		L1 = l1ForTesting()
 	}
 }

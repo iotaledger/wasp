@@ -25,6 +25,7 @@ import (
 type (
 	getAccountAssetsFn        func(ch chain.Chain, agentID iscp.AgentID) (*iscp.FungibleTokens, error)
 	hasRequestBeenProcessedFn func(ch chain.Chain, reqID iscp.RequestID) (bool, error)
+	checkNonceFn              func(ch chain.Chain, req iscp.Request) error
 )
 
 func AddEndpoints(
@@ -32,6 +33,7 @@ func AddEndpoints(
 	getChain chains.ChainProvider,
 	getChainBalance getAccountAssetsFn,
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
+	checkNonce checkNonceFn,
 	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
 	log *logger.Logger,
@@ -40,6 +42,7 @@ func AddEndpoints(
 		getChain:                getChain,
 		getAccountAssets:        getChainBalance,
 		hasRequestBeenProcessed: hasRequestBeenProcessed,
+		checkNonce:              checkNonce,
 		requestsCache:           expiringcache.New(cacheTTL),
 		nodePubKey:              nodePubKey,
 		log:                     log,
@@ -59,6 +62,7 @@ type offLedgerReqAPI struct {
 	getChain                chains.ChainProvider
 	getAccountAssets        getAccountAssetsFn
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
+	checkNonce              checkNonceFn
 	requestsCache           *expiringcache.ExpiringCache
 	nodePubKey              *cryptolib.PublicKey
 	log                     *logger.Logger
@@ -100,8 +104,9 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return httperrors.ServerError("internal error")
 	}
 
+	defer o.requestsCache.Set(reqID, true)
+
 	if alreadyProcessed {
-		o.requestsCache.Set(reqID, true)
 		return httperrors.BadRequest("request already processed")
 	}
 
@@ -112,11 +117,14 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return httperrors.ServerError("Unable to get account balance")
 	}
 
-	o.requestsCache.Set(reqID, true)
-
 	if assets.IsEmpty() {
 		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String()))
 	}
+
+	if err := o.checkNonce(ch, offLedgerReq); err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
+	}
+
 	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
 			ChainID: ch.ID(),

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -56,6 +57,17 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	return nil
 }
 
+func CheckNonce(req iscp.Request, maxAssumedNonce uint64) error {
+	if maxAssumedNonce <= OffLedgerNonceStrictOrderTolerance {
+		return nil
+	}
+	nonce := req.AsOffLedger().Nonce()
+	if nonce < maxAssumedNonce-OffLedgerNonceStrictOrderTolerance {
+		return fmt.Errorf("nonce %d is too old", nonce)
+	}
+	return nil
+}
+
 // checkReasonToSkipOffLedger checks reasons to skip off ledger request
 func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	// first checks if it is already in backlog
@@ -70,17 +82,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAccount())
 	})
 
-	nonce := vmctx.req.AsOffLedger().Nonce()
-	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
-		maxAssumed, OffLedgerNonceStrictOrderTolerance, nonce)
-
-	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
-		return nil
-	}
-	if nonce <= maxAssumed-OffLedgerNonceStrictOrderTolerance {
-		return fmt.Errorf("nonce %d is too old", nonce)
-	}
-	return nil
+	return CheckNonce(vmctx.req, maxAssumed)
 }
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request
