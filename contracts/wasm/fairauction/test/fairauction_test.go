@@ -14,9 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const description = "Cool NFTs for sale!"
-const deposit = 1000
-const minBid = 500
+const (
+	description = "Cool NFTs for sale!"
+	deposit     = 1000
+	minBid      = 500
+)
 
 func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, wasmtypes.ScNftID) {
 	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)

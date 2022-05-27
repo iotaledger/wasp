@@ -113,13 +113,13 @@ pub fn func_set_owner_margin(_ctx: &ScFuncContext, f: &SetOwnerMarginContext) {
 
 pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     let nft = f.params.nft().value();
-    let nfts = ctx.allowance().nft_ids();
-
-    if nfts.contains(&nft) {
+    let allowance = ctx.allowance();
+    let nfts = allowance.nft_ids();
+    if !nfts.contains(&nft) {
         ctx.panic("Missing auction nft");
     }
 
-    let transfer = ScTransfer::iotas(1);
+    let mut transfer = ScTransfer::iotas(1);
     transfer.add_nft(&nft);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     let minimum_bid = f.params.minimum_bid().value();
@@ -155,7 +155,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     if margin == 0 {
         margin = 1;
     }
-    let deposit = ctx.allowance().iotas();
+    let deposit = allowance.iotas();
     if deposit < margin {
         ctx.panic("Insufficient deposit");
     }
