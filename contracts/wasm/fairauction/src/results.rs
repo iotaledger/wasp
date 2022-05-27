@@ -12,11 +12,11 @@ use wasmlib::*;
 use crate::*;
 
 #[derive(Clone)]
-pub struct ImmutableGetInfoResults {
+pub struct ImmutableGetAuctionInfoResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableGetInfoResults {
+impl ImmutableGetAuctionInfoResults {
     // nr of bidders
     pub fn bidders(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_BIDDERS))
@@ -57,19 +57,14 @@ impl ImmutableGetInfoResults {
 		ScImmutableUint64::new(self.proxy.root(RESULT_MINIMUM_BID))
 	}
 
-    // number of tokens for sale
-    pub fn num_tokens(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(RESULT_NUM_TOKENS))
+    // NFT of NFTs for sale
+    pub fn nft(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(RESULT_NFT))
 	}
 
     // auction owner's margin in promilles
     pub fn owner_margin(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
-	}
-
-    // token of tokens for sale
-    pub fn token(&self) -> ScImmutableTokenID {
-		ScImmutableTokenID::new(self.proxy.root(RESULT_TOKEN))
 	}
 
     // timestamp when auction started
@@ -79,11 +74,11 @@ impl ImmutableGetInfoResults {
 }
 
 #[derive(Clone)]
-pub struct MutableGetInfoResults {
+pub struct MutableGetAuctionInfoResults {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableGetInfoResults {
+impl MutableGetAuctionInfoResults {
     // nr of bidders
     pub fn bidders(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_BIDDERS))
@@ -124,19 +119,14 @@ impl MutableGetInfoResults {
 		ScMutableUint64::new(self.proxy.root(RESULT_MINIMUM_BID))
 	}
 
-    // number of tokens for sale
-    pub fn num_tokens(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(RESULT_NUM_TOKENS))
+    // NFT of NFTs for sale
+    pub fn nft(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(RESULT_NFT))
 	}
 
     // auction owner's margin in promilles
     pub fn owner_margin(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_OWNER_MARGIN))
-	}
-
-    // token of tokens for sale
-    pub fn token(&self) -> ScMutableTokenID {
-		ScMutableTokenID::new(self.proxy.root(RESULT_TOKEN))
 	}
 
     // timestamp when auction started

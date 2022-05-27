@@ -60,18 +60,18 @@ export class StartAuctionContext {
 	state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState(wasmlib.ScState.proxy());
 }
 
-export class GetInfoCall {
+export class GetAuctionInfoCall {
 	func: wasmlib.ScView;
-	params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams(wasmlib.ScView.nilProxy);
-	results: sc.ImmutableGetInfoResults = new sc.ImmutableGetInfoResults(wasmlib.ScView.nilProxy);
+	params: sc.MutableGetAuctionInfoParams = new sc.MutableGetAuctionInfoParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetAuctionInfoResults = new sc.ImmutableGetAuctionInfoResults(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScViewCallContext) {
-		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetInfo);
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetAuctionInfo);
 	}
 }
 
-export class GetInfoContext {
-	params: sc.ImmutableGetInfoParams = new sc.ImmutableGetInfoParams(wasmlib.paramsProxy());
-	results: sc.MutableGetInfoResults = new sc.MutableGetInfoResults(wasmlib.ScView.nilProxy);
+export class GetAuctionInfoContext {
+	params: sc.ImmutableGetAuctionInfoParams = new sc.ImmutableGetAuctionInfoParams(wasmlib.paramsProxy());
+	results: sc.MutableGetAuctionInfoResults = new sc.MutableGetAuctionInfoResults(wasmlib.ScView.nilProxy);
 	state: sc.ImmutableFairAuctionState = new sc.ImmutableFairAuctionState(wasmlib.ScState.proxy());
 }
 
@@ -100,10 +100,10 @@ export class ScFuncs {
 		return f;
 	}
 
-	static getInfo(ctx: wasmlib.ScViewCallContext): GetInfoCall {
-		const f = new GetInfoCall(ctx);
-		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
-		f.results = new sc.ImmutableGetInfoResults(wasmlib.newCallResultsProxy(f.func));
+	static getAuctionInfo(ctx: wasmlib.ScViewCallContext): GetAuctionInfoCall {
+		const f = new GetAuctionInfoCall(ctx);
+		f.params = new sc.MutableGetAuctionInfoParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetAuctionInfoResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 }

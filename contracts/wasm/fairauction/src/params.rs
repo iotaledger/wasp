@@ -17,9 +17,9 @@ pub struct ImmutableFinalizeAuctionParams {
 }
 
 impl ImmutableFinalizeAuctionParams {
-    // token identifies the auction
-    pub fn token(&self) -> ScImmutableTokenID {
-		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+    // NFT identifies the auction
+    pub fn nft(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
@@ -29,9 +29,9 @@ pub struct MutableFinalizeAuctionParams {
 }
 
 impl MutableFinalizeAuctionParams {
-    // token identifies the auction
-    pub fn token(&self) -> ScMutableTokenID {
-		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+    // NFT identifies the auction
+    pub fn nft(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
@@ -41,9 +41,9 @@ pub struct ImmutablePlaceBidParams {
 }
 
 impl ImmutablePlaceBidParams {
-    // token identifies the auction
-    pub fn token(&self) -> ScImmutableTokenID {
-		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+    // NFT identifies the auction
+    pub fn nft(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
@@ -53,9 +53,9 @@ pub struct MutablePlaceBidParams {
 }
 
 impl MutablePlaceBidParams {
-    // token identifies the auction
-    pub fn token(&self) -> ScMutableTokenID {
-		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+    // NFT identifies the auction
+    pub fn nft(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
@@ -89,7 +89,7 @@ pub struct ImmutableStartAuctionParams {
 }
 
 impl ImmutableStartAuctionParams {
-    // description of the tokens being auctioned
+    // description of the NFTs being auctioned
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
@@ -104,9 +104,9 @@ impl ImmutableStartAuctionParams {
 		ScImmutableUint64::new(self.proxy.root(PARAM_MINIMUM_BID))
 	}
 
-    // token of the tokens being auctioned
-    pub fn token(&self) -> ScImmutableTokenID {
-		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+    // NFT of the NFTs being auctioned
+    pub fn nft(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
@@ -116,7 +116,7 @@ pub struct MutableStartAuctionParams {
 }
 
 impl MutableStartAuctionParams {
-    // description of the tokens being auctioned
+    // description of the NFTs being auctioned
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
@@ -131,32 +131,32 @@ impl MutableStartAuctionParams {
 		ScMutableUint64::new(self.proxy.root(PARAM_MINIMUM_BID))
 	}
 
-    // token of the tokens being auctioned
-    pub fn token(&self) -> ScMutableTokenID {
-		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+    // NFT of the NFTs being auctioned
+    pub fn nft(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
 #[derive(Clone)]
-pub struct ImmutableGetInfoParams {
+pub struct ImmutableGetAuctionInfoParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableGetInfoParams {
-    // token identifies the auction
-    pub fn token(&self) -> ScImmutableTokenID {
-		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+impl ImmutableGetAuctionInfoParams {
+    // NFT identifies the auction
+    pub fn nft(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableGetInfoParams {
+pub struct MutableGetAuctionInfoParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableGetInfoParams {
-    // token identifies the auction
-    pub fn token(&self) -> ScMutableTokenID {
-		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
+impl MutableGetAuctionInfoParams {
+    // NFT identifies the auction
+    pub fn nft(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }

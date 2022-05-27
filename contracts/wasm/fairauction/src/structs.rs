@@ -26,12 +26,10 @@ pub struct Auction {
     pub highest_bidder : ScAgentID,
     // minimum bid amount
     pub minimum_bid    : u64,
-    // number of tokens for sale
-    pub num_tokens     : u64,
+    // NFT of NFTs for sale
+    pub nft            : ScNftID,
     // auction owner's margin in promilles
     pub owner_margin   : u64,
-    // token of tokens for sale
-    pub token          : ScTokenID,
     // timestamp when auction started
     pub when_started   : u64,
 }
@@ -47,9 +45,8 @@ impl Auction {
             highest_bid    : uint64_decode(&mut dec),
             highest_bidder : agent_id_decode(&mut dec),
             minimum_bid    : uint64_decode(&mut dec),
-            num_tokens     : uint64_decode(&mut dec),
+            nft            : nft_id_decode(&mut dec),
             owner_margin   : uint64_decode(&mut dec),
-            token          : token_id_decode(&mut dec),
             when_started   : uint64_decode(&mut dec),
         }
     }
@@ -63,9 +60,8 @@ impl Auction {
 		uint64_encode(&mut enc, self.highest_bid);
 		agent_id_encode(&mut enc, &self.highest_bidder);
 		uint64_encode(&mut enc, self.minimum_bid);
-		uint64_encode(&mut enc, self.num_tokens);
+		nft_id_encode(&mut enc, &self.nft);
 		uint64_encode(&mut enc, self.owner_margin);
-		token_id_encode(&mut enc, &self.token);
 		uint64_encode(&mut enc, self.when_started);
         enc.buf()
     }

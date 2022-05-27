@@ -8,38 +8,38 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class MapTokenIDToImmutableAuction extends wasmtypes.ScProxy {
+export class MapNftIDToImmutableAuction extends wasmtypes.ScProxy {
 
-	getAuction(key: wasmtypes.ScTokenID): sc.ImmutableAuction {
-		return new sc.ImmutableAuction(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	getAuction(key: wasmtypes.ScNftID): sc.ImmutableAuction {
+		return new sc.ImmutableAuction(this.proxy.key(wasmtypes.nftIDToBytes(key)));
 	}
 }
 
-export class MapTokenIDToImmutableBidderList extends wasmtypes.ScProxy {
+export class MapNftIDToImmutableBidderList extends wasmtypes.ScProxy {
 
-	getBidderList(key: wasmtypes.ScTokenID): sc.ImmutableBidderList {
-		return new sc.ImmutableBidderList(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	getBidderList(key: wasmtypes.ScNftID): sc.ImmutableBidderList {
+		return new sc.ImmutableBidderList(this.proxy.key(wasmtypes.nftIDToBytes(key)));
 	}
 }
 
-export class MapTokenIDToImmutableBids extends wasmtypes.ScProxy {
+export class MapNftIDToImmutableBids extends wasmtypes.ScProxy {
 
-	getBids(key: wasmtypes.ScTokenID): sc.ImmutableBids {
-		return new sc.ImmutableBids(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	getBids(key: wasmtypes.ScNftID): sc.ImmutableBids {
+		return new sc.ImmutableBids(this.proxy.key(wasmtypes.nftIDToBytes(key)));
 	}
 }
 
 export class ImmutableFairAuctionState extends wasmtypes.ScProxy {
-	auctions(): sc.MapTokenIDToImmutableAuction {
-		return new sc.MapTokenIDToImmutableAuction(this.proxy.root(sc.StateAuctions));
+	auctions(): sc.MapNftIDToImmutableAuction {
+		return new sc.MapNftIDToImmutableAuction(this.proxy.root(sc.StateAuctions));
 	}
 
-	bidderList(): sc.MapTokenIDToImmutableBidderList {
-		return new sc.MapTokenIDToImmutableBidderList(this.proxy.root(sc.StateBidderList));
+	bidderList(): sc.MapNftIDToImmutableBidderList {
+		return new sc.MapNftIDToImmutableBidderList(this.proxy.root(sc.StateBidderList));
 	}
 
-	bids(): sc.MapTokenIDToImmutableBids {
-		return new sc.MapTokenIDToImmutableBids(this.proxy.root(sc.StateBids));
+	bids(): sc.MapNftIDToImmutableBids {
+		return new sc.MapNftIDToImmutableBids(this.proxy.root(sc.StateBids));
 	}
 
 	// default auction owner's margin in promilles
@@ -48,36 +48,36 @@ export class ImmutableFairAuctionState extends wasmtypes.ScProxy {
 	}
 }
 
-export class MapTokenIDToMutableAuction extends wasmtypes.ScProxy {
+export class MapNftIDToMutableAuction extends wasmtypes.ScProxy {
 
 	clear(): void {
 		this.proxy.clearMap();
 	}
 
-	getAuction(key: wasmtypes.ScTokenID): sc.MutableAuction {
-		return new sc.MutableAuction(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	getAuction(key: wasmtypes.ScNftID): sc.MutableAuction {
+		return new sc.MutableAuction(this.proxy.key(wasmtypes.nftIDToBytes(key)));
 	}
 }
 
-export class MapTokenIDToMutableBidderList extends wasmtypes.ScProxy {
+export class MapNftIDToMutableBidderList extends wasmtypes.ScProxy {
 
 	clear(): void {
 		this.proxy.clearMap();
 	}
 
-	getBidderList(key: wasmtypes.ScTokenID): sc.MutableBidderList {
-		return new sc.MutableBidderList(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	getBidderList(key: wasmtypes.ScNftID): sc.MutableBidderList {
+		return new sc.MutableBidderList(this.proxy.key(wasmtypes.nftIDToBytes(key)));
 	}
 }
 
-export class MapTokenIDToMutableBids extends wasmtypes.ScProxy {
+export class MapNftIDToMutableBids extends wasmtypes.ScProxy {
 
 	clear(): void {
 		this.proxy.clearMap();
 	}
 
-	getBids(key: wasmtypes.ScTokenID): sc.MutableBids {
-		return new sc.MutableBids(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+	getBids(key: wasmtypes.ScNftID): sc.MutableBids {
+		return new sc.MutableBids(this.proxy.key(wasmtypes.nftIDToBytes(key)));
 	}
 }
 
@@ -86,16 +86,16 @@ export class MutableFairAuctionState extends wasmtypes.ScProxy {
 		return new sc.ImmutableFairAuctionState(this.proxy);
 	}
 
-	auctions(): sc.MapTokenIDToMutableAuction {
-		return new sc.MapTokenIDToMutableAuction(this.proxy.root(sc.StateAuctions));
+	auctions(): sc.MapNftIDToMutableAuction {
+		return new sc.MapNftIDToMutableAuction(this.proxy.root(sc.StateAuctions));
 	}
 
-	bidderList(): sc.MapTokenIDToMutableBidderList {
-		return new sc.MapTokenIDToMutableBidderList(this.proxy.root(sc.StateBidderList));
+	bidderList(): sc.MapNftIDToMutableBidderList {
+		return new sc.MapNftIDToMutableBidderList(this.proxy.root(sc.StateBidderList));
 	}
 
-	bids(): sc.MapTokenIDToMutableBids {
-		return new sc.MapTokenIDToMutableBids(this.proxy.root(sc.StateBids));
+	bids(): sc.MapNftIDToMutableBids {
+		return new sc.MapNftIDToMutableBids(this.proxy.root(sc.StateBids));
 	}
 
 	// default auction owner's margin in promilles

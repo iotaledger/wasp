@@ -3,9 +3,9 @@
 
 use wasmlib::*;
 
-use crate::*;
 use crate::contract::*;
 use crate::structs::*;
+use crate::*;
 
 const DURATION_DEFAULT: u32 = 60;
 const DURATION_MIN: u32 = 1;
@@ -16,19 +16,19 @@ const OWNER_MARGIN_MIN: u64 = 5;
 const OWNER_MARGIN_MAX: u64 = 100;
 
 pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
-    let token = f.params.token().value();
-    let current_auction = f.state.auctions().get_auction(&token);
+    let nft = f.params.nft().value();
+    let current_auction = f.state.auctions().get_auction(&nft);
     ctx.require(current_auction.exists(), "Missing auction info");
     let auction = current_auction.value();
     if auction.highest_bid == 0 {
-        ctx.log(&("No one bid on ".to_string() + &token.to_string()));
+        ctx.log(&("No one bid on ".to_string() + &nft.to_string()));
         let mut owner_fee = auction.minimum_bid * auction.owner_margin / 1000;
         if owner_fee == 0 {
             owner_fee = 1;
         }
-        // finalizeAuction request token was probably not confirmed yet
+        // finalizeAuction request nft was probably not confirmed yet
         transfer_iotas(ctx, &ctx.contract_creator(), owner_fee - 1);
-        transfer_tokens(ctx, &auction.creator, &auction.token, auction.num_tokens);
+        transfer_nft(ctx, &auction.creator, &auction.nft);
         transfer_iotas(ctx, &auction.creator, auction.deposit - owner_fee);
         return;
     }
@@ -39,8 +39,8 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
     }
 
     // return staked bids to losers
-    let bids = f.state.bids().get_bids(&token);
-    let bidder_list = f.state.bidder_list().get_bidder_list(&token);
+    let bids = f.state.bids().get_bids(&nft);
+    let bidder_list = f.state.bidder_list().get_bidder_list(&nft);
     let size = bidder_list.length();
     for i in 0..size {
         let loser = bidder_list.get_agent_id(i).value();
@@ -50,23 +50,27 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
         }
     }
 
-    // finalizeAuction request token was probably not confirmed yet
+    // finalizeAuction request nft was probably not confirmed yet
     transfer_iotas(ctx, &ctx.contract_creator(), owner_fee - 1);
-    transfer_tokens(ctx, &auction.highest_bidder, &auction.token, auction.num_tokens);
-    transfer_iotas(ctx, &auction.creator, auction.deposit + auction.highest_bid - owner_fee);
+    transfer_nft(ctx, &auction.highest_bidder, &auction.nft);
+    transfer_iotas(
+        ctx,
+        &auction.creator,
+        auction.deposit + auction.highest_bid - owner_fee,
+    );
 }
 
 pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
     let mut bid_amount = ctx.allowance().iotas();
     ctx.require(bid_amount > 0, "Missing bid amount");
 
-    let token = f.params.token().value();
-    let current_auction = f.state.auctions().get_auction(&token);
+    let nft = f.params.nft().value();
+    let current_auction = f.state.auctions().get_auction(&nft);
     ctx.require(current_auction.exists(), "Missing auction info");
 
     let mut auction = current_auction.value();
-    let bids = f.state.bids().get_bids(&token);
-    let bidder_list = f.state.bidder_list().get_bidder_list(&token);
+    let bids = f.state.bids().get_bids(&nft);
+    let bidder_list = f.state.bidder_list().get_bidder_list(&nft);
     let caller = ctx.caller();
     let current_bid = bids.get_bid(&caller);
     if current_bid.exists() {
@@ -108,12 +112,16 @@ pub fn func_set_owner_margin(_ctx: &ScFuncContext, f: &SetOwnerMarginContext) {
 }
 
 pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
-    let token = f.params.token().value();
-    let num_tokens = ctx.allowance().balance(&token);
-    if num_tokens.is_zero() {
-        ctx.panic("Missing auction tokens");
+    let nft = f.params.nft().value();
+    let nfts = ctx.allowance().nft_ids();
+
+    if nfts.contains(&nft) {
+        ctx.panic("Missing auction nft");
     }
 
+    let transfer = ScTransfer::iotas(1);
+    transfer.add_nft(&nft);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     let minimum_bid = f.params.minimum_bid().value();
 
     // duration in minutes
@@ -152,9 +160,9 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         ctx.panic("Insufficient deposit");
     }
 
-    let current_auction = f.state.auctions().get_auction(&token);
+    let current_auction = f.state.auctions().get_auction(&nft);
     if current_auction.exists() {
-        ctx.panic("Auction for this token already exists");
+        ctx.panic("Auction for this nft already exists");
     }
 
     let auction = Auction {
@@ -165,21 +173,20 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         highest_bid: 0,
         highest_bidder: agent_id_from_bytes(&[]),
         minimum_bid: minimum_bid,
-        num_tokens: num_tokens.uint64(),
         owner_margin: owner_margin,
-        token: token,
+        nft: nft,
         when_started: ctx.timestamp(),
     };
     current_auction.set_value(&auction);
 
     let fa = ScFuncs::finalize_auction(ctx);
-    fa.params.token().set_value(&auction.token);
+    fa.params.nft().set_value(&auction.nft);
     fa.func.delay(duration * 60).post();
 }
 
-pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
-    let token = f.params.token().value();
-    let current_auction = f.state.auctions().get_auction(&token);
+pub fn view_get_auction_info(ctx: &ScViewContext, f: &GetAuctionInfoContext) {
+    let nft = f.params.nft().value();
+    let current_auction = f.state.auctions().get_auction(&nft);
     ctx.require(current_auction.exists(), "Missing auction info");
 
     let auction = current_auction.value();
@@ -188,14 +195,15 @@ pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
     f.results.description().set_value(&auction.description);
     f.results.duration().set_value(auction.duration);
     f.results.highest_bid().set_value(auction.highest_bid);
-    f.results.highest_bidder().set_value(&auction.highest_bidder);
+    f.results
+        .highest_bidder()
+        .set_value(&auction.highest_bidder);
     f.results.minimum_bid().set_value(auction.minimum_bid);
-    f.results.num_tokens().set_value(auction.num_tokens);
     f.results.owner_margin().set_value(auction.owner_margin);
-    f.results.token().set_value(&auction.token);
+    f.results.nft().set_value(&auction.nft);
     f.results.when_started().set_value(auction.when_started);
 
-    let bidder_list = f.state.bidder_list().get_bidder_list(&token);
+    let bidder_list = f.state.bidder_list().get_bidder_list(&nft);
     f.results.bidders().set_value(bidder_list.length());
 }
 
@@ -210,14 +218,13 @@ fn transfer_iotas(ctx: &ScFuncContext, agent: &ScAgentID, amount: u64) {
     ctx.send(&agent.address(), &ScTransfer::iotas(amount));
 }
 
-fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, token: &ScTokenID, amount: u64) {
-    let big_amount = ScBigInt::from_uint64(amount);
+fn transfer_nft(ctx: &ScFuncContext, agent: &ScAgentID, nft: &ScNftID) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.send(&agent.address(), &ScTransfer::tokens(token, &big_amount));
+        ctx.send(&agent.address(), &ScTransfer::nft(nft));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.send(&agent.address(), &ScTransfer::tokens(token, &big_amount));
+    ctx.send(&agent.address(), &ScTransfer::nft(nft));
 }
