@@ -9,30 +9,30 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	// token identifies the auction
-	token(): wasmtypes.ScImmutableTokenID {
-		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class MutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	// token identifies the auction
-	token(): wasmtypes.ScMutableTokenID {
-		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class ImmutablePlaceBidParams extends wasmtypes.ScProxy {
-	// token identifies the auction
-	token(): wasmtypes.ScImmutableTokenID {
-		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class MutablePlaceBidParams extends wasmtypes.ScProxy {
-	// token identifies the auction
-	token(): wasmtypes.ScMutableTokenID {
-		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
@@ -51,7 +51,7 @@ export class MutableSetOwnerMarginParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
-	// description of the tokens being auctioned
+	// description of the NFTs being auctioned
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
@@ -66,14 +66,14 @@ export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
 
-	// token of the tokens being auctioned
-	token(): wasmtypes.ScImmutableTokenID {
-		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
+	// NFT of the NFTs being auctioned
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class MutableStartAuctionParams extends wasmtypes.ScProxy {
-	// description of the tokens being auctioned
+	// description of the NFTs being auctioned
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
@@ -88,22 +88,22 @@ export class MutableStartAuctionParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
 
-	// token of the tokens being auctioned
-	token(): wasmtypes.ScMutableTokenID {
-		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
+	// NFT of the NFTs being auctioned
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
-export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
-	// token identifies the auction
-	token(): wasmtypes.ScImmutableTokenID {
-		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamToken));
+export class ImmutableGetAuctionInfoParams extends wasmtypes.ScProxy {
+	// NFT identifies the auction
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
-export class MutableGetInfoParams extends wasmtypes.ScProxy {
-	// token identifies the auction
-	token(): wasmtypes.ScMutableTokenID {
-		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamToken));
+export class MutableGetAuctionInfoParams extends wasmtypes.ScProxy {
+	// NFT identifies the auction
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }

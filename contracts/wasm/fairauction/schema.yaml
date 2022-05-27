@@ -1,8 +1,8 @@
 name: FairAuction
-description: Decentralized auction to securely sell tokens to the highest bidder
+description: Decentralized auction to securely sell NFTs to the highest bidder
 structs:
   Auction:
-    token: TokenID # token of tokens for sale
+    nft: NftID # NFT of NFTs for sale
     creator: AgentID # issuer of start_auction transaction
     deposit: Uint64 # deposit by auction owner to cover the SC fees
     description: String # auction description
@@ -10,7 +10,6 @@ structs:
     highestBid: Uint64 # the current highest bid amount
     highestBidder: AgentID # the current highest bidder
     minimumBid: Uint64 # minimum bid amount
-    numTokens: Uint64 # number of tokens for sale
     ownerMargin: Uint64 # auction owner's margin in promilles
     whenStarted: Uint64 # timestamp when auction started
   Bid:
@@ -21,35 +20,35 @@ typedefs:
   BidderList: AgentID[]
   Bids: map[AgentID]Bid
 state:
-  auctions: map[TokenID]Auction
-  bidderList: map[TokenID]BidderList
-  bids: map[TokenID]Bids
+  auctions: map[NftID]Auction
+  bidderList: map[NftID]BidderList
+  bids: map[NftID]Bids
   ownerMargin: Uint64 # default auction owner's margin in promilles
 funcs:
+  startAuction:
+    params:
+      nft: NftID # NFT of the NFTs being auctioned
+      description: String? # description of the NFTs being auctioned
+      duration: Uint32? # duration of auction in minutes
+      minimumBid: Uint64 # minimum required amount for any bid
   finalizeAuction:
     access: self # only SC itself can invoke this function
     params:
-      token: TokenID # token identifies the auction
+      nft: NftID # NFT identifies the auction
   placeBid:
     params:
-      token: TokenID # token identifies the auction
+      nft: NftID # NFT identifies the auction
   setOwnerMargin:
     access: creator # only SC creator can set owner margin
     params:
       ownerMargin: Uint64 # new SC owner margin in promilles
-  startAuction:
-    params:
-      token: TokenID # token of the tokens being auctioned
-      description: String? # description of the tokens being auctioned
-      duration: Uint32? # duration of auction in minutes
-      minimumBid: Uint64 # minimum required amount for any bid
 views:
-  getInfo:
-    params:
-      token: TokenID # token identifies the auction
+  getAuctionInfo:
+    params: 
+      nft: NftID # NFT identifies the auction
     results:
       bidders: Uint32 # nr of bidders
-      token: TokenID # token of tokens for sale
+      nft: NftID # NFT of NFTs for sale
       creator: AgentID # issuer of start_auction transaction
       deposit: Uint64 # deposit by auction owner to cover the SC fees
       description: String # auction description
@@ -57,6 +56,5 @@ views:
       highestBid: Uint64 # the current highest bid amount
       highestBidder: AgentID # the current highest bidder
       minimumBid: Uint64 # minimum bid amount
-      numTokens: Uint64 # number of tokens for sale
       ownerMargin: Uint64 # auction owner's margin in promilles
       whenStarted: Uint64 # timestamp when auction started
