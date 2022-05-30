@@ -185,10 +185,17 @@ func (c *committee) GetRandomValidators(upToN int) []*cryptolib.PublicKey {
 	validators := c.validatorNodes.OtherNodes()
 	if upToN >= len(validators) {
 		valPubKeys := make([]*cryptolib.PublicKey, 0)
-		for i := range validators {
-			valPubKeys = append(valPubKeys, validators[i].PubKey())
+		for _, validator := range validators {
+			valPubKeys = append(valPubKeys, validator.PubKey())
 		}
 		return valPubKeys
+	}
+
+	validatorIndexes := make([]uint16, len(validators))
+	i := 0
+	for index := range validators {
+		validatorIndexes[i] = index
+		i++
 	}
 
 	var b [8]byte
@@ -198,7 +205,7 @@ func (c *committee) GetRandomValidators(upToN int) []*cryptolib.PublicKey {
 	permutation.Shuffle(seed)
 	ret := make([]*cryptolib.PublicKey, 0)
 	for len(ret) < upToN {
-		i := permutation.Next()
+		i := validatorIndexes[permutation.Next()]
 		ret = append(ret, validators[i].PubKey())
 	}
 
