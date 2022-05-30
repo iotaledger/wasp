@@ -256,9 +256,13 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
+	wallet, issuerAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
-	nft, _ := mintDummyNFT(t, ch, wallet, addr)
+	nft, _ := mintDummyNFT(t, ch, wallet, issuerAddr)
+
+	require.True(t, ch.Env.HasL1NFT(issuerAddr, &nft.ID))
+	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
+	require.False(t, ch.HasL2NFT(iscp.NewAgentID(issuerAddr), &nft.ID))
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddFungibleTokens(iscp.NewTokensIotas(1_000_000)).
@@ -268,8 +272,9 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	_, err := ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 
-	require.False(t, ch.Env.HasL1NFT(addr, &nft.ID))
+	require.False(t, ch.Env.HasL1NFT(issuerAddr, &nft.ID))
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
+	require.True(t, ch.HasL2NFT(iscp.NewAgentID(issuerAddr), &nft.ID))
 
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		WithAllowance(iscp.NewAllowance(10_000, nil, []iotago.NFTID{nft.ID})).
@@ -278,8 +283,9 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	_, err = ch.PostRequestOffLedger(wdReq, wallet)
 	require.NoError(t, err)
 
-	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
+	require.True(t, ch.Env.HasL1NFT(issuerAddr, &nft.ID))
 	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
+	require.False(t, ch.HasL2NFT(iscp.NewAgentID(issuerAddr), &nft.ID))
 }
 
 func TestNFTMintToChain(t *testing.T) { run2(t, testNFTMintToChain) }

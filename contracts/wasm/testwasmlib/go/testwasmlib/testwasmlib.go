@@ -27,7 +27,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(bytes.Equal(f.Params.Bytes().Value(), byteData), "mismatch: Bytes")
 	}
 	if f.Params.ChainID().Exists() {
-		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
+		ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "mismatch: ChainID")
 	}
 	if f.Params.Hash().Exists() {
 		hash := wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210"))

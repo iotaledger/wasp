@@ -34,14 +34,52 @@ impl MutableFoundryCreateNewResults {
 }
 
 #[derive(Clone)]
+pub struct ArrayOfImmutableNftID {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfImmutableNftID {
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_nft_id(&self, index: u32) -> ScImmutableNftID {
+        ScImmutableNftID::new(self.proxy.index(index))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableAccountNFTsResults {
 	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAccountNFTsResults {
-    pub fn nft_i_ds(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(RESULT_NFT_I_DS))
+    pub fn nft_i_ds(&self) -> ArrayOfImmutableNftID {
+		ArrayOfImmutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
 	}
+}
+
+#[derive(Clone)]
+pub struct ArrayOfMutableNftID {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfMutableNftID {
+	pub fn append_nft_id(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
+    }
+
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_nft_id(&self, index: u32) -> ScMutableNftID {
+        ScMutableNftID::new(self.proxy.index(index))
+    }
 }
 
 #[derive(Clone)]
@@ -50,8 +88,8 @@ pub struct MutableAccountNFTsResults {
 }
 
 impl MutableAccountNFTsResults {
-    pub fn nft_i_ds(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(RESULT_NFT_I_DS))
+    pub fn nft_i_ds(&self) -> ArrayOfMutableNftID {
+		ArrayOfMutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
 	}
 }
 

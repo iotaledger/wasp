@@ -78,7 +78,7 @@ pub fn state_proxy() -> Proxy {
 }
 
 pub trait ScSandbox {
-    // retrieve the agent id of self contract account
+    // retrieve the agent id of this contract account
     fn account_id(&self) -> ScAgentID {
         agent_id_from_bytes(&sandbox(FN_ACCOUNT_ID, &[]))
     }
@@ -110,24 +110,24 @@ pub trait ScSandbox {
         ScImmutableDict::new(ScDict::new(&buf))
     }
 
-    // retrieve the chain id of the chain self contract lives on
-    fn chain_id(&self) -> ScChainID {
-        chain_id_from_bytes(&sandbox(FN_CHAIN_ID, &[]))
-    }
-
-    // retrieve the agent id of the owner of the chain self contract lives on
+    // retrieve the agent id of the owner of the chain this contract lives on
     fn chain_owner_id(&self) -> ScAgentID {
         agent_id_from_bytes(&sandbox(FN_CHAIN_OWNER_ID, &[]))
     }
 
-    // retrieve the hname of self contract
+    // retrieve the hname of this contract
     fn contract(&self) -> ScHname {
         hname_from_bytes(&sandbox(FN_CONTRACT, &[]))
     }
 
-    // retrieve the agent id of the creator of self contract
+    // retrieve the agent id of the creator of this contract
     fn contract_creator(&self) -> ScAgentID {
         agent_id_from_bytes(&sandbox(FN_CONTRACT_CREATOR, &[]))
+    }
+
+    // retrieve the chain id of the chain this contract lives on
+    fn current_chain_id(&self) -> ScChainID {
+        chain_id_from_bytes(&sandbox(FN_CHAIN_ID, &[]))
     }
 
     // logs informational text message
@@ -225,7 +225,7 @@ pub trait ScSandboxFunc: ScSandbox {
     }
 
     fn estimate_dust(&self, f: &ScFunc) -> u64 {
-        let req = f.post_request(ScFuncContext {}.chain_id());
+        let req = f.post_request(ScFuncContext {}.current_chain_id());
         uint64_from_bytes(&sandbox(FN_ESTIMATE_DUST, &req.to_bytes()))
     }
 
@@ -234,7 +234,7 @@ pub trait ScSandboxFunc: ScSandbox {
         sandbox(FN_EVENT, &string_to_bytes(msg));
     }
 
-    // retrieve the assets that were minted in self transaction
+    // retrieve the assets that were minted in this transaction
     fn minted(&self) -> ScBalances {
         let buf = sandbox(FN_MINTED, &[]);
         return ScAssets::new(&buf).balances();
@@ -287,7 +287,7 @@ pub trait ScSandboxFunc: ScSandbox {
     //	panic("implement me");
     //}
 
-    // retrieve the request id of self transaction
+    // retrieve the request id of this transaction
     fn request_id(&self) -> ScRequestID {
         return request_id_from_bytes(&sandbox(FN_REQUEST_ID, &[]));
     }

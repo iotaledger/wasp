@@ -104,11 +104,6 @@ export class ScSandbox {
         return new ScDict(res).immutable();
     }
 
-    // retrieve the chain id of the chain this contract lives on
-    public currentChainID(): wasmtypes.ScChainID {
-        return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null));
-    }
-
     // retrieve the agent id of the owner of the chain this contract lives on
     public chainOwnerID(): wasmtypes.ScAgentID {
         return wasmtypes.agentIDFromBytes(sandbox(FnChainOwnerID, null));
@@ -122,6 +117,11 @@ export class ScSandbox {
     // retrieve the agent id of the creator of this contract
     public contractCreator(): wasmtypes.ScAgentID {
         return wasmtypes.agentIDFromBytes(sandbox(FnContractCreator, null));
+    }
+
+    // retrieve the chain id of the chain this contract lives on
+    public currentChainID(): wasmtypes.ScChainID {
+        return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null));
     }
 
     // logs informational text message

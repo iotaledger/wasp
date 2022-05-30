@@ -44,7 +44,7 @@ export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainCon
 export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.CheckContextFromFullEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
     ctx.require(f.params.caller().value().equals(ctx.caller()), "fail: caller");
-    ctx.require(f.params.chainID().value().equals(ctx.chainID()), "fail: chainID");
+    ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
     ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
@@ -166,7 +166,7 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
-    ctx.require(f.params.chainID().value().equals(ctx.chainID()), "fail: chainID");
+    ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
     ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }

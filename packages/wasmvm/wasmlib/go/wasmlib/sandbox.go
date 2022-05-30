@@ -98,11 +98,6 @@ func (s ScSandbox) callWithAllowance(hContract, hFunction wasmtypes.ScHname, par
 	return NewScDictFromBytes(res).Immutable()
 }
 
-// retrieve the chain id of the chain this contract lives on
-func (s ScSandbox) ChainID() wasmtypes.ScChainID {
-	return wasmtypes.ChainIDFromBytes(Sandbox(FnChainID, nil))
-}
-
 // retrieve the agent id of the owner of the chain this contract lives on
 func (s ScSandbox) ChainOwnerID() wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(Sandbox(FnChainOwnerID, nil))
@@ -116,6 +111,11 @@ func (s ScSandbox) Contract() wasmtypes.ScHname {
 // retrieve the agent id of the creator of this contract
 func (s ScSandbox) ContractCreator() wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(Sandbox(FnContractCreator, nil))
+}
+
+// retrieve the chain id of the chain this contract lives on
+func (s ScSandbox) CurrentChainID() wasmtypes.ScChainID {
+	return wasmtypes.ChainIDFromBytes(Sandbox(FnChainID, nil))
 }
 
 // logs informational text message

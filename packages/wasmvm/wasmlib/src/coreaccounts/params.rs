@@ -239,8 +239,8 @@ pub struct ImmutableNftDataParams {
 }
 
 impl ImmutableNftDataParams {
-    pub fn nft_id(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(PARAM_NFT_ID))
+    pub fn nft_id(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_NFT_ID))
 	}
 }
 
@@ -250,7 +250,7 @@ pub struct MutableNftDataParams {
 }
 
 impl MutableNftDataParams {
-    pub fn nft_id(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(PARAM_NFT_ID))
+    pub fn nft_id(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_NFT_ID))
 	}
 }

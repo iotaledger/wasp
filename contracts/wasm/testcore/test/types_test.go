@@ -15,9 +15,9 @@ func TestTypesFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.PassTypesFull(ctx)
-		f.Params.Address().SetValue(ctx.ChainID().Address())
+		f.Params.Address().SetValue(ctx.CurrentChainID().Address())
 		f.Params.AgentID().SetValue(ctx.Originator().ScAgentID())
-		f.Params.ChainID().SetValue(ctx.ChainID())
+		f.Params.ChainID().SetValue(ctx.CurrentChainID())
 		f.Params.ContractID().SetValue(ctx.AccountID())
 		f.Params.Hash().SetValue(ctx.Cvt.ScHash(hashing.HashStrings("Hash")))
 		f.Params.Hname().SetValue(ctx.Cvt.ScHname(iscp.Hn("Hname")))
@@ -37,9 +37,9 @@ func TestTypesView(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		v := testcore.ScFuncs.PassTypesView(ctx)
-		v.Params.Address().SetValue(ctx.ChainID().Address())
+		v.Params.Address().SetValue(ctx.CurrentChainID().Address())
 		v.Params.AgentID().SetValue(ctx.Originator().ScAgentID())
-		v.Params.ChainID().SetValue(ctx.ChainID())
+		v.Params.ChainID().SetValue(ctx.CurrentChainID())
 		v.Params.ContractID().SetValue(ctx.AccountID())
 		v.Params.Hash().SetValue(ctx.Cvt.ScHash(hashing.HashStrings("Hash")))
 		v.Params.Hname().SetValue(ctx.Cvt.ScHname(iscp.Hn("Hname")))
