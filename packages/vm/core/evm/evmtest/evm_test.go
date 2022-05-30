@@ -595,3 +595,16 @@ func TestISCCall(t *testing.T) {
 	require.NoError(env.solo.T, err)
 	require.EqualValues(t, 42, codec.MustDecodeInt64(r.MustGet(inccounter.VarCounter)))
 }
+
+func TestFibonacciContract(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	fibo := env.deployFibonacciContract(ethKey)
+	require.EqualValues(t, 1, env.getBlockNumber())
+
+	res, err := fibo.fib(7)
+	require.NoError(t, err)
+	t.Log("evm gas used:", res.evmReceipt.GasUsed)
+	t.Log("iscp gas used:", res.iscpReceipt.GasBurned)
+	t.Log("iscpc gas fee:", res.iscpReceipt.GasFeeCharged)
+}

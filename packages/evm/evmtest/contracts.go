@@ -53,3 +53,12 @@ var (
 	iscTestContractBytecodeHex string
 	ISCTestContractBytecode    = common.FromHex(strings.TrimSpace(iscTestContractBytecodeHex))
 )
+
+//go:generate solc --abi --bin --overwrite Fibonacci.sol -o .
+var (
+	//go:embed Fibonacci.abi
+	FibonacciContractABI string
+	//go:embed Fibonacci.bin
+	fibonacciContractBytecodeHex string
+	FibonacciContractByteCode    = common.FromHex(strings.TrimSpace(fibonacciContractBytecodeHex))
+)

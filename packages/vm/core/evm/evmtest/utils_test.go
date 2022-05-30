@@ -70,6 +70,10 @@ type loopContractInstance struct {
 	*evmContractInstance
 }
 
+type fibonacciContractInstance struct {
+	*evmContractInstance
+}
+
 type iotaCallOptions struct {
 	wallet    *cryptolib.KeyPair
 	before    func(*solo.CallParams)
@@ -235,6 +239,10 @@ func (e *soloChainEnv) deployERC20Contract(creator *ecdsa.PrivateKey, name, symb
 
 func (e *soloChainEnv) deployLoopContract(creator *ecdsa.PrivateKey) *loopContractInstance {
 	return &loopContractInstance{e.deployContract(creator, evmtest.LoopContractABI, evmtest.LoopContractBytecode)}
+}
+
+func (e *soloChainEnv) deployFibonacciContract(creator *ecdsa.PrivateKey) *fibonacciContractInstance {
+	return &fibonacciContractInstance{e.deployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
 }
 
 func (e *soloChainEnv) signer() types.Signer {
@@ -433,6 +441,10 @@ func (e *erc20ContractInstance) transfer(recipientAddress common.Address, amount
 
 func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, err error) {
 	return l.callFn(opts, "loop")
+}
+
+func (f *fibonacciContractInstance) fib(n uint32, opts ...ethCallOptions) (res callFnResult, err error) {
+	return f.callFn(opts, "fib", n)
 }
 
 func generateEthereumKey(t testing.TB) (*ecdsa.PrivateKey, common.Address) {
