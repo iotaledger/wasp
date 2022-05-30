@@ -75,7 +75,7 @@ func TestGetInitialState(t *testing.T) {
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.True(t, trie.EqualCommitments(state.OriginStateCommitment(), trie.RootCommitment(manager.solidState.TrieNodeStore())))
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
-	require.EqualValues(t, 0, syncInfo.StateOutputBlockIndex)
+	require.EqualValues(t, 0, syncInfo.StateOutput.GetStateIndex())
 }
 
 func TestGetNextState(t *testing.T) {

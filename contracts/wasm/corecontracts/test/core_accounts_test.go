@@ -20,7 +20,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const dustAllowance = 1 * iscp.Mi
+const (
+	dustAllowance = 1 * iscp.Mi
+	nftMetadata   = "NFT metadata"
+)
 
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
@@ -382,11 +385,51 @@ func TestFoundryOutput(t *testing.T) {
 }
 
 func TestAccountNFTs(t *testing.T) {
-	// TODO
-	t.SkipNow()
+	ctx := setupAccounts(t)
+	user := ctx.NewSoloAgent()
+	nftID := ctx.MintNFT(user, []byte(nftMetadata))
+	userAddr, _ := iscp.AddressFromAgentID(user.AgentID())
+
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscpNFTID(&nftID)))
+
+	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
+	transfer := wasmlib.NewScTransferNFT(&nftID)
+	fd.Func.Transfer(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscpNFTID(&nftID)))
+
+	v := coreaccounts.ScFuncs.AccountNFTs(ctx)
+	v.Params.AgentID().SetValue(user.ScAgentID())
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 1, v.Results.NftIDs().Length())
+	require.EqualValues(t, nftID, v.Results.NftIDs().GetNftID(0).Value())
 }
 
 func TestNFTData(t *testing.T) {
-	// TODO
-	t.SkipNow()
+	ctx := setupAccounts(t)
+	user := ctx.NewSoloAgent()
+	nftID := ctx.MintNFT(user, []byte(nftMetadata))
+	userAddr, _ := iscp.AddressFromAgentID(user.AgentID())
+
+	iscpNFTID := ctx.Cvt.IscpNFTID(&nftID)
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscpNFTID))
+
+	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
+	transfer := wasmlib.NewScTransferNFT(&nftID)
+	fd.Func.Transfer(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscpNFTID))
+
+	v := coreaccounts.ScFuncs.NftData(ctx)
+	v.Params.NftID().SetValue(nftID)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	nftData, err := iscp.NFTFromBytes(v.Results.NftData().Value())
+	require.NoError(t, err)
+	require.EqualValues(t, *iscpNFTID, nftData.ID)
+	require.EqualValues(t, userAddr, nftData.Issuer)
+	require.EqualValues(t, []byte(nftMetadata), nftData.Metadata)
 }

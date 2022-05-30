@@ -24,7 +24,7 @@ func TestSerializeRequestData(t *testing.T) {
 
 		reqBack := req2.(*OffLedgerRequestData)
 		require.EqualValues(t, req.ID(), reqBack.ID())
-		require.True(t, req.SenderAddress().Equal(reqBack.SenderAddress()))
+		require.True(t, req.SenderAccount().Equals(reqBack.SenderAccount()))
 
 		serialized2 := req2.Bytes()
 		require.True(t, bytes.Equal(serialized, serialized2))
@@ -65,7 +65,7 @@ func TestSerializeRequestData(t *testing.T) {
 		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(&chainID, requestMetadata.SenderContract)))
 		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 		require.EqualValues(t, req.ID(), req2.ID())
-		require.True(t, req.SenderAddress().Equal(req2.SenderAddress()))
+		require.True(t, req.SenderAccount().Equals(req2.SenderAccount()))
 
 		serialized2 := req2.Bytes()
 		require.True(t, bytes.Equal(serialized, serialized2))

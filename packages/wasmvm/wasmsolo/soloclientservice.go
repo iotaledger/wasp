@@ -45,7 +45,7 @@ func (s *SoloClientService) CallViewByHname(chainID *iscp.ChainID, hContract, hF
 }
 
 func (s *SoloClientService) Event(msg string) {
-	msg = "vmmsg " + s.ctx.ChainID().String() + " 0 " + msg
+	msg = "vmmsg " + s.ctx.CurrentChainID().String() + " 0 " + msg
 	s.msg <- strings.Split(msg, " ")
 }
 

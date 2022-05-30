@@ -329,18 +329,11 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
-	defer ch.logRequestLastBlock()
-
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
-	if len(results) == 0 {
-		return nil, xerrors.Errorf("request was skipped")
-	}
-	res := results[0]
-	return res.Return, res.Error
+	return ch.RunOffLedgerRequest(r)
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {

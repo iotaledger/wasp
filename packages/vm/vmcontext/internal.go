@@ -104,7 +104,7 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID
 func (vmctx *VMContext) GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens {
 	var ret *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetAssets(s, agentID)
+		ret = accounts.GetAccountAssets(s, agentID)
 		if ret == nil {
 			ret = &iscp.FungibleTokens{}
 		}

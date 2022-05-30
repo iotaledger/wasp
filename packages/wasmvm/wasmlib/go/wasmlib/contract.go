@@ -9,7 +9,7 @@ import (
 )
 
 type ScFuncCallContext interface {
-	ChainID() wasmtypes.ScChainID
+	CurrentChainID() wasmtypes.ScChainID
 	InitFuncCallContext()
 }
 
@@ -155,7 +155,7 @@ func (f *ScFunc) OfContract(hContract wasmtypes.ScHname) *ScFunc {
 }
 
 func (f *ScFunc) Post() {
-	f.PostToChain(f.ctx.ChainID())
+	f.PostToChain(f.ctx.CurrentChainID())
 }
 
 func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {

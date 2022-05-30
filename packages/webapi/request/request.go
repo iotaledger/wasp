@@ -23,9 +23,9 @@ import (
 )
 
 type (
-	getAccountAssetsFn        func(ch chain.Chain, agentID iscp.AgentID) (*iscp.FungibleTokens, error)
-	hasRequestBeenProcessedFn func(ch chain.Chain, reqID iscp.RequestID) (bool, error)
-	checkNonceFn              func(ch chain.Chain, req iscp.Request) error
+	getAccountAssetsFn        func(ch chain.ChainCore, agentID iscp.AgentID) (*iscp.FungibleTokens, error)
+	hasRequestBeenProcessedFn func(ch chain.ChainCore, reqID iscp.RequestID) (bool, error)
+	checkNonceFn              func(ch chain.ChainCore, req iscp.Request) error
 )
 
 func AddEndpoints(
@@ -150,7 +150,7 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *iscp.OffLedgerRequ
 		}
 		rGeneric, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
-			return nil, nil, httperrors.BadRequest(fmt.Sprintf("error constructing off-ledger request from base64 string: %q", r.Request))
+			return nil, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
 		}
 		var ok bool
 		if req, ok = rGeneric.(*iscp.OffLedgerRequestData); !ok {

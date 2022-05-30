@@ -21,7 +21,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(wasmtypes.bytesCompare(f.params.bytes().value(), byteData) == 0, "mismatch: Bytes");
     }
     if ((f.params.chainID().exists())) {
-        ctx.require(f.params.chainID().value().equals(ctx.chainID()), "mismatch: ChainID");
+        ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "mismatch: ChainID");
     }
     if ((f.params.hash().exists())) {
         const hash = wasmtypes.hashFromBytes(wasmtypes.stringToBytes("0123456789abcdeffedcba9876543210"));

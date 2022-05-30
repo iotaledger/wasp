@@ -62,7 +62,7 @@ func TestCreditDebit1(t *testing.T) {
 	expected := iscp.NewFungibleTokens(43, nil).AddNativeTokens(dummyAssetID, big.NewInt(4))
 	require.True(t, expected.Equals(total))
 
-	userAssets := GetAssets(state, agentID1)
+	userAssets := GetAccountAssets(state, agentID1)
 	require.EqualValues(t, 43, userAssets.Iotas)
 	require.Zero(t, userAssets.Tokens.MustSet()[dummyAssetID].Amount.Cmp(big.NewInt(4)))
 	checkLedgerT(t, state, "cp2")
@@ -295,7 +295,7 @@ func TestDebitAll(t *testing.T) {
 	require.EqualValues(t, 0, len(accs))
 	require.True(t, ok)
 
-	assets := GetAssets(state, agentID1)
+	assets := GetAccountAssets(state, agentID1)
 	require.True(t, assets.IsEmpty())
 
 	assets = GetTotalL2Assets(state)

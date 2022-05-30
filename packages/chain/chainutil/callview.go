@@ -1,4 +1,4 @@
-package webapiutil
+package chainutil
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"

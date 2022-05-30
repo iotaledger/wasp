@@ -225,7 +225,12 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
-	nc.log.Debugf("Posted transaction: %v", tx)
+	txID, err := tx.ID()
+	if err == nil {
+		nc.log.Debugf("Posted transaction id %v", iscp.TxID(txID))
+	} else {
+		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
+	}
 	return txMsg, nil
 }
 

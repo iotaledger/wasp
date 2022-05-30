@@ -20,7 +20,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.bytes().value() == byte_data, "mismatch: Bytes");
     }
     if f.params.chain_id().exists() {
-        ctx.require(f.params.chain_id().value() == ctx.chain_id(), "mismatch: ChainID");
+        ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "mismatch: ChainID");
     }
     if f.params.hash().exists() {
         let hash = hash_from_bytes("0123456789abcdeffedcba9876543210".as_bytes());

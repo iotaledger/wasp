@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
@@ -81,11 +82,11 @@ func (ch *Chain) L2NFTs(agentID iscp.AgentID) []iotago.NFTID {
 	ret := make([]iotago.NFTID, 0)
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
-	nftIDsBin, err := res.Get(accounts.ParamNFTIDs)
-	require.NoError(ch.Env.T, err)
-	for i := 0; i < len(nftIDsBin); i += iotago.NFTIDLength {
+	nftIDs := collections.NewArray16ReadOnly(res, accounts.ParamNFTIDs)
+	nftLen := nftIDs.MustLen()
+	for i := uint16(0); i < nftLen; i++ {
 		nftID := iotago.NFTID{}
-		copy(nftID[:], nftIDsBin[i:i+iotago.NFTIDLength])
+		copy(nftID[:], nftIDs.MustGetAt(i))
 		ret = append(ret, nftID)
 	}
 	return ret
@@ -168,9 +169,10 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and ftokens for the call
 const (
-	DestroyTokensGasBudgetIotas   = 1 * iscp.Mi
-	SendToL2AccountGasBudgetIotas = 1 * iscp.Mi
-	DestroyFoundryGasBudgetIotas  = 1 * iscp.Mi
+	DestroyTokensGasBudgetIotas       = 1 * iscp.Mi
+	SendToL2AccountGasBudgetIotas     = 1 * iscp.Mi
+	DestroyFoundryGasBudgetIotas      = 1 * iscp.Mi
+	TransferAllowanceToGasBudgetIotas = 1 * iscp.Mi
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -309,13 +311,14 @@ func (ch *Chain) DepositAssetsToL2(assets *iscp.FungibleTokens, user *cryptolib.
 }
 
 // TransferAllowanceTo sends an on-ledger request to transfer funds to target account (sends extra iotas to the sender account to cover gas)
-func (ch *Chain) TransferAllowanceTo(allowance *iscp.FungibleTokens, targetAccount iscp.AgentID, wallet *cryptolib.KeyPair) error {
+func (ch *Chain) TransferAllowanceTo(allowance *iscp.FungibleTokens, targetAccount iscp.AgentID, forceOpenAccount bool, wallet *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
-			accounts.ParamAgentID: codec.EncodeAgentID(targetAccount),
+			accounts.ParamAgentID:          codec.EncodeAgentID(targetAccount),
+			accounts.ParamForceOpenAccount: codec.EncodeBool(forceOpenAccount),
 		}).
 			WithAllowance(iscp.NewAllowanceFungibleTokens(allowance)).
-			WithFungibleTokens(allowance.Clone().AddIotas(1*iscp.Mi)).
+			WithFungibleTokens(allowance.Clone().AddIotas(TransferAllowanceToGasBudgetIotas)).
 			WithGasBudget(math.MaxUint64),
 		wallet,
 	)

@@ -13,38 +13,38 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-type evmChainInstance struct {
-	t            testing.TB
-	solo         *solo.Solo
-	soloChain    *solo.Chain
-	faucetKey    *ecdsa.PrivateKey
-	faucetSupply *big.Int
-	chainID      int
+var latestBlock = rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
+
+type soloChainEnv struct {
+	t          testing.TB
+	solo       *solo.Solo
+	soloChain  *solo.Chain
+	evmChainID uint16
+	evmChain   *jsonrpc.EVMChain
 }
 
 type evmContractInstance struct {
-	chain         *evmChainInstance
+	chain         *soloChainEnv
 	defaultSender *ecdsa.PrivateKey
 	address       common.Address
 	abi           abi.ABI
@@ -77,12 +77,13 @@ type iotaCallOptions struct {
 }
 
 type ethCallOptions struct {
-	iota   iotaCallOptions
-	sender *ecdsa.PrivateKey
-	value  *big.Int
+	sender    *ecdsa.PrivateKey
+	value     *big.Int
+	allowance *iscp.Allowance
+	gasLimit  uint64
 }
 
-func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
+func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *soloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustDustDeposit: true,
 		Debug:                 true,
@@ -94,26 +95,18 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmC
 	return initEVMWithSolo(t, env)
 }
 
-func initEVMWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
-	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-	chainID := evm.DefaultChainID
-	return &evmChainInstance{
-		t:    t,
-		solo: env,
-		soloChain: env.NewChain(nil, "ch1", dict.Dict{
-			root.ParamEVM(evm.FieldChainID): codec.EncodeUint16(uint16(chainID)),
-			root.ParamEVM(evm.FieldGenesisAlloc): evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
-				crypto.PubkeyToAddress(faucetKey.PublicKey): {Balance: faucetSupply},
-			}),
-		}),
-		faucetKey:    faucetKey,
-		faucetSupply: faucetSupply,
-		chainID:      chainID,
+func initEVMWithSolo(t testing.TB, env *solo.Solo) *soloChainEnv {
+	soloChain := env.NewChain(nil, "ch1")
+	return &soloChainEnv{
+		t:          t,
+		solo:       env,
+		soloChain:  soloChain,
+		evmChainID: evm.DefaultChainID,
+		evmChain:   soloChain.EVM(),
 	}
 }
 
-func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCallOptions {
+func (e *soloChainEnv) parseIotaCallOptions(opts []iotaCallOptions) iotaCallOptions {
 	if len(opts) == 0 {
 		opts = []iotaCallOptions{{}}
 	}
@@ -124,13 +117,9 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	return opt
 }
 
-func (e *evmChainInstance) buildSoloRequest(funName string, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(evm.Contract.Name, funName, params...)
-}
-
-func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
+func (e *soloChainEnv) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
 	opt := e.parseIotaCallOptions(opts)
-	req := e.buildSoloRequest(funName, params...)
+	req := solo.NewCallParams(evm.Contract.Name, funName, params...)
 	if opt.before != nil {
 		opt.before(req)
 	}
@@ -155,7 +144,7 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 	return ret, nil
 }
 
-func (e *evmChainInstance) resolveError(err error) error {
+func (e *soloChainEnv) resolveError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -166,7 +155,7 @@ func (e *evmChainInstance) resolveError(err error) error {
 	return err
 }
 
-func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
+func (e *soloChainEnv) callView(funName string, params ...interface{}) (dict.Dict, error) {
 	ret, err := e.soloChain.CallView(evm.Contract.Name, funName, params...)
 	if err != nil {
 		return nil, fmt.Errorf("CallView failed: %w", e.resolveError(err))
@@ -174,32 +163,25 @@ func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict
 	return ret, nil
 }
 
-func (e *evmChainInstance) setBlockTime(t uint32) {
-	_, err := e.postRequest(nil, evm.FuncSetBlockTime.Name, evm.FieldBlockTime, codec.EncodeUint32(t))
+func (e *soloChainEnv) getBlockNumber() uint64 {
+	n, err := e.evmChain.BlockNumber()
 	require.NoError(e.t, err)
+	return n.Uint64()
 }
 
-func (e *evmChainInstance) getBlockNumber() uint64 {
-	ret, err := e.callView(evm.FuncGetBlockNumber.Name)
-	require.NoError(e.t, err)
-	return new(big.Int).SetBytes(ret.MustGet(evm.FieldResult)).Uint64()
-}
-
-func (e *evmChainInstance) getBlockByNumber(n uint64) *types.Block {
-	ret, err := e.callView(evm.FuncGetBlockByNumber.Name, evm.FieldBlockNumber, new(big.Int).SetUint64(n).Bytes())
-	require.NoError(e.t, err)
-	block, err := evmtypes.DecodeBlock(ret.MustGet(evm.FieldResult))
+func (e *soloChainEnv) getBlockByNumber(n uint64) *types.Block {
+	block, err := e.evmChain.BlockByNumber(new(big.Int).SetUint64(n))
 	require.NoError(e.t, err)
 	return block
 }
 
-func (e *evmChainInstance) getCode(addr common.Address) []byte {
-	ret, err := e.callView(evm.FuncGetCode.Name, evm.FieldAddress, addr.Bytes())
+func (e *soloChainEnv) getCode(addr common.Address) []byte {
+	ret, err := e.evmChain.Code(addr, latestBlock)
 	require.NoError(e.t, err)
-	return ret.MustGet(evm.FieldResult)
+	return ret
 }
 
-func (e *evmChainInstance) getGasRatio() util.Ratio32 {
+func (e *soloChainEnv) getGasRatio() util.Ratio32 {
 	ret, err := e.callView(evm.FuncGetGasRatio.Name)
 	require.NoError(e.t, err)
 	ratio, err := codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
@@ -207,24 +189,18 @@ func (e *evmChainInstance) getGasRatio() util.Ratio32 {
 	return ratio
 }
 
-func (e *evmChainInstance) setGasRatio(newGasRatio util.Ratio32, opts ...iotaCallOptions) error {
+func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iotaCallOptions) error {
 	_, err := e.postRequest(opts, evm.FuncSetGasRatio.Name, evm.FieldGasRatio, newGasRatio)
 	return err
 }
 
-func (e *evmChainInstance) faucetAddress() common.Address {
-	return crypto.PubkeyToAddress(e.faucetKey.PublicKey)
-}
-
-func (e *evmChainInstance) getBalance(addr common.Address) *big.Int {
-	ret, err := e.callView(evm.FuncGetBalance.Name, evm.FieldAddress, addr.Bytes())
+func (e *soloChainEnv) getBalance(addr common.Address) *big.Int {
+	bal, err := e.evmChain.Balance(addr, latestBlock)
 	require.NoError(e.t, err)
-	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evm.FieldResult))
 	return bal
 }
 
-func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
+func (e *soloChainEnv) getNonce(addr common.Address) uint64 {
 	ret, err := e.callView(evm.FuncGetNonce.Name, evm.FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
 	nonce, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
@@ -232,7 +208,7 @@ func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-func (e *evmChainInstance) ISCContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+func (e *soloChainEnv) ISCContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
 	iscABI, err := abi.JSON(strings.NewReader(isccontract.ABI))
 	require.NoError(e.t, err)
 	return &iscContractInstance{
@@ -245,27 +221,27 @@ func (e *evmChainInstance) ISCContract(defaultSender *ecdsa.PrivateKey) *iscCont
 	}
 }
 
-func (e *evmChainInstance) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
+func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
-func (e *evmChainInstance) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
+func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
 	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, n)}
 }
 
-func (e *evmChainInstance) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
+func (e *soloChainEnv) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
 	return &erc20ContractInstance{e.deployContract(creator, evmtest.ERC20ContractABI, evmtest.ERC20ContractBytecode, name, symbol)}
 }
 
-func (e *evmChainInstance) deployLoopContract(creator *ecdsa.PrivateKey) *loopContractInstance {
+func (e *soloChainEnv) deployLoopContract(creator *ecdsa.PrivateKey) *loopContractInstance {
 	return &loopContractInstance{e.deployContract(creator, evmtest.LoopContractABI, evmtest.LoopContractBytecode)}
 }
 
-func (e *evmChainInstance) signer() types.Signer {
-	return evmtypes.Signer(big.NewInt(int64(e.chainID)))
+func (e *soloChainEnv) signer() types.Signer {
+	return evmutil.Signer(big.NewInt(int64(e.evmChainID)))
 }
 
-func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
+func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := e.getNonce(creatorAddress)
@@ -281,32 +257,23 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	value := big.NewInt(0)
 
+	gasLimit, err := e.evmChain.EstimateGas(ethereum.CallMsg{
+		From:     creatorAddress,
+		GasPrice: evm.GasPrice,
+		Value:    value,
+		Data:     data,
+	}, nil)
+	require.NoError(e.t, err)
+
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, 0, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
 		e.signer(),
-		e.faucetKey,
+		creator,
 	)
 	require.NoError(e.t, err)
 
-	txdata, err := tx.MarshalBinary()
+	err = e.evmChain.SendTransaction(tx, nil)
 	require.NoError(e.t, err)
-
-	req := solo.NewCallParamsFromDict(evm.Contract.Name, evm.FuncSendTransaction.Name, dict.Dict{
-		evm.FieldTransactionData: txdata,
-	})
-
-	iscpGas, iscpGasFee, err := e.soloChain.EstimateGasOnLedger(req, nil, true)
-	require.NoError(e.t, e.resolveError(err))
-	req.WithGasBudget(iscpGas)
-
-	// deposit gas fee
-	depositGasFeeReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-	_, fee2, err := e.soloChain.EstimateGasOnLedger(depositGasFeeReq, nil, true)
-	require.NoError(e.t, e.resolveError(err))
-	_, err = e.soloChain.PostRequestSync(depositGasFeeReq.AddIotas(iscpGasFee+fee2), nil)
-
-	// send EVM tx
-	_, err = e.soloChain.PostRequestOffLedger(req, nil)
 
 	return &evmContractInstance{
 		chain:         e,
@@ -329,16 +296,25 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 	if opt.sender == nil {
 		opt.sender = e.defaultSender
 	}
-	if opt.iota.wallet == nil {
-		opt.iota.wallet = e.chain.soloChain.OriginatorPrivateKey
-	}
 	if opt.value == nil {
 		opt.value = big.NewInt(0)
+	}
+	if opt.gasLimit == 0 {
+		var err error
+		senderAddress := crypto.PubkeyToAddress(opt.sender.PublicKey)
+		opt.gasLimit, err = e.chain.evmChain.EstimateGas(ethereum.CallMsg{
+			From:     senderAddress,
+			To:       &e.address,
+			GasPrice: evm.GasPrice,
+			Value:    opt.value,
+			Data:     callData,
+		}, opt.allowance)
+		require.NoError(e.chain.t, err)
 	}
 	return opt
 }
 
-func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName string, args ...interface{}) ([]byte, *types.Transaction, ethCallOptions) {
+func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, *iscp.Allowance) {
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
 	opt := e.parseEthCallOptions(opts, callArguments)
@@ -347,14 +323,11 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 
 	nonce := e.chain.getNonce(senderAddress)
 
-	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, 0, evm.GasPrice, callArguments)
+	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callArguments)
 
 	tx, err := types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 	require.NoError(e.chain.t, err)
-
-	txdata, err := tx.MarshalBinary()
-	require.NoError(e.chain.t, err)
-	return txdata, tx, opt
+	return tx, opt.allowance
 }
 
 type callFnResult struct {
@@ -366,20 +339,17 @@ type callFnResult struct {
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (res callFnResult, err error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
-	txdata, tx, opt := e.buildEthTxData(opts, fnName, args...)
-	res.tx = tx
+	var allowance *iscp.Allowance
+	res.tx, allowance = e.buildEthTx(opts, fnName, args...)
 
-	_, err = e.chain.postRequest([]iotaCallOptions{opt.iota}, evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata)
+	err = e.chain.evmChain.SendTransaction(res.tx, allowance)
 	if err != nil {
 		return
 	}
 
 	res.iscpReceipt = e.chain.soloChain.LastReceipt()
 
-	receiptResult, err := e.chain.callView(evm.FuncGetReceipt.Name, evm.FieldTransactionHash, tx.Hash().Bytes())
-	require.NoError(e.chain.t, err)
-
-	res.evmReceipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evm.FieldResult))
+	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 	require.NoError(e.chain.t, err)
 
 	return
@@ -402,30 +372,28 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	require.NoError(e.chain.t, err)
 }
 
-func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, args []interface{}, v interface{}) {
+func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}) {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
-	opt := e.parseEthCallOptions(opts, callArguments)
-	senderAddress := crypto.PubkeyToAddress(opt.sender.PublicKey)
+	senderAddress := crypto.PubkeyToAddress(e.defaultSender.PublicKey)
 	callMsg := e.callMsg(ethereum.CallMsg{
 		From:     senderAddress,
 		Gas:      0,
 		GasPrice: evm.GasPrice,
-		Value:    opt.value,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.callView(evm.FuncCallContract.Name, evm.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
+	ret, err := e.chain.evmChain.CallContract(callMsg, latestBlock)
 	require.NoError(e.chain.t, err)
 	if v != nil {
-		err = e.abi.UnpackIntoInterface(v, fnName, ret.MustGet(evm.FieldResult))
+		err = e.abi.UnpackIntoInterface(v, fnName, ret)
 		require.NoError(e.chain.t, err)
 	}
 }
 
 func (i *iscTestContractInstance) getChainID() *iscp.ChainID {
 	var v isccontract.ISCChainID
-	i.callView(nil, "getChainID", nil, &v)
+	i.callView("getChainID", nil, &v)
 	return v.MustUnwrap()
 }
 
@@ -439,7 +407,7 @@ func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOpti
 
 func (s *storageContractInstance) retrieve() uint32 {
 	var v uint32
-	s.callView(nil, "retrieve", nil, &v)
+	s.callView("retrieve", nil, &v)
 	return v
 }
 
@@ -447,15 +415,15 @@ func (s *storageContractInstance) store(n uint32, opts ...ethCallOptions) (res c
 	return s.callFn(opts, "store", n)
 }
 
-func (e *erc20ContractInstance) balanceOf(addr common.Address, opts ...ethCallOptions) *big.Int {
+func (e *erc20ContractInstance) balanceOf(addr common.Address) *big.Int {
 	v := new(big.Int)
-	e.callView(opts, "balanceOf", []interface{}{addr}, &v)
+	e.callView("balanceOf", []interface{}{addr}, &v)
 	return v
 }
 
-func (e *erc20ContractInstance) totalSupply(opts ...ethCallOptions) *big.Int {
+func (e *erc20ContractInstance) totalSupply() *big.Int {
 	v := new(big.Int)
-	e.callView(opts, "totalSupply", nil, &v)
+	e.callView("totalSupply", nil, &v)
 	return v
 }
 

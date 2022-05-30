@@ -560,3 +560,21 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 		AssetsL2: ch.L2Assets(iscp.NewAgentID(addr)),
 	}
 }
+
+func (ch *Chain) GetL2FundsFromFaucet(agentID iscp.AgentID, iotas ...uint64) {
+	iotaKey, iotaAddr := ch.Env.NewKeyPairWithFunds()
+
+	var amount uint64
+	if len(iotas) > 0 {
+		amount = iotas[0]
+	} else {
+		amount = ch.Env.L1Iotas(iotaAddr) - TransferAllowanceToGasBudgetIotas
+	}
+	err := ch.TransferAllowanceTo(
+		iscp.NewTokensIotas(amount),
+		agentID,
+		true,
+		iotaKey,
+	)
+	require.NoError(ch.Env.T, err)
+}

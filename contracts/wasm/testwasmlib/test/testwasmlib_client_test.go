@@ -25,7 +25,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useSoloClient {
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 		svcClient := wasmsolo.NewSoloClientService(ctx)
-		chainID := ctx.ChainID()
+		chainID := ctx.CurrentChainID()
 		svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
 		require.NoError(t, svc.Err)
 
@@ -82,7 +82,7 @@ func TestClientEvents(t *testing.T) {
 	// get new triggerEvent interface, pass params, and post the request
 	f := testwasmlib.ScFuncs.TriggerEvent(svc)
 	f.Params.Name().SetValue("Lala")
-	f.Params.Address().SetValue(svc.ChainID().Address())
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
@@ -92,7 +92,7 @@ func TestClientEvents(t *testing.T) {
 	// get new triggerEvent interface, pass params, and post the request
 	f = testwasmlib.ScFuncs.TriggerEvent(svc)
 	f.Params.Name().SetValue("Trala")
-	f.Params.Address().SetValue(svc.ChainID().Address())
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 

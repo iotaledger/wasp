@@ -5,7 +5,6 @@ package emulator
 
 import (
 	"crypto/ecdsa"
-	"math"
 	"math/big"
 	"strings"
 	"testing"
@@ -23,20 +22,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) *types.Receipt {
+func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte, gasLimit uint64) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
-	nonce := emu.StateDB().GetNonce(senderAddress)
+	if gasLimit == 0 {
+		var err error
+		gasLimit, err = emu.EstimateGas(ethereum.CallMsg{
+			From:  senderAddress,
+			To:    &receiverAddress,
+			Value: amount,
+			Data:  data,
+		})
+		require.NoError(t, err)
+	}
 
+	nonce := emu.StateDB().GetNonce(senderAddress)
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, receiverAddress, amount, math.MaxUint64, evm.GasPrice, data),
+		types.NewTransaction(nonce, receiverAddress, amount, gasLimit, evm.GasPrice, data),
 		emu.Signer(),
 		sender,
 	)
 	require.NoError(t, err)
 
-	receipt, _, _, err := emu.SendTransaction(tx, tx.Gas())
+	receipt, res, err := emu.SendTransaction(tx)
 	require.NoError(t, err)
+	if res != nil && res.Err != nil {
+		t.Logf("Execution failed: %v", res.Err)
+	}
 	emu.MintBlock()
 
 	return receipt
@@ -101,7 +113,7 @@ func TestBlockchain(t *testing.T) {
 
 	// send a transaction transferring 1000 ETH to receiverAddress
 	{
-		receipt := sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
+		receipt := sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil, 0)
 
 		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
 		block := emu.BlockchainDB().GetCurrentBlock()
@@ -143,7 +155,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	// do a transfer using one instance of EVMEmulator
 	func() {
 		emu := NewEVMEmulator(db, 1, nil)
-		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
+		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil, 0)
 	}()
 
 	// initialize a new EVMEmulator using the same DB and check the state
@@ -156,7 +168,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	}
 }
 
-type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
+type contractFnCaller func(sender *ecdsa.PrivateKey, gasLimit uint64, name string, args ...interface{}) *types.Receipt
 
 func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
@@ -174,17 +186,26 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	data = append(data, contractBytecode...)
 	data = append(data, constructorArguments...)
 
+	gasLimit, err := emu.EstimateGas(ethereum.CallMsg{
+		From:  creatorAddress,
+		Value: txValue,
+		Data:  data,
+	})
+	require.NoError(t, err)
+
 	require.NoError(t, err)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, txValue, math.MaxUint64, evm.GasPrice, data),
+		types.NewContractCreation(nonce, txValue, gasLimit, evm.GasPrice, data),
 		emu.Signer(),
 		creator,
 	)
 	require.NoError(t, err)
 
-	receipt, _, _, err := emu.SendTransaction(tx, tx.Gas())
+	receipt, res, err := emu.SendTransaction(tx)
 	require.NoError(t, err)
+	require.NoError(t, res.Err)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	emu.MintBlock()
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
@@ -206,10 +227,10 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		}
 	}
 
-	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt {
+	callFn := func(sender *ecdsa.PrivateKey, gasLimit uint64, name string, args ...interface{}) *types.Receipt {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
-		receipt := sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments)
+		receipt := sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments, gasLimit)
 		t.Logf("callFn %s Status: %d", name, receipt.Status)
 		t.Logf("Logs:")
 		for _, log := range receipt.Logs {
@@ -265,7 +286,7 @@ func TestStorageContract(t *testing.T) {
 		require.NotEmpty(t, res)
 
 		var v uint32
-		err = contractABI.UnpackIntoInterface(&v, "retrieve", res)
+		err = contractABI.UnpackIntoInterface(&v, "retrieve", res.Return())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, v)
 
@@ -275,7 +296,7 @@ func TestStorageContract(t *testing.T) {
 
 	// send tx that calls `store(43)`
 	{
-		callFn(faucet, "store", uint32(43))
+		callFn(faucet, 0, "store", uint32(43))
 		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber())
 	}
 
@@ -292,7 +313,7 @@ func TestStorageContract(t *testing.T) {
 		require.NotEmpty(t, res)
 
 		var v uint32
-		err = contractABI.UnpackIntoInterface(&v, "retrieve", res)
+		err = contractABI.UnpackIntoInterface(&v, "retrieve", res.Return())
 		require.NoError(t, err)
 		require.EqualValues(t, 43, v)
 
@@ -341,7 +362,7 @@ func TestERC20Contract(t *testing.T) {
 		require.NoError(t, err)
 
 		v := new(big.Int)
-		err = contractABI.UnpackIntoInterface(&v, name, res)
+		err = contractABI.UnpackIntoInterface(&v, name, res.Return())
 		require.NoError(t, err)
 		return v
 	}
@@ -361,7 +382,7 @@ func TestERC20Contract(t *testing.T) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	receipt := callFn(erc20Owner, "transfer", recipientAddress, transferAmount)
+	receipt := callFn(erc20Owner, 0, "transfer", recipientAddress, transferAmount)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
@@ -369,7 +390,7 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
 	// call `transferFrom` as recipient without allowance => get error
-	receipt = callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	receipt = callFn(recipient, emu.GasLimit(), "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
 	require.Equal(t, types.ReceiptStatusFailed, receipt.Status)
 	require.Equal(t, 0, len(receipt.Logs))
 
@@ -377,12 +398,12 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
 	// call `approve` as erc20Owner
-	receipt = callFn(erc20Owner, "approve", recipientAddress, transferAmount)
+	receipt = callFn(erc20Owner, 0, "approve", recipientAddress, transferAmount)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `transferFrom` as recipient with allowance => ok
-	receipt = callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	receipt = callFn(recipient, 0, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
@@ -430,10 +451,10 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 		callArguments, err := contractABI.Pack("store", uint32(i))
 		require.NoError(b, err)
 
-		gas := evm.BlockGasLimitDefault
+		gasLimit := uint64(100000)
 
 		txs[i], err = types.SignTx(
-			types.NewTransaction(nonce, contractAddress, amount, gas, evm.GasPrice, callArguments),
+			types.NewTransaction(nonce, contractAddress, amount, gasLimit, evm.GasPrice, callArguments),
 			emu.Signer(),
 			sender,
 		)
@@ -470,8 +491,9 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 	b.ResetTimer()
 	for _, chunk := range chunks {
 		for _, tx := range chunk {
-			receipt, _, _, err := emu.SendTransaction(tx, tx.Gas())
+			receipt, res, err := emu.SendTransaction(tx)
 			require.NoError(b, err)
+			require.NoError(b, res.Err)
 			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
 		}
 		emu.MintBlock()

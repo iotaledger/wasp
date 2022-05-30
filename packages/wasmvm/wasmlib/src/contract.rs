@@ -163,7 +163,7 @@ impl ScFunc {
     }
 
     pub fn post(&self) {
-        self.post_to_chain(ScFuncContext {}.chain_id())
+        self.post_to_chain(ScFuncContext {}.current_chain_id())
     }
 
     pub(crate) fn post_request(&self, chain_id: ScChainID) -> wasmrequests::PostRequest {

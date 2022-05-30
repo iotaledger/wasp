@@ -400,26 +400,6 @@ func getNativeTokenBalance(account *collections.ImmutableMap, tokenID *iotago.Na
 	return ret
 }
 
-// GetAssets returns all assets owned by agentID. Returns nil if account does not exist
-func GetAssets(state kv.KVStoreReader, agentID iscp.AgentID) *iscp.FungibleTokens {
-	acc := getAccountR(state, agentID)
-	ret := iscp.NewEmptyAssets()
-	acc.MustIterate(func(k []byte, v []byte) bool {
-		if len(k) == 0 {
-			// iota
-			ret.Iotas = util.MustUint64From8Bytes(v)
-			return true
-		}
-		token := iotago.NativeToken{
-			ID:     iscp.MustNativeTokenIDFromBytes(k),
-			Amount: new(big.Int).SetBytes(v),
-		}
-		ret.Tokens = append(ret.Tokens, &token)
-		return true
-	})
-	return ret
-}
-
 func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	ret := dict.New()
 	getAccountsMapR(state).MustIterate(func(agentID []byte, val []byte) bool {

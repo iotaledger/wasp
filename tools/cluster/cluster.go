@@ -619,6 +619,11 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	return balance
 }
 
+func (clu *Cluster) L1Iotas(addr iotago.Address) uint64 {
+	tokens := clu.AddressBalances(addr)
+	return tokens.Iotas
+}
+
 func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.FungibleTokens) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }

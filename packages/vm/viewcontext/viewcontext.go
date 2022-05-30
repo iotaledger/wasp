@@ -90,7 +90,7 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 }
 
 func (ctx *ViewContext) GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens {
-	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+	return accounts.GetAccountAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetAccountNFTs(agentID iscp.AgentID) []iotago.NFTID {

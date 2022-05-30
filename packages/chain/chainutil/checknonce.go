@@ -1,4 +1,4 @@
-package webapiutil
+package chainutil
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
-func CheckNonce(ch chain.Chain, req iscp.Request) error {
+func CheckNonce(ch chain.ChainCore, req iscp.Request) error {
 	res, err := CallView(ch, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(),
 		dict.Dict{
 			accounts.ParamAgentID: codec.Encode(req.SenderAccount()),

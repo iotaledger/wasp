@@ -8,15 +8,15 @@ func Info() string {
 }
 
 func NewRequest(chainID string) string {
-	return "chain/" + chainID + "/request"
+	return "/chain/" + chainID + "/request"
 }
 
 func CallViewByName(chainID, contractHname, functionName string) string {
-	return "chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
+	return "/chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
 }
 
 func CallViewByHname(chainID, contractHname, functionHname string) string {
-	return "chain/" + chainID + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
+	return "/chain/" + chainID + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
 }
 
 func RequestReceipt(chainID, reqID string) string {
@@ -29,6 +29,14 @@ func WaitRequestProcessed(chainID, reqID string) string {
 
 func StateGet(chainID, key string) string {
 	return "/chain/" + chainID + "/state/" + key
+}
+
+func EVMRequestIDByTransactionHash(chainID string, txHash string) string {
+	return "/chain/" + chainID + "/evm/reqid/" + txHash
+}
+
+func EVMJSONRPC(chainID string) string {
+	return "/chain/" + chainID + "/evm/jsonrpc"
 }
 
 func ActivateChain(chainID string) string {

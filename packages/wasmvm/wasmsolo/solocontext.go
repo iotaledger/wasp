@@ -64,6 +64,7 @@ type SoloContext struct {
 	isRequest   bool
 	IsWasm      bool
 	keyPair     *cryptolib.KeyPair
+	nfts        map[iotago.NFTID]*iscp.NFT
 	offLedger   bool
 	scName      string
 	Tx          *iotago.Transaction
@@ -284,10 +285,6 @@ func (ctx *SoloContext) ChainAccount() *SoloAgent {
 	}
 }
 
-func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
-	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
-}
-
 func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
 	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
@@ -300,6 +297,10 @@ func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
 func (ctx *SoloContext) ContractExists(scName string) error {
 	_, err := ctx.Chain.FindContract(scName)
 	return err
+}
+
+func (ctx *SoloContext) CurrentChainID() wasmtypes.ScChainID {
+	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 // Creator returns a SoloAgent representing the contract creator
@@ -388,6 +389,30 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	ctx.offLedger = true
 	ctx.keyPair = agent.Pair
 	return ctx
+}
+
+// MintNFT tells SoloContext to mint a new NFT issued/owned by the specified agent
+// note that SoloContext will cache the NFT data to be able to use it
+// in Post()s that go through the *SAME* SoloContext
+func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScNftID {
+	addr, ok := iscp.AddressFromAgentID(agent.AgentID())
+	if !ok {
+		panic("agent should be an address")
+	}
+	nftInfo, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
+	if err != nil {
+		panic(err)
+	}
+	nft := &iscp.NFT{
+		ID:       nftInfo.NFTID,
+		Issuer:   addr,
+		Metadata: metadata,
+	}
+	if ctx.nfts == nil {
+		ctx.nfts = make(map[iotago.NFTID]*iscp.NFT)
+	}
+	ctx.nfts[nft.ID] = nft
+	return ctx.Cvt.ScNftID(&nft.ID)
 }
 
 // Originator returns a SoloAgent representing the chain originator
