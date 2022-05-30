@@ -16,7 +16,7 @@ import (
 const (
 	// OffLedgerNonceStrictOrderTolerance how many steps back the nonce is considered too old
 	// within this limit order of nonces is not checked
-	OffLedgerNonceStrictOrderTolerance = 10000
+	OffLedgerNonceStrictOrderTolerance = 10_000
 	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
 	// the UTXO won't be consumed to avoid race conditions
 	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute

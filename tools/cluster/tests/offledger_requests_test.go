@@ -147,7 +147,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	// use an access node to create the chainClient
-	chClient := e.newWalletWithFunds(5, 1, 1000, 0, 1, 2, 3, 4, 5)
+	chClient := e.newWalletWithFunds(5, 1, 1000*iscp.Mi, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
 	_, err = chClient.PostOffLedgerRequest(

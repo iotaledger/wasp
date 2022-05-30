@@ -18,11 +18,11 @@ type WaspConfigParams struct {
 const WaspConfig = `
 {
   "database": {
-    "inMemory": true,
+    "inMemory": false,
     "directory": "waspdb"
   },
   "logger": {
-    "level": "debug",
+    "level": "info",
     "disableCaller": false,
     "disableStacktrace": true,
     "encoding": "console",
