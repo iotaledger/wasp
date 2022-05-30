@@ -112,13 +112,15 @@ pub fn func_set_owner_margin(_ctx: &ScFuncContext, f: &SetOwnerMarginContext) {
 }
 
 pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
-    let nft = f.params.nft().value();
     let allowance = ctx.allowance();
     let nfts = allowance.nft_ids();
-    if !nfts.contains(&nft) {
-        ctx.panic("Missing auction nft");
+    if nfts.len() != 1 {
+        ctx.panic(&format!(
+            "expect 1 NFT is provided, instead {} tokens are provided.",
+            nfts.len()
+        ));
     }
-
+    let nft = nfts[0];
     let mut transfer = ScTransfer::iotas(1);
     transfer.add_nft(&nft);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);

@@ -125,7 +125,6 @@ fn func_start_auction_thunk(ctx: &ScFuncContext) {
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.minimum_bid().exists(), "missing mandatory minimumBid");
-	ctx.require(f.params.nft().exists(), "missing mandatory nft");
 	func_start_auction(ctx, &f);
 	ctx.log("fairauction.funcStartAuction ok");
 }

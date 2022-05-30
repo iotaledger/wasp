@@ -105,11 +105,12 @@ export function funcSetOwnerMargin(ctx: wasmlib.ScFuncContext, f: sc.SetOwnerMar
 }
 
 export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
-    let nft = f.params.nft().value();
-    if (ctx.allowance().nftIDs.length == 0) {
-        ctx.panic("Missing auction nft");
+    // let nft = f.params.nft().value();
+    let nfts = ctx.allowance().nftIDs();
+    if (nfts.length != 1) {
+        ctx.panic(`expect 1 NFT is provided, instead "+${nfts.length}+ " tokens are provided.`);
     }
-
+    let nft = nfts[0]
     let transfer = wasmlib.ScTransfer.iotas(1);
     transfer.addNFT(nft)
     ctx.transferAllowed(ctx.accountID(), transfer, false)

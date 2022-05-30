@@ -4,6 +4,8 @@
 package fairauction
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -23,21 +25,17 @@ const (
 )
 
 func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
-	auctionNFT := f.Params.Nft().Value()
 	nfts := ctx.Allowance().NftIDs()
-	for _, nft := range nfts {
-		if nft.String() == auctionNFT.String() {
-			goto exist
-		}
+	if len(nfts) != 1 {
+		ctx.Panic(fmt.Sprintf("expect 1 NFT is provided, instead %v tokens are provided.", len(nfts)))
 	}
-	ctx.Panic("Missing auction tokens")
+	auctionNFT := nfts[0]
 
-exist:
 	// Any transfer to the Smart Contract is implemented as a transfer of assets to the caller's L2 account,
 	// with an allowance to those assets passed to the Smart Contract, so Smart Contract needs to actively
 	// transfer the for sale NFT to Smart Contract account
 	transfer := wasmlib.NewScTransferIotas(DustDeposit)
-	transfer.AddNFT(&auctionNFT)
+	transfer.AddNFT(auctionNFT)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	minimumBid := f.Params.MinimumBid().Value()
@@ -78,7 +76,7 @@ exist:
 		ctx.Panic("Insufficient deposit")
 	}
 
-	currentAuction := f.State.Auctions().GetAuction(auctionNFT)
+	currentAuction := f.State.Auctions().GetAuction(*auctionNFT)
 	if currentAuction.Exists() {
 		ctx.Panic("Auction for this token already exists")
 	}
@@ -92,7 +90,7 @@ exist:
 		HighestBidder: ctx.Caller(),
 		MinimumBid:    minimumBid,
 		OwnerMargin:   ownerMargin,
-		Nft:           auctionNFT,
+		Nft:           *auctionNFT,
 		WhenStarted:   ctx.Timestamp(),
 	}
 	currentAuction.SetValue(auction)

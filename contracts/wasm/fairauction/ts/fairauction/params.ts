@@ -65,11 +65,6 @@ export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
 	minimumBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
-
-	// NFT of the NFTs being auctioned
-	nft(): wasmtypes.ScImmutableNftID {
-		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
-	}
 }
 
 export class MutableStartAuctionParams extends wasmtypes.ScProxy {
@@ -86,11 +81,6 @@ export class MutableStartAuctionParams extends wasmtypes.ScProxy {
 	// minimum required amount for any bid
 	minimumBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamMinimumBid));
-	}
-
-	// NFT of the NFTs being auctioned
-	nft(): wasmtypes.ScMutableNftID {
-		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 

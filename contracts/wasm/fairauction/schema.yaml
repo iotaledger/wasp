@@ -27,7 +27,6 @@ state:
 funcs:
   startAuction:
     params:
-      nft: NftID # NFT of the NFTs being auctioned
       description: String? # description of the NFTs being auctioned
       duration: Uint32? # duration of auction in minutes
       minimumBid: Uint64 # minimum required amount for any bid
