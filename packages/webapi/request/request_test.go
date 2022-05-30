@@ -27,9 +27,7 @@ type mockedChain struct {
 	*testchain.MockedChainCore
 }
 
-var (
-	_ chain.Chain = &mockedChain{}
-)
+var _ chain.Chain = &mockedChain{}
 
 // chain.ChainRequests implementation
 
@@ -113,11 +111,16 @@ func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
 	}
 }
 
+func checkNonceMocked(ch chain.ChainCore, req iscp.Request) error {
+	return nil
+}
+
 func newMockedAPI(t *testing.T) *offLedgerReqAPI {
 	return &offLedgerReqAPI{
 		getChain:                createMockedGetChain(t),
 		getAccountAssets:        getAccountBalanceMocked,
 		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
+		checkNonce:              checkNonceMocked,
 		requestsCache:           expiringcache.New(10 * time.Second),
 	}
 }

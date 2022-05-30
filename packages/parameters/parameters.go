@@ -63,8 +63,8 @@ const (
 
 	RawBlocksEnabled = "debug.rawblocksEnabled"
 	RawBlocksDir     = "debug.rawblocksDirectory"
-	RegistryUseText = "registry.useText"
-	RegistryFile    = "registry.file"
+	RegistryUseText  = "registry.useText"
+	RegistryFile     = "registry.file"
 )
 
 func Init() *configuration.Configuration {

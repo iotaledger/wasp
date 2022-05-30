@@ -55,7 +55,7 @@ func TestOffledgerRequest(t *testing.T) {
 	chEnv := newChainEnv(t, e.Clu, chain)
 	chEnv.deployIncCounterSC(counter)
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 1000, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 1, 2, 3)
 
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(
@@ -93,7 +93,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 10000, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 0, 1, 2, 3)
 
 	// send big blob off-ledger request via Web API
 	size := int64(1 * 900 * 1024) // 900 KB
@@ -147,7 +147,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	// use an access node to create the chainClient
-	chClient := e.newWalletWithFunds(5, 1, 1000, 0, 1, 2, 3, 4, 5)
+	chClient := e.newWalletWithFunds(5, 1, 1000*iscp.Mi, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
 	_, err = chClient.PostOffLedgerRequest(
@@ -165,4 +165,72 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	require.NoError(t, err)
 	resultint64, _ := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	require.EqualValues(t, 43, resultint64)
+}
+
+func TestOffledgerNonce(t *testing.T) {
+	e := setupWithNoChain(t)
+
+	chain, err := e.Clu.DeployDefaultChain()
+	require.NoError(t, err)
+
+	chEnv := newChainEnv(t, e.Clu, chain)
+	chEnv.deployIncCounterSC(nil)
+
+	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 1, 2, 3)
+
+	// send off-ledger request with a high nonce
+	offledgerReq, err := chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			Nonce: 1_000_000,
+		},
+	)
+	require.NoError(t, err)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	require.NoError(t, err)
+
+	// send off-ledger request with a high nonce -1
+	offledgerReq, err = chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			Nonce: 999_999,
+		},
+	)
+	require.NoError(t, err)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	require.NoError(t, err)
+
+	// send off-ledger request with a much lower nonce
+	offledgerReq, err = chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			Nonce: 1,
+		},
+	)
+	require.Regexp(t, "invalid nonce", err.Error())
+
+	// try replaying the initial request
+	offledgerReq, err = chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			Nonce: 1_000_000,
+		},
+	)
+	require.Regexp(t, "request already processed", err.Error())
+
+	// send a request with a higher nonce
+	offledgerReq, err = chClient.PostOffLedgerRequest(
+		incCounterSCHname,
+		inccounter.FuncIncCounter.Hname(),
+		chainclient.PostRequestParams{
+			Nonce: 1_000_001,
+		},
+	)
+	require.NoError(t, err)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	require.NoError(t, err)
 }

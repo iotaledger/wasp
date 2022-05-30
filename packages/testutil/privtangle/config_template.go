@@ -71,7 +71,7 @@ var configFileContentTemplate = `
 		"parameters": {
       "networkName": "private_tangle_wasp_cluster",
       "bech32HRP": "atoi",
-      "minPoWScore": 100.0,
+      "minPoWScore": 1,
       "vByteCost": 600,
       "vByteFactorData": 1,
       "vByteFactorKey": 10,

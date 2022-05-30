@@ -1,6 +1,7 @@
 package sbtests
 
 import (
+	"math"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/vm"
@@ -17,19 +18,18 @@ import (
 func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.KeyPair) {
 	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(seedIndex))
 	iotasToSend := ch.Env.L1Iotas(address)
-	gasBudget := gas.MaxGasPerCall + 5000000
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncInfiniteLoop.Name).
 		AddIotas(iotasToSend).
-		WithGasBudget(gasBudget)
+		WithGasBudget(math.MaxUint64)
 	return req, wallet
 }
 
-// create a TX with gaslimit + 5000, only the limit should be used
+// create a TX that would use more than max gas limit, assert that only the maximum will be used
 func TestTxWithGasOverLimit(t *testing.T) { run2(t, testTxWithGasOverLimit) }
 
 func testTxWithGasOverLimit(t *testing.T, w bool) {
-	if !FORCE_RUST_WASM && w {
+	if w { // TODO the WASM version of this must be tested.
 		t.SkipNow()
 	}
 	_, ch := setupChain(t, nil)
