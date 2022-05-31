@@ -90,7 +90,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
-	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req)
+	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req.(iscp.OnLedgerRequest))
 	if dustAdjustment > 0 {
 		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
 	}

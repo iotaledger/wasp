@@ -19,13 +19,13 @@ import (
 // TODO: automatically calculate this? Do not charge for blockchain bookkeeping?
 const EVMGasBookkeeping = 100_000
 
-func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction, gasRatio *util.Ratio32) (*OffLedgerRequestData, error) {
+func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction, gasRatio *util.Ratio32) (OffLedgerRequest, error) {
 	// TODO: verify tx.ChainId()?
 	signatureScheme, err := newEVMOffLedferSignatureSchemeFromTransaction(tx)
 	if err != nil {
 		return nil, err
 	}
-	return &OffLedgerRequestData{
+	return &offLedgerRequestData{
 		chainID:         chainID,
 		contract:        Hn(evmnames.Contract),
 		entryPoint:      Hn(evmnames.FuncSendTransaction),
@@ -37,8 +37,8 @@ func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction, gasRatio *u
 	}, nil
 }
 
-func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMsg, gasRatio *util.Ratio32) *OffLedgerRequestData {
-	return &OffLedgerRequestData{
+func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMsg, gasRatio *util.Ratio32) OffLedgerRequest {
+	return &offLedgerRequestData{
 		chainID:         chainID,
 		contract:        Hn(evmnames.Contract),
 		entryPoint:      Hn(evmnames.FuncEstimateGas),
@@ -50,15 +50,15 @@ func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMs
 	}
 }
 
-func (r *OffLedgerRequestData) IsEVM() bool {
+func (r *offLedgerRequestData) IsEVM() bool {
 	return r.IsEVMSendTransaction() || r.IsEVMEstimateGas()
 }
 
-func (r *OffLedgerRequestData) IsEVMSendTransaction() bool {
+func (r *offLedgerRequestData) IsEVMSendTransaction() bool {
 	return r.contract == Hn(evmnames.Contract) && r.entryPoint == Hn(evmnames.FuncSendTransaction)
 }
 
-func (r *OffLedgerRequestData) IsEVMEstimateGas() bool {
+func (r *offLedgerRequestData) IsEVMEstimateGas() bool {
 	return r.contract == Hn(evmnames.Contract) && r.entryPoint == Hn(evmnames.FuncEstimateGas)
 }
 

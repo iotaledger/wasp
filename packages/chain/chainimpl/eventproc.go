@@ -277,11 +277,11 @@ func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerPubKe
 	c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
-func (c *chainObj) isRequestValid(req *iscp.OffLedgerRequestData) bool {
+func (c *chainObj) isRequestValid(req iscp.OffLedgerRequest) bool {
 	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
 }
 
-func (c *chainObj) broadcastOffLedgerRequest(req *iscp.OffLedgerRequestData) {
+func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID())
 	msg := &messages.OffLedgerRequestMsg{
 		ChainID: c.chainID,
@@ -321,7 +321,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *iscp.OffLedgerRequestData) {
 				return
 			}
 			c.offLedgerReqsAcksMutex.RLock()
-			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
+			ackPeers := c.offLedgerReqsAcks[req.ID()]
 			c.offLedgerReqsAcksMutex.RUnlock()
 			if cmt != nil && len(ackPeers) >= int(cmt.Size())-1 {
 				// this node is part of the committee and the message has already been received by every other committee node

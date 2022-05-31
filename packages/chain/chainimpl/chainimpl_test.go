@@ -19,7 +19,7 @@ func TestValidateOffledger(t *testing.T) {
 	}
 	req := testutil.DummyOffledgerRequest(c.chainID)
 	require.True(t, c.isRequestValid(req))
-	req.WithNonce(999) // signature must be invalid after request content changes
+	req.(iscp.UnsignedOffLedgerRequest).WithNonce(999) // signature must be invalid after request content changes
 	require.False(t, c.isRequestValid(req))
 
 	wrongChainReq := testutil.DummyOffledgerRequest(iscp.RandomChainID())

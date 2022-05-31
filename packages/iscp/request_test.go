@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -16,13 +17,13 @@ func TestSerializeRequestData(t *testing.T) {
 	var req Request
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
-		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100)
+		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100).Sign(cryptolib.NewKeyPair())
 
 		serialized := req.Bytes()
 		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
 
-		reqBack := req2.(*OffLedgerRequestData)
+		reqBack := req2.(*offLedgerRequestData)
 		require.EqualValues(t, req.ID(), reqBack.ID())
 		require.True(t, req.SenderAccount().Equals(reqBack.SenderAccount()))
 

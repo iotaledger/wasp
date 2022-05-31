@@ -15,8 +15,6 @@ type Request interface {
 	Calldata
 
 	IsOffLedger() bool
-	AsOffLedger() AsOffLedger
-	AsOnLedger() AsOnLedger
 
 	Bytes() []byte
 	String() string
@@ -45,11 +43,29 @@ type Features interface {
 	ReturnAmount() (uint64, bool)
 }
 
-type AsOffLedger interface {
+type OffLedgerRequestData interface {
+	ChainID() *ChainID
 	Nonce() uint64
 }
 
-type AsOnLedger interface {
+type UnsignedOffLedgerRequest interface {
+	Calldata
+	OffLedgerRequestData
+
+	WithNonce(nonce uint64) UnsignedOffLedgerRequest
+	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
+	WithAllowance(allowance *Allowance) UnsignedOffLedgerRequest
+	Sign(key *cryptolib.KeyPair) OffLedgerRequest
+}
+
+type OffLedgerRequest interface {
+	Request
+	OffLedgerRequestData
+	VerifySignature() bool
+}
+
+type OnLedgerRequest interface {
+	Request
 	Output() iotago.Output
 	IsInternalUTXO(*ChainID) bool
 	UTXOInput() iotago.UTXOInput
@@ -124,7 +140,7 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 // don't process any request which deadline will expire within 1 minute
 const RequestConsideredExpiredWindow = time.Minute * 1
 
-func RequestIsExpired(req AsOnLedger, currentTime TimeData) bool {
+func RequestIsExpired(req OnLedgerRequest, currentTime TimeData) bool {
 	expiry, _ := req.Features().Expiry()
 	if expiry == nil {
 		return false
@@ -135,7 +151,7 @@ func RequestIsExpired(req AsOnLedger, currentTime TimeData) bool {
 	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-RequestConsideredExpiredWindow))
 }
 
-func RequestIsUnlockable(req AsOnLedger, chainAddress iotago.Address, currentTime TimeData) bool {
+func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, currentTime TimeData) bool {
 	if RequestIsExpired(req, currentTime) {
 		return false
 	}
