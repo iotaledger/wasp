@@ -53,13 +53,13 @@ func TestBasicAccountsNLow(t *testing.T) {
 }
 
 func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
-	hname := iscp.Hn(incCounterSCName)
+	hname := iscp.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 
-	_, err := e.Chain.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
+	_, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
-		root.ParamName:        incCounterSCName,
+		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(e.t, err)
 
@@ -84,7 +84,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 
 		require.EqualValues(e.t, programHash1, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, incCounterSCName, cr.Name)
+		require.EqualValues(e.t, nativeIncCounterSCName, cr.Name)
 
 		counterValue, err := e.Chain.GetCounterValue(hname, i)
 		require.NoError(e.t, err)
@@ -108,7 +108,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	e.checkBalanceOnChain(iscp.NewAgentID(myAddress), iscp.IotaTokenID, transferIotas-fees)
 
 	for i := range e.Chain.CommitteeNodes {
-		counterValue, err := e.Chain.GetCounterValue(incCounterSCHname, i)
+		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, 43, counterValue)
 	}
@@ -137,14 +137,14 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	hname := iscp.Hn(incCounterSCName)
+	hname := iscp.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 	require.NoError(t, err)
 
-	_, err = chain.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
+	_, err = chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
-		root.ParamName:        incCounterSCName,
+		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(t, err)
 
@@ -167,7 +167,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, incCounterSCName, cr.Name)
+		require.EqualValues(t, nativeIncCounterSCName, cr.Name)
 
 		counterValue, err := chain.GetCounterValue(hname, i)
 		require.NoError(t, err)

@@ -7,33 +7,32 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
-const incCounterSCName = "inccounter1"
+const nativeIncCounterSCName = "NativeIncCounter"
 
-var incCounterSCHname = iscp.Hn(incCounterSCName)
+var nativeIncCounterSCHname = iscp.Hn(nativeIncCounterSCName)
 
-func (e *ChainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *iotago.Transaction {
+func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transaction {
+	counterStartValue := 42
+	if len(initCounter) > 0 {
+		counterStartValue = initCounter[0]
+	}
 	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Contract.ProgramHash
 
-	tx, err := e.Chain.DeployContract(incCounterSCName, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        incCounterSCName,
+	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, map[string]interface{}{
+		inccounter.VarCounter: 0,
+		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(e.t, err)
 
-	if counter != nil && !counter.WaitUntilExpectationsMet() {
-		e.t.Fatal()
-	}
-
-	blockIndex, err := e.Chain.BlockIndex(0)
+	blockIndex, err := e.Chain.BlockIndex(counterStartValue)
 	require.NoError(e.t, err)
 	require.Greater(e.t, blockIndex, uint32(1))
 
-	// wait until all nodes (including access nodes) are at least at block `blockIndex``
+	// wait until all nodes (including access nodes) are at least at block `blockIndex`
 	retries := 0
 	for i := 1; i < len(e.Chain.AllPeers); i++ {
 		peerIdx := e.Chain.AllPeers[i]
@@ -56,16 +55,16 @@ func (e *ChainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *iotago.T
 		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
 
-		cr := contractRegistry[incCounterSCHname]
+		cr := contractRegistry[nativeIncCounterSCHname]
 		require.NotNil(e.t, cr)
 
 		require.EqualValues(e.t, programHash, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, cr.Name, incCounterSCName)
+		require.EqualValues(e.t, cr.Name, nativeIncCounterSCName)
 
-		counterValue, err := e.Chain.GetCounterValue(incCounterSCHname, i)
+		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, 42, counterValue)
+		require.EqualValues(e.t, counterStartValue, counterValue)
 	}
 
 	return tx

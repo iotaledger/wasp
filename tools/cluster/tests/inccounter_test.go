@@ -4,15 +4,94 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
+
+const (
+	incName        = "inccounter"
+	incDescription = "IncCounter, a PoC smart contract"
+)
+
+var incHname = iscp.Hn(incName)
+
+const (
+	varCounter    = "counter"
+	varNumRepeats = "numRepeats"
+	varDelay      = "delay"
+)
+
+type contractWithMessageCounterEnv struct {
+	*contractEnv
+	counter *cluster.MessageCounter
+}
+
+func setupWithContractAndMessageCounter(t *testing.T, nrOfRequests int) *contractWithMessageCounterEnv {
+	clu := newCluster(t)
+
+	expectations := map[string]int{
+		"dismissed_committee": 0,
+		"state":               3 + nrOfRequests,
+		//"request_out":         3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
+	}
+
+	var err error
+
+	counter, err := clu.StartMessageCounter(expectations)
+	require.NoError(t, err)
+	t.Cleanup(counter.Close)
+
+	chain, err := clu.DeployDefaultChain()
+	require.NoError(t, err)
+
+	chEnv := newChainEnv(t, clu, chain)
+
+	cEnv := chEnv.deployWasmContract(incName, incDescription, nil)
+	require.NoError(t, err)
+
+	// deposit funds onto the contract account, so it can post a L1 request
+	contractAgentID := iscp.NewContractAgentID(chEnv.Chain.ChainID, incHname)
+	tx, err := chEnv.NewChainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_500_000),
+		Args: map[kv.Key][]byte{
+			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
+		},
+		Allowance: iscp.NewAllowanceIotas(1_000_000),
+	})
+	require.NoError(chEnv.t, err)
+	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(chEnv.t, err)
+
+	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
+}
+
+func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
+	transfer := iscp.NewFungibleTokens(uint64(tokens), nil)
+	b := iscp.NewEmptyAssets()
+	if transfer != nil {
+		b = transfer
+	}
+	tx, err := e.NewChainClient().Post1Request(contract, entryPoint, chainclient.PostRequestParams{
+		Transfer: b,
+		Args:     codec.MakeDict(params),
+	})
+	require.NoError(e.t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 60*time.Second)
+	require.NoError(e.t, err)
+	if !e.counter.WaitUntilExpectationsMet() {
+		e.t.Fatal()
+	}
+}
 
 func (e *contractEnv) checkSC(numRequests int) {
 	for i := range e.Chain.CommitteeNodes {
@@ -59,7 +138,7 @@ func (e *ChainEnv) checkCounter(expected int) {
 }
 
 func TestIncDeployment(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, 1)
 
 	if !e.counter.WaitUntilExpectationsMet() {
 		t.Fatal()
@@ -77,11 +156,11 @@ func TestInc5xNothing(t *testing.T) {
 }
 
 func testNothing(t *testing.T, numRequests int) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRequests)
+	e := setupWithContractAndMessageCounter(t, numRequests)
 
 	entryPoint := iscp.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
+		tx, err := e.NewChainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
@@ -106,11 +185,11 @@ func TestInc5xIncrement(t *testing.T) {
 }
 
 func testIncrement(t *testing.T, numRequests int) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRequests)
+	e := setupWithContractAndMessageCounter(t, numRequests)
 
 	entryPoint := iscp.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
+		tx, err := e.NewChainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
 		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
@@ -126,7 +205,7 @@ func testIncrement(t *testing.T, numRequests int) {
 
 func TestIncrementWithTransfer(t *testing.T) {
 	t.Fail() // TODO refactor
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
@@ -147,7 +226,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 }
 
 func TestIncCallIncrement1(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 
 	entryPoint := iscp.Hn("callIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
@@ -156,7 +235,7 @@ func TestIncCallIncrement1(t *testing.T) {
 }
 
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 
 	entryPoint := iscp.Hn("callIncrementRecurse5x")
 	e.postRequest(incHname, entryPoint, 1_000, nil)
@@ -165,7 +244,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 }
 
 func TestIncPostIncrement(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4) // NOTE: expectations are not used in this test, so the last parameter is meaningless
+	e := setupWithContractAndMessageCounter(t, 4) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
 	entryPoint := iscp.Hn("postIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
@@ -175,7 +254,7 @@ func TestIncPostIncrement(t *testing.T) {
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRepeats+3) // NOTE: expectations are not used in this test, so the last parameter is meaningless
+	e := setupWithContractAndMessageCounter(t, numRepeats+3) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
 	entryPoint := iscp.Hn("repeatMany")
 	e.postRequest(incHname, entryPoint, numRepeats, map[string]interface{}{
@@ -200,28 +279,28 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 }
 
 func TestIncLocalStateInternalCall(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 	entryPoint := iscp.Hn("localStateInternalCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 	entryPoint := iscp.Hn("localStateSandboxCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4)
+	e := setupWithContractAndMessageCounter(t, 4)
 	entryPoint := iscp.Hn("localStatePost")
 	e.postRequest(incHname, entryPoint, 3, nil)
 	e.checkCounter(0)
 }
 
 func TestIncViewCounter(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(1)
@@ -236,7 +315,7 @@ func TestIncViewCounter(t *testing.T) {
 }
 
 func TestIncCounterDelay(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
+	e := setupWithContractAndMessageCounter(t, 2)
 	e.postRequest(incHname, iscp.Hn("increment"), 0, nil)
 	e.checkCounter(1)
 
