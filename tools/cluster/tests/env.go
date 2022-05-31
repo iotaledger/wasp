@@ -1,46 +1,49 @@
 package tests
 
 import (
-	"math/rand"
 	"os"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	wallet      = initSeed()
-	scOwner     = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(0))
-	scOwnerAddr = tpkg.RandEd25519Address()
-)
-
 type env struct {
 	t   *testing.T
-	clu *cluster.Cluster
+	Clu *cluster.Cluster
 }
 
-type chainEnv struct {
+type ChainEnv struct {
 	*env
-	chain        *cluster.Chain
-	addressIndex uint64
+	Chain       *cluster.Chain
+	scOwner     *cryptolib.KeyPair
+	scOwnerAddr iotago.Address
 }
 
-func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *chainEnv {
-	return &chainEnv{env: &env{t: t, clu: clu}, chain: chain}
+func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *ChainEnv {
+	keyPair, addr, err := clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
+	return &ChainEnv{
+		env:         &env{t: t, Clu: clu},
+		Chain:       chain,
+		scOwner:     keyPair,
+		scOwnerAddr: addr,
+	}
 }
 
 type contractEnv struct {
-	*chainEnv
+	*ChainEnv
 	programHash hashing.HashValue
 }
 
@@ -49,61 +52,32 @@ type contractWithMessageCounterEnv struct {
 	counter *cluster.MessageCounter
 }
 
-func initSeed() cryptolib.Seed {
-	return cryptolib.NewSeed()
-}
-
-func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map[string]interface{}) *contractEnv {
-	ret := &contractEnv{chainEnv: e}
+func (e *ChainEnv) deployContract(wasmName, scDescription string, initParams map[string]interface{}) *contractEnv {
+	ret := &contractEnv{ChainEnv: e}
 
 	wasmPath := "wasm/" + wasmName + "_bg.wasm"
 
 	wasm, err := os.ReadFile(wasmPath)
 	require.NoError(e.t, err)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorKeyPair)
 
-	reqTx, err := chClient.DepositFunds(100)
+	reqTx, err := chClient.DepositFunds(1_000_000)
 	require.NoError(e.t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
 
-	ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+	ph, err := e.Chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
 	require.NoError(e.t, err)
 	ret.programHash = ph
 	e.t.Logf("deployContract: proghash = %s\n", ph.String())
 	return ret
 }
 
-func (e *chainEnv) createNewClient() *scclient.SCClient {
-	keyPair, _ := e.getOrCreateAddress()
-	client := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+func (e *ChainEnv) createNewClient() *scclient.SCClient {
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(e.t, err)
+	client := e.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 	return client
-}
-
-func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, iotago.Address) {
-	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
-
-	randomAddress := rand.NewSource(time.Now().UnixNano())
-
-	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
-	myAddress := keyPair.Address()
-
-	funds := e.clu.AddressBalances(myAddress).Iotas
-
-	if funds <= minTokenAmountBeforeRequestingNewFunds {
-		// Requesting new token requires a new address
-
-		e.addressIndex = rand.New(randomAddress).Uint64()
-		e.t.Logf("Generating new address: %v", e.addressIndex)
-
-		keyPair = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
-		myAddress = keyPair.Address()
-
-		e.requestFunds(myAddress, "myAddress")
-		e.t.Logf("Funds: %v, addressIndex: %v", funds, e.addressIndex)
-	}
-
-	return keyPair, myAddress
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
@@ -121,22 +95,22 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 		Args:     codec.MakeDict(params),
 	})
 	require.NoError(e.t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 60*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 60*time.Second)
 	require.NoError(e.t, err)
 	if !e.counter.WaitUntilExpectationsMet() {
-		e.t.Fail()
+		e.t.Fatal()
 	}
 }
 
 func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *env {
-	return &env{t: t, clu: newCluster(t, opt...)}
+	return &env{t: t, Clu: newCluster(t, opt...)}
 }
 
-func setupWithChain(t *testing.T, opt ...waspClusterOpts) *chainEnv {
+func SetupWithChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
 	e := setupWithNoChain(t, opt...)
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
-	return newChainEnv(e.t, e.clu, chain)
+	return newChainEnv(e.t, e.Clu, chain)
 }
 
 func setupWithContractAndMessageCounter(t *testing.T, name, description string, nrOfRequests int) *contractWithMessageCounterEnv {
@@ -162,11 +136,22 @@ func setupWithContractAndMessageCounter(t *testing.T, name, description string, 
 	cEnv := chEnv.deployContract(name, description, nil)
 	require.NoError(t, err)
 
-	chEnv.requestFunds(scOwnerAddr, "client")
+	// deposit funds onto the contract account, so it can post a L1 request
+	contractAgentID := iscp.NewContractAgentID(chEnv.Chain.ChainID, iscp.Hn(name))
+	tx, err := chEnv.chainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_500_000),
+		Args: map[kv.Key][]byte{
+			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
+		},
+		Allowance: iscp.NewAllowanceIotas(1_000_000),
+	})
+	require.NoError(chEnv.t, err)
+	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(chEnv.t, err)
 
 	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
 }
 
-func (e *chainEnv) chainClient() *chainclient.Client {
-	return chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, scOwner)
+func (e *ChainEnv) chainClient() *chainclient.Client {
+	return chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.scOwner)
 }

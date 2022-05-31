@@ -9,57 +9,219 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class DepositCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeposit);
-	params: sc.MutableDepositParams = new sc.MutableDepositParams(wasmlib.ScView.nilProxy);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncDeposit);
+	}
+}
+
+export class FoundryCreateNewCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableFoundryCreateNewParams = new sc.MutableFoundryCreateNewParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableFoundryCreateNewResults = new sc.ImmutableFoundryCreateNewResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncFoundryCreateNew);
+	}
+}
+
+export class FoundryDestroyCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableFoundryDestroyParams = new sc.MutableFoundryDestroyParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncFoundryDestroy);
+	}
+}
+
+export class FoundryModifySupplyCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableFoundryModifySupplyParams = new sc.MutableFoundryModifySupplyParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncFoundryModifySupply);
+	}
 }
 
 export class HarvestCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHarvest);
+	func: wasmlib.ScFunc;
 	params: sc.MutableHarvestParams = new sc.MutableHarvestParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncHarvest);
+	}
+}
+
+export class TransferAllowanceToCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableTransferAllowanceToParams = new sc.MutableTransferAllowanceToParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTransferAllowanceTo);
+	}
 }
 
 export class WithdrawCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWithdraw);
+	func: wasmlib.ScFunc;
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncWithdraw);
+	}
+}
+
+export class AccountNFTsCall {
+	func: wasmlib.ScView;
+	params: sc.MutableAccountNFTsParams = new sc.MutableAccountNFTsParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableAccountNFTsResults = new sc.ImmutableAccountNFTsResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAccountNFTs);
+	}
 }
 
 export class AccountsCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAccounts);
+	func: wasmlib.ScView;
 	results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAccounts);
+	}
+}
+
+export class BalanceCall {
+	func: wasmlib.ScView;
+	params: sc.MutableBalanceParams = new sc.MutableBalanceParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableBalanceResults = new sc.ImmutableBalanceResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBalance);
+	}
+}
+
+export class FoundryOutputCall {
+	func: wasmlib.ScView;
+	params: sc.MutableFoundryOutputParams = new sc.MutableFoundryOutputParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableFoundryOutputResults = new sc.ImmutableFoundryOutputResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewFoundryOutput);
+	}
 }
 
 export class GetAccountNonceCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAccountNonce);
+	func: wasmlib.ScView;
 	params: sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams(wasmlib.ScView.nilProxy);
 	results: sc.ImmutableGetAccountNonceResults = new sc.ImmutableGetAccountNonceResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetAccountNonce);
+	}
+}
+
+export class GetNativeTokenIDRegistryCall {
+	func: wasmlib.ScView;
+	results: sc.ImmutableGetNativeTokenIDRegistryResults = new sc.ImmutableGetNativeTokenIDRegistryResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetNativeTokenIDRegistry);
+	}
+}
+
+export class NftDataCall {
+	func: wasmlib.ScView;
+	params: sc.MutableNftDataParams = new sc.MutableNftDataParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableNftDataResults = new sc.ImmutableNftDataResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewNftData);
+	}
+}
+
+export class TotalAssetsCall {
+	func: wasmlib.ScView;
+	results: sc.ImmutableTotalAssetsResults = new sc.ImmutableTotalAssetsResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewTotalAssets);
+	}
 }
 
 export class ScFuncs {
-	static deposit(_ctx: wasmlib.ScFuncCallContext): DepositCall {
-		const f = new DepositCall();
-		f.params = new sc.MutableDepositParams(wasmlib.newCallParamsProxy(f.func));
+	static deposit(ctx: wasmlib.ScFuncCallContext): DepositCall {
+		return new DepositCall(ctx);
+	}
+
+	static foundryCreateNew(ctx: wasmlib.ScFuncCallContext): FoundryCreateNewCall {
+		const f = new FoundryCreateNewCall(ctx);
+		f.params = new sc.MutableFoundryCreateNewParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableFoundryCreateNewResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static harvest(_ctx: wasmlib.ScFuncCallContext): HarvestCall {
-		const f = new HarvestCall();
+	static foundryDestroy(ctx: wasmlib.ScFuncCallContext): FoundryDestroyCall {
+		const f = new FoundryDestroyCall(ctx);
+		f.params = new sc.MutableFoundryDestroyParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static foundryModifySupply(ctx: wasmlib.ScFuncCallContext): FoundryModifySupplyCall {
+		const f = new FoundryModifySupplyCall(ctx);
+		f.params = new sc.MutableFoundryModifySupplyParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static harvest(ctx: wasmlib.ScFuncCallContext): HarvestCall {
+		const f = new HarvestCall(ctx);
 		f.params = new sc.MutableHarvestParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
-		return new WithdrawCall();
+	static transferAllowanceTo(ctx: wasmlib.ScFuncCallContext): TransferAllowanceToCall {
+		const f = new TransferAllowanceToCall(ctx);
+		f.params = new sc.MutableTransferAllowanceToParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
 	}
 
-	static accounts(_ctx: wasmlib.ScViewCallContext): AccountsCall {
-		const f = new AccountsCall();
+	static withdraw(ctx: wasmlib.ScFuncCallContext): WithdrawCall {
+		return new WithdrawCall(ctx);
+	}
+
+	static accountNFTs(ctx: wasmlib.ScViewCallContext): AccountNFTsCall {
+		const f = new AccountNFTsCall(ctx);
+		f.params = new sc.MutableAccountNFTsParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableAccountNFTsResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static accounts(ctx: wasmlib.ScViewCallContext): AccountsCall {
+		const f = new AccountsCall(ctx);
 		f.results = new sc.ImmutableAccountsResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 
-	static getAccountNonce(_ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
-		const f = new GetAccountNonceCall();
+	static balance(ctx: wasmlib.ScViewCallContext): BalanceCall {
+		const f = new BalanceCall(ctx);
+		f.params = new sc.MutableBalanceParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableBalanceResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static foundryOutput(ctx: wasmlib.ScViewCallContext): FoundryOutputCall {
+		const f = new FoundryOutputCall(ctx);
+		f.params = new sc.MutableFoundryOutputParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableFoundryOutputResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static getAccountNonce(ctx: wasmlib.ScViewCallContext): GetAccountNonceCall {
+		const f = new GetAccountNonceCall(ctx);
 		f.params = new sc.MutableGetAccountNonceParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetAccountNonceResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static getNativeTokenIDRegistry(ctx: wasmlib.ScViewCallContext): GetNativeTokenIDRegistryCall {
+		const f = new GetNativeTokenIDRegistryCall(ctx);
+		f.results = new sc.ImmutableGetNativeTokenIDRegistryResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static nftData(ctx: wasmlib.ScViewCallContext): NftDataCall {
+		const f = new NftDataCall(ctx);
+		f.params = new sc.MutableNftDataParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableNftDataResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static totalAssets(ctx: wasmlib.ScViewCallContext): TotalAssetsCall {
+		const f = new TotalAssetsCall(ctx);
+		f.results = new sc.ImmutableTotalAssetsResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 }

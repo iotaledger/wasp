@@ -34,7 +34,7 @@ export class ScBigInt {
             return rhs.add(this);
         }
 
-        const buf: u8[] = new Array(lhsLen);
+        const buf = new Array<u8>(lhsLen);
         let carry: u16 = 0;
         for (let i = 0; i < rhsLen; i++) {
             carry += (this.bytes[i] as u16) + (rhs.bytes[i] as u16);
@@ -112,7 +112,7 @@ export class ScBigInt {
 
     private divModSimple(value: u8): ScBigInt[] {
         const lhsLen = this.bytes.length;
-        const buf: u8[] = new Array(lhsLen);
+        const buf = new Array<u8>(lhsLen);
         let remain: u16 = 0;
         const rhs = value as u16;
         for (let i = lhsLen - 1; i >= 0; i--) {
@@ -182,7 +182,7 @@ export class ScBigInt {
 
         let lhs_len = this.bytes.length;
         let buf_len = lhs_len + whole_bytes + 1;
-        let buf: u8[] = new Array(buf_len);
+        let buf = new Array<u8>(buf_len);
         let word: u16 = 0;
         for (let i = lhs_len; i > 0; i--) {
             word = (word << 8) + (this.bytes[i - 1] as u16);
@@ -207,7 +207,7 @@ export class ScBigInt {
         }
 
         let buf_len = lhs_len - whole_bytes;
-        let buf: u8[] = new Array(buf_len);
+        let buf = new Array<u8>(buf_len);
         let bytes = this.bytes.slice(whole_bytes);
         let word = (bytes[0] as u16) << 8;
         for (let i = 1; i < buf_len; i++) {
@@ -229,7 +229,7 @@ export class ScBigInt {
         const lhsLen = this.bytes.length;
         const rhsLen = rhs.bytes.length;
 
-        const buf: u8[] = new Array(lhsLen);
+        const buf = new Array<u8>(lhsLen);
         let borrow: u16 = 0;
         for (let i = 0; i < rhsLen; i++) {
             borrow += (this.bytes[i] as u16) - (rhs.bytes[i] as u16);
@@ -260,15 +260,19 @@ export class ScBigInt {
         if (zeroes > wasmtypes.ScUint64Length) {
             panic("value exceeds Uint64");
         }
-        const buf = bigIntToBytes(this).concat(wasmtypes.zeroes(zeroes));
+        const buf = this.bytes.concat(wasmtypes.zeroes(zeroes));
         return wasmtypes.uint64FromBytes(buf);
     }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+const quintillion = ScBigInt.fromUint64(1_000_000_000_000_000_000);
+
 export function bigIntDecode(dec: wasmtypes.WasmDecoder): ScBigInt {
-    return bigIntFromBytesUnchecked(dec.bytes());
+    const o = new ScBigInt();
+    o.bytes = dec.bytes();
+    return o;
 }
 
 export function bigIntEncode(enc: wasmtypes.WasmEncoder, value: ScBigInt): void {
@@ -276,30 +280,47 @@ export function bigIntEncode(enc: wasmtypes.WasmEncoder, value: ScBigInt): void 
 }
 
 export function bigIntFromBytes(buf: u8[]): ScBigInt {
-    if (buf.length == 0) {
-        return new ScBigInt();
-    }
-    return bigIntFromBytesUnchecked(buf);
+    const o = new ScBigInt();
+    o.bytes = reverse(buf);
+    return o;
 }
 
 export function bigIntToBytes(value: ScBigInt): u8[] {
-    return value.bytes;
+    return reverse(value.bytes);
+}
+
+export function bigIntFromString(value: string): ScBigInt {
+    const digits = value.length - 18;
+    if (digits <= 0) {
+        // Uint64 fits 18 digits or 1 quintillion
+        return ScBigInt.fromUint64(wasmtypes.uint64FromString(value));
+    }
+
+    // build value 18 digits at a time
+    const lhs = bigIntFromString(value.slice(0, digits));
+    const rhs = bigIntFromString(value.slice(digits));
+    return lhs.mul(quintillion).add(rhs)
 }
 
 export function bigIntToString(value: ScBigInt): string {
     if (value.isUint64()) {
         return wasmtypes.uint64ToString(value.uint64());
     }
-    const divMod = value.divMod(ScBigInt.fromUint64(1_000_000_000_000_000_000));
+    const divMod = value.divMod(quintillion);
     const digits = wasmtypes.uint64ToString(divMod[1].uint64());
     const zeroes = wasmtypes.zeroes(18 - digits.length);
     return bigIntToString(divMod[0]) + zeroes + digits;
 }
 
-function bigIntFromBytesUnchecked(buf: u8[]): ScBigInt {
-    const o = new ScBigInt();
-    o.bytes = buf.slice(0);
-    return o;
+// Stupid big.Int uses BigEndian byte encoding, so our external byte encoding should
+// reflect this by reverse()-ing the byte order in BigIntFromBytes and BigIntToBytes
+function reverse(bytes: u8[]): u8[] {
+    let n = bytes.length;
+    const buf = new Array<u8>(n);
+    for (let i = 0; i < n; i++) {
+        buf[n - 1 - i] = bytes[i];
+    }
+    return buf;
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

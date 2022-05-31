@@ -10,9 +10,9 @@ const (
 	ScAddressEd25519 byte = 0
 	ScAddressNFT     byte = 16
 
-	ScLengthAlias   = 21
+	ScLengthAlias   = 33
 	ScLengthEd25519 = 33
-	ScLengthNFT     = 21
+	ScLengthNFT     = 33
 
 	ScAddressLength = ScLengthEd25519
 )
@@ -22,8 +22,7 @@ type ScAddress struct {
 }
 
 func (o ScAddress) AsAgentID() ScAgentID {
-	// agentID for address has Hname zero
-	return NewScAgentID(o, 0)
+	return NewScAgentIDFromAddress(o)
 }
 
 func (o ScAddress) Bytes() []byte {
@@ -85,9 +84,12 @@ func AddressToBytes(value ScAddress) []byte {
 	}
 }
 
+func AddressFromString(value string) ScAddress {
+	return Bech32Decode(value)
+}
+
 func AddressToString(value ScAddress) string {
-	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Bech32Encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

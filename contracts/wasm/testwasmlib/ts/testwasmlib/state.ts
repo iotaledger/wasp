@@ -96,6 +96,7 @@ export class ImmutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.MapAddressToImmutableAddressMap(this.proxy.root(sc.StateAddressMapOfAddressMap));
 	}
 
+	// ISCP-specific datatypes, using Address
 	arrayOfAddressArray(): sc.ArrayOfImmutableAddressArray {
 		return new sc.ArrayOfImmutableAddressArray(this.proxy.root(sc.StateArrayOfAddressArray));
 	}
@@ -104,6 +105,7 @@ export class ImmutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.ArrayOfImmutableAddressMap(this.proxy.root(sc.StateArrayOfAddressMap));
 	}
 
+	// basic datatypes, using String
 	arrayOfStringArray(): sc.ArrayOfImmutableStringArray {
 		return new sc.ArrayOfImmutableStringArray(this.proxy.root(sc.StateArrayOfStringArray));
 	}
@@ -116,6 +118,7 @@ export class ImmutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.MapInt32ToImmutableLongitude(this.proxy.root(sc.StateLatLong));
 	}
 
+	// Other
 	random(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateRandom));
 	}
@@ -273,6 +276,7 @@ export class MutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.MapAddressToMutableAddressMap(this.proxy.root(sc.StateAddressMapOfAddressMap));
 	}
 
+	// ISCP-specific datatypes, using Address
 	arrayOfAddressArray(): sc.ArrayOfMutableAddressArray {
 		return new sc.ArrayOfMutableAddressArray(this.proxy.root(sc.StateArrayOfAddressArray));
 	}
@@ -281,6 +285,7 @@ export class MutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.ArrayOfMutableAddressMap(this.proxy.root(sc.StateArrayOfAddressMap));
 	}
 
+	// basic datatypes, using String
 	arrayOfStringArray(): sc.ArrayOfMutableStringArray {
 		return new sc.ArrayOfMutableStringArray(this.proxy.root(sc.StateArrayOfStringArray));
 	}
@@ -293,6 +298,7 @@ export class MutableTestWasmLibState extends wasmtypes.ScProxy {
 		return new sc.MapInt32ToMutableLongitude(this.proxy.root(sc.StateLatLong));
 	}
 
+	// Other
 	random(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateRandom));
 	}

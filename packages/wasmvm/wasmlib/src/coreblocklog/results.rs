@@ -17,6 +17,7 @@ pub struct ImmutableControlAddressesResults {
 }
 
 impl ImmutableControlAddressesResults {
+    // the addresses have been set as state controller address or governing address since the following block index
     pub fn block_index(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
@@ -36,6 +37,7 @@ pub struct MutableControlAddressesResults {
 }
 
 impl MutableControlAddressesResults {
+    // the addresses have been set as state controller address or governing address since the following block index
     pub fn block_index(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
@@ -92,6 +94,7 @@ pub struct ImmutableGetEventsForBlockResults {
 }
 
 impl ImmutableGetEventsForBlockResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -126,6 +129,7 @@ pub struct MutableGetEventsForBlockResults {
 }
 
 impl MutableGetEventsForBlockResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -137,6 +141,7 @@ pub struct ImmutableGetEventsForContractResults {
 }
 
 impl ImmutableGetEventsForContractResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -148,6 +153,7 @@ pub struct MutableGetEventsForContractResults {
 }
 
 impl MutableGetEventsForContractResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -159,6 +165,7 @@ pub struct ImmutableGetEventsForRequestResults {
 }
 
 impl ImmutableGetEventsForRequestResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -170,6 +177,7 @@ pub struct MutableGetEventsForRequestResults {
 }
 
 impl MutableGetEventsForRequestResults {
+    // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
@@ -226,6 +234,7 @@ pub struct ImmutableGetRequestIDsForBlockResults {
 }
 
 impl ImmutableGetRequestIDsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
 		ArrayOfImmutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
 	}
@@ -260,6 +269,7 @@ pub struct MutableGetRequestIDsForBlockResults {
 }
 
 impl MutableGetRequestIDsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
 		ArrayOfMutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
 	}
@@ -309,6 +319,7 @@ pub struct ImmutableGetRequestReceiptsForBlockResults {
 }
 
 impl ImmutableGetRequestReceiptsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_record(&self) -> ArrayOfImmutableBytes {
 		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
 	}
@@ -320,6 +331,7 @@ pub struct MutableGetRequestReceiptsForBlockResults {
 }
 
 impl MutableGetRequestReceiptsForBlockResults {
+    // native contract, so this is an Array16
     pub fn request_record(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
 	}
@@ -331,8 +343,8 @@ pub struct ImmutableIsRequestProcessedResults {
 }
 
 impl ImmutableIsRequestProcessedResults {
-    pub fn request_processed(&self) -> ScImmutableString {
-		ScImmutableString::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
+    pub fn request_processed(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
 	}
 }
 
@@ -342,7 +354,7 @@ pub struct MutableIsRequestProcessedResults {
 }
 
 impl MutableIsRequestProcessedResults {
-    pub fn request_processed(&self) -> ScMutableString {
-		ScMutableString::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
+    pub fn request_processed(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
 	}
 }

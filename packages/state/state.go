@@ -5,8 +5,6 @@ package state
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -17,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"golang.org/x/xerrors"
 )
 
@@ -26,6 +26,8 @@ type virtualStateAccess struct {
 	db   kvstore.KVStore
 	kvs  *buffered.BufferedKVStoreAccess
 	trie *trie.Trie
+	// onBlockSave (if != nil) is called each time block is saved to the db with the state
+	onBlockSave OnBlockSaveClosure
 }
 
 var (
@@ -78,14 +80,23 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 	if db == nil {
 		return nil
 	}
-	return db.WithRealm(append(db.Realm(), realm...))
+	ret, err := db.WithRealm(append(db.Realm(), realm...))
+	if err != nil {
+		panic(fmt.Errorf("error creating subRealm: %w", err))
+	}
+	return ret
+}
+
+func (vs *virtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {
+	vs.onBlockSave = fun
 }
 
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
-		db:   vs.db,
-		kvs:  vs.kvs.Copy(),
-		trie: vs.trie.Clone(),
+		db:          vs.db,
+		kvs:         vs.kvs.Copy(),
+		trie:        vs.trie.Clone(),
+		onBlockSave: vs.onBlockSave,
 	}
 	return ret
 }
@@ -136,16 +147,16 @@ func (vs *virtualStateAccess) Timestamp() time.Time {
 	return ts
 }
 
-func (vs *virtualStateAccess) PreviousStateCommitment() trie.VCommitment {
-	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevStateCommitment))
+func (vs *virtualStateAccess) PreviousL1Commitment() *L1Commitment {
+	cBin, err := vs.KVStore().Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
 	if err != nil {
-		panic(xerrors.Errorf("state.PreviousStateCommitment: %w", err))
+		panic(xerrors.Errorf("state.PreviousL1Commitment: %w", err))
 	}
-	c, err := vs.trie.VectorCommitmentFromBytes(cBin)
+	c, err := L1CommitmentFromBytes(cBin)
 	if err != nil {
 		panic(xerrors.Errorf("loadPrevStateHashFromState: %w", err))
 	}
-	return c
+	return &c
 }
 
 // ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
@@ -175,7 +186,7 @@ func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
 	return trie.GetProofGeneric(vs.trie, dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
 }
 
-// ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
+// ExtractBlock creates a block from mutations
 func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 	ret, err := newBlock(vs.kvs.Mutations())
 	if err != nil {

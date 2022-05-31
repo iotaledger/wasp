@@ -11,61 +11,73 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "governance"
-	ScDescription = "Core governance contract"
+	ScDescription = "Governance contract"
 	HScName       = wasmtypes.ScHname(0x17cf909f)
 )
 
 const (
-	ParamChainOwner             = "oi"
-	ParamHname                  = "hn"
-	ParamMaxBlobSize            = "bs"
-	ParamMaxEventSize           = "es"
-	ParamMaxEventsPerReq        = "ne"
-	ParamOwnerFee               = "of"
-	ParamStateControllerAddress = "S"
-	ParamValidatorFee           = "vf"
+	ParamAccessNodeInfoAccessAPI    = "o"
+	ParamAccessNodeInfoCertificate  = "n"
+	ParamAccessNodeInfoForCommittee = "l"
+	ParamAccessNodeInfoPubKey       = "m"
+	ParamChainOwner                 = "c"
+	ParamChangeAccessNodesActions   = "p"
+	ParamFeePolicyBytes             = "d"
+	ParamMaxBlobSize                = "g"
+	ParamMaxEventSize               = "h"
+	ParamMaxEventsPerReq            = "i"
+	ParamStateControllerAddress     = "S"
 )
 
 const (
-	ResultAllowedStateControllerAddresses = "a"
+	ResultAccessNodeCandidates            = "ac"
+	ResultAccessNodes                     = "an"
+	ResultAllowedStateControllerAddresses = "b"
 	ResultChainID                         = "c"
+	ResultChainOwner                      = "c"
 	ResultChainOwnerID                    = "o"
-	ResultDefaultOwnerFee                 = "do"
-	ResultDefaultValidatorFee             = "dv"
 	ResultDescription                     = "d"
+	ResultFeePolicyBytes                  = "d"
+	ResultGasFeePolicyBytes               = "g"
 	ResultMaxBlobSize                     = "mb"
 	ResultMaxEventSize                    = "me"
 	ResultMaxEventsPerReq                 = "mr"
-	ResultOwnerFee                        = "of"
-	ResultValidatorFee                    = "vf"
 )
 
 const (
 	FuncAddAllowedStateControllerAddress    = "addAllowedStateControllerAddress"
+	FuncAddCandidateNode                    = "addCandidateNode"
+	FuncChangeAccessNodes                   = "changeAccessNodes"
 	FuncClaimChainOwnership                 = "claimChainOwnership"
 	FuncDelegateChainOwnership              = "delegateChainOwnership"
 	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
+	FuncRevokeAccessNode                    = "revokeAccessNode"
 	FuncRotateStateController               = "rotateStateController"
 	FuncSetChainInfo                        = "setChainInfo"
-	FuncSetContractFee                      = "setContractFee"
-	FuncSetDefaultFee                       = "setDefaultFee"
+	FuncSetFeePolicy                        = "setFeePolicy"
 	ViewGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
 	ViewGetChainInfo                        = "getChainInfo"
-	ViewGetFeeInfo                          = "getFeeInfo"
+	ViewGetChainNodes                       = "getChainNodes"
+	ViewGetChainOwner                       = "getChainOwner"
+	ViewGetFeePolicy                        = "getFeePolicy"
 	ViewGetMaxBlobSize                      = "getMaxBlobSize"
 )
 
 const (
 	HFuncAddAllowedStateControllerAddress    = wasmtypes.ScHname(0x9469d567)
+	HFuncAddCandidateNode                    = wasmtypes.ScHname(0xb745b382)
+	HFuncChangeAccessNodes                   = wasmtypes.ScHname(0x7bca3700)
 	HFuncClaimChainOwnership                 = wasmtypes.ScHname(0x03ff0fc0)
 	HFuncDelegateChainOwnership              = wasmtypes.ScHname(0x93ecb6ad)
 	HFuncRemoveAllowedStateControllerAddress = wasmtypes.ScHname(0x31f69447)
+	HFuncRevokeAccessNode                    = wasmtypes.ScHname(0x5459512d)
 	HFuncRotateStateController               = wasmtypes.ScHname(0x244d1038)
 	HFuncSetChainInfo                        = wasmtypes.ScHname(0x702f5d2b)
-	HFuncSetContractFee                      = wasmtypes.ScHname(0x8421a42b)
-	HFuncSetDefaultFee                       = wasmtypes.ScHname(0x3310ecd0)
+	HFuncSetFeePolicy                        = wasmtypes.ScHname(0x5b791c9f)
 	HViewGetAllowedStateControllerAddresses  = wasmtypes.ScHname(0xf3505183)
 	HViewGetChainInfo                        = wasmtypes.ScHname(0x434477e2)
-	HViewGetFeeInfo                          = wasmtypes.ScHname(0x9fe54b48)
+	HViewGetChainNodes                       = wasmtypes.ScHname(0xe1832289)
+	HViewGetChainOwner                       = wasmtypes.ScHname(0x9b2ef0ac)
+	HViewGetFeePolicy                        = wasmtypes.ScHname(0xf8c89790)
 	HViewGetMaxBlobSize                      = wasmtypes.ScHname(0xe1db3d28)
 )

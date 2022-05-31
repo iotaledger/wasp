@@ -9,100 +9,124 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
+	// nr of bidders
 	bidders(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBidders));
 	}
 
+	// issuer of start_auction transaction
 	creator(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultCreator));
 	}
 
+	// deposit by auction owner to cover the SC fees
 	deposit(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultDeposit));
 	}
 
+	// auction description
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultDescription));
 	}
 
+	// auction duration in minutes
 	duration(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultDuration));
 	}
 
+	// the current highest bid amount
 	highestBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultHighestBid));
 	}
 
+	// the current highest bidder
 	highestBidder(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultHighestBidder));
 	}
 
+	// minimum bid amount
 	minimumBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMinimumBid));
 	}
 
+	// number of tokens for sale
 	numTokens(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultNumTokens));
 	}
 
+	// auction owner's margin in promilles
 	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultOwnerMargin));
 	}
 
+	// token of tokens for sale
 	token(): wasmtypes.ScImmutableTokenID {
 		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ResultToken));
 	}
 
+	// timestamp when auction started
 	whenStarted(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultWhenStarted));
 	}
 }
 
 export class MutableGetInfoResults extends wasmtypes.ScProxy {
+	// nr of bidders
 	bidders(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBidders));
 	}
 
+	// issuer of start_auction transaction
 	creator(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultCreator));
 	}
 
+	// deposit by auction owner to cover the SC fees
 	deposit(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultDeposit));
 	}
 
+	// auction description
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultDescription));
 	}
 
+	// auction duration in minutes
 	duration(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultDuration));
 	}
 
+	// the current highest bid amount
 	highestBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultHighestBid));
 	}
 
+	// the current highest bidder
 	highestBidder(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultHighestBidder));
 	}
 
+	// minimum bid amount
 	minimumBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMinimumBid));
 	}
 
+	// number of tokens for sale
 	numTokens(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultNumTokens));
 	}
 
+	// auction owner's margin in promilles
 	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultOwnerMargin));
 	}
 
+	// token of tokens for sale
 	token(): wasmtypes.ScMutableTokenID {
 		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ResultToken));
 	}
 
+	// timestamp when auction started
 	whenStarted(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultWhenStarted));
 	}

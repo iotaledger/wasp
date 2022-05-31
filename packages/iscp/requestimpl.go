@@ -12,9 +12,12 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // RequestDataFromMarshalUtil read Request from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
@@ -46,16 +49,70 @@ func RequestDataToMarshalUtil(req Request, mu *marshalutil.MarshalUtil) {
 // region OffLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
 type OffLedgerRequestData struct {
-	chainID    *ChainID
-	contract   Hname
-	entryPoint Hname
-	params     dict.Dict
-	publicKey  *cryptolib.PublicKey
-	sender     *iotago.Ed25519Address
-	signature  []byte
-	nonce      uint64
-	allowance  *Allowance
-	gasBudget  uint64
+	chainID         *ChainID
+	contract        Hname
+	entryPoint      Hname
+	params          dict.Dict
+	signatureScheme OffLedgerSignatureScheme
+	nonce           uint64
+	allowance       *Allowance
+	gasBudget       uint64
+}
+
+type iscOffLedgerSignatureScheme struct {
+	publicKey *cryptolib.PublicKey
+	signature []byte
+}
+
+var _ OffLedgerSignatureScheme = &iscOffLedgerSignatureScheme{}
+
+func (s *iscOffLedgerSignatureScheme) writeEssence(mu *marshalutil.MarshalUtil) {
+	publicKey := s.publicKey.AsBytes()
+	mu.WriteUint8(uint8(len(publicKey))).
+		WriteBytes(publicKey)
+}
+
+func (s *iscOffLedgerSignatureScheme) writeSignature(mu *marshalutil.MarshalUtil) {
+	mu.WriteUint16(uint16(len(s.signature)))
+	mu.WriteBytes(s.signature)
+}
+
+func (s *iscOffLedgerSignatureScheme) readEssence(mu *marshalutil.MarshalUtil) error {
+	pkLen, err := mu.ReadUint8()
+	if err != nil {
+		return err
+	}
+	if publicKey, err := mu.ReadBytes(int(pkLen)); err != nil {
+		return err
+	} else {
+		s.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey)
+	}
+	return err
+}
+
+func (s *iscOffLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) error {
+	sigLength, err := mu.ReadUint16()
+	if err != nil {
+		return err
+	}
+	s.signature, err = mu.ReadBytes(int(sigLength))
+	return err
+}
+
+func (s *iscOffLedgerSignatureScheme) setPublicKey(key *cryptolib.PublicKey) {
+	s.publicKey = key
+}
+
+func (s *iscOffLedgerSignatureScheme) sign(key *cryptolib.KeyPair, data []byte) {
+	s.signature = key.GetPrivateKey().Sign(data)
+}
+
+func (s *iscOffLedgerSignatureScheme) verify(data []byte) bool {
+	return s.publicKey.Verify(data, s.signature)
+}
+
+func (s *iscOffLedgerSignatureScheme) Sender() AgentID {
+	return NewAgentID(s.publicKey.AsEd25519Address())
 }
 
 func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
@@ -64,7 +121,13 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
-		nonce:      nonce,
+		signatureScheme: &iscOffLedgerSignatureScheme{
+			publicKey: cryptolib.NewEmptyPublicKey(),
+			signature: []byte{},
+		},
+		nonce:     nonce,
+		allowance: NewEmptyAllowance(),
+		gasBudget: gas.MaxGasPerCall,
 	}
 }
 
@@ -124,20 +187,14 @@ func OffLedgerRequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OffLedge
 
 func (r *OffLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	r.writeEssenceToMarshalUtil(mu)
-	mu.WriteUint16(uint16(len(r.signature)))
-	mu.WriteBytes(r.signature)
+	r.signatureScheme.writeSignature(mu)
 }
 
 func (r *OffLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if err := r.readEssenceFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	sigLength, err := mu.ReadUint16()
-	if err != nil {
-		return err
-	}
-	r.signature, err = mu.ReadBytes(int(sigLength))
-	if err != nil {
+	if err := r.signatureScheme.readSignature(mu); err != nil {
 		return err
 	}
 	return nil
@@ -150,15 +207,13 @@ func (r *OffLedgerRequestData) essenceBytes() []byte {
 }
 
 func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	publicKey := r.publicKey.AsBytes()
 	mu.Write(r.chainID).
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
-		WriteUint8(uint8(len(publicKey))).
-		WriteBytes(publicKey).
 		WriteUint64(r.nonce).
 		WriteUint64(r.gasBudget)
+	r.signatureScheme.writeEssence(mu)
 	mu.WriteBool(r.allowance != nil)
 	if r.allowance != nil {
 		r.allowance.WriteToMarshalUtil(mu)
@@ -180,27 +235,42 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if err != nil {
 		return err
 	}
-	pkLen, err := mu.ReadUint8()
-	if err != nil {
-		return err
-	}
-	if publicKey, err := mu.ReadBytes(int(pkLen)); err != nil {
-		return err
-	} else if r.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey); err != nil {
-		return err
-	}
 	if r.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
 	if r.gasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	var transferNotNil bool
-	if transferNotNil, err = mu.ReadBool(); err != nil {
+
+	if r.IsEVMSendTransaction() {
+		tx, err := evmtypes.DecodeTransaction(r.params.MustGet(evmnames.FieldTransaction))
+		if err != nil {
+			return err
+		}
+		signatureScheme, err := newEVMOffLedferSignatureSchemeFromTransaction(tx)
+		if err != nil {
+			return err
+		}
+		r.signatureScheme = signatureScheme
+	} else if r.IsEVMEstimateGas() {
+		callMsg, err := evmtypes.DecodeCallMsg(r.params.MustGet(evmnames.FieldCallMsg))
+		if err != nil {
+			return err
+		}
+		r.signatureScheme = newEVMOffLedferSignatureSchemeFromCallMsg(callMsg)
+	} else {
+		r.signatureScheme = &iscOffLedgerSignatureScheme{}
+	}
+	if err = r.signatureScheme.readEssence(mu); err != nil {
+		return err
+	}
+
+	var hasAllowance bool
+	if hasAllowance, err = mu.ReadBool(); err != nil {
 		return err
 	}
 	r.allowance = nil
-	if transferNotNil {
+	if hasAllowance {
 		if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 			return err
 		}
@@ -213,10 +283,10 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 	return hashing.HashData(r.Bytes())
 }
 
-// Sign signs essence
+// Sign signs the essence
 func (r *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) {
-	r.publicKey = key.GetPublicKey()
-	r.signature = key.GetPrivateKey().Sign(r.essenceBytes())
+	r.signatureScheme.setPublicKey(key.GetPublicKey())
+	r.signatureScheme.sign(key, r.essenceBytes())
 }
 
 // FungibleTokens is attached assets to the UTXO. Nil for off-ledger
@@ -238,14 +308,14 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-func (r *OffLedgerRequestData) WithTransfer(transfer *Allowance) *OffLedgerRequestData {
-	r.allowance = transfer.Clone()
+func (r *OffLedgerRequestData) WithAllowance(allowance *Allowance) *OffLedgerRequestData {
+	r.allowance = allowance.Clone()
 	return r
 }
 
 // VerifySignature verifies essence signature
 func (r *OffLedgerRequestData) VerifySignature() bool {
-	return r.publicKey.Verify(r.essenceBytes(), r.signature)
+	return r.signatureScheme.verify(r.essenceBytes())
 }
 
 // ID returns request id for this request
@@ -262,6 +332,9 @@ func (r *OffLedgerRequestData) Nonce() uint64 {
 }
 
 func (r *OffLedgerRequestData) WithNonce(nonce uint64) Calldata {
+	if r.IsEVM() {
+		panic("nonce in EVM requests is specified in the Ethereum tx")
+	}
 	r.nonce = nonce
 	return r
 }
@@ -270,15 +343,8 @@ func (r *OffLedgerRequestData) Params() dict.Dict {
 	return r.params
 }
 
-func (r *OffLedgerRequestData) SenderAccount() *AgentID {
-	return NewAgentID(r.SenderAddress(), 0)
-}
-
-func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
-	if r.sender == nil {
-		r.sender = r.publicKey.AsEd25519Address()
-	}
-	return r.sender
+func (r *OffLedgerRequestData) SenderAccount() AgentID {
+	return r.signatureScheme.Sender()
 }
 
 func (r *OffLedgerRequestData) CallTarget() CallTarget {
@@ -322,22 +388,18 @@ type OnLedgerRequestData struct {
 
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
-	featureBlocks    iotago.FeatureBlocksSet
+	featureBlocks    iotago.FeaturesSet
 	unlockConditions iotago.UnlockConditionsSet
 	requestMetadata  *RequestMetadata
 }
 
 func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestData, error) {
-	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbSet, err = o.FeatureBlocks().Set()
-	if err != nil {
-		return nil, err
-	}
+	fbSet := o.FeaturesSet()
 
-	reqMetadata, err = RequestMetadataFromFeatureBlocksSet(fbSet)
+	reqMetadata, err = RequestMetadataFromFeatureSet(fbSet)
 	if err != nil {
 		return nil, err
 	}
@@ -346,16 +408,11 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		reqMetadata.Allowance.fillEmptyNFTIDs(o, id)
 	}
 
-	ucSet, err := o.UnlockConditions().Set()
-	if err != nil {
-		return nil, err
-	}
-
 	return &OnLedgerRequestData{
 		output:           o,
 		inputID:          *id,
 		featureBlocks:    fbSet,
-		unlockConditions: ucSet,
+		unlockConditions: o.UnlockConditionsSet(),
 		requestMetadata:  reqMetadata,
 	}, nil
 }
@@ -416,15 +473,23 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 	return r.requestMetadata.Params
 }
 
-func (r *OnLedgerRequestData) SenderAccount() *AgentID {
-	if r.SenderAddress() == nil || r.requestMetadata == nil {
+func (r *OnLedgerRequestData) SenderAccount() AgentID {
+	sender := r.SenderAddress()
+	if sender == nil || r.requestMetadata == nil {
 		return nil
 	}
-	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract)
+	if r.requestMetadata.SenderContract != 0 {
+		if sender.Type() != iotago.AddressAlias {
+			panic("inconsistency: non-alias address cannot have hname != 0")
+		}
+		chid := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+		return NewContractAgentID(&chid, r.requestMetadata.SenderContract)
+	}
+	return NewAgentID(sender)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
-	senderBlock := r.featureBlocks.SenderFeatureBlock()
+	senderBlock := r.featureBlocks.SenderFeature()
 	if senderBlock == nil {
 		return nil
 	}
@@ -467,11 +532,11 @@ func (r *OnLedgerRequestData) NFT() *NFT {
 	utxoInput := r.UTXOInput()
 	ret.ID = util.NFTIDFromNFTOutput(out, utxoInput.ID())
 
-	for _, featureBlock := range out.ImmutableBlocks {
-		if block, ok := featureBlock.(*iotago.IssuerFeatureBlock); ok {
+	for _, featureBlock := range out.ImmutableFeatures {
+		if block, ok := featureBlock.(*iotago.IssuerFeature); ok {
 			ret.Issuer = block.Address
 		}
-		if block, ok := featureBlock.(*iotago.MetadataFeatureBlock); ok {
+		if block, ok := featureBlock.(*iotago.MetadataFeature); ok {
 			ret.Metadata = block.Data
 		}
 	}
@@ -659,8 +724,8 @@ func (rid RequestID) OutputID() iotago.OutputID {
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
 	ret := RequestLookupDigest{}
-	// copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
-	// copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
+	copy(ret[:RequestIDDigestLen], rid.TransactionID[:RequestIDDigestLen])
+	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.TransactionOutputIndex))
 	return ret
 }
 
@@ -672,20 +737,27 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return OID(rid.UTXOInput()) // CHANGE THIS = the "0/format" is fucking things up
+	return OID(rid.UTXOInput())
 }
 
 func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
-	txid := TxID(&oid.TransactionID)
+	txid := TxID(oid.TransactionID)
 	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
 }
 
-func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("%d%s%s", o.TransactionOutputIndex, RequestIDSeparator, TxID(&o.TransactionID))
+func (rid RequestID) Equals(reqID2 RequestID) bool {
+	if rid.TransactionOutputIndex != reqID2.TransactionOutputIndex {
+		return false
+	}
+	return rid.TransactionID == reqID2.TransactionID
 }
 
-func TxID(txID *iotago.TransactionID) string {
+func OID(o *iotago.UTXOInput) string {
+	return fmt.Sprintf("%d%s%s", o.TransactionOutputIndex, RequestIDSeparator, TxID(o.TransactionID))
+}
+
+func TxID(txID iotago.TransactionID) string {
 	return hex.EncodeToString(txID[:])
 }
 
@@ -695,6 +767,14 @@ func ShortRequestIDs(ids []RequestID) []string {
 		ret[i] = ids[i].Short()
 	}
 	return ret
+}
+
+func ShortRequestIDsFromRequests(reqs []Request) []string {
+	requestIDs := make([]RequestID, len(reqs))
+	for i := range reqs {
+		requestIDs[i] = reqs[i].ID()
+	}
+	return ShortRequestIDs(requestIDs)
 }
 
 // endregion ////////////////////////////////////////////////////////////
@@ -715,13 +795,12 @@ type RequestMetadata struct {
 	GasBudget uint64
 }
 
-func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestMetadata, error) {
-	metadataFeatBlock := set.MetadataFeatureBlock()
+func RequestMetadataFromFeatureSet(set iotago.FeaturesSet) (*RequestMetadata, error) {
+	metadataFeatBlock := set.MetadataFeature()
 	if metadataFeatBlock == nil {
 		return nil, nil
 	}
-	bytes := metadataFeatBlock.Data
-	return RequestMetadataFromBytes(bytes)
+	return RequestMetadataFromBytes(metadataFeatBlock.Data)
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {

@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // Address is the string representation of iotago.Address
 type Address string
 
-func NewAddress(address iotago.Address, networkPrefix iotago.NetworkPrefix) Address {
-	return Address(address.String())
+func NewAddress(address iotago.Address) Address {
+	return Address(address.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {

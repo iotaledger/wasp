@@ -123,7 +123,6 @@ const (
 	ParamAddress           = "address"
 	ParamChainID           = "chainID"
 	ParamIotasToWithdrawal = "iotasWithdrawal"
-	ParamGasBudgetToSend   = "gasBudget"
 	ParamChainOwnerID      = "chainOwnerID"
 	ParamCaller            = "caller"
 	ParamAgentID           = "agentID"

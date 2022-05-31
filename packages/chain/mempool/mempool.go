@@ -9,9 +9,8 @@ import (
 	"sync"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -237,7 +236,7 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 }
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (isReady bool, shouldBeRemoved bool) {
+func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (isReady, shouldBeRemoved bool) {
 	if ref.req.IsOffLedger() {
 		return true, false
 	}

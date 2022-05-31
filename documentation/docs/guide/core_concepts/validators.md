@@ -1,13 +1,15 @@
 ---
-keywords:
-- Validators
-- consensus
-- state update
 description: Each chain is run by a network of validator nodes which run a consensus on the chain state update.
 image: /img/logo/WASP_logo_dark.png
+keywords:
+- validators
+- validator nodes
+- consensus
+- state update
+- explanation
 ---
 # Validators
 
-Each chain is run by a network of validator nodes, which run a consensus on the chain state updates. The [Wasp](https://github.com/iotaledger/wasp) node is an implementation of the validator node. The validators of the chain form a committee, a bound together closed set of nodes. The committee of the chain may change, allowing new validators and validator nodes to be added or replaced. This also makes the chain itself agnostic to its validators (the committee).
+Each chain is run by that chain's *committee of validators*. This committee owns a key that is split between all of its validators. Each key share is useless on its own, but a collective signature gives validators full control over the chain.
 
-Only when a supermajority of the validators (the quorum) of a chain reaches [consensus](./consensus.md), a new state update can be signed, which unlocks the AliasOutput for the chain and produces the next state UTXO.
+ISC does not define how do you select validators to form a committee: it could be a solitary choice of the chain's owner, or it could be a [public competition](https://wiki.assembly.sc/learn/introduction/) between candidates. ISC does not define how validators are rewarded, either.

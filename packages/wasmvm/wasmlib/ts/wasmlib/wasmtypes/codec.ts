@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {sandbox} from "../host";
-import {FnUtilsBase58Encode, panic} from "../sandbox";
+import {FnUtilsBase58Decode, FnUtilsBase58Encode, panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {ScSandboxUtils} from "../sandboxutils";
+import {ScAddress} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -207,12 +209,73 @@ export class WasmEncoder {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // wrapper for simplified use by hashtypes
+export function base58Decode(value: string): u8[] {
+    const utils = new ScSandboxUtils();
+    return utils.base58Decode(value)
+}
+
 export function base58Encode(buf: u8[]): string {
-    return wasmtypes.stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
+    const utils = new ScSandboxUtils();
+    return utils.base58Encode(buf)
+}
+
+function hexer(hexDigit: u8): u8 {
+    // '0' to '9'
+    if (hexDigit >= 0x30 && hexDigit <= 0x39) {
+        return hexDigit - 0x30;
+    }
+    // 'a' to 'f'
+    if (hexDigit >= 0x61 && hexDigit <= 0x66) {
+        return hexDigit - 0x61 + 10;
+    }
+    // 'A' to 'F'
+    if (hexDigit >= 0x41 && hexDigit <= 0x46){
+        return hexDigit - 0x41 + 10;
+    }
+    panic("invalid hex digit");
+    return 0;
+}
+
+export function hexDecode(hex: string): u8[] {
+    const digits = hex.length;
+    if ((digits & 1) != 0) {
+        panic("odd hex string length");
+    }
+    const buf = new Array<u8>(digits / 2);
+    for (let i = 0; i < digits; i += 2) {
+        buf[i / 2] = (hexer(hex.charCodeAt(i) as u8) << 4) | hexer(hex.charCodeAt(i + 1) as u8)
+    }
+    return buf
+}
+
+export function hexEncode(buf: u8[]): string {
+    const bytes = buf.length;
+    const hex = new Array<u8>(bytes * 2);
+    const alpha = (0x61 - 10) as u8;
+    const digit = 0x30 as u8;
+
+    for (let i = 0; i < bytes; i++) {
+        const b: u8 = buf[i];
+        const b1: u8 = b >> 4;
+        hex[i * 2] = b1 + ((b1 > 9) ? alpha : digit);
+        const b2: u8 = b & 0x0f;
+        hex[i * 2 + 1] = b2 + ((b2 > 9) ? alpha : digit);
+    }
+    return wasmtypes.stringFromBytes(hex);
+}
+
+export function intFromString(value: string, bits: u32): i64 {
+    //TODO implement bits, handle 64 bits properly
+    return parseInt(value) as i64;
+}
+
+export function uintFromString(value: string, bits: u32): u64 {
+    //TODO implement bits, handle 64 bits properly
+    return parseInt(value) as u64;
 }
 
 export function zeroes(count: u32): u8[] {
-    const buf: u8[] = new Array(count);
+    const buf = new Array<u8>(count);
     buf.fill(0);
     return buf;
 }

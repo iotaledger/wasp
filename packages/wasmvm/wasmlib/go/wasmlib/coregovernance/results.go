@@ -9,16 +9,16 @@ package coregovernance
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ArrayOfImmutableBytes struct {
+type ArrayOfImmutableAddress struct {
 	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableBytes) Length() uint32 {
+func (a ArrayOfImmutableAddress) Length() uint32 {
 	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableBytes) GetBytes(index uint32) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(a.proxy.Index(index))
+func (a ArrayOfImmutableAddress) GetAddress(index uint32) wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(a.proxy.Index(index))
 }
 
 type ImmutableGetAllowedStateControllerAddressesResults struct {
@@ -26,28 +26,28 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 }
 
 // native contract, so this is an Array16
-func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableBytes {
-	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
+func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableAddress {
+	return ArrayOfImmutableAddress{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
 }
 
-type ArrayOfMutableBytes struct {
+type ArrayOfMutableAddress struct {
 	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfMutableBytes) AppendBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(a.proxy.Append())
+func (a ArrayOfMutableAddress) AppendAddress() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(a.proxy.Append())
 }
 
-func (a ArrayOfMutableBytes) Clear() {
+func (a ArrayOfMutableAddress) Clear() {
 	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableBytes) Length() uint32 {
+func (a ArrayOfMutableAddress) Length() uint32 {
 	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableBytes) GetBytes(index uint32) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(a.proxy.Index(index))
+func (a ArrayOfMutableAddress) GetAddress(index uint32) wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(a.proxy.Index(index))
 }
 
 type MutableGetAllowedStateControllerAddressesResults struct {
@@ -55,8 +55,8 @@ type MutableGetAllowedStateControllerAddressesResults struct {
 }
 
 // native contract, so this is an Array16
-func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableBytes {
-	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
+func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableAddress {
+	return ArrayOfMutableAddress{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
 }
 
 type ImmutableGetChainInfoResults struct {
@@ -71,29 +71,24 @@ func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScImmutableAgentI
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
-func (s ImmutableGetChainInfoResults) DefaultOwnerFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultDefaultOwnerFee))
-}
-
-func (s ImmutableGetChainInfoResults) DefaultValidatorFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultDefaultValidatorFee))
-}
-
 func (s ImmutableGetChainInfoResults) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
 }
 
-// feeColor=f: Color
-func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableInt32 {
-	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ResultMaxBlobSize))
+func (s ImmutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultGasFeePolicyBytes))
 }
 
-func (s ImmutableGetChainInfoResults) MaxEventSize() wasmtypes.ScImmutableInt16 {
-	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ResultMaxEventSize))
+func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultMaxBlobSize))
 }
 
-func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScImmutableInt16 {
-	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ResultMaxEventsPerReq))
+func (s ImmutableGetChainInfoResults) MaxEventSize() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ResultMaxEventSize))
+}
+
+func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScImmutableUint16 {
+	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ResultMaxEventsPerReq))
 }
 
 type MutableGetChainInfoResults struct {
@@ -108,69 +103,114 @@ func (s MutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
-func (s MutableGetChainInfoResults) DefaultOwnerFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultDefaultOwnerFee))
-}
-
-func (s MutableGetChainInfoResults) DefaultValidatorFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultDefaultValidatorFee))
-}
-
 func (s MutableGetChainInfoResults) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
 }
 
-// feeColor=f: Color
-func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableInt32 {
-	return wasmtypes.NewScMutableInt32(s.proxy.Root(ResultMaxBlobSize))
+func (s MutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultGasFeePolicyBytes))
 }
 
-func (s MutableGetChainInfoResults) MaxEventSize() wasmtypes.ScMutableInt16 {
-	return wasmtypes.NewScMutableInt16(s.proxy.Root(ResultMaxEventSize))
+func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultMaxBlobSize))
 }
 
-func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScMutableInt16 {
-	return wasmtypes.NewScMutableInt16(s.proxy.Root(ResultMaxEventsPerReq))
+func (s MutableGetChainInfoResults) MaxEventSize() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ResultMaxEventSize))
 }
 
-type ImmutableGetFeeInfoResults struct {
+func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScMutableUint16 {
+	return wasmtypes.NewScMutableUint16(s.proxy.Root(ResultMaxEventsPerReq))
+}
+
+type MapBytesToImmutableBytes struct {
 	proxy wasmtypes.Proxy
 }
 
-// feeColor=f: Color
-func (s ImmutableGetFeeInfoResults) OwnerFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultOwnerFee))
+func (m MapBytesToImmutableBytes) GetBytes(key []byte) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesToBytes(key)))
 }
 
-func (s ImmutableGetFeeInfoResults) ValidatorFee() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultValidatorFee))
-}
-
-type MutableGetFeeInfoResults struct {
+type ImmutableGetChainNodesResults struct {
 	proxy wasmtypes.Proxy
 }
 
-// feeColor=f: Color
-func (s MutableGetFeeInfoResults) OwnerFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultOwnerFee))
+func (s ImmutableGetChainNodesResults) AccessNodeCandidates() MapBytesToImmutableBytes {
+	return MapBytesToImmutableBytes{proxy: s.proxy.Root(ResultAccessNodeCandidates)}
 }
 
-func (s MutableGetFeeInfoResults) ValidatorFee() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultValidatorFee))
+func (s ImmutableGetChainNodesResults) AccessNodes() MapBytesToImmutableBytes {
+	return MapBytesToImmutableBytes{proxy: s.proxy.Root(ResultAccessNodes)}
+}
+
+type MapBytesToMutableBytes struct {
+	proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToMutableBytes) Clear() {
+	m.proxy.ClearMap()
+}
+
+func (m MapBytesToMutableBytes) GetBytes(key []byte) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
+type MutableGetChainNodesResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetChainNodesResults) AccessNodeCandidates() MapBytesToMutableBytes {
+	return MapBytesToMutableBytes{proxy: s.proxy.Root(ResultAccessNodeCandidates)}
+}
+
+func (s MutableGetChainNodesResults) AccessNodes() MapBytesToMutableBytes {
+	return MapBytesToMutableBytes{proxy: s.proxy.Root(ResultAccessNodes)}
+}
+
+type ImmutableGetChainOwnerResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableGetChainOwnerResults) ChainOwner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwner))
+}
+
+type MutableGetChainOwnerResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetChainOwnerResults) ChainOwner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwner))
+}
+
+type ImmutableGetFeePolicyResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultFeePolicyBytes))
+}
+
+type MutableGetFeePolicyResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultFeePolicyBytes))
 }
 
 type ImmutableGetMaxBlobSizeResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScImmutableInt32 {
-	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ResultMaxBlobSize))
+func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultMaxBlobSize))
 }
 
 type MutableGetMaxBlobSizeResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScMutableInt32 {
-	return wasmtypes.NewScMutableInt32(s.proxy.Root(ResultMaxBlobSize))
+func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultMaxBlobSize))
 }

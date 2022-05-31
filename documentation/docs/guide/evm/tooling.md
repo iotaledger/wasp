@@ -1,16 +1,17 @@
 ---
+description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
+image: /img/logo/WASP_logo_dark.png
 keywords:
-- Smart Contracts
-- Chain
+- smart contracts
+- chain
 - EVM
 - Solidity
-- Tooling
+- tooling
 - wasp-cli
 - hardhat
 - metamask
 - JSON-RPC
-description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
-image: /img/logo/WASP_logo_dark.png
+- reference
 ---
 # EVM Tooling
 
@@ -51,6 +52,15 @@ If you wish to use additional EVM chains with Metamask, you can simply add more 
 ### Remix 
 
 If you also want to use the [Remix IDE](https://remix.ethereum.org/) to deploy any regular Solidity Smart Contract, you should set the environment as **Injected Web3**, which should then connect with your MetaMask wallet.
+
+Click on the _Deploy & Run transactions_ button in the menu on the left and select `Injected Web3` from the `Environment` dropdown.
+
+[![Select Injected Web3 from the Environment dropdown](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)](https://user-images.githubusercontent.com/7383572/146169413-fd0992e3-7c2d-4c66-bf84-8dd4f2f492a7.png)
+
+Metamask will ask to connect to Remix and once connected the `Environment` will be set to `Injected Web3` with the `Custom (1074) network`.
+
+[![Environment will be set to Injected Web3](https://user-images.githubusercontent.com/7383572/146169653-fd692eab-6e74-4b17-8833-bd87dafc0ce2.png)](https://user-images.githubusercontent.com/7383572/146169653-fd692eab-6e74-4b17-8833-bd87dafc0ce2.png)
+
 
 ## Video Tutorial
 

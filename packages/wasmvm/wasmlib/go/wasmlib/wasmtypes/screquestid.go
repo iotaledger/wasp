@@ -47,9 +47,13 @@ func RequestIDToBytes(value ScRequestID) []byte {
 	return value.id[:]
 }
 
+func RequestIDFromString(value string) ScRequestID {
+	return RequestIDFromBytes(Base58Decode(value))
+}
+
 func RequestIDToString(value ScRequestID) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Base58Encode(RequestIDToBytes(value))
 }
 
 func requestIDFromBytesUnchecked(buf []byte) ScRequestID {

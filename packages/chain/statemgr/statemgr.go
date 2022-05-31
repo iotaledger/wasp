@@ -78,15 +78,16 @@ func New(
 	} else {
 		timers = NewStateManagerTimers()
 	}
+	log := c.Log().Named("sm")
 	ret := &stateManager{
 		ready:                      ready.New(fmt.Sprintf("state manager %s", c.ID().String()[:6]+"..")),
 		store:                      store,
 		chain:                      c,
 		nodeConn:                   nodeconn,
 		domain:                     domain,
-		syncingBlocks:              newSyncingBlocks(c.Log(), timers.GetBlockRetry),
+		syncingBlocks:              newSyncingBlocks(log, wal),
 		timers:                     timers,
-		log:                        c.Log().Named("s"),
+		log:                        log,
 		pullStateRetryTime:         time.Now(),
 		eventGetBlockMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventBlockMsgPipe:          pipe.NewLimitInfinitePipe(maxMsgBuffer),
@@ -161,6 +162,7 @@ func (sm *stateManager) initLoadState() {
 		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return
 	}
+	sm.setRawBlocksOptions()
 	sm.recvLoop() // Check to process external events.
 }
 

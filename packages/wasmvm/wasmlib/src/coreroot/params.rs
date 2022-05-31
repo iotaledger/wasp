@@ -17,6 +17,7 @@ pub struct ImmutableDeployContractParams {
 }
 
 impl ImmutableDeployContractParams {
+    // default 'N/A'
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
@@ -25,6 +26,7 @@ impl ImmutableDeployContractParams {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    //TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
@@ -36,6 +38,7 @@ pub struct MutableDeployContractParams {
 }
 
 impl MutableDeployContractParams {
+    // default 'N/A'
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
@@ -44,6 +47,7 @@ impl MutableDeployContractParams {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
+    //TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
@@ -68,6 +72,28 @@ pub struct MutableGrantDeployPermissionParams {
 impl MutableGrantDeployPermissionParams {
     pub fn deployer(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableRequireDeployPermissionsParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableRequireDeployPermissionsParams {
+    pub fn deploy_permissions_enabled(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableRequireDeployPermissionsParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableRequireDeployPermissionsParams {
+    pub fn deploy_permissions_enabled(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
 	}
 }
 

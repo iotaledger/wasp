@@ -7,13 +7,14 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
 func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
 	member := dividend.ScFuncs.Member(ctx)
-	member.Params.Address().SetValue(agent.ScAddress())
+	member.Params.Address().SetValue(agent.ScAgentID().Address())
 	member.Params.Factor().SetValue(factor)
 	member.Func.Post()
 }
@@ -25,7 +26,7 @@ func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
 
 func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) uint64 {
 	getFactor := dividend.ScFuncs.GetFactor(ctx)
-	getFactor.Params.Address().SetValue(member.ScAddress())
+	getFactor.Params.Address().SetValue(member.ScAgentID().Address())
 	getFactor.Func.Call()
 	value := getFactor.Results.Factor().Value()
 	return value
@@ -59,7 +60,7 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 
 	member1 := ctx.NewSoloAgent()
 	member := dividend.ScFuncs.Member(ctx)
-	member.Params.Address().SetValue(member1.ScAddress())
+	member.Params.Address().SetValue(member1.ScAgentID().Address())
 	member.Func.Post()
 	require.Error(t, ctx.Err)
 	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")
@@ -78,12 +79,13 @@ func TestDivide1Member(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1001)
+	const dividendToDivide = 1*iscp.Mi + 1
+	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
 	bal.Originator -= ctx.GasFee
-	bal.Add(member1, 1001)
+	bal.Add(member1, dividendToDivide)
 	bal.VerifyBalances(t)
 }
 
@@ -110,14 +112,15 @@ func TestDivide2Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1999)
+	const dividendToDivide = 2*iscp.Mi - 1
+	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := uint64(1999) - 1999*250/1000 - 1999*750/1000
+	remain := dividendToDivide - dividendToDivide*250/1000 - dividendToDivide*750/1000
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, 1999*250/1000)
-	bal.Add(member2, 1999*750/1000)
+	bal.Add(member1, dividendToDivide*250/1000)
+	bal.Add(member2, dividendToDivide*750/1000)
 	bal.VerifyBalances(t)
 }
 
@@ -154,26 +157,28 @@ func TestDivide3Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1999)
+	const dividendToDivide = 2*iscp.Mi - 1
+	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
-	remain := uint64(1999) - 1999*250/1500 - 1999*500/1500 - 1999*750/1500
+	remain := dividendToDivide - dividendToDivide*250/1500 - dividendToDivide*500/1500 - dividendToDivide*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, 1999*250/1500)
-	bal.Add(member2, 1999*500/1500)
-	bal.Add(member3, 1999*750/1500)
+	bal.Add(member1, dividendToDivide*250/1500)
+	bal.Add(member2, dividendToDivide*500/1500)
+	bal.Add(member3, dividendToDivide*750/1500)
 	bal.VerifyBalances(t)
 
-	dividendDivide(ctx, 1234)
+	const dividendToDivide2 = 2*iscp.Mi + 234
+	dividendDivide(ctx, dividendToDivide2)
 	require.NoError(t, ctx.Err)
 
-	remain = uint64(1234) - 1234*250/1500 - 1234*500/1500 - 1234*750/1500
+	remain = dividendToDivide2 - dividendToDivide2*250/1500 - dividendToDivide2*500/1500 - dividendToDivide2*750/1500
 	bal.Chain += ctx.GasFee
 	bal.Originator += remain - ctx.GasFee
-	bal.Add(member1, 1234*250/1500)
-	bal.Add(member2, 1234*500/1500)
-	bal.Add(member3, 1234*750/1500)
+	bal.Add(member1, dividendToDivide2*250/1500)
+	bal.Add(member2, dividendToDivide2*500/1500)
+	bal.Add(member3, dividendToDivide2*750/1500)
 	bal.VerifyBalances(t)
 }
 

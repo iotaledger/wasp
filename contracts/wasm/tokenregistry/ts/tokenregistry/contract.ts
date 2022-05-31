@@ -9,8 +9,11 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class MintSupplyCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMintSupply);
+	func: wasmlib.ScFunc;
 	params: sc.MutableMintSupplyParams = new sc.MutableMintSupplyParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncMintSupply);
+	}
 }
 
 export class MintSupplyContext {
@@ -19,8 +22,11 @@ export class MintSupplyContext {
 }
 
 export class TransferOwnershipCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferOwnership);
+	func: wasmlib.ScFunc;
 	params: sc.MutableTransferOwnershipParams = new sc.MutableTransferOwnershipParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTransferOwnership);
+	}
 }
 
 export class TransferOwnershipContext {
@@ -29,8 +35,11 @@ export class TransferOwnershipContext {
 }
 
 export class UpdateMetadataCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncUpdateMetadata);
+	func: wasmlib.ScFunc;
 	params: sc.MutableUpdateMetadataParams = new sc.MutableUpdateMetadataParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncUpdateMetadata);
+	}
 }
 
 export class UpdateMetadataContext {
@@ -39,8 +48,11 @@ export class UpdateMetadataContext {
 }
 
 export class GetInfoCall {
-	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetInfo);
+	func: wasmlib.ScView;
 	params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetInfo);
+	}
 }
 
 export class GetInfoContext {
@@ -49,26 +61,26 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-	static mintSupply(_ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
-		const f = new MintSupplyCall();
+	static mintSupply(ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
+		const f = new MintSupplyCall(ctx);
 		f.params = new sc.MutableMintSupplyParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static transferOwnership(_ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
-		const f = new TransferOwnershipCall();
+	static transferOwnership(ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
+		const f = new TransferOwnershipCall(ctx);
 		f.params = new sc.MutableTransferOwnershipParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static updateMetadata(_ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
-		const f = new UpdateMetadataCall();
+	static updateMetadata(ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
+		const f = new UpdateMetadataCall(ctx);
 		f.params = new sc.MutableUpdateMetadataParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
-	static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
-		const f = new GetInfoCall();
+	static getInfo(ctx: wasmlib.ScViewCallContext): GetInfoCall {
+		const f = new GetInfoCall(ctx);
 		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}

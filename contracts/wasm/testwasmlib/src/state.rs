@@ -145,6 +145,7 @@ impl ImmutableTestWasmLibState {
 		MapAddressToImmutableAddressMap { proxy: self.proxy.root(STATE_ADDRESS_MAP_OF_ADDRESS_MAP) }
 	}
 
+    // ISCP-specific datatypes, using Address
     pub fn array_of_address_array(&self) -> ArrayOfImmutableAddressArray {
 		ArrayOfImmutableAddressArray { proxy: self.proxy.root(STATE_ARRAY_OF_ADDRESS_ARRAY) }
 	}
@@ -153,6 +154,7 @@ impl ImmutableTestWasmLibState {
 		ArrayOfImmutableAddressMap { proxy: self.proxy.root(STATE_ARRAY_OF_ADDRESS_MAP) }
 	}
 
+    // basic datatypes, using String
     pub fn array_of_string_array(&self) -> ArrayOfImmutableStringArray {
 		ArrayOfImmutableStringArray { proxy: self.proxy.root(STATE_ARRAY_OF_STRING_ARRAY) }
 	}
@@ -165,6 +167,7 @@ impl ImmutableTestWasmLibState {
 		MapInt32ToImmutableLongitude { proxy: self.proxy.root(STATE_LAT_LONG) }
 	}
 
+    // Other
     pub fn random(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(STATE_RANDOM))
 	}
@@ -367,6 +370,7 @@ impl MutableTestWasmLibState {
 		MapAddressToMutableAddressMap { proxy: self.proxy.root(STATE_ADDRESS_MAP_OF_ADDRESS_MAP) }
 	}
 
+    // ISCP-specific datatypes, using Address
     pub fn array_of_address_array(&self) -> ArrayOfMutableAddressArray {
 		ArrayOfMutableAddressArray { proxy: self.proxy.root(STATE_ARRAY_OF_ADDRESS_ARRAY) }
 	}
@@ -375,6 +379,7 @@ impl MutableTestWasmLibState {
 		ArrayOfMutableAddressMap { proxy: self.proxy.root(STATE_ARRAY_OF_ADDRESS_MAP) }
 	}
 
+    // basic datatypes, using String
     pub fn array_of_string_array(&self) -> ArrayOfMutableStringArray {
 		ArrayOfMutableStringArray { proxy: self.proxy.root(STATE_ARRAY_OF_STRING_ARRAY) }
 	}
@@ -387,6 +392,7 @@ impl MutableTestWasmLibState {
 		MapInt32ToMutableLongitude { proxy: self.proxy.root(STATE_LAT_LONG) }
 	}
 
+    // Other
     pub fn random(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(STATE_RANDOM))
 	}

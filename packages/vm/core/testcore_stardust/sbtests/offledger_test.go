@@ -19,7 +19,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		cAID := setupTestSandboxSC(t, chain, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
-		userAgentID := iscp.NewAgentID(userAddr, 0)
+		userAgentID := iscp.NewAgentID(userAddr)
 
 		chain.AssertL2Iotas(userAgentID, 0)
 		chain.AssertL2Iotas(cAID, 0)
@@ -43,13 +43,14 @@ func TestOffLedgerSuccess(t *testing.T) {
 		cAID := setupTestSandboxSC(t, ch, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
-		userAgentID := iscp.NewAgentID(userAddr, 0)
+		userAgentID := iscp.NewAgentID(userAddr)
 
 		ch.AssertL2Iotas(userAgentID, 0)
 		ch.AssertL2Iotas(cAID, 0)
 
-		err := ch.DepositIotasToL2(1000, user)
-		expectedUser := 1000 - ch.LastReceipt().GasFeeCharged
+		depositIotas := 1 * iscp.Mi
+		err := ch.DepositIotasToL2(depositIotas, user)
+		expectedUser := depositIotas - ch.LastReceipt().GasFeeCharged
 		ch.AssertL2Iotas(userAgentID, expectedUser)
 		require.NoError(t, err)
 

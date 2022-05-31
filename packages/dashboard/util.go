@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func args(args ...interface{}) []interface{} {
@@ -16,6 +17,10 @@ func args(args ...interface{}) []interface{} {
 
 func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
+}
+
+func chainIDref(chID iscp.ChainID) *iscp.ChainID {
+	return &chID
 }
 
 func assetID(aID []byte) []byte {
@@ -72,16 +77,19 @@ func formatTimestampOrNever(t time.Time) string {
 	return formatTimestamp(t)
 }
 
-func exploreAddressURL(baseURL string, networkPrefix iotago.NetworkPrefix) func(address iotago.Address) string {
-	return func(address iotago.Address) string {
-		return baseURL + "/" + address.Bech32(networkPrefix)
-	}
+func (d *Dashboard) exploreAddressURL(address iotago.Address) string {
+	return d.wasp.ExploreAddressBaseURL() + "/" + d.addressToString(address)
 }
 
 func (d *Dashboard) addressToString(a iotago.Address) string {
-	return a.Bech32(d.wasp.L1Params().Bech32Prefix)
+	return a.Bech32(parameters.L1.Protocol.Bech32HRP)
 }
 
-func (d *Dashboard) agentIDToString(a *iscp.AgentID) string {
-	return a.String(d.wasp.L1Params().Bech32Prefix)
+func (d *Dashboard) agentIDToString(a iscp.AgentID) string {
+	return a.String()
+}
+
+func (d *Dashboard) addressFromAgentID(a iscp.AgentID) iotago.Address {
+	addr, _ := iscp.AddressFromAgentID(a)
+	return addr
 }

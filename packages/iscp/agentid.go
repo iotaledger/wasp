@@ -8,105 +8,89 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
-const nilAgentID = 0xff
+type AgentIDKind uint8
 
-// AgentID represents address on the ledger with optional hname
-// If address is and alias address and hname is != 0 the agent id is interpreted as
-// ad contract id
-type AgentID struct {
-	a iotago.Address
-	h Hname
+const (
+	AgentIDKindNil AgentIDKind = iota
+	AgentIDKindAddress
+	AgentIDKindContract
+	AgentIDKindEthereumAddress
+)
+
+// AgentID represents any entity that can hold assets on L2 and/or call contracts.
+type AgentID interface {
+	Kind() AgentIDKind
+	String() string
+	Bytes() []byte
+	Equals(other AgentID) bool
 }
 
-var NilAgentID AgentID
-
-// NewAgentID makes new AgentID
-func NewAgentID(addr iotago.Address, hname Hname) *AgentID {
-	return &AgentID{
-		a: addr,
-		h: hname,
-	}
+// AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).
+type AgentIDWithL1Address interface {
+	AgentID
+	Address() iotago.Address
 }
 
-func BytesFromAddress(address iotago.Address) []byte {
-	addressInBytes, err := address.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return nil
+// AddressFromAgentID returns the L1 address of the AgentID, if applicable.
+func AddressFromAgentID(a AgentID) (iotago.Address, bool) {
+	wa, ok := a.(AgentIDWithL1Address)
+	if !ok {
+		return nil, false
 	}
-	return addressInBytes
+	return wa.Address(), true
 }
 
-// AddressFromBytes unmarshals an Address from a sequence of bytes.
-func AddressFromBytes(bytes []byte) (address iotago.Address, consumedBytes int, err error) {
-	marshalUtil := marshalutil.New(bytes)
-	if address, err = AddressFromMarshalUtil(marshalUtil); err != nil {
-		err = fmt.Errorf("failed to parse Address from MarshalUtil: %w", err)
+// HnameFromAgentID returns the hname of the AgentID, if applicable.
+func HnameFromAgentID(a AgentID) (Hname, bool) {
+	ca, ok := a.(*ContractAgentID)
+	if !ok {
+		return 0, false
 	}
-	consumedBytes = marshalUtil.ReadOffset()
-
-	return
+	return ca.Hname(), true
 }
 
-func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
-	typeByte, err := mu.ReadByte()
-	if err != nil {
-		return nil, err
+// NewAgentID creates an AddressAgentID if the address is not an AliasAddress;
+// otherwise a ContractAgentID with hname = 0.
+func NewAgentID(addr iotago.Address) AgentID {
+	if addr.Type() == iotago.AddressAlias {
+		chid := ChainIDFromAddress(addr.(*iotago.AliasAddress))
+		return NewContractAgentID(&chid, 0)
 	}
-	addr, err := iotago.AddressSelector(uint32(typeByte))
-	if err != nil {
-		return nil, err
-	}
-	mu.ReadSeek(-1)
-	initialOffset := mu.ReadOffset()
-	remainingBytes := mu.ReadRemainingBytes()
-	length, err := addr.Deserialize(remainingBytes, serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return nil, err
-	}
-	mu.ReadSeek(initialOffset + length)
-	return addr, nil
+	return &AddressAgentID{a: addr}
 }
 
-func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
+func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
 	var err error
-	addrType, err := mu.ReadByte()
+	kind, err := mu.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	// is this the special value (0xff) that indicates a nil agent id?
-	if addrType == nilAgentID {
-		return &NilAgentID, nil
+	switch AgentIDKind(kind) {
+	case AgentIDKindNil:
+		return &NilAgentID{}, nil
+	case AgentIDKindAddress:
+		return addressAgentIDFromMarshalUtil(mu)
+	case AgentIDKindContract:
+		return contractAgentIDFromMarshalUtil(mu)
+	case AgentIDKindEthereumAddress:
+		return ethAgentIDFromMarshalUtil(mu)
 	}
-	mu.ReadSeek(-1)
-	ret := &AgentID{}
-	if ret.a, err = AddressFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	// only alias address can have a non-zero hName
-	if addrType != byte(iotago.AddressAlias) {
-		// no need to decode a value that is always zero
-		return ret, nil
-	}
-	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return nil, fmt.Errorf("no handler for AgentID kind %d", kind)
 }
 
-func AgentIDFromBytes(data []byte) (*AgentID, error) {
+func AgentIDFromBytes(data []byte) (AgentID, error) {
 	return AgentIDFromMarshalUtil(marshalutil.New(data))
 }
 
 // NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (*AgentID, error) {
-	if s == "-" {
-		return &NilAgentID, nil
+func NewAgentIDFromString(s string) (AgentID, error) {
+	if s == nilAgentIDString {
+		return &NilAgentID{}, nil
 	}
 	var hnamePart, addrPart string
 	{
@@ -121,99 +105,20 @@ func NewAgentIDFromString(s string, networkPrefix iotago.NetworkPrefix) (*AgentI
 			return nil, xerrors.New("NewAgentIDFromString: wrong format")
 		}
 	}
-	prefix, addr, err := iotago.ParseBech32(addrPart)
-	if err != nil {
-		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
-	}
-	if prefix != networkPrefix {
-		return nil, xerrors.Errorf("NewAgentIDFromString: expected network prefix %s, got %s", networkPrefix, prefix)
-	}
-	var hname Hname
+
 	if hnamePart != "" {
-		hname, err = HnameFromString(hnamePart)
-		if err != nil {
-			return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
-		}
+		return contractAgentIDFromString(hnamePart, addrPart)
 	}
-	return NewAgentID(addr, hname), nil
+	if strings.HasPrefix(addrPart, string(parameters.L1.Protocol.Bech32HRP)) {
+		return addressAgentIDFromString(s)
+	}
+	if strings.HasPrefix(addrPart, "0x") {
+		return ethAgentIDFromString(s)
+	}
+	return nil, xerrors.New("NewAgentIDFromString: wrong format")
 }
 
 // NewRandomAgentID creates random AgentID
-func NewRandomAgentID() *AgentID {
-	raddr := RandomChainID()
-	return NewAgentID(raddr.AsAddress(), Hn("testName"))
-}
-
-func KnownAgentID(b byte, h uint32) *AgentID {
-	var aliasID iotago.AliasID
-	for i := range aliasID {
-		aliasID[i] = b
-	}
-	return NewAgentID(aliasID.ToAddress(), Hname(h))
-}
-
-func (a *AgentID) Address() iotago.Address {
-	return a.a
-}
-
-func (a *AgentID) Hname() Hname {
-	return a.h
-}
-
-// Key returns string(Bytes()), which can be used as a key in maps, etc.
-func (a *AgentID) Key() string {
-	return string(a.Bytes())
-}
-
-func (a *AgentID) Bytes() []byte {
-	mu := marshalutil.New()
-	if a.IsNil() {
-		// encode special value (0xff) in address type byte
-		// this value will never occur as actual address type
-		mu.WriteByte(nilAgentID)
-		return mu.Bytes()
-	}
-	addressBytes, err := a.a.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return nil
-	}
-	mu.WriteBytes(addressBytes)
-	// only alias address can have a non-zero hName
-	if addressBytes[0] != byte(iotago.AddressAlias) {
-		// no need to encode a value that is always zero
-		return mu.Bytes()
-	}
-	mu.Write(a.h)
-	return mu.Bytes()
-}
-
-func (a *AgentID) Equals(a1 *AgentID) bool {
-	if a.IsNil() || a1.IsNil() {
-		return a.IsNil() && a1.IsNil()
-	}
-	if !a.a.Equal(a1.a) {
-		return false
-	}
-	if a.h != a1.h {
-		return false
-	}
-	return true
-}
-
-func (a *AgentID) String(networkPrefix iotago.NetworkPrefix) string {
-	if a.IsNil() {
-		return "-"
-	}
-	if a.h == 0 {
-		return a.a.Bech32(networkPrefix)
-	}
-	return a.h.String() + "@" + a.a.Bech32(networkPrefix)
-}
-
-func (a *AgentID) Base58() string {
-	return base58.Encode(a.Bytes())
-}
-
-func (a *AgentID) IsNil() bool {
-	return a.a == nil && a.h == 0
+func NewRandomAgentID() AgentID {
+	return NewContractAgentID(RandomChainID(), Hn("testName"))
 }

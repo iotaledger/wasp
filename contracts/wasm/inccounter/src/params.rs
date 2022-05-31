@@ -17,6 +17,7 @@ pub struct ImmutableIncrementWithDelayParams {
 }
 
 impl ImmutableIncrementWithDelayParams {
+    // delay in seconds
     pub fn delay(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(PARAM_DELAY))
 	}
@@ -28,6 +29,7 @@ pub struct MutableIncrementWithDelayParams {
 }
 
 impl MutableIncrementWithDelayParams {
+    // delay in seconds
     pub fn delay(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(PARAM_DELAY))
 	}
@@ -39,6 +41,7 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
+    // value to initialize state counter with
     pub fn counter(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_COUNTER))
 	}
@@ -50,6 +53,7 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
+    // value to initialize state counter with
     pub fn counter(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_COUNTER))
 	}
@@ -61,6 +65,7 @@ pub struct ImmutableRepeatManyParams {
 }
 
 impl ImmutableRepeatManyParams {
+    // number of times to recursively call myself
     pub fn num_repeats(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_NUM_REPEATS))
 	}
@@ -72,6 +77,7 @@ pub struct MutableRepeatManyParams {
 }
 
 impl MutableRepeatManyParams {
+    // number of times to recursively call myself
     pub fn num_repeats(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_NUM_REPEATS))
 	}
@@ -83,6 +89,7 @@ pub struct ImmutableWhenMustIncrementParams {
 }
 
 impl ImmutableWhenMustIncrementParams {
+    // dummy param to prevent 'duplicate outputs not allowed'
     pub fn dummy(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.proxy.root(PARAM_DUMMY))
 	}
@@ -94,6 +101,7 @@ pub struct MutableWhenMustIncrementParams {
 }
 
 impl MutableWhenMustIncrementParams {
+    // dummy param to prevent 'duplicate outputs not allowed'
     pub fn dummy(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.proxy.root(PARAM_DUMMY))
 	}

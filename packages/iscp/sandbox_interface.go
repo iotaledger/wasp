@@ -5,12 +5,12 @@ package iscp
 
 import (
 	"math/big"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -19,21 +19,21 @@ type SandboxBase interface {
 	Helpers
 	Balance
 	// AccountID returns the agentID of the current contract
-	AccountID() *AgentID
+	AccountID() AgentID
 	// Params returns the parameters of the current call
 	Params() *Params
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
-	ChainOwnerID() *AgentID
+	ChainOwnerID() AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
 	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
-	ContractAgentID() *AgentID
+	ContractAgentID() AgentID
 	// ContractCreator returns the agentID that deployed the contract
-	ContractCreator() *AgentID
-	// Timestamp returns the UnixNano timestamp of the current state
-	Timestamp() int64
+	ContractCreator() AgentID
+	// Timestamp returns the Unix timestamp of the current state in seconds
+	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
 	Log() LogInterface
 	// Utils provides access to common necessary functionality
@@ -42,8 +42,6 @@ type SandboxBase interface {
 	Gas() Gas
 	// GetNFTInfo returns information about a NFTID (issuer and metadata)
 	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
-	// L1Params returns the L1 parameters
-	L1Params() *parameters.L1
 }
 
 type Params struct {
@@ -57,8 +55,8 @@ type Helpers interface {
 }
 
 type Authorize interface {
-	RequireCaller(agentID *AgentID)
-	RequireCallerAnyOf(agentID []*AgentID)
+	RequireCaller(agentID AgentID)
+	RequireCallerAnyOf(agentID []AgentID)
 	RequireCallerIsChainOwner()
 }
 
@@ -89,7 +87,7 @@ type Sandbox interface {
 	// target contract's accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
-	Caller() *AgentID
+	Caller() AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
@@ -107,10 +105,10 @@ type Sandbox interface {
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
 	// TransferAllowedFunds fails if target does not exist
-	TransferAllowedFunds(target *AgentID, transfer ...*Allowance) *Allowance
+	TransferAllowedFunds(target AgentID, transfer ...*Allowance) *Allowance
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
 	// If it is a random target, funds may be inaccessible (less safe)
-	TransferAllowedFundsForceCreateTarget(target *AgentID, transfer ...*Allowance) *Allowance
+	TransferAllowedFundsForceCreateTarget(target AgentID, transfer ...*Allowance) *Allowance
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// SendAsNFT sends an on-ledger request as an NFTOutput
@@ -129,7 +127,7 @@ type Sandbox interface {
 // Privileged is a sub-interface for core contracts. Should not be called by VM plugins
 type Privileged interface {
 	TryLoadContract(programHash hashing.HashValue) error
-	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, metadata []byte) (uint32, uint64)
+	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}

@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/trie"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -21,10 +19,12 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -43,12 +43,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// utxodb.FundsFromFaucetAmount is the default amount of tokens returned by the UTXODB faucet
-// which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
-	NetworkPrefix      = "solo"
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -88,10 +85,10 @@ type Chain struct {
 	OriginatorPrivateKey *cryptolib.KeyPair
 	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID *iscp.AgentID
+	OriginatorAgentID iscp.AgentID
 
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
-	ValidatorFeeTarget *iscp.AgentID
+	ValidatorFeeTarget iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
 	State state.VirtualStateAccess
@@ -118,7 +115,6 @@ type InitOptions struct {
 	Debug                 bool
 	PrintStackTrace       bool
 	Seed                  cryptolib.Seed
-	L1Params              *parameters.L1
 	Log                   *logger.Logger
 }
 
@@ -127,7 +123,6 @@ func defaultInitOptions() *InitOptions {
 		Debug:                 false,
 		PrintStackTrace:       false,
 		Seed:                  cryptolib.Seed{},
-		L1Params:              parameters.L1ForTesting(),
 		AutoAdjustDustDeposit: false, // is OFF by default
 	}
 }
@@ -145,19 +140,16 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}
 	if opt.Log == nil {
 		opt.Log = testlogger.NewNamedLogger(t.Name(), timeLayout)
-	}
-	if !opt.Debug {
-		opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
-	}
-	if opt.L1Params == nil {
-		opt.L1Params = parameters.L1ForTesting()
+		if !opt.Debug {
+			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+		}
 	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithL1Params(opt.L1Params)
+	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:])
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
-		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true),
+		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
 		vmRunner:                     runvm.NewVMRunner(),
@@ -178,10 +170,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}))
 
 	return ret
-}
-
-func (env *Solo) L1Params() *parameters.L1 {
-	return env.utxoDB.L1Params()
 }
 
 func (env *Solo) SyncLog() {
@@ -228,7 +216,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	} else {
 		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
-	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
+	originatorAgentID := iscp.NewAgentID(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
@@ -238,7 +226,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		initIotas, // will be adjusted to min dust deposit
 		outs,
 		outIDs,
-		env.utxoDB.L1Params(),
 	)
 	require.NoError(env.T, err)
 
@@ -250,9 +237,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(NetworkPrefix))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(NetworkPrefix))
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(NetworkPrefix))
+		name, chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
@@ -292,7 +279,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		"'solo' testing chain",
 		outs,
 		ids,
-		env.utxoDB.L1Params(),
 		initParams...,
 	)
 	require.NoError(env.T, err)
@@ -555,10 +541,6 @@ func (env *Solo) L1Ledger() *utxodb.UtxoDB {
 	return env.utxoDB
 }
 
-func (env *Solo) RentStructure() *iotago.RentStructure {
-	return env.utxoDB.RentStructure()
-}
-
 type NFTMintedInfo struct {
 	Output   iotago.Output
 	OutputID iotago.OutputID
@@ -575,7 +557,6 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		Target:            target,
 		UnspentOutputs:    allOuts,
 		UnspentOutputIDs:  allOutIDs,
-		L1Params:          env.L1Params(),
 		ImmutableMetadata: immutableMetadata,
 	})
 	if err != nil {

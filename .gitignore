@@ -6,6 +6,7 @@ wasp.log
 /evmemulator
 /schema
 /submsg
+/vendor
 waspdb/
 cluster-data/
 dist/

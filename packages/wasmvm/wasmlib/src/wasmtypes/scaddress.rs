@@ -11,9 +11,9 @@ pub const SC_ADDRESS_ALIAS: u8 = 8;
 pub const SC_ADDRESS_ED25519: u8 = 0;
 pub const SC_ADDRESS_NFT: u8 = 16;
 
-pub const SC_LENGTH_ALIAS: usize = 21;
+pub const SC_LENGTH_ALIAS: usize = 33;
 pub const SC_LENGTH_ED25519: usize = 33;
-pub const SC_LENGTH_NFT: usize = 21;
+pub const SC_LENGTH_NFT: usize = 33;
 
 pub const SC_ADDRESS_LENGTH: usize = SC_LENGTH_ED25519;
 
@@ -24,7 +24,7 @@ pub struct ScAddress {
 
 impl ScAddress {
     pub fn as_agent_id(&self) -> ScAgentID {
-        ScAgentID::new(self, ScHname(0))
+        ScAgentID::from_address(self)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -95,9 +95,14 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
     Vec::new()
 }
 
+pub fn address_from_string(value: &str) -> ScAddress {
+    let utils = ScSandboxUtils{};
+    utils.bech32_decode(value)
+}
+
 pub fn address_to_string(value: &ScAddress) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    let utils = ScSandboxUtils{};
+    utils.bech32_encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

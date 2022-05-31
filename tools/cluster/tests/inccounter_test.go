@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -15,28 +15,28 @@ import (
 )
 
 func (e *contractEnv) checkSC(numRequests int) {
-	for i := range e.chain.CommitteeNodes {
-		blockIndex, err := e.chain.BlockIndex(i)
+	for i := range e.Chain.CommitteeNodes {
+		blockIndex, err := e.Chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, numRequests+4, blockIndex)
+		require.Greater(e.t, blockIndex, uint32(numRequests+4))
 
-		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
-		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
+		cl := e.Chain.SCClient(governance.Contract.Hname(), nil, i)
+		info, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
 		chid, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.chain.ChainID, chid)
+		require.EqualValues(e.t, e.Chain.ChainID, chid)
 
 		aid, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.chain.OriginatorID(), aid)
+		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
 
 		desc, err := codec.DecodeString(info.MustGet(governance.VarDescription), "")
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.chain.Description, desc)
+		require.EqualValues(e.t, e.Chain.Description, desc)
 
-		recs, err := e.chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.FuncGetContractRecords.Name, nil)
+		recs, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
@@ -50,9 +50,9 @@ func (e *contractEnv) checkSC(numRequests int) {
 	}
 }
 
-func (e *chainEnv) checkCounter(expected int) {
-	for i := range e.chain.CommitteeNodes {
-		counterValue, err := e.chain.GetCounterValue(incHname, i)
+func (e *ChainEnv) checkCounter(expected int) {
+	for i := range e.Chain.CommitteeNodes {
+		counterValue, err := e.Chain.GetCounterValue(incHname, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, expected, counterValue)
 	}
@@ -62,7 +62,7 @@ func TestIncDeployment(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
 
 	if !e.counter.WaitUntilExpectationsMet() {
-		t.Fail()
+		t.Fatal()
 	}
 	e.checkSC(0)
 	e.checkCounter(0)
@@ -83,12 +83,14 @@ func testNothing(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
+		require.Equal(t, 1, len(receipts))
+		require.Contains(t, receipts[0].TranslatedError, vm.ErrTargetEntryPointNotFound.MessageFormat())
 	}
 
 	if !e.counter.WaitUntilExpectationsMet() {
-		t.Fail()
+		t.Fatal()
 	}
 
 	e.checkSC(numRequests)
@@ -110,12 +112,12 @@ func testIncrement(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.chainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
-		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
 	if !e.counter.WaitUntilExpectationsMet() {
-		t.Fail()
+		t.Fatal()
 	}
 
 	e.checkSC(numRequests)
@@ -123,22 +125,23 @@ func testIncrement(t *testing.T, numRequests int) {
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
+	t.Fail() // TODO refactor
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
-	if !e.clu.AssertAddressBalances(scOwnerAddr,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42)) {
-		t.Fail()
-	}
-	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)
-	require.EqualValues(t, 42, actual)
+	// if !e.clu.AssertAddressBalances(scOwnerAddr,
+	// 	iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42)) {
+	// 	t.Fatal()
+	// }
+	// agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
+	// actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)
+	// require.EqualValues(t, 42, actual)
 
-	agentID = iscp.NewAgentID(scOwnerAddr, 0)
-	actual = e.getBalanceOnChain(agentID, iscp.IotaTokenID)
-	require.EqualValues(t, 0, actual)
+	// agentID = iscp.NewAgentID(scOwnerAddr, 0)
+	// actual = e.getBalanceOnChain(agentID, iscp.IotaTokenID)
+	// require.EqualValues(t, 0, actual)
 
 	e.checkCounter(1)
 }
@@ -156,37 +159,39 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 
 	entryPoint := iscp.Hn("callIncrementRecurse5x")
-	e.postRequest(incHname, entryPoint, 0, nil)
+	e.postRequest(incHname, entryPoint, 1_000, nil)
 
 	e.checkCounter(6)
 }
 
 func TestIncPostIncrement(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
 	entryPoint := iscp.Hn("postIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
 
-	e.checkCounter(2)
+	e.waitUntilCounterEquals(incHname, 2, 30*time.Second)
 }
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRepeats+3)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRepeats+3) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
 	entryPoint := iscp.Hn("repeatMany")
 	e.postRequest(incHname, entryPoint, numRepeats, map[string]interface{}{
 		varNumRepeats: numRepeats,
 	})
 
-	for i := range e.chain.CommitteeNodes {
-		b, err := e.chain.GetStateVariable(incHname, varCounter, i)
+	e.waitUntilCounterEquals(incHname, numRepeats+1, 30*time.Second)
+
+	for i := range e.Chain.CommitteeNodes {
+		b, err := e.Chain.GetStateVariable(incHname, varCounter, i)
 		require.NoError(t, err)
 		counterValue, err := codec.DecodeInt64(b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, numRepeats+1, counterValue)
 
-		b, err = e.chain.GetStateVariable(incHname, varNumRepeats, i)
+		b, err = e.Chain.GetStateVariable(incHname, varNumRepeats, i)
 		require.NoError(t, err)
 		repeats, err := codec.DecodeInt64(b, 0)
 		require.NoError(t, err)
@@ -220,8 +225,8 @@ func TestIncViewCounter(t *testing.T) {
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(1)
-	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, incHname, "getCounter", nil,
+	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
+		e.Chain.ChainID, incHname, "getCounter", nil,
 	)
 	require.NoError(t, err)
 

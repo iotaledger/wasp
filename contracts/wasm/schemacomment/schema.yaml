@@ -13,6 +13,11 @@ events: # line comment for event 1
 # line comment for event 3
 # line comment for event 4
 
+
+  # header comment for TestEventNoParams 1
+  # header comment for TestEventNoParams 2
+  TestEventNoParams: # line comment for TestEventNoParams 1
+
   # header comment for TestEvent 1
   # header comment for TestEvent 2
   TestEvent: # line comment for TestEvent 1

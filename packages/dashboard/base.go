@@ -5,15 +5,17 @@ package dashboard
 
 import (
 	_ "embed"
+	"encoding/hex"
 	"html/template"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/authentication"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/labstack/echo/v4"
@@ -31,15 +33,15 @@ type Tab struct {
 }
 
 type BaseTemplateParams struct {
-	NavPages    []Tab
-	Breadcrumbs []Tab
-	Path        string
-	MyNetworkID string
-	Version     string
+	IsAuthenticated bool
+	NavPages        []Tab
+	Breadcrumbs     []Tab
+	Path            string
+	MyNetworkID     string
+	Version         string
 }
 
 type WaspServices interface {
-	L1Params() *parameters.L1
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	PeeringStats() (*PeeringStats, error)
@@ -51,6 +53,7 @@ type WaspServices interface {
 	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
 	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
 	GetChainConsensusWorkflowStatus(*iscp.ChainID) (chain.ConsensusWorkflowStatus, error)
+	GetChainConsensusPipeMetrics(*iscp.ChainID) (chain.ConsensusPipeMetrics, error)
 }
 
 type Dashboard struct {
@@ -73,6 +76,7 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 	d.errorInit(server, r)
 
 	d.navPages = []Tab{
+		d.authInit(server, r),
 		d.configInit(server, r),
 		d.peeringInit(server, r),
 		d.chainsInit(server, r),
@@ -89,12 +93,23 @@ func (d *Dashboard) Stop() {
 }
 
 func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {
+	var isAuthenticated bool
+
+	auth, ok := c.Get("auth").(*authentication.AuthContext)
+
+	if !ok {
+		isAuthenticated = false
+	} else {
+		isAuthenticated = auth.IsAuthenticated()
+	}
+
 	return BaseTemplateParams{
-		NavPages:    d.navPages,
-		Breadcrumbs: breadcrumbs,
-		Path:        c.Path(),
-		MyNetworkID: d.wasp.MyNetworkID(),
-		Version:     wasp.Version,
+		IsAuthenticated: isAuthenticated,
+		NavPages:        d.navPages,
+		Breadcrumbs:     breadcrumbs,
+		Path:            c.Path(),
+		MyNetworkID:     d.wasp.MyNetworkID(),
+		Version:         wasp.Version,
 	}
 }
 
@@ -102,9 +117,10 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
 		"formatTimestampOrNever": formatTimestampOrNever,
-		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL(), d.wasp.L1Params().Bech32Prefix),
+		"exploreAddressUrl":      d.exploreAddressURL,
 		"args":                   args,
 		"hashref":                hashref,
+		"chainidref":             chainIDref,
 		"assedID":                assetID,
 		"trim":                   trim,
 		"incUint32":              incUint32,
@@ -112,9 +128,11 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"bytesToString":          bytesToString,
 		"addressToString":        d.addressToString,
 		"agentIDToString":        d.agentIDToString,
+		"addressFromAgentID":     d.addressFromAgentID,
 		"keyToString":            keyToString,
 		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,
+		"hex":                    hex.EncodeToString,
 		"replace":                strings.Replace,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 	})

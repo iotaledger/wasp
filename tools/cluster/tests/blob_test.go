@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -17,38 +16,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	testOwner = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress = testOwner.Address()
-)
-
-func setupBlobTest(t *testing.T) *chainEnv {
+func setupBlobTest(t *testing.T) *ChainEnv {
 	e := setupWithNoChain(t)
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	chEnv.checkCoreContracts()
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 1, blockIndex)
+		require.Greater(t, blockIndex, uint32(2))
+		require.LessOrEqual(t, blockIndex, uint32(5))
 	}
 
-	e.requestFunds(myAddress, "myAddress")
+	_, myAddress, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
-	if !e.clu.AssertAddressBalances(myAddress,
+	if !e.Clu.AssertAddressBalances(myAddress,
 		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)) {
-		t.Fail()
+		t.Fatal()
 	}
 	return chEnv
 }
 
-func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
-	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name,
+func (e *ChainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
+	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
+		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Name,
 		dict.Dict{
 			blob.ParamHash: hash[:],
 		})
@@ -58,9 +54,9 @@ func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
 	return decoded
 }
 
-func (e *chainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
-	v, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
+	v, err := e.Chain.Cluster.WaspClient(0).CallView(
+		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
@@ -90,7 +86,10 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 	reqTx, err := chClient.Post1Request(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
@@ -99,7 +98,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	sizes := e.getBlobInfo(expectedHash)
@@ -131,15 +130,19 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	chClient := chainclient.New(e.clu.L1Client(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
-	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	expectedHash, _, err := chClient.UploadBlob(fv)
+	expectedHash, _, receipt, err := chClient.UploadBlob(fv)
 	require.NoError(t, err)
+	require.Empty(t, receipt.TranslatedError)
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	sizes := e.getBlobInfo(expectedHash)

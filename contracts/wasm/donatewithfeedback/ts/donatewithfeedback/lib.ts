@@ -26,10 +26,12 @@ const exportMap: wasmlib.ScExportMap = {
 };
 
 export function on_call(index: i32): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.export(exportMap);
 }
 
@@ -43,6 +45,8 @@ function funcDonateThunk(ctx: wasmlib.ScFuncContext): void {
 function funcWithdrawThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("donatewithfeedback.funcWithdraw");
 	let f = new sc.WithdrawContext();
+
+	// only SC creator can withdraw donated funds
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	sc.funcWithdraw(ctx, f);

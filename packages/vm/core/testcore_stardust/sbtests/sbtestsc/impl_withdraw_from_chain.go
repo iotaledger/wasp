@@ -1,6 +1,8 @@
 package sbtestsc
 
 import (
+	"math"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -13,8 +15,6 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
 	iotasToWithdrawal := params.MustGetUint64(ParamIotasToWithdrawal)
-	gasBudget := params.MustGetUint64(ParamGasBudgetToSend)
-
 	availableIotas := ctx.AllowanceAvailable().Assets.Iotas
 
 	request := iscp.RequestParameters{
@@ -23,13 +23,13 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 		Metadata: &iscp.SendMetadata{
 			TargetContract: accounts.Contract.Hname(),
 			EntryPoint:     accounts.FuncWithdraw.Hname(),
-			GasBudget:      gasBudget,
+			GasBudget:      math.MaxUint64,
 			Allowance:      iscp.NewAllowanceIotas(iotasToWithdrawal),
 		},
 	}
 	requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
 	if availableIotas < requiredDustDeposit {
-		ctx.Log().Panicf("no enough iotas sent to cover dust deposit")
+		ctx.Log().Panicf("not enough iotas sent to cover dust deposit")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(request)

@@ -6,7 +6,6 @@ func AliasIDFromAliasOutput(out *iotago.AliasOutput, outID iotago.OutputID) iota
 	if out.AliasID.Empty() {
 		// NFT outputs might not have an NFTID defined yet (when initially minted, the NFTOutput will have an empty NFTID, so we need to compute it)
 		return iotago.AliasIDFromOutputID(outID)
-	} else {
-		return out.AliasID
 	}
+	return out.AliasID
 }

@@ -11,11 +11,11 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -27,7 +27,7 @@ import (
 )
 
 type advancedInccounterEnv struct {
-	*chainEnv
+	*ChainEnv
 }
 
 func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *advancedInccounterEnv {
@@ -38,7 +38,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	t.Logf("generated state address: %s", addr.Bech32(clu.L1Client().L1Params().Bech32Prefix))
+	t.Logf("generated state address: %s", addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
@@ -52,19 +52,19 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, params)
 	require.NoError(t, err)
 
-	e := &env{t: t, clu: clu}
-	chEnv := &chainEnv{
+	e := &env{t: t, Clu: clu}
+	chEnv := &ChainEnv{
 		env:   e,
-		chain: chain,
+		Chain: chain,
 	}
 	waitUntil(t, chEnv.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 	return &advancedInccounterEnv{
-		chainEnv: chEnv,
+		ChainEnv: chEnv,
 	}
 }
 
-func (e *chainEnv) printBlocks(expected int) {
-	recs, err := e.chain.GetAllBlockInfoRecordsReverse()
+func (e *ChainEnv) printBlocks(expected int) {
+	recs, err := e.Chain.GetAllBlockInfoRecordsReverse()
 	require.NoError(e.t, err)
 
 	sum := 0
@@ -198,19 +198,20 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
-	keyPair, myAddress := e.getOrCreateAddress()
+	keyPair, myAddress, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress)
 
-	accountsClient := e.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTokensIotas(100),
 	})
 	require.NoError(t, err)
 
 	waitUntil(t, e.balanceOnChainIotaEquals(myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
 
-	myClient := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := e.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
@@ -237,9 +238,10 @@ func TestAccessNodesMany(t *testing.T) {
 
 	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
-	keyPair, _ := e.getOrCreateAddress()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
-	myClient := e.chain.SCClient(incCounterSCHname, keyPair)
+	myClient := e.Chain.SCClient(incCounterSCHname, keyPair)
 
 	requestsCount := requestsCountInitial
 	requestsCumulative := 0
@@ -253,7 +255,7 @@ func TestAccessNodesMany(t *testing.T) {
 		}
 		posted += requestsCount
 		requestsCumulative += requestsCount
-		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
+		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.Clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
 	e.printBlocks(
@@ -276,8 +278,8 @@ func TestRotation(t *testing.T) {
 	addr2, err := clu.RunDKG(cmt2, 3)
 	require.NoError(t, err)
 
-	t.Logf("addr1: %s", addr1.Bech32(clu.L1Client().L1Params().Bech32Prefix))
-	t.Logf("addr2: %s", addr2.Bech32(clu.L1Client().L1Params().Bech32Prefix))
+	t.Logf("addr1: %s", addr1.Bech32(parameters.L1.Protocol.Bech32HRP))
+	t.Logf("addr2: %s", addr2.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
@@ -291,14 +293,13 @@ func TestRotation(t *testing.T) {
 	_, err = chain.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), e.clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(incCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second)
 
 	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
 	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
 
-	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := keyPair.Address()
-	e.requestFunds(myAddress, "myAddress")
+	keyPair, _, err := clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)
 
@@ -322,7 +323,7 @@ func TestRotation(t *testing.T) {
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	reqid := iscp.NewRequestID(*txID, 0)
+	reqid := iscp.NewRequestID(txID, 0)
 
 	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
@@ -346,7 +347,7 @@ func TestRotation(t *testing.T) {
 
 	txID, err = tx.ID()
 	require.NoError(t, err)
-	reqid = iscp.NewRequestID(*txID, 0)
+	reqid = iscp.NewRequestID(txID, 0)
 	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
 
@@ -386,7 +387,7 @@ func TestRotationMany(t *testing.T) {
 	for i := range cmt {
 		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
 		require.NoError(t, err)
-		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(clu.L1Client().L1Params().Bech32Prefix))
+		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(parameters.L1.Protocol.Bech32HRP))
 	}
 
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
@@ -401,7 +402,7 @@ func TestRotationMany(t *testing.T) {
 		require.NoError(t, err)
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		reqid := iscp.NewRequestID(*txID, 0)
+		reqid := iscp.NewRequestID(txID, 0)
 		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 5, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
@@ -421,9 +422,8 @@ func TestRotationMany(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
-	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
-	myAddress := keyPair.Address()
-	e.requestFunds(myAddress, "myAddress")
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
 
 	myClient := chain.SCClient(incCounterSCHname, keyPair)
 
@@ -446,7 +446,7 @@ func TestRotationMany(t *testing.T) {
 		require.NoError(t, err)
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		reqid := iscp.NewRequestID(*txID, 0)
+		reqid := iscp.NewRequestID(txID, 0)
 		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 4, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
@@ -473,18 +473,18 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	return ret
 }
 
-func (e *chainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
+func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
 	return waitTrue(timeout, func() bool {
 		i, err := e.callGetBlockIndex(nodeIndex)
 		return err == nil && i >= blockIndex
 	})
 }
 
-func (e *chainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
-	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.chain.ChainID,
+func (e *ChainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
+	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
+		e.Chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncGetLatestBlockInfo.Name,
+		blocklog.ViewGetLatestBlockInfo.Name,
 		nil,
 	)
 	if err != nil {
@@ -502,7 +502,7 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	res, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncGetRequestReceipt.Name,
+		blocklog.ViewGetRequestReceipt.Name,
 		args,
 	)
 	if err != nil {
@@ -517,18 +517,18 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	return rec, nil
 }
 
-func (e *chainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) bool {
+func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		a, err := e.callGetStateController(nodeIndex)
 		return err == nil && a.Equal(addr)
 	})
 }
 
-func (e *chainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
-	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.chain.ChainID,
+func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
+	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
+		e.Chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncControlAddresses.Name,
+		blocklog.ViewControlAddresses.Name,
 		nil,
 	)
 	if err != nil {
@@ -543,7 +543,7 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		governance.Contract.Hname(),
-		governance.FuncGetAllowedStateControllerAddresses.Name,
+		governance.ViewGetAllowedStateControllerAddresses.Name,
 		nil,
 	)
 	require.NoError(t, err)

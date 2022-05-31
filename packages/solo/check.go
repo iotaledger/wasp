@@ -17,18 +17,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) AssertL2NativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
+func (ch *Chain) AssertL2NativeTokens(agentID iscp.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
 	bals := ch.L2Assets(agentID)
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (ch *Chain) AssertL2Iotas(agentID *iscp.AgentID, bal uint64) {
+func (ch *Chain) AssertL2Iotas(agentID iscp.AgentID, bal uint64) {
 	require.EqualValues(ch.Env.T, int(bal), int(ch.L2Assets(agentID).Iotas))
 }
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
+	_, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	for _, c := range corecontracts.All {
@@ -37,7 +37,7 @@ func (ch *Chain) CheckChain() {
 		require.EqualValues(ch.Env.T, c.Name, recFromState.Name)
 		require.EqualValues(ch.Env.T, c.Description, recFromState.Description)
 		require.EqualValues(ch.Env.T, c.ProgramHash, recFromState.ProgramHash)
-		require.True(ch.Env.T, recFromState.Creator.IsNil())
+		require.Equal(ch.Env.T, iscp.AgentIDKindNil, recFromState.Creator.Kind())
 	}
 	ch.CheckAccountLedger()
 }
@@ -53,11 +53,11 @@ func (ch *Chain) CheckAccountLedger() {
 		sum.Add(ch.L2Assets(acc))
 	}
 	require.True(ch.Env.T, total.Equals(sum))
-	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
+	coreacc := iscp.NewContractAgentID(ch.ChainID, root.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
+	coreacc = iscp.NewContractAgentID(ch.ChainID, blob.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
+	coreacc = iscp.NewContractAgentID(ch.ChainID, accounts.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 }
@@ -79,7 +79,7 @@ func (ch *Chain) AssertControlAddresses() {
 	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
 }
 
-func (ch *Chain) HasL2NFT(agentID *iscp.AgentID, nftID *iotago.NFTID) bool {
+func (ch *Chain) HasL2NFT(agentID iscp.AgentID, nftID *iotago.NFTID) bool {
 	accNFTIDs := ch.L2NFTs(agentID)
 	for _, id := range accNFTIDs {
 		if bytes.Equal(id[:], nftID[:]) {

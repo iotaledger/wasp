@@ -10,13 +10,20 @@ package tokenregistry
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Token struct {
-	Created     uint64              // creation timestamp
-	Description string              // description what minted token represents
-	MintedBy    wasmtypes.ScAgentID // original minter
-	Owner       wasmtypes.ScAgentID // current owner
-	Supply      uint64              // amount of tokens originally minted
-	Updated     uint64              // last update timestamp
-	UserDefined string              // any user defined text
+	// creation timestamp
+	Created uint64
+	// description what minted token represents
+	Description string
+	// original minter
+	MintedBy wasmtypes.ScAgentID
+	// current owner
+	Owner wasmtypes.ScAgentID
+	// amount of tokens originally minted
+	Supply uint64
+	// last update timestamp
+	Updated uint64
+	// any user defined text
+	UserDefined string
 }
 
 func NewTokenFromBytes(buf []byte) *Token {

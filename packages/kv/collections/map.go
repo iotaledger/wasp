@@ -1,7 +1,6 @@
 package collections
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -20,7 +19,14 @@ type ImmutableMap struct {
 	name string
 }
 
-const mapElemKeyCode = byte('#')
+// For easy distinction between arrays and map collections
+// we use '#' as separator for arrays and '.' for maps.
+// Do not change this value unless you want to break how
+// WasmLib maps these collections in the exact same way
+const (
+	mapElemKeyCode = byte('.')
+	mapSizeKeyCode = byte('#')
+)
 
 func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
@@ -37,15 +43,16 @@ func NewMapReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableMap {
 }
 
 func MapSizeKey(mapName string) []byte {
-	return []byte(mapName)
+	ret := make([]byte, 0, len(mapName)+1)
+	ret = append(ret, []byte(mapName)...)
+	return append(ret, mapSizeKeyCode)
 }
 
 func MapElemKey(mapName string, keyInMap []byte) []byte {
-	var buf bytes.Buffer
-	buf.Write([]byte(mapName))
-	buf.WriteByte(mapElemKeyCode)
-	buf.Write(keyInMap)
-	return buf.Bytes()
+	ret := make([]byte, 0, len(mapName)+len(keyInMap)+1)
+	ret = append(ret, []byte(mapName)...)
+	ret = append(ret, mapElemKeyCode)
+	return append(ret, keyInMap...)
 }
 
 func (m *Map) Immutable() *ImmutableMap {
@@ -87,11 +94,11 @@ func (m *ImmutableMap) MustGetAt(key []byte) []byte {
 }
 
 func (m *Map) SetAt(key, value []byte) error {
-	ok, err := m.HasAt(key)
+	keyExists, err := m.HasAt(key)
 	if err != nil {
 		return err
 	}
-	if !ok {
+	if !keyExists {
 		err = m.addToSize(1)
 		if err != nil {
 			return err
@@ -109,11 +116,14 @@ func (m *Map) MustSetAt(key, value []byte) {
 }
 
 func (m *Map) DelAt(key []byte) error {
-	ok, err := m.HasAt(key)
+	keyExist, err := m.HasAt(key)
+	if !keyExist {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	if ok {
+	if keyExist {
 		err = m.addToSize(-1)
 		if err != nil {
 			return err

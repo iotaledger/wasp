@@ -13,6 +13,7 @@ type ImmutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// the addresses have been set as state controller address or governing address since the following block index
 func (s ImmutableControlAddressesResults) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBlockIndex))
 }
@@ -29,6 +30,7 @@ type MutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// the addresses have been set as state controller address or governing address since the following block index
 func (s MutableControlAddressesResults) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
 }
@@ -271,14 +273,14 @@ type ImmutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultRequestProcessed))
+func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ResultRequestProcessed))
 }
 
 type MutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ResultRequestProcessed))
+func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ResultRequestProcessed))
 }

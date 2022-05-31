@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type MockedNodeConn struct {
@@ -71,13 +70,13 @@ func (mncT *MockedNodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iot
 	if mncT.pullTxInclusionStateAllowedFun(chainID, txid) {
 		mncT.ledgers.GetLedger(chainID).PullTxInclusionState(mncT.id, txid)
 	} else {
-		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, iscp.TxID(&txid))
+		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, iscp.TxID(txid))
 	}
 }
 
-func (mncT *MockedNodeConn) PullOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
+func (mncT *MockedNodeConn) PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
 	if mncT.pullOutputByIDAllowedFun(chainID, id) {
-		mncT.ledgers.GetLedger(chainID).PullOutputByID(mncT.id, id)
+		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, id)
 	} else {
 		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, iscp.OID(id))
 	}
@@ -97,6 +96,9 @@ func (mncT *MockedNodeConn) AttachMilestones(handler chain.NodeConnectionMilesto
 
 func (mncT *MockedNodeConn) DetachMilestones(attachID *events.Closure) {
 	mncT.ledgers.DetachMilestones(attachID)
+}
+
+func (mncT *MockedNodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
 }
 
 func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
@@ -133,10 +135,6 @@ func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
-}
-
-func (mncT *MockedNodeConn) L1Params() *parameters.L1 {
-	return parameters.L1ForTesting()
 }
 
 /*func (m *MockedNodeConn) PullLatestOutput() {

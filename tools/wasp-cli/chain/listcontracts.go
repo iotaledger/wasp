@@ -3,7 +3,6 @@ package chain
 import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +12,7 @@ var listContractsCmd = &cobra.Command{
 	Short: "List deployed contracts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		records, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetContractRecords.Name, nil)
+		records, err := SCClient(root.Contract.Hname()).CallView(root.ViewGetContractRecords.Name, nil)
 		log.Check(err)
 		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		log.Check(err)
@@ -34,7 +33,7 @@ var listContractsCmd = &cobra.Command{
 		for hname, c := range contracts {
 			creator := ""
 			if c.HasCreator() {
-				creator = c.Creator.String(config.L1NetworkPrefix())
+				creator = c.Creator.String()
 			}
 
 			rows[i] = []string{

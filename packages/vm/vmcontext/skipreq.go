@@ -1,23 +1,22 @@
 package vmcontext
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
 const (
 	// OffLedgerNonceStrictOrderTolerance how many steps back the nonce is considered too old
 	// within this limit order of nonces is not checked
-	OffLedgerNonceStrictOrderTolerance = 10000
+	OffLedgerNonceStrictOrderTolerance = 10_000
 	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
 	// the UTXO won't be consumed to avoid race conditions
 	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute
@@ -58,6 +57,17 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	return nil
 }
 
+func CheckNonce(req iscp.Request, maxAssumedNonce uint64) error {
+	if maxAssumedNonce <= OffLedgerNonceStrictOrderTolerance {
+		return nil
+	}
+	nonce := req.AsOffLedger().Nonce()
+	if nonce < maxAssumedNonce-OffLedgerNonceStrictOrderTolerance {
+		return fmt.Errorf("nonce %d is too old", nonce)
+	}
+	return nil
+}
+
 // checkReasonToSkipOffLedger checks reasons to skip off ledger request
 func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	// first checks if it is already in backlog
@@ -69,20 +79,10 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
 		// It is checking if nonce is not too old. See replay-off-ledger.md
-		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAddress())
+		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAccount())
 	})
 
-	nonce := vmctx.req.AsOffLedger().Nonce()
-	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
-		maxAssumed, OffLedgerNonceStrictOrderTolerance, nonce)
-
-	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
-		return nil
-	}
-	if nonce > maxAssumed-OffLedgerNonceStrictOrderTolerance {
-		return xerrors.Errorf("nonce %d is too old", nonce)
-	}
-	return nil
+	return CheckNonce(vmctx.req, maxAssumed)
 }
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request

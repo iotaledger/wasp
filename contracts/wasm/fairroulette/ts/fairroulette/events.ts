@@ -10,7 +10,14 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class FairRouletteEvents {
 
-	bet(address: wasmtypes.ScAddress, amount: u64, number: u16): void {
+	bet(
+		// address of better
+		address: wasmtypes.ScAddress,
+		// amount of iotas to bet
+		amount: u64,
+		// number to bet on
+		number: u16,
+	): void {
 		const evt = new wasmlib.EventEncoder("fairroulette.bet");
 		evt.encode(wasmtypes.addressToString(address));
 		evt.encode(wasmtypes.uint64ToString(amount));
@@ -18,14 +25,22 @@ export class FairRouletteEvents {
 		evt.emit();
 	}
 
-	payout(address: wasmtypes.ScAddress, amount: u64): void {
+	payout(
+		// address of winner
+		address: wasmtypes.ScAddress,
+		// amount of iotas won
+		amount: u64,
+	): void {
 		const evt = new wasmlib.EventEncoder("fairroulette.payout");
 		evt.encode(wasmtypes.addressToString(address));
 		evt.encode(wasmtypes.uint64ToString(amount));
 		evt.emit();
 	}
 
-	round(number: u32): void {
+	round(
+		// current betting round number
+		number: u32,
+	): void {
 		const evt = new wasmlib.EventEncoder("fairroulette.round");
 		evt.encode(wasmtypes.uint32ToString(number));
 		evt.emit();
@@ -41,7 +56,10 @@ export class FairRouletteEvents {
 		evt.emit();
 	}
 
-	winner(number: u16): void {
+	winner(
+		// the winning number
+		number: u16,
+	): void {
 		const evt = new wasmlib.EventEncoder("fairroulette.winner");
 		evt.encode(wasmtypes.uint16ToString(number));
 		evt.emit();

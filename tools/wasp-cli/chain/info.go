@@ -55,20 +55,20 @@ var infoCmd = &cobra.Command{
 			printNodes("Access nodes", chainInfo.AccessNodes)
 			printNodes("Candidate nodes", chainInfo.CandidateNodes)
 
-			ret, err := SCClient(governance.Contract.Hname()).CallView(governance.FuncGetChainInfo.Name, nil)
+			ret, err := SCClient(governance.Contract.Hname()).CallView(governance.ViewGetChainInfo.Name, nil)
 			log.Check(err)
 			govInfo, err := governance.GetChainInfo(ret)
 			log.Check(err)
 
 			log.Printf("Description: %s\n", govInfo.Description)
 
-			recs, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetContractRecords.Name, nil)
+			recs, err := SCClient(root.Contract.Hname()).CallView(root.ViewGetContractRecords.Name, nil)
 			log.Check(err)
 			contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
 			log.Check(err)
 			log.Printf("#Contracts: %d\n", len(contracts))
 
-			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String(config.L1NetworkPrefix()))
+			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String())
 
 			if govInfo.GasFeePolicy != nil {
 				gasFeeToken := "iota"

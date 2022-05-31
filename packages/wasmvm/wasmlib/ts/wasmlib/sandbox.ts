@@ -24,31 +24,33 @@ export const FnContract            : i32 = -10;
 export const FnContractCreator     : i32 = -11;
 export const FnDeployContract      : i32 = -12;
 export const FnEntropy             : i32 = -13;
-export const FnEvent               : i32 = -14;
-export const FnLog                 : i32 = -15;
-export const FnMinted              : i32 = -16;
-export const FnPanic               : i32 = -17;
-export const FnParams              : i32 = -18;
-export const FnPost                : i32 = -19;
-export const FnRequest             : i32 = -20;
-export const FnRequestID           : i32 = -21;
-export const FnResults             : i32 = -22;
-export const FnSend                : i32 = -23;
-export const FnStateAnchor         : i32 = -24;
-export const FnTimestamp           : i32 = -25;
-export const FnTrace               : i32 = -26;
-export const FnUtilsBase58Decode   : i32 = -27;
-export const FnUtilsBase58Encode   : i32 = -28;
-export const FnUtilsBlsAddress     : i32 = -29;
-export const FnUtilsBlsAggregate   : i32 = -30;
-export const FnUtilsBlsValid       : i32 = -31;
-export const FnUtilsEd25519Address : i32 = -32;
-export const FnUtilsEd25519Valid   : i32 = -33;
-export const FnUtilsHashBlake2b    : i32 = -34;
-export const FnUtilsHashName       : i32 = -35;
-export const FnUtilsHashSha3       : i32 = -36;
-export const FnTransferAllowed     : i32 = -37;
-export const FnEstimateDust        : i32 = -38;
+export const FnEstimateDust        : i32 = -14;
+export const FnEvent               : i32 = -15;
+export const FnLog                 : i32 = -16;
+export const FnMinted              : i32 = -17;
+export const FnPanic               : i32 = -18;
+export const FnParams              : i32 = -19;
+export const FnPost                : i32 = -20;
+export const FnRequest             : i32 = -21;
+export const FnRequestID           : i32 = -22;
+export const FnResults             : i32 = -23;
+export const FnSend                : i32 = -24;
+export const FnStateAnchor         : i32 = -25;
+export const FnTimestamp           : i32 = -26;
+export const FnTrace               : i32 = -27;
+export const FnTransferAllowed     : i32 = -28;
+export const FnUtilsBase58Decode   : i32 = -29;
+export const FnUtilsBase58Encode   : i32 = -30;
+export const FnUtilsBech32Decode   : i32 = -31;
+export const FnUtilsBech32Encode   : i32 = -32;
+export const FnUtilsBlsAddress     : i32 = -33;
+export const FnUtilsBlsAggregate   : i32 = -34;
+export const FnUtilsBlsValid       : i32 = -35;
+export const FnUtilsEd25519Address : i32 = -36;
+export const FnUtilsEd25519Valid   : i32 = -37;
+export const FnUtilsHashBlake2b    : i32 = -38;
+export const FnUtilsHashName       : i32 = -39;
+export const FnUtilsHashSha3       : i32 = -40;
 // @formatter:on
 
 // Direct logging of text to host log
@@ -86,25 +88,20 @@ export class ScSandbox {
     }
 
     // calls a smart contract function
-    protected callWithTransfer(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfer | null): ScImmutableDict {
+    protected callWithAllowance(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
+         const req = new wasmrequests.CallRequest();
+        req.contract = hContract;
+        req.function = hFunction;
         if (params === null) {
             params = new ScDict([]);
         }
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
-        const req = new wasmrequests.CallRequest();
-        req.contract = hContract;
-        req.function = hFunction;
         req.params = params.toBytes();
-        req.transfer = transfer.toBytes();
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
         const res = sandbox(FnCall, req.bytes());
         return new ScDict(res).immutable();
-    }
-
-    // retrieve the chain id of the chain this contract lives on
-    public chainID(): wasmtypes.ScChainID {
-        return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null));
     }
 
     // retrieve the agent id of the owner of the chain this contract lives on
@@ -120,6 +117,11 @@ export class ScSandbox {
     // retrieve the agent id of the creator of this contract
     public contractCreator(): wasmtypes.ScAgentID {
         return wasmtypes.agentIDFromBytes(sandbox(FnContractCreator, null));
+    }
+
+    // retrieve the chain id of the chain this contract lives on
+    public currentChainID(): wasmtypes.ScChainID {
+        return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null));
     }
 
     // logs informational text message
@@ -167,7 +169,7 @@ export class ScSandbox {
 export class ScSandboxView extends ScSandbox {
     // calls a smart contract view
     public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null): ScImmutableDict {
-        return this.callWithTransfer(hContract, hFunction, params, null);
+        return this.callWithAllowance(hContract, hFunction, params, null);
     }
 
     public rawState(): ScImmutableState {
@@ -190,8 +192,8 @@ export class ScSandboxFunc extends ScSandbox {
     //}
 
     // calls a smart contract function
-    public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfer | null): ScImmutableDict {
-        return this.callWithTransfer(hContract, hFunction, params, transfer);
+    public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
+        return this.callWithAllowance(hContract, hFunction, params, allowance);
     }
 
     // retrieve the agent id of the caller of the smart contract
@@ -218,14 +220,19 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     public estimateDust(fn: ScFunc): u64 {
-        let transfer = fn.transferAssets;
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
         const req = new wasmrequests.PostRequest();
         req.contract = fn.hContract;
         req.function = fn.hFunction;
         req.params = fn.params.toBytes();
+        let allowance = fn.allowanceAssets;
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
+        let transfer = fn.transferAssets;
+        if (transfer === null) {
+            transfer = new ScTransfer();
+        }
         req.transfer = transfer.toBytes();
         req.delay = fn.delaySeconds;
         return wasmtypes.uint64FromBytes(sandbox(FnEstimateDust, req.bytes()));
@@ -241,13 +248,14 @@ export class ScSandboxFunc extends ScSandbox {
         return new ScAssets(sandbox(FnMinted, null)).balances();
     }
 
-    // (delayed) posts a smart contract function request
-    public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, transfer: ScTransfer, delay: u32): void {
+    // Post (delayed) posts a SC function request
+    public post(chainID: wasmtypes.ScChainID, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict, allowance: ScTransfer, transfer: ScTransfer, delay: u32): void {
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
         req.contract = hContract;
         req.function = hFunction;
         req.params = params.toBytes();
+        req.allowance = allowance.toBytes();
         req.transfer = transfer.toBytes();
         req.delay = delay;
         sandbox(FnPost, req.bytes());
@@ -288,7 +296,7 @@ export class ScSandboxFunc extends ScSandbox {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
     }
 
-    // transfer assets to the specified Tangle ledger address
+    // Send transfers SC assets to the specified address
     public send(address: wasmtypes.ScAddress, transfer: ScTransfer): void {
         // we need some assets to send
         if (transfer.isEmpty()) {
@@ -305,7 +313,7 @@ export class ScSandboxFunc extends ScSandbox {
     //	panic("implement me")
     //}
 
-    // transfer allowed assets to the specified ISCP ledger address
+    // TransferAllowed transfers allowed assets from caller to the specified account
     public transferAllowed(agentID: wasmtypes.ScAgentID, transfer: ScTransfer, create: bool): void {
         // we need some assets to send
         if (transfer.isEmpty()) {

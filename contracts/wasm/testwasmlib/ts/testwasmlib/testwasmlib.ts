@@ -21,7 +21,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(wasmtypes.bytesCompare(f.params.bytes().value(), byteData) == 0, "mismatch: Bytes");
     }
     if ((f.params.chainID().exists())) {
-        ctx.require(f.params.chainID().value().equals(ctx.chainID()), "mismatch: ChainID");
+        ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "mismatch: ChainID");
     }
     if ((f.params.hash().exists())) {
         const hash = wasmtypes.hashFromBytes(wasmtypes.stringToBytes("0123456789abcdeffedcba9876543210"));
@@ -43,7 +43,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
     }
     if ((f.params.nftID().exists())) {
-        const color = wasmlib.nftIDFromBytes(wasmtypes.stringToBytes("01234567890123456789"));
+        const color = wasmlib.nftIDFromBytes(wasmtypes.stringToBytes("abcdefghijklmnopqrstuvwxyz123456"));
         ctx.require(f.params.nftID().value().equals(color), "mismatch: NftID");
     }
     if ((f.params.requestID().exists())) {
@@ -54,7 +54,7 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
     }
     if ((f.params.tokenID().exists())) {
-        const color = wasmlib.tokenIDFromBytes(wasmtypes.stringToBytes("RedGreenBlueYellowCyanBlackWhitePurple"));
+        const color = wasmlib.tokenIDFromBytes(wasmtypes.stringToBytes("abcdefghijklmnopqrstuvwxyz1234567890AB"));
         ctx.require(f.params.tokenID().value().equals(color), "mismatch: TokenID");
     }
     if ((f.params.uint8().exists())) {

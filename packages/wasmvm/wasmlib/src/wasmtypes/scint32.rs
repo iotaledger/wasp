@@ -33,6 +33,10 @@ pub fn int32_to_bytes(value: i32) -> Vec<u8> {
     value.to_le_bytes().to_vec()
 }
 
+pub fn int32_from_string(value: &str) -> i32 {
+    value.parse::<i32>().unwrap()
+}
+
 pub fn int32_to_string(value: i32) -> String {
     value.to_string()
 }

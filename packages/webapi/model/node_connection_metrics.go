@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
@@ -33,7 +32,7 @@ type NodeConnectionMetrics struct {
 	Registered  []ChainID                     `swagger:"desc(Chain IDs of the chains registered to receiving L1 events)"`
 }
 
-func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics, networkPrefix iotago.NetworkPrefix) *NodeConnectionMetrics {
+func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) *NodeConnectionMetrics {
 	ncmm := NewNodeConnectionMessagesMetrics(metrics)
 	registered := metrics.GetRegistered()
 	r := make([]ChainID, len(registered))

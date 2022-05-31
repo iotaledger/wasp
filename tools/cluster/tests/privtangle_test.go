@@ -5,14 +5,12 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -20,7 +18,9 @@ import (
 )
 
 func TestHornetStartup(t *testing.T) {
-	if PrivTangle == nil {
+	l1.StartPrivtangleIfNecessary(t.Logf)
+
+	if l1.Privtangle == nil {
 		t.Skip("tests running against live network, skipping pvt tangle tests")
 	}
 	// pvt tangle is already stated by the cluster l1_init
@@ -31,17 +31,17 @@ func TestHornetStartup(t *testing.T) {
 	myKeyPair := cryptolib.NewKeyPair()
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
-	nc := nodeclient.New(fmt.Sprintf("http://%s:%d", ClustL1Config.Hostname, ClustL1Config.APIPort))
+	nc := nodeclient.New(l1.Config.APIAddress)
 	nodeEvt, err := nc.EventAPI(ctx)
 	require.NoError(t, err)
 	require.NoError(t, nodeEvt.Connect(ctx))
 	l1Info, err := nc.Info(ctx)
 	require.NoError(t, err)
 
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, nodeconn.L1ParamsFromInfoResp(l1Info).Bech32Prefix, nodeclient.UnlockConditionAny)
+	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, l1Info.Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
-	client := nodeconn.NewL1Client(ClustL1Config, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), log)
+	client := nodeconn.NewL1Client(l1.Config, log)
 
 	initialOutputCount := mustOutputCount(client, myAddress)
 	//
@@ -60,7 +60,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	tx, err := nodeconn.MakeSimpleValueTX(client, ClustL1Config.FaucetKey, myAddress, 50000)
+	tx, err := nodeconn.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
 	require.NoError(t, err)
 	err = client.PostTx(tx)
 	require.NoError(t, err)

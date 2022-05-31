@@ -10,7 +10,10 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class TestWasmLibEvents {
 
-	test(address: wasmtypes.ScAddress, name: string): void {
+	test(
+		address: wasmtypes.ScAddress,
+		name: string,
+	): void {
 		const evt = new wasmlib.EventEncoder("testwasmlib.test");
 		evt.encode(wasmtypes.addressToString(address));
 		evt.encode(wasmtypes.stringToString(name));

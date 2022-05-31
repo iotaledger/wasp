@@ -3,10 +3,19 @@
 
 package wasmtypes
 
+import "strconv"
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// Base58Encode sandbox function wrapper for simplified use by hashtypes
-var Base58Encode func(buf []byte) string
+// sandbox function wrappers for simplified use by hashtypes
+var (
+	Base58Decode func(base58 string) []byte
+	Base58Encode func(buf []byte) string
+	Bech32Decode func(bech32 string) ScAddress
+	Bech32Encode func(addr ScAddress) string
+	HexDecode    func(base58 string) []byte
+	HexEncode    func(buf []byte) string
+)
 
 // WasmDecoder decodes separate entities from a byte buffer
 type WasmDecoder struct {
@@ -207,4 +216,22 @@ func (e *WasmEncoder) VluEncode(value uint64) *WasmEncoder {
 	// emit without continuation bit to signal end
 	e.buf = append(e.buf, b)
 	return e
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+func IntFromString(value string, bits int) int64 {
+	ret, err := strconv.ParseInt(value, 10, bits)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func UintFromString(value string, bits int) uint64 {
+	ret, err := strconv.ParseUint(value, 10, bits)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

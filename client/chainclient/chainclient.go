@@ -1,8 +1,6 @@
 package chainclient
 
 import (
-	"math"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -12,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
@@ -45,16 +44,14 @@ type PostRequestParams struct {
 	Nonce     uint64
 	NFT       *iscp.NFT
 	Allowance *iscp.Allowance
-	GasBudget uint64
+	GasBudget *uint64
 }
 
 func defaultParams(params ...PostRequestParams) PostRequestParams {
 	if len(params) > 0 {
 		return params[0]
 	}
-	return PostRequestParams{
-		GasBudget: math.MaxUint64,
-	}
+	return PostRequestParams{}
 }
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
@@ -75,6 +72,12 @@ func (c *Client) Post1Request(
 		i++
 	}
 
+	var gasBudget uint64
+	if par.GasBudget == nil {
+		gasBudget = gas.MaxGasPerCall
+	} else {
+		gasBudget = *par.GasBudget
+	}
 	tx, err := transaction.NewRequestTransaction(
 		transaction.NewRequestTransactionParams{
 			SenderKeyPair:    c.KeyPair,
@@ -90,11 +93,10 @@ func (c *Client) Post1Request(
 					EntryPoint:     entryPoint,
 					Params:         par.Args,
 					Allowance:      par.Allowance,
-					GasBudget:      par.GasBudget,
+					GasBudget:      gasBudget,
 				},
 			},
 			NFT: par.NFT,
-			L1:  c.Layer1Client.L1Params(),
 		},
 	)
 	if err != nil {
@@ -115,7 +117,17 @@ func (c *Client) PostOffLedgerRequest(
 		c.nonces[c.KeyPair.Address().Key()]++
 		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 	}
+	var gasBudget uint64
+	if par.GasBudget == nil {
+		gasBudget = gas.MaxGasPerCall
+	} else {
+		gasBudget = *par.GasBudget
+	}
 	offledgerReq := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	offledgerReq.WithAllowance(par.Allowance)
+	if par.GasBudget != nil {
+		offledgerReq = offledgerReq.WithGasBudget(gasBudget)
+	}
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
@@ -130,7 +142,8 @@ func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 // NewPostRequestParams simplifies encoding of request parameters
 func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	return &PostRequestParams{
-		Args: parseParams(p),
+		Args:     parseParams(p),
+		Transfer: iscp.NewFungibleTokens(0, nil),
 	}
 }
 
@@ -141,6 +154,11 @@ func (par *PostRequestParams) WithTransfer(transfer *iscp.FungibleTokens) *PostR
 
 func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
 	par.Transfer.AddIotas(i)
+	return par
+}
+
+func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
+	par.GasBudget = &budget
 	return par
 }
 

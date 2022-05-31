@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_NFT_ID_LENGTH: usize = 20;
+pub const SC_NFT_ID_LENGTH: usize = 32;
 
 #[derive(PartialEq, Clone, Copy, Eq, Hash)]
 pub struct ScNftID {
@@ -47,6 +47,10 @@ pub fn nft_id_from_bytes(buf: &[u8]) -> ScNftID {
 
 pub fn nft_id_to_bytes(value: &ScNftID) -> Vec<u8> {
     value.id.to_vec()
+}
+
+pub fn nft_id_from_string(value: &str) -> ScNftID {
+    nft_id_from_bytes(&base58_decode(value))
 }
 
 pub fn nft_id_to_string(value: &ScNftID) -> String {

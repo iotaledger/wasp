@@ -6,8 +6,6 @@ import (
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,28 +18,28 @@ func TestBlockBasic(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("ok block index", func(t *testing.T) {
-		h := testmisc.RandVectorCommitment()
-		su := NewStateUpdateWithBlockLogValues(42, time.Time{}, h)
+		l1c := RandL1Commitment()
+		su := NewStateUpdateWithBlockLogValues(42, time.Time{}, l1c)
 		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
-		require.True(t, trie.EqualCommitments(h, b1.PreviousStateCommitment(CommitmentModel)))
+		require.True(t, trie.EqualCommitments(l1c.StateCommitment, b1.PreviousL1Commitment().StateCommitment))
 	})
 	t.Run("with timestamp", func(t *testing.T) {
 		currentTime := time.Now()
-		ph := testmisc.RandVectorCommitment()
-		su := NewStateUpdateWithBlockLogValues(42, currentTime, ph)
+		l1c := RandL1Commitment()
+		su := NewStateUpdateWithBlockLogValues(42, currentTime, l1c)
 		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, currentTime.Equal(b1.Timestamp()))
-		require.EqualValues(t, ph, b1.PreviousStateCommitment(CommitmentModel))
+		require.EqualValues(t, l1c.Bytes(), b1.PreviousL1Commitment().Bytes())
 	})
 }
 
 func TestBatches(t *testing.T) {
-	suBlock := NewStateUpdateWithBlockLogValues(2, time.Time{}, testmisc.RandVectorCommitment())
+	suBlock := NewStateUpdateWithBlockLogValues(2, time.Time{}, RandL1Commitment())
 
 	block1, err := newBlock(suBlock.Mutations())
 	require.NoError(t, err)

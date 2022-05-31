@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -45,8 +46,7 @@ type TimeData struct {
 type Calldata interface {
 	ID() RequestID
 	Params() dict.Dict
-	SenderAccount() *AgentID // returns nil if sender address is not available
-	SenderAddress() iotago.Address
+	SenderAccount() AgentID
 	CallTarget() CallTarget
 	TargetAddress() iotago.Address   // TODO implement properly. Target depends on time assumptions and UTXO type
 	FungibleTokens() *FungibleTokens // attached assets for the UTXO request, nil for off-ledger. All goes to sender
@@ -77,6 +77,17 @@ type ReturnAmountOptions interface {
 	Amount() uint64
 }
 
+type OffLedgerSignatureScheme interface {
+	writeEssence(mu *marshalutil.MarshalUtil)
+	writeSignature(mu *marshalutil.MarshalUtil)
+	readEssence(mu *marshalutil.MarshalUtil) error
+	readSignature(mu *marshalutil.MarshalUtil) error
+	setPublicKey(key *cryptolib.PublicKey)
+	sign(key *cryptolib.KeyPair, data []byte)
+	verify(data []byte) bool
+	Sender() AgentID
+}
+
 func TakeRequestIDs(reqs ...Request) []RequestID {
 	ret := make([]RequestID, len(reqs))
 	for i := range reqs {
@@ -103,7 +114,7 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 		}
 		// wrap output into the iscp.Request
 		odata, err := OnLedgerFromUTXO(out, &iotago.UTXOInput{
-			TransactionID:          *txid,
+			TransactionID:          txid,
 			TransactionOutputIndex: uint16(i),
 		})
 		if err != nil {

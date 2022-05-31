@@ -61,14 +61,14 @@ func MustGetChainInfo(state kv.KVStoreReader) *ChainInfo {
 	return info
 }
 
-func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
+func MustGetChainOwnerID(state kv.KVStoreReader) iscp.AgentID {
 	d := kvdecoder.New(state)
 	return d.MustGetAgentID(VarChainOwnerID)
 }
 
 // GetGasFeePolicy returns gas policy from the state
 func GetGasFeePolicy(state kv.KVStoreReader) (*gas.GasFeePolicy, error) {
-	return gas.GasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+	return gas.FeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }
 
 func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {

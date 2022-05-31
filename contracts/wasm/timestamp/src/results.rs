@@ -17,6 +17,7 @@ pub struct ImmutableGetTimestampResults {
 }
 
 impl ImmutableGetTimestampResults {
+    // last official timestamp generated
     pub fn timestamp(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_TIMESTAMP))
 	}
@@ -28,6 +29,7 @@ pub struct MutableGetTimestampResults {
 }
 
 impl MutableGetTimestampResults {
+    // last official timestamp generated
     pub fn timestamp(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_TIMESTAMP))
 	}

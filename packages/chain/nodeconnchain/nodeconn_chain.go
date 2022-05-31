@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -68,10 +67,6 @@ func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log 
 	return &result, nil
 }
 
-func (nccT *nodeconnChain) L1Params() *parameters.L1 {
-	return nccT.nc.L1Params()
-}
-
 func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output iotago.Output) {
 	nccT.metrics.GetInStateOutput().CountLastMessage(struct {
 		OutputID iotago.OutputID
@@ -123,13 +118,13 @@ func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago
 }
 
 func (nccT *nodeconnChain) txInclusionStateHandler(txID iotago.TransactionID, state string) {
-	txIDStr := iscp.TxID(&txID)
+	txIDStr := iscp.TxID(txID)
 	nccT.log.Debugf("handling inclusion state of tx ID %v: %v", txIDStr, state)
 	nccT.txInclusionStateCh <- &txInclusionStateMsg{
 		txID:  txID,
 		state: state,
 	}
-	nccT.log.Debugf("handling inclusion state of tx ID %v: inclusion state %v handled", txIDStr, state)
+	nccT.log.Debugf("handling inclusion state of tx ID %v finished", txIDStr)
 }
 
 func (nccT *nodeconnChain) AttachToAliasOutput(handler chain.NodeConnectionAliasOutputHandlerFun) {
@@ -269,9 +264,9 @@ func (nccT *nodeconnChain) PullTxInclusionState(txID iotago.TransactionID) {
 	nccT.nc.PullTxInclusionState(nccT.chainID, txID)
 }
 
-func (nccT *nodeconnChain) PullOutputByID(outputID *iotago.UTXOInput) {
+func (nccT *nodeconnChain) PullStateOutputByID(outputID *iotago.UTXOInput) {
 	nccT.metrics.GetOutPullOutputByID().CountLastMessage(outputID)
-	nccT.nc.PullOutputByID(nccT.chainID, outputID)
+	nccT.nc.PullStateOutputByID(nccT.chainID, outputID)
 }
 
 func (nccT *nodeconnChain) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {

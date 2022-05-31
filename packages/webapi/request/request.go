@@ -23,8 +23,9 @@ import (
 )
 
 type (
-	getAccountAssetsFn        func(ch chain.Chain, agentID *iscp.AgentID) (*iscp.FungibleTokens, error)
-	hasRequestBeenProcessedFn func(ch chain.Chain, reqID iscp.RequestID) (bool, error)
+	getAccountAssetsFn        func(ch chain.ChainCore, agentID iscp.AgentID) (*iscp.FungibleTokens, error)
+	hasRequestBeenProcessedFn func(ch chain.ChainCore, reqID iscp.RequestID) (bool, error)
+	checkNonceFn              func(ch chain.ChainCore, req iscp.Request) error
 )
 
 func AddEndpoints(
@@ -32,6 +33,7 @@ func AddEndpoints(
 	getChain chains.ChainProvider,
 	getChainBalance getAccountAssetsFn,
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
+	checkNonce checkNonceFn,
 	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
 	log *logger.Logger,
@@ -40,12 +42,13 @@ func AddEndpoints(
 		getChain:                getChain,
 		getAccountAssets:        getChainBalance,
 		hasRequestBeenProcessed: hasRequestBeenProcessed,
+		checkNonce:              checkNonce,
 		requestsCache:           expiringcache.New(cacheTTL),
 		nodePubKey:              nodePubKey,
 		log:                     log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
-		SetSummary("New off-ledger request").
+		SetSummary("Post an off-ledger request").
 		AddParamPath("", "chainID", "chainID represented in base58").
 		AddParamBody(
 			model.OffLedgerRequestBody{Request: "base64 string"},
@@ -59,6 +62,7 @@ type offLedgerReqAPI struct {
 	getChain                chains.ChainProvider
 	getAccountAssets        getAccountAssetsFn
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
+	checkNonce              checkNonceFn
 	requestsCache           *expiringcache.ExpiringCache
 	nodePubKey              *cryptolib.PublicKey
 	log                     *logger.Logger
@@ -96,27 +100,31 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 
 	alreadyProcessed, err := o.hasRequestBeenProcessed(ch, reqID)
 	if err != nil {
-		o.log.Errorf("webapi.offledger - check if already processed: %w", err)
+		o.log.Errorf("webapi.offledger - check if already processed: %v", err)
 		return httperrors.ServerError("internal error")
 	}
 
+	defer o.requestsCache.Set(reqID, true)
+
 	if alreadyProcessed {
-		o.requestsCache.Set(reqID, true)
 		return httperrors.BadRequest("request already processed")
 	}
 
 	// check user has on-chain balance
 	assets, err := o.getAccountAssets(ch, offLedgerReq.SenderAccount())
 	if err != nil {
-		o.log.Errorf("webapi.offledger - account balance: %w", err)
+		o.log.Errorf("webapi.offledger - account balance: %v", err)
 		return httperrors.ServerError("Unable to get account balance")
 	}
 
-	o.requestsCache.Set(reqID, true)
-
 	if assets.IsEmpty() {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String()))
 	}
+
+	if err := o.checkNonce(ch, offLedgerReq); err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
+	}
+
 	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
 			ChainID: ch.ID(),
@@ -142,7 +150,7 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *iscp.OffLedgerRequ
 		}
 		rGeneric, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
-			return nil, nil, httperrors.BadRequest(fmt.Sprintf("error constructing off-ledger request from base64 string: %q", r.Request))
+			return nil, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
 		}
 		var ok bool
 		if req, ok = rGeneric.(*iscp.OffLedgerRequestData); !ok {

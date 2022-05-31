@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/snapshot"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"os"
-
-	"github.com/iotaledger/wasp/packages/snapshot"
 )
 
 const usage = "USAGE: snapshot [-create | -scanfile | -restoredb] <filename>\n"

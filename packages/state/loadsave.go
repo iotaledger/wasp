@@ -2,9 +2,14 @@ package state
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"path"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
@@ -45,7 +50,10 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	}
 	vs.Commit()
 
-	batch := vs.db.Batched()
+	batch, err := vs.db.Batched()
+	if err != nil {
+		panic(fmt.Errorf("error saving state: %w", err))
+	}
 
 	vs.trie.PersistMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
 	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
@@ -62,6 +70,14 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	// call flush explicitly, because batched.Commit doesn't actually write the changes to disk
 	if err := vs.db.Flush(); err != nil {
 		return err
+	}
+
+	if vs.onBlockSave != nil {
+		// store or trace blocks if set so
+		stateCommitment := trie.RootCommitment(vs.TrieNodeStore())
+		for _, blk := range blocks {
+			vs.onBlockSave(stateCommitment, blk)
+		}
 	}
 
 	vs.trie.ClearCache()
@@ -119,4 +135,19 @@ func LoadBlock(store kvstore.KVStore, stateIndex uint32) (Block, error) {
 		return nil, err
 	}
 	return BlockFromBytes(data)
+}
+
+// SaveRawBlockClosure return closure which saves block in specified directory
+func SaveRawBlockClosure(dir string, log *logger.Logger) OnBlockSaveClosure {
+	return func(stateCommitment trie.VCommitment, block Block) {
+		data := block.Bytes()
+		h := hashing.HashData(data)
+		fname := fmt.Sprintf("%d.%s.%s.mut", block.BlockIndex(), stateCommitment.String(), h.String())
+		err := ioutil.WriteFile(path.Join(dir, fname), data, 0o666)
+		if err != nil {
+			log.Warnf("failed to save raw block #%d to dir %s as '%s': %v", block.BlockIndex(), dir, fname, err)
+		} else {
+			log.Infof("saved raw block #%d to dir %s as '%s'", block.BlockIndex(), dir, fname)
+		}
+	}
 }

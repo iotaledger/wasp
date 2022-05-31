@@ -5,11 +5,11 @@ package sandbox
 
 import (
 	"math/big"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -21,10 +21,6 @@ type SandboxBase struct {
 
 var _ iscp.SandboxBase = &SandboxBase{}
 
-func (s *SandboxBase) L1Params() *parameters.L1 {
-	return s.Ctx.L1Params()
-}
-
 func (s *SandboxBase) assert() *assert.Assert {
 	if s.assertObj == nil {
 		s.assertObj = assert.NewAssert(s.Ctx)
@@ -32,7 +28,7 @@ func (s *SandboxBase) assert() *assert.Assert {
 	return s.assertObj
 }
 
-func (s *SandboxBase) AccountID() *iscp.AgentID {
+func (s *SandboxBase) AccountID() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.AccountID()
 }
@@ -67,7 +63,7 @@ func (s *SandboxBase) ChainID() *iscp.ChainID {
 	return s.Ctx.ChainID()
 }
 
-func (s *SandboxBase) ChainOwnerID() *iscp.AgentID {
+func (s *SandboxBase) ChainOwnerID() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ChainOwnerID()
 }
@@ -77,17 +73,17 @@ func (s *SandboxBase) Contract() iscp.Hname {
 	return s.Ctx.CurrentContractHname()
 }
 
-func (s *SandboxBase) ContractAgentID() *iscp.AgentID {
+func (s *SandboxBase) ContractAgentID() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return iscp.NewAgentID(s.Ctx.ChainID().AsAddress(), s.Ctx.CurrentContractHname())
+	return iscp.NewContractAgentID(s.Ctx.ChainID(), s.Ctx.CurrentContractHname())
 }
 
-func (s *SandboxBase) ContractCreator() *iscp.AgentID {
+func (s *SandboxBase) ContractCreator() iscp.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ContractCreator()
 }
 
-func (s *SandboxBase) Timestamp() int64 {
+func (s *SandboxBase) Timestamp() time.Time {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.Timestamp()
 }

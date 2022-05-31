@@ -188,12 +188,12 @@ func (p *kvdecoder) MustGetRequestID(key kv.Key, def ...iscp.RequestID) iscp.Req
 	return ret
 }
 
-func (p *kvdecoder) GetAgentID(key kv.Key, def ...*iscp.AgentID) (*iscp.AgentID, error) {
+func (p *kvdecoder) GetAgentID(key kv.Key, def ...iscp.AgentID) (iscp.AgentID, error) {
 	v, err := codec.DecodeAgentID(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...*iscp.AgentID) *iscp.AgentID {
+func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...iscp.AgentID) iscp.AgentID {
 	ret, err := p.GetAgentID(key, def...)
 	p.check(err)
 	return ret
@@ -253,28 +253,13 @@ func (p *kvdecoder) MustGetTokenScheme(key kv.Key, def ...iotago.TokenScheme) io
 	return ret
 }
 
-func (p *kvdecoder) GetTokenTag(key kv.Key, def ...iotago.TokenTag) (iotago.TokenTag, error) {
-	v := p.MustGet(key)
-	ret, err := codec.DecodeTokenTag(v, def...)
-	if err != nil {
-		return iotago.TokenTag{}, err
-	}
-	return ret, nil
-}
-
-func (p *kvdecoder) MustGetTokenTag(key kv.Key, def ...iotago.TokenTag) iotago.TokenTag {
-	ret, err := p.GetTokenTag(key, def...)
-	p.check(err)
-	return ret
-}
-
 func (p *kvdecoder) GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error) {
 	v := p.MustGet(key)
 	if v == nil {
 		if len(def) != 0 {
 			return def[0], nil
 		}
-		return nil, fmt.Errorf("GetTokenTag: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetBigInt: mandatory parameter '%s' does not exist", key)
 	}
 	return codec.DecodeBigIntAbs(v)
 }

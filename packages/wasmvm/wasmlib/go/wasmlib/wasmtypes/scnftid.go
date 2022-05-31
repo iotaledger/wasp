@@ -6,7 +6,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScNftIDLength = 20
+const ScNftIDLength = 32
 
 type ScNftID struct {
 	id [ScNftIDLength]byte
@@ -44,9 +44,13 @@ func NftIDToBytes(value ScNftID) []byte {
 	return value.id[:]
 }
 
+func NftIDFromString(value string) ScNftID {
+	return NftIDFromBytes(Base58Decode(value))
+}
+
 func NftIDToString(value ScNftID) string {
 	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Base58Encode(NftIDToBytes(value))
 }
 
 func nftIDFromBytesUnchecked(buf []byte) ScNftID {

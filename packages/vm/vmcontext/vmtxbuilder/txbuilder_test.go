@@ -5,10 +5,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -16,21 +12,14 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"github.com/stretchr/testify/require"
 )
-
-func randStateData() *state.L1Commitment {
-	h := hashing.RandomHash(nil)
-	sd, err := state.L1CommitmentFromBytes(h[:])
-	if err != nil {
-		panic(err)
-	}
-	return &sd
-}
 
 func rndAliasID() (ret iotago.AliasID) {
 	a := tpkg.RandAliasAddress()
@@ -44,7 +33,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 	if amountNative > 0 {
 		assets = &iscp.FungibleTokens{
 			Iotas:  0,
-			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
+			Tokens: iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
 		}
 	}
 	out := transaction.MakeBasicOutput(
@@ -53,7 +42,6 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		assets,
 		nil,
 		iscp.SendOptions{},
-		testdeserparams.RentStructure(),
 	)
 	if len(addIotasToDustMinimum) > 0 {
 		out.Amount += addIotasToDustMinimum[0]
@@ -86,7 +74,6 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			Options:                    iscp.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
 		},
-		testdeserparams.DeSerializationParameters().RentStructure,
 	)
 	txb.AddOutput(exout)
 	_, _, err := txb.Totals()
@@ -97,7 +84,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 }
 
 func TestTxBuilderBasic(t *testing.T) {
-	const initialTotalIotas = 1000
+	const initialTotalIotas = 10 * iscp.Mi
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -112,8 +99,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		StateIndex:     0,
 		StateMetadata:  stateMetadata[:],
 		FoundryCounter: 0,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},
@@ -129,12 +116,11 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		totals, _, err := txb.Totals()
 		require.NoError(t, err)
-		require.EqualValues(t, 1000-txb.dustDepositAssumption.AnchorOutput, totals.TotalIotasInL2Accounts)
+		require.EqualValues(t, initialTotalIotas-txb.dustDepositAssumption.AnchorOutput, totals.TotalIotasInL2Accounts)
 		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
@@ -142,7 +128,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		require.EqualValues(t, 1, len(essence.Inputs))
 		require.EqualValues(t, 1, len(essence.Outputs))
 
@@ -156,8 +142,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		txb.addDeltaIotasToTotal(42)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalIotasInL2Accounts))
@@ -167,8 +152,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
 			anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -186,7 +170,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, expectedIotas, int(totalsOut.TotalIotasInL2Accounts))
 		require.EqualValues(t, 0, len(totalsOut.NativeTokenBalances))
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -194,8 +178,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -214,7 +197,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 1, len(totalsOut.NativeTokenBalances))
 		require.True(t, totalsOut.NativeTokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -223,7 +206,7 @@ func TestTxBuilderBasic(t *testing.T) {
 }
 
 func TestTxBuilderConsistency(t *testing.T) {
-	const initialTotalIotas = 1000
+	const initialTotalIotas = 10 * iscp.Mi
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -238,8 +221,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		StateIndex:     0,
 		StateMetadata:  stateMetadata[:],
 		FoundryCounter: 0,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},
@@ -272,8 +255,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -310,8 +292,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -327,9 +308,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 		sumIN, sumOUT, err := txb.Totals()
 		require.NoError(t, err)
 
-		expectedIotas := initialTotalIotas - int(txb.dustDepositAssumption.AnchorOutput) + int(deposit)
+		expectedIotas := initialTotalIotas - txb.dustDepositAssumption.AnchorOutput + deposit
 		require.EqualValues(t, expectedIotas, int(sumIN.TotalIotasInL2Accounts))
-		expectedIotas -= len(amounts) * int(txb.dustDepositAssumption.NativeTokenOutput)
+		expectedIotas -= uint64(len(amounts) * int(txb.dustDepositAssumption.NativeTokenOutput))
 		require.EqualValues(t, expectedIotas, int(sumOUT.TotalIotasInL2Accounts))
 	}
 
@@ -363,7 +344,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -377,7 +358,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runConsume(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -390,7 +371,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		runConsume(runTimes, testAmount)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -404,7 +385,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -423,7 +404,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -447,7 +428,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -471,7 +452,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -499,7 +480,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -555,7 +536,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, afterTokens[nativeTokenIDs[0]].Cmp(new(big.Int).SetInt64(10)) == 0)
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -585,7 +566,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		require.EqualValues(t, 2, len(essence.Inputs))
 		require.EqualValues(t, 2, len(essence.Outputs))
 
@@ -607,7 +588,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		totalIn, totalOut, err := txb.Totals()
 		require.NoError(t, err)
-		expectedIotas := initialTotalIotas - int(txb.dustDepositAssumption.AnchorOutput) + int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)
+		expectedIotas := initialTotalIotas - txb.dustDepositAssumption.AnchorOutput + txb.dustDepositAssumption.NativeTokenOutput*uint64(len(nativeTokenIDs))
 		require.EqualValues(t, expectedIotas, int(totalOut.TotalIotasInL2Accounts+totalOut.SentOutIotas))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)+int(txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalIotasInDustDeposit))
@@ -621,7 +602,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		require.EqualValues(t, 6, len(essence.Inputs))
 		require.EqualValues(t, 6, len(essence.Outputs))
 
@@ -641,7 +622,7 @@ func TestDustDeposit(t *testing.T) {
 		GasBudget:      0,
 	}
 	t.Run("calc dust assumptions", func(t *testing.T) {
-		d := transaction.NewDepositEstimate(testdeserparams.RentStructure())
+		d := transaction.NewDepositEstimate()
 		t.Logf("dust deposit assumptions:\n%s", d.String())
 
 		d1, err := transaction.DustDepositAssumptionFromBytes(d.Bytes())
@@ -657,9 +638,9 @@ func TestDustDeposit(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			testdeserparams.RentStructure(),
 		)
-		require.Equal(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
+		expected := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewFungibleTokens(10000, nil)
@@ -669,14 +650,13 @@ func TestDustDeposit(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			testdeserparams.RentStructure(),
 		)
-		require.GreaterOrEqual(t, out.Deposit(), out.VByteCost(parameters.L1ForTesting().RentStructure(), nil))
+		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(&parameters.L1.Protocol.RentStructure, nil))
 	})
 }
 
 func TestFoundries(t *testing.T) {
-	const initialTotalIotas = 1000
+	const initialTotalIotas = 1 * iscp.Mi
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -691,8 +671,8 @@ func TestFoundries(t *testing.T) {
 		StateIndex:     0,
 		StateMetadata:  stateMetadata[:],
 		FoundryCounter: 0,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
+		Features: iotago.Features{
+			&iotago.SenderFeature{
 				Address: aliasID.ToAddress(),
 			},
 		},
@@ -711,8 +691,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
-			parameters.L1ForTesting(),
+			*transaction.NewDepositEstimate(),
 		)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
@@ -727,7 +706,6 @@ func TestFoundries(t *testing.T) {
 		for i := 0; i < n; i++ {
 			sn, _ := txb.CreateNewFoundry(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(10_000_000), MeltedTokens: util.Big0, MintedTokens: util.Big0},
-				iotago.TokenTag{},
 				nil,
 			)
 			require.EqualValues(t, i+1, int(sn))
@@ -742,7 +720,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("create foundry ok", func(t *testing.T) {
 		initTest()
 		createNFoundries(3)
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
@@ -750,11 +728,11 @@ func TestFoundries(t *testing.T) {
 	t.Run("create foundry not enough", func(t *testing.T) {
 		initTest()
 		err := panicutil.CatchPanicReturnError(func() {
-			createNFoundries(5)
+			createNFoundries(5000)
 		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 
-		essence, _ := txb.BuildTransactionEssence(randStateData())
+		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
@@ -778,7 +756,6 @@ func TestSerDe(t *testing.T) {
 			assets,
 			&reqMetadata,
 			iscp.SendOptions{},
-			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
@@ -790,7 +767,7 @@ func TestSerDe(t *testing.T) {
 		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
 		require.EqualValues(t, out.Deposit(), outBack.Amount)
 		require.EqualValues(t, 0, len(outBack.NativeTokens))
-		require.True(t, outBack.Blocks.Equal(out.Blocks))
+		require.True(t, outBack.Features.Equal(out.Features))
 	})
 	t.Run("serde FoundryOutput", func(t *testing.T) {
 		out := &iotago.FoundryOutput{
@@ -800,13 +777,12 @@ func TestSerDe(t *testing.T) {
 			Amount:       1337,
 			NativeTokens: nil,
 			SerialNumber: 5,
-			TokenTag:     iotago.TokenTag{},
 			TokenScheme: &iotago.SimpleTokenScheme{
 				MintedTokens:  big.NewInt(200),
 				MeltedTokens:  big.NewInt(0),
 				MaximumSupply: big.NewInt(2000),
 			},
-			Blocks: nil,
+			Features: nil,
 		}
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

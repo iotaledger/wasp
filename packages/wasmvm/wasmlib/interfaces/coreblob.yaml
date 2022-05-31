@@ -1,5 +1,5 @@
 name: CoreBlob
-description: Core blob contract
+description: Blob Contract
 structs: {}
 typedefs: {}
 state: {}
@@ -7,20 +7,30 @@ funcs:
   storeBlob:
     params:
       blobs=this: map[String]Bytes # set of named blobs
+
+      # The following are predefined blob names that are necessary
+      # to be able to load and deploy specific VM binary code.
+      # They directly map to entries in the blobs map.
+      # In fact, we will probably never use the blobs map directly.
+
+      progBinary=p: Bytes? # smart contract program binary code
+      description=d: String? # description of progBinary
+      vmType=v: String? # VM type that must be used to run progBinary
     results:
       hash: Hash # calculated hash of blob set
 views:
+  getBlobInfo:
+    params:
+      hash: Hash # blob set
+    results:
+      blobSizes=this: map[String]Int32 # size for each named blob
   getBlobField:
     params:
       field: String # blob name
       hash: Hash # blob set
     results:
       bytes: Bytes # blob data
-  getBlobInfo:
-    params:
-      hash: Hash # blob set
-    results:
-      blobSizes=this: map[String]Int32 # size for each named blob
   listBlobs:
     results:
       blobSizes=this: map[Hash]Int32 # total size for each blob set
+ 

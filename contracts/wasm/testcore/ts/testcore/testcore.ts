@@ -44,7 +44,7 @@ export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainCon
 export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.CheckContextFromFullEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
     ctx.require(f.params.caller().value().equals(ctx.caller()), "fail: caller");
-    ctx.require(f.params.chainID().value().equals(ctx.chainID()), "fail: chainID");
+    ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
     ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
@@ -166,7 +166,7 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
-    ctx.require(f.params.chainID().value().equals(ctx.chainID()), "fail: chainID");
+    ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
     ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
@@ -283,8 +283,9 @@ export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackC
 export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
     let iotas = ctx.allowance().iotas();
     const address = ctx.caller().address();
-    const transfer = wasmlib.ScTransfer.iotas(200);
-    for (; iotas >= 200; iotas -= 200) {
+    let iotasToTransfer: u64 = 1_000_000;
+    const transfer = wasmlib.ScTransfer.iotas(iotasToTransfer);
+    for (; iotas >= iotasToTransfer; iotas -= iotasToTransfer) {
         ctx.transferAllowed(ctx.accountID(), transfer, false);
         ctx.send(address, transfer);
     }

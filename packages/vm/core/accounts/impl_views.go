@@ -6,19 +6,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
-
-// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
-func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
-	mapping := getNativeTokenOutputMapR(ctx.State())
-	ret := dict.New()
-	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), []byte{0xFF})
-		return true
-	})
-	return ret
-}
 
 // viewBalance returns colored balances of the account belonging to the AgentID
 // Params:
@@ -41,17 +31,29 @@ func viewAccounts(ctx iscp.SandboxView) dict.Dict {
 	return getAccountsIntern(ctx.State())
 }
 
-func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
+// nonces are only sent with off-ledger requests
+func viewGetAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID)
-	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
+	nonce := GetMaxAssumedNonce(ctx.State(), account)
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
 	return ret
 }
 
-// foundryOutput takes serial number and returns corresponding foundry output in serialized form
-func foundryOutput(ctx iscp.SandboxView) dict.Dict {
-	ctx.Log().Debugf("accounts.foundryOutput")
+// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
+func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
+	mapping := getNativeTokenOutputMapR(ctx.State())
+	ret := dict.New()
+	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
+		ret.Set(kv.Key(elemKey), []byte{0xff})
+		return true
+	})
+	return ret
+}
+
+// viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
+func viewFoundryOutput(ctx iscp.SandboxView) dict.Dict {
+	ctx.Log().Debugf("accounts.viewFoundryOutput")
 
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
@@ -68,13 +70,13 @@ func viewAccountNFTs(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
 	nftIDs := getAccountNFTs(getAccountR(ctx.State(), aid))
-	ret := []byte{}
-	for _, nftid := range nftIDs {
-		ret = append(ret, nftid[:]...)
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamNFTIDs)
+	for _, nftID := range nftIDs {
+		arr.MustPush(nftID[:])
 	}
-	return dict.Dict{
-		ParamNFTIDs: ret,
-	}
+	return ret
 }
 
 // viewNFTData returns the NFT data for a given NFTID

@@ -53,3 +53,25 @@ func NewConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *Consensus
 		CurrentStateIndex: status.GetCurrentStateIndex(),
 	}
 }
+
+type ConsensusPipeMetrics struct {
+	EventStateTransitionMsgPipeSize int
+	EventSignedResultMsgPipeSize    int
+	EventSignedResultAckMsgPipeSize int
+	EventInclusionStateMsgPipeSize  int
+	EventACSMsgPipeSize             int
+	EventVMResultMsgPipeSize        int
+	EventTimerMsgPipeSize           int
+}
+
+func NewConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {
+	return &ConsensusPipeMetrics{
+		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
+		EventSignedResultMsgPipeSize:    pipeMetrics.GetEventSignedResultMsgPipeSize(),
+		EventSignedResultAckMsgPipeSize: pipeMetrics.GetEventSignedResultAckMsgPipeSize(),
+		EventInclusionStateMsgPipeSize:  pipeMetrics.GetEventInclusionStateMsgPipeSize(),
+		EventACSMsgPipeSize:             pipeMetrics.GetEventACSMsgPipeSize(),
+		EventVMResultMsgPipeSize:        pipeMetrics.GetEventVMResultMsgPipeSize(),
+		EventTimerMsgPipeSize:           pipeMetrics.GetEventTimerMsgPipeSize(),
+	}
+}

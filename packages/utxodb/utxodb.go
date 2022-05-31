@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -18,12 +19,10 @@ import (
 )
 
 const (
-	DefaultIOTASupply = iotago.TokenSupply
-
-	Mi = 1_000_000
+	DefaultIOTASupply = tpkg.TestTokenSupply
 
 	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * Mi
+	FundsFromFaucetAmount = 1000 * iscp.Mi
 )
 
 var (
@@ -41,7 +40,6 @@ type UtxoDB struct {
 	mutex        sync.RWMutex
 	supply       uint64
 	seed         [cryptolib.SeedSize]byte
-	l1Params     *parameters.L1
 	transactions map[iotago.TransactionID]*iotago.Transaction
 	utxo         map[iotago.OutputID]struct{}
 	// latest milestone index and time. With each added transaction, global time moves
@@ -55,7 +53,6 @@ type InitParams struct {
 	initialTime time.Time
 	timestep    time.Duration
 	supply      uint64
-	l1Params    *parameters.L1
 	seed        [cryptolib.SeedSize]byte
 }
 
@@ -68,7 +65,6 @@ func DefaultInitParams(seed ...[]byte) *InitParams {
 		initialTime: time.Unix(1, 0),
 		timestep:    1 * time.Millisecond,
 		supply:      DefaultIOTASupply,
-		l1Params:    parameters.L1ForTesting(),
 		seed:        seedBytes,
 	}
 }
@@ -80,11 +76,6 @@ func (i *InitParams) WithInitialTime(t time.Time) *InitParams {
 
 func (i *InitParams) WithTimeStep(timestep time.Duration) *InitParams {
 	i.timestep = timestep
-	return i
-}
-
-func (i *InitParams) WithL1Params(l1Params *parameters.L1) *InitParams {
-	i.l1Params = l1Params
 	return i
 }
 
@@ -104,7 +95,6 @@ func New(params ...*InitParams) *UtxoDB {
 	u := &UtxoDB{
 		supply:       p.supply,
 		seed:         p.seed,
-		l1Params:     p.l1Params,
 		transactions: make(map[iotago.TransactionID]*iotago.Transaction),
 		utxo:         make(map[iotago.OutputID]struct{}),
 		globalLogicalTime: iscp.TimeData{
@@ -121,20 +111,8 @@ func (u *UtxoDB) Seed() []byte {
 	return u.seed[:]
 }
 
-func (u *UtxoDB) L1Params() *parameters.L1 {
-	return u.l1Params
-}
-
-func (u *UtxoDB) RentStructure() *iotago.RentStructure {
-	return u.l1Params.RentStructure()
-}
-
-func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
-	return u.l1Params.DeSerializationParameters
-}
-
 func (u *UtxoDB) genesisInit() {
-	genesisTx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
+	genesisTx, err := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID()).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address: genesisAddress,
 			Output: &iotago.BasicOutput{
@@ -150,7 +128,7 @@ func (u *UtxoDB) genesisInit() {
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(u.deSeriParams(), genesisSigner)
+		Build(parameters.L1.Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -171,12 +149,12 @@ func (u *UtxoDB) addTransaction(tx *iotago.Transaction, isGenesis bool) {
 		delete(u.utxo, outID)
 	}
 	// store transaction
-	u.transactions[*txid] = tx
+	u.transactions[txid] = tx
 
 	// add unspent outputs to the ledger
 	for i := range tx.Essence.Outputs {
 		utxo := &iotago.UTXOInput{
-			TransactionID:          *txid,
+			TransactionID:          txid,
 			TransactionOutputIndex: uint16(i),
 		}
 		u.utxo[utxo.ID()] = struct{}{}
@@ -237,7 +215,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 		fundsAmount = amount[0]
 	}
 
-	tx, err := builder.NewTransactionBuilder(u.l1Params.NetworkID).
+	tx, err := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID()).
 		AddInput(&builder.ToBeSignedUTXOInput{
 			Address:  genesisAddress,
 			Output:   inputOutput,
@@ -255,7 +233,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(u.deSeriParams(), genesisSigner)
+		Build(parameters.L1.Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -323,7 +301,7 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 
 func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	// serialize for syntactic check
-	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.deSeriParams()); err != nil {
+	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, parameters.L1.Protocol); err != nil {
 		return err
 	}
 

@@ -6,7 +6,9 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -77,7 +79,9 @@ func nextState(
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, trie.RootCommitment(vs.TrieNodeStore()))
+	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
+	require.NoError(t, err)
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, &prev)
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -95,10 +99,13 @@ func nextState(
 	nextvs.Commit()
 	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
 
+	block, err := nextvs.ExtractBlock()
+	require.NoError(t, err)
+
 	aliasID := consumedOutput.AliasID
 	inputs := iotago.OutputIDs{consumedOutputID}
 	txEssence := &iotago.TransactionEssence{
-		NetworkID: 0,
+		NetworkID: tpkg.TestNetworkID,
 		Inputs:    inputs.UTXOInputs(),
 		Outputs: []iotago.Output{
 			&iotago.AliasOutput{
@@ -106,10 +113,10 @@ func nextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore())).Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), hashing.HashData(block.EssenceBytes())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
-				Blocks:         consumedOutput.Blocks,
+				Features:       consumedOutput.Features,
 			},
 		},
 		Payload: nil,
@@ -139,13 +146,13 @@ func NextState(
 	)
 	require.NoError(t, err)
 	tx := &iotago.Transaction{
-		Essence:      txEssence,
-		UnlockBlocks: []iotago.UnlockBlock{&iotago.SignatureUnlockBlock{Signature: signatures[0]}},
+		Essence: txEssence,
+		Unlocks: []iotago.Unlock{&iotago.SignatureUnlock{Signature: signatures[0]}},
 	}
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(*txID, 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(txID, 0).UTXOInput()
 
 	return nextvs, tx, aliasOutputID
 }

@@ -3,6 +3,7 @@
 
 [workspace]
 members = [
+    "corecontracts",
     "dividend",
     "donatewithfeedback",
     "erc20",

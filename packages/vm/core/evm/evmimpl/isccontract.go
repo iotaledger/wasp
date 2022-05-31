@@ -62,6 +62,7 @@ func newISCContract(ctx iscp.Sandbox) vm.ISCContract {
 	return &iscContract{ctx}
 }
 
+//nolint:funlen
 func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
@@ -84,9 +85,6 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 	case "getSenderAccount":
 		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Request().SenderAccount())}
-
-	case "getSenderAddress":
-		outs = []interface{}{isccontract.WrapIotaAddress(c.ctx.Request().SenderAddress())}
 
 	case "getAllowanceIotas":
 		outs = []interface{}{c.ctx.Request().Allowance().Assets.Iotas}
@@ -119,12 +117,20 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
 
 	case "send":
-
 		params := isccontract.ISCRequestParameters{}
 		err := method.Inputs.Copy(&params, args)
-		fmt.Printf(err.Error())
-		outs = []interface{}{}
-	//	c.ctx.Send(params)
+		c.ctx.RequireNoError(err)
+		c.ctx.Send(params.Unwrap())
+
+	case "sendAsNFT":
+		var callArgs struct {
+			isccontract.ISCRequestParameters
+			Id isccontract.IotaNFTID
+		}
+		err := method.Inputs.Copy(&callArgs, args)
+		c.ctx.RequireNoError(err)
+		c.ctx.TransferAllowedFunds(c.ctx.AccountID())
+		c.ctx.SendAsNFT(callArgs.Unwrap(), callArgs.Id.Unwrap())
 
 	case "call":
 		var callArgs struct {
@@ -168,7 +174,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 	ret, err := method.Outputs.Pack(outs...)
 	c.ctx.RequireNoError(err)
-	return
+	return ret, remainingGas
 }
 
 type iscContractView struct {
@@ -182,7 +188,7 @@ func newISCContractView(ctx iscp.SandboxView) vm.ISCContract {
 var _ vm.ISCContract = &iscContractView{}
 
 func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
-	ret, remainingGas, method, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
 	}
@@ -213,9 +219,11 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 
 	ret, err := method.Outputs.Pack(outs...)
 	c.ctx.RequireNoError(err)
-	return
+	return ret, remainingGas
 }
 
+// TODO evm param is not used, can it be removed?
+//nolint:unparam
 func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
@@ -244,8 +252,8 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 		nft := ctx.GetNFTData(nftID.Unwrap())
 		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
 
-	case "getTimestampUnixNano":
-		outs = []interface{}{ctx.Timestamp()}
+	case "getTimestampUnixSeconds":
+		outs = []interface{}{ctx.Timestamp().Unix()}
 
 	case "logInfo":
 		ctx.Log().Infof("%s", args[0].(string))
@@ -263,5 +271,5 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 	ok = true
 	ret, err := method.Outputs.Pack(outs...)
 	ctx.RequireNoError(err)
-	return
+	return ret, remainingGas, method, ok
 }

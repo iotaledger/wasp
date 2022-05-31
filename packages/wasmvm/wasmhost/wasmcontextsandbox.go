@@ -6,10 +6,13 @@ package wasmhost
 import (
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -31,6 +34,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnContractCreator,
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
+	(*WasmContextSandbox).fnEstimateDust,
 	(*WasmContextSandbox).fnEvent,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
@@ -44,8 +48,11 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnStateAnchor,
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
+	(*WasmContextSandbox).fnTransferAllowed,
 	(*WasmContextSandbox).fnUtilsBase58Decode,
 	(*WasmContextSandbox).fnUtilsBase58Encode,
+	(*WasmContextSandbox).fnUtilsBech32Decode,
+	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
 	(*WasmContextSandbox).fnUtilsBlsAggregate,
 	(*WasmContextSandbox).fnUtilsBlsValid,
@@ -54,8 +61,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnUtilsHashBlake2b,
 	(*WasmContextSandbox).fnUtilsHashName,
 	(*WasmContextSandbox).fnUtilsHashSha3,
-	(*WasmContextSandbox).fnTransferAllowed,
-	(*WasmContextSandbox).fnEstimateDust,
 }
 
 // '$' prefix indicates a string param
@@ -77,6 +82,7 @@ var sandboxFuncNames = []string{
 	"FnContractCreator",
 	"#FnDeployContract",
 	"FnEntropy",
+	"#FnEstimateDust",
 	"$FnEvent",
 	"$FnLog",
 	"FnMinted",
@@ -90,8 +96,11 @@ var sandboxFuncNames = []string{
 	"#FnStateAnchor",
 	"FnTimestamp",
 	"$FnTrace",
+	"#FnTransferAllowed",
 	"$FnUtilsBase58Decode",
 	"#FnUtilsBase58Encode",
+	"$FnUtilsBech32Decode",
+	"#FnUtilsBech32Encode",
 	"#FnUtilsBlsAddress",
 	"#FnUtilsBlsAggregate",
 	"#FnUtilsBlsValid",
@@ -100,8 +109,6 @@ var sandboxFuncNames = []string{
 	"#FnUtilsHashBlake2b",
 	"$FnUtilsHashName",
 	"#FnUtilsHashSha3",
-	"#FnTransferAllowed",
-	"#FnEstimateDust",
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
@@ -116,6 +123,8 @@ type WasmContextSandbox struct {
 }
 
 var _ ISandbox = new(WasmContextSandbox)
+
+var EventSubscribers []func(msg string)
 
 func NewWasmContextSandbox(wc *WasmContext, ctx interface{}) *WasmContextSandbox {
 	s := &WasmContextSandbox{wc: wc}
@@ -150,34 +159,35 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 
-	scAssets := wasmlib.NewScAssets(req.Transfer)
-	allowance := s.cvt.IscpAllowance(scAssets)
-	assets := allowance
+	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
+	if allowance.IsEmpty() {
+		allowance = transfer
+	}
 	// Force a minimum transfer of 1000 iotas for dust and some gas
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 iota
-	if assets.Assets.Iotas < 1000 {
-		// assets are different from allowance, so clone allowance before modifying
-		assets = allowance.Clone()
-		assets.Assets.Iotas = 1000
+	if !transfer.IsEmpty() && transfer.Assets.Iotas < 1*iscp.Mi {
+		transfer = transfer.Clone()
+		transfer.Assets.Iotas = 1 * iscp.Mi
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
 	sendReq := iscp.RequestParameters{
 		AdjustToMinimumDustDeposit: true,
 		TargetAddress:              chainID.AsAddress(),
-		FungibleTokens:             assets.Assets,
+		FungibleTokens:             transfer.Assets,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: contract,
 			EntryPoint:     function,
 			Params:         params,
 			// TODO check, probably not correct
 			Allowance: allowance,
-			GasBudget: 500_000,
+			GasBudget: gas.MaxGasPerCall,
 		},
 	}
 	if req.Delay != 0 {
-		timeLock := time.Unix(0, s.ctx.Timestamp())
+		timeLock := s.ctx.Timestamp()
 		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
 		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
 	}
@@ -229,16 +239,14 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	function := s.cvt.IscpHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	scAssets := wasmlib.NewScAssets(req.Transfer)
-	allowance := s.cvt.IscpAllowance(scAssets)
-	// TODO check, probably not right
-	transfer := iscp.NewAllowanceFungibleTokens(allowance.Assets)
+	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
-	results := s.callUnlocked(contract, function, params, transfer)
+	results := s.callUnlocked(contract, function, params, allowance)
 	return results.Bytes()
 }
 
 func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
+	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
@@ -280,6 +288,7 @@ func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) {
+	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
@@ -296,7 +305,11 @@ func (s *WasmContextSandbox) fnEstimateDust(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
-	s.ctx.Event(string(args))
+	msg := string(args)
+	s.ctx.Event(msg)
+	for _, eventSubscribers := range EventSubscribers {
+		eventSubscribers(msg)
+	}
 	return nil
 }
 
@@ -368,7 +381,7 @@ func (s *WasmContextSandbox) fnStateAnchor(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(s.common.Timestamp())
+	return codec.EncodeUint64(uint64(s.common.Timestamp().UnixNano()))
 }
 
 func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
@@ -400,6 +413,21 @@ func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
 
 func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
 	return []byte(s.common.Utils().Base58().Encode(args))
+}
+
+func (s WasmContextSandbox) fnUtilsBech32Decode(args []byte) []byte {
+	hrp, addr, err := iotago.ParseBech32(string(args))
+	s.checkErr(err)
+	if hrp != parameters.L1.Protocol.Bech32HRP {
+		s.Panicf("Invalid protocol prefix: %s", string(hrp))
+	}
+	return s.cvt.ScAddress(addr).Bytes()
+}
+
+func (s WasmContextSandbox) fnUtilsBech32Encode(args []byte) []byte {
+	scAddress := wasmtypes.AddressFromBytes(args)
+	addr := s.cvt.IscpAddress(&scAddress)
+	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 
 func (s WasmContextSandbox) fnUtilsBlsAddress(args []byte) []byte {

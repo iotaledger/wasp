@@ -14,7 +14,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
-$structComment
+$#each structComment _structComment
 type $StrName struct {
 $#each struct structField
 }
@@ -39,7 +39,8 @@ $#emit structMethods
 `,
 	// *******************************
 	"structField": `
-	$FldName$fldPad $fldLangType $fldComment
+$#each fldComment _structFieldComment
+	$FldName$fldPad $fldLangType
 `,
 	// *******************************
 	"structDecode": `
@@ -47,7 +48,7 @@ $#emit structMethods
 `,
 	// *******************************
 	"structEncode": `
-		wasmtypes.$FldType$+Encode(enc, o.$FldName)
+	wasmtypes.$FldType$+Encode(enc, o.$FldName)
 `,
 	// *******************************
 	"structMethods": `

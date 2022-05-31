@@ -1,0 +1,1 @@
+[{"inputs":[{"internalType":"uint32","name":"n","type":"uint32"}],"name":"fib","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"view","type":"function"}]

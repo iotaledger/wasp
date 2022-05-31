@@ -47,7 +47,7 @@ func (m *commitmentModel) Proof(key []byte, tr trie.NodeStore) *Proof {
 	for i, k := range proofGeneric.Path {
 		node, ok := tr.GetNode(kv.Key(k))
 		if !ok {
-			panic(xerrors.Errorf("can't find node key '%d'", kv.Key(k)))
+			panic(xerrors.Errorf("can't find node key '%s'", kv.Key(k)))
 		}
 		isLast = i == len(proofGeneric.Path)-1
 		if !isLast {
@@ -137,7 +137,7 @@ func (p *Proof) Validate(root trie.VCommitment, value ...[]byte) error {
 	if err != nil {
 		return err
 	}
-	cv := (vectorCommitment)(c)
+	cv := vectorCommitment(c)
 	if !trie.EqualCommitments(&cv, root) {
 		return xerrors.New("invalid proof: commitment not equal to the root")
 	}
@@ -249,12 +249,14 @@ func (p *Proof) Read(r io.Reader) error {
 		return err
 	}
 	var size uint16
+	//nolint:gocritic
 	if err = util.ReadUint16(r, &size); err != nil {
 		return err
 	}
 	p.Path = make([]*ProofElement, size)
 	for i := range p.Path {
 		p.Path[i] = &ProofElement{}
+		//nolint:gocritic
 		if err = p.Path[i].Read(r); err != nil {
 			return err
 		}

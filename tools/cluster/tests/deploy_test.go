@@ -14,9 +14,9 @@ import (
 )
 
 func TestDeployChain(t *testing.T) {
-	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
+	e := setupWithNoChain(t)
 
-	counter1, err := e.clu.StartMessageCounter(map[string]int{
+	counter1, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
 		"request_out":     1,
@@ -24,26 +24,26 @@ func TestDeployChain(t *testing.T) {
 	require.NoError(t, err)
 	defer counter1.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	if !counter1.WaitUntilExpectationsMet() {
-		t.Fail()
+		t.Fatal()
 	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)
-	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress(), 0))
+	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
-	t.Logf("--- chainOwnerID: %s", chainOwnerID.String(e.clu.GetL1NetworkPrefix()))
+	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
 	chEnv.checkCoreContracts()
 	chEnv.checkRootsOutside()
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 1, blockIndex)
+		require.Greater(t, blockIndex, uint32(1))
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestDeployChain(t *testing.T) {
 func TestDeployContractOnly(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
@@ -62,16 +62,16 @@ func TestDeployContractOnly(t *testing.T) {
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	tx := chEnv.deployIncCounterSC(counter)
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
@@ -85,7 +85,7 @@ func TestDeployContractOnly(t *testing.T) {
 	{
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(*txID, 0))
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(txID, 0))
 		require.NoError(t, err)
 		require.Nil(t, rec.Error)
 	}
@@ -94,7 +94,7 @@ func TestDeployContractOnly(t *testing.T) {
 func TestDeployContractAndSpawn(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
+	counter, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
@@ -102,10 +102,10 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	require.NoError(t, err)
 	defer counter.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	chEnv.deployIncCounterSC(counter)
 
@@ -118,18 +118,19 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
-	).WithIotas(1)
+	).WithIotas(100)
 	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
+	require.Len(t, receipts, 1)
 
 	chEnv.checkCoreContracts()
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, blockIndex)
+		require.Greater(t, blockIndex, uint32(2))
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)

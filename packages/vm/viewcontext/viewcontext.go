@@ -2,6 +2,7 @@ package viewcontext
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -41,7 +42,7 @@ type ViewContext struct {
 	gasBurnLog  *gas.BurnLog
 	gasBudget   uint64
 	callStack   []*callContext
-	l1Params    *parameters.L1
+	l1Params    *parameters.L1Params
 }
 
 var _ execution.WaspContext = &ViewContext{}
@@ -52,7 +53,6 @@ func New(ch chain.ChainCore) *ViewContext {
 		stateReader: ch.GetStateReader(),
 		chainID:     ch.ID(),
 		log:         ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		l1Params:    ch.L1Params(),
 	}
 }
 
@@ -77,23 +77,23 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	ctx.gasBudget -= g
 }
 
-func (ctx *ViewContext) AccountID() *iscp.AgentID {
+func (ctx *ViewContext) AccountID() iscp.AgentID {
 	hname := ctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return ctx.ChainID().CommonAccount()
 	}
-	return iscp.NewAgentID(ctx.ChainID().AsAddress(), hname)
+	return iscp.NewContractAgentID(ctx.ChainID(), hname)
 }
 
 func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
-	return accounts.GetAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+func (ctx *ViewContext) GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens {
+	return accounts.GetAccountAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID *iscp.AgentID) []iotago.NFTID {
+func (ctx *ViewContext) GetAccountNFTs(agentID iscp.AgentID) []iotago.NFTID {
 	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
@@ -101,19 +101,19 @@ func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) iscp.NFT {
 	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
 }
 
-func (ctx *ViewContext) Timestamp() int64 {
+func (ctx *ViewContext) Timestamp() time.Time {
 	t, err := ctx.stateReader.Timestamp()
 	if err != nil {
 		ctx.log.Panicf("%v", err)
 	}
-	return t.UnixNano()
+	return t
 }
 
-func (ctx *ViewContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
+func (ctx *ViewContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
 	return accounts.GetIotaBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (ctx *ViewContext) GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	return accounts.GetNativeTokenBalance(
 		ctx.contractStateReader(accounts.Contract.Hname()),
 		agentID,
@@ -129,11 +129,11 @@ func (ctx *ViewContext) ChainID() *iscp.ChainID {
 	return ctx.chainInfo.ChainID
 }
 
-func (ctx *ViewContext) ChainOwnerID() *iscp.AgentID {
+func (ctx *ViewContext) ChainOwnerID() iscp.AgentID {
 	return ctx.chainInfo.ChainOwnerID
 }
 
-func (ctx *ViewContext) ContractCreator() *iscp.AgentID {
+func (ctx *ViewContext) ContractCreator() iscp.AgentID {
 	rec := ctx.GetContractRecord(ctx.CurrentContractHname())
 	if rec == nil {
 		panic("can't find current contract")
@@ -236,7 +236,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.P
 		// retrieve serialized block info record
 		retBlockInfoBin = ctx.initAndCallView(
 			blocklog.Contract.Hname(),
-			blocklog.FuncGetBlockInfo.Hname(),
+			blocklog.ViewGetBlockInfo.Hname(),
 			codec.MakeDict(map[string]interface{}{
 				blocklog.ParamBlockIndex: blockIndex,
 			}),
@@ -251,7 +251,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.P
 }
 
 // GetRootCommitment calculates root commitment from state.
-// A valid state must return root commitment equal to the StateCommitment from the anchor
+// A valid state must return root commitment equal to the L1Commitment from the anchor
 func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
 	var ret trie.VCommitment
 	err := panicutil.CatchAllButDBError(func() {
@@ -261,10 +261,6 @@ func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
 		ret = nil
 	}
 	return ret, err
-}
-
-func (ctx *ViewContext) L1Params() *parameters.L1 {
-	return ctx.l1Params
 }
 
 // GetContractStateCommitment returns commitment to the contract's state, if possible.

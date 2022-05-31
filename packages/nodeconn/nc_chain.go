@@ -5,6 +5,7 @@ package nodeconn
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -62,41 +64,68 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
+	txID, err := tx.ID()
+	if err != nil {
+		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
+	}
+	ncc.log.Debugf("publishing transaction %v...", iscp.TxID(txID))
 	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
 		return err
 	}
-	txID, err := tx.ID()
-	if err != nil {
-		return xerrors.Errorf("failed to get a tx ID: %w", err)
-	}
+	ncc.log.Debugf("publishing transaction %v: posted", iscp.TxID(txID))
+
 	txMsgID, err := txMsg.ID()
 	if err != nil {
-		return xerrors.Errorf("failed to extract a tx message ID: %w", err)
+		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", iscp.TxID(txID), err)
 	}
-
 	//
 	// TODO: Move it to `nc_transaction.go`
-	msgMetaChanges, subInfo := ncc.nc.mqttClient.MessageMetadataChange(*txMsgID)
+	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
 	if subInfo.Error() != nil {
-		return xerrors.Errorf("failed to subscribe: %w", subInfo.Error())
+		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", iscp.TxID(txID), subInfo.Error())
 	}
 	go func() {
+		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", iscp.TxID(txID))
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != nil {
-				ncc.inclusionStates.Trigger(*txID, *msgMetaChange.LedgerInclusionState)
+				str, err := json.Marshal(msgMetaChange)
+				if err != nil {
+					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", iscp.TxID(txID), err)
+				} else {
+					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", iscp.TxID(txID), str)
+				}
+				ncc.inclusionStates.Trigger(txID, *msgMetaChange.LedgerInclusionState)
 			}
 		}
+		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", iscp.TxID(txID))
 	}()
-	// TODO promote/re-attach logic is missing (cannot be blocking, like the PostTx func)
-	return nil
+
+	// TODO should promote/re-attach logic not be blocking?
+	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
+}
+
+func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
+	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	res, err := ncc.nc.nodeAPIClient.OutputByID(ctxWithTimeout, id)
+	cancelContext()
+	if err != nil {
+		ncc.log.Errorf("PullOutputByID: error querying API - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+		return
+	}
+	out, err := res.Output()
+	if err != nil {
+		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+		return
+	}
+	ncc.outputHandler(id, out)
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
-	bech32Addr := ncc.chainID.AsAddress().Bech32(ncc.nc.l1params.Bech32Prefix)
+	bech32Addr := ncc.chainID.AsAddress().Bech32(parameters.L1.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
-		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
@@ -154,7 +183,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 		// Subscribe to the new outputs first.
 		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
 			ncc.chainID.AsAddress(),
-			ncc.nc.l1params.Bech32Prefix,
+			parameters.L1.Protocol.Bech32HRP,
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {
@@ -174,12 +203,16 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 					ncc.log.Warnf("error while receiving unspent output: %v", err)
 					continue
 				}
-				tid, err := outResponse.TxID()
+				if outResponse.Metadata == nil {
+					ncc.log.Warnf("error while receiving unspent output, metadata is nil")
+					continue
+				}
+				tid, err := outResponse.Metadata.TxID()
 				if err != nil {
 					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
 					continue
 				}
-				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
 				ncc.log.Debugf("received UTXO, outputID: %s", outID.ToHex())
 				ncc.outputHandler(outID, out)
 			case <-ncc.nc.ctx.Done():
@@ -187,6 +220,18 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 			}
 		}
 	}
+}
+
+func (ncc *ncChain) queryLatestChainStateUTXO() {
+	// TODO what should be an adequate timeout for this query?
+	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
+	cancelContext()
+	if err != nil {
+		ncc.log.Panicf("error while fetching chain state output: %v", err)
+	}
+	ncc.log.Debugf("received chain state update, outputID: %s", stateOutputID.ToHex())
+	ncc.stateOutputHandler(*stateOutputID, stateOutput)
 }
 
 func (ncc *ncChain) subscribeToChainStateUpdates() {
@@ -198,19 +243,11 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 	}
 
 	//
-	// Then fetch all the existing unspent outputs owned by the chain.
-	// TODO what should be an adequate timeout for this query?
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
-	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
-	cancelContext()
-	if err != nil {
-		ncc.log.Panicf("error while fetching chain state output: %v", err)
-	}
-	ncc.log.Debugf("received chain state update, outputID: %s", stateOutputID.ToHex())
-	ncc.stateOutputHandler(*stateOutputID, stateOutput)
+	// Then fetch the latest chain state UTXO.
+	ncc.queryLatestChainStateUTXO()
 
 	//
-	// Then receive all the subscribed new outputs.
+	// Then receive all the subscribed state outputs.
 	for {
 		select {
 		case outResponse := <-eventsCh:
@@ -219,12 +256,16 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
 				continue
 			}
-			tid, err := outResponse.TxID()
+			if outResponse.Metadata == nil {
+				ncc.log.Warnf("error while receiving chain state unspent output, metadata is nil")
+				continue
+			}
+			tid, err := outResponse.Metadata.TxID()
 			if err != nil {
 				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
 				continue
 			}
-			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.OutputIndex)
+			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
 			ncc.log.Debugf("received chain state update, outputID: %s", outID.ToHex())
 			ncc.stateOutputHandler(outID, out)
 		case <-ncc.nc.ctx.Done():

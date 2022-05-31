@@ -1,14 +1,14 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
 // VirtualStateAccess is a virtualized access interface to the chain's database
@@ -18,7 +18,7 @@ type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	TrieNodeStore() trie.NodeStore
-	PreviousStateCommitment() trie.VCommitment
+	PreviousL1Commitment() *L1Commitment
 	Commit()
 	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
@@ -31,6 +31,7 @@ type VirtualStateAccess interface {
 	KVStore() *buffered.BufferedKVStoreAccess
 	Copy() VirtualStateAccess
 	DangerouslyConvertToString() string
+	WithOnBlockSave(fun OnBlockSaveClosure)
 }
 
 type OptimisticStateReader interface {
@@ -56,7 +57,9 @@ type Block interface {
 	ApprovingOutputID() *iotago.UTXOInput
 	SetApprovingOutputID(*iotago.UTXOInput)
 	Timestamp() time.Time
-	PreviousStateCommitment(trie.CommitmentModel) trie.VCommitment
+	PreviousL1Commitment() *L1Commitment
 	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
 }
+
+type OnBlockSaveClosure func(stateCommitment trie.VCommitment, block Block)

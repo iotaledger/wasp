@@ -5,16 +5,22 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 )
+
+func knownAgentID(b byte, h uint32) iscp.AgentID {
+	var chid iscp.ChainID
+	for i := range chid {
+		chid[i] = b
+	}
+	return iscp.NewContractAgentID(&chid, iscp.Hname(h))
+}
 
 func TestBasic(t *testing.T) {
 	t.Logf("Name: %s", Contract.Name)
@@ -40,7 +46,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
-	agentID1 := iscp.KnownAgentID(1, 2)
+	agentID1 := knownAgentID(1, 2)
 	transfer := iscp.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
@@ -56,7 +62,7 @@ func TestCreditDebit1(t *testing.T) {
 	expected := iscp.NewFungibleTokens(43, nil).AddNativeTokens(dummyAssetID, big.NewInt(4))
 	require.True(t, expected.Equals(total))
 
-	userAssets := GetAssets(state, agentID1)
+	userAssets := GetAccountAssets(state, agentID1)
 	require.EqualValues(t, 43, userAssets.Iotas)
 	require.Zero(t, userAssets.Tokens.MustSet()[dummyAssetID].Amount.Cmp(big.NewInt(4)))
 	checkLedgerT(t, state, "cp2")
@@ -289,7 +295,7 @@ func TestDebitAll(t *testing.T) {
 	require.EqualValues(t, 0, len(accs))
 	require.True(t, ok)
 
-	assets := GetAssets(state, agentID1)
+	assets := GetAccountAssets(state, agentID1)
 	require.True(t, assets.IsEmpty())
 
 	assets = GetTotalL2Assets(state)
@@ -345,8 +351,7 @@ func TestTransferNFTs(t *testing.T) {
 
 func TestFoundryOutputRec(t *testing.T) {
 	o := foundryOutputRec{
-		Amount:   300,
-		TokenTag: iotago.TokenTag{},
+		Amount: 300,
 		TokenScheme: &iotago.SimpleTokenScheme{
 			MaximumSupply: big.NewInt(1000),
 			MintedTokens:  big.NewInt(20),
@@ -359,10 +364,11 @@ func TestFoundryOutputRec(t *testing.T) {
 	o1, err := foundryOutputRecFromMarshalUtil(marshalutil.New(oBin))
 	require.NoError(t, err)
 	require.EqualValues(t, o.Amount, o1.Amount)
-	require.EqualValues(t, o.TokenTag, o1.TokenTag)
 	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
 	require.True(t, ok)
+	//nolint:gocritic
 	require.True(t, ts.MaximumSupply.Cmp(ts.MaximumSupply) == 0)
+	//nolint:gocritic
 	require.True(t, ts.MintedTokens.Cmp(ts.MintedTokens) == 0)
 	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
 	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)
@@ -371,7 +377,7 @@ func TestFoundryOutputRec(t *testing.T) {
 func TestCreditDebitNFT1(t *testing.T) {
 	state := dict.New()
 
-	agentID1 := iscp.KnownAgentID(1, 2)
+	agentID1 := knownAgentID(1, 2)
 	nft := iscp.NFT{
 		ID:       iotago.NFTID{123},
 		Issuer:   tpkg.RandEd25519Address(),

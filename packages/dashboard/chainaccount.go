@@ -26,7 +26,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	agentID, err := iscp.NewAgentIDFromString(c.Param("agentid"), d.wasp.L1Params().Bech32Prefix)
+	agentID, err := iscp.NewAgentIDFromString(c.Param("agentid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -34,14 +34,14 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	result := &ChainAccountTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
 			Path:  c.Path(),
-			Title: fmt.Sprintf("Account %.16s…", agentID.String(d.wasp.L1Params().Bech32Prefix)),
+			Title: fmt.Sprintf("Account %.16s…", agentID.String()),
 			Href:  "#",
 		}),
 		ChainID: chainID,
 		AgentID: agentID,
 	}
 
-	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
+	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.ViewBalance.Name, codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	}))
 	if err != nil {
@@ -59,7 +59,7 @@ type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
 	ChainID *iscp.ChainID
-	AgentID *iscp.AgentID
+	AgentID iscp.AgentID
 
 	Balances *iscp.FungibleTokens
 }

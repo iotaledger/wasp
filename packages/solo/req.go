@@ -40,20 +40,6 @@ type CallParams struct {
 	sender     iotago.Address
 }
 
-func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
-	ret := &CallParams{
-		targetName: scName,
-		target:     iscp.Hn(scName),
-		epName:     funName,
-		entryPoint: iscp.Hn(funName),
-	}
-	ret.params = dict.New()
-	for k, v := range par {
-		ret.params.Set(k, v)
-	}
-	return ret
-}
-
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequestSync and callViewFull
 // calls:
 //  - 'scName' is a a name of the target smart contract
@@ -63,7 +49,26 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 // With the WithTransfers the CallParams structure may be complemented with attached ftokens
 // sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
-	return NewCallParamsFromDic(scName, funName, parseParams(params))
+	return NewCallParamsFromDict(scName, funName, parseParams(params))
+}
+
+func NewCallParamsFromDict(scName, funName string, par dict.Dict) *CallParams {
+	ret := NewCallParamsFromDictByHname(iscp.Hn(scName), iscp.Hn(funName), par)
+	ret.targetName = scName
+	ret.epName = funName
+	return ret
+}
+
+func NewCallParamsFromDictByHname(hContract, hFunction iscp.Hname, par dict.Dict) *CallParams {
+	ret := &CallParams{
+		target:     hContract,
+		entryPoint: hFunction,
+	}
+	ret.params = dict.New()
+	for k, v := range par {
+		ret.params.Set(k, v)
+	}
+	return ret
 }
 
 func (r *CallParams) WithAllowance(allowance *iscp.Allowance) *CallParams {
@@ -105,6 +110,10 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 		}},
 	})
 	return r
+}
+
+func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
+	return r.AddAllowance(iscp.NewAllowance(0, nil, nfts))
 }
 
 func (r *CallParams) WithFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
@@ -176,8 +185,8 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
-		WithTransfer(r.allowance).
-		WithGasBudget(r.gasBudget)
+		WithGasBudget(r.gasBudget).
+		WithAllowance(r.allowance)
 	ret.Sign(keyPair)
 	return ret
 }
@@ -247,7 +256,6 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			Options: iscp.SendOptions{},
 		},
 		NFT:                          req.nft,
-		L1:                           ch.Env.utxoDB.L1Params(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
 	if err != nil {
@@ -297,7 +305,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	txid, err := tx.ID()
 	require.NoError(ch.Env.T, err)
 
-	return tx, iscp.NewRequestID(*txid, 0), nil
+	return tx, iscp.NewRequestID(txid, 0), nil
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
@@ -321,18 +329,11 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
-	defer ch.logRequestLastBlock()
-
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
-	if len(results) == 0 {
-		return nil, xerrors.Errorf("request was skipped")
-	}
-	res := results[0]
-	return res.Return, res.Error
+	return ch.RunOffLedgerRequest(r)
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
@@ -356,7 +357,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address(), 0)
+	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address())
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
@@ -451,6 +452,11 @@ func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log().Debugf("callView: %s::%s", scName, funName)
+	return ch.CallViewByHname(iscp.Hn(scName), iscp.Hn(funName), params...)
+}
+
+func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...interface{}) (dict.Dict, error) {
+	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)
 
@@ -459,7 +465,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
-	return vmctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), p)
+	return vmctx.CallViewExternal(hContract, hFunction, p)
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
@@ -502,12 +508,12 @@ func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Pro
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
-// GetStateCommitment returns state commitment taken from the anchor output
-func (ch *Chain) GetStateCommitment() trie.VCommitment {
+// GetL1Commitment returns state commitment taken from the anchor output
+func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorOutput := ch.GetAnchorOutput()
 	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
-	return ret.Commitment
+	return &ret
 }
 
 // GetRootCommitment calculates root commitment from state

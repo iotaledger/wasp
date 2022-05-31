@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -224,9 +225,6 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		return
 	}
 
-	if vmctx.req.SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.SenderAddress() == nil")
-	}
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
 	guaranteedFeeTokens := vmctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget
@@ -344,7 +342,7 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 
 func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
 	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
-		return root.ContractRecordFromContractInfo(root.Contract, &iscp.NilAgentID)
+		return root.ContractRecordFromContractInfo(root.Contract)
 	}
 	return vmctx.GetContractRecord(contractHname)
 }
@@ -372,7 +370,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 func (vmctx *VMContext) mustCheckTransactionSize() {
 	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
-	if tx.Size() > vmctx.task.L1Params.MaxTransactionSize {
+	if tx.Size() > parameters.L1.MaxTransactionSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
 	}
 }

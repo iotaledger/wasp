@@ -1,0 +1,17 @@
+{{define "title"}}Login{{end}}
+
+{{define "body"}}
+<div class="card fluid">
+	{{if .LoginError}}
+		<div class="login_error">
+			{{ .LoginError }}
+		</div>
+	{{end}}
+
+	<form method="post">
+		<input type="text" placeholder="Username" name="username"></input>
+		<input type="password" placeholder="Password" name="password"></input>
+		<input type="submit" value="Login"></input>
+	</form>
+</div>
+{{end}}

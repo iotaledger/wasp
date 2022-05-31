@@ -46,6 +46,16 @@ func BoolToBytes(value bool) []byte {
 	return []byte{ScBoolFalse}
 }
 
+func BoolFromString(value string) bool {
+	switch value {
+	case "0":
+		return false
+	case "1":
+		return true
+	}
+	panic("invalid bool string")
+}
+
 func BoolToString(value bool) string {
 	if value {
 		return "1"

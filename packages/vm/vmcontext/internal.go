@@ -20,13 +20,13 @@ import (
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, ftokens *iscp.FungibleTokens) {
+func (vmctx *VMContext) creditToAccount(agentID iscp.AgentID, ftokens *iscp.FungibleTokens) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditToAccount(s, agentID, ftokens)
 	})
 }
 
-func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, nft *iscp.NFT) {
+func (vmctx *VMContext) creditNFTToAccount(agentID iscp.AgentID, nft *iscp.NFT) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditNFTToAccount(s, agentID, nft)
 	})
@@ -34,7 +34,7 @@ func (vmctx *VMContext) creditNFTToAccount(agentID *iscp.AgentID, nft *iscp.NFT)
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.FungibleTokens) {
+func (vmctx *VMContext) debitFromAccount(agentID iscp.AgentID, transfer *iscp.FungibleTokens) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitFromAccount(s, agentID, transfer)
 	})
@@ -42,13 +42,13 @@ func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.F
 
 // debitNFTFromAccount removes a NFT from account.
 // should be called only when posting request
-func (vmctx *VMContext) debitNFTFromAccount(agentID *iscp.AgentID, nftID iotago.NFTID) {
+func (vmctx *VMContext) debitNFTFromAccount(agentID iscp.AgentID, nftID iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitNFTFromAccount(s, agentID, nftID)
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) {
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, fungibleTokens, nfts)
 	})
@@ -77,7 +77,7 @@ func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 	return ret
 }
 
-func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
+func (vmctx *VMContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
 	var ret uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetIotaBalance(s, agentID)
@@ -85,7 +85,7 @@ func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 	return ret
 }
 
-func (vmctx *VMContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetNativeTokenBalance(s, agentID, tokenID)
@@ -101,10 +101,10 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID
 	return ret
 }
 
-func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
+func (vmctx *VMContext) GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens {
 	var ret *iscp.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetAssets(s, agentID)
+		ret = accounts.GetAccountAssets(s, agentID)
 		if ret == nil {
 			ret = &iscp.FungibleTokens{}
 		}
@@ -112,7 +112,7 @@ func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.FungibleTokens {
 	return ret
 }
 
-func (vmctx *VMContext) GetAccountNFTs(agentID *iscp.AgentID) (ret []iotago.NFTID) {
+func (vmctx *VMContext) GetAccountNFTs(agentID iscp.AgentID) (ret []iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetAccountNFTs(s, agentID)
 	})
@@ -212,14 +212,14 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.SaveMaxAssumedNonce(
 			s,
-			vmctx.req.SenderAddress(),
+			vmctx.req.SenderAccount(),
 			vmctx.req.AsOffLedger().Nonce(),
 		)
 	})
 }
 
 // adjustL2IotasIfNeeded adjust L2 ledger for iotas if the L1 changed because of dust deposit changes
-func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account *iscp.AgentID) {
+func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account iscp.AgentID) {
 	if adjustment == 0 {
 		return
 	}

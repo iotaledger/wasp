@@ -1,13 +1,12 @@
 package chain
 
 import (
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -20,7 +19,7 @@ var listAccountsCmd = &cobra.Command{
 	Short: "List accounts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewAccounts.Name, nil)
+		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.ViewAccounts.Name, nil)
 		log.Check(err)
 
 		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().String())
@@ -31,7 +30,7 @@ var listAccountsCmd = &cobra.Command{
 		for k := range ret {
 			agentID, err := codec.DecodeAgentID([]byte(k))
 			log.Check(err)
-			rows[i] = []string{agentID.String(config.L1NetworkPrefix())}
+			rows[i] = []string{agentID.String()}
 			i++
 		}
 		log.PrintTable(header, rows)
@@ -43,12 +42,15 @@ var balanceCmd = &cobra.Command{
 	Short: "Show balance of on-chain account",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		agentID, err := iscp.NewAgentIDFromString(args[0], config.L1NetworkPrefix())
+		if parameters.L1 == nil {
+			config.L1Client() // this will fill parameters.L1 with data from the L1 node
+		}
+		agentID, err := iscp.NewAgentIDFromString(args[0])
 		log.Check(err)
 
-		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name, dict.Dict{
-				accounts.ParamAgentID: agentID.Bytes(),
-			})
+		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.ViewBalance.Name, dict.Dict{
+			accounts.ParamAgentID: agentID.Bytes(),
+		})
 		log.Check(err)
 
 		header := []string{"token", "amount"}
@@ -62,7 +64,7 @@ var balanceCmd = &cobra.Command{
 			bal, err := codec.DecodeBigIntAbs(v)
 			log.Check(err)
 
-			rows[i] = []string{tokenStr, fmt.Sprintf("%s", bal)}
+			rows[i] = []string{tokenStr, bal.String()}
 			i++
 		}
 		log.PrintTable(header, rows)

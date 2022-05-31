@@ -154,7 +154,19 @@ func (g *GenBase) emitEach(line string) {
 	case KeyTypeDef:
 		g.emitEachField(g.s.Typedefs, template)
 	default:
-		g.error(line)
+		// emit multi-line text
+		text, ok := g.keys[parts[1]]
+		if !ok {
+			g.error(line)
+			return
+		}
+		if text != "" {
+			lines := strings.Split(text, "\n")
+			for _, nextLine := range lines {
+				g.keys["nextLine"] = nextLine
+				g.emit(template)
+			}
+		}
 	}
 }
 
@@ -437,14 +449,12 @@ func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	g.setMultiKeyValues("kind", g.currentFunc.Kind)
 	g.keys["hFuncName"] = iscp.Hn(g.keys["funcName"]).String()
 	grant := g.currentFunc.Access.Val
-	comment := ""
 	index := strings.Index(grant, "//")
 	if index >= 0 {
-		comment = grant[index:]
 		grant = strings.TrimSpace(grant[:index])
 	}
 	g.setMultiKeyValues("funcAccess", grant)
-	g.keys["funcAccessComment"] = comment
+	g.keys["funcAccessComment"] = g.currentFunc.Access.Comment
 	g.keys["funcComment"] = g.currentFunc.Comment
 	if pad {
 		g.keys["funcPad"] = spaces[:maxCamelLength-len(g.keys["funcName"])]

@@ -21,6 +21,10 @@ func BytesToBytes(value []byte) []byte {
 	return value
 }
 
+func BytesFromString(value string) []byte {
+	return Base58Decode(value)
+}
+
 func BytesToString(value []byte) string {
 	return Base58Encode(value)
 }

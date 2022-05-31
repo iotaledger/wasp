@@ -15,6 +15,7 @@ import (
 var all *configuration.Configuration
 
 const (
+	UserList           = "users"
 	NodeOwnerAddresses = "node.ownerAddresses"
 
 	LoggerLevel             = "logger.level"
@@ -36,8 +37,7 @@ const (
 	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
-	L1Host    = "L1.host"
-	L1APIPort = "L1.apiport"
+	L1APIAddress = "L1APIAddress"
 
 	PeeringMyNetID                   = "peering.netid"
 	PeeringPort                      = "peering.port"
@@ -60,6 +60,11 @@ const (
 
 	WALEnabled   = "wal.enabled"
 	WALDirectory = "wal.directory"
+
+	RawBlocksEnabled = "debug.rawblocksEnabled"
+	RawBlocksDir     = "debug.rawblocksDirectory"
+	RegistryUseText  = "registry.useText"
+	RegistryFile     = "registry.file"
 )
 
 func Init() *configuration.Configuration {
@@ -87,8 +92,7 @@ func Init() *configuration.Configuration {
 	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
 
-	flag.String(L1Host, "127.0.0.1", "l1 node host")
-	flag.String(L1APIPort, "5000", "l1 node api port")
+	flag.String(L1APIAddress, "http://127.0.0.1:5000", "L1 node API URL")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")
@@ -113,7 +117,16 @@ func Init() *configuration.Configuration {
 	flag.Bool(WALEnabled, true, "enabled wal")
 	flag.String(WALDirectory, "wal", "path to logs folder")
 
+	flag.Bool(RawBlocksEnabled, false, "enable raw blocks to be written to disk on a separate dir")
+	flag.String(RawBlocksDir, "blocks", "path to the directory where the blocks should be written to")
+	flag.Bool(RegistryUseText, false, "enable text key/value store for registry db.")
+	flag.String(RegistryFile, "chain-registry.json", "registry filename. Ignored if registry.useText is false.")
+
 	return all
+}
+
+func IsLoaded() bool {
+	return all != nil
 }
 
 func GetBool(name string) bool {
@@ -136,6 +149,14 @@ func GetStringToString(name string) map[string]string {
 	return all.StringMap(name)
 }
 
+func GetStruct(path string, object interface{}) error {
+	return all.Unmarshal(path, object)
+}
+
+func GetStructWithConf(path string, object interface{}, uc koanf.UnmarshalConf) error {
+	return all.UnmarshalWithConf(path, object, uc)
+}
+
 func Dump() map[string]interface{} {
 	// hack to access private member Node.config
 	rf := reflect.ValueOf(all).Elem().FieldByName("config")
@@ -144,6 +165,7 @@ func Dump() map[string]interface{} {
 
 	m := map[string]interface{}{}
 	flatten(m, tree, "")
+
 	return m
 }
 

@@ -1,8 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import { panic } from "../sandbox";
 import * as wasmtypes from "./index"
+import {ScSandboxUtils} from "../sandboxutils";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -10,9 +11,9 @@ export const ScAddressAlias: u8 = 8;
 export const ScAddressEd25519: u8 = 0;
 export const ScAddressNFT: u8 = 16;
 
-export const ScLengthAlias = 21;
+export const ScLengthAlias = 33;
 export const ScLengthEd25519 = 33;
-export const ScLengthNFT = 21;
+export const ScLengthNFT = 33;
 
 export const ScAddressLength = ScLengthEd25519;
 
@@ -21,7 +22,7 @@ export class ScAddress {
 
     asAgentID(): wasmtypes.ScAgentID {
         // agentID for address has Hname zero
-        return new wasmtypes.ScAgentID(this, new wasmtypes.ScHname(0));
+        return wasmtypes.ScAgentID.fromAddress(this);
     }
 
     public equals(other: ScAddress): bool {
@@ -96,9 +97,14 @@ export function addressToBytes(value: ScAddress): u8[] {
     return [];
 }
 
+export function addressFromString(value: string): ScAddress {
+    const utils = new ScSandboxUtils();
+    return utils.bech32Decode(value);
+}
+
 export function addressToString(value: ScAddress): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    const utils = new ScSandboxUtils();
+    return utils.bech32Encode(value);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

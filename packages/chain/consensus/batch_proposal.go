@@ -25,7 +25,7 @@ type BatchProposal struct {
 	TimeData                iscp.TimeData
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
-	FeeDestination          *iscp.AgentID
+	FeeDestination          iscp.AgentID
 	SigShareOfStateOutputID tbls.SigShare
 }
 
@@ -33,7 +33,7 @@ type consensusBatchParams struct {
 	timeData        iscp.TimeData // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
-	feeDestination  *iscp.AgentID
+	feeDestination  iscp.AgentID
 	entropy         hashing.HashValue
 }
 
@@ -127,23 +127,19 @@ func (b *BatchProposal) Bytes() []byte {
 // if it is not bellow the timestamps of all the on-ledger requests and the previous transaction in the chain.
 // This implement the "fixing" part described in IscpBatchTimestamp.tla.
 func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, stateTimestamp time.Time) error {
+	// TODO: is this function, especially its Timestamp edditing part, still needded?
 	// maxReqTime := time.Time{}
 	for i := range b.RequestIDs {
 		if hashing.HashData(requests[i].Bytes()) != b.RequestHashes[i] {
 			return xerrors.New("inconsistent requests in EnsureTimestampConsistent")
 		}
-		//TODO
 		/*if maxReqTime.Before(requests[i].Timestamp()) {
 			maxReqTime = requests[i].Timestamp()
 		}*/
 	}
-	//TODO
 	/*if b.Timestamp.Before(maxReqTime) {
 		b.Timestamp = maxReqTime
 	}*/
-	if b.TimeData.Time.Before(stateTimestamp) {
-		b.TimeData.Time = stateTimestamp
-	}
 	return nil
 }
 

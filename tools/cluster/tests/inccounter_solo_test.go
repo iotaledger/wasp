@@ -72,20 +72,19 @@ func TestSpamCallViewWasm(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
 
-	e := &env{t: t, clu: clu}
-	chEnv := &chainEnv{
+	e := &env{t: t, Clu: clu}
+	chEnv := &ChainEnv{
 		env:   e,
-		chain: chain,
+		Chain: chain,
 	}
 
-	chEnv.requestFunds(scOwnerAddr, "client")
 	chEnv.deployContract(incName, incDescription, nil)
 
 	{
 		// increment counter once
 		tx, err := chEnv.chainClient().Post1Request(incHname, iscp.Hn("increment"))
 		require.NoError(t, err)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 

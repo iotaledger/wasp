@@ -17,22 +17,27 @@ pub struct ImmutableDonationResults {
 }
 
 impl ImmutableDonationResults {
+    // amount donated
     pub fn amount(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
 
+    // who donated
     pub fn donator(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(RESULT_DONATOR))
 	}
 
+    // error to be reported to donator if anything goes wrong
     pub fn error(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(RESULT_ERROR))
 	}
 
+    // the feedback for the person donated to
     pub fn feedback(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(RESULT_FEEDBACK))
 	}
 
+    // when the donation took place
     pub fn timestamp(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(RESULT_TIMESTAMP))
 	}
@@ -44,22 +49,27 @@ pub struct MutableDonationResults {
 }
 
 impl MutableDonationResults {
+    // amount donated
     pub fn amount(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_AMOUNT))
 	}
 
+    // who donated
     pub fn donator(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(RESULT_DONATOR))
 	}
 
+    // error to be reported to donator if anything goes wrong
     pub fn error(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(RESULT_ERROR))
 	}
 
+    // the feedback for the person donated to
     pub fn feedback(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(RESULT_FEEDBACK))
 	}
 
+    // when the donation took place
     pub fn timestamp(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(RESULT_TIMESTAMP))
 	}

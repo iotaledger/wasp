@@ -4,11 +4,12 @@
 package iscp
 
 import (
-	"encoding/hex"
+	"fmt"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
@@ -34,11 +35,19 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 }
 
 func ChainIDFromString(s string) (*ChainID, error) {
-	bytes, err := hex.DecodeString(s)
+	prefix, addr, err := iotago.ParseBech32(s)
 	if err != nil {
 		return nil, err
 	}
-	return ChainIDFromBytes(bytes)
+	if prefix != parameters.L1.Protocol.Bech32HRP {
+		return nil, fmt.Errorf("prefix doesn't match expected protocol prefix")
+	}
+	aliasAddr, ok := addr.(*iotago.AliasAddress)
+	if !ok {
+		return nil, fmt.Errorf("chainID must be an alias address")
+	}
+	cid := ChainIDFromAddress(aliasAddr)
+	return &cid, nil
 }
 
 // ChainIDFromMarshalUtil reads from Marshalutil
@@ -91,9 +100,9 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return *chid == *chid1
 }
 
-// String human readable form (hex)
+// String human readable form (bech32)
 func (chid *ChainID) String() string {
-	return hex.EncodeToString(chid.Bytes())
+	return chid.AsAddress().Bech32(parameters.L1.Protocol.Bech32HRP)
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {
@@ -106,6 +115,14 @@ func (chid *ChainID) AsAliasAddress() *iotago.AliasAddress {
 	return &ret
 }
 
-func (chid *ChainID) CommonAccount() *AgentID {
-	return NewAgentID(chid.AsAddress(), 0)
+func (chid *ChainID) CommonAccount() AgentID {
+	return NewContractAgentID(chid, 0)
+}
+
+func (chid *ChainID) IsSameChain(aid AgentID) bool {
+	contract, ok := aid.(*ContractAgentID)
+	if !ok {
+		return false
+	}
+	return chid.Equals(contract.ChainID())
 }

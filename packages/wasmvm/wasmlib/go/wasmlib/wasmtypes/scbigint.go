@@ -289,6 +289,8 @@ func (o ScBigInt) Uint64() uint64 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+var quintillion = NewScBigInt(1_000_000_000_000_000_000)
+
 func BigIntDecode(dec *WasmDecoder) ScBigInt {
 	return ScBigInt{bytes: dec.Bytes()}
 }
@@ -298,21 +300,45 @@ func BigIntEncode(enc *WasmEncoder, value ScBigInt) {
 }
 
 func BigIntFromBytes(buf []byte) ScBigInt {
-	return ScBigInt{bytes: buf}
+	return ScBigInt{bytes: reverse(buf)}
 }
 
 func BigIntToBytes(value ScBigInt) []byte {
-	return value.bytes
+	return reverse(value.bytes)
+}
+
+func BigIntFromString(value string) ScBigInt {
+	digits := len(value) - 18
+	if digits <= 0 {
+		// Uint64 fits 18 digits or 1 quintillion
+		return NewScBigInt(Uint64FromString(value))
+	}
+
+	// build value 18 digits at a time
+	lhs := BigIntFromString(value[:digits])
+	rhs := BigIntFromString(value[digits:])
+	return lhs.Mul(quintillion).Add(rhs)
 }
 
 func BigIntToString(value ScBigInt) string {
 	if value.IsUint64() {
 		return Uint64ToString(value.Uint64())
 	}
-	div, modulo := value.DivMod(NewScBigInt(1_000_000_000_000_000_000))
+	div, modulo := value.DivMod(quintillion)
 	digits := Uint64ToString(modulo.Uint64())
 	zeroes := "000000000000000000"[:18-len(digits)]
 	return BigIntToString(div) + zeroes + digits
+}
+
+// Stupid big.Int uses BigEndian byte encoding, so our external byte encoding should
+// reflect this by reverse()-ing the byte order in BigIntFromBytes and BigIntToBytes
+func reverse(bytes []byte) []byte {
+	n := len(bytes)
+	buf := make([]byte, n)
+	for i, b := range bytes {
+		buf[n-1-i] = b
+	}
+	return buf
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -4,7 +4,7 @@
 package wasmhost
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -24,15 +24,17 @@ type ISandbox interface {
 }
 
 type WasmContext struct {
-	funcName  string
-	funcTable *WasmFuncTable
-	gasBudget uint64
-	gasBurned uint64
-	id        int32
-	proc      *WasmProcessor
-	results   dict.Dict
-	sandbox   ISandbox
-	wcSandbox *WasmContextSandbox
+	funcName    string
+	funcTable   *WasmFuncTable
+	gasBudget   uint64
+	gasBurned   uint64
+	gasDisabled bool
+	id          int32
+	proc        *WasmProcessor
+	results     dict.Dict
+	sandbox     ISandbox
+	vm          WasmVM
+	wcSandbox   *WasmContextSandbox
 }
 
 var (
@@ -40,12 +42,19 @@ var (
 	_ wasmlib.ScHost             = &WasmContext{}
 )
 
-func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
-	return &WasmContext{
+func NewWasmContext(proc *WasmProcessor, function string) *WasmContext {
+	wc := &WasmContext{
 		funcName:  function,
-		proc:      proc,
 		funcTable: proc.funcTable,
+		proc:      proc,
+		vm:        proc.vm,
 	}
+	newInstance := proc.vm.NewInstance(wc)
+	if newInstance != nil {
+		wc.vm = newInstance
+	}
+	proc.RegisterContext(wc)
+	return wc
 }
 
 func NewWasmContextForSoloContext(function string, sandbox ISandbox) *WasmContext {
@@ -57,10 +66,6 @@ func NewWasmContextForSoloContext(function string, sandbox ISandbox) *WasmContex
 }
 
 func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
-	if wc.id == 0 {
-		panic("Context id is zero")
-	}
-
 	wc.wcSandbox = NewWasmContextSandbox(wc, ctx)
 	wc.sandbox = wc.wcSandbox
 
@@ -68,7 +73,7 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 	defer func() {
 		Connect(wcSaved)
 		// clean up context after use
-		wc.proc.KillContext(wc.id)
+		wc.proc.UnregisterContext(wc)
 	}()
 
 	if wc.funcName == "" {
@@ -91,20 +96,28 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 }
 
 func (wc *WasmContext) callFunction() error {
-	wc.proc.instanceLock.Lock()
-	defer wc.proc.instanceLock.Unlock()
+	index, ok := wc.funcTable.funcToIndex[wc.funcName]
+	if !ok {
+		return errors.New("unknown SC function name: " + wc.funcName)
+	}
 
-	saveID := wc.proc.currentContextID
-	wc.proc.currentContextID = wc.id
+	proc := wc.proc
+
+	// TODO is this really necessary? We should not be able to call in parallel
+	proc.instanceLock.Lock()
+	defer proc.instanceLock.Unlock()
+
+	saveID := proc.currentContextID
+	proc.currentContextID = wc.id
 	wc.gasBudget = wc.GasBudget()
-	wc.proc.vm.GasBudget(wc.gasBudget * wc.proc.gasFactor())
-	err := wc.proc.RunScFunction(wc.funcName)
+	wc.vm.GasBudget(wc.gasBudget * proc.gasFactor())
+	err := wc.vm.RunScFunction(index)
 	// if err == nil {
-	wc.GasBurned(wc.proc.vm.GasBurned() / wc.proc.gasFactor())
+	wc.GasBurned(wc.vm.GasBurned() / proc.gasFactor())
 	//}
 	wc.gasBurned = wc.gasBudget - wc.GasBudget()
-	wc.proc.currentContextID = saveID
-	fmt.Printf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
+	proc.currentContextID = saveID
+	wc.log().Debugf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
 
@@ -151,6 +164,10 @@ func (wc *WasmContext) GasBurned(burned uint64) {
 	}
 }
 
+func (wc *WasmContext) GasDisable(disable bool) {
+	wc.gasDisabled = disable
+}
+
 func (wc *WasmContext) IsView() bool {
 	return wc.proc.IsView(wc.funcName)
 }
@@ -162,12 +179,24 @@ func (wc *WasmContext) log() iscp.LogInterface {
 	return wc.proc.log
 }
 
+func (wc *WasmContext) RunScFunction(functionName string) (err error) {
+	index, ok := wc.funcTable.funcToIndex[functionName]
+	if !ok {
+		return errors.New("unknown SC function name: " + functionName)
+	}
+	return wc.vm.RunScFunction(index)
+}
+
 func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
 	if !HostTracing || funcNr == wasmlib.FnLog || funcNr == wasmlib.FnTrace {
 		return wc.sandbox.Call(funcNr, params)
 	}
 
 	wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
+	// TODO fix this. Probably need to connect proper context or smth
+	if wc.sandbox == nil {
+		panic("nil sandbox")
+	}
 	res := wc.sandbox.Call(funcNr, params)
 	wc.tracef("  => %s", hex(res))
 	return res

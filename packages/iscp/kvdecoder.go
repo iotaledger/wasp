@@ -38,16 +38,14 @@ type KVDecoder interface {
 	MustGetAddress(key kv.Key, def ...iotago.Address) iotago.Address
 	GetRequestID(key kv.Key, def ...RequestID) (RequestID, error)
 	MustGetRequestID(key kv.Key, def ...RequestID) RequestID
-	GetAgentID(key kv.Key, def ...*AgentID) (*AgentID, error)
-	MustGetAgentID(key kv.Key, def ...*AgentID) *AgentID
+	GetAgentID(key kv.Key, def ...AgentID) (AgentID, error)
+	MustGetAgentID(key kv.Key, def ...AgentID) AgentID
 	GetChainID(key kv.Key, def ...*ChainID) (*ChainID, error)
 	MustGetChainID(key kv.Key, def ...*ChainID) *ChainID
 	GetBytes(key kv.Key, def ...[]byte) ([]byte, error)
 	MustGetBytes(key kv.Key, def ...[]byte) []byte
 	GetTokenScheme(key kv.Key, def ...iotago.TokenScheme) (iotago.TokenScheme, error)
 	MustGetTokenScheme(key kv.Key, def ...iotago.TokenScheme) iotago.TokenScheme
-	GetTokenTag(key kv.Key, def ...iotago.TokenTag) (iotago.TokenTag, error)
-	MustGetTokenTag(key kv.Key, def ...iotago.TokenTag) iotago.TokenTag
 	GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error)
 	MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int
 }

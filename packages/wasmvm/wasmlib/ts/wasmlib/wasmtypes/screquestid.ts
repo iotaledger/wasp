@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {addressToBytes} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -54,9 +55,13 @@ export function requestIDToBytes(value: ScRequestID): u8[] {
     return value.id;
 }
 
+export function requestIDFromString(value: string): ScRequestID {
+    return requestIDFromBytes(wasmtypes.base58Decode(value));
+}
+
 export function requestIDToString(value: ScRequestID): string {
     // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    return wasmtypes.base58Encode(requestIDToBytes(value));
 }
 
 function requestIDFromBytesUnchecked(buf: u8[]): ScRequestID {

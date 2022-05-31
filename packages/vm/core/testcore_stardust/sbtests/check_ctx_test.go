@@ -19,7 +19,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCheckContextFromFullEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
+		sbtestsc.ParamAgentID, iscp.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID).
@@ -38,7 +38,7 @@ func testMainCallsFromViewEP(t *testing.T, w bool) {
 
 	_, err := chain.CallView(ScName, sbtestsc.FuncCheckContextFromViewEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
+		sbtestsc.ParamAgentID, iscp.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID,
 	)

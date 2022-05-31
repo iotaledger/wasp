@@ -12,6 +12,7 @@ pub use exports::*;
 pub use sandbox::*;
 pub use sandboxutils::*;
 pub use wasmtypes::*;
+pub use wasmvmhost::*;
 
 pub mod assets;
 pub mod context;
@@ -29,6 +30,7 @@ pub mod sandbox;
 pub mod sandboxutils;
 pub mod wasmrequests;
 pub mod wasmtypes;
+pub mod wasmvmhost;
 
 // When the `wee_alloc` feature is enabled,
 // use `wee_alloc` as the global allocator.

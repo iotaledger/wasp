@@ -17,6 +17,7 @@ pub struct ImmutablePlaceBetParams {
 }
 
 impl ImmutablePlaceBetParams {
+    // the number a better bets on
     pub fn number(&self) -> ScImmutableUint16 {
 		ScImmutableUint16::new(self.proxy.root(PARAM_NUMBER))
 	}
@@ -28,6 +29,7 @@ pub struct MutablePlaceBetParams {
 }
 
 impl MutablePlaceBetParams {
+    // the number a better bets on
     pub fn number(&self) -> ScMutableUint16 {
 		ScMutableUint16::new(self.proxy.root(PARAM_NUMBER))
 	}
@@ -39,6 +41,7 @@ pub struct ImmutablePlayPeriodParams {
 }
 
 impl ImmutablePlayPeriodParams {
+    // number of minutes in one playing round
     pub fn play_period(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(PARAM_PLAY_PERIOD))
 	}
@@ -50,6 +53,7 @@ pub struct MutablePlayPeriodParams {
 }
 
 impl MutablePlayPeriodParams {
+    // number of minutes in one playing round
     pub fn play_period(&self) -> ScMutableUint32 {
 		ScMutableUint32::new(self.proxy.root(PARAM_PLAY_PERIOD))
 	}

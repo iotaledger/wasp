@@ -14,23 +14,24 @@ import (
 )
 
 var Processor = Contract.Processor(initialize,
-	// views
-	FuncGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
-	FuncViewBalance.WithHandler(viewBalance),
-	FuncViewTotalAssets.WithHandler(viewTotalAssets),
-	FuncViewAccounts.WithHandler(viewAccounts),
-	FuncViewAccountNFTs.WithHandler(viewAccountNFTs),
-	FuncViewNFTData.WithHandler(viewNFTData),
 	// funcs
 	FuncDeposit.WithHandler(deposit),
-	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
-	FuncWithdraw.WithHandler(withdraw),
-	FuncHarvest.WithHandler(harvest),
-	FuncGetAccountNonce.WithHandler(getAccountNonce),
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
-	FuncFoundryOutput.WithHandler(foundryOutput),
+	FuncHarvest.WithHandler(harvest),
+	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
+	FuncWithdraw.WithHandler(withdraw),
+
+	// views
+	ViewAccountNFTs.WithHandler(viewAccountNFTs),
+	ViewAccounts.WithHandler(viewAccounts),
+	ViewBalance.WithHandler(viewBalance),
+	ViewFoundryOutput.WithHandler(viewFoundryOutput),
+	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
+	ViewGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
+	ViewNFTData.WithHandler(viewNFTData),
+	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
@@ -63,7 +64,7 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 // transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
-// - ParamAgentID. AgentID. mandatory
+// - ParamAgentID. AgentID. Required
 // - ParamForceOpenAccount Bool. Optional, default: false
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
@@ -82,7 +83,7 @@ func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 }
 
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
-const ConstDepositFeeTmp = uint64(1000)
+const ConstDepositFeeTmp = 1 * iscp.Mi
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request
@@ -93,10 +94,15 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 
 	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
-	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
+	callerAddress, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
+
+	callerContract, _ := ctx.Caller().(*iscp.ContractAgentID)
+	if callerContract != nil && callerContract.ChainID().Equals(ctx.ChainID()) {
 		// if the caller is on the same chain, do nothing
 		return nil
 	}
+
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
 	allowance := ctx.AllowanceAvailable()
@@ -113,22 +119,20 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	caller := ctx.Caller()
-	isCallerAContract := caller.Hname() != 0
-
-	if isCallerAContract {
+	if callerContract != nil && callerContract.Hname() != 0 {
+		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
 		allowance := iscp.NewAllowanceFungibleTokens(
 			iscp.NewTokensIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
 		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
-			TargetAddress:  ctx.Caller().Address(),
+			TargetAddress:  callerAddress,
 			FungibleTokens: fundsToWithdraw,
 			Metadata: &iscp.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
 				Allowance:      allowance,
-				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(caller)},
+				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
 				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
 			},
 		}
@@ -142,7 +146,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 		return nil
 	}
 	tx := iscp.RequestParameters{
-		TargetAddress:  ctx.Caller().Address(),
+		TargetAddress:  callerAddress,
 		FungibleTokens: fundsToWithdraw,
 	}
 	if nftID != nil {
@@ -154,10 +158,10 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-// TODO refactor owner of the chain moves all tokens balance the common account to its own account
+// harvest moves all the L2 balances of chain commmon account to chain owner's account
 // Params:
-//   ParamForceMinimumIotas specify how may iotas should be left on the common account
-//   but not less that MinimumIotasOnCommonAccount constant
+//   ParamForceMinimumIotas: specify the number of IOTAs left on the common account will be not less than MinimumIotasOnCommonAccount constant
+// TODO refactor owner of the chain moves all tokens balance the common account to its own account
 func harvest(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
@@ -166,15 +170,17 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	defer checkLedger(state, "accounts.harvest.exit")
 
 	bottomIotas := ctx.Params().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
+	if bottomIotas > MinimumIotasOnCommonAccount {
+		bottomIotas = MinimumIotasOnCommonAccount
+	}
 	commonAccount := ctx.ChainID().CommonAccount()
 	toWithdraw := GetAccountAssets(state, commonAccount)
-	if toWithdraw.IsEmpty() {
-		// empty toWithdraw, nothing to withdraw. Can't be
+	if toWithdraw.Iotas <= bottomIotas {
+		// below minimum, nothing to withdraw
 		return nil
 	}
-	if toWithdraw.Iotas > bottomIotas {
-		toWithdraw.Iotas -= bottomIotas
-	}
+	ctx.Requiref(toWithdraw.Iotas > bottomIotas, "assertion failed: toWithdraw.Iotas > bottomIotas")
+	toWithdraw.Iotas -= bottomIotas
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
 	return nil
 }
@@ -191,10 +197,9 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ts := util.MustTokenScheme(tokenScheme)
 	ts.MeltedTokens = util.Big0
 	ts.MintedTokens = util.Big0
-	tokenTag := ctx.Params().MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
 
 	// create UTXO
-	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, nil)
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
 	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
 	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
 	debitIotasFromAllowance(ctx, dustConsumed)

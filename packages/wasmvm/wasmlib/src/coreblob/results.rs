@@ -17,6 +17,7 @@ pub struct ImmutableStoreBlobResults {
 }
 
 impl ImmutableStoreBlobResults {
+    // calculated hash of blob set
     pub fn hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(RESULT_HASH))
 	}
@@ -28,6 +29,7 @@ pub struct MutableStoreBlobResults {
 }
 
 impl MutableStoreBlobResults {
+    // calculated hash of blob set
     pub fn hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(RESULT_HASH))
 	}
@@ -39,6 +41,7 @@ pub struct ImmutableGetBlobFieldResults {
 }
 
 impl ImmutableGetBlobFieldResults {
+    // blob data
     pub fn bytes(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.proxy.root(RESULT_BYTES))
 	}
@@ -50,6 +53,7 @@ pub struct MutableGetBlobFieldResults {
 }
 
 impl MutableGetBlobFieldResults {
+    // blob data
     pub fn bytes(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.proxy.root(RESULT_BYTES))
 	}
@@ -72,6 +76,7 @@ pub struct ImmutableGetBlobInfoResults {
 }
 
 impl ImmutableGetBlobInfoResults {
+    // size for each named blob
     pub fn blob_sizes(&self) -> MapStringToImmutableInt32 {
 		MapStringToImmutableInt32 { proxy: self.proxy.clone() }
 	}
@@ -98,6 +103,7 @@ pub struct MutableGetBlobInfoResults {
 }
 
 impl MutableGetBlobInfoResults {
+    // size for each named blob
     pub fn blob_sizes(&self) -> MapStringToMutableInt32 {
 		MapStringToMutableInt32 { proxy: self.proxy.clone() }
 	}
@@ -120,6 +126,7 @@ pub struct ImmutableListBlobsResults {
 }
 
 impl ImmutableListBlobsResults {
+    // total size for each blob set
     pub fn blob_sizes(&self) -> MapHashToImmutableInt32 {
 		MapHashToImmutableInt32 { proxy: self.proxy.clone() }
 	}
@@ -146,6 +153,7 @@ pub struct MutableListBlobsResults {
 }
 
 impl MutableListBlobsResults {
+    // total size for each blob set
     pub fn blob_sizes(&self) -> MapHashToMutableInt32 {
 		MapHashToMutableInt32 { proxy: self.proxy.clone() }
 	}

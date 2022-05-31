@@ -55,12 +55,8 @@ func New(
 	if err != nil {
 		return nil, nil, xerrors.Errorf("NewCommittee: cannot serialize address: %v", err)
 	}
-	var chainArr *iscp.ChainID
-	if chainID != nil {
-		chainArr = chainID
-	}
-	for i := range chainArr {
-		peerGroupID[i] = address[i] ^ chainArr[i]
+	for i := range chainID {
+		peerGroupID[i] = address[i] ^ chainID[i]
 	}
 	var peers peering.GroupProvider
 	if peers, err = netProvider.PeerGroup(peerGroupID, dkShare.GetNodePubKeys()); err != nil {
@@ -189,10 +185,17 @@ func (c *committee) GetRandomValidators(upToN int) []*cryptolib.PublicKey {
 	validators := c.validatorNodes.OtherNodes()
 	if upToN >= len(validators) {
 		valPubKeys := make([]*cryptolib.PublicKey, 0)
-		for i := range validators {
-			valPubKeys = append(valPubKeys, validators[i].PubKey())
+		for _, validator := range validators {
+			valPubKeys = append(valPubKeys, validator.PubKey())
 		}
 		return valPubKeys
+	}
+
+	validatorIndexes := make([]uint16, len(validators))
+	i := 0
+	for index := range validators {
+		validatorIndexes[i] = index
+		i++
 	}
 
 	var b [8]byte
@@ -202,7 +205,7 @@ func (c *committee) GetRandomValidators(upToN int) []*cryptolib.PublicKey {
 	permutation.Shuffle(seed)
 	ret := make([]*cryptolib.PublicKey, 0)
 	for len(ret) < upToN {
-		i := permutation.Next()
+		i := validatorIndexes[permutation.Next()]
 		ret = append(ret, validators[i].PubKey())
 	}
 

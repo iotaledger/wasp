@@ -17,7 +17,7 @@ func setFeePolicy(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	data := ctx.Params().MustGetBytes(governance.ParamFeePolicyBytes)
-	_, err := gas.GasFeePolicyFromBytes(data)
+	_, err := gas.FeePolicyFromBytes(data)
 	ctx.RequireNoError(err)
 
 	ctx.State().Set(governance.VarGasFeePolicyBytes, data)

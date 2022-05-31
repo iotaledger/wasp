@@ -52,10 +52,12 @@ const exportMap: wasmlib.ScExportMap = {
 };
 
 export function on_call(index: i32): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.export(exportMap);
 }
 

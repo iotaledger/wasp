@@ -4,7 +4,7 @@ var VersionHash string
 
 const (
 	// Version version number
-	Version = "0.2.4"
+	Version = "0.3.0"
 
 	// Name app code name
 	Name = "Wasp"

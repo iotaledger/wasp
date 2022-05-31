@@ -20,7 +20,7 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddIotas(1000).WithGasBudget(math.MaxUint64)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddIotas(1 * iscp.Mi).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
@@ -78,7 +78,7 @@ func testConcurrency(t *testing.T, w bool) {
 	commonAccountFinalBalance := chain.L2Iotas(chain.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
 
-	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName) // SC has no funds (because it never claims funds from allowance)
+	contractAgentID := iscp.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2Iotas(contractAgentID, 0)
 }
 
@@ -94,7 +94,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	commonAccountInitialBalance := chain.L2Iotas(chain.CommonAccount())
 
-	iotasSentPerRequest := uint64(1000)
+	iotasSentPerRequest := 1 * iscp.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddIotas(iotasSentPerRequest).WithGasBudget(math.MaxUint64)
 
@@ -129,7 +129,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	for i := range users {
 		expectedBalance := uint64(repeats[i]) * (iotasSentPerRequest - predictedGasFee)
-		chain.AssertL2Iotas(iscp.NewAgentID(userAddr[i], 0), expectedBalance)
+		chain.AssertL2Iotas(iscp.NewAgentID(userAddr[i]), expectedBalance)
 		chain.Env.AssertL1Iotas(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*iotasSentPerRequest)
 	}
 

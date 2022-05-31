@@ -12,9 +12,9 @@ use wasmlib::*;
 
 #[derive(Clone)]
 pub struct Bet {
-    pub amount : u64, 
-    pub better : ScAgentID, 
-    pub number : u16, 
+    pub amount : u64,
+    pub better : ScAgentID,
+    pub number : u16,
 }
 
 impl Bet {

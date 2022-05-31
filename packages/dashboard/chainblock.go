@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/labstack/echo/v4"
 )
@@ -53,7 +54,7 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 	if uint32(index) == result.LatestBlockIndex {
 		result.Block = latestBlock.Info
 	} else {
-		ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetBlockInfo.Name, dict.Dict{
+		ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name, dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
 		})
 		if err != nil {
@@ -63,10 +64,14 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		if result.Block.L1Commitment == nil {
+			// to please the template.
+			result.Block.L1Commitment = state.L1CommitmentNil
+		}
 	}
 
 	{
-		ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
+		ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
 		})
 		if err != nil {
@@ -84,7 +89,7 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 	}
 
 	{
-		ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name, dict.Dict{
+		ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name, dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
 		})
 		if err != nil {

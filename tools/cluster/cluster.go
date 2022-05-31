@@ -25,10 +25,10 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -50,18 +50,23 @@ type Cluster struct {
 }
 
 func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
-	err := logger.InitGlobalLogger(parameters.Init())
-	if err != nil {
-		panic(err)
+	var lg *logger.Logger
+	if t != nil {
+		lg = testlogger.NewLogger(t)
+	} else {
+		// when cluster tool is being used outside tests
+		if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+			panic(err)
+		}
+		lg = logger.NewLogger(name)
 	}
-
 	return &Cluster{
 		Name:             name,
 		Config:           config,
 		ValidatorKeyPair: cryptolib.NewKeyPair(),
 		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), logger.NewLogger("l1client")),
+		l1:               nodeconn.NewL1Client(config.L1, lg),
 	}
 }
 
@@ -170,13 +175,13 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	committeePubKeys := make([]string, 0)
-	for _, i := range chain.CommitteeNodes {
-		peeringNode, err := clu.WaspClient(i).GetPeeringSelf()
+	committeePubKeys := make([]string, len(chain.CommitteeNodes))
+	for i, nodeIndex := range chain.CommitteeNodes {
+		peeringNode, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
 		if err != nil {
 			return nil, err
 		}
-		committeePubKeys = append(committeePubKeys, peeringNode.PubKey)
+		committeePubKeys[i] = peeringNode.PubKey
 	}
 
 	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
@@ -197,36 +202,52 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	chain.StateAddress = stateAddr
 	chain.ChainID = chainID
 
+	return chain, clu.addAllAccessNodes(chain, allPeers)
+}
+
+func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	//
-	// Register all non-committee nodes as access nodes.
-	for _, a := range allPeers {
-		if err := clu.AddAccessNode(a, chain); err != nil {
-			return nil, err
+	// Register all nodes as access nodes.
+	// TODO make this configurable (so that only selected nodes are access nodes)
+	addAccessNodesRequests := make([]*iotago.Transaction, len(nodes))
+	for i, a := range nodes {
+		tx, err := clu.AddAccessNode(a, chain)
+		if err != nil {
+			return err
 		}
+		addAccessNodesRequests[i] = tx
 	}
 
-	return chain, nil
+	peers := multiclient.New(chain.CommitteeAPIHosts())
+
+	for _, tx := range addAccessNodesRequests {
+		// ---------- wait until the requests are processed in all committee nodes
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second); err != nil {
+			return xerrors.Errorf("WaitAddAccessNode: %w", err)
+		}
+	}
+	return nil
 }
 
 // AddAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
+func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnAccessNodes(clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
-		return err
+		return nil, err
 	}
 	accessNodePeering, err := waspClient.GetPeeringSelf()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress(), clu.l1.L1Params().Bech32Prefix)
+	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	scArgs := governance.AccessNodeInfo{
 		NodePubKey:    accessNodePubKey.AsBytes(),
@@ -235,18 +256,20 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
-	scParams := chainclient.NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).WithIotas(1)
+	scParams := chainclient.
+		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
+		WithIotas(1000)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	txID, err := tx.ID()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
-	return nil
+	return tx, nil
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
@@ -300,7 +323,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			waspNodeDataPath(dataPath, i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress(), clu.l1.L1Params().Bech32Prefix),
+			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress()),
 			i,
 			modifyConfig,
 		)
@@ -442,6 +465,12 @@ func (clu *Cluster) RestartNode(nodeIndex int) error {
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command(command)
+
+	// force the wasp processes to close if the cluster tests time out
+	if clu.t != nil {
+		util.TerminateCmdWhenTestStops(cmd)
+	}
+
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -567,6 +596,7 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 }
 
 func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
@@ -576,7 +606,22 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}
+
+	// if the address is an alias output, we also need to fetch the output itself and add that balance
+	if aliasAddr, ok := addr.(*iotago.AliasAddress); ok {
+		aliasOutput, err := clu.l1.GetAliasOutput(aliasAddr.AliasID())
+		if err != nil {
+			fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
+			return nil
+		}
+		balance.Add(transaction.AssetsFromOutput(aliasOutput))
+	}
 	return balance
+}
+
+func (clu *Cluster) L1Iotas(addr iotago.Address) uint64 {
+	tokens := clu.AddressBalances(addr)
+	return tokens.Iotas
 }
 
 func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.FungibleTokens) bool {
@@ -585,8 +630,4 @@ func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.Fu
 
 func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
 	return clu.l1.OutputMap(addr)
-}
-
-func (clu *Cluster) GetL1NetworkPrefix() iotago.NetworkPrefix {
-	return clu.l1.L1Params().Bech32Prefix
 }

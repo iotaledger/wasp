@@ -1,4 +1,3 @@
-//nolint:dupl
 package dashboard
 
 import (
@@ -38,15 +37,21 @@ func (d *Dashboard) handleMetricsChainConsensus(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
+	pipeMetrics, err := d.wasp.GetChainConsensusPipeMetrics(chainID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 	return c.Render(http.StatusOK, c.Path(), &MetricsChainConsensusTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, metricsChainBreadcrumb(c.Echo(), chainID), tab),
 		ChainID:            chainID.String(),
 		Status:             status,
+		PipeMetrics:        pipeMetrics,
 	})
 }
 
 type MetricsChainConsensusTemplateParams struct {
 	BaseTemplateParams
-	ChainID string
-	Status  chain.ConsensusWorkflowStatus
+	ChainID     string
+	Status      chain.ConsensusWorkflowStatus
+	PipeMetrics chain.ConsensusPipeMetrics
 }

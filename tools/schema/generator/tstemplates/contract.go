@@ -20,9 +20,12 @@ $#each func FuncNameForCall
 $#emit setupInitFunc
 
 export class $FuncName$+Call {
-	func: wasmlib.Sc$initFunc$Kind = new wasmlib.Sc$initFunc$Kind(sc.HScName, sc.H$Kind$FuncName);
+	func: wasmlib.Sc$initFunc$Kind;
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
+	public constructor(ctx: wasmlib.Sc$Kind$+CallContext) {
+		this.func = new wasmlib.Sc$initFunc$Kind(ctx, sc.HScName, sc.H$Kind$FuncName);
+	}
 }
 $#if core else FuncNameContext
 `,
@@ -33,8 +36,7 @@ export class $FuncName$+Context {
 $#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
-$#if func MutablePackageState
-$#if view ImmutablePackageState
+$#if state PackageState
 }
 `,
 	// *******************************
@@ -62,6 +64,11 @@ $#if events PackageEventsExist
 	results: sc.Mutable$FuncName$+Results = new sc.Mutable$FuncName$+Results(wasmlib.ScView.nilProxy);
 `,
 	// *******************************
+	"PackageState": `
+$#if func MutablePackageState
+$#if view ImmutablePackageState
+`,
+	// *******************************
 	"ImmutablePackageState": `
 	state: sc.Immutable$Package$+State = new sc.Immutable$Package$+State(wasmlib.ScState.proxy());
 `,
@@ -74,13 +81,14 @@ $#if events PackageEventsExist
 $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
-	static $funcName(_ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
+$#each funcComment _funcComment
+	static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
 	}
 `,
 	// *******************************
 	"setPtrs": `
-		const f = new $FuncName$+Call();
+		const f = new $FuncName$+Call(ctx);
 $#if param initParams
 $#if result initResults
 		return f;
@@ -95,6 +103,6 @@ $#if result initResults
 `,
 	// *******************************
 	"noPtrs": `
-		return new $FuncName$+Call();
+		return new $FuncName$+Call(ctx);
 `,
 }

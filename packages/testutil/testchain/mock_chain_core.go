@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -96,10 +95,6 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		ret.onEventRequestProcessed(id)
 	}))
 	return ret
-}
-
-func (m *MockedChainCore) L1Params() *parameters.L1 {
-	return parameters.L1ForTesting()
 }
 
 func (m *MockedChainCore) Log() *logger.Logger {

@@ -3,19 +3,20 @@
 
 import * as wasmrequests from "./wasmrequests"
 import * as wasmtypes from "./wasmtypes"
-import {ScAssets, ScTransfer} from "./assets";
+import {ScTransfer} from "./assets";
 import {ScDict} from "./dict";
 import {sandbox} from "./host";
 import {FnCall, FnPost, panic, ScSandbox} from "./sandbox";
 
 // base contract objects
 
-export interface ScFuncCallContext {
-    canCallFunc(): void;
+export interface ScViewCallContext {
+    chainID(): wasmtypes.ScChainID;
+    initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname;
 }
 
-export interface ScViewCallContext {
-    canCallView(): void;
+export interface ScFuncCallContext extends ScViewCallContext {
+    initFuncCallContext(): void;
 }
 
 export function newCallParamsProxy(v: ScView): wasmtypes.Proxy {
@@ -40,7 +41,7 @@ export class ScView {
     params: ScDict;
     resultsProxy: wasmtypes.Proxy | null;
 
-    constructor(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
+    constructor(ctx: ScViewCallContext, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
         this.hContract = hContract;
         this.hFunction = hFunction;
         this.params = ScView.nilParams;
@@ -48,19 +49,19 @@ export class ScView {
     }
 
     call(): void {
-        this.callWithTransfer(null);
+        this.callWithAllowance(null);
     }
 
-    protected callWithTransfer(transfer: ScTransfer | null): void {
+    protected callWithAllowance(allowance: ScTransfer | null): void {
         //TODO new ScSandboxFunc().call(...)
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
         const req = new wasmrequests.CallRequest();
         req.contract = this.hContract;
         req.function = this.hFunction;
         req.params = this.params.toBytes();
-        req.transfer = transfer.toBytes();
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
         const res = sandbox(FnCall, req.bytes());
         const proxy = this.resultsProxy;
         if (proxy != null) {
@@ -77,6 +78,10 @@ export class ScView {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScInitFunc extends ScView {
+    constructor(ctx: ScFuncCallContext, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
+        super(ctx, hContract, hFunction);
+    }
+
     call(): void {
         return panic("cannot call init");
     }
@@ -86,13 +91,32 @@ export class ScInitFunc extends ScView {
 
 export class ScFunc extends ScView {
     delaySeconds: u32 = 0;
+    allowanceAssets: ScTransfer | null = null;
     transferAssets: ScTransfer | null = null;
 
+    constructor(ctx: ScFuncCallContext, hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
+        super(ctx, hContract, hFunction);
+    }
+
+    allowance(allowance: ScTransfer): ScFunc {
+        this.allowanceAssets = allowance;
+        return this;
+    }
+
+    allowanceIotas(amount: i64): ScFunc {
+        return this.allowance(ScTransfer.iotas(amount));
+    }
+
     call(): void {
-        if (this.delaySeconds != 0) {
-            return panic("cannot delay a call");
+        if (this.transferAssets != null) {
+            panic("cannot transfer assets in a call");
+            return
         }
-        this.callWithTransfer(this.transferAssets);
+        if (this.delaySeconds != 0) {
+            panic("cannot delay a call");
+            return
+        }
+        this.callWithAllowance(this.allowanceAssets);
     }
 
     delay(seconds: u32): ScFunc {
@@ -101,19 +125,24 @@ export class ScFunc extends ScView {
     }
 
     post(): void {
-        return this.postToChain(new ScSandbox().chainID());
+        return this.postToChain(new ScSandbox().currentChainID());
     }
 
     postToChain(chainID: wasmtypes.ScChainID): void {
-        let transfer = this.transferAssets;
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
         const req = new wasmrequests.PostRequest();
         req.chainID = chainID;
         req.contract = this.hContract;
         req.function = this.hFunction;
         req.params = this.params.toBytes();
+        let allowance = this.allowanceAssets;
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
+        let transfer = this.transferAssets;
+        if (transfer === null) {
+            transfer = new ScTransfer();
+        }
         req.transfer = transfer.toBytes();
         req.delay = this.delaySeconds;
         const res = sandbox(FnPost, req.bytes());

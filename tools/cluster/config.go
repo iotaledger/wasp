@@ -8,6 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -28,27 +29,27 @@ type ClusterConfig struct {
 	L1   nodeconn.L1Config
 }
 
-func DefaultConfig() *ClusterConfig {
-	return &ClusterConfig{
-		Wasp: WaspConfig{
-			NumNodes:           4,
-			FirstAPIPort:       9090,
-			FirstPeeringPort:   4000,
-			FirstNanomsgPort:   5550,
-			FirstDashboardPort: 7000,
-			FirstProfilingPort: 6060,
-			FirstMetricsPort:   2112,
-		},
-		L1: nodeconn.L1Config{
-			Hostname:   "127.0.0.1",
-			APIPort:    8080,
-			FaucetPort: 8091,
-		},
+func DefaultWaspConfig() WaspConfig {
+	return WaspConfig{
+		NumNodes:           4,
+		FirstAPIPort:       9090,
+		FirstPeeringPort:   4000,
+		FirstNanomsgPort:   5550,
+		FirstDashboardPort: 7000,
+		FirstProfilingPort: 6060,
+		FirstMetricsPort:   2112,
 	}
 }
 
 func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
+}
+
+func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config) *ClusterConfig {
+	return &ClusterConfig{
+		Wasp: waspConfig,
+		L1:   l1Config,
+	}
 }
 
 func LoadConfig(dataPath string) (*ClusterConfig, error) {
@@ -71,10 +72,6 @@ func (c *ClusterConfig) Save(dataPath string) error {
 
 func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
-}
-
-func (c *ClusterConfig) goshimmerAPIHost() string {
-	return fmt.Sprintf("%s:%d", c.L1.Hostname, c.L1.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
@@ -148,12 +145,8 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) L1Host(nodeIndex int) string {
-	return c.L1.Hostname
-}
-
-func (c *ClusterConfig) L1Port(nodeIndex int) int {
-	return c.L1.APIPort
+func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
+	return c.L1.APIAddress
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
@@ -164,17 +157,16 @@ func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
 	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
-func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address, networkPrefix iotago.NetworkPrefix) *templates.WaspConfigParams {
+func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
 		DashboardPort:                c.DashboardPort(i),
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
-		L1Host:                       c.L1Host(i),
-		L1Port:                       c.L1Port(i),
+		L1APIAddress:                 c.L1APIAddress(i),
 		MetricsPort:                  c.PrometheusPort(i),
-		OwnerAddress:                 ownerAddress.Bech32(networkPrefix),
+		OwnerAddress:                 ownerAddress.Bech32(parameters.L1.Protocol.Bech32HRP),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

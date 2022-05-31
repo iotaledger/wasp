@@ -18,7 +18,6 @@ type NewRequestTransactionParams struct {
 	UnspentOutputIDs             iotago.OutputIDs
 	Request                      *iscp.RequestParameters
 	NFT                          *iscp.NFT
-	L1                           *parameters.L1
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
@@ -55,14 +54,13 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			GasBudget:      req.Metadata.GasBudget,
 		},
 		req.Options,
-		par.L1.RentStructure(),
 		par.DisableAutoAdjustDustDeposit,
 	)
 	if par.NFT != nil {
 		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
 	}
 
-	requiredDustDeposit := out.VByteCost(par.L1.RentStructure(), nil)
+	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	if out.Deposit() < requiredDustDeposit {
 		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
 			ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
@@ -76,7 +74,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	outputs, sumIotasOut, sumTokensOut, sumNFTsOut = updateOutputsWhenSendingOnBehalfOf(par, outputs, sumIotasOut, sumTokensOut, sumNFTsOut)
 
-	inputIDs, remainder, err := computeInputsAndRemainder(par.SenderKeyPair.Address(), sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs, par.L1.RentStructure())
+	inputIDs, remainder, err := computeInputsAndRemainder(par.SenderKeyPair.Address(), sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +84,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, par.L1.NetworkID)
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, parameters.L1.Protocol.NetworkID())
 }
 
 func outputMatchesSendAsAddress(output iotago.Output, oID iotago.OutputID, address iotago.Address) bool {

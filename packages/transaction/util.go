@@ -7,6 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -64,11 +65,11 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 
 	if aliasID == nilAliasID {
 		isOrigin = true
-		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0))
+		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0))
 	}
 	return &iscp.StateAnchor{
 		IsOrigin:             isOrigin,
-		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(*txid, 0),
+		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(txid, 0),
 		ChainID:              iscp.ChainIDFromAliasID(aliasID),
 		StateController:      anchorOutput.StateController(),
 		GovernanceController: anchorOutput.GovernorAddress(),
@@ -90,7 +91,6 @@ func computeInputsAndRemainder(
 	nftsOut map[iotago.NFTID]bool,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	rentStructure *iotago.RentStructure,
 ) (
 	iotago.OutputIDs,
 	*iotago.BasicOutput,
@@ -140,7 +140,7 @@ func computeInputsAndRemainder(
 			tokensIn[nativeToken.ID] = nativeTokenAmountSum
 		}
 		// calculate remainder. It will return  err != nil if inputs not enough.
-		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
+		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut)
 		if errLast == nil && len(NFTsIn) == len(nftsOut) {
 			break
 		}
@@ -157,7 +157,7 @@ func computeInputsAndRemainder(
 // - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
 // Returns (nil, error) if inputs are not enough (taking into account dust deposit requirements)
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
-func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) (*iotago.BasicOutput, error) {
+func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
 	if inIotas < outIotas {
 		return nil, ErrNotEnoughIotas
 	}
@@ -221,48 +221,48 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	bc := ret.VByteCost(rentStructure, nil)
+	bc := parameters.L1.Protocol.RentStructure.VByteCost * ret.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	if ret.Amount < bc {
 		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, bc)
 	}
 	return ret, nil
 }
 
-func MakeSignatureAndReferenceUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {
-	ret := make(iotago.UnlockBlocks, totalInputs)
+func MakeSignatureAndReferenceUnlocks(totalInputs int, sig iotago.Signature) iotago.Unlocks {
+	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlockBlock{Signature: sig}
+			ret[0] = &iotago.SignatureUnlock{Signature: sig}
 			continue
 		}
-		ret[i] = &iotago.ReferenceUnlockBlock{Reference: 0}
+		ret[i] = &iotago.ReferenceUnlock{Reference: 0}
 	}
 	return ret
 }
 
-func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {
-	ret := make(iotago.UnlockBlocks, totalInputs)
+func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig iotago.Signature) iotago.Unlocks {
+	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlockBlock{Signature: sig}
+			ret[0] = &iotago.SignatureUnlock{Signature: sig}
 			continue
 		}
-		ret[i] = &iotago.AliasUnlockBlock{Reference: 0}
+		ret[i] = &iotago.AliasUnlock{Reference: 0}
 	}
 	return ret
 }
 
 func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signature) *iotago.Transaction {
 	return &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sig),
+		Essence: essence,
+		Unlocks: MakeSignatureAndAliasUnlockFeatures(len(essence.Inputs), sig),
 	}
 }
 
-func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
+func GetVByteCosts(tx *iotago.Transaction) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {
-		ret[i] = out.VByteCost(rentStructure, nil)
+		ret[i] = parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
 	}
 	return ret
 }
@@ -283,8 +283,8 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 	}
 
 	return &iotago.Transaction{
-		Essence:      essence,
-		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+		Essence: essence,
+		Unlocks: MakeSignatureAndReferenceUnlocks(len(inputs), sigs[0]),
 	}, nil
 }
 
@@ -297,7 +297,7 @@ func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.Ali
 		if out, ok := o.(*iotago.AliasOutput); ok { //nolint:gocritic // reducing nesting would damage readability
 			aliasID := out.AliasID
 			oid := &iotago.UTXOInput{
-				TransactionID:          *txID,
+				TransactionID:          txID,
 				TransactionOutputIndex: uint16(index),
 			}
 			var found bool

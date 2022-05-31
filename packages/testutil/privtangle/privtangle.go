@@ -8,47 +8,40 @@ import (
 	"bufio"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
-	"testing"
 	"time"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"golang.org/x/xerrors"
 )
 
-// requires hornet, inx-mqtt and inx-indexer binaries to be in PATH
-// https://github.com/gohornet/hornet
-// https://github.com/gohornet/inx-mqtt
-// https://github.com/gohornet/inx-indexer
+// requires hornet, and inx plugins binaries to be in PATH
+// https://github.com/gohornet/hornet (33dca81)
+// https://github.com/gohornet/inx-mqtt (bba54ea)
+// https://github.com/gohornet/inx-indexer (0ad8ea9)
+// https://github.com/gohornet/inx-coordinator (64d4ab1)
+// https://github.com/gohornet/inx-faucet (abb1f8d) (requires `git submodule update --init --recursive` before building )
 
-const (
-	nodePortOffsetRestAPI = iota
-	nodePortOffsetPeering
-	nodePortOffsetDashboard
-	nodePortOffsetProfiling
-	nodePortOffsetPrometheus
-	nodePortOffsetFaucet
-	nodePortOffsetMQTT
-	nodePortOffsetMQTTWebSocket
-	nodePortOffsetIndexer
-	nodePortOffsetINX
-)
+type LogFunc func(format string, args ...interface{})
 
 type PrivTangle struct {
 	CooKeyPair1   *cryptolib.KeyPair
 	CooKeyPair2   *cryptolib.KeyPair
 	FaucetKeyPair *cryptolib.KeyPair
-	NetworkID     string
+	NetworkName   string
 	SnapshotInit  string
 	ConfigFile    string
 	BaseDir       string
@@ -57,15 +50,15 @@ type PrivTangle struct {
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
 	ctx           context.Context
-	t             *testing.T
+	logfunc       LogFunc
 }
 
-func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *testing.T) *PrivTangle {
+func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc LogFunc) *PrivTangle {
 	pt := PrivTangle{
 		CooKeyPair1:   cryptolib.NewKeyPair(),
 		CooKeyPair2:   cryptolib.NewKeyPair(),
 		FaucetKeyPair: cryptolib.NewKeyPair(),
-		NetworkID:     "private_tangle_wasp_cluster",
+		NetworkName:   "private_tangle_wasp_cluster",
 		SnapshotInit:  "snapshot.init",
 		ConfigFile:    "config.json",
 		BaseDir:       baseDir,
@@ -74,7 +67,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
-		t:             t,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
@@ -91,21 +83,23 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, t *test
 		pt.startNode(i)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
-	pt.logf("Starting... Done, all nodes started.")
+	pt.logf("Starting... all nodes started.")
 
-	pt.WaitAllAlive()
-	pt.logf("Starting... Done, all nodes alive.")
+	pt.waitAllReady()
+	pt.logf("Starting... all nodes are up and running, starting coordinator.")
+	pt.startCoordinator(0)
+	pt.waitAllHealthy()
+	pt.logf("Starting... coordinator started, all nodes are healthy.")
+
+	pt.waitAllReturnTips()
+	pt.logf("Starting... Done, all nodes alive and returning tips.")
 
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
 		pt.startMqtt(i)
 	}
-	pt.WaitInxPlugins()
-
-	// Close when the test ends
-	if t != nil {
-		t.Cleanup(pt.Stop)
-	}
+	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
+	pt.waitInxPlugins()
 
 	return &pt
 }
@@ -116,7 +110,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	}
 	snapGenArgs := []string{
 		"tool", "snap-gen",
-		fmt.Sprintf("--networkID=%s", pt.NetworkID),
+		fmt.Sprintf("--networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsEd25519Address().String()[2:]), // Dropping 0x from HEX.
 		fmt.Sprintf("--outputPath=%s", filepath.Join(pt.BaseDir, pt.SnapshotInit)),
 	}
@@ -131,15 +125,6 @@ func (pt *PrivTangle) startNode(i int) {
 	plugins := "INX,Debug,Prometheus"
 	if i == 0 {
 		plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
-		env = append(env,
-			fmt.Sprintf("COO_PRV_KEYS=%s,%s",
-				hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
-				hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
-			),
-			fmt.Sprintf("FAUCET_PRV_KEY=%s",
-				hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
-			),
-		)
 	}
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
 	nodePathDB := "db"               // Relative from nodePath.
@@ -174,35 +159,27 @@ func (pt *PrivTangle) startNode(i int) {
 
 	args := []string{
 		"-c", pt.ConfigFile,
-		fmt.Sprintf("--protocol.networkID=%s", pt.NetworkID),
+		fmt.Sprintf("--protocol.parameters.networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortRestAPI(i)),
 		fmt.Sprintf("--dashboard.bindAddress=localhost:%d", pt.NodePortDashboard(i)),
 		fmt.Sprintf("--db.path=%s", nodePathDB),
-		fmt.Sprintf("--node.disablePlugins=%s", "Autopeering"),
-		fmt.Sprintf("--node.enablePlugins=%s", plugins),
+		fmt.Sprintf("--app.disablePlugins=%s", "Autopeering"),
+		fmt.Sprintf("--app.enablePlugins=%s", plugins),
 		fmt.Sprintf("--snapshots.fullPath=%s", nodePathSnapFull),
 		fmt.Sprintf("--snapshots.deltaPath=%s", nodePathSnapDelta),
 		fmt.Sprintf("--p2p.bindMultiAddresses=/ip4/127.0.0.1/tcp/%d", pt.NodePortPeering(i)),
 		fmt.Sprintf("--profiling.bindAddress=127.0.0.1:%d", pt.NodePortProfiling(i)),
 		fmt.Sprintf("--prometheus.bindAddress=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
-		fmt.Sprintf("--faucet.website.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
-	if i == 0 {
-		args = append(args,
-			"--cooBootstrap",
-			"--cooStartIndex", "0",
-		)
-	}
+
 	hornetCmd := exec.CommandContext(pt.ctx, "hornet", args...)
 	// kill hornet cmd if the go test process is killed
-	hornetCmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
+	util.TerminateCmdWhenTestStops(hornetCmd)
 
 	hornetCmd.Env = os.Environ()
 	hornetCmd.Env = append(hornetCmd.Env, env...)
@@ -216,66 +193,68 @@ func (pt *PrivTangle) startNode(i int) {
 	}
 }
 
+func (pt *PrivTangle) startCoordinator(i int) {
+	env := []string{
+		fmt.Sprintf("COO_PRV_KEYS=%s,%s",
+			hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
+			hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
+		),
+	}
+	args := []string{
+		"--cooBootstrap",
+		"--cooStartIndex=0",
+		"--coordinator.interval=1s",
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+	}
+	pt.startINXPlugin(i, "inx-coordinator", args, env)
+}
+
+func (pt *PrivTangle) startFaucet(i int) {
+	env := []string{
+		fmt.Sprintf("FAUCET_PRV_KEY=%s",
+			hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
+		),
+	}
+	args := []string{
+		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
+	}
+	pt.startINXPlugin(i, "inx-faucet", args, env)
+}
+
 func (pt *PrivTangle) startIndexer(i int) {
-	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-indexer")
-
-	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
-	}
-
-	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
-	}
-
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--indexer.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
 	}
-
-	indexerCmd := exec.CommandContext(pt.ctx, "inx-indexer", args...)
-	// kill indexer cmd if the go test process is killed
-	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
-
-	indexerCmd.Dir = indexerPath
-
-	writeOutputToFiles(indexerPath, indexerCmd)
-
-	if err := indexerCmd.Start(); err != nil {
-		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
-	}
+	pt.startINXPlugin(i, "inx-indexer", args, nil)
 }
 
 func (pt *PrivTangle) startMqtt(i int) {
-	indexerPath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), "inx-mqtt")
-
-	if err := os.MkdirAll(indexerPath, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", indexerPath, err))
-	}
-
-	if err := os.WriteFile(filepath.Join(indexerPath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
-	}
-
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		fmt.Sprintf("--mqtt.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
-		fmt.Sprintf("--mqtt.wsPort=%d", pt.NodePortMQTTWebSocket(i)),
+		fmt.Sprintf("--mqtt.websocket.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
+	}
+	pt.startINXPlugin(i, "inx-mqtt", args, nil)
+}
+
+func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) {
+	path := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), plugin)
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		panic(xerrors.Errorf("Unable to create dir %v: %w", path, err))
 	}
 
-	indexerCmd := exec.CommandContext(pt.ctx, "inx-mqtt", args...)
-	// kill indexer cmd if the go test process is killed
-	indexerCmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
+	cmd := exec.CommandContext(pt.ctx, plugin, args...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, env...)
+	cmd.Dir = path
+	writeOutputToFiles(path, cmd)
 
-	indexerCmd.Dir = indexerPath
+	// kill cmd if the go test process is killed
+	util.TerminateCmdWhenTestStops(cmd)
 
-	writeOutputToFiles(indexerPath, indexerCmd)
-
-	if err := indexerCmd.Start(); err != nil {
-		panic(xerrors.Errorf("Cannot start indexer [%d]: %w", i, err))
+	if err := cmd.Start(); err != nil {
+		panic(xerrors.Errorf("Cannot start %s [%d]: %w", plugin, i, err))
 	}
 }
 
@@ -301,20 +280,33 @@ func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
 	return nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
 }
 
-// The health endpoint is not working for now.
-// So we are using other endpoint for this check.
-func (pt *PrivTangle) WaitAllAlive() {
-	pt.waitAllHealthy()
-	pt.waitAllReturnTips()
-}
-
 func (pt *PrivTangle) waitAllReturnTips() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
 			_, err := pt.nodeClient(i).Tips(pt.ctx)
-			if err != nil && pt.t != nil {
+			if err != nil {
 				pt.logf("Node[%d] is not ready yet: %v", i, err)
+			}
+			if err != nil {
+				allOK = false
+			}
+		}
+		if allOK {
+			break
+		}
+		pt.logf("Waiting to all nodes to startup.")
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (pt *PrivTangle) waitAllReady() {
+	for {
+		allOK := true
+		for i := range pt.NodeCommands {
+			_, err := pt.nodeClient(i).Info(pt.ctx)
+			if err != nil {
+				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
 			if err != nil {
 				allOK = false
@@ -333,7 +325,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 		allOK := true
 		for i := range pt.NodeCommands {
 			ok, err := pt.nodeClient(i).Health(pt.ctx)
-			if err != nil && pt.t != nil {
+			if err != nil {
 				pt.logf("Failed to check Node[%d] health: %v", i, err)
 			}
 			if err != nil || !ok {
@@ -343,14 +335,12 @@ func (pt *PrivTangle) waitAllHealthy() {
 		if allOK {
 			break
 		}
-		if pt.t != nil {
-			pt.logf("Waiting to all nodes to startup.")
-		}
+		pt.logf("Waiting to all nodes to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-func (pt *PrivTangle) WaitInxPlugins() {
+func (pt *PrivTangle) waitInxPlugins() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
@@ -366,15 +356,47 @@ func (pt *PrivTangle) WaitInxPlugins() {
 				allOK = false
 				continue
 			}
+			// faucet
+			err = pt.queryFaucetInfo()
+			if err != nil {
+				allOK = false
+				continue
+			}
 		}
 		if allOK {
 			return
 		}
-		if pt.t != nil {
-			pt.logf("Waiting to all nodes INX plugings to startup.")
-		}
+		pt.logf("Waiting to all nodes INX plugings to startup.")
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+type FaucetInfoResponse struct {
+	Balance uint64 `json:"balance"`
+}
+
+func (pt *PrivTangle) queryFaucetInfo() error {
+	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
+	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
+	if err != nil {
+		return xerrors.Errorf("unable to create request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
+	}
+	resBody, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
+	}
+	var parsedResp FaucetInfoResponse
+	json.Unmarshal(resBody, &parsedResp)
+	if parsedResp.Balance == 0 {
+		return fmt.Errorf("faucet has 0 balance")
+	}
+	return nil
 }
 
 func (pt *PrivTangle) NodeMultiAddr(i int) string {
@@ -403,48 +425,48 @@ func (pt *PrivTangle) NodeMultiAddrsWoIndex(x int) []string {
 }
 
 func (pt *PrivTangle) NodePortRestAPI(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetRestAPI
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetRestAPI
 }
 
 func (pt *PrivTangle) NodePortPeering(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetPeering
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetPeering
 }
 
 func (pt *PrivTangle) NodePortDashboard(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetDashboard
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetDashboard
 }
 
 func (pt *PrivTangle) NodePortProfiling(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetProfiling
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetProfiling
 }
 
 func (pt *PrivTangle) NodePortPrometheus(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetPrometheus
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetPrometheus
 }
 
 func (pt *PrivTangle) NodePortFaucet(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetFaucet
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetFaucet
 }
 
 func (pt *PrivTangle) NodePortMQTT(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetMQTT
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetMQTT
 }
 
-func (pt *PrivTangle) NodePortMQTTWebSocket(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetMQTTWebSocket
+func (pt *PrivTangle) NodePortCoordinator(i int) int {
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetCoordinator
 }
 
 func (pt *PrivTangle) NodePortIndexer(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetIndexer
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetIndexer
 }
 
 func (pt *PrivTangle) NodePortINX(i int) int {
-	return pt.BasePort + i*10 + nodePortOffsetINX
+	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetINX
 }
 
 func (pt *PrivTangle) logf(msg string, args ...interface{}) {
-	if pt.t != nil {
-		pt.t.Logf("HORNET Cluster: "+msg, args...)
+	if pt.logfunc != nil {
+		pt.logfunc("HORNET Cluster: "+msg, args...)
 	}
 }
 
@@ -454,10 +476,9 @@ func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 		nodeIndex = i[0]
 	}
 	return nodeconn.L1Config{
-		Hostname:   "localhost",
-		APIPort:    pt.NodePortRestAPI(nodeIndex),
-		FaucetPort: pt.NodePortFaucet(nodeIndex),
-		FaucetKey:  pt.FaucetKeyPair,
+		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
+		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),
+		FaucetKey:     pt.FaucetKeyPair,
 	}
 }
 
@@ -470,12 +491,12 @@ func writeOutputToFiles(path string, cmd *exec.Cmd) {
 	if err != nil {
 		panic(xerrors.Errorf("Unable to get stdout for HORNET[path: %s]: %w", path, err))
 	}
-	outFilePath := filepath.Join(path, "log.txt")
+	outFilePath := filepath.Join(path, "stdout.log")
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
 		panic(err)
 	}
-	errFilePath := filepath.Join(path, "errors.txt")
+	errFilePath := filepath.Join(path, "stderr.log")
 	errFile, err := os.Create(errFilePath)
 	if err != nil {
 		panic(err)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
@@ -16,11 +17,11 @@ import (
 func TestWriteToWAL(t *testing.T) {
 	e := setupWithNoChain(t, waspClusterOpts{nNodes: 1})
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 	require.NoError(t, err)
 
-	walDir := walDirFromDataPath(e.clu.DataPath, chain.ChainID.String())
+	walDir := walDirFromDataPath(e.Clu.DataPath, chain.ChainID.String())
 	require.True(t, walDirectoryCreated(walDir))
 
 	blockIndex, _ := chain.BlockIndex(0)
@@ -34,7 +35,7 @@ func TestWriteToWAL(t *testing.T) {
 	require.EqualValues(t, blockIndex, block.BlockIndex())
 
 	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetBlockInfo.Name,
+		chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Name,
 		dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
 		})
@@ -45,7 +46,7 @@ func TestWriteToWAL(t *testing.T) {
 
 	require.EqualValues(t, blockInfo.BlockIndex, block.BlockIndex())
 	require.EqualValues(t, blockInfo.Timestamp, block.Timestamp())
-	require.EqualValues(t, blockInfo.PreviousStateCommitment.Bytes(), block.PreviousStateCommitment(state.CommitmentModel).Bytes())
+	require.True(t, trie.EqualCommitments(blockInfo.PreviousL1Commitment.StateCommitment, block.PreviousL1Commitment().StateCommitment))
 }
 
 func walDirectoryCreated(walDir string) bool {

@@ -79,6 +79,8 @@ fn func_withdraw_thunk(ctx: &ScFuncContext) {
 		params: ImmutableWithdrawParams { proxy: params_proxy() },
 		state: MutableDonateWithFeedbackState { proxy: state_proxy() },
 	};
+
+	// only SC creator can withdraw donated funds
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	func_withdraw(ctx, &f);

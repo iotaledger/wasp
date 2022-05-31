@@ -13,17 +13,15 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"golang.org/x/xerrors"
 )
 
 type L1Config struct {
-	Hostname   string
-	APIPort    int
-	FaucetPort int
-	FaucetKey  *cryptolib.KeyPair
+	APIAddress    string
+	FaucetAddress string
+	FaucetKey     *cryptolib.KeyPair
 }
 
 // nodeconn implements L1Client
@@ -35,16 +33,16 @@ type L1Client interface {
 	PostTx(tx *iotago.Transaction, timeout ...time.Duration) error
 	// returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
-	// returns the l1 parameters used by the node
-	L1Params() *parameters.L1
+	// output
+	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error)
 	// used to query the health endpoint of the node
 	Health(timeout ...time.Duration) (bool, error)
 }
 
 var _ L1Client = &nodeConn{}
 
-func NewL1Client(config L1Config, metrics nodeconnmetrics.NodeConnectionMetrics, log *logger.Logger, timeout ...time.Duration) L1Client {
-	return newNodeConn(config, metrics, log, timeout...)
+func NewL1Client(config L1Config, log *logger.Logger, timeout ...time.Duration) L1Client {
+	return newNodeConn(config, log, false, timeout...)
 }
 
 const defaultTimeout = 1 * time.Minute
@@ -54,14 +52,10 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
-	indexerClient, err := nc.nodeAPIClient.Indexer(ctxWithTimeout)
-	if err != nil {
-		return nil, xerrors.Errorf("failed getting the indexer client: %w", err)
-	}
-	bech32Addr := myAddress.Bech32(nc.l1params.Bech32Prefix)
+	bech32Addr := myAddress.Bech32(parameters.L1.Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
-		&nodeclient.FoundriesQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
 		&nodeclient.AliasesQuery{StateControllerBech32: bech32Addr},
 	}
@@ -69,7 +63,7 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	result := make(map[iotago.OutputID]iotago.Output)
 
 	for _, query := range queries {
-		res, err := indexerClient.Outputs(ctxWithTimeout, query)
+		res, err := nc.indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to query address outputs: %w", err)
 		}
@@ -101,6 +95,13 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
 }
 
+func (nc *nodeConn) GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error) {
+	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
+	_, stateOutput, err := nc.indexerClient.Alias(ctxWithTimeout, aliasID)
+	cancelContext()
+	return stateOutput, err
+}
+
 // RequestFunds implements L1Connection
 func (nc *nodeConn) RequestFunds(addr iotago.Address, timeout ...time.Duration) error {
 	if nc.config.FaucetKey == nil {
@@ -115,8 +116,8 @@ func (nc *nodeConn) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durat
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
-	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(nc.L1Params().Bech32Prefix))
-	faucetURL := fmt.Sprintf("http://%s:%d/api/plugins/faucet/v1/enqueue", nc.config.Hostname, nc.config.APIPort)
+	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	faucetURL := fmt.Sprintf("%s/api/enqueue", nc.config.FaucetAddress)
 	httpReq, err := http.NewRequestWithContext(ctxWithTimeout, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
 	if err != nil {
 		return xerrors.Errorf("unable to create request: %w", err)
@@ -134,7 +135,7 @@ func (nc *nodeConn) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durat
 	if err != nil {
 		return xerrors.Errorf("faucet status=%v, unable to read response body: %w", res.Status, err)
 	}
-	return xerrors.Errorf("faucet call failed, responPrivateKeyse status=%v, body=%v", res.Status, resBody)
+	return xerrors.Errorf("faucet call failed, response status=%v, body=%v", res.Status, string(resBody))
 }
 
 // PostSimpleValueTX submits a simple value transfer TX.
@@ -162,7 +163,7 @@ func MakeSimpleValueTX(
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get address outputs: %w", err)
 	}
-	txBuilder := builder.NewTransactionBuilder(client.L1Params().NetworkID)
+	txBuilder := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID())
 	inputSum := uint64(0)
 	for i, o := range senderOuts {
 		if inputSum >= amount {
@@ -191,7 +192,7 @@ func MakeSimpleValueTX(
 		})
 	}
 	tx, err := txBuilder.Build(
-		client.L1Params().DeSerializationParameters,
+		parameters.L1.Protocol,
 		sender.AsAddressSigner(),
 	)
 	if err != nil {

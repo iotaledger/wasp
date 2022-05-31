@@ -3,6 +3,7 @@ package evmimpl
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
@@ -50,13 +51,12 @@ func UnpackVMError(result *core.ExecutionResult, contractID iscp.Hname) (*iscp.V
 
 	abiUint16, _ := abi.NewType("uint16", "", nil)
 
-	errorId, err := (abi.Arguments{{Type: abiUint16}}).Unpack(data[4:])
-
+	errorID, err := (abi.Arguments{{Type: abiUint16}}).Unpack(data[4:])
 	if err != nil {
 		return nil, err
 	}
 
-	errorCode := iscp.NewVMErrorCode(contractID, errorId[0].(uint16))
+	errorCode := iscp.NewVMErrorCode(contractID, errorID[0].(uint16))
 
 	return &errorCode, nil
 }

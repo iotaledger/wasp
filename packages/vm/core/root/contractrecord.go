@@ -22,19 +22,16 @@ type ContractRecord struct {
 	// is hname(name) =  iscp.Hn(name)
 	Name string
 	// The agentID of the entity which deployed the instance. It can be interpreted as
-	// an priviledged user of the instance, however it is up to the smart contract.
-	Creator *iscp.AgentID
+	// an privileged user of the instance, however it is up to the smart contract.
+	Creator iscp.AgentID
 }
 
-func ContractRecordFromContractInfo(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {
-	if creator == nil {
-		panic("ContractRecordFromContractInfo: creator can't be nil")
-	}
+func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord {
 	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,
 		Name:        itf.Name,
-		Creator:     creator,
+		Creator:     &iscp.NilAgentID{},
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -27,12 +26,11 @@ type VMTask struct {
 	Processors         *processors.Cache
 	AnchorOutput       *iotago.AliasOutput
 	AnchorOutputID     iotago.OutputID
-	L1Params           *parameters.L1
 	SolidStateBaseline coreutil.StateBaseline
 	Requests           []iscp.Request
 	TimeAssumption     iscp.TimeData
 	Entropy            hashing.HashValue
-	ValidatorFeeTarget *iscp.AgentID
+	ValidatorFeeTarget iscp.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
 	EstimateGasMode      bool
 	EnableGasBurnLogging bool // for testing and Solo only

@@ -9,48 +9,56 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableIncrementWithDelayParams extends wasmtypes.ScProxy {
+	// delay in seconds
 	delay(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamDelay));
 	}
 }
 
 export class MutableIncrementWithDelayParams extends wasmtypes.ScProxy {
+	// delay in seconds
 	delay(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamDelay));
 	}
 }
 
 export class ImmutableInitParams extends wasmtypes.ScProxy {
+	// value to initialize state counter with
 	counter(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamCounter));
 	}
 }
 
 export class MutableInitParams extends wasmtypes.ScProxy {
+	// value to initialize state counter with
 	counter(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamCounter));
 	}
 }
 
 export class ImmutableRepeatManyParams extends wasmtypes.ScProxy {
+	// number of times to recursively call myself
 	numRepeats(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamNumRepeats));
 	}
 }
 
 export class MutableRepeatManyParams extends wasmtypes.ScProxy {
+	// number of times to recursively call myself
 	numRepeats(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamNumRepeats));
 	}
 }
 
 export class ImmutableWhenMustIncrementParams extends wasmtypes.ScProxy {
+	// dummy param to prevent 'duplicate outputs not allowed'
 	dummy(): wasmtypes.ScImmutableInt64 {
 		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamDummy));
 	}
 }
 
 export class MutableWhenMustIncrementParams extends wasmtypes.ScProxy {
+	// dummy param to prevent 'duplicate outputs not allowed'
 	dummy(): wasmtypes.ScMutableInt64 {
 		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamDummy));
 	}

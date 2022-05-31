@@ -12,11 +12,12 @@ keywords:
 ---
 # Account Balances
 
-:::note
+::: note
 
 The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
 
 :::
+
 Each chain in the _IOTA Smart Contracts_ is a separate ledger, different from the UTXO ledger.
 Multiple chains add another dimension on top of the UTXO Ledger. Smart contracts
 can exchange assets between themselves on the same chain and also between different chains, as well as with

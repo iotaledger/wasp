@@ -28,7 +28,7 @@ impl ScBigInt {
         while buf_len > 0 && buf[buf_len - 1] == 0 {
             buf_len -= 1;
         }
-        big_int_from_bytes(&buf[..buf_len])
+        ScBigInt { bytes: buf[..buf_len].to_vec() }
     }
 
     pub fn add(&self, rhs: &ScBigInt) -> ScBigInt {
@@ -295,13 +295,14 @@ impl ScBigInt {
         if zeroes > SC_UINT64_LENGTH {
             panic("value exceeds Uint64");
         }
-        let mut buf = big_int_to_bytes(self);
+        let mut buf = self.bytes.clone();
         buf.extend_from_slice(&ZERO_U64[..zeroes]);
         uint64_from_bytes(&buf)
     }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 
 pub fn big_int_decode(dec: &mut WasmDecoder) -> ScBigInt {
     ScBigInt { bytes: dec.bytes() }
@@ -312,11 +313,25 @@ pub fn big_int_encode(enc: &mut WasmEncoder, value: &ScBigInt) {
 }
 
 pub fn big_int_from_bytes(buf: &[u8]) -> ScBigInt {
-    ScBigInt { bytes: buf.to_vec() }
+    ScBigInt { bytes: reverse(buf) }
 }
 
 pub fn big_int_to_bytes(value: &ScBigInt) -> Vec<u8> {
-    value.bytes.to_vec()
+    reverse(&value.bytes)
+}
+
+pub fn big_int_from_string(value: &str) -> ScBigInt {
+    let digits = value.len() - 18;
+    if digits <= 0 {
+        // Uint64 fits 18 digits or 1 quintillion
+        return ScBigInt::from_uint64(uint64_from_string(value));
+    }
+
+    // build value 18 digits at a time
+    let quintillion = ScBigInt::from_uint64(1_000_000_000_000_000_000);
+    let lhs = big_int_from_string(&value[..digits]);
+    let rhs = big_int_from_string(&value[digits..]);
+    lhs.mul(&quintillion).add(&rhs)
 }
 
 pub fn big_int_to_string(value: &ScBigInt) -> String {
@@ -327,6 +342,17 @@ pub fn big_int_to_string(value: &ScBigInt) -> String {
     let digits = uint64_to_string(modulo.uint64());
     let zeroes = &"000000000000000000"[..18 - digits.len()];
     return big_int_to_string(&div) + zeroes + &digits;
+}
+
+// Stupid big.Int uses BigEndian byte encoding, so our external byte encoding should
+// reflect this by reverse()-ing the byte order in BigIntFromBytes and BigIntToBytes
+fn reverse(bytes: &[u8]) -> Vec<u8> {
+    let n = bytes.len();
+    let mut buf: Vec<u8> = vec![0; n];
+    for i in 0..n {
+        buf[n - 1 - i] = bytes[i];
+    }
+    buf
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

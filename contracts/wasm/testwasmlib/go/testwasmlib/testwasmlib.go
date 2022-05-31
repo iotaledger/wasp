@@ -27,7 +27,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(bytes.Equal(f.Params.Bytes().Value(), byteData), "mismatch: Bytes")
 	}
 	if f.Params.ChainID().Exists() {
-		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
+		ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "mismatch: ChainID")
 	}
 	if f.Params.Hash().Exists() {
 		hash := wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210"))
@@ -49,7 +49,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
 	if f.Params.NftID().Exists() {
-		nftID := wasmtypes.NftIDFromBytes([]byte("01234567890123456789"))
+		nftID := wasmtypes.NftIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456"))
 		ctx.Require(f.Params.NftID().Value() == nftID, "mismatch: NftID")
 	}
 	if f.Params.RequestID().Exists() {
@@ -60,7 +60,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.String().Value() == "this is a string", "mismatch: String")
 	}
 	if f.Params.TokenID().Exists() {
-		tokenID := wasmtypes.TokenIDFromBytes([]byte("RedGreenBlueYellowCyanBlackWhitePurple"))
+		tokenID := wasmtypes.TokenIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz1234567890AB"))
 		ctx.Require(f.Params.TokenID().Value() == tokenID, "mismatch: TokenID")
 	}
 	if f.Params.Uint8().Exists() {
@@ -81,7 +81,6 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 	f.State.Random().SetValue(ctx.Random(1000))
 }
 
-//nolint:unparam
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, f *TakeAllowanceContext) {
 	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()), false)
 	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Iotas())))

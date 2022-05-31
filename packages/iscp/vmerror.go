@@ -126,37 +126,28 @@ func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTempla
 	if messageLength, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	if messageInBytes, err := mu.ReadBytes(int(messageLength)); err != nil {
+	messageInBytes, err := mu.ReadBytes(int(messageLength))
+	if err != nil {
 		return nil, err
-	} else {
-		e.messageFormat = string(messageInBytes)
 	}
-
+	e.messageFormat = string(messageInBytes)
 	return e, nil
 }
 
 type UnresolvedVMError struct {
-	code   VMErrorCode
-	params []interface{}
-	hash   uint32
+	ErrorCode VMErrorCode   `json:"code"`
+	Params    []interface{} `json:"params"`
+	Hash      uint32        `json:"hash"`
 }
 
 var _ VMErrorBase = &UnresolvedVMError{}
 
 func (e *UnresolvedVMError) Error() string {
-	return fmt.Sprintf("UnresolvedVMError(code: %s, hash: %x)", e.code, e.hash)
-}
-
-func (e *UnresolvedVMError) Hash() uint32 {
-	return e.hash
+	return fmt.Sprintf("UnresolvedVMError(code: %s, hash: %x)", e.ErrorCode, e.Hash)
 }
 
 func (e *UnresolvedVMError) Code() VMErrorCode {
-	return e.code
-}
-
-func (e *UnresolvedVMError) Params() []interface{} {
-	return e.params
+	return e.ErrorCode
 }
 
 func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error {
@@ -172,15 +163,11 @@ func (e *UnresolvedVMError) deserializeParams(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 
-	if err = json.Unmarshal(params, &e.params); err != nil {
-		return err
-	}
-
-	return err
+	return json.Unmarshal(params, &e.Params)
 }
 
 func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
-	bytes, err := json.Marshal(e.params)
+	bytes, err := json.Marshal(e.Params)
 	if err != nil {
 		panic(err)
 	}
@@ -191,8 +178,8 @@ func (e *UnresolvedVMError) serializeParams(mu *marshalutil.MarshalUtil) {
 
 func (e *UnresolvedVMError) Bytes() []byte {
 	mu := marshalutil.New()
-	e.code.Serialize(mu)
-	mu.WriteUint32(e.hash)
+	e.ErrorCode.Serialize(mu)
+	mu.WriteUint32(e.Hash)
 	e.serializeParams(mu)
 	return mu.Bytes()
 }
@@ -225,11 +212,14 @@ func (e *VMError) Params() []interface{} {
 }
 
 func (e *VMError) Error() string {
+	if e == nil {
+		return ""
+	}
 	return fmt.Sprintf(e.MessageFormat(), e.params...)
 }
 
 func (e *VMError) Hash() uint32 {
-	if len(e.MessageFormat()) == 0 {
+	if e.MessageFormat() == "" {
 		return 0
 	}
 
@@ -265,9 +255,9 @@ func (e *VMError) AsGoError() error {
 
 func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 	return &UnresolvedVMError{
-		code:   e.template.code,
-		params: e.params,
-		hash:   e.Hash(),
+		ErrorCode: e.template.code,
+		Params:    e.params,
+		Hash:      e.Hash(),
 	}
 }
 
@@ -278,13 +268,13 @@ func (e *VMError) AsTemplate() *VMErrorTemplate {
 func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedVMError, error) {
 	var err error
 	unresolvedError := &UnresolvedVMError{}
-	if unresolvedError.code, err = VMErrorCodeFromMarshalUtil(mu); err != nil {
+	if unresolvedError.ErrorCode, err = VMErrorCodeFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if unresolvedError.hash, err = mu.ReadUint32(); err != nil {
+	if unresolvedError.Hash, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
-	if err = unresolvedError.deserializeParams(mu); err != nil {
+	if err := unresolvedError.deserializeParams(mu); err != nil {
 		return nil, err
 	}
 	return unresolvedError, nil
@@ -294,12 +284,12 @@ func GetErrorIDFromMessageFormat(messageFormat string) uint16 {
 	messageFormatHash := hashing.HashStrings(messageFormat).Bytes()
 	mu := marshalutil.New(messageFormatHash)
 
-	errorId, err := mu.ReadUint16()
+	errorID, err := mu.ReadUint16()
 	if err != nil {
 		panic(err)
 	}
 
-	return errorId
+	return errorID
 }
 
 // VMErrorIs returns true if the error includes a VMErrorCode in its chain that matches the given code

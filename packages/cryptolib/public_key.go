@@ -21,6 +21,12 @@ func newPublicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
 	return &PublicKey{cryptoPublicKey}
 }
 
+func NewEmptyPublicKey() *PublicKey {
+	return &PublicKey{
+		key: make([]byte, PublicKeySize),
+	}
+}
+
 func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
 	b, err := base58.Decode(s)
 	if err != nil {
@@ -41,10 +47,14 @@ func (pkT *PublicKey) AsBytes() []byte {
 	return pkT.key
 }
 
-func (pkT *PublicKey) AsKey() PublicKeyKey {
-	var result PublicKeyKey
+func (pkT *PublicKey) AsByteArray() [PublicKeySize]byte {
+	var result [PublicKeySize]byte
 	copy(result[:], pkT.key)
 	return result
+}
+
+func (pkT *PublicKey) AsKey() PublicKeyKey {
+	return PublicKeyKey(pkT.AsByteArray())
 }
 
 func (pkT *PublicKey) AsString() string {

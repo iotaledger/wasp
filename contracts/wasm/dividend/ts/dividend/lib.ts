@@ -30,10 +30,12 @@ const exportMap: wasmlib.ScExportMap = {
 };
 
 export function on_call(index: i32): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.export(exportMap);
 }
 
@@ -54,6 +56,8 @@ function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
 function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcMember");
 	let f = new sc.MemberContext();
+
+	// only defined owner of contract can add members
 	const access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
@@ -67,6 +71,8 @@ function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcSetOwner");
 	let f = new sc.SetOwnerContext();
+
+	// only defined owner of contract can change owner
 	const access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");

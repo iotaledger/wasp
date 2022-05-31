@@ -126,10 +126,10 @@ func New(
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
-	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestonePointer) {
+	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
 		ret.timeData = &iscp.TimeData{
 			MilestoneIndex: milestonePointer.Index,
-			Time:           time.Unix(0, int64(milestonePointer.Timestamp)),
+			Time:           time.Unix(int64(milestonePointer.Timestamp), 0),
 		}
 	})
 	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {
@@ -291,6 +291,7 @@ func (c *consensus) refreshConsensusInfo() {
 		StateIndex: index,
 		Mempool:    c.mempool.Info(timeData),
 		TimerTick:  int(c.lastTimerTick.Load()),
+		TimeData:   timeData,
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
 		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v, "+
@@ -313,4 +314,16 @@ func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 
 func (c *consensus) GetWorkflowStatus() chain.ConsensusWorkflowStatus {
 	return c.workflow
+}
+
+func (c *consensus) GetPipeMetrics() chain.ConsensusPipeMetrics {
+	return &pipeMetrics{
+		eventStateTransitionMsgPipeSize: c.eventStateTransitionMsgPipe.Len(),
+		eventSignedResultMsgPipeSize:    c.eventSignedResultMsgPipe.Len(),
+		eventSignedResultAckMsgPipeSize: c.eventSignedResultAckMsgPipe.Len(),
+		eventInclusionStateMsgPipeSize:  c.eventInclusionStateMsgPipe.Len(),
+		eventTimerMsgPipeSize:           c.eventTimerMsgPipe.Len(),
+		eventVMResultMsgPipeSize:        c.eventVMResultMsgPipe.Len(),
+		eventACSMsgPipeSize:             c.eventACSMsgPipe.Len(),
+	}
 }

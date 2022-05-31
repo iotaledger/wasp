@@ -18,6 +18,7 @@ var Templates = []map[string]string{
 	constsTs,
 	contractTs,
 	eventsTs,
+	eventhandlersTs,
 	funcsTs,
 	indexTs,
 	libTs,
@@ -95,5 +96,37 @@ import * as sc from "./index";
   "extends": "assemblyscript/std/assembly.json",
   "include": ["./*.ts"]
 }
+`,
+	// *******************************
+	"_eventComment": `
+	$nextLine
+`,
+	// *******************************
+	"_eventParamComment": `
+		$nextLine
+`,
+	// *******************************
+	"_fldComment": `
+	$nextLine
+`,
+	// *******************************
+	"_funcComment": `
+	$nextLine
+`,
+	// *******************************
+	"_funcAccessComment": `
+	$nextLine
+`,
+	// *******************************
+	"_structComment": `
+$nextLine
+`,
+	// *******************************
+	"_structFieldComment": `
+	$nextLine
+`,
+	// *******************************
+	"_typedefComment": `
+$nextLine
 `,
 }

@@ -14,7 +14,7 @@ const (
 
 var (
 	FuncRegisterError         = coreutil.Func("registerError")
-	FuncGetErrorMessageFormat = coreutil.ViewFunc("getErrorMessageFormat")
+	ViewGetErrorMessageFormat = coreutil.ViewFunc("getErrorMessageFormat")
 )
 
 // parameters

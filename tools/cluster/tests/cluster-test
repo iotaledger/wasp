@@ -1,0 +1,61 @@
+#!/bin/bash -l
+
+# use: cluster-test [arguments for `go test`]
+#
+# example: ./cluster-test -failfast
+
+TESTS=(\
+    "TestDeployChain" \
+    "TestDeployContractOnly" \
+    "TestDeployContractAndSpawn" \
+    "TestNodeConn" \
+    "TestHornetStartup" \
+    "TestPostDeployInccounter" \
+    "TestPost1Request" \
+    "TestPost53Recursive" \
+    "TestPost5Requests" \
+    "TestPost5AsyncRequests" \
+    "TestWriteToWAL" \
+    "TestBlobDeployChain" \
+    "TestBlobStoreSmallBlob" \
+    "TestBlobStoreManyBlobsNoEncoding" \
+    "TestNanoPublisher" \
+    "TestMissingRequests" \
+    "TestBasicAccounts" \
+    "TestBasicAccountsNLow" \
+    "TestBasic2Accounts" \
+    "TestIncDeployment" \
+    "TestIncNothing" \
+    "TestInc5xNothing" \
+    "TestIncIncrement" \
+    "TestInc5xIncrement" \
+    "TestIncCallIncrement1" \
+    "TestIncCallIncrement2Recurse5x" \
+    "TestIncPostIncrement" \
+    "TestIncRepeatManyIncrement" \
+    "TestIncLocalStateInternalCall" \
+    "TestIncLocalStateSandboxCall" \
+    "TestIncLocalStatePost" \
+    "TestIncViewCounter" \
+    "TestIncCounterDelay" \
+	"TestEVMJsonRPCClusterGetLogs" \
+	"TestEVMJsonRPCClusterGasLimit" \
+	"TestEVMJsonRPCClusterInvalidNonce" \
+)
+TEMP_LOG_FILE="testTemp.log"
+WD=$PWD
+
+for ((i=0; i<${#TESTS[@]}; i++))
+do
+    if go test -run "${TESTS[i]}" $* > "${TEMP_LOG_FILE}" ; then
+        echo "Test ${TESTS[i]} was successful"
+    else
+        log_file="error${TESTS[i]}.log"
+        mv ${TEMP_LOG_FILE} ${log_file}
+        echo "Test ${TESTS[i]} FAILED"
+        exit
+    fi
+done
+
+rm "${TEMP_LOG_FILE}"
+echo "All tests passed"

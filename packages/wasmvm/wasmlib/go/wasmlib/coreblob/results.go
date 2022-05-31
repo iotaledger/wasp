@@ -59,7 +59,6 @@ type ImmutableGetBlobInfoResults struct {
 
 // size for each named blob
 func (s ImmutableGetBlobInfoResults) BlobSizes() MapStringToImmutableInt32 {
-	//nolint:gosimple
 	return MapStringToImmutableInt32{proxy: s.proxy}
 }
 
@@ -81,7 +80,6 @@ type MutableGetBlobInfoResults struct {
 
 // size for each named blob
 func (s MutableGetBlobInfoResults) BlobSizes() MapStringToMutableInt32 {
-	//nolint:gosimple
 	return MapStringToMutableInt32{proxy: s.proxy}
 }
 
@@ -99,7 +97,6 @@ type ImmutableListBlobsResults struct {
 
 // total size for each blob set
 func (s ImmutableListBlobsResults) BlobSizes() MapHashToImmutableInt32 {
-	//nolint:gosimple
 	return MapHashToImmutableInt32{proxy: s.proxy}
 }
 
@@ -121,6 +118,5 @@ type MutableListBlobsResults struct {
 
 // total size for each blob set
 func (s MutableListBlobsResults) BlobSizes() MapHashToMutableInt32 {
-	//nolint:gosimple
 	return MapHashToMutableInt32{proxy: s.proxy}
 }
