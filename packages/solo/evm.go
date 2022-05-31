@@ -27,13 +27,13 @@ func NewEVMBackend(chain *Chain) *jsonRPCSoloBackend {
 	return &jsonRPCSoloBackend{Chain: chain}
 }
 
-func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction, allowance *iscp.Allowance) error {
-	_, err := b.Chain.PostEthereumTransaction(tx, allowance)
+func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
+	_, err := b.Chain.PostEthereumTransaction(tx)
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg, allowance *iscp.Allowance) (uint64, error) {
-	return b.Chain.EstimateGasEthereum(callMsg, allowance)
+func (b *jsonRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+	return b.Chain.EstimateGasEthereum(callMsg)
 }
 
 func (b *jsonRPCSoloBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
@@ -56,23 +56,18 @@ func (ch *Chain) EVMGasRatio() util.Ratio32 {
 	return codec.MustDecodeRatio32(ret.MustGet(evm.FieldResult))
 }
 
-func (ch *Chain) PostEthereumTransaction(tx *types.Transaction, allowance *iscp.Allowance) (dict.Dict, error) {
+func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {
 	gasRatio := ch.EVMGasRatio()
 	req, err := iscp.NewEVMOffLedgerRequest(ch.ChainID, tx, &gasRatio)
 	if err != nil {
 		return nil, err
 	}
-	return ch.RunOffLedgerRequest(
-		req.WithAllowance(allowance),
-	)
+	return ch.RunOffLedgerRequest(req)
 }
 
-func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg, allowance *iscp.Allowance) (uint64, error) {
+func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
 	gasRatio := ch.EVMGasRatio()
-	res := ch.estimateGas(
-		iscp.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg, &gasRatio).
-			WithAllowance(allowance),
-	)
+	res := ch.estimateGas(iscp.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg, &gasRatio))
 	if res.Error != nil {
 		return 0, res.Error
 	}

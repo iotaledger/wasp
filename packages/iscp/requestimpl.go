@@ -214,9 +214,11 @@ func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.Marshal
 		WriteUint64(r.nonce).
 		WriteUint64(r.gasBudget)
 	r.signatureScheme.writeEssence(mu)
-	mu.WriteBool(r.allowance != nil)
-	if r.allowance != nil {
-		r.allowance.WriteToMarshalUtil(mu)
+	if !r.IsEVM() {
+		mu.WriteBool(r.allowance != nil)
+		if r.allowance != nil {
+			r.allowance.WriteToMarshalUtil(mu)
+		}
 	}
 }
 
@@ -257,7 +259,7 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 		if err != nil {
 			return err
 		}
-		r.signatureScheme = newEVMOffLedferSignatureSchemeFromCallMsg(callMsg)
+		r.signatureScheme = newEVMOffLedgerSignatureScheme(callMsg.From)
 	} else {
 		r.signatureScheme = &iscOffLedgerSignatureScheme{}
 	}
@@ -265,14 +267,16 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 		return err
 	}
 
-	var hasAllowance bool
-	if hasAllowance, err = mu.ReadBool(); err != nil {
-		return err
-	}
-	r.allowance = nil
-	if hasAllowance {
-		if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
+	if !r.IsEVM() {
+		var hasAllowance bool
+		if hasAllowance, err = mu.ReadBool(); err != nil {
 			return err
+		}
+		r.allowance = nil
+		if hasAllowance {
+			if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -309,6 +313,9 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 }
 
 func (r *OffLedgerRequestData) WithAllowance(allowance *Allowance) *OffLedgerRequestData {
+	if r.IsEVM() && !allowance.IsEmpty() {
+		panic("allowance is not supported in EVM requests")
+	}
 	r.allowance = allowance.Clone()
 	return r
 }

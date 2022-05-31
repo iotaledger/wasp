@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -42,7 +43,7 @@ func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMs
 		contract:        Hn(evmnames.Contract),
 		entryPoint:      Hn(evmnames.FuncEstimateGas),
 		params:          dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(callMsg)},
-		signatureScheme: newEVMOffLedferSignatureSchemeFromCallMsg(callMsg),
+		signatureScheme: newEVMOffLedgerSignatureScheme(callMsg.From),
 		nonce:           0,
 		allowance:       NewEmptyAllowance(),
 		gasBudget:       math.MaxUint64,
@@ -72,11 +73,11 @@ func newEVMOffLedferSignatureSchemeFromTransaction(tx *types.Transaction) (*evmO
 	if err != nil {
 		return nil, err
 	}
-	return &evmOffLedgerSignatureScheme{sender: NewEthereumAddressAgentID(sender)}, nil
+	return newEVMOffLedgerSignatureScheme(sender), nil
 }
 
-func newEVMOffLedferSignatureSchemeFromCallMsg(callMsg ethereum.CallMsg) *evmOffLedgerSignatureScheme {
-	return &evmOffLedgerSignatureScheme{sender: NewEthereumAddressAgentID(callMsg.From)}
+func newEVMOffLedgerSignatureScheme(sender common.Address) *evmOffLedgerSignatureScheme {
+	return &evmOffLedgerSignatureScheme{sender: NewEthereumAddressAgentID(sender)}
 }
 
 func (s *evmOffLedgerSignatureScheme) Sender() AgentID {

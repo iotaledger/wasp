@@ -29,7 +29,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
 	gasRatio := env.soloChain.EVMGasRatio()
 	for i := 0; i < b.N; i++ {
 		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-		tx, _ := storage.buildEthTx([]ethCallOptions{{
+		tx := storage.buildEthTx([]ethCallOptions{{
 			sender:   ethKey,
 			gasLimit: gasLimit,
 		}}, "store", uint32(i))

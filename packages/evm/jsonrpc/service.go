@@ -158,8 +158,7 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
 		return common.Hash{}, err
 	}
-	// TODO: allowance?
-	if err := e.evmChain.SendTransaction(tx, nil); err != nil {
+	if err := e.evmChain.SendTransaction(tx); err != nil {
 		return common.Hash{}, e.resolveError(err)
 	}
 	return tx.Hash(), nil
@@ -171,8 +170,7 @@ func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash rpc.BlockNumberOr
 }
 
 func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
-	// TODO: allowance?
-	gas, err := e.evmChain.EstimateGas(args.parse(), nil)
+	gas, err := e.evmChain.EstimateGas(args.parse())
 	return hexutil.Uint64(gas), e.resolveError(err)
 }
 
@@ -270,8 +268,7 @@ func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
 	if err != nil {
 		return common.Hash{}, err
 	}
-	// TODO: allowance?
-	if err := e.evmChain.SendTransaction(tx, nil); err != nil {
+	if err := e.evmChain.SendTransaction(tx); err != nil {
 		return common.Hash{}, e.resolveError(err)
 	}
 	return tx.Hash(), nil

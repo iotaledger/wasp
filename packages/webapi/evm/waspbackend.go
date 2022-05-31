@@ -55,7 +55,7 @@ func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 	return codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
 }
 
-func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction, allowance *iscp.Allowance) error {
+func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
 	gasRatio, err := b.EVMGasRatio()
 	if err != nil {
 		return err
@@ -64,7 +64,6 @@ func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction, allowance
 	if err != nil {
 		return err
 	}
-	req.WithAllowance(allowance)
 	b.chain.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
 			ChainID: b.chain.ID(),
@@ -87,13 +86,16 @@ func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
 	b.requestIDs.Delete(txHash)
 }
 
-func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg, allowance *iscp.Allowance) (uint64, error) {
+func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	// TODO: cache the gas ratio?
 	gasRatio, err := b.EVMGasRatio()
 	if err != nil {
 		return 0, err
 	}
-	res, err := chainutil.SimulateCall(b.chain, iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg, &gasRatio).WithAllowance(allowance))
+	res, err := chainutil.SimulateCall(
+		b.chain,
+		iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg, &gasRatio),
+	)
 	if err != nil {
 		return 0, err
 	}
