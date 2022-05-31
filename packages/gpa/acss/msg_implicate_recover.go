@@ -5,7 +5,6 @@ package acss
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"go.dedis.ch/kyber/v3"
 )
 
 type msgImplicateKind byte
@@ -19,10 +18,11 @@ const (
 // The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
 //
 type msgImplicateRecover struct {
+	sender    gpa.NodeID
 	recipient gpa.NodeID
 	kind      msgImplicateKind
 	i         int
-	sk        kyber.Scalar
+	data      []byte // Either implication or the recovered secret.
 }
 
 var _ gpa.Message = &msgImplicateRecover{}
@@ -32,7 +32,7 @@ func (m *msgImplicateRecover) Recipient() gpa.NodeID {
 }
 
 func (m *msgImplicateRecover) SetSender(sender gpa.NodeID) {
-	// Don't care the sender.
+	m.sender = sender
 }
 
 func (m *msgImplicateRecover) MarshalBinary() ([]byte, error) {

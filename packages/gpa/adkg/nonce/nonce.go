@@ -6,7 +6,8 @@
 // > Variant a)
 // >
 // >     Setup
-// >         Run any DKG (preferably probably FROST-DKG) to derive the aggregated public key and private key share. This leads to a synchronous, non-robust setup phase.
+// >         Run any DKG (preferably probably FROST-DKG) to derive the aggregated public key and private key share.
+// >         This leads to a synchronous, non-robust setup phase.
 // >     Nonce sharing (can be started any time before the signing process)
 // >         For every party i:
 // >             Sample secret s = a₀
@@ -44,7 +45,7 @@ import (
 )
 
 type Output struct {
-	Indexes  []int           // Intexes used to construct the final key (exactly f+1 for the intermediate output).
+	Indexes  []int           // Indexes used to construct the final key (exactly f+1 for the intermediate output).
 	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
 }
 

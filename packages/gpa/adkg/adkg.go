@@ -55,7 +55,7 @@ import (
 )
 
 type Output struct {
-	Indexes  []int           // Intexes used to construct the final key (exactly f+1 for the intermediate output).
+	Indexes  []int           // Indexes used to construct the final key (exactly f+1 for the intermediate output).
 	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
 }
 

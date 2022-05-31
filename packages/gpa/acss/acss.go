@@ -5,7 +5,7 @@
 //
 //	https://iotaledger.github.io/crypto-tss/talks/async-dkg/slides-async-dkg.html#/5/6
 //
-// Here is a copy of the pseudocode from the slide mentioned above (just in case):
+// Here is a copy of the pseudo code from the slide mentioned above (just in case):
 //
 // > // dealer with input s
 // > sample random polynomial ϕ such that ϕ(0) = s
@@ -47,45 +47,50 @@
 // >       out = true
 // >       output sᵢ
 //
-// More details and references to the papers are bellow:
+// On the adaptations and sources:
 //
-// Here the references for the Asynchronous Secret-Sharing that I was referring to.
-// It is purely based on (Feldman) Verifiable Secret Sharing and does not rely on any PVSS schemes
-// requiring fancy NIZKP (and thus trades network-complexity vs computational-complexity):
-//
-//   * [1], Section IV. A. we use the ACSS scheme from [2] but replace its Pedersen
-//     commitment with a Feldman polynomial commitment to achieve Homomorphic-Partial-Commitment.
-//
-//   * In [2], Section 5.3. they explain the Pedersen-based hbACSS0 and give some proof sketch.
-//     The complete description and analysis of hbACSS0 can be found in [3]. However, as mentioned
-//     before they use Kate-commitments instead of Feldman/Pedersen. This has better message
-//     complexity especially when multiple secrets are shared at the same time, but in our case
-//     that would need to be replaced with Feldman making it much simpler and not losing any security.
-//     Actually, [3] is just a pre-print, the official published version is [4], but [4] also contains
-//     other, non-relevant, variants like hbACSS1 and hbACSS2 and much more analysis.
-//     So, I found [3] a bit more helpful, although it is just the preliminary version.
-//     They also provide their reference implementation in [5], which is also what the
-//     authors of [1] used for their practical DKG results.
-//
-// [1] Practical Asynchronous Distributed Key Generation https://eprint.iacr.org/2021/1591
-// [2] Asynchronous Data Dissemination and its Applications https://eprint.iacr.org/2021/777
-// [3] Brief Note: Asynchronous Verifiable Secret Sharing with Optimal Resilience and Linear Amortized Overhead https://arxiv.org/pdf/1902.06095.pdf
-// [4] hbACSS: How to Robustly Share Many Secrets https://eprint.iacr.org/2021/159
-// [5] https://github.com/tyurek/hbACSS
+// > More details and references to the papers are bellow:
+// >
+// > Here the references for the Asynchronous Secret-Sharing that I was referring to.
+// > It is purely based on (Feldman) Verifiable Secret Sharing and does not rely on any PVSS schemes
+// > requiring fancy NIZKP (and thus trades network-complexity vs computational-complexity):
+// >
+// >   * [1], Section IV. A. we use the ACSS scheme from [2] but replace its Pedersen
+// >     commitment with a Feldman polynomial commitment to achieve Homomorphic-Partial-Commitment.
+// >
+// >   * In [2], Section 5.3. they explain the Pedersen-based hbACSS0 and give some proof sketch.
+// >     The complete description and analysis of hbACSS0 can be found in [3]. However, as mentioned
+// >     before they use Kate-commitments instead of Feldman/Pedersen. This has better message
+// >     complexity especially when multiple secrets are shared at the same time, but in our case
+// >     that would need to be replaced with Feldman making it much simpler and not losing any security.
+// >     Actually, [3] is just a pre-print, the official published version is [4], but [4] also contains
+// >     other, non-relevant, variants like hbACSS1 and hbACSS2 and much more analysis.
+// >     So, I found [3] a bit more helpful, although it is just the preliminary version.
+// >     They also provide their reference implementation in [5], which is also what the
+// >     authors of [1] used for their practical DKG results.
+// >
+// > [1] Practical Asynchronous Distributed Key Generation https://eprint.iacr.org/2021/1591
+// > [2] Asynchronous Data Dissemination and its Applications https://eprint.iacr.org/2021/777
+// > [3] Brief Note: Asynchronous Verifiable Secret Sharing with Optimal Resilience and Linear Amortized Overhead https://arxiv.org/pdf/1902.06095.pdf
+// > [4] hbACSS: How to Robustly Share Many Secrets https://eprint.iacr.org/2021/159
+// > [5] https://github.com/tyurek/hbACSS
 //
 // A PoC implementation: <https://github.com/Wollac/async.go>.
 //
-// TODO: Check, how DH key exchange should be applied.
-// TODO: Review other differences.
+// The Crypto part shown the pseudo-code above is replaced in the implementation with the
+// scheme allowing to keep the private keys secret. The scheme implementation is taken
+// from the PoC mentioned above. It is described in <https://hackmd.io/@CcRtfCBnRbW82-AdbFJUig/S1qcPiUN5>.
 //
 package acss
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/encrypt/ecies"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -99,48 +104,35 @@ type acssImpl struct {
 	mySK          kyber.Scalar
 	myPK          kyber.Point
 	myIdx         int
-	dealer        gpa.NodeID                 // A node that is recognized as a dealer.
-	dealCB        func(int, []byte) []byte   // Callback to be called on the encrypted deals (for tests actually).
-	peerPKs       map[gpa.NodeID]kyber.Point // Peer public keys.
-	peerIdx       []gpa.NodeID               // Particular order of the nodes (position in the polynomial).
-	rbc           gpa.GPA                    // RBC to share `C||E`.
-	rbcOutC       *share.PubPoly             // C -- Commitment from the dealer.
-	rbcOutE       [][]byte                   // E -- Encrypted Private Shares.
-	voteOKRecv    map[gpa.NodeID]bool        // A set of received OK votes.
-	voteREADYRecv map[gpa.NodeID]bool        // A set of received READY votes.
-	voteREADYSent bool                       // Have we sent our READY vote?
-	pendingIRMsgs []*msgImplicateRecover     // I/R messages are buffered, if the RBC is not completed yet.
-	recoverT      map[int]*share.PriShare    // Private shares from the RECOVER messages.
-	outS          *share.PriShare            // Our share of the secret (decrypted from rbcOutE).
+	dealer        gpa.NodeID                     // A node that is recognized as a dealer.
+	dealCB        func(int, []byte) []byte       // Callback to be called on the encrypted deals (for tests actually).
+	peerPKs       map[gpa.NodeID]kyber.Point     // Peer public keys.
+	peerIdx       []gpa.NodeID                   // Particular order of the nodes (position in the polynomial).
+	rbc           gpa.GPA                        // RBC to share `C||E`.
+	rbcOut        *crypto.Deal                   // Deal broadcasted by the dealer.
+	voteOKRecv    map[gpa.NodeID]bool            // A set of received OK votes.
+	voteREADYRecv map[gpa.NodeID]bool            // A set of received READY votes.
+	voteREADYSent bool                           // Have we sent our READY vote?
+	pendingIRMsgs []*msgImplicateRecover         // I/R messages are buffered, if the RBC is not completed yet.
+	implicateRecv map[gpa.NodeID]bool            // To check, that implicate only received once from a node.
+	recoverRecv   map[gpa.NodeID]*share.PriShare // Private shares from the RECOVER messages.
+	outS          *share.PriShare                // Our share of the secret (decrypted from rbcOutE).
 	output        bool
 	log           *logger.Logger
 }
 
-//
-// NOTE: The secret key `mySK` have to be temporary, as it is revealed in the case
-// when the dealer is detected to be faulty and the IMPLICATE/RECOVER procedure is used.
-//
 func New(
-	suite suites.Suite,
-	peers []gpa.NodeID,
-	peerPKs map[gpa.NodeID]kyber.Point,
-	f int,
-	me gpa.NodeID,
-	mySK kyber.Scalar,
-	dealer gpa.NodeID,
-	dealCB func(int, []byte) []byte,
-	log *logger.Logger,
+	suite suites.Suite, // Ed25519
+	peers []gpa.NodeID, // Participating nodes in a specific order.
+	peerPKs map[gpa.NodeID]kyber.Point, // Public keys for all the peers.
+	f int, // Max number of expected faulty nodes.
+	me gpa.NodeID, // ID of this node.
+	mySK kyber.Scalar, // Secret Key of this node.
+	dealer gpa.NodeID, // The dealer node for this protocol instance.
+	dealCB func(int, []byte) []byte, // For tests only: interceptor for the deal to be shared.
+	log *logger.Logger, // A logger to use.
 ) gpa.GPA {
 	n := len(peers)
-	myIdx := -1
-	for i := range peers {
-		if peers[i] == me {
-			myIdx = i
-		}
-	}
-	if myIdx == -1 {
-		panic("i'm not in the peer list")
-	}
 	if dealCB == nil {
 		dealCB = func(i int, b []byte) []byte { return b }
 	}
@@ -151,26 +143,33 @@ func New(
 		me:            me,
 		mySK:          mySK,
 		myPK:          peerPKs[me],
-		myIdx:         myIdx,
+		myIdx:         -1, // Updated bellow.
 		dealer:        dealer,
 		dealCB:        dealCB,
 		peerPKs:       peerPKs,
 		peerIdx:       peers,
 		rbc:           rbc.New(peers, f, me, dealer, func(b []byte) bool { return true }),
-		rbcOutC:       nil, // Will be set on output from the RBC.
-		rbcOutE:       nil, // Will be set on output from the RBC.
+		rbcOut:        nil, // Will be set on output from the RBC.
 		voteOKRecv:    map[gpa.NodeID]bool{},
 		voteREADYRecv: map[gpa.NodeID]bool{},
 		voteREADYSent: false,
 		pendingIRMsgs: []*msgImplicateRecover{},
-		recoverT:      map[int]*share.PriShare{},
+		implicateRecv: map[gpa.NodeID]bool{},
+		recoverRecv:   map[gpa.NodeID]*share.PriShare{},
 		outS:          nil,
 		output:        false,
 		log:           log,
 	}
+	if a.myIdx = a.peerIndex(me); a.myIdx == -1 {
+		panic("i'm not in the peer list")
+	}
 	return gpa.NewOwnHandler(me, &a)
 }
 
+//
+// Input for the algorithm is the secret to share.
+// It can be provided by the dealer only.
+//
 func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
 	if a.me != a.dealer {
 		panic(xerrors.Errorf("only dealer can initiate the sharing"))
@@ -221,32 +220,18 @@ func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 // > RBC(C||E)
 //
 func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
-	// > sample random polynomial ϕ such that ϕ(0) = s
-	priPoly := share.NewPriPoly(a.suite, a.f+1, secretToShare, a.suite.RandomStream())
-
-	// > C, S := VSS.Share(ϕ, f+1, n)
-	C := priPoly.Commit(nil)
-	S := priPoly.Shares(a.n)
-
-	// > E := [PKI.Enc(S[i], pkᵢ) for each party i]
-	E := make([][]byte, a.n)
-	for i, peerID := range a.peerIdx {
-		if i != S[i].I {
-			panic("i != S[i].I")
-		}
-		Si, err := S[S[i].I].V.MarshalBinary()
-		if err != nil {
-			panic(xerrors.Errorf("cannot serialize share: %w", err))
-		}
-		Ei, err := ecies.Encrypt(a.suite, a.peerPKs[peerID], Si, a.suite.Hash)
-		if err != nil {
-			panic(xerrors.Errorf("cannot encrypt share: %w", err))
-		}
-		E[i] = a.dealCB(i, Ei)
+	pubKeys := make([]kyber.Point, 0)
+	for _, peerID := range a.peerIdx {
+		pubKeys = append(pubKeys, a.peerPKs[peerID])
+	}
+	deal := crypto.NewDeal(a.suite, pubKeys, secretToShare)
+	data, err := deal.MarshalBinary()
+	if err != nil {
+		panic(fmt.Sprintf("acss: internal error: %v", err))
 	}
 
 	// > RBC(C||E)
-	rbcCEPayloadBytes, err := (&msgRBCCEPayload{suite: a.suite, C: C, E: E}).MarshalBinary()
+	rbcCEPayloadBytes, err := (&msgRBCCEPayload{suite: a.suite, data: data}).MarshalBinary()
 	if err != nil {
 		panic(xerrors.Errorf("cannot serialize msg_rbc_ce: %w", err))
 	}
@@ -282,19 +267,23 @@ func (a *acssImpl) handleRBCMessage(m *msgWrapper) []gpa.Message {
 // >   send <OK>
 //
 func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
-	if a.outS != nil {
+	if a.outS != nil || a.rbcOut != nil {
 		// Take the first RBC output only.
 		return gpa.NoMessages()
 	}
 	a.log.Debugf("handleRBCOutput: %+v", m)
 	//
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
-	a.rbcOutC = m.payload.C
-	a.rbcOutE = m.payload.E
+	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, m.payload.data)
+	if err != nil {
+		panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload.data"))
+	}
+	a.rbcOut = deal
 	msgs := a.handleImplicateRecoverPending(gpa.NoMessages())
 	//
 	// Process the RBC output, as described above.
-	myShare, err := a.tryDecryptVerifyPriShare(a.myIdx, a.mySK)
+	secret := crypto.Secret(a.suite, a.rbcOut.PubKey, a.mySK)
+	myShare, err := crypto.DecryptShare(a.suite, a.rbcOut, a.myIdx, secret)
 	if err != nil {
 		return a.broadcastImplicate(err, msgs)
 	}
@@ -328,7 +317,6 @@ func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
 // >     output sᵢ
 //
 func (a *acssImpl) handleVoteREADY(m *msgVote) []gpa.Message {
-	a.log.Debugf("handleVoteREADY: %+v", m)
 	a.voteREADYRecv[m.sender] = true
 	count := len(a.voteREADYRecv)
 	msgs := gpa.NoMessages()
@@ -343,11 +331,7 @@ func (a *acssImpl) handleVoteREADY(m *msgVote) []gpa.Message {
 // It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
 // We store these messages for processing after that, if RBC is not done and process it otherwise.
 func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) []gpa.Message {
-	if !a.checkPrivateKey(m.i, m.sk) {
-		a.log.Warnf("handleImplicateRecoverReceived: node[%v]=%v provided invalid secret key, will ignore the message.", m.i, a.peerIdx[m.i])
-		return gpa.NoMessages()
-	}
-	if a.rbcOutC == nil && a.rbcOutE == nil {
+	if a.rbcOut == nil {
 		a.pendingIRMsgs = append(a.pendingIRMsgs, m)
 		return gpa.NoMessages()
 	}
@@ -364,7 +348,7 @@ func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) []gpa.
 func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Message {
 	//
 	// Only process the IMPLICATE/RECOVER messages, if this node has RBC completed.
-	if a.rbcOutC == nil && a.rbcOutE == nil {
+	if a.rbcOut == nil {
 		return msgs
 	}
 	postponedIRMsgs := []*msgImplicateRecover{}
@@ -404,11 +388,34 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Messa
 // NOTE: We assume `if out == true:` stands for a wait for such condition.
 //
 func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
-	_, err := a.tryDecryptVerifyPriShare(m.i, m.sk)
-	if err != nil {
-		return a.broadcastRecover(gpa.NoMessages())
+	peerIndex := a.peerIndex(m.sender)
+	if peerIndex == -1 {
+		a.log.Warnf("implicate received from unknown peer: %v", m.sender)
+		return gpa.NoMessages()
 	}
-	return gpa.NoMessages()
+	//
+	// Check message duplicates.
+	if _, ok := a.implicateRecv[m.sender]; ok {
+		// Received the implicate before, just ignore it.
+		return gpa.NoMessages()
+	}
+	a.implicateRecv[m.sender] = true
+	//
+	// Check implicate.
+	secret, err := crypto.CheckImplicate(a.suite, a.rbcOut.PubKey, a.peerPKs[m.sender], m.data)
+	if err != nil {
+		a.log.Warnf("Invalid implication received: %v", err)
+		return gpa.NoMessages()
+	}
+	_, err = crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, secret)
+	if err == nil {
+		// if we are able to decrypt the share, the implication is not correct
+		a.log.Warnf("encrypted share is valid")
+		return gpa.NoMessages()
+	}
+	//
+	// Create the reveal message.
+	return a.broadcastRecover(gpa.NoMessages())
 }
 
 // Here the RBC is assumed to be completed already and the private key is checked.
@@ -427,31 +434,38 @@ func (a *acssImpl) handleRecover(m *msgImplicateRecover) []gpa.Message {
 		// Ignore the RECOVER messages, if we are done with the output.
 		return gpa.NoMessages()
 	}
-
-	// >     on receiving <RECOVER, j, skⱼ>:
-	// >       sⱼ := PKI.Dec(eⱼ, skⱼ)
-	// >       if VSS.Verify(C, j, sⱼ): T = T ∪ {sⱼ}
-	sJ, err := a.tryDecryptVerifyPriShare(m.i, m.sk)
-	if err != nil {
-		a.log.Warnf("recover message cannot be used to decrypt share: %v", err)
+	peerIndex := a.peerIndex(m.sender)
+	if peerIndex == -1 {
+		a.log.Warnf("Recover received from unexpected sender: %v", m.sender)
 		return gpa.NoMessages()
 	}
-	a.recoverT[m.i] = sJ
+	if _, ok := a.recoverRecv[m.sender]; ok {
+		a.log.Warnf("Recover was already received from %v", m.sender)
+		return gpa.NoMessages()
+	}
+
+	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, m.data)
+	if err != nil {
+		a.log.Warnf("invalid secret revealed")
+		return gpa.NoMessages()
+	}
+	a.recoverRecv[m.sender] = peerSecret
 
 	// >     wait until len(T) >= f+1:
 	// >       sᵢ = SSS.Recover(T, f+1, n)(i)
 	// >       out = true
 	// >       output sᵢ
-	if len(a.recoverT) >= a.f+1 {
+	if len(a.recoverRecv) >= a.f+1 {
 		priShares := []*share.PriShare{}
-		for i := range a.recoverT {
-			priShares = append(priShares, a.recoverT[i])
+		for i := range a.recoverRecv {
+			priShares = append(priShares, a.recoverRecv[i])
 		}
-		priPoly, err := share.RecoverPriPoly(a.suite, priShares, a.f+1, a.n)
+
+		myPriShare, err := crypto.InterpolateShare(a.suite, priShares, a.n, a.myIdx)
 		if err != nil {
 			a.log.Warnf("Failed to recover pri-poly: %v", err)
 		}
-		a.outS = priPoly.Shares(a.n)[a.myIdx]
+		a.outS = myPriShare
 		a.output = true
 		return gpa.NoMessages()
 	}
@@ -468,37 +482,20 @@ func (a *acssImpl) broadcastVote(voteKind msgVoteKind, msgs []gpa.Message) []gpa
 
 func (a *acssImpl) broadcastImplicate(reason error, msgs []gpa.Message) []gpa.Message {
 	a.log.Warnf("Sending implicate because of: %v", reason)
-	return a.broadcastImplicateRecover(msgImplicateRecoverKindIMPLICATE, msgs)
+	implicate := crypto.Implicate(a.suite, a.rbcOut.PubKey, a.mySK)
+	return a.broadcastImplicateRecover(msgImplicateRecoverKindIMPLICATE, implicate, msgs)
 }
 
 func (a *acssImpl) broadcastRecover(msgs []gpa.Message) []gpa.Message {
-	return a.broadcastImplicateRecover(msgImplicateRecoverKindRECOVER, msgs)
+	secret := crypto.Secret(a.suite, a.rbcOut.PubKey, a.mySK)
+	return a.broadcastImplicateRecover(msgImplicateRecoverKindRECOVER, secret, msgs)
 }
 
-func (a *acssImpl) broadcastImplicateRecover(kind msgImplicateKind, msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) broadcastImplicateRecover(kind msgImplicateKind, data []byte, msgs []gpa.Message) []gpa.Message {
 	for i := range a.peerIdx {
-		msgs = append(msgs, &msgImplicateRecover{kind: kind, recipient: a.peerIdx[i], i: a.myIdx, sk: a.mySK})
+		msgs = append(msgs, &msgImplicateRecover{kind: kind, recipient: a.peerIdx[i], i: a.myIdx, data: data})
 	}
 	return msgs
-}
-
-//
-// Assume rbcOutE and rbcOutE are already set.
-//
-func (a *acssImpl) tryDecryptVerifyPriShare(j int, skJ kyber.Scalar) (*share.PriShare, error) {
-	decrypted, err := ecies.Decrypt(a.suite, skJ, a.rbcOutE[j], a.suite.Hash)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to decrypt share: %v", err)
-	}
-	jShare := a.suite.Scalar()
-	if err := jShare.UnmarshalBinary(decrypted); err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal share: %v", err)
-	}
-	jPriShare := &share.PriShare{I: j, V: jShare}
-	if !a.rbcOutC.Check(jPriShare) {
-		return nil, xerrors.Errorf("share verification failed")
-	}
-	return jPriShare, nil
 }
 
 func (a *acssImpl) tryOutput() {
@@ -508,8 +505,13 @@ func (a *acssImpl) tryOutput() {
 	}
 }
 
-func (a *acssImpl) checkPrivateKey(j int, skJ kyber.Scalar) bool {
-	return a.peerPKs[a.peerIdx[j]].Equal(a.suite.Point().Mul(skJ, nil))
+func (a *acssImpl) peerIndex(peer gpa.NodeID) int {
+	for i := range a.peerIdx {
+		if a.peerIdx[i] == peer {
+			return i
+		}
+	}
+	return -1
 }
 
 func (a *acssImpl) Output() gpa.Output {

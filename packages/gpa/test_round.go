@@ -32,7 +32,11 @@ func (tr *testRound) Input(input Input) []Message {
 }
 
 func (tr *testRound) Message(msg Message) []Message {
-	tr.received[msg.(*testRoundMsg).sender] = true
+	from := msg.(*testRoundMsg).sender
+	if tr.received[from] {
+		panic(xerrors.Errorf("duplicate message"))
+	}
+	tr.received[from] = true
 	return NoMessages()
 }
 
