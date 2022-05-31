@@ -10,22 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
-	data, err := mu.ReadBytes(iotago.OutputIDLength)
-	if err != nil {
-		return nil, err
-	}
-	id, err := DecodeOutputID(data)
-	if err != nil {
-		return nil, err
-	}
-	return id.UTXOInput(), nil
-}
-
-func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
-	mu.WriteBytes(EncodeOutputID(id.ID()))
-}
-
 // Request wraps any data which can be potentially be interpreted as a request
 type Request interface {
 	Calldata
