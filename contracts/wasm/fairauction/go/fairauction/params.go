@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package fairauction
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -82,11 +83,6 @@ func (s ImmutableStartAuctionParams) MinimumBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
-// NFT of the NFTs being auctioned
-func (s ImmutableStartAuctionParams) Nft() wasmtypes.ScImmutableNftID {
-	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNft))
-}
-
 type MutableStartAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -104,11 +100,6 @@ func (s MutableStartAuctionParams) Duration() wasmtypes.ScMutableUint32 {
 // minimum required amount for any bid
 func (s MutableStartAuctionParams) MinimumBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamMinimumBid))
-}
-
-// NFT of the NFTs being auctioned
-func (s MutableStartAuctionParams) Nft() wasmtypes.ScMutableNftID {
-	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNft))
 }
 
 type ImmutableGetAuctionInfoParams struct {

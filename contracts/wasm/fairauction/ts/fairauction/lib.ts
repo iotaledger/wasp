@@ -73,7 +73,6 @@ function funcStartAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcStartAuction");
 	let f = new sc.StartAuctionContext();
 	ctx.require(f.params.minimumBid().exists(), "missing mandatory minimumBid");
-	ctx.require(f.params.nft().exists(), "missing mandatory nft");
 	sc.funcStartAuction(ctx, f);
 	ctx.log("fairauction.funcStartAuction ok");
 }

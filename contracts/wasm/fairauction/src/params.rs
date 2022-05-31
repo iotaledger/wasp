@@ -103,11 +103,6 @@ impl ImmutableStartAuctionParams {
     pub fn minimum_bid(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_MINIMUM_BID))
 	}
-
-    // NFT of the NFTs being auctioned
-    pub fn nft(&self) -> ScImmutableNftID {
-		ScImmutableNftID::new(self.proxy.root(PARAM_NFT))
-	}
 }
 
 #[derive(Clone)]
@@ -129,11 +124,6 @@ impl MutableStartAuctionParams {
     // minimum required amount for any bid
     pub fn minimum_bid(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_MINIMUM_BID))
-	}
-
-    // NFT of the NFTs being auctioned
-    pub fn nft(&self) -> ScMutableNftID {
-		ScMutableNftID::new(self.proxy.root(PARAM_NFT))
 	}
 }
 
