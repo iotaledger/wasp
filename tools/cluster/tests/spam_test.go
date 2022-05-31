@@ -46,7 +46,7 @@ func TestSpamOnledger(t *testing.T) {
 			continue
 		}
 		go func() {
-			chainClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+			chainClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 			retries := 0
 			for i := 0; i < numRequestsPerAccount; i++ {
 				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -115,7 +115,7 @@ func TestSpamOffLedger(t *testing.T) {
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
-	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 
 	durationsMutex := sync.Mutex{}
 	processingDurationsSum := uint64(0)
@@ -185,27 +185,16 @@ func TestSpamOffLedger(t *testing.T) {
 
 func TestSpamCallViewWasm(t *testing.T) {
 	testutil.RunHeavy(t)
-	clu := newCluster(t)
-	committee := []int{0}
-	quorum := uint16(1)
-	addr, err := clu.RunDKG(committee, quorum)
+	env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
+
+	wallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
-	require.NoError(t, err)
-
-	e := &env{t: t, Clu: clu}
-	chEnv := &ChainEnv{
-		env:   e,
-		Chain: chain,
-	}
-
-	chEnv.deployContract(incName, incDescription, nil)
-
+	client := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), wallet)
 	{
 		// increment counter once
-		tx, err := chEnv.chainClient().Post1Request(incHname, iscp.Hn("increment"))
+		tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
-		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -214,8 +203,7 @@ func TestSpamCallViewWasm(t *testing.T) {
 
 	for i := 0; i < n; i++ {
 		go func() {
-			cl := chain.SCClient(incHname, nil)
-			r, err := cl.CallView("getCounter", nil)
+			r, err := client.CallView("getCounter", nil)
 			if err != nil {
 				ch <- err
 				return

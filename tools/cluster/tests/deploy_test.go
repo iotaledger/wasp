@@ -54,26 +54,18 @@ func TestDeployChain(t *testing.T) {
 func TestDeployContractOnly(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.Clu.StartMessageCounter(map[string]int{
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_out":         1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	tx := chEnv.deployIncCounterSC(counter)
+	tx := chEnv.deployNativeIncCounterSC()
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
-			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
+			root.ParamHname: iscp.Hn(nativeIncCounterSCName).Bytes(),
 		})
 	require.NoError(t, err)
 	recb, err := ret.Get(root.ParamContractRecData)
@@ -94,22 +86,14 @@ func TestDeployContractOnly(t *testing.T) {
 func TestDeployContractAndSpawn(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.Clu.StartMessageCounter(map[string]int{
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_out":         1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	chEnv.deployIncCounterSC(counter)
+	chEnv.deployNativeIncCounterSC()
 
-	hname := iscp.Hn(incCounterSCName)
+	hname := iscp.Hn(nativeIncCounterSCName)
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"

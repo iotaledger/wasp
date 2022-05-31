@@ -29,9 +29,9 @@ func TestMissingRequests(t *testing.T) {
 
 	e := newChainEnv(t, clu, chain)
 
-	e.deployIncCounterSC(nil)
+	e.deployNativeIncCounterSC()
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	userWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestMissingRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	// send off-ledger request to all nodes except #3
-	req := iscp.NewOffLedgerRequest(chainID, incCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}, 0)
+	req := iscp.NewOffLedgerRequest(chainID, nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}, 0)
 	req.Sign(userWallet)
 
 	err = clu.WaspClient(0).PostOffLedgerRequest(chainID, req)
