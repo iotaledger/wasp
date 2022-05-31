@@ -14,6 +14,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	incName        = "inccounter"
+	incDescription = "IncCounter, a PoC smart contract"
+)
+
+var incHname = iscp.Hn(incName)
+
+const (
+	varCounter    = "counter"
+	varNumRepeats = "numRepeats"
+	varDelay      = "delay"
+)
+
 func (e *contractEnv) checkSC(numRequests int) {
 	for i := range e.Chain.CommitteeNodes {
 		blockIndex, err := e.Chain.BlockIndex(i)

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -179,4 +181,58 @@ func TestSpamOffLedger(t *testing.T) {
 	require.Regexp(t, "counter = 100000", events[len(events)-1])
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
+}
+
+func TestSpamCallViewWasm(t *testing.T) {
+	testutil.RunHeavy(t)
+	clu := newCluster(t)
+	committee := []int{0}
+	quorum := uint16(1)
+	addr, err := clu.RunDKG(committee, quorum)
+	require.NoError(t, err)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	require.NoError(t, err)
+
+	e := &env{t: t, Clu: clu}
+	chEnv := &ChainEnv{
+		env:   e,
+		Chain: chain,
+	}
+
+	chEnv.deployContract(incName, incDescription, nil)
+
+	{
+		// increment counter once
+		tx, err := chEnv.chainClient().Post1Request(incHname, iscp.Hn("increment"))
+		require.NoError(t, err)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+		require.NoError(t, err)
+	}
+
+	const n = 200
+	ch := make(chan error, n)
+
+	for i := 0; i < n; i++ {
+		go func() {
+			cl := chain.SCClient(incHname, nil)
+			r, err := cl.CallView("getCounter", nil)
+			if err != nil {
+				ch <- err
+				return
+			}
+
+			v, err := codec.DecodeInt64(r.MustGet(inccounter.VarCounter))
+			if err == nil && v != 1 {
+				err = errors.New("v != 1")
+			}
+			ch <- err
+		}()
+	}
+
+	for i := 0; i < n; i++ {
+		err := <-ch
+		if err != nil {
+			t.Error(err)
+		}
+	}
 }
