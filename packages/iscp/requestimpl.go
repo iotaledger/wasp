@@ -388,8 +388,8 @@ type OnLedgerRequestData struct {
 
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
-	featureBlocks    iotago.FeaturesSet
-	unlockConditions iotago.UnlockConditionsSet
+	featureBlocks    iotago.FeatureSet
+	unlockConditions iotago.UnlockConditionSet
 	requestMetadata  *RequestMetadata
 }
 
@@ -397,7 +397,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbSet := o.FeaturesSet()
+	fbSet := o.FeatureSet()
 
 	reqMetadata, err = RequestMetadataFromFeatureSet(fbSet)
 	if err != nil {
@@ -412,7 +412,7 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 		output:           o,
 		inputID:          *id,
 		featureBlocks:    fbSet,
-		unlockConditions: o.UnlockConditionsSet(),
+		unlockConditions: o.UnlockConditionSet(),
 		requestMetadata:  reqMetadata,
 	}, nil
 }
@@ -795,7 +795,7 @@ type RequestMetadata struct {
 	GasBudget uint64
 }
 
-func RequestMetadataFromFeatureSet(set iotago.FeaturesSet) (*RequestMetadata, error) {
+func RequestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
 	metadataFeatBlock := set.MetadataFeature()
 	if metadataFeatBlock == nil {
 		return nil, nil

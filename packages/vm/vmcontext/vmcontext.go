@@ -36,7 +36,7 @@ type VMContext struct {
 	finalStateTimestamp  time.Time
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
-	dustAssumptions      *transaction.DustDepositAssumption
+	dustAssumptions      *transaction.StorageDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
@@ -129,7 +129,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
 			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewDepositEstimate()
+		currentDustDepositValues := transaction.NewStorageDepositEstimate()
 		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
 			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
 			panic(vm.ErrInconsistentDustAssumptions)
@@ -144,7 +144,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		ret.dustAssumptions = transaction.NewDepositEstimate()
+		ret.dustAssumptions = transaction.NewStorageDepositEstimate()
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {

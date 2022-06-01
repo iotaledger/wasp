@@ -13,16 +13,16 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type DustDepositAssumption struct {
+type StorageDepositAssumption struct {
 	AnchorOutput      uint64
 	NativeTokenOutput uint64
 	NFTOutput         uint64
 }
 
-func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error) {
+func StorageDepositAssumptionFromBytes(data []byte) (*StorageDepositAssumption, error) {
 	mu := marshalutil.New(data)
 	var err error
-	ret := &DustDepositAssumption{}
+	ret := &StorageDepositAssumption{}
 	if ret.AnchorOutput, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error)
 	return ret, nil
 }
 
-func (d *DustDepositAssumption) Bytes() []byte {
+func (d *StorageDepositAssumption) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint64(d.AnchorOutput).
 		WriteUint64(d.NativeTokenOutput).
@@ -43,20 +43,20 @@ func (d *DustDepositAssumption) Bytes() []byte {
 		Bytes()
 }
 
-func (d *DustDepositAssumption) String() string {
+func (d *StorageDepositAssumption) String() string {
 	return fmt.Sprintf("InternalDustDepositEstimate: anchor UTXO = %d, nativetokenUTXO = %d",
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 
-func NewDepositEstimate() *DustDepositAssumption {
-	return &DustDepositAssumption{
-		AnchorOutput:      aliasOutputDustDeposit(),
-		NativeTokenOutput: nativeTokenOutputDustDeposit(),
-		NFTOutput:         nftOutputDustDeposit(),
+func NewStorageDepositEstimate() *StorageDepositAssumption {
+	return &StorageDepositAssumption{
+		AnchorOutput:      aliasOutputStorageDeposit(),
+		NativeTokenOutput: nativeTokenOutputStorageDeposit(),
+		NFTOutput:         nftOutputStorageDeposit(),
 	}
 }
 
-func aliasOutputDustDeposit() uint64 {
+func aliasOutputStorageDeposit() uint64 {
 	keyPair := cryptolib.NewKeyPairFromSeed([32]byte{})
 	addr := keyPair.GetPublicKey().AsEd25519Address()
 
@@ -74,10 +74,10 @@ func aliasOutputDustDeposit() uint64 {
 			},
 		},
 	}
-	return parameters.L1.Protocol.RentStructure.VByteCost * aliasOutput.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	return parameters.L1.Protocol.RentStructure.MinRent(aliasOutput)
 }
 
-func nativeTokenOutputDustDeposit() uint64 {
+func nativeTokenOutputStorageDeposit() uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
 	o := MakeBasicOutput(
 		&addr,
@@ -92,10 +92,10 @@ func nativeTokenOutputDustDeposit() uint64 {
 		nil,
 		iscp.SendOptions{},
 	)
-	return parameters.L1.Protocol.RentStructure.VByteCost * o.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	return parameters.L1.Protocol.RentStructure.MinRent(o)
 }
 
-func nftOutputDustDeposit() uint64 {
+func nftOutputStorageDeposit() uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
 	basicOut := MakeBasicOutput(
 		&addr,
@@ -116,5 +116,5 @@ func nftOutputDustDeposit() uint64 {
 		Metadata: make([]byte, iotago.MaxMetadataLength),
 	})
 
-	return parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	return parameters.L1.Protocol.RentStructure.MinRent(out)
 }

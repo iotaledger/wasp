@@ -116,7 +116,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 		totals, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -142,7 +142,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 		txb.addDeltaIotasToTotal(42)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalIotasInL2Accounts))
@@ -152,7 +152,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
 			anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -178,7 +178,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -255,7 +255,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -292,7 +292,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -622,10 +622,10 @@ func TestDustDeposit(t *testing.T) {
 		GasBudget:      0,
 	}
 	t.Run("calc dust assumptions", func(t *testing.T) {
-		d := transaction.NewDepositEstimate()
+		d := transaction.NewStorageDepositEstimate()
 		t.Logf("dust deposit assumptions:\n%s", d.String())
 
-		d1, err := transaction.DustDepositAssumptionFromBytes(d.Bytes())
+		d1, err := transaction.StorageDepositAssumptionFromBytes(d.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, d.AnchorOutput, d1.AnchorOutput)
 		require.EqualValues(t, d.NativeTokenOutput, d1.NativeTokenOutput)
@@ -639,7 +639,7 @@ func TestDustDeposit(t *testing.T) {
 			&reqMetadata,
 			iscp.SendOptions{},
 		)
-		expected := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+		expected := parameters.L1.Protocol.RentStructure.MinRent(out)
 		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
@@ -691,7 +691,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewDepositEstimate(),
+			*transaction.NewStorageDepositEstimate(),
 		)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
