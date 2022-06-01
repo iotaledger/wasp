@@ -4,8 +4,6 @@
 package fairauction
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -26,9 +24,7 @@ const (
 
 func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	nfts := ctx.Allowance().NftIDs()
-	if len(nfts) != 1 {
-		ctx.Panic(fmt.Sprintf("expect 1 NFT is provided, instead %v tokens are provided.", len(nfts)))
-	}
+	ctx.Require(len(nfts) == 1, "single NFT allowance expected")
 	auctionNFT := nfts[0]
 
 	// Any transfer to the Smart Contract is implemented as a transfer of assets to the caller's L2 account,
@@ -78,7 +74,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 
 	currentAuction := f.State.Auctions().GetAuction(*auctionNFT)
 	if currentAuction.Exists() {
-		ctx.Panic("Auction for this token already exists")
+		ctx.Panic("Auction for this nft already exists")
 	}
 
 	auction := &Auction{
@@ -98,6 +94,46 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	fa := ScFuncs.FinalizeAuction(ctx)
 	fa.Params.Nft().SetValue(auction.Nft)
 	fa.Func.Delay(duration * 60).Post()
+}
+
+func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
+	bidAmount := ctx.Allowance().Iotas()
+	ctx.Require(bidAmount > 0, "Missing bid amount")
+
+	token := f.Params.Nft().Value()
+	currentAuction := f.State.Auctions().GetAuction(token)
+	ctx.Require(currentAuction.Exists(), "Missing auction info")
+
+	auction := currentAuction.Value()
+	bids := f.State.Bids().GetBids(token)
+	bidderList := f.State.BidderList().GetBidderList(token)
+	caller := ctx.Caller()
+	currentBid := bids.GetBid(caller)
+	if currentBid.Exists() {
+		ctx.Log("Upped bid from: " + caller.String())
+		bid := currentBid.Value()
+		bidAmount += bid.Amount
+		bid.Amount = bidAmount
+		bid.Timestamp = ctx.Timestamp()
+		currentBid.SetValue(bid)
+	} else {
+		ctx.Require(bidAmount >= auction.MinimumBid, "Insufficient bid amount")
+		ctx.Log("New bid from: " + caller.String())
+		index := bidderList.Length()
+		bidderList.AppendAgentID().SetValue(caller)
+		bid := &Bid{
+			Index:     index,
+			Amount:    bidAmount,
+			Timestamp: ctx.Timestamp(),
+		}
+		currentBid.SetValue(bid)
+	}
+	if bidAmount > auction.HighestBid {
+		ctx.Log("New highest bidder")
+		auction.HighestBid = bidAmount
+		auction.HighestBidder = caller
+		currentAuction.SetValue(auction)
+	}
 }
 
 func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
@@ -139,46 +175,6 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 	transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
 	transferNFT(ctx, auction.HighestBidder, auction.Nft)
 	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
-}
-
-func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
-	bidAmount := ctx.Allowance().Iotas()
-	ctx.Require(bidAmount > 0, "Missing bid amount")
-
-	token := f.Params.Nft().Value()
-	currentAuction := f.State.Auctions().GetAuction(token)
-	ctx.Require(currentAuction.Exists(), "Missing auction info")
-
-	auction := currentAuction.Value()
-	bids := f.State.Bids().GetBids(token)
-	bidderList := f.State.BidderList().GetBidderList(token)
-	caller := ctx.Caller()
-	currentBid := bids.GetBid(caller)
-	if currentBid.Exists() {
-		ctx.Log("Upped bid from: " + caller.String())
-		bid := currentBid.Value()
-		bidAmount += bid.Amount
-		bid.Amount = bidAmount
-		bid.Timestamp = ctx.Timestamp()
-		currentBid.SetValue(bid)
-	} else {
-		ctx.Require(bidAmount >= auction.MinimumBid, "Insufficient bid amount")
-		ctx.Log("New bid from: " + caller.String())
-		index := bidderList.Length()
-		bidderList.AppendAgentID().SetValue(caller)
-		bid := &Bid{
-			Index:     index,
-			Amount:    bidAmount,
-			Timestamp: ctx.Timestamp(),
-		}
-		currentBid.SetValue(bid)
-	}
-	if bidAmount > auction.HighestBid {
-		ctx.Log("New highest bidder")
-		auction.HighestBid = bidAmount
-		auction.HighestBidder = caller
-		currentAuction.SetValue(auction)
-	}
 }
 
 func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {

@@ -13,6 +13,76 @@ const OWNER_MARGIN_DEFAULT: u64 = 50;
 const OWNER_MARGIN_MIN: u64 = 5;
 const OWNER_MARGIN_MAX: u64 = 100;
 
+export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
+    // let nft = f.params.nft().value();
+    let nfts = ctx.allowance().nftIDs();
+    ctx.require(nfts.length == 1, "single NFT allowance expected")
+    let auctionNFT = nfts[0]
+
+    let transfer = wasmlib.ScTransfer.iotas(1);
+    transfer.addNFT(auctionNFT)
+    ctx.transferAllowed(ctx.accountID(), transfer, false)
+
+    let minimumBid = f.params.minimumBid().value();
+
+    // duration in minutes
+    let duration = f.params.duration().value();
+    if (duration == 0) {
+        duration = DURATION_DEFAULT;
+    }
+    if (duration < DURATION_MIN) {
+        duration = DURATION_MIN;
+    }
+    if (duration > DURATION_MAX) {
+        duration = DURATION_MAX;
+    }
+
+    let description = f.params.description().value();
+    if (description == "") {
+        description = "N/A".toString();
+    }
+    if (description.length > MAX_DESCRIPTION_LENGTH) {
+        description = description.slice(0,MAX_DESCRIPTION_LENGTH) + "[...]";
+    }
+
+    let ownerMargin = f.state.ownerMargin().value();
+    if (ownerMargin == 0) {
+        ownerMargin = OWNER_MARGIN_DEFAULT;
+    }
+
+    // need at least 1 iota to run SC
+    let margin = minimumBid * ownerMargin / 1000;
+    if (margin == 0) {
+        margin = 1;
+    }
+    let deposit = ctx.allowance().iotas();
+    if (deposit < margin) {
+        ctx.panic("Insufficient deposit");
+    }
+
+    let currentAuction = f.state.auctions().getAuction(auctionNFT);
+    if (currentAuction.exists()) {
+        ctx.panic("Auction for this nft already exists");
+    }
+
+    let auction = new sc.Auction();
+    auction.creator = ctx.caller();
+    auction.deposit = deposit;
+    auction.description = description;
+    auction.duration = duration;
+    auction.highestBid = 0;
+    auction.highestBidder = ctx.caller();
+    auction.minimumBid = minimumBid;
+    auction.ownerMargin = ownerMargin;
+    auction.nft = auctionNFT;
+    auction.whenStarted = ctx.timestamp();
+    currentAuction.setValue(auction);
+
+    let fa = sc.ScFuncs.finalizeAuction(ctx);
+    fa.params.nft().setValue(auction.nft);
+    fa.func.delay(duration * 60).post();
+}
+
 export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAuctionContext): void {
     let nft = f.params.nft().value();
     let currentAuction = f.state.auctions().getAuction(nft);
@@ -102,77 +172,6 @@ export function funcSetOwnerMargin(ctx: wasmlib.ScFuncContext, f: sc.SetOwnerMar
         ownerMargin = OWNER_MARGIN_MAX;
     }
     f.state.ownerMargin().setValue(ownerMargin);
-}
-
-export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
-    // let nft = f.params.nft().value();
-    let nfts = ctx.allowance().nftIDs();
-    if (nfts.length != 1) {
-        ctx.panic(`expect 1 NFT is provided, instead "+${nfts.length}+ " tokens are provided.`);
-    }
-    let nft = nfts[0]
-    let transfer = wasmlib.ScTransfer.iotas(1);
-    transfer.addNFT(nft)
-    ctx.transferAllowed(ctx.accountID(), transfer, false)
-
-    let minimumBid = f.params.minimumBid().value();
-
-    // duration in minutes
-    let duration = f.params.duration().value();
-    if (duration == 0) {
-        duration = DURATION_DEFAULT;
-    }
-    if (duration < DURATION_MIN) {
-        duration = DURATION_MIN;
-    }
-    if (duration > DURATION_MAX) {
-        duration = DURATION_MAX;
-    }
-
-    let description = f.params.description().value();
-    if (description == "") {
-        description = "N/A".toString();
-    }
-    if (description.length > MAX_DESCRIPTION_LENGTH) {
-        description = description.slice(0,MAX_DESCRIPTION_LENGTH) + "[...]";
-    }
-
-    let ownerMargin = f.state.ownerMargin().value();
-    if (ownerMargin == 0) {
-        ownerMargin = OWNER_MARGIN_DEFAULT;
-    }
-
-    // need at least 1 iota to run SC
-    let margin = minimumBid * ownerMargin / 1000;
-    if (margin == 0) {
-        margin = 1;
-    }
-    let deposit = ctx.allowance().iotas();
-    if (deposit < margin) {
-        ctx.panic("Insufficient deposit");
-    }
-
-    let currentAuction = f.state.auctions().getAuction(nft);
-    if (currentAuction.exists()) {
-        ctx.panic("Auction for this nft nft already exists");
-    }
-
-    let auction = new sc.Auction();
-    auction.creator = ctx.caller();
-    auction.nft = nft;
-    auction.deposit = deposit;
-    auction.description = description;
-    auction.duration = duration;
-    auction.highestBid = 0;
-    auction.highestBidder = wasmtypes.agentIDFromBytes([]);
-    auction.minimumBid = minimumBid;
-    auction.ownerMargin = ownerMargin;
-    auction.whenStarted = ctx.timestamp();
-    currentAuction.setValue(auction);
-
-    let fa = sc.ScFuncs.finalizeAuction(ctx);
-    fa.params.nft().setValue(auction.nft);
-    fa.func.delay(duration * 60).post();
 }
 
 export function viewGetAuctionInfo(ctx: wasmlib.ScViewContext, f: sc.GetAuctionInfoContext): void {

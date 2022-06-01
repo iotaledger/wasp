@@ -79,14 +79,14 @@ export function agentIDFromBytes(buf: u8[]): ScAgentID {
         return agentID;
     }
     switch (buf[0]) {
-        case wasmtypes.ScAgentIDAddress: {
+        case ScAgentIDAddress: {
             buf = buf.slice(1)
             if (buf.length != wasmtypes.ScLengthAlias && buf.length != wasmtypes.ScLengthEd25519) {
                 panic("invalid AgentID length: address agentID");
             }
             return ScAgentID.fromAddress(wasmtypes.addressFromBytes(buf));
         }
-        case wasmtypes.ScAgentIDContract: {
+        case ScAgentIDContract: {
             buf = buf.slice(1)
             if (buf.length != wasmtypes.ScChainIDLength + wasmtypes.ScHnameLength) {
                 panic("invalid AgentID length: contract agentID");
@@ -95,6 +95,11 @@ export function agentIDFromBytes(buf: u8[]): ScAgentID {
             const hname = wasmtypes.hnameFromBytes(buf.slice(wasmtypes.ScChainIDLength));
             return new ScAgentID(chainID.address(), hname);
         }
+        case ScAgentIDEthereum:
+            panic("AgentIDFromBytes: unsupported ScAgentIDEthereum");
+            break;
+        case ScAgentIDNil:
+            break;
         default: {
             panic("AgentIDFromBytes: invalid AgentID type");
             break;
@@ -113,6 +118,12 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
             buf[0] = value.kind;
             return buf.concat(wasmtypes.hnameToBytes(value._hname));
         }
+        case ScAgentIDEthereum:
+            panic("AgentIDToBytes: unsupported ScAgentIDEthereum");
+            break;
+        case ScAgentIDNil:
+            panic("AgentIDToBytes: unsupported ScAgentIDNil");
+            break;
         default: {
             panic("AgentIDToBytes: invalid AgentID type");
             break;
@@ -122,6 +133,7 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
 }
 
 export function agentIDFromString(value: string): ScAgentID {
+    //TODO ScAgentIDEthereum / ScAgentIDNil
     const parts = value.split("@");
     switch (parts.length) {
         case 1:
@@ -135,6 +147,7 @@ export function agentIDFromString(value: string): ScAgentID {
 }
 
 export function agentIDToString(value: ScAgentID): string {
+    //TODO ScAgentIDEthereum / ScAgentIDNil
     if (value.kind == ScAgentIDContract) {
         return wasmtypes.hnameToString(value.hname()) + "@" + wasmtypes.addressToString(value.address())
     }

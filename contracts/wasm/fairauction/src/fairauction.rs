@@ -15,6 +15,116 @@ const OWNER_MARGIN_DEFAULT: u64 = 50;
 const OWNER_MARGIN_MIN: u64 = 5;
 const OWNER_MARGIN_MAX: u64 = 100;
 
+pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
+    let allowance = ctx.allowance();
+    let nfts = allowance.nft_ids();
+    ctx.require(nfts.len() == 1, "single NFT allowance expected");
+    let auction_nft = nfts[0];
+    let mut transfer = ScTransfer::iotas(1);
+    transfer.add_nft(&auction_nft);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    let minimum_bid = f.params.minimum_bid().value();
+
+    // duration in minutes
+    let mut duration = f.params.duration().value();
+    if duration == 0 {
+        duration = DURATION_DEFAULT;
+    }
+    if duration < DURATION_MIN {
+        duration = DURATION_MIN;
+    }
+    if duration > DURATION_MAX {
+        duration = DURATION_MAX;
+    }
+
+    let mut description = f.params.description().value();
+    if description == "" {
+        description = "N/A".to_string();
+    }
+    if description.len() > MAX_DESCRIPTION_LENGTH {
+        let ss: String = description.chars().take(MAX_DESCRIPTION_LENGTH).collect();
+        description = ss + "[...]";
+    }
+
+    let mut owner_margin = f.state.owner_margin().value();
+    if owner_margin == 0 {
+        owner_margin = OWNER_MARGIN_DEFAULT;
+    }
+
+    // need at least 1 iota to run SC
+    let mut margin = minimum_bid * owner_margin / 1000;
+    if margin == 0 {
+        margin = 1;
+    }
+    let deposit = allowance.iotas();
+    if deposit < margin {
+        ctx.panic("Insufficient deposit");
+    }
+
+    let current_auction = f.state.auctions().get_auction(&auction_nft);
+    if current_auction.exists() {
+        ctx.panic("Auction for this nft already exists");
+    }
+
+    let auction = Auction {
+        creator: ctx.caller(),
+        deposit: deposit,
+        description: description,
+        duration: duration,
+        highest_bid: 0,
+        highest_bidder: ctx.caller(),
+        minimum_bid: minimum_bid,
+        owner_margin: owner_margin,
+        nft: auction_nft,
+        when_started: ctx.timestamp(),
+    };
+    current_auction.set_value(&auction);
+
+    let fa = ScFuncs::finalize_auction(ctx);
+    fa.params.nft().set_value(&auction.nft);
+    fa.func.delay(duration * 60).post();
+}
+
+pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
+    let mut bid_amount = ctx.allowance().iotas();
+    ctx.require(bid_amount > 0, "Missing bid amount");
+
+    let nft = f.params.nft().value();
+    let current_auction = f.state.auctions().get_auction(&nft);
+    ctx.require(current_auction.exists(), "Missing auction info");
+
+    let mut auction = current_auction.value();
+    let bids = f.state.bids().get_bids(&nft);
+    let bidder_list = f.state.bidder_list().get_bidder_list(&nft);
+    let caller = ctx.caller();
+    let current_bid = bids.get_bid(&caller);
+    if current_bid.exists() {
+        ctx.log(&("Upped bid from: ".to_string() + &caller.to_string()));
+        let mut bid = current_bid.value();
+        bid_amount += bid.amount;
+        bid.amount = bid_amount;
+        bid.timestamp = ctx.timestamp();
+        current_bid.set_value(&bid);
+    } else {
+        ctx.require(bid_amount >= auction.minimum_bid, "Insufficient bid amount");
+        ctx.log(&("New bid from: ".to_string() + &caller.to_string()));
+        let index = bidder_list.length();
+        bidder_list.append_agent_id().set_value(&caller);
+        let bid = Bid {
+            index: index,
+            amount: bid_amount,
+            timestamp: ctx.timestamp(),
+        };
+        current_bid.set_value(&bid);
+    }
+    if bid_amount > auction.highest_bid {
+        ctx.log("New highest bidder");
+        auction.highest_bid = bid_amount;
+        auction.highest_bidder = caller;
+        current_auction.set_value(&auction);
+    }
+}
+
 pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
     let nft = f.params.nft().value();
     let current_auction = f.state.auctions().get_auction(&nft);
@@ -60,46 +170,6 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
     );
 }
 
-pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
-    let mut bid_amount = ctx.allowance().iotas();
-    ctx.require(bid_amount > 0, "Missing bid amount");
-
-    let nft = f.params.nft().value();
-    let current_auction = f.state.auctions().get_auction(&nft);
-    ctx.require(current_auction.exists(), "Missing auction info");
-
-    let mut auction = current_auction.value();
-    let bids = f.state.bids().get_bids(&nft);
-    let bidder_list = f.state.bidder_list().get_bidder_list(&nft);
-    let caller = ctx.caller();
-    let current_bid = bids.get_bid(&caller);
-    if current_bid.exists() {
-        ctx.log(&("Upped bid from: ".to_string() + &caller.to_string()));
-        let mut bid = current_bid.value();
-        bid_amount += bid.amount;
-        bid.amount = bid_amount;
-        bid.timestamp = ctx.timestamp();
-        current_bid.set_value(&bid);
-    } else {
-        ctx.require(bid_amount >= auction.minimum_bid, "Insufficient bid amount");
-        ctx.log(&("New bid from: ".to_string() + &caller.to_string()));
-        let index = bidder_list.length();
-        bidder_list.append_agent_id().set_value(&caller);
-        let bid = Bid {
-            index: index,
-            amount: bid_amount,
-            timestamp: ctx.timestamp(),
-        };
-        current_bid.set_value(&bid);
-    }
-    if bid_amount > auction.highest_bid {
-        ctx.log("New highest bidder");
-        auction.highest_bid = bid_amount;
-        auction.highest_bidder = caller;
-        current_auction.set_value(&auction);
-    }
-}
-
 pub fn func_set_owner_margin(_ctx: &ScFuncContext, f: &SetOwnerMarginContext) {
     let mut owner_margin = f.params.owner_margin().value();
     if owner_margin < OWNER_MARGIN_MIN {
@@ -109,81 +179,6 @@ pub fn func_set_owner_margin(_ctx: &ScFuncContext, f: &SetOwnerMarginContext) {
         owner_margin = OWNER_MARGIN_MAX;
     }
     f.state.owner_margin().set_value(owner_margin);
-}
-
-pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
-    let allowance = ctx.allowance();
-    let nfts = allowance.nft_ids();
-    if nfts.len() != 1 {
-        ctx.panic(&format!(
-            "expect 1 NFT is provided, instead {} tokens are provided.",
-            nfts.len()
-        ));
-    }
-    let nft = nfts[0];
-    let mut transfer = ScTransfer::iotas(1);
-    transfer.add_nft(&nft);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-    let minimum_bid = f.params.minimum_bid().value();
-
-    // duration in minutes
-    let mut duration = f.params.duration().value();
-    if duration == 0 {
-        duration = DURATION_DEFAULT;
-    }
-    if duration < DURATION_MIN {
-        duration = DURATION_MIN;
-    }
-    if duration > DURATION_MAX {
-        duration = DURATION_MAX;
-    }
-
-    let mut description = f.params.description().value();
-    if description == "" {
-        description = "N/A".to_string();
-    }
-    if description.len() > MAX_DESCRIPTION_LENGTH {
-        let ss: String = description.chars().take(MAX_DESCRIPTION_LENGTH).collect();
-        description = ss + "[...]";
-    }
-
-    let mut owner_margin = f.state.owner_margin().value();
-    if owner_margin == 0 {
-        owner_margin = OWNER_MARGIN_DEFAULT;
-    }
-
-    // need at least 1 iota to run SC
-    let mut margin = minimum_bid * owner_margin / 1000;
-    if margin == 0 {
-        margin = 1;
-    }
-    let deposit = allowance.iotas();
-    if deposit < margin {
-        ctx.panic("Insufficient deposit");
-    }
-
-    let current_auction = f.state.auctions().get_auction(&nft);
-    if current_auction.exists() {
-        ctx.panic("Auction for this nft already exists");
-    }
-
-    let auction = Auction {
-        creator: ctx.caller(),
-        deposit: deposit,
-        description: description,
-        duration: duration,
-        highest_bid: 0,
-        highest_bidder: agent_id_from_bytes(&[]),
-        minimum_bid: minimum_bid,
-        owner_margin: owner_margin,
-        nft: nft,
-        when_started: ctx.timestamp(),
-    };
-    current_auction.set_value(&auction);
-
-    let fa = ScFuncs::finalize_auction(ctx);
-    fa.params.nft().set_value(&auction.nft);
-    fa.func.delay(duration * 60).post();
 }
 
 pub fn view_get_auction_info(ctx: &ScViewContext, f: &GetAuctionInfoContext) {
