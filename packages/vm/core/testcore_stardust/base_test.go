@@ -24,6 +24,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
+	ret := make([]uint64, len(tx.Essence.Outputs))
+	for i, out := range tx.Essence.Outputs {
+		ret[i] = parameters.L1.Protocol.RentStructure.MinRent(out)
+	}
+	return ret
+}
+
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
@@ -31,7 +39,7 @@ func TestInitLoad(t *testing.T) {
 	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
 	_ = ch.Log().Sync()
 
-	dustCosts := transaction.NewDepositEstimate()
+	dustCosts := transaction.NewStorageDepositEstimate()
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, cassets.Iotas)
 	require.EqualValues(t, 0, len(cassets.Tokens))
@@ -71,8 +79,8 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	env.AssertL1Iotas(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-totalSpent)
 
 	// let's analise dust deposit on origin and init transactions
-	vByteCostInit := transaction.GetVByteCosts(initTx)[0]
-	dustCosts := transaction.NewDepositEstimate()
+	vByteCostInit := GetStorageDeposit(initTx)[0]
+	dustCosts := transaction.NewStorageDepositEstimate()
 	// what we spent is only for dust deposits for those 2 transactions
 	require.EqualValues(t, int(totalSpent), int(dustCosts.AnchorOutput+vByteCostInit))
 
@@ -122,7 +130,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
+		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
@@ -159,7 +167,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
+		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
@@ -196,7 +204,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
+		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
@@ -233,7 +241,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
-		reqDustDeposit := transaction.GetVByteCosts(reqTx)[0]
+		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
