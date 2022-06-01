@@ -38,7 +38,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// validating and storing dust deposit assumption constants
 	iotasOnAnchor := ctx.StateAnchor().Deposit
 	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
-	dustDepositAssumptions, err := transaction.DustDepositAssumptionFromBytes(dustAssumptionsBin)
+	dustDepositAssumptions, err := transaction.StorageDepositAssumptionFromBytes(dustAssumptionsBin)
 	// checking if assumptions are consistent
 	ctx.Requiref(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)

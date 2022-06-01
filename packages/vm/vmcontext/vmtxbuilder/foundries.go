@@ -42,7 +42,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 			Data: metadata,
 		}}
 	}
-	f.Amount = parameters.L1.Protocol.RentStructure.VByteCost * f.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	f.Amount = parameters.L1.Protocol.RentStructure.MinRent(f)
 	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, vm.ErrNotEnoughIotaBalance)

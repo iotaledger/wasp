@@ -106,6 +106,11 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		client := e.createNewClient()
 
 		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+		for i := 0; i < 5 && (err != nil); i++ {
+			fmt.Printf("Error posting request, will retry... %v", err)
+			time.Sleep(100 * time.Millisecond)
+			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
+		}
 		require.NoError(t, err)
 	}
 
@@ -185,18 +190,17 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
-	keyPair, myAddress, err := e.Clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myAgentID := iscp.NewAgentID(myAddress)
-
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(100),
+	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_000_000),
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, e.balanceOnChainIotaEquals(myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
 	myClient := e.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 

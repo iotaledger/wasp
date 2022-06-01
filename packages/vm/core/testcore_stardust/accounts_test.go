@@ -622,13 +622,12 @@ func TestDepositIotas(t *testing.T) {
 			require.NoError(t, err)
 			rec := v.ch.LastReceipt()
 
-			byteCost := parameters.L1.Protocol.RentStructure.VByteCost *
-				tx.Essence.Outputs[0].VBytes(&parameters.L1.Protocol.RentStructure, nil)
-			t.Logf("byteCost = %d", byteCost)
+			storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(tx.Essence.Outputs[0])
+			t.Logf("byteCost = %d", storageDeposit)
 
 			adjusted := addIotas
-			if adjusted < byteCost {
-				adjusted = byteCost
+			if adjusted < storageDeposit {
+				adjusted = storageDeposit
 			}
 			require.True(t, rec.GasFeeCharged <= adjusted)
 			v.ch.AssertL2Iotas(v.userAgentID, adjusted-rec.GasFeeCharged)
@@ -797,7 +796,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 func TestTransferAndHarvest(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
-	dustCosts := transaction.NewDepositEstimate()
+	dustCosts := transaction.NewStorageDepositEstimate()
 	commonAssets := v.ch.L2CommonAccountAssets()
 	require.True(t, commonAssets.Iotas+dustCosts.AnchorOutput > 10_000)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))

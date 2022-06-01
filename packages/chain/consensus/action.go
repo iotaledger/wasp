@@ -626,10 +626,12 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 		c.workflow.setCompleted()
 		c.refreshConsensusInfo()
 		c.log.Debugf("processTxInclusionState: transaction id %s is included; workflow finished", finalTxIDStr)
-	case "conflicitng":
+	case "conflicting":
 		c.workflow.setTransactionSeen()
 		c.log.Infof("processTxInclusionState: transaction id %s is conflicting; restarting consensus.", finalTxIDStr)
 		c.resetWorkflow()
+	default:
+		c.log.Warnf("processTxInclusionState: unknown inclusion state %s for transaction id %s; ignoring", msg.State, finalTxIDStr)
 	}
 }
 
