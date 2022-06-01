@@ -160,7 +160,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 	var nilAliasID iotago.AliasID
-	blockset := vmctx.task.AnchorOutput.FeaturesSet()
+	blockset := vmctx.task.AnchorOutput.FeatureSet()
 	senderBlock := blockset.SenderFeature()
 	var sender iotago.Address
 	if senderBlock != nil {

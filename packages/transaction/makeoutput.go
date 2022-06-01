@@ -93,10 +93,10 @@ func MakeBasicOutput(
 		return out
 	}
 
-	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
-	if out.Deposit() < requiredDustDeposit {
+	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	if out.Deposit() < storageDeposit {
 		// adjust the amount to the minimum required
-		out.Amount = requiredDustDeposit
+		out.Amount = storageDeposit
 	}
 
 	return out
@@ -114,10 +114,10 @@ func NFTOutputFromPostData(
 	if !par.AdjustToMinimumDustDeposit {
 		return out
 	}
-	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
-	if out.Deposit() < requiredDustDeposit {
+	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	if out.Deposit() < storageDeposit {
 		// adjust the amount to the minimum required
-		out.Amount = requiredDustDeposit
+		out.Amount = storageDeposit
 	}
 	return out
 }

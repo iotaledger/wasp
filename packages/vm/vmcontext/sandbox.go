@@ -88,7 +88,7 @@ func (s *contractSandbox) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFT
 
 func (s *contractSandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateDustCost)
-	return s.Ctx.(*VMContext).EstimateRequiredDustDeposit(par)
+	return s.Ctx.(*VMContext).EstimateRequiredStorageDeposit(par)
 }
 
 func (s *contractSandbox) State() kv.KVStore {

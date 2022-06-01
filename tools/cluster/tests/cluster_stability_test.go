@@ -10,9 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/testutil"
-
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 )

@@ -74,7 +74,7 @@ func aliasOutputDustDeposit() uint64 {
 			},
 		},
 	}
-	return parameters.L1.Protocol.RentStructure.VByteCost * aliasOutput.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	return parameters.L1.Protocol.RentStructure.MinRent(aliasOutput)
 }
 
 func nativeTokenOutputDustDeposit() uint64 {
@@ -92,7 +92,7 @@ func nativeTokenOutputDustDeposit() uint64 {
 		nil,
 		iscp.SendOptions{},
 	)
-	return parameters.L1.Protocol.RentStructure.VByteCost * o.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	return parameters.L1.Protocol.RentStructure.MinRent(o)
 }
 
 func nftOutputDustDeposit() uint64 {
@@ -116,5 +116,5 @@ func nftOutputDustDeposit() uint64 {
 		Metadata: make([]byte, iotago.MaxMetadataLength),
 	})
 
-	return parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
+	return parameters.L1.Protocol.RentStructure.MinRent(out)
 }

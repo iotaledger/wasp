@@ -27,12 +27,12 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 			&iotago.MetadataFeature{Data: par.ImmutableMetadata},
 		},
 	}
-	requiredDust := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
-	out.Amount = requiredDust
+	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	out.Amount = storageDeposit
 
 	outputs := iotago.Outputs{out}
 
-	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, requiredDust, nil, nil, par.UnspentOutputs, par.UnspentOutputIDs)
+	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, storageDeposit, nil, nil, par.UnspentOutputs, par.UnspentOutputIDs)
 	if err != nil {
 		return nil, err
 	}

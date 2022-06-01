@@ -221,9 +221,9 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	bc := parameters.L1.Protocol.RentStructure.VByteCost * ret.VBytes(&parameters.L1.Protocol.RentStructure, nil)
-	if ret.Amount < bc {
-		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, bc)
+	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(ret)
+	if ret.Amount < storageDeposit {
+		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, storageDeposit)
 	}
 	return ret, nil
 }
@@ -257,14 +257,6 @@ func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signat
 		Essence: essence,
 		Unlocks: MakeSignatureAndAliasUnlockFeatures(len(essence.Inputs), sig),
 	}
-}
-
-func GetVByteCosts(tx *iotago.Transaction) []uint64 {
-	ret := make([]uint64, len(tx.Essence.Outputs))
-	for i, out := range tx.Essence.Outputs {
-		ret[i] = parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
-	}
-	return ret
 }
 
 func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
