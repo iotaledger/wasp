@@ -16,6 +16,9 @@ type Request interface {
 
 	IsOffLedger() bool
 
+	WriteToMarshalUtil(mu *marshalutil.MarshalUtil)
+	readFromMarshalUtil(mu *marshalutil.MarshalUtil) error
+
 	Bytes() []byte
 	String() string
 }
@@ -34,7 +37,7 @@ type Calldata interface {
 	FungibleTokens() *FungibleTokens // attached assets for the UTXO request, nil for off-ledger. All goes to sender
 	NFT() *NFT                       // Not nil if the request is an NFT request
 	Allowance() *Allowance           // transfer of assets to the smart contract. Debited from sender account
-	GasBudget() uint64
+	GasBudget() (gas uint64, isEVM bool)
 }
 
 type Features interface {
@@ -49,9 +52,6 @@ type OffLedgerRequestData interface {
 }
 
 type UnsignedOffLedgerRequest interface {
-	Calldata
-	OffLedgerRequestData
-
 	WithNonce(nonce uint64) UnsignedOffLedgerRequest
 	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
 	WithAllowance(allowance *Allowance) UnsignedOffLedgerRequest
@@ -75,17 +75,6 @@ type OnLedgerRequest interface {
 type ReturnAmountOptions interface {
 	ReturnTo() iotago.Address
 	Amount() uint64
-}
-
-type OffLedgerSignatureScheme interface {
-	writeEssence(mu *marshalutil.MarshalUtil)
-	writeSignature(mu *marshalutil.MarshalUtil)
-	readEssence(mu *marshalutil.MarshalUtil) error
-	readSignature(mu *marshalutil.MarshalUtil) error
-	setPublicKey(key *cryptolib.PublicKey)
-	sign(key *cryptolib.KeyPair, data []byte)
-	verify(data []byte) bool
-	Sender() AgentID
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {

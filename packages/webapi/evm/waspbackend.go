@@ -56,11 +56,7 @@ func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 }
 
 func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
-	gasRatio, err := b.EVMGasRatio()
-	if err != nil {
-		return err
-	}
-	req, err := iscp.NewEVMOffLedgerRequest(b.chain.ID(), tx, &gasRatio)
+	req, err := iscp.NewEVMOffLedgerRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err
 	}
@@ -87,14 +83,9 @@ func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
 }
 
 func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	// TODO: cache the gas ratio?
-	gasRatio, err := b.EVMGasRatio()
-	if err != nil {
-		return 0, err
-	}
 	res, err := chainutil.SimulateCall(
 		b.chain,
-		iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg, &gasRatio),
+		iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg),
 	)
 	if err != nil {
 		return 0, err

@@ -166,7 +166,7 @@ func TestLoop(t *testing.T) {
 	gasRatio := env.getGasRatio()
 
 	for _, gasLimit := range []uint64{200000, 400000} {
-		iotasSent := evmtypes.EVMGasToISC(gasLimit, &gasRatio) + iscp.EVMGasBookkeeping
+		iotasSent := evmtypes.EVMGasToISC(gasLimit, &gasRatio)
 		ethKey2, ethAddr2 := env.soloChain.NewEthereumAccountWithL2Funds(iotasSent)
 		require.EqualValues(t,
 			env.soloChain.L2Iotas(iscp.NewEthereumAddressAgentID(ethAddr2)),

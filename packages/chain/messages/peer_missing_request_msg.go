@@ -19,7 +19,7 @@ func (msg *MissingRequestMsg) Bytes() []byte {
 func NewMissingRequestMsg(data []byte) (*MissingRequestMsg, error) {
 	msg := &MissingRequestMsg{}
 	var err error
-	msg.Request, err = iscp.RequestDataFromMarshalUtil(marshalutil.New(data))
+	msg.Request, err = iscp.NewRequestFromMarshalUtil(marshalutil.New(data))
 	if err != nil {
 		return nil, err
 	}

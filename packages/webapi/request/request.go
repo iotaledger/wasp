@@ -148,7 +148,7 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req iscp.OffLedgerReque
 		if err = c.Bind(r); err != nil {
 			return nil, nil, httperrors.BadRequest("error parsing request from payload")
 		}
-		rGeneric, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
+		rGeneric, err := iscp.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
 			return nil, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
 		}
@@ -164,7 +164,7 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req iscp.OffLedgerReque
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("error parsing request from payload")
 	}
-	rGeneric, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(reqBytes))
+	rGeneric, err := iscp.NewRequestFromMarshalUtil(marshalutil.New(reqBytes))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("error parsing request from payload")
 	}

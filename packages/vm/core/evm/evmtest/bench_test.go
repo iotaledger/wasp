@@ -26,7 +26,6 @@ func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
 	// setup: prepare N requests that call FuncSendTransaction with an EVM tx
 	// that calls `storage.store()`
 	reqs := make([]iscp.Request, b.N)
-	gasRatio := env.soloChain.EVMGasRatio()
 	for i := 0; i < b.N; i++ {
 		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 		tx := storage.buildEthTx([]ethCallOptions{{
@@ -34,7 +33,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
 			gasLimit: gasLimit,
 		}}, "store", uint32(i))
 		var err error
-		reqs[i], err = iscp.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx, &gasRatio)
+		reqs[i], err = iscp.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx)
 		require.NoError(b, err)
 	}
 

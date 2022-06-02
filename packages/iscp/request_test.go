@@ -20,7 +20,7 @@ func TestSerializeRequestData(t *testing.T) {
 		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100).Sign(cryptolib.NewKeyPair())
 
 		serialized := req.Bytes()
-		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
+		req2, err := NewRequestFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
 
 		reqBack := req2.(*offLedgerRequestData)
@@ -60,7 +60,7 @@ func TestSerializeRequestData(t *testing.T) {
 		require.NoError(t, err)
 
 		serialized := req.Bytes()
-		req2, err := RequestDataFromMarshalUtil(marshalutil.New(serialized))
+		req2, err := NewRequestFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
 		chainID := ChainIDFromAddress(sender)
 		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(&chainID, requestMetadata.SenderContract)))
@@ -74,7 +74,7 @@ func TestSerializeRequestData(t *testing.T) {
 }
 
 func TestRequestIDToFromString(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(200)
+	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(200).Sign(cryptolib.NewKeyPair())
 	oritinalID := req.ID()
 	s := oritinalID.String()
 	require.NotEmpty(t, s)

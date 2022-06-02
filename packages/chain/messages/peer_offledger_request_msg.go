@@ -40,7 +40,7 @@ func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
 	if err != nil {
 		return nil, err
 	}
-	req, err := iscp.RequestDataFromMarshalUtil(mu)
+	req, err := iscp.NewRequestFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}

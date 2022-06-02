@@ -12,38 +12,41 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-// RequestDataFromMarshalUtil read Request from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
-func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
-	isOffLedger, err := mu.ReadBool()
+const (
+	requestKindTagOnLedger byte = iota
+	requestKindTagOffLedgerISC
+	requestKindTagOffLedgerEVM
+	requestKindTagOffLedgerEVMEstimateGas
+)
+
+func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
+	kind, err := mu.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	if isOffLedger {
-		return OffLedgerRequestDataFromMarshalUtil(mu)
-	}
-	// on-ledger
-	return OnLedgerRequestFromMarshalUtil(mu)
-}
-
-func RequestDataToMarshalUtil(req Request, mu *marshalutil.MarshalUtil) {
-	switch req := req.(type) {
-	case *onLedgerRequestData:
-		mu.WriteBool(false)
-		req.writeToMarshalUtil(mu)
-	case *offLedgerRequestData:
-		mu.WriteBool(true)
-		req.writeToMarshalUtil(mu)
+	var r Request
+	switch kind {
+	case requestKindTagOnLedger:
+		r = &onLedgerRequestData{}
+	case requestKindTagOffLedgerISC:
+		r = &offLedgerRequestData{}
+	case requestKindTagOffLedgerEVM:
+		r = &evmOffLedgerRequest{}
+	case requestKindTagOffLedgerEVMEstimateGas:
+		r = &evmOffLedgerEstimateGasRequest{}
 	default:
-		panic(fmt.Sprintf("RequestDataToMarshalUtil: no handler for type %T", req))
+		panic(fmt.Sprintf("no handler for request kind %d", kind))
 	}
+	if err = r.readFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return r, nil
 }
 
 // region offLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
@@ -53,31 +56,29 @@ type offLedgerRequestData struct {
 	contract        Hname
 	entryPoint      Hname
 	params          dict.Dict
-	signatureScheme OffLedgerSignatureScheme
+	signatureScheme *offLedgerSignatureScheme // nil if unsigned
 	nonce           uint64
 	allowance       *Allowance
 	gasBudget       uint64
 }
 
-type iscOffLedgerSignatureScheme struct {
+type offLedgerSignatureScheme struct {
 	publicKey *cryptolib.PublicKey
 	signature []byte
 }
 
-var _ OffLedgerSignatureScheme = &iscOffLedgerSignatureScheme{}
-
-func (s *iscOffLedgerSignatureScheme) writeEssence(mu *marshalutil.MarshalUtil) {
+func (s *offLedgerSignatureScheme) writeEssence(mu *marshalutil.MarshalUtil) {
 	publicKey := s.publicKey.AsBytes()
 	mu.WriteUint8(uint8(len(publicKey))).
 		WriteBytes(publicKey)
 }
 
-func (s *iscOffLedgerSignatureScheme) writeSignature(mu *marshalutil.MarshalUtil) {
+func (s *offLedgerSignatureScheme) writeSignature(mu *marshalutil.MarshalUtil) {
 	mu.WriteUint16(uint16(len(s.signature)))
 	mu.WriteBytes(s.signature)
 }
 
-func (s *iscOffLedgerSignatureScheme) readEssence(mu *marshalutil.MarshalUtil) error {
+func (s *offLedgerSignatureScheme) readEssence(mu *marshalutil.MarshalUtil) error {
 	pkLen, err := mu.ReadUint8()
 	if err != nil {
 		return err
@@ -90,7 +91,7 @@ func (s *iscOffLedgerSignatureScheme) readEssence(mu *marshalutil.MarshalUtil) e
 	return err
 }
 
-func (s *iscOffLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) error {
+func (s *offLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) error {
 	sigLength, err := mu.ReadUint16()
 	if err != nil {
 		return err
@@ -99,35 +100,15 @@ func (s *iscOffLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil)
 	return err
 }
 
-func (s *iscOffLedgerSignatureScheme) setPublicKey(key *cryptolib.PublicKey) {
-	s.publicKey = key
-}
-
-func (s *iscOffLedgerSignatureScheme) sign(key *cryptolib.KeyPair, data []byte) {
-	s.signature = key.GetPrivateKey().Sign(data)
-}
-
-func (s *iscOffLedgerSignatureScheme) verify(data []byte) bool {
-	return s.publicKey.Verify(data, s.signature)
-}
-
-func (s *iscOffLedgerSignatureScheme) Sender() AgentID {
-	return NewAgentID(s.publicKey.AsEd25519Address())
-}
-
 func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
 	return &offLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
 		entryPoint: entryPoint,
 		params:     params,
-		signatureScheme: &iscOffLedgerSignatureScheme{
-			publicKey: cryptolib.NewEmptyPublicKey(),
-			signature: []byte{},
-		},
-		nonce:     nonce,
-		allowance: NewEmptyAllowance(),
-		gasBudget: gas.MaxGasPerCall,
+		nonce:      nonce,
+		allowance:  NewEmptyAllowance(),
+		gasBudget:  gas.MaxGasPerCall,
 	}
 }
 
@@ -165,11 +146,11 @@ var _ Calldata = &offLedgerRequestData{}
 
 func (r *offLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	RequestDataToMarshalUtil(r, mu)
+	r.WriteToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-func OffLedgerRequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (OffLedgerRequest, error) {
+func newOffLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (OffLedgerRequest, error) {
 	ret := &offLedgerRequestData{}
 	if err := ret.readFromMarshalUtil(mu); err != nil {
 		return nil, err
@@ -177,7 +158,7 @@ func OffLedgerRequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (OffLedger
 	return ret, nil
 }
 
-func (r *offLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (r *offLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	r.writeEssenceToMarshalUtil(mu)
 	r.signatureScheme.writeSignature(mu)
 }
@@ -199,19 +180,16 @@ func (r *offLedgerRequestData) essenceBytes() []byte {
 }
 
 func (r *offLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(r.chainID).
+	mu.
+		WriteByte(requestKindTagOffLedgerISC).
+		Write(r.chainID).
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
 		WriteUint64(r.nonce).
 		WriteUint64(r.gasBudget)
 	r.signatureScheme.writeEssence(mu)
-	if !r.IsEVM() {
-		mu.WriteBool(r.allowance != nil)
-		if r.allowance != nil {
-			r.allowance.WriteToMarshalUtil(mu)
-		}
-	}
+	r.allowance.WriteToMarshalUtil(mu)
 }
 
 func (r *offLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -235,54 +213,23 @@ func (r *offLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if r.gasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-
-	if r.IsEVMSendTransaction() {
-		tx, err := evmtypes.DecodeTransaction(r.params.MustGet(evmnames.FieldTransaction))
-		if err != nil {
-			return err
-		}
-		signatureScheme, err := newEVMOffLedferSignatureSchemeFromTransaction(tx)
-		if err != nil {
-			return err
-		}
-		r.signatureScheme = signatureScheme
-	} else if r.IsEVMEstimateGas() {
-		callMsg, err := evmtypes.DecodeCallMsg(r.params.MustGet(evmnames.FieldCallMsg))
-		if err != nil {
-			return err
-		}
-		r.signatureScheme = newEVMOffLedgerSignatureScheme(callMsg.From)
-	} else {
-		r.signatureScheme = &iscOffLedgerSignatureScheme{}
-	}
+	r.signatureScheme = &offLedgerSignatureScheme{}
 	if err = r.signatureScheme.readEssence(mu); err != nil {
 		return err
 	}
-
-	if !r.IsEVM() {
-		var hasAllowance bool
-		if hasAllowance, err = mu.ReadBool(); err != nil {
-			return err
-		}
-		r.allowance = nil
-		if hasAllowance {
-			if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
-				return err
-			}
-		}
+	if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
+		return err
 	}
 	return nil
 }
 
-// only used for consensus
-func (r *offLedgerRequestData) Hash() [32]byte {
-	return hashing.HashData(r.Bytes())
-}
-
 // Sign signs the essence
 func (r *offLedgerRequestData) Sign(key *cryptolib.KeyPair) OffLedgerRequest {
-	r.signatureScheme.setPublicKey(key.GetPublicKey())
-	r.signatureScheme.sign(key, r.essenceBytes())
+	r.signatureScheme = &offLedgerSignatureScheme{
+		publicKey: key.GetPublicKey(),
+	}
+	essence := r.essenceBytes()
+	r.signatureScheme.signature = key.GetPrivateKey().Sign(essence)
 	return r
 }
 
@@ -306,16 +253,13 @@ func (r *offLedgerRequestData) WithGasBudget(gasBudget uint64) UnsignedOffLedger
 }
 
 func (r *offLedgerRequestData) WithAllowance(allowance *Allowance) UnsignedOffLedgerRequest {
-	if r.IsEVM() && !allowance.IsEmpty() {
-		panic("allowance is not supported in EVM requests")
-	}
 	r.allowance = allowance.Clone()
 	return r
 }
 
 // VerifySignature verifies essence signature
 func (r *offLedgerRequestData) VerifySignature() bool {
-	return r.signatureScheme.verify(r.essenceBytes())
+	return r.signatureScheme.publicKey.Verify(r.essenceBytes(), r.signatureScheme.signature)
 }
 
 // ID returns request id for this request
@@ -332,9 +276,6 @@ func (r *offLedgerRequestData) Nonce() uint64 {
 }
 
 func (r *offLedgerRequestData) WithNonce(nonce uint64) UnsignedOffLedgerRequest {
-	if r.IsEVM() {
-		panic("nonce in EVM requests is specified in the Ethereum tx")
-	}
 	r.nonce = nonce
 	return r
 }
@@ -344,7 +285,7 @@ func (r *offLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *offLedgerRequestData) SenderAccount() AgentID {
-	return r.signatureScheme.Sender()
+	return NewAgentID(r.signatureScheme.publicKey.AsEd25519Address())
 }
 
 func (r *offLedgerRequestData) CallTarget() CallTarget {
@@ -363,8 +304,8 @@ func (r *offLedgerRequestData) Timestamp() time.Time {
 	return time.Time{}
 }
 
-func (r *offLedgerRequestData) GasBudget() uint64 {
-	return r.gasBudget
+func (r *offLedgerRequestData) GasBudget() (gas uint64, isEVM bool) {
+	return r.gasBudget, false
 }
 
 func (r *offLedgerRequestData) String() string {
@@ -394,6 +335,14 @@ type onLedgerRequestData struct {
 }
 
 func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (OnLedgerRequest, error) {
+	r := &onLedgerRequestData{}
+	if err := r.readFromUTXO(o, id); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *onLedgerRequestData) readFromUTXO(o iotago.Output, id *iotago.UTXOInput) error {
 	var reqMetadata *RequestMetadata
 	var err error
 
@@ -401,57 +350,57 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (OnLedgerRequest, e
 
 	reqMetadata, err = RequestMetadataFromFeatureSet(fbSet)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if reqMetadata != nil {
 		reqMetadata.Allowance.fillEmptyNFTIDs(o, id)
 	}
 
-	return &onLedgerRequestData{
-		output:           o,
-		inputID:          *id,
-		featureBlocks:    fbSet,
-		unlockConditions: o.UnlockConditionSet(),
-		requestMetadata:  reqMetadata,
-	}, nil
+	r.output = o
+	r.inputID = *id
+	r.featureBlocks = fbSet
+	r.unlockConditions = o.UnlockConditionsSet()
+	r.requestMetadata = reqMetadata
+	return nil
 }
 
-func OnLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (OnLedgerRequest, error) {
+func (r *onLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	utxoID, err := UTXOInputFromMarshalUtil(mu)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	outputBytesLength, err := mu.ReadUint16()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	outputBytes, err := mu.ReadBytes(int(outputBytesLength))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	outputType, err := mu.ReadByte()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	output, err := iotago.OutputSelector(uint32(outputType))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	_, err = output.Deserialize(outputBytes, serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return OnLedgerFromUTXO(output, utxoID)
+	return r.readFromUTXO(output, utxoID)
 }
 
 func (r *onLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	RequestDataToMarshalUtil(r, mu)
+	r.WriteToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-func (r *onLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.WriteByte(requestKindTagOnLedger)
 	outputBytes, err := r.output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
 	if err != nil {
 		return
@@ -554,8 +503,8 @@ func (r *onLedgerRequestData) FungibleTokens() *FungibleTokens {
 	return NewFungibleTokens(amount, tokens)
 }
 
-func (r *onLedgerRequestData) GasBudget() uint64 {
-	return r.requestMetadata.GasBudget
+func (r *onLedgerRequestData) GasBudget() (gas uint64, isEVM bool) {
+	return r.requestMetadata.GasBudget, false
 }
 
 // implements Request interface
@@ -812,10 +761,7 @@ func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		Write(p.EntryPoint).
 		WriteUint64(p.GasBudget)
 	p.Params.WriteToMarshalUtil(mu)
-	mu.WriteBool(!p.Allowance.IsEmpty())
-	if !p.Allowance.IsEmpty() {
-		p.Allowance.WriteToMarshalUtil(mu)
-	}
+	p.Allowance.WriteToMarshalUtil(mu)
 }
 
 func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -835,14 +781,8 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	if p.Params, err = dict.FromMarshalUtil(mu); err != nil {
 		return err
 	}
-	allowanceNotEmpty, err := mu.ReadBool()
-	if err != nil {
+	if p.Allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
 		return err
-	}
-	if allowanceNotEmpty {
-		if p.Allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
-			return err
-		}
 	}
 	return nil
 }

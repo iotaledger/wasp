@@ -57,8 +57,7 @@ func (ch *Chain) EVMGasRatio() util.Ratio32 {
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {
-	gasRatio := ch.EVMGasRatio()
-	req, err := iscp.NewEVMOffLedgerRequest(ch.ChainID, tx, &gasRatio)
+	req, err := iscp.NewEVMOffLedgerRequest(ch.ChainID, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +65,7 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, erro
 }
 
 func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
-	gasRatio := ch.EVMGasRatio()
-	res := ch.estimateGas(iscp.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg, &gasRatio))
+	res := ch.estimateGas(iscp.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg))
 	if res.Error != nil {
 		return 0, res.Error
 	}
