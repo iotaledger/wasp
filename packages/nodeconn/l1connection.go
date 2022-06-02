@@ -21,6 +21,7 @@ type L1Config struct {
 	APIAddress    string
 	FaucetAddress string
 	FaucetKey     *cryptolib.KeyPair
+	UseRemotePoW  bool
 }
 
 // nodeconn implements L1Client
