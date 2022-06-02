@@ -61,7 +61,7 @@ type UnsignedOffLedgerRequest interface {
 type OffLedgerRequest interface {
 	Request
 	OffLedgerRequestData
-	VerifySignature() bool
+	VerifySignature() error
 }
 
 type OnLedgerRequest interface {

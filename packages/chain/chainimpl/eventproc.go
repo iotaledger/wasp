@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -254,10 +255,10 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderPubKey.AsString(), msg.Req.ID())
 	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderPubKey)
 
-	if !c.isRequestValid(msg.Req) {
+	if err := c.validateRequest(msg.Req); err != nil {
 		// this means some node broadcasted an invalid request (bad chainID or signature)
 		// TODO should the sender node be punished somehow?
-		c.log.Errorf("handleOffLedgerRequestMsg message ignored: request is not valid")
+		c.log.Errorf("handleOffLedgerRequestMsg message ignored: %v", err)
 		return
 	}
 	if !c.mempool.ReceiveRequest(msg.Req) {
@@ -277,8 +278,11 @@ func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerPubKe
 	c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
-func (c *chainObj) isRequestValid(req iscp.OffLedgerRequest) bool {
-	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
+func (c *chainObj) validateRequest(req iscp.OffLedgerRequest) error {
+	if !req.ChainID().Equals(c.ID()) {
+		return fmt.Errorf("chainID mismatch")
+	}
+	return req.VerifySignature()
 }
 
 func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {

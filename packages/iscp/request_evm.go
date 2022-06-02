@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -132,9 +133,15 @@ func (r *evmOffLedgerRequest) Nonce() uint64 {
 	return r.tx.Nonce()
 }
 
-func (r *evmOffLedgerRequest) VerifySignature() bool {
+func (r *evmOffLedgerRequest) VerifySignature() error {
 	sender, err := evmutil.GetSender(r.tx)
-	return err != nil && sender == r.sender.EthAddress()
+	if err != nil {
+		return fmt.Errorf("cannot verify Ethereum tx sender: %v", err)
+	}
+	if sender != r.sender.EthAddress() {
+		return fmt.Errorf("sender mismatch in EVM off-ledger request")
+	}
+	return nil
 }
 
 type evmOffLedgerEstimateGasRequest struct {
@@ -199,7 +206,8 @@ func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
 }
 
 func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
-	return 0, true
+	// see VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
+	return math.MaxUint64, false
 }
 
 func (r *evmOffLedgerEstimateGasRequest) ID() RequestID {
@@ -240,7 +248,6 @@ func (r *evmOffLedgerEstimateGasRequest) Nonce() uint64 {
 	return 0
 }
 
-func (r *evmOffLedgerEstimateGasRequest) VerifySignature() bool {
-	// evmOffLedgerEstimateGasRequest should never be used to send regular requests
-	return false
+func (r *evmOffLedgerEstimateGasRequest) VerifySignature() error {
+	return fmt.Errorf("evmOffLedgerEstimateGasRequest should never be used to send regular requests")
 }

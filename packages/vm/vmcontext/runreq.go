@@ -41,7 +41,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
-	vmctx.gasBurnEnable(false)
+	vmctx.GasBurnEnable(false)
 
 	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 	defer func() { vmctx.currentStateUpdate = nil }()
@@ -127,7 +127,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 	}
 	vmctx.calculateAffordableGasBudget()
 	vmctx.gasSetBudget(vmctx.gasBudgetAdjusted)
-	vmctx.gasBurnEnable(true)
+	vmctx.GasBurnEnable(true)
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
@@ -222,15 +222,11 @@ func (vmctx *VMContext) getGasBudget() uint64 {
 		return gasBudget
 	}
 
-	// evmGasBookkeeping is the exceess iotas needed for gas when sending an EVM transaction
-	// TODO: automatically calculate this? Do not charge for blockchain bookkeeping?
-	const evmGasBookkeeping = 100_000
-
 	var gasRatio util.Ratio32
 	vmctx.callCore(evm.Contract, func(s kv.KVStore) {
 		gasRatio = evmimpl.GetGasRatio(s)
 	})
-	return evmtypes.EVMGasToISC(gasBudget, &gasRatio) + evmGasBookkeeping
+	return evmtypes.EVMGasToISC(gasBudget, &gasRatio)
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
@@ -306,7 +302,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
 	// disable gas burn
-	vmctx.gasBurnEnable(false)
+	vmctx.GasBurnEnable(false)
 	if vmctx.req.SenderAccount() == nil {
 		// no charging if sender is unknown
 		return

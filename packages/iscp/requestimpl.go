@@ -258,8 +258,11 @@ func (r *offLedgerRequestData) WithAllowance(allowance *Allowance) UnsignedOffLe
 }
 
 // VerifySignature verifies essence signature
-func (r *offLedgerRequestData) VerifySignature() bool {
-	return r.signatureScheme.publicKey.Verify(r.essenceBytes(), r.signatureScheme.signature)
+func (r *offLedgerRequestData) VerifySignature() error {
+	if !r.signatureScheme.publicKey.Verify(r.essenceBytes(), r.signatureScheme.signature) {
+		return fmt.Errorf("invalid signature")
+	}
+	return nil
 }
 
 // ID returns request id for this request
@@ -360,7 +363,7 @@ func (r *onLedgerRequestData) readFromUTXO(o iotago.Output, id *iotago.UTXOInput
 	r.output = o
 	r.inputID = *id
 	r.featureBlocks = fbSet
-	r.unlockConditions = o.UnlockConditionsSet()
+	r.unlockConditions = o.UnlockConditionSet()
 	r.requestMetadata = reqMetadata
 	return nil
 }

@@ -81,9 +81,9 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	}
 
 	// check req signature
-	if !offLedgerReq.VerifySignature() {
+	if err := offLedgerReq.VerifySignature(); err != nil {
 		o.requestsCache.Set(reqID, true)
-		return httperrors.BadRequest("Invalid signature.")
+		return httperrors.BadRequest(fmt.Sprintf("could not verify: %s", err.Error()))
 	}
 
 	// check req is for the correct chain

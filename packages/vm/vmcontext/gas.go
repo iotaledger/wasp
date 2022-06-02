@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
-func (vmctx *VMContext) gasBurnEnable(enable bool) {
+func (vmctx *VMContext) GasBurnEnable(enable bool) {
 	vmctx.gasBurnEnabled = enable
 }
 
