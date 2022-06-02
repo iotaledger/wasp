@@ -479,6 +479,7 @@ func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
 		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),
 		FaucetKey:     pt.FaucetKeyPair,
+		UseRemotePoW:  false,
 	}
 }
 
