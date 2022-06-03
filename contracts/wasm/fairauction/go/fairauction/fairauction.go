@@ -9,8 +9,11 @@ import (
 )
 
 const (
-	DurationDefault      = 60
-	DurationMin          = 1
+	// default duration is 60 min
+	DurationDefault = 60
+	// minimum duration is 1 min
+	DurationMin = 1
+	// maximum duration is 120 min
 	DurationMax          = 120
 	MaxDescriptionLength = 150
 	OwnerMarginDefault   = 50
@@ -18,52 +21,84 @@ const (
 	OwnerMarginMax       = 100
 )
 
-func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
-	token := f.Params.Token().Value()
-	currentAuction := f.State.Auctions().GetAuction(token)
-	ctx.Require(currentAuction.Exists(), "Missing auction info")
-	auction := currentAuction.Value()
-	if auction.HighestBid == 0 {
-		ctx.Log("No one bid on " + token.String())
-		ownerFee := auction.MinimumBid * auction.OwnerMargin / 1000
-		if ownerFee == 0 {
-			ownerFee = 1
-		}
-		// finalizeAuction request token was probably not confirmed yet
-		transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
-		transferTokens(ctx, auction.Creator, auction.Token, auction.NumTokens)
-		transferIotas(ctx, auction.Creator, auction.Deposit-ownerFee)
-		return
+func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
+	allowance := ctx.Allowance()
+	nfts := allowance.NftIDs()
+	ctx.Require(len(nfts) == 1, "single NFT allowance expected")
+	auctionNFT := nfts[0]
+
+	minimumBid := f.Params.MinimumBid().Value()
+
+	// duration in minutes
+	duration := f.Params.Duration().Value()
+	if duration == 0 {
+		duration = DurationDefault
+	}
+	if duration < DurationMin {
+		duration = DurationMin
+	}
+	if duration > DurationMax {
+		duration = DurationMax
 	}
 
-	ownerFee := auction.HighestBid * auction.OwnerMargin / 1000
-	if ownerFee == 0 {
-		ownerFee = 1
+	description := f.Params.Description().Value()
+	if description == "" {
+		description = "N/A"
+	}
+	if len(description) > MaxDescriptionLength {
+		ss := description[:MaxDescriptionLength]
+		description = ss + "[...]"
 	}
 
-	// return staked bids to losers
-	bids := f.State.Bids().GetBids(token)
-	bidderList := f.State.BidderList().GetBidderList(token)
-	size := bidderList.Length()
-	for i := uint32(0); i < size; i++ {
-		loser := bidderList.GetAgentID(i).Value()
-		if loser != auction.HighestBidder {
-			bid := bids.GetBid(loser).Value()
-			transferIotas(ctx, loser, bid.Amount)
-		}
+	ownerMargin := f.State.OwnerMargin().Value()
+	if ownerMargin == 0 {
+		ownerMargin = OwnerMarginDefault
 	}
 
-	// finalizeAuction request token was probably not confirmed yet
-	transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
-	transferTokens(ctx, auction.HighestBidder, auction.Token, auction.NumTokens)
-	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
+	// TODO need at least 1 iota (dust deposit) to run SC
+	margin := minimumBid * ownerMargin / 1000
+	if margin == 0 {
+		margin = 1
+	}
+	deposit := allowance.Iotas()
+	if deposit < margin {
+		ctx.Panic("Insufficient deposit")
+	}
+
+	currentAuction := f.State.Auctions().GetAuction(*auctionNFT)
+	if currentAuction.Exists() {
+		ctx.Panic("Auction for this nft already exists")
+	}
+
+	auction := &Auction{
+		Creator:       ctx.Caller(),
+		Deposit:       deposit,
+		Description:   description,
+		Duration:      duration,
+		HighestBid:    0,
+		HighestBidder: ctx.Caller(),
+		MinimumBid:    minimumBid,
+		OwnerMargin:   ownerMargin,
+		Nft:           *auctionNFT,
+		WhenStarted:   ctx.Timestamp(),
+	}
+	currentAuction.SetValue(auction)
+
+	// take custody of deposit and NFT
+	transfer := wasmlib.NewScTransferIotas(deposit)
+	transfer.AddNFT(auctionNFT)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+
+	fa := ScFuncs.FinalizeAuction(ctx)
+	fa.Params.Nft().SetValue(auction.Nft)
+	fa.Func.Delay(duration * 60).Post()
 }
 
 func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
 	bidAmount := ctx.Allowance().Iotas()
 	ctx.Require(bidAmount > 0, "Missing bid amount")
 
-	token := f.Params.Token().Value()
+	token := f.Params.Nft().Value()
 	currentAuction := f.State.Auctions().GetAuction(token)
 	ctx.Require(currentAuction.Exists(), "Missing auction info")
 
@@ -99,6 +134,47 @@ func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
 	}
 }
 
+func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
+	auctionNFT := f.Params.Nft().Value()
+	currentAuction := f.State.Auctions().GetAuction(auctionNFT)
+	ctx.Require(currentAuction.Exists(), "Missing auction info")
+	auction := currentAuction.Value()
+	if auction.HighestBid == 0 {
+		ctx.Log("No one bid on " + auctionNFT.String())
+		ownerFee := auction.MinimumBid * auction.OwnerMargin / 1000
+		if ownerFee == 0 {
+			ownerFee = 1
+		}
+		// finalizeAuction request token was probably not confirmed yet
+		transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
+		transferNFT(ctx, auction.Creator, auction.Nft)
+		transferIotas(ctx, auction.Creator, auction.Deposit-ownerFee)
+		return
+	}
+
+	ownerFee := auction.HighestBid * auction.OwnerMargin / 1000
+	if ownerFee == 0 {
+		ownerFee = 1
+	}
+
+	// return staked bids to losers
+	bids := f.State.Bids().GetBids(auctionNFT)
+	bidderList := f.State.BidderList().GetBidderList(auctionNFT)
+	size := bidderList.Length()
+	for i := uint32(0); i < size; i++ {
+		loser := bidderList.GetAgentID(i).Value()
+		if loser != auction.HighestBidder {
+			bid := bids.GetBid(loser).Value()
+			transferIotas(ctx, loser, bid.Amount)
+		}
+	}
+
+	// finalizeAuction request token was probably not confirmed yet
+	transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
+	transferNFT(ctx, auction.HighestBidder, auction.Nft)
+	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
+}
+
 func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
 	ownerMargin := f.Params.OwnerMargin().Value()
 	if ownerMargin < OwnerMarginMin {
@@ -110,78 +186,8 @@ func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
 	f.State.OwnerMargin().SetValue(ownerMargin)
 }
 
-func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
-	token := f.Params.Token().Value()
-	numTokens := ctx.Allowance().Balance(&token)
-	if numTokens.IsZero() {
-		ctx.Panic("Missing auction tokens")
-	}
-
-	minimumBid := f.Params.MinimumBid().Value()
-
-	// duration in minutes
-	duration := f.Params.Duration().Value()
-	if duration == 0 {
-		duration = DurationDefault
-	}
-	if duration < DurationMin {
-		duration = DurationMin
-	}
-	if duration > DurationMax {
-		duration = DurationMax
-	}
-
-	description := f.Params.Description().Value()
-	if description == "" {
-		description = "N/A"
-	}
-	if len(description) > MaxDescriptionLength {
-		ss := description[:MaxDescriptionLength]
-		description = ss + "[...]"
-	}
-
-	ownerMargin := f.State.OwnerMargin().Value()
-	if ownerMargin == 0 {
-		ownerMargin = OwnerMarginDefault
-	}
-
-	// need at least 1 iota to run SC
-	margin := minimumBid * ownerMargin / 1000
-	if margin == 0 {
-		margin = 1
-	}
-	deposit := ctx.Allowance().Iotas()
-	if deposit < margin {
-		ctx.Panic("Insufficient deposit")
-	}
-
-	currentAuction := f.State.Auctions().GetAuction(token)
-	if currentAuction.Exists() {
-		ctx.Panic("Auction for this token already exists")
-	}
-
-	auction := &Auction{
-		Creator:       ctx.Caller(),
-		Deposit:       deposit,
-		Description:   description,
-		Duration:      duration,
-		HighestBid:    0,
-		HighestBidder: wasmtypes.ScAgentID{},
-		MinimumBid:    minimumBid,
-		NumTokens:     numTokens.Uint64(),
-		OwnerMargin:   ownerMargin,
-		Token:         token,
-		WhenStarted:   ctx.Timestamp(),
-	}
-	currentAuction.SetValue(auction)
-
-	fa := ScFuncs.FinalizeAuction(ctx)
-	fa.Params.Token().SetValue(auction.Token)
-	fa.Func.Delay(duration * 60).Post()
-}
-
-func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
-	token := f.Params.Token().Value()
+func viewGetAuctionInfo(ctx wasmlib.ScViewContext, f *GetAuctionInfoContext) {
+	token := f.Params.Nft().Value()
 	currentAuction := f.State.Auctions().GetAuction(token)
 	if !currentAuction.Exists() {
 		ctx.Panic("Missing auction info")
@@ -195,9 +201,8 @@ func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
 	f.Results.HighestBid().SetValue(auction.HighestBid)
 	f.Results.HighestBidder().SetValue(auction.HighestBidder)
 	f.Results.MinimumBid().SetValue(auction.MinimumBid)
-	f.Results.NumTokens().SetValue(auction.NumTokens)
 	f.Results.OwnerMargin().SetValue(auction.OwnerMargin)
-	f.Results.Token().SetValue(auction.Token)
+	f.Results.Nft().SetValue(auction.Nft)
 	f.Results.WhenStarted().SetValue(auction.WhenStarted)
 
 	bidderList := f.State.BidderList().GetBidderList(token)
@@ -215,14 +220,13 @@ func transferIotas(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, amount 
 	ctx.Send(agent.Address(), wasmlib.NewScTransferIotas(amount))
 }
 
-func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, token wasmtypes.ScTokenID, amount uint64) {
-	bigAmount := wasmtypes.NewScBigInt(amount)
+func transferNFT(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, nft wasmtypes.ScNftID) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.Send(agent.Address(), wasmlib.NewScTransferTokens(&token, bigAmount))
+		ctx.Send(agent.Address(), wasmlib.NewScTransferNFT(&nft))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.Send(agent.Address(), wasmlib.NewScTransferTokens(&token, bigAmount))
+	ctx.Send(agent.Address(), wasmlib.NewScTransferNFT(&nft))
 }

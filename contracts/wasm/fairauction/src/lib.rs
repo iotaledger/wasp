@@ -34,7 +34,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	FUNC_PLACE_BID,
     	FUNC_SET_OWNER_MARGIN,
     	FUNC_START_AUCTION,
-    	VIEW_GET_INFO,
+    	VIEW_GET_AUCTION_INFO,
 	],
     funcs: &[
     	func_finalize_auction_thunk,
@@ -43,7 +43,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	func_start_auction_thunk,
 	],
     views: &[
-    	view_get_info_thunk,
+    	view_get_auction_info_thunk,
 	],
 };
 
@@ -72,7 +72,7 @@ fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
-	ctx.require(f.params.token().exists(), "missing mandatory token");
+	ctx.require(f.params.nft().exists(), "missing mandatory nft");
 	func_finalize_auction(ctx, &f);
 	ctx.log("fairauction.funcFinalizeAuction ok");
 }
@@ -88,7 +88,7 @@ fn func_place_bid_thunk(ctx: &ScFuncContext) {
 		params: ImmutablePlaceBidParams { proxy: params_proxy() },
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.token().exists(), "missing mandatory token");
+	ctx.require(f.params.nft().exists(), "missing mandatory nft");
 	func_place_bid(ctx, &f);
 	ctx.log("fairauction.funcPlaceBid ok");
 }
@@ -125,26 +125,25 @@ fn func_start_auction_thunk(ctx: &ScFuncContext) {
 		state: MutableFairAuctionState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.minimum_bid().exists(), "missing mandatory minimumBid");
-	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_start_auction(ctx, &f);
 	ctx.log("fairauction.funcStartAuction ok");
 }
 
-pub struct GetInfoContext {
-	params: ImmutableGetInfoParams,
-	results: MutableGetInfoResults,
+pub struct GetAuctionInfoContext {
+	params: ImmutableGetAuctionInfoParams,
+	results: MutableGetAuctionInfoResults,
 	state: ImmutableFairAuctionState,
 }
 
-fn view_get_info_thunk(ctx: &ScViewContext) {
-	ctx.log("fairauction.viewGetInfo");
-	let f = GetInfoContext {
-		params: ImmutableGetInfoParams { proxy: params_proxy() },
-		results: MutableGetInfoResults { proxy: results_proxy() },
+fn view_get_auction_info_thunk(ctx: &ScViewContext) {
+	ctx.log("fairauction.viewGetAuctionInfo");
+	let f = GetAuctionInfoContext {
+		params: ImmutableGetAuctionInfoParams { proxy: params_proxy() },
+		results: MutableGetAuctionInfoResults { proxy: results_proxy() },
 		state: ImmutableFairAuctionState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.token().exists(), "missing mandatory token");
-	view_get_info(ctx, &f);
+	ctx.require(f.params.nft().exists(), "missing mandatory nft");
+	view_get_auction_info(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
-	ctx.log("fairauction.viewGetInfo ok");
+	ctx.log("fairauction.viewGetAuctionInfo ok");
 }

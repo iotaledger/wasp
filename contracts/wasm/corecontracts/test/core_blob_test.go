@@ -12,6 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// this is the expected blob hash for key0/val0 key1/val1
+const expectedBlobHash = "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
+
 func setupBlob(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
 	ctx = ctx.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
@@ -28,8 +31,7 @@ func TestStoreBlob(t *testing.T) {
 	f.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
-	expectedHash := "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
-	require.Equal(t, expectedHash, f.Results.Hash().Value().String())
+	require.Equal(t, expectedBlobHash, f.Results.Hash().Value().String())
 }
 
 func TestGetBlobInfo(t *testing.T) {
@@ -41,11 +43,10 @@ func TestGetBlobInfo(t *testing.T) {
 	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
 	fStore.Func.Post()
 	require.NoError(t, ctx.Err)
-	expectedHash := "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
-	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
+	require.Equal(t, expectedBlobHash, fStore.Results.Hash().Value().String())
 
 	fList := coreblob.ScFuncs.GetBlobInfo(ctx)
-	fList.Params.Hash().SetValue(wasmtypes.HashFromString(expectedHash))
+	fList.Params.Hash().SetValue(wasmtypes.HashFromString(expectedBlobHash))
 	fList.Func.Call()
 	size := fList.Results.BlobSizes().GetInt32("key0").Value()
 	require.Equal(t, int32(4), size)
@@ -60,12 +61,11 @@ func TestGetBlobField(t *testing.T) {
 	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
 	fStore.Func.Post()
 	require.NoError(t, ctx.Err)
-	expectedHash := "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
-	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
+	require.Equal(t, expectedBlobHash, fStore.Results.Hash().Value().String())
 
 	fList := coreblob.ScFuncs.GetBlobField(ctx)
 	fList.Params.Field().SetValue("key0")
-	fList.Params.Hash().SetValue(wasmtypes.HashFromString(expectedHash))
+	fList.Params.Hash().SetValue(wasmtypes.HashFromString(expectedBlobHash))
 	fList.Func.Call()
 	stored := fList.Results.Bytes().Value()
 	require.Equal(t, []byte("val0"), stored)

@@ -15,7 +15,7 @@ var exportMap = wasmlib.ScExportMap{
 		FuncPlaceBid,
 		FuncSetOwnerMargin,
 		FuncStartAuction,
-		ViewGetInfo,
+		ViewGetAuctionInfo,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		funcFinalizeAuctionThunk,
@@ -24,7 +24,7 @@ var exportMap = wasmlib.ScExportMap{
 		funcStartAuctionThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		viewGetInfoThunk,
+		viewGetAuctionInfoThunk,
 	},
 }
 
@@ -56,7 +56,7 @@ func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
-	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
+	ctx.Require(f.Params.Nft().Exists(), "missing mandatory nft")
 	funcFinalizeAuction(ctx, f)
 	ctx.Log("fairauction.funcFinalizeAuction ok")
 }
@@ -76,7 +76,7 @@ func funcPlaceBidThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
+	ctx.Require(f.Params.Nft().Exists(), "missing mandatory nft")
 	funcPlaceBid(ctx, f)
 	ctx.Log("fairauction.funcPlaceBid ok")
 }
@@ -121,33 +121,32 @@ func funcStartAuctionThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 	ctx.Require(f.Params.MinimumBid().Exists(), "missing mandatory minimumBid")
-	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcStartAuction(ctx, f)
 	ctx.Log("fairauction.funcStartAuction ok")
 }
 
-type GetInfoContext struct {
-	Params  ImmutableGetInfoParams
-	Results MutableGetInfoResults
+type GetAuctionInfoContext struct {
+	Params  ImmutableGetAuctionInfoParams
+	Results MutableGetAuctionInfoResults
 	State   ImmutableFairAuctionState
 }
 
-func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
-	ctx.Log("fairauction.viewGetInfo")
+func viewGetAuctionInfoThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("fairauction.viewGetAuctionInfo")
 	results := wasmlib.NewScDict()
-	f := &GetInfoContext{
-		Params: ImmutableGetInfoParams{
+	f := &GetAuctionInfoContext{
+		Params: ImmutableGetAuctionInfoParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
-		Results: MutableGetInfoResults{
+		Results: MutableGetAuctionInfoResults{
 			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairAuctionState{
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
-	viewGetInfo(ctx, f)
+	ctx.Require(f.Params.Nft().Exists(), "missing mandatory nft")
+	viewGetAuctionInfo(ctx, f)
 	ctx.Results(results)
-	ctx.Log("fairauction.viewGetInfo ok")
+	ctx.Log("fairauction.viewGetAuctionInfo ok")
 }

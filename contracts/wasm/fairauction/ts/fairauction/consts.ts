@@ -8,14 +8,14 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "fairauction";
-export const ScDescription = "Decentralized auction to securely sell tokens to the highest bidder";
+export const ScDescription = "Decentralized auction to securely sell NFTs to the highest bidder";
 export const HScName       = new wasmtypes.ScHname(0x1b5c43b1);
 
 export const ParamDescription = "description";
 export const ParamDuration    = "duration";
 export const ParamMinimumBid  = "minimumBid";
+export const ParamNft         = "nft";
 export const ParamOwnerMargin = "ownerMargin";
-export const ParamToken       = "token";
 
 export const ResultBidders       = "bidders";
 export const ResultCreator       = "creator";
@@ -25,9 +25,8 @@ export const ResultDuration      = "duration";
 export const ResultHighestBid    = "highestBid";
 export const ResultHighestBidder = "highestBidder";
 export const ResultMinimumBid    = "minimumBid";
-export const ResultNumTokens     = "numTokens";
+export const ResultNft           = "nft";
 export const ResultOwnerMargin   = "ownerMargin";
-export const ResultToken         = "token";
 export const ResultWhenStarted   = "whenStarted";
 
 export const StateAuctions    = "auctions";
@@ -39,10 +38,10 @@ export const FuncFinalizeAuction = "finalizeAuction";
 export const FuncPlaceBid        = "placeBid";
 export const FuncSetOwnerMargin  = "setOwnerMargin";
 export const FuncStartAuction    = "startAuction";
-export const ViewGetInfo         = "getInfo";
+export const ViewGetAuctionInfo  = "getAuctionInfo";
 
 export const HFuncFinalizeAuction = new wasmtypes.ScHname(0x8d534ddc);
 export const HFuncPlaceBid        = new wasmtypes.ScHname(0x9bd72fa9);
 export const HFuncSetOwnerMargin  = new wasmtypes.ScHname(0x1774461a);
 export const HFuncStartAuction    = new wasmtypes.ScHname(0xd5b7bacb);
-export const HViewGetInfo         = new wasmtypes.ScHname(0xcfedba5f);
+export const HViewGetAuctionInfo  = new wasmtypes.ScHname(0xd1f16936);

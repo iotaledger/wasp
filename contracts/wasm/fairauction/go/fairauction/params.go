@@ -13,36 +13,36 @@ type ImmutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// token identifies the auction
-func (s ImmutableFinalizeAuctionParams) Token() wasmtypes.ScImmutableTokenID {
-	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
+// NFT identifies the auction
+func (s ImmutableFinalizeAuctionParams) Nft() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNft))
 }
 
 type MutableFinalizeAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// token identifies the auction
-func (s MutableFinalizeAuctionParams) Token() wasmtypes.ScMutableTokenID {
-	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
+// NFT identifies the auction
+func (s MutableFinalizeAuctionParams) Nft() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNft))
 }
 
 type ImmutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// token identifies the auction
-func (s ImmutablePlaceBidParams) Token() wasmtypes.ScImmutableTokenID {
-	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
+// NFT identifies the auction
+func (s ImmutablePlaceBidParams) Nft() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNft))
 }
 
 type MutablePlaceBidParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// token identifies the auction
-func (s MutablePlaceBidParams) Token() wasmtypes.ScMutableTokenID {
-	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
+// NFT identifies the auction
+func (s MutablePlaceBidParams) Nft() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNft))
 }
 
 type ImmutableSetOwnerMarginParams struct {
@@ -67,7 +67,7 @@ type ImmutableStartAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// description of the tokens being auctioned
+// description of the NFTs being auctioned
 func (s ImmutableStartAuctionParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
@@ -82,16 +82,11 @@ func (s ImmutableStartAuctionParams) MinimumBid() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
-// token of the tokens being auctioned
-func (s ImmutableStartAuctionParams) Token() wasmtypes.ScImmutableTokenID {
-	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
-}
-
 type MutableStartAuctionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// description of the tokens being auctioned
+// description of the NFTs being auctioned
 func (s MutableStartAuctionParams) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
@@ -106,25 +101,20 @@ func (s MutableStartAuctionParams) MinimumBid() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
-// token of the tokens being auctioned
-func (s MutableStartAuctionParams) Token() wasmtypes.ScMutableTokenID {
-	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
-}
-
-type ImmutableGetInfoParams struct {
+type ImmutableGetAuctionInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// token identifies the auction
-func (s ImmutableGetInfoParams) Token() wasmtypes.ScImmutableTokenID {
-	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamToken))
+// NFT identifies the auction
+func (s ImmutableGetAuctionInfoParams) Nft() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNft))
 }
 
-type MutableGetInfoParams struct {
+type MutableGetAuctionInfoParams struct {
 	proxy wasmtypes.Proxy
 }
 
-// token identifies the auction
-func (s MutableGetInfoParams) Token() wasmtypes.ScMutableTokenID {
-	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamToken))
+// NFT identifies the auction
+func (s MutableGetAuctionInfoParams) Nft() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNft))
 }

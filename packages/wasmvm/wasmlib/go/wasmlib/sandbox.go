@@ -148,7 +148,7 @@ func (s ScSandbox) Results(results *ScDict) {
 	Sandbox(FnResults, results.Bytes())
 }
 
-// deterministic time stamp fixed at the moment of calling the smart contract
+// deterministic timestamp in nanosecond fixed at the moment of calling the smart contract
 func (s ScSandbox) Timestamp() uint64 {
 	return wasmtypes.Uint64FromBytes(Sandbox(FnTimestamp, nil))
 }

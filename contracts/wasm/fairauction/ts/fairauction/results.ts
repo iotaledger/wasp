@@ -8,7 +8,7 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
+export class ImmutableGetAuctionInfoResults extends wasmtypes.ScProxy {
 	// nr of bidders
 	bidders(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBidders));
@@ -49,19 +49,14 @@ export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMinimumBid));
 	}
 
-	// number of tokens for sale
-	numTokens(): wasmtypes.ScImmutableUint64 {
-		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultNumTokens));
+	// NFT of NFTs for sale
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ResultNft));
 	}
 
 	// auction owner's margin in promilles
 	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultOwnerMargin));
-	}
-
-	// token of tokens for sale
-	token(): wasmtypes.ScImmutableTokenID {
-		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ResultToken));
 	}
 
 	// timestamp when auction started
@@ -70,7 +65,7 @@ export class ImmutableGetInfoResults extends wasmtypes.ScProxy {
 	}
 }
 
-export class MutableGetInfoResults extends wasmtypes.ScProxy {
+export class MutableGetAuctionInfoResults extends wasmtypes.ScProxy {
 	// nr of bidders
 	bidders(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBidders));
@@ -111,19 +106,14 @@ export class MutableGetInfoResults extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMinimumBid));
 	}
 
-	// number of tokens for sale
-	numTokens(): wasmtypes.ScMutableUint64 {
-		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultNumTokens));
+	// NFT of NFTs for sale
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ResultNft));
 	}
 
 	// auction owner's margin in promilles
 	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultOwnerMargin));
-	}
-
-	// token of tokens for sale
-	token(): wasmtypes.ScMutableTokenID {
-		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ResultToken));
 	}
 
 	// timestamp when auction started
