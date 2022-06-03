@@ -20,9 +20,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     let nfts = allowance.nft_ids();
     ctx.require(nfts.len() == 1, "single NFT allowance expected");
     let auction_nft = nfts[0];
-    let mut transfer = ScTransfer::iotas(1);
-    transfer.add_nft(&auction_nft);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+
     let minimum_bid = f.params.minimum_bid().value();
 
     // duration in minutes
@@ -51,7 +49,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         owner_margin = OWNER_MARGIN_DEFAULT;
     }
 
-    // need at least 1 iota to run SC
+    //TODO need at least 1 iota to run SC
     let mut margin = minimum_bid * owner_margin / 1000;
     if margin == 0 {
         margin = 1;
@@ -79,6 +77,11 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         when_started: ctx.timestamp(),
     };
     current_auction.set_value(&auction);
+
+    // take custody of deposit and NFT
+    let mut transfer = ScTransfer::iotas(deposit);
+    transfer.add_nft(&auction_nft);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
 
     let fa = ScFuncs::finalize_auction(ctx);
     fa.params.nft().set_value(&auction.nft);

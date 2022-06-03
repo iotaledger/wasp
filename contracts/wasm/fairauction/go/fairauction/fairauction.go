@@ -19,20 +19,13 @@ const (
 	OwnerMarginDefault   = 50
 	OwnerMarginMin       = 5
 	OwnerMarginMax       = 100
-	DustDeposit          = 1
 )
 
 func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
-	nfts := ctx.Allowance().NftIDs()
+	allowance := ctx.Allowance()
+	nfts := allowance.NftIDs()
 	ctx.Require(len(nfts) == 1, "single NFT allowance expected")
 	auctionNFT := nfts[0]
-
-	// Any transfer to the Smart Contract is implemented as a transfer of assets to the caller's L2 account,
-	// with an allowance to those assets passed to the Smart Contract, so Smart Contract needs to actively
-	// transfer the for sale NFT to Smart Contract account
-	transfer := wasmlib.NewScTransferIotas(DustDeposit)
-	transfer.AddNFT(auctionNFT)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	minimumBid := f.Params.MinimumBid().Value()
 
@@ -62,12 +55,12 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		ownerMargin = OwnerMarginDefault
 	}
 
-	// need at least 1 iota (dust deposit) to run SC
+	// TODO need at least 1 iota (dust deposit) to run SC
 	margin := minimumBid * ownerMargin / 1000
 	if margin == 0 {
-		margin = DustDeposit
+		margin = 1
 	}
-	deposit := ctx.Allowance().Iotas()
+	deposit := allowance.Iotas()
 	if deposit < margin {
 		ctx.Panic("Insufficient deposit")
 	}
@@ -90,6 +83,11 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		WhenStarted:   ctx.Timestamp(),
 	}
 	currentAuction.SetValue(auction)
+
+	// take custody of deposit and NFT
+	transfer := wasmlib.NewScTransferIotas(deposit)
+	transfer.AddNFT(auctionNFT)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	fa := ScFuncs.FinalizeAuction(ctx)
 	fa.Params.Nft().SetValue(auction.Nft)

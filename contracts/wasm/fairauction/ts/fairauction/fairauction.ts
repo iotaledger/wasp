@@ -14,14 +14,10 @@ const OWNER_MARGIN_MIN: u64 = 5;
 const OWNER_MARGIN_MAX: u64 = 100;
 
 export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
-    // let nft = f.params.nft().value();
-    let nfts = ctx.allowance().nftIDs();
+    let allowance = ctx.allowance();
+    let nfts = allowance.nftIDs();
     ctx.require(nfts.length == 1, "single NFT allowance expected")
     let auctionNFT = nfts[0]
-
-    let transfer = wasmlib.ScTransfer.iotas(1);
-    transfer.addNFT(auctionNFT)
-    ctx.transferAllowed(ctx.accountID(), transfer, false)
 
     let minimumBid = f.params.minimumBid().value();
 
@@ -50,12 +46,12 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
         ownerMargin = OWNER_MARGIN_DEFAULT;
     }
 
-    // need at least 1 iota to run SC
+    //TODO need at least 1 iota to run SC
     let margin = minimumBid * ownerMargin / 1000;
     if (margin == 0) {
         margin = 1;
     }
-    let deposit = ctx.allowance().iotas();
+    let deposit = allowance.iotas();
     if (deposit < margin) {
         ctx.panic("Insufficient deposit");
     }
@@ -77,6 +73,11 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     auction.nft = auctionNFT;
     auction.whenStarted = ctx.timestamp();
     currentAuction.setValue(auction);
+
+    // take custody of deposit and NFT
+    let transfer = wasmlib.ScTransfer.iotas(deposit);
+    transfer.addNFT(auctionNFT)
+    ctx.transferAllowed(ctx.accountID(), transfer, false)
 
     let fa = sc.ScFuncs.finalizeAuction(ctx);
     fa.params.nft().setValue(auction.nft);

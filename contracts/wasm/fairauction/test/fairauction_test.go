@@ -16,8 +16,8 @@ import (
 
 const (
 	description = "Cool NFTs for sale!"
-	deposit     = 1000
-	minBid      = 500
+	deposit     = uint64(1000)
+	minBid      = uint64(500)
 )
 
 func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, wasmtypes.ScNftID) {
@@ -64,12 +64,11 @@ func TestGetAuctionInfo(t *testing.T) {
 	info.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	// no bider since auction just started
+	// no bidder since auction just started
 	require.EqualValues(t, 0, info.Results.Bidders().Value())
 	require.EqualValues(t, nftID, info.Results.Nft().Value())
 	require.EqualValues(t, auctioneer.ScAgentID(), info.Results.Creator().Value())
-	// fairauction.DustDeposit is used 1 time for ensure the auction transaction exists
-	require.Equal(t, uint64(deposit-fairauction.DustDeposit), info.Results.Deposit().Value())
+	require.Equal(t, deposit, info.Results.Deposit().Value())
 	require.EqualValues(t, description, info.Results.Description().Value())
 	require.EqualValues(t, fairauction.DurationDefault, info.Results.Duration().Value())
 	// initial highest bid is 0
