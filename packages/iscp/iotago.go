@@ -1,6 +1,7 @@
 package iscp
 
 import (
+	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"golang.org/x/xerrors"
 )
@@ -22,4 +23,20 @@ func DecodeOutputID(b []byte, def ...iotago.OutputID) (iotago.OutputID, error) {
 
 func EncodeOutputID(value iotago.OutputID) []byte {
 	return value[:]
+}
+
+func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
+	data, err := mu.ReadBytes(iotago.OutputIDLength)
+	if err != nil {
+		return nil, err
+	}
+	id, err := DecodeOutputID(data)
+	if err != nil {
+		return nil, err
+	}
+	return id.UTXOInput(), nil
+}
+
+func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
+	mu.WriteBytes(EncodeOutputID(id.ID()))
 }

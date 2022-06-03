@@ -27,7 +27,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 
 	if gasLimit == 0 {
 		var err error
-		gasLimit, err = emu.EstimateGas(ethereum.CallMsg{
+		gasLimit, err = emu.estimateGas(ethereum.CallMsg{
 			From:  senderAddress,
 			To:    &receiverAddress,
 			Value: amount,
@@ -44,7 +44,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx)
+	receipt, res, err := emu.SendTransaction(tx, nil)
 	require.NoError(t, err)
 	if res != nil && res.Err != nil {
 		t.Logf("Execution failed: %v", res.Err)
@@ -186,7 +186,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	data = append(data, contractBytecode...)
 	data = append(data, constructorArguments...)
 
-	gasLimit, err := emu.EstimateGas(ethereum.CallMsg{
+	gasLimit, err := emu.estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
 		Value: txValue,
 		Data:  data,
@@ -202,7 +202,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx)
+	receipt, res, err := emu.SendTransaction(tx, nil)
 	require.NoError(t, err)
 	require.NoError(t, res.Err)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
@@ -281,7 +281,7 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, callArguments)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments})
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -308,7 +308,7 @@ func TestStorageContract(t *testing.T) {
 		res, err := emu.CallContract(ethereum.CallMsg{
 			To:   &contractAddress,
 			Data: callArguments,
-		})
+		}, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -358,7 +358,7 @@ func TestERC20Contract(t *testing.T) {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments})
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
 		require.NoError(t, err)
 
 		v := new(big.Int)
@@ -491,7 +491,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 	b.ResetTimer()
 	for _, chunk := range chunks {
 		for _, tx := range chunk {
-			receipt, res, err := emu.SendTransaction(tx)
+			receipt, res, err := emu.SendTransaction(tx, nil)
 			require.NoError(b, err)
 			require.NoError(b, res.Err)
 			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)

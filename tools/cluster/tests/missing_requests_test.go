@@ -44,8 +44,7 @@ func TestMissingRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	// send off-ledger request to all nodes except #3
-	req := iscp.NewOffLedgerRequest(chainID, nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}, 0)
-	req.Sign(userWallet)
+	req := iscp.NewOffLedgerRequest(chainID, nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}, 0).Sign(userWallet)
 
 	err = clu.WaspClient(0).PostOffLedgerRequest(chainID, req)
 	require.NoError(t, err)
@@ -60,8 +59,7 @@ func TestMissingRequests(t *testing.T) {
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
-	req2 := iscp.NewOffLedgerRequest(chainID, iscp.Hn("foo"), iscp.Hn("bar"), nil, 1)
-	req2.Sign(userWallet)
+	req2 := iscp.NewOffLedgerRequest(chainID, iscp.Hn("foo"), iscp.Hn("bar"), nil, 1).Sign(userWallet)
 	err = clu.WaspClient(3).PostOffLedgerRequest(chainID, req2)
 	require.NoError(t, err)
 	//-------

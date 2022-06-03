@@ -10,7 +10,7 @@ import (
 )
 
 // UploadBlob sends an off-ledger request to call 'store' in the blob contract.
-func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *iscp.OffLedgerRequestData, *iscp.Receipt, error) {
+func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, iscp.OffLedgerRequest, *iscp.Receipt, error) {
 	blobHash := blob.MustGetBlobHash(fields)
 
 	req, err := c.PostOffLedgerRequest(

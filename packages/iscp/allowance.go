@@ -80,6 +80,10 @@ func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
 }
 
 func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.WriteBool(a.IsEmpty())
+	if a.IsEmpty() {
+		return
+	}
 	a.Assets.WriteToMarshalUtil(mu)
 	mu.WriteUint16(uint16(len(a.NFTs)))
 	for _, id := range a.NFTs {
@@ -88,6 +92,13 @@ func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 }
 
 func AllowanceFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Allowance, error) {
+	empty, err := mu.ReadBool()
+	if err != nil {
+		return nil, err
+	}
+	if empty {
+		return NewEmptyAllowance(), nil
+	}
 	assets, err := FungibleTokensFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err

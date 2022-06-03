@@ -12,7 +12,7 @@ import (
 
 type OffLedgerRequestMsg struct {
 	ChainID *iscp.ChainID
-	Req     *iscp.OffLedgerRequestData
+	Req     iscp.OffLedgerRequest
 }
 
 type OffLedgerRequestMsgIn struct {
@@ -20,7 +20,7 @@ type OffLedgerRequestMsgIn struct {
 	SenderPubKey *cryptolib.PublicKey
 }
 
-func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) *OffLedgerRequestMsg {
+func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req iscp.OffLedgerRequest) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     req,
@@ -40,11 +40,11 @@ func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
 	if err != nil {
 		return nil, err
 	}
-	req, err := iscp.RequestDataFromMarshalUtil(mu)
+	req, err := iscp.NewRequestFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	reqCasted, ok := req.(*iscp.OffLedgerRequestData)
+	reqCasted, ok := req.(iscp.OffLedgerRequest)
 	if !ok {
 		return nil, xerrors.New("OffLedgerRequestMsgFromBytes: wrong type of request data")
 	}

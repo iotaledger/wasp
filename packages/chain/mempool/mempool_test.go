@@ -36,8 +36,8 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 
 func now() iscp.TimeData { return iscp.TimeData{Time: time.Now()} }
 
-func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestParameters)) []*iscp.OnLedgerRequestData {
-	result := make([]*iscp.OnLedgerRequestData, amount)
+func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestParameters)) []iscp.OnLedgerRequest {
+	result := make([]iscp.OnLedgerRequest, amount)
 	for i := range result {
 		requestParams := iscp.RequestParameters{
 			TargetAddress:  chainAddress,
@@ -190,8 +190,8 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(chainAddress, rdr, log, mempoolMetrics)
 
-	offLedgerRequest := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("dummyContract"), iscp.Hn("dummyEP"), dict.New(), 0)
-	offLedgerRequest.Sign(cryptolib.NewKeyPair())
+	offLedgerRequest := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("dummyContract"), iscp.Hn("dummyEP"), dict.New(), 0).
+		Sign(cryptolib.NewKeyPair())
 	require.EqualValues(t, 0, mempoolMetrics.offLedgerRequestCounter)
 	pool.ReceiveRequests(offLedgerRequest)
 	require.True(t, pool.WaitRequestInPool(offLedgerRequest.ID(), 200*time.Millisecond))

@@ -44,12 +44,12 @@ func (sc *WasmClientService) PostRequest(chainID *iscp.ChainID, hContract, hFunc
 	sc.nonce++
 	req := iscp.NewOffLedgerRequest(chainID, hContract, hFuncName, params, sc.nonce)
 	req.WithAllowance(allowance)
-	req.Sign(keyPair)
-	err := sc.waspClient.PostOffLedgerRequest(chainID, req)
+	signed := req.Sign(keyPair)
+	err := sc.waspClient.PostOffLedgerRequest(chainID, signed)
 	if err != nil {
 		return nil, err
 	}
-	id := req.ID()
+	id := signed.ID()
 	return &id, nil
 }
 

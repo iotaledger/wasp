@@ -23,8 +23,7 @@ func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress iotago.Add
 	args.Set(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
 	nonce := uint64(time.Now().UnixNano())
 	ret := iscp.NewOffLedgerRequest(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args, nonce)
-	ret.Sign(keyPair)
-	return ret
+	return ret.Sign(keyPair)
 }
 
 func MakeRotateStateControllerTransaction(
