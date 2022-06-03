@@ -280,7 +280,7 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 			Value:    (*big.Int)(args.Value),
 			Data:     data,
 		}
-		estimated, err := e.evmChain.EstimateGas(callArgs, nil)
+		estimated, err := e.evmChain.EstimateGas(callArgs)
 		if err != nil {
 			return err
 		}

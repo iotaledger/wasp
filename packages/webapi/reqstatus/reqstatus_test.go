@@ -8,6 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -30,7 +31,7 @@ func (m *mockChain) GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestRecei
 		iscp.Hn("some entrypoint"),
 		dict.Dict{foo: []byte("bar")},
 		42,
-	)
+	).Sign(cryptolib.NewKeyPair())
 	return &blocklog.RequestReceipt{
 		Request: req,
 		Error: &iscp.UnresolvedVMError{

@@ -34,25 +34,27 @@ import (
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
 type ViewContext struct {
-	processors  *processors.Cache
-	stateReader state.OptimisticStateReader
-	chainID     *iscp.ChainID
-	log         *logger.Logger
-	chainInfo   *governance.ChainInfo
-	gasBurnLog  *gas.BurnLog
-	gasBudget   uint64
-	callStack   []*callContext
-	l1Params    *parameters.L1Params
+	processors     *processors.Cache
+	stateReader    state.OptimisticStateReader
+	chainID        *iscp.ChainID
+	log            *logger.Logger
+	chainInfo      *governance.ChainInfo
+	gasBurnLog     *gas.BurnLog
+	gasBudget      uint64
+	gasBurnEnabled bool
+	callStack      []*callContext
+	l1Params       *parameters.L1Params
 }
 
 var _ execution.WaspContext = &ViewContext{}
 
 func New(ch chain.ChainCore) *ViewContext {
 	return &ViewContext{
-		processors:  ch.Processors(),
-		stateReader: ch.GetStateReader(),
-		chainID:     ch.ID(),
-		log:         ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		processors:     ch.Processors(),
+		stateReader:    ch.GetStateReader(),
+		chainID:        ch.ID(),
+		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		gasBurnEnabled: true,
 	}
 }
 
@@ -69,6 +71,9 @@ func (ctx *ViewContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 }
 
 func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
+	if !ctx.gasBurnEnabled {
+		return
+	}
 	g := burnCode.Cost(par...)
 	ctx.gasBurnLog.Record(burnCode, g)
 	if g > ctx.gasBudget {
@@ -286,4 +291,8 @@ func (ctx *ViewContext) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitm
 		return nil, retErr
 	}
 	return retC, nil
+}
+
+func (ctx *ViewContext) GasBurnEnable(enable bool) {
+	ctx.gasBurnEnabled = enable
 }

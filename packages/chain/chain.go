@@ -95,7 +95,7 @@ type Committee interface {
 
 type (
 	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
-	NodeConnectionOnLedgerRequestHandlerFun func(*iscp.OnLedgerRequestData)
+	NodeConnectionOnLedgerRequestHandlerFun func(iscp.OnLedgerRequest)
 	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
 	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
 )

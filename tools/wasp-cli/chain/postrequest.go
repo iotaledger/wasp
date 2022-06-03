@@ -34,7 +34,7 @@ func postRequestCmd() *cobra.Command {
 
 			if offLedger {
 				params.Nonce = uint64(time.Now().UnixNano())
-				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*iscp.OffLedgerRequestData, error) {
+				util.WithOffLedgerRequest(GetCurrentChainID(), func() (iscp.OffLedgerRequest, error) {
 					return scClient.PostOffLedgerRequest(fname, params)
 				})
 			} else {

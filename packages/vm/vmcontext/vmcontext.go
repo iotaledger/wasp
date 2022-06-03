@@ -171,7 +171,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
-	vmctx.gasBurnEnable(false)
+	vmctx.GasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()

@@ -14,7 +14,7 @@ func PostTransaction(tx *iotago.Transaction) {
 	config.L1Client().PostTx(tx)
 }
 
-func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*iscp.OffLedgerRequestData, error)) {
+func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (iscp.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())

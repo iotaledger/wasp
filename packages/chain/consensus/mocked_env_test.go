@@ -189,18 +189,18 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
-	reqs := make([]*iscp.OffLedgerRequestData, n)
+	reqs := make([]iscp.OffLedgerRequest, n)
 	for i := 0; i < n; i++ {
 		d := dict.New()
 		ii := uint16(i)
 		d.Set("c", []byte{byte(ii % 256), byte(ii / 256)})
-		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64())
-		reqs[i].Sign(cryptolib.NewKeyPair())
+		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64()).
+			Sign(cryptolib.NewKeyPair())
 	}
 	rnd := len(randomize) > 0 && randomize[0]
 	for _, n := range env.Nodes {
 		for _, r := range reqs {
-			go func(node *mockedNode, req *iscp.OffLedgerRequestData) {
+			go func(node *mockedNode, req iscp.OffLedgerRequest) {
 				if rnd {
 					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 				}

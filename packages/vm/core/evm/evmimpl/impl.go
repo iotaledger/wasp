@@ -79,35 +79,29 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 }
 
 func applyTransaction(ctx iscp.Sandbox) dict.Dict {
+	// we only want to charge gas for the actual execution of the ethereum tx
+	ctx.Privileged().GasBurnEnable(false)
+	defer ctx.Privileged().GasBurnEnable(true)
+
 	tx := &types.Transaction{}
 	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransaction))
 	ctx.RequireNoError(err)
 
 	ctx.RequireCaller(iscp.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
 
-	iscGasBudget := ctx.Gas().Budget()
-	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
-	{
-		evmGasBudget := evmtypes.ISCGasBudgetToEVM(iscGasBudget, &gasRatio)
-		ctx.Requiref(
-			tx.Gas() <= evmGasBudget,
-			"remaining ISC gas bugdet (%d ISC gas units = %d evm gas units) not enough to cover for EVM tx gas budget (%d)",
-			iscGasBudget,
-			evmGasBudget,
-			tx.Gas(),
-		)
-	}
-
 	// next block will be minted when the ISC block is closed
 	emu := getEmulatorInBlockContext(ctx)
 
 	ctx.Requiref(tx.ChainId().Uint64() == uint64(emu.BlockchainDB().GetChainID()), "chainId mismatch")
 
-	receipt, result, err := emu.SendTransaction(tx)
+	receipt, result, err := emu.SendTransaction(tx, ctx.Privileged().GasBurnEnable)
 
-	// burn gas even on error
+	// burn EVM gas as ISC gas
 	if result != nil {
+		gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+		ctx.Privileged().GasBurnEnable(true)
 		ctx.Gas().Burn(gas.BurnCodeEVM1P, evmtypes.EVMGasToISC(result.UsedGas, &gasRatio))
+		ctx.Privileged().GasBurnEnable(false)
 	}
 
 	ctx.RequireNoError(err)
@@ -209,26 +203,34 @@ func callContract(ctx iscp.SandboxView) dict.Dict {
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
-	res, err := emu.CallContract(callMsg)
+	res, err := emu.CallContract(callMsg, nil)
 	ctx.RequireNoError(err)
 	ctx.Requiref(res.Err == nil, GetRevertErrorMessage(res, ctx.Contract()))
 	return result(res.Return())
 }
 
+// TODO: For some reason, when EstimateGasMode == true the gas burned is less. How to automatically calculate this?
+var additionalGasBurned = gas.BurnCodeReadFromState1P.Cost(2)
+
 func estimateGas(ctx iscp.Sandbox) dict.Dict {
+	// we only want to charge gas for the actual execution of the ethereum tx
+	ctx.Privileged().GasBurnEnable(false)
+	defer ctx.Privileged().GasBurnEnable(true)
+
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
 	ctx.RequireCaller(iscp.NewEthereumAddressAgentID(callMsg.From))
 
-	iscGasBudget := ctx.Gas().Budget()
-
 	emu := createEmulator(ctx)
-	res, err := emu.CallContract(callMsg)
+	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
 	ctx.Requiref(res.Err == nil, GetRevertErrorMessage(res, ctx.Contract()))
 
-	iscGasBurned := iscGasBudget - ctx.Gas().Budget()
+	// TODO: this assumes that the initial budget was gas.MaxGasPerCall
+	// see evmOffLedgerEstimateGasRequest::GasBudget()
+	// and VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
+	iscGasBurned := gas.MaxGasPerCall - ctx.Gas().Budget()
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
-	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio)
+	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio) + additionalGasBurned
 	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))
 }

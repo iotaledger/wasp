@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -71,8 +70,8 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 	return feePolicy, nil
 }
 
-func (e *EVMChain) SendTransaction(tx *types.Transaction, allowance *iscp.Allowance) error {
-	return e.backend.EVMSendTransaction(tx, allowance)
+func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
+	return e.backend.EVMSendTransaction(tx)
 }
 
 func paramsWithOptionalBlockNumber(blockNumber *big.Int, parameters dict.Dict) dict.Dict {
@@ -240,8 +239,8 @@ func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumberOrHash rpc.Blo
 	return ret.MustGet(evm.FieldResult), nil
 }
 
-func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, allowance *iscp.Allowance) (uint64, error) {
-	return e.backend.EVMEstimateGas(callMsg, allowance)
+func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+	return e.backend.EVMEstimateGas(callMsg)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
