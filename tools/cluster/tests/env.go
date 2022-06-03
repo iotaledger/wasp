@@ -61,10 +61,22 @@ func (e *ChainEnv) deployWasmContract(wasmName, scDescription string, initParams
 }
 
 func (e *ChainEnv) createNewClient() *scclient.SCClient {
-	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
+	keyPair, addr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
-	client := e.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
-	return client
+	retries := 0
+	for {
+		outs, err := e.env.Clu.L1Client().OutputMap(addr)
+		require.NoError(e.t, err)
+		if len(outs) > 0 {
+			break
+		}
+		retries++
+		if retries > 10 {
+			panic("createNewClient - funds aren't available")
+		}
+		time.Sleep(300 * time.Millisecond)
+	}
+	return e.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 }
 
 func SetupWithChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {

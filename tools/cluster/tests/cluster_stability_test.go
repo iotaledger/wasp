@@ -145,6 +145,8 @@ func runTestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T, cluster
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.sendRequests(numRequests, time.Millisecond*250)
 	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.chainEnv.Clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
+	env.chainEnv.Clu.Stop()
+	time.Sleep(1 * time.Second)
 }
 
 func TestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T) {
