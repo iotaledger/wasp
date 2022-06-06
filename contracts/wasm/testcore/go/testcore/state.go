@@ -13,8 +13,8 @@ type ImmutableTestCoreState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestCoreState) Counter() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(StateCounter))
+func (s ImmutableTestCoreState) Counter() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateCounter))
 }
 
 func (s ImmutableTestCoreState) Ints() MapStringToImmutableInt64 {
@@ -33,8 +33,8 @@ func (s MutableTestCoreState) AsImmutable() ImmutableTestCoreState {
 	return ImmutableTestCoreState(s)
 }
 
-func (s MutableTestCoreState) Counter() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(StateCounter))
+func (s MutableTestCoreState) Counter() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateCounter))
 }
 
 func (s MutableTestCoreState) Ints() MapStringToMutableInt64 {

@@ -56,6 +56,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	FUNC_WITHDRAW_FROM_CHAIN,
     	VIEW_CHECK_CONTEXT_FROM_VIEW_EP,
     	VIEW_FIBONACCI,
+    	VIEW_FIBONACCI_INDIRECT,
     	VIEW_GET_COUNTER,
     	VIEW_GET_INT,
     	VIEW_GET_STRING_VALUE,
@@ -100,6 +101,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     views: &[
     	view_check_context_from_view_ep_thunk,
     	view_fibonacci_thunk,
+    	view_fibonacci_indirect_thunk,
     	view_get_counter_thunk,
     	view_get_int_thunk,
     	view_get_string_value_thunk,
@@ -136,7 +138,7 @@ fn func_call_on_chain_thunk(ctx: &ScFuncContext) {
 		results: MutableCallOnChainResults { proxy: results_proxy() },
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
+	ctx.require(f.params.n().exists(), "missing mandatory n");
 	func_call_on_chain(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.funcCallOnChain ok");
@@ -294,7 +296,7 @@ fn func_run_recursion_thunk(ctx: &ScFuncContext) {
 		results: MutableRunRecursionResults { proxy: results_proxy() },
 		state: MutableTestCoreState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
+	ctx.require(f.params.n().exists(), "missing mandatory n");
 	func_run_recursion(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.funcRunRecursion ok");
@@ -571,10 +573,29 @@ fn view_fibonacci_thunk(ctx: &ScViewContext) {
 		results: MutableFibonacciResults { proxy: results_proxy() },
 		state: ImmutableTestCoreState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.int_value().exists(), "missing mandatory intValue");
+	ctx.require(f.params.n().exists(), "missing mandatory n");
 	view_fibonacci(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testcore.viewFibonacci ok");
+}
+
+pub struct FibonacciIndirectContext {
+	params: ImmutableFibonacciIndirectParams,
+	results: MutableFibonacciIndirectResults,
+	state: ImmutableTestCoreState,
+}
+
+fn view_fibonacci_indirect_thunk(ctx: &ScViewContext) {
+	ctx.log("testcore.viewFibonacciIndirect");
+	let f = FibonacciIndirectContext {
+		params: ImmutableFibonacciIndirectParams { proxy: params_proxy() },
+		results: MutableFibonacciIndirectResults { proxy: results_proxy() },
+		state: ImmutableTestCoreState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.n().exists(), "missing mandatory n");
+	view_fibonacci_indirect(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testcore.viewFibonacciIndirect ok");
 }
 
 pub struct GetCounterContext {

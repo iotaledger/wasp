@@ -16,71 +16,90 @@ import (
 func callOnChain(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf(FuncCallOnChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	paramIn := params.MustGetInt64(ParamIntParamValue)
+	paramIn := params.MustGetUint64(ParamN)
 	hnameContract := params.MustGetHname(ParamHnameContract, ctx.Contract())
 	hnameEP := params.MustGetHname(ParamHnameEP, FuncCallOnChain.Hname())
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
-	counter := state.MustGetInt64(VarCounter, 0)
-	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
+	counter := state.MustGetUint64(VarCounter, 0)
+	ctx.State().Set(VarCounter, codec.EncodeUint64(counter+1))
 
 	ctx.Log().Infof("param IN = %d, hnameContract = %s, hnameEP = %s, counter = %d",
 		paramIn, hnameContract, hnameEP, counter)
 
 	return ctx.Call(hnameContract, hnameEP, codec.MakeDict(map[string]interface{}{
-		ParamIntParamValue: paramIn,
+		ParamN: paramIn,
 	}), nil)
 }
 
 func incCounter(ctx iscp.Sandbox) dict.Dict {
 	state := kvdecoder.New(ctx.State(), ctx.Log())
-	counter := state.MustGetInt64(VarCounter, 0)
-	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
+	counter := state.MustGetUint64(VarCounter, 0)
+	ctx.State().Set(VarCounter, codec.EncodeUint64(counter+1))
 	return nil
 }
 
 func getCounter(ctx iscp.SandboxView) dict.Dict {
 	ret := dict.New()
 	state := kvdecoder.New(ctx.State(), ctx.Log())
-	counter := state.MustGetInt64(VarCounter, 0)
-	ret.Set(VarCounter, codec.EncodeInt64(counter))
+	counter := state.MustGetUint64(VarCounter, 0)
+	ret.Set(VarCounter, codec.EncodeUint64(counter))
 	return ret
 }
 
 func runRecursion(ctx iscp.Sandbox) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	depth := params.MustGetInt64(ParamIntParamValue)
-	if depth <= 0 {
+	depth := params.MustGetUint64(ParamN)
+	if depth == 0 {
 		return nil
 	}
 	return ctx.Call(ctx.Contract(), FuncCallOnChain.Hname(), codec.MakeDict(map[string]interface{}{
-		ParamHnameEP:       FuncRunRecursion.Hname(),
-		ParamIntParamValue: depth - 1,
+		ParamHnameEP: FuncRunRecursion.Hname(),
+		ParamN:       depth - 1,
 	}), nil)
+}
+
+func fibonacci(n uint64) uint64 {
+	if n <= 1 {
+		return n
+	}
+	return fibonacci(n-1) + fibonacci(n-2)
 }
 
 func getFibonacci(ctx iscp.SandboxView) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-
-	callInt := params.MustGetInt64(ParamIntParamValue)
-	ctx.Log().Infof("fibonacci( %d )", callInt)
+	n := params.MustGetUint64(ParamN)
+	ctx.Log().Infof("fibonacci( %d )", n)
+	result := fibonacci(n)
 	ret := dict.New()
-	if callInt == 0 || callInt == 1 {
-		ret.Set(ParamIntParamValue, codec.EncodeInt64(callInt))
+	ret.Set(ParamN, codec.EncodeUint64(result))
+	return ret
+}
+
+func getFibonacciIndirect(ctx iscp.SandboxView) dict.Dict {
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	n := params.MustGetUint64(ParamN)
+	ctx.Log().Infof("fibonacciIndirect( %d )", n)
+	ret := dict.New()
+	if n <= 1 {
+		ret.Set(ParamN, codec.EncodeUint64(n))
 		return ret
 	}
-	r1 := ctx.Call(ctx.Contract(), FuncGetFibonacci.Hname(), codec.MakeDict(map[string]interface{}{
-		ParamIntParamValue: callInt - 1,
-	}))
-	result := kvdecoder.New(r1, ctx.Log())
-	r1val := result.MustGetInt64(ParamIntParamValue)
 
-	r2 := ctx.Call(ctx.Contract(), FuncGetFibonacci.Hname(), codec.MakeDict(map[string]interface{}{
-		ParamIntParamValue: callInt - 2,
+	ret1 := ctx.Call(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
+		ParamN: n - 1,
 	}))
-	result = kvdecoder.New(r2, ctx.Log())
-	r2val := result.MustGetInt64(ParamIntParamValue)
-	ret.Set(ParamIntParamValue, codec.EncodeInt64(r1val+r2val))
+	result := kvdecoder.New(ret1, ctx.Log())
+	n1 := result.MustGetUint64(ParamN)
+
+	ret2 := ctx.Call(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
+		ParamN: n - 2,
+	}))
+	result = kvdecoder.New(ret2, ctx.Log())
+	n2 := result.MustGetUint64(ParamN)
+
+	ret.Set(ParamN, codec.EncodeUint64(n1+n2))
 	return ret
 }
 

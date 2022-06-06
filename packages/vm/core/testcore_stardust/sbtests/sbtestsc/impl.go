@@ -18,7 +18,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 // testEventLogGenericData is called several times in log_test.go
 func testEventLogGenericData(ctx iscp.Sandbox) dict.Dict {
 	params := ctx.Params()
-	inc := codec.MustDecodeInt64(params.MustGet(VarCounter), 1)
+	inc := codec.MustDecodeUint64(params.MustGet(VarCounter), 1)
 	ctx.Event(fmt.Sprintf("[GenericData] Counter Number: %d", inc))
 	return nil
 }

@@ -24,7 +24,7 @@ const (
 )
 
 func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
-	paramInt := f.Params.IntValue().Value()
+	n := f.Params.N().Value()
 
 	hnameContract := ctx.Contract()
 	if f.Params.HnameContract().Exists() {
@@ -38,7 +38,7 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 
 	counter := f.State.Counter()
 
-	ctx.Log("param IN = " + f.Params.IntValue().String() +
+	ctx.Log("param IN = " + f.Params.N().String() +
 		", hnameContract = " + hnameContract.String() +
 		", hnameEP = " + hnameEP.String() +
 		", counter = " + counter.String())
@@ -46,11 +46,11 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 	counter.SetValue(counter.Value() + 1)
 
 	params := wasmlib.NewScDict()
-	key := []byte(ParamIntValue)
-	params.Set(key, wasmtypes.Int64ToBytes(paramInt))
+	key := []byte(ParamN)
+	params.Set(key, wasmtypes.Uint64ToBytes(n))
 	ret := ctx.Call(hnameContract, hnameEP, params, nil)
-	retVal := wasmtypes.Int64FromBytes(ret.Get(key))
-	f.Results.IntValue().SetValue(retVal)
+	retVal := wasmtypes.Uint64FromBytes(ret.Get(key))
+	f.Results.N().SetValue(retVal)
 }
 
 func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFullEPContext) {
@@ -61,19 +61,22 @@ func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFu
 	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
+func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
+	allowance := ctx.Allowance()
+	transfer := wasmlib.NewScTransferFromBalances(allowance)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+}
+
 func funcDoNothing(ctx wasmlib.ScFuncContext, f *DoNothingContext) {
 	ctx.Log(MsgDoNothing)
 }
 
-//func funcGetMintedSupply(ctx wasmlib.ScFuncContext, f *GetMintedSupplyContext) {
-//	//minted := ctx.Minted()
-//	//mintedColors := minted.Colors()
-//	//ctx.Require(len(mintedColors) == 1, "test only supports one minted color")
-//	//color := mintedColors[0]
-//	//amount := minted.Balance(color)
-//	//f.Results.MintedColor().SetValue(color)
-//	//f.Results.MintedSupply().SetValue(amount)
-//}
+func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
+	provided := ctx.Allowance().Iotas()
+	dummy := ScFuncs.EstimateMinDust(ctx)
+	required := ctx.EstimateDust(dummy.Func)
+	ctx.Require(provided >= required, "not enough funds")
+}
 
 func funcIncCounter(ctx wasmlib.ScFuncContext, f *IncCounterContext) {
 	counter := f.State.Counter()
@@ -104,18 +107,40 @@ func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
 	// TODO more?
 }
 
+func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContext) {
+	caller := ctx.Caller()
+	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
+	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.Send(caller.Address(), transfer)
+}
+
 func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
-	depth := f.Params.IntValue().Value()
+	depth := f.Params.N().Value()
 	if depth <= 0 {
 		return
 	}
 
 	callOnChain := ScFuncs.CallOnChain(ctx)
-	callOnChain.Params.IntValue().SetValue(depth - 1)
+	callOnChain.Params.N().SetValue(depth - 1)
 	callOnChain.Params.HnameEP().SetValue(HFuncRunRecursion)
 	callOnChain.Func.Call()
-	retVal := callOnChain.Results.IntValue().Value()
-	f.Results.IntValue().SetValue(retVal)
+	retVal := callOnChain.Results.N().Value()
+	f.Results.N().SetValue(retVal)
+}
+
+func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext) {
+}
+
+func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
+	address := ctx.Caller().Address()
+	allowance := ctx.Allowance()
+	transfer := wasmlib.NewScTransferFromBalances(allowance)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	for _, nftID := range allowance.NftIDs() {
+		transfer = wasmlib.NewScTransferNFT(nftID)
+		ctx.Send(address, transfer)
+	}
 }
 
 func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
@@ -137,6 +162,41 @@ func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 	for i := 0; i < 5; i++ {
 		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
 	}
+}
+
+func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
+	iotas := ctx.Allowance().Iotas()
+	address := ctx.Caller().Address()
+	iotasToTransfer := uint64(1_000_000)
+	transfer := wasmlib.NewScTransferIotas(iotasToTransfer)
+	for ; iotas >= iotasToTransfer; iotas -= iotasToTransfer {
+		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+		ctx.Send(address, transfer)
+	}
+}
+
+func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
+	iotas := ctx.Allowance().Iotas()
+	address := ctx.Caller().Address()
+	transfer := wasmlib.NewScTransferIotas(iotas)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	for _, token := range ctx.Allowance().TokenIDs() {
+		one := wasmtypes.NewScBigInt(1)
+		transfer = wasmlib.NewScTransferTokens(token, one)
+		tokens := ctx.Allowance().Balance(token)
+		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
+			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+			ctx.Send(address, transfer)
+		}
+	}
+}
+
+func funcTestBlockContext1(ctx wasmlib.ScFuncContext, f *TestBlockContext1Context) {
+	ctx.Panic(MsgCoreOnlyPanic)
+}
+
+func funcTestBlockContext2(ctx wasmlib.ScFuncContext, f *TestBlockContext2Context) {
+	ctx.Panic(MsgCoreOnlyPanic)
 }
 
 func funcTestCallPanicFullEP(ctx wasmlib.ScFuncContext, f *TestCallPanicFullEPContext) {
@@ -171,10 +231,6 @@ func funcTestEventLogGenericData(ctx wasmlib.ScFuncContext, f *TestEventLogGener
 func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, f *TestPanicFullEPContext) {
 	ctx.Panic(MsgFullPanic)
 }
-
-//func funcWithdrawToChain(ctx wasmlib.ScFuncContext, f *WithdrawToChainContext) {
-//	//coreaccounts.ScFuncs.Withdraw(ctx).Func.PostToChain(f.Params.ChainID().Value())
-//}
 
 func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
 	targetChain := f.Params.ChainID().Value()
@@ -212,23 +268,36 @@ func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromVi
 	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
+func fibonacci(n uint64) uint64 {
+	if n <= 1 {
+		return n
+	}
+	return fibonacci(n-1) + fibonacci(n-2)
+}
+
 func viewFibonacci(ctx wasmlib.ScViewContext, f *FibonacciContext) {
-	n := f.Params.IntValue().Value()
+	n := f.Params.N().Value()
+	result := fibonacci(n)
+	f.Results.N().SetValue(result)
+}
+
+func viewFibonacciIndirect(ctx wasmlib.ScViewContext, f *FibonacciIndirectContext) {
+	n := f.Params.N().Value()
 	if n == 0 || n == 1 {
-		f.Results.IntValue().SetValue(n)
+		f.Results.N().SetValue(n)
 		return
 	}
 
-	fib := ScFuncs.Fibonacci(ctx)
-	fib.Params.IntValue().SetValue(n - 1)
+	fib := ScFuncs.FibonacciIndirect(ctx)
+	fib.Params.N().SetValue(n - 1)
 	fib.Func.Call()
-	n1 := fib.Results.IntValue().Value()
+	n1 := fib.Results.N().Value()
 
-	fib.Params.IntValue().SetValue(n - 2)
+	fib.Params.N().SetValue(n - 2)
 	fib.Func.Call()
-	n2 := fib.Results.IntValue().Value()
+	n2 := fib.Results.N().Value()
 
-	f.Results.IntValue().SetValue(n1 + n2)
+	f.Results.N().SetValue(n1 + n2)
 }
 
 func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
@@ -240,6 +309,19 @@ func viewGetInt(ctx wasmlib.ScViewContext, f *GetIntContext) {
 	value := f.State.Ints().GetInt64(name)
 	ctx.Require(value.Exists(), "param '"+name+"' not found")
 	f.Results.Values().GetInt64(name).SetValue(value.Value())
+}
+
+func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
+	ctx.Panic(MsgCoreOnlyPanic)
+	// varName := f.Params.VarName().Value()
+	// value := f.State.Strings().GetString(varName).Value()
+	// f.Results.Vars().GetString(varName).SetValue(value)
+}
+
+func viewInfiniteLoopView(ctx wasmlib.ScViewContext, f *InfiniteLoopViewContext) {
+	for {
+		// do nothing, just waste gas
+	}
 }
 
 func viewJustView(ctx wasmlib.ScViewContext, f *JustViewContext) {
@@ -275,87 +357,4 @@ func viewTestSandboxCall(ctx wasmlib.ScViewContext, f *TestSandboxCallContext) {
 	getChainInfo := coregovernance.ScFuncs.GetChainInfo(ctx)
 	getChainInfo.Func.Call()
 	f.Results.SandboxCall().SetValue(getChainInfo.Results.Description().Value())
-}
-
-func funcTestBlockContext1(ctx wasmlib.ScFuncContext, f *TestBlockContext1Context) {
-	ctx.Panic(MsgCoreOnlyPanic)
-}
-
-func funcTestBlockContext2(ctx wasmlib.ScFuncContext, f *TestBlockContext2Context) {
-	ctx.Panic(MsgCoreOnlyPanic)
-}
-
-func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
-	ctx.Panic(MsgCoreOnlyPanic)
-	// varName := f.Params.VarName().Value()
-	// value := f.State.Strings().GetString(varName).Value()
-	// f.Results.Vars().GetString(varName).SetValue(value)
-}
-
-func viewInfiniteLoopView(ctx wasmlib.ScViewContext, f *InfiniteLoopViewContext) {
-	for {
-		// do nothing, just waste gas
-	}
-}
-
-func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
-	allowance := ctx.Allowance()
-	transfer := wasmlib.NewScTransferFromBalances(allowance)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-}
-
-func funcEstimateMinDust(ctx wasmlib.ScFuncContext, f *EstimateMinDustContext) {
-	provided := ctx.Allowance().Iotas()
-	dummy := ScFuncs.EstimateMinDust(ctx)
-	required := ctx.EstimateDust(dummy.Func)
-	ctx.Require(provided >= required, "not enough funds")
-}
-
-func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, f *PingAllowanceBackContext) {
-	caller := ctx.Caller()
-	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
-	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-	ctx.Send(caller.Address(), transfer)
-}
-
-func funcSendLargeRequest(ctx wasmlib.ScFuncContext, f *SendLargeRequestContext) {
-}
-
-func funcSendNFTsBack(ctx wasmlib.ScFuncContext, f *SendNFTsBackContext) {
-	address := ctx.Caller().Address()
-	allowance := ctx.Allowance()
-	transfer := wasmlib.NewScTransferFromBalances(allowance)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-	for _, nftID := range allowance.NftIDs() {
-		transfer = wasmlib.NewScTransferNFT(nftID)
-		ctx.Send(address, transfer)
-	}
-}
-
-func funcSplitFunds(ctx wasmlib.ScFuncContext, f *SplitFundsContext) {
-	iotas := ctx.Allowance().Iotas()
-	address := ctx.Caller().Address()
-	iotasToTransfer := uint64(1_000_000)
-	transfer := wasmlib.NewScTransferIotas(iotasToTransfer)
-	for ; iotas >= iotasToTransfer; iotas -= iotasToTransfer {
-		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-		ctx.Send(address, transfer)
-	}
-}
-
-func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, f *SplitFundsNativeTokensContext) {
-	iotas := ctx.Allowance().Iotas()
-	address := ctx.Caller().Address()
-	transfer := wasmlib.NewScTransferIotas(iotas)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-	for _, token := range ctx.Allowance().TokenIDs() {
-		one := wasmtypes.NewScBigInt(1)
-		transfer = wasmlib.NewScTransferTokens(token, one)
-		tokens := ctx.Allowance().Balance(token)
-		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
-			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-			ctx.Send(address, transfer)
-		}
-	}
 }
