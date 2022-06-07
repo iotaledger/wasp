@@ -16,7 +16,7 @@ var Contract = coreutil.NewContract("inccounter", "Increment counter, a PoC smar
 
 var Processor = Contract.Processor(initialize,
 	FuncIncCounter.WithHandler(incCounter),
-	FuncIncAndRepeatOnceAfter5s.WithHandler(incCounterAndRepeatOnce),
+	FuncIncAndRepeatOnceAfter2s.WithHandler(incCounterAndRepeatOnce),
 	FuncIncAndRepeatMany.WithHandler(incCounterAndRepeatMany),
 	FuncSpawn.WithHandler(spawn),
 	FuncGetCounter.WithHandler(getCounter),
@@ -24,7 +24,7 @@ var Processor = Contract.Processor(initialize,
 
 var (
 	FuncIncCounter              = coreutil.Func("incCounter")
-	FuncIncAndRepeatOnceAfter5s = coreutil.Func("incAndRepeatOnceAfter5s")
+	FuncIncAndRepeatOnceAfter2s = coreutil.Func("incAndRepeatOnceAfter5s")
 	FuncIncAndRepeatMany        = coreutil.Func("incAndRepeatMany")
 	FuncSpawn                   = coreutil.Func("spawn")
 	FuncGetCounter              = coreutil.ViewFunc("getCounter")
@@ -73,10 +73,11 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: counter = %d", val+1))
+	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(iscp.RequestParameters{
 		TargetAddress:              ctx.ChainID().AsAddress(),
-		FungibleTokens:             iscp.NewFungibleTokens(1, nil),
+		FungibleTokens:             iscp.NewFungibleTokens(allowance.Assets.Iotas, nil),
 		AdjustToMinimumDustDeposit: true,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Contract(),

@@ -23,3 +23,7 @@ wasp-cli.json
 **/node_modules/
 goshimmer.log
 /*.sh
+
+*.trie
+*.bin
+*.snapshot

@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -143,7 +142,7 @@ func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID iscp.RequestID) 
 		blocklog.ParamRequestID, reqID,
 	)
 	require.NoError(t, err)
-	events, err := testcore.EventsViewResultToStringArray(res)
+	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	return events
 }
@@ -159,7 +158,7 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []
 		res, err = chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name)
 	}
 	require.NoError(t, err)
-	events, err := testcore.EventsViewResultToStringArray(res)
+	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	return events
 }
@@ -171,7 +170,7 @@ func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [
 		blocklog.ParamToBlock, toBlock,
 	)
 	require.NoError(t, err)
-	events, err := testcore.EventsViewResultToStringArray(res)
+	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	return events
 }

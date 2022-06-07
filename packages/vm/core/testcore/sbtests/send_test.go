@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 

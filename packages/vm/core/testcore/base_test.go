@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 

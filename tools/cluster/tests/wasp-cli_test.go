@@ -250,8 +250,8 @@ func TestWaspCLIBlobContract(t *testing.T) {
 }
 
 func TestWaspCLIMint(t *testing.T) {
+	newWaspCLITest(t)
 	panic("TODO implement")
-	// w := newWaspCLITest(t)
 
 	// out := w.Run("mint", "1000")
 	// colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
@@ -272,8 +272,8 @@ func TestWaspCLIMint(t *testing.T) {
 }
 
 func TestWaspCLIBalance(t *testing.T) {
+	newWaspCLITest(t)
 	panic("TODO implement")
-	// w := newWaspCLITest(t)
 	// w.Run("mint", "1000")
 
 	// out := w.Run("balance")

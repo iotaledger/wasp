@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
