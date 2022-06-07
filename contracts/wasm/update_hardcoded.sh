@@ -5,7 +5,7 @@ for dir in ./*; do
     fi
 done
 if [ -f "testcore/pkg/testcore_bg.wasm" ]; then
-    cp testcore/pkg/testcore_bg.wasm ../../packages/vm/core/testcore_stardust/sbtests/sbtestsc/
+    cp testcore/pkg/testcore_bg.wasm ../../packages/vm/core/testcore/sbtests/sbtestsc/
 fi
 if [ -f "inccounter/pkg/inccounter_bg.wasm" ]; then
     cp inccounter/pkg/inccounter_bg.wasm ../../tools/cluster/tests/wasm/

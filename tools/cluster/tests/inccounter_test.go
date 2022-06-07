@@ -204,8 +204,8 @@ func testIncrement(t *testing.T, numRequests int) {
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
-	t.Fail() // TODO refactor
 	e := setupWithContractAndMessageCounter(t, 2)
+	t.Fail() // TODO refactor
 
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
