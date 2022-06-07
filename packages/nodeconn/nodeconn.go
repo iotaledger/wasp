@@ -101,8 +101,16 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 		log:     log.Named("nc"),
 		config:  config,
 	}
+
 	if initMqttClient {
 		go nc.run()
+		for {
+			if nc.mqttClient.MQTTClient.IsConnected() {
+				break
+			}
+			nc.log.Debugf("waiting until mqtt client is connected")
+			time.Sleep(1 * time.Second)
+		}
 	}
 	return &nc
 }
