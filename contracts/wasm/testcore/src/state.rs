@@ -18,8 +18,8 @@ pub struct ImmutableTestCoreState {
 }
 
 impl ImmutableTestCoreState {
-    pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(STATE_COUNTER))
+    pub fn counter(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn ints(&self) -> MapStringToImmutableInt64 {
@@ -41,8 +41,8 @@ impl MutableTestCoreState {
 		ImmutableTestCoreState { proxy: self.proxy.root("") }
 	}
 
-    pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(STATE_COUNTER))
+    pub fn counter(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn ints(&self) -> MapStringToMutableInt64 {

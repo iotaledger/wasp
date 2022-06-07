@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -45,6 +46,9 @@ var (
 )
 
 const (
+	MinGasFee         = 100
+	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*iscp.Mi - MinGasFee
+	L2FundsAgent      = 10 * iscp.Mi
 	L2FundsContract   = 10 * iscp.Mi
 	L2FundsCreator    = 20 * iscp.Mi
 	L2FundsOriginator = 30 * iscp.Mi
@@ -362,7 +366,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 // tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 	agent := NewSoloAgent(ctx.Chain.Env)
-	ctx.Chain.MustDepositIotasToL2(10*iscp.Mi, agent.Pair)
+	ctx.Chain.MustDepositIotasToL2(L2FundsAgent+MinGasFee, agent.Pair)
 	return agent
 }
 

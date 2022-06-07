@@ -212,7 +212,7 @@ func (m *mempool) traceIn(req iscp.Request) {
 	var timeLockMilestone uint32
 
 	if !req.IsOffLedger() {
-		td := req.AsOnLedger().Features().TimeLock()
+		td := req.(iscp.OnLedgerRequest).Features().TimeLock()
 		if td != nil {
 			timeLockTime = td.Time
 			timeLockMilestone = td.MilestoneIndex
@@ -241,7 +241,7 @@ func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (is
 		return true, false
 	}
 
-	onLedgerReq := ref.req.AsOnLedger()
+	onLedgerReq := ref.req.(iscp.OnLedgerRequest)
 
 	// Skip anything with return amounts in this version.
 	if _, ok := onLedgerReq.Features().ReturnAmount(); ok {

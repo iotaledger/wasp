@@ -30,6 +30,7 @@ var Processor = Contract.Processor(initialize,
 	FuncSetInt.WithHandler(setInt),
 	FuncGetInt.WithHandler(getInt),
 	FuncGetFibonacci.WithHandler(getFibonacci),
+	FuncGetFibonacciIndirect.WithHandler(getFibonacciIndirect),
 	FuncIncCounter.WithHandler(incCounter),
 	FuncGetCounter.WithHandler(getCounter),
 	FuncRunRecursion.WithHandler(runRecursion),
@@ -88,13 +89,14 @@ var (
 	// FuncSendToAddress = coreutil.Func("sendToAddress")
 	FuncJustView = coreutil.ViewFunc("justView")
 
-	FuncCallOnChain  = coreutil.Func("callOnChain")
-	FuncSetInt       = coreutil.Func("setInt")
-	FuncGetInt       = coreutil.ViewFunc("getInt")
-	FuncGetFibonacci = coreutil.ViewFunc("fibonacci")
-	FuncGetCounter   = coreutil.ViewFunc("getCounter")
-	FuncIncCounter   = coreutil.Func("incCounter")
-	FuncRunRecursion = coreutil.Func("runRecursion")
+	FuncCallOnChain          = coreutil.Func("callOnChain")
+	FuncSetInt               = coreutil.Func("setInt")
+	FuncGetInt               = coreutil.ViewFunc("getInt")
+	FuncGetFibonacci         = coreutil.ViewFunc("fibonacci")
+	FuncGetFibonacciIndirect = coreutil.ViewFunc("fibonacciIndirect")
+	FuncGetCounter           = coreutil.ViewFunc("getCounter")
+	FuncIncCounter           = coreutil.Func("incCounter")
+	FuncRunRecursion         = coreutil.Func("runRecursion")
 
 	FuncPassTypesFull = coreutil.Func("passTypesFull")
 	FuncPassTypesView = coreutil.ViewFunc("passTypesView")
@@ -119,26 +121,27 @@ const (
 	VarContractNameDeployed = "exampleDeployTR"
 
 	// parameters
-	ParamFail              = "initFailParam"
 	ParamAddress           = "address"
-	ParamChainID           = "chainID"
-	ParamIotasToWithdrawal = "iotasWithdrawal"
-	ParamChainOwnerID      = "chainOwnerID"
-	ParamCaller            = "caller"
 	ParamAgentID           = "agentID"
+	ParamCaller            = "caller"
+	ParamChainID           = "chainID"
+	ParamChainOwnerID      = "chainOwnerID"
 	ParamContractCreator   = "contractCreator"
 	ParamContractID        = "contractID"
-	ParamIntParamName      = "intParamName"
-	ParamIntParamValue     = "intParamValue"
+	ParamFail              = "initFailParam"
 	ParamHnameContract     = "hnameContract"
 	ParamHnameEP           = "hnameEP"
-	ParamVarName           = "varName"
-	ParamSize              = "size"
+	ParamIntParamName      = "intParamName"
+	ParamIntParamValue     = "intParamValue"
+	ParamIotasToWithdrawal = "iotasWithdrawal"
+	ParamN                 = "n"
 	ParamProgHash          = "progHash"
+	ParamSize              = "size"
+	ParamVarName           = "varName"
 
 	// error fragments for testing
-	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
-	MsgViewPanic         = "========== panic VIEW ========="
 	MsgDoNothing         = "========== doing nothing"
+	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
 	MsgPanicUnauthorized = "============== panic due to unauthorized call"
+	MsgViewPanic         = "========== panic VIEW ========="
 )

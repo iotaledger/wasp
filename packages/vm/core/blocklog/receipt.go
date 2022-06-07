@@ -46,7 +46,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
-	if ret.Request, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
+	if ret.Request, err = iscp.NewRequestFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 
@@ -70,7 +70,7 @@ func (r *RequestReceipt) Bytes() []byte {
 		WriteUint64(r.GasBurned).
 		WriteUint64(r.GasFeeCharged)
 
-	iscp.RequestDataToMarshalUtil(r.Request, mu)
+	r.Request.WriteToMarshalUtil(mu)
 
 	if r.Error == nil {
 		mu.WriteBool(false)

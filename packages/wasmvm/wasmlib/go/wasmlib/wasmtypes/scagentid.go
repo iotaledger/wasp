@@ -85,6 +85,8 @@ func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 		a.hname = HnameFromBytes(buf[ScChainIDLength:])
 	case ScAgentIDEthereum:
 		panic("AgentIDFromBytes: unsupported ScAgentIDEthereum")
+	case ScAgentIDNil:
+		break
 	default:
 		panic("AgentIDFromBytes: invalid AgentID type")
 	}
@@ -101,12 +103,15 @@ func AgentIDToBytes(value ScAgentID) []byte {
 		return append(buf, HnameToBytes(value.hname)...)
 	case ScAgentIDEthereum:
 		panic("AgentIDToBytes: unsupported ScAgentIDEthereum")
+	case ScAgentIDNil:
+		panic("AgentIDToBytes: unsupported ScAgentIDNil")
 	default:
 		panic("AgentIDToBytes: invalid AgentID type")
 	}
 }
 
 func AgentIDFromString(value string) ScAgentID {
+	// TODO ScAgentIDEthereum / ScAgentIDNil
 	parts := strings.Split(value, "@")
 	switch len(parts) {
 	case 1:
@@ -119,6 +124,7 @@ func AgentIDFromString(value string) ScAgentID {
 }
 
 func AgentIDToString(value ScAgentID) string {
+	// TODO ScAgentIDEthereum / ScAgentIDNil
 	if value.kind == ScAgentIDContract {
 		return HnameToString(value.Hname()) + "@" + AddressToString(value.Address())
 	}

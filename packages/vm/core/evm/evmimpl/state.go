@@ -4,11 +4,13 @@
 package evmimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
@@ -31,5 +33,9 @@ func setGasRatio(ctx iscp.Sandbox) dict.Dict {
 }
 
 func getGasRatio(ctx iscp.SandboxView) dict.Dict {
-	return result(ctx.State().MustGet(keyGasRatio))
+	return result(GetGasRatio(ctx.State()).Bytes())
+}
+
+func GetGasRatio(state kv.KVStoreReader) util.Ratio32 {
+	return codec.MustDecodeRatio32(state.MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
 }

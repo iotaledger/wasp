@@ -24,12 +24,10 @@ type Auction struct {
 	HighestBidder wasmtypes.ScAgentID
 	// minimum bid amount
 	MinimumBid uint64
-	// number of tokens for sale
-	NumTokens uint64
+	// NFT of NFTs for sale
+	Nft wasmtypes.ScNftID
 	// auction owner's margin in promilles
 	OwnerMargin uint64
-	// token of tokens for sale
-	Token wasmtypes.ScTokenID
 	// timestamp when auction started
 	WhenStarted uint64
 }
@@ -44,9 +42,8 @@ func NewAuctionFromBytes(buf []byte) *Auction {
 	data.HighestBid = wasmtypes.Uint64Decode(dec)
 	data.HighestBidder = wasmtypes.AgentIDDecode(dec)
 	data.MinimumBid = wasmtypes.Uint64Decode(dec)
-	data.NumTokens = wasmtypes.Uint64Decode(dec)
+	data.Nft = wasmtypes.NftIDDecode(dec)
 	data.OwnerMargin = wasmtypes.Uint64Decode(dec)
-	data.Token = wasmtypes.TokenIDDecode(dec)
 	data.WhenStarted = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
@@ -61,9 +58,8 @@ func (o *Auction) Bytes() []byte {
 	wasmtypes.Uint64Encode(enc, o.HighestBid)
 	wasmtypes.AgentIDEncode(enc, o.HighestBidder)
 	wasmtypes.Uint64Encode(enc, o.MinimumBid)
-	wasmtypes.Uint64Encode(enc, o.NumTokens)
+	wasmtypes.NftIDEncode(enc, o.Nft)
 	wasmtypes.Uint64Encode(enc, o.OwnerMargin)
-	wasmtypes.TokenIDEncode(enc, o.Token)
 	wasmtypes.Uint64Encode(enc, o.WhenStarted)
 	return enc.Buf()
 }

@@ -57,11 +57,11 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	return nil
 }
 
-func CheckNonce(req iscp.Request, maxAssumedNonce uint64) error {
+func CheckNonce(req iscp.OffLedgerRequest, maxAssumedNonce uint64) error {
 	if maxAssumedNonce <= OffLedgerNonceStrictOrderTolerance {
 		return nil
 	}
-	nonce := req.AsOffLedger().Nonce()
+	nonce := req.Nonce()
 	if nonce < maxAssumedNonce-OffLedgerNonceStrictOrderTolerance {
 		return fmt.Errorf("nonce %d is too old", nonce)
 	}
@@ -82,7 +82,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAccount())
 	})
 
-	return CheckNonce(vmctx.req, maxAssumed)
+	return CheckNonce(vmctx.req.(iscp.OffLedgerRequest), maxAssumed)
 }
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request
@@ -110,7 +110,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 
 func (vmctx *VMContext) checkInternalOutput() error {
 	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
-	if vmctx.req.AsOnLedger().IsInternalUTXO(vmctx.ChainID()) {
+	if vmctx.req.(iscp.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
 		return xerrors.New("it is an internal output")
 	}
 	return nil
@@ -119,7 +119,7 @@ func (vmctx *VMContext) checkInternalOutput() error {
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonTimeLock() error {
-	lock := vmctx.req.AsOnLedger().Features().TimeLock()
+	lock := vmctx.req.(iscp.OnLedgerRequest).Features().TimeLock()
 	if lock != nil {
 		if !lock.Time.IsZero() {
 			if vmctx.finalStateTimestamp.Before(lock.Time) {
@@ -136,7 +136,7 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonExpiry() error {
-	expiry, _ := vmctx.req.AsOnLedger().Features().Expiry()
+	expiry, _ := vmctx.req.(iscp.OnLedgerRequest).Features().Expiry()
 
 	if expiry == nil {
 		return nil
@@ -160,7 +160,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	}
 
 	// General unlock validation
-	output, _ := vmctx.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
+	output, _ := vmctx.req.(iscp.OnLedgerRequest).Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
 		ConfUnix:    uint32(vmctx.finalStateTimestamp.Unix()),
@@ -176,7 +176,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
-	if _, ok := vmctx.req.AsOnLedger().Features().ReturnAmount(); ok {
+	if _, ok := vmctx.req.(iscp.OnLedgerRequest).Features().ReturnAmount(); ok {
 		return xerrors.New("return amount feature not supported in this version")
 	}
 	return nil

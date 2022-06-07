@@ -22,12 +22,10 @@ export class Auction {
 	highestBidder : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);
 	// minimum bid amount
 	minimumBid    : u64 = 0;
-	// number of tokens for sale
-	numTokens     : u64 = 0;
+	// NFT of NFTs for sale
+	nft           : wasmtypes.ScNftID = new wasmtypes.ScNftID();
 	// auction owner's margin in promilles
 	ownerMargin   : u64 = 0;
-	// token of tokens for sale
-	token         : wasmtypes.ScTokenID = new wasmtypes.ScTokenID();
 	// timestamp when auction started
 	whenStarted   : u64 = 0;
 
@@ -41,9 +39,8 @@ export class Auction {
 		data.highestBid    = wasmtypes.uint64Decode(dec);
 		data.highestBidder = wasmtypes.agentIDDecode(dec);
 		data.minimumBid    = wasmtypes.uint64Decode(dec);
-		data.numTokens     = wasmtypes.uint64Decode(dec);
+		data.nft           = wasmtypes.nftIDDecode(dec);
 		data.ownerMargin   = wasmtypes.uint64Decode(dec);
-		data.token         = wasmtypes.tokenIDDecode(dec);
 		data.whenStarted   = wasmtypes.uint64Decode(dec);
 		dec.close();
 		return data;
@@ -58,9 +55,8 @@ export class Auction {
 		wasmtypes.uint64Encode(enc, this.highestBid);
 		wasmtypes.agentIDEncode(enc, this.highestBidder);
 		wasmtypes.uint64Encode(enc, this.minimumBid);
-		wasmtypes.uint64Encode(enc, this.numTokens);
+		wasmtypes.nftIDEncode(enc, this.nft);
 		wasmtypes.uint64Encode(enc, this.ownerMargin);
-		wasmtypes.tokenIDEncode(enc, this.token);
 		wasmtypes.uint64Encode(enc, this.whenStarted);
 		return enc.buf();
 	}

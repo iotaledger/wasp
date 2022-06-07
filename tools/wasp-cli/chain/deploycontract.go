@@ -50,7 +50,7 @@ var deployContractCmd = &cobra.Command{
 }
 
 func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict) {
-	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*iscp.OffLedgerRequestData, error) {
+	util.WithOffLedgerRequest(GetCurrentChainID(), func() (iscp.OffLedgerRequest, error) {
 		args := codec.MakeDict(map[string]interface{}{
 			root.ParamName:        name,
 			root.ParamDescription: description,

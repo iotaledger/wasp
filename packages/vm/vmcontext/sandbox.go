@@ -152,3 +152,7 @@ func (s *contractSandbox) BlockContext(construct func(ctx iscp.Sandbox) interfac
 	// doesn't have a gas burn, only used for internal (native) contracts
 	return s.Ctx.(*VMContext).BlockContext(s, construct, onClose)
 }
+
+func (s *contractSandbox) GasBurnEnable(enable bool) {
+	s.Ctx.GasBurnEnable(enable)
+}

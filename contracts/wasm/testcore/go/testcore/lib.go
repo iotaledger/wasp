@@ -42,6 +42,7 @@ var exportMap = wasmlib.ScExportMap{
 		FuncWithdrawFromChain,
 		ViewCheckContextFromViewEP,
 		ViewFibonacci,
+		ViewFibonacciIndirect,
 		ViewGetCounter,
 		ViewGetInt,
 		ViewGetStringValue,
@@ -86,6 +87,7 @@ var exportMap = wasmlib.ScExportMap{
 	Views: []wasmlib.ScViewContextFunction{
 		viewCheckContextFromViewEPThunk,
 		viewFibonacciThunk,
+		viewFibonacciIndirectThunk,
 		viewGetCounterThunk,
 		viewGetIntThunk,
 		viewGetStringValueThunk,
@@ -128,7 +130,7 @@ func funcCallOnChainThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
 	funcCallOnChain(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.funcCallOnChain ok")
@@ -317,7 +319,7 @@ func funcRunRecursionThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
 	funcRunRecursion(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.funcRunRecursion ok")
@@ -650,10 +652,36 @@ func viewFibonacciThunk(ctx wasmlib.ScViewContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
 	viewFibonacci(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.viewFibonacci ok")
+}
+
+type FibonacciIndirectContext struct {
+	Params  ImmutableFibonacciIndirectParams
+	Results MutableFibonacciIndirectResults
+	State   ImmutableTestCoreState
+}
+
+func viewFibonacciIndirectThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testcore.viewFibonacciIndirect")
+	results := wasmlib.NewScDict()
+	f := &FibonacciIndirectContext{
+		Params: ImmutableFibonacciIndirectParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableFibonacciIndirectResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
+	viewFibonacciIndirect(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testcore.viewFibonacciIndirect ok")
 }
 
 type GetCounterContext struct {

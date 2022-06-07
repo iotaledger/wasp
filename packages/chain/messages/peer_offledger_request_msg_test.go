@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,10 +23,11 @@ func TestMarshalling(t *testing.T) {
 	args := dict.Dict{foo: []byte("bar")}
 	nonce := uint64(time.Now().UnixNano())
 	chainID := iscp.RandomChainID()
+	key, _ := testkey.GenKeyAddr()
 
 	msg := NewOffLedgerRequestMsg(
 		chainID,
-		iscp.NewOffLedgerRequest(iscp.RandomChainID(), contract, entrypoint, args, nonce).WithGasBudget(1000),
+		iscp.NewOffLedgerRequest(iscp.RandomChainID(), contract, entrypoint, args, nonce).WithGasBudget(1000).Sign(key),
 	)
 
 	// marshall the msg

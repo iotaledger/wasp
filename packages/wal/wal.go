@@ -59,6 +59,7 @@ func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
 	}
 	// read all segments in log
 	f, err := os.Open(w.dir)
+	defer f.Close()
 	if err != nil {
 		return nil, fmt.Errorf("could not open wal: %w", err)
 	}
@@ -98,6 +99,7 @@ func (w *chainWAL) Write(bytes []byte) error {
 func (w *chainWAL) createSegment(i uint32) (*segment, error) {
 	segName := segmentName(w.dir, i)
 	f, err := os.OpenFile(segName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
+	defer f.Close()
 	if err != nil {
 		return nil, fmt.Errorf("could not create segment: %w", err)
 	}
@@ -149,6 +151,7 @@ func (w *chainWAL) getSegment(i uint32) *segment {
 func (s *segment) load() error {
 	segName := segmentName(s.dir, s.index)
 	f, err := os.OpenFile(segName, os.O_RDONLY, 0o666)
+	defer f.Close()
 	if err != nil {
 		return fmt.Errorf("error opening segment: %w", err)
 	}
