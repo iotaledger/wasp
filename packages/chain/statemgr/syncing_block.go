@@ -98,7 +98,7 @@ func (syncT *syncingBlock) setApprovalInfo(output *iscp.AliasOutputWithID) {
 		return
 	}
 	syncT.approvalInfo = approvalInfo
-	syncT.log.Debugf("setApprovalInfo suceeded for state %v; approval info is %s", output.GetStateIndex(), approvalInfo)
+	syncT.log.Debugf("setApprovalInfo succeeded for state %v; approval info is %s", output.GetStateIndex(), approvalInfo)
 }
 
 func (syncT *syncingBlock) setReceivedFromWAL() {

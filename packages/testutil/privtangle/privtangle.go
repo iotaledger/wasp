@@ -377,7 +377,7 @@ type FaucetInfoResponse struct {
 
 func (pt *PrivTangle) queryFaucetInfo() error {
 	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
+	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, http.NewRequestWithContext(pt.ctx, "GET", faucetURL, http.NoBody))
 	if err != nil {
 		return xerrors.Errorf("unable to create request: %w", err)
 	}

@@ -21,7 +21,7 @@ type WAL struct {
 	metrics  *walMetrics
 	segments map[uint32]*segment
 	synced   map[uint32]bool
-	mu       sync.RWMutex //nolint
+	mu       sync.RWMutex
 }
 
 type chainWAL struct {

@@ -119,8 +119,10 @@ func (r *offLedgerRequestData) IsOffLedger() bool {
 	return true
 }
 
-var _ UnsignedOffLedgerRequest = &offLedgerRequestData{}
-var _ OffLedgerRequest = &offLedgerRequestData{}
+var (
+	_ UnsignedOffLedgerRequest = &offLedgerRequestData{}
+	_ OffLedgerRequest         = &offLedgerRequestData{}
+)
 
 func (r *offLedgerRequestData) ChainID() *ChainID {
 	return r.chainID

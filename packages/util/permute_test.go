@@ -14,7 +14,7 @@ func TestValidPermutation(t *testing.T) {
 	require.True(t, ValidPermutation([]uint16{0, 4, 2, 1, 3}))
 	require.True(t, ValidPermutation([]uint16{2, 4, 1, 0, 3}))
 
-	require.False(t, ValidPermutation([]uint16{1, 2, 3, 4, 5})) //Permutation indexes should start at 0
+	require.False(t, ValidPermutation([]uint16{1, 2, 3, 4, 5})) // Permutation indexes should start at 0
 	require.False(t, ValidPermutation([]uint16{0, 2, 2}))
 	require.False(t, ValidPermutation([]uint16{1, 2, 1}))
 }

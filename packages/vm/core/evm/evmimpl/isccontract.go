@@ -223,7 +223,7 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 }
 
 // TODO evm param is not used, can it be removed?
-//nolint:unparam
+
 func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
