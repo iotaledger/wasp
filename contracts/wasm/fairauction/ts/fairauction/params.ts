@@ -9,85 +9,91 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class MutableFinalizeAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class ImmutablePlaceBidParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class MutablePlaceBidParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+	// NFT identifies the auction
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
 export class ImmutableSetOwnerMarginParams extends wasmtypes.ScProxy {
+	// new SC owner margin in promilles
 	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamOwnerMargin));
 	}
 }
 
 export class MutableSetOwnerMarginParams extends wasmtypes.ScProxy {
+	// new SC owner margin in promilles
 	ownerMargin(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamOwnerMargin));
 	}
 }
 
 export class ImmutableStartAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
-	}
-
+	// description of the NFTs being auctioned
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
 
+	// duration of auction in minutes
 	duration(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamDuration));
 	}
 
+	// minimum required amount for any bid
 	minimumBid(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
 }
 
 export class MutableStartAuctionParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
-	}
-
+	// description of the NFTs being auctioned
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
 
+	// duration of auction in minutes
 	duration(): wasmtypes.ScMutableUint32 {
 		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamDuration));
 	}
 
+	// minimum required amount for any bid
 	minimumBid(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamMinimumBid));
 	}
 }
 
-export class ImmutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamColor));
+export class ImmutableGetAuctionInfoParams extends wasmtypes.ScProxy {
+	// NFT identifies the auction
+	nft(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }
 
-export class MutableGetInfoParams extends wasmtypes.ScProxy {
-	color(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamColor));
+export class MutableGetAuctionInfoParams extends wasmtypes.ScProxy {
+	// NFT identifies the auction
+	nft(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNft));
 	}
 }

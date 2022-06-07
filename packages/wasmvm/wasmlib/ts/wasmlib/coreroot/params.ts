@@ -9,6 +9,7 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableDeployContractParams extends wasmtypes.ScProxy {
+	// default 'N/A'
 	description(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
 	}
@@ -17,12 +18,14 @@ export class ImmutableDeployContractParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
+	//TODO variable init params for deployed contract
 	programHash(): wasmtypes.ScImmutableHash {
 		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
 }
 
 export class MutableDeployContractParams extends wasmtypes.ScProxy {
+	// default 'N/A'
 	description(): wasmtypes.ScMutableString {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
 	}
@@ -31,6 +34,7 @@ export class MutableDeployContractParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
+	//TODO variable init params for deployed contract
 	programHash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
@@ -45,6 +49,18 @@ export class ImmutableGrantDeployPermissionParams extends wasmtypes.ScProxy {
 export class MutableGrantDeployPermissionParams extends wasmtypes.ScProxy {
 	deployer(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamDeployer));
+	}
+}
+
+export class ImmutableRequireDeployPermissionsParams extends wasmtypes.ScProxy {
+	deployPermissionsEnabled(): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamDeployPermissionsEnabled));
+	}
+}
+
+export class MutableRequireDeployPermissionsParams extends wasmtypes.ScProxy {
+	deployPermissionsEnabled(): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamDeployPermissionsEnabled));
 	}
 }
 

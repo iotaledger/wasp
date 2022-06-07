@@ -4,10 +4,11 @@
 package lpp_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -24,33 +25,33 @@ func TestLPPPeeringImpl(t *testing.T) {
 	netIDs := []string{"localhost:9027", "localhost:9028", "localhost:9029"}
 	nodes := make([]peering.NetworkProvider, len(netIDs))
 
-	keys := make([]ed25519.KeyPair, len(netIDs))
+	keys := make([]*cryptolib.KeyPair, len(netIDs))
 	tnms := make([]peering.TrustedNetworkManager, len(netIDs))
 	for i := range keys {
-		keys[i] = ed25519.GenerateKeyPair()
+		keys[i] = cryptolib.NewKeyPair()
 		tnms[i] = testutil.NewTrustedNetworkManager()
 	}
 	for _, tnm := range tnms {
 		for i := range netIDs {
-			_, err = tnm.TrustPeer(keys[i].PublicKey, netIDs[i])
+			_, err = tnm.TrustPeer(keys[i].GetPublicKey(), netIDs[i])
 			require.NoError(t, err)
 		}
 	}
-	nodes[0], _, err = lpp.NewNetworkProvider(netIDs[0], 9027, &keys[0], tnms[0], log.Named("node0"))
+	nodes[0], _, err = lpp.NewNetworkProvider(netIDs[0], 9027, keys[0], tnms[0], log.Named("node0"))
 	require.NoError(t, err)
-	nodes[1], _, err = lpp.NewNetworkProvider(netIDs[1], 9028, &keys[1], tnms[1], log.Named("node1"))
+	nodes[1], _, err = lpp.NewNetworkProvider(netIDs[1], 9028, keys[1], tnms[1], log.Named("node1"))
 	require.NoError(t, err)
-	nodes[2], _, err = lpp.NewNetworkProvider(netIDs[2], 9029, &keys[2], tnms[2], log.Named("node2"))
+	nodes[2], _, err = lpp.NewNetworkProvider(netIDs[2], 9029, keys[2], tnms[2], log.Named("node2"))
 	require.NoError(t, err)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 
-	n0p2, err := nodes[0].PeerByPubKey(&keys[2].PublicKey)
+	n0p2, err := nodes[0].PeerByPubKey(keys[2].GetPublicKey())
 	require.NoError(t, err)
-	n1p1, err := nodes[1].PeerByPubKey(&keys[1].PublicKey)
+	n1p1, err := nodes[1].PeerByPubKey(keys[1].GetPublicKey())
 	require.NoError(t, err)
-	n2p0, err := nodes[2].PeerByPubKey(&keys[0].PublicKey)
+	n2p0, err := nodes[2].PeerByPubKey(keys[0].GetPublicKey())
 	require.NoError(t, err)
 
 	chain1 := peering.RandomPeeringID()

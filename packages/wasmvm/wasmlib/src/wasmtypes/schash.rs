@@ -31,7 +31,7 @@ pub fn hash_decode(dec: &mut WasmDecoder) -> ScHash {
 }
 
 pub fn hash_encode(enc: &mut WasmEncoder, value: &ScHash) {
-    enc.fixed_bytes(&value.to_bytes(), SC_HASH_LENGTH);
+    enc.fixed_bytes(&value.id, SC_HASH_LENGTH);
 }
 
 pub fn hash_from_bytes(buf: &[u8]) -> ScHash {
@@ -46,6 +46,10 @@ pub fn hash_from_bytes(buf: &[u8]) -> ScHash {
 
 pub fn hash_to_bytes(value: &ScHash) -> Vec<u8> {
     value.id.to_vec()
+}
+
+pub fn hash_from_string(value: &str) -> ScHash {
+    hash_from_bytes(&base58_decode(value))
 }
 
 pub fn hash_to_string(value: &ScHash) -> String {

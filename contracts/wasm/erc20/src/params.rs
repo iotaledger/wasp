@@ -17,10 +17,12 @@ pub struct ImmutableApproveParams {
 }
 
 impl ImmutableApproveParams {
+    // allowance value for delegated account
     pub fn amount(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
+    // delegated account
     pub fn delegation(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
@@ -32,10 +34,12 @@ pub struct MutableApproveParams {
 }
 
 impl MutableApproveParams {
+    // allowance value for delegated account
     pub fn amount(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
+    // delegated account
     pub fn delegation(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
@@ -47,10 +51,12 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
+    // creator/owner of the initial supply
     pub fn creator(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_CREATOR))
 	}
 
+    // initial token supply
     pub fn supply(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_SUPPLY))
 	}
@@ -62,10 +68,12 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
+    // creator/owner of the initial supply
     pub fn creator(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_CREATOR))
 	}
 
+    // initial token supply
     pub fn supply(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_SUPPLY))
 	}
@@ -77,10 +85,12 @@ pub struct ImmutableTransferParams {
 }
 
 impl ImmutableTransferParams {
+    // target account
     pub fn account(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
+    // amount of tokens to transfer
     pub fn amount(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
@@ -92,10 +102,12 @@ pub struct MutableTransferParams {
 }
 
 impl MutableTransferParams {
+    // target account
     pub fn account(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
+    // amount of tokens to transfer
     pub fn amount(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
@@ -107,14 +119,17 @@ pub struct ImmutableTransferFromParams {
 }
 
 impl ImmutableTransferFromParams {
+    // sender account
     pub fn account(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
+    // amount of tokens to transfer
     pub fn amount(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
+    // recipient account
     pub fn recipient(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_RECIPIENT))
 	}
@@ -126,14 +141,17 @@ pub struct MutableTransferFromParams {
 }
 
 impl MutableTransferFromParams {
+    // sender account
     pub fn account(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
+    // amount of tokens to transfer
     pub fn amount(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
+    // recipient account
     pub fn recipient(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_RECIPIENT))
 	}
@@ -145,10 +163,12 @@ pub struct ImmutableAllowanceParams {
 }
 
 impl ImmutableAllowanceParams {
+    // sender account
     pub fn account(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
+    // delegated account
     pub fn delegation(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
@@ -160,10 +180,12 @@ pub struct MutableAllowanceParams {
 }
 
 impl MutableAllowanceParams {
+    // sender account
     pub fn account(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
+    // delegated account
     pub fn delegation(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
@@ -175,6 +197,7 @@ pub struct ImmutableBalanceOfParams {
 }
 
 impl ImmutableBalanceOfParams {
+    // sender account
     pub fn account(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
@@ -186,6 +209,7 @@ pub struct MutableBalanceOfParams {
 }
 
 impl MutableBalanceOfParams {
+    // sender account
     pub fn account(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}

@@ -17,8 +17,8 @@ pub struct ImmutableCallOnChainResults {
 }
 
 impl ImmutableCallOnChainResults {
-    pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
+    pub fn n(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_N))
 	}
 }
 
@@ -28,38 +28,8 @@ pub struct MutableCallOnChainResults {
 }
 
 impl MutableCallOnChainResults {
-    pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
-	}
-}
-
-#[derive(Clone)]
-pub struct ImmutableGetMintedSupplyResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableGetMintedSupplyResults {
-    pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(RESULT_MINTED_COLOR))
-	}
-
-    pub fn minted_supply(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(RESULT_MINTED_SUPPLY))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableGetMintedSupplyResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableGetMintedSupplyResults {
-    pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(RESULT_MINTED_COLOR))
-	}
-
-    pub fn minted_supply(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(RESULT_MINTED_SUPPLY))
+    pub fn n(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_N))
 	}
 }
 
@@ -69,8 +39,8 @@ pub struct ImmutableRunRecursionResults {
 }
 
 impl ImmutableRunRecursionResults {
-    pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
+    pub fn n(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_N))
 	}
 }
 
@@ -80,8 +50,8 @@ pub struct MutableRunRecursionResults {
 }
 
 impl MutableRunRecursionResults {
-    pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
+    pub fn n(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_N))
 	}
 }
 
@@ -113,8 +83,8 @@ pub struct ImmutableFibonacciResults {
 }
 
 impl ImmutableFibonacciResults {
-    pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
+    pub fn n(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_N))
 	}
 }
 
@@ -124,8 +94,30 @@ pub struct MutableFibonacciResults {
 }
 
 impl MutableFibonacciResults {
-    pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
+    pub fn n(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_N))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableFibonacciIndirectResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableFibonacciIndirectResults {
+    pub fn n(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_N))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableFibonacciIndirectResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableFibonacciIndirectResults {
+    pub fn n(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_N))
 	}
 }
 
@@ -135,8 +127,8 @@ pub struct ImmutableGetCounterResults {
 }
 
 impl ImmutableGetCounterResults {
-    pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(RESULT_COUNTER))
+    pub fn counter(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_COUNTER))
 	}
 }
 
@@ -146,8 +138,8 @@ pub struct MutableGetCounterResults {
 }
 
 impl MutableGetCounterResults {
-    pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(RESULT_COUNTER))
+    pub fn counter(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_COUNTER))
 	}
 }
 

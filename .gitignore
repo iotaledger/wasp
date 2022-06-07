@@ -6,6 +6,7 @@ wasp.log
 /evmemulator
 /schema
 /submsg
+/vendor
 waspdb/
 cluster-data/
 dist/
@@ -22,3 +23,7 @@ wasp-cli.json
 **/node_modules/
 goshimmer.log
 /*.sh
+
+*.trie
+*.bin
+*.snapshot

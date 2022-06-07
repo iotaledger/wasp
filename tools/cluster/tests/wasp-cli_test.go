@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
@@ -22,12 +20,6 @@ const srcFile = "wasm/" + file
 func TestWaspCLINoChains(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	w.Run("init")
-	if !*goShimmerUseProvidedNode {
-		w.Run("set", "goshimmer.faucetPoWTarget", "0")
-	}
-	w.Run("request-funds")
-
 	out := w.Run("address")
 
 	ownerAddr := regexp.MustCompile(`(?m)Address:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
@@ -39,9 +31,6 @@ func TestWaspCLINoChains(t *testing.T) {
 
 func TestWaspCLI1Chain(t *testing.T) {
 	w := newWaspCLITest(t)
-
-	w.Run("init")
-	w.Run("request-funds")
 
 	alias := "chain1"
 
@@ -66,7 +55,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	// test chain list-contracts command
 	out = w.Run("chain", "list-contracts")
-	require.Regexp(t, `Total \d+ contracts`, out[0])
+	require.Regexp(t, `Total \d+ contracts in chain .{64}`, out[0])
 
 	// test chain list-accounts command
 	out = w.Run("chain", "list-accounts")
@@ -77,13 +66,21 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	// test chain balance command
 	out = w.Run("chain", "balance", agentID)
-	// check that the chain balance of owner is 1 IOTA
-	require.Regexp(t, `(?m)IOTA\s+1$`, out[3])
+	// check that the chain balance of owner is > 0
+	r := regexp.MustCompile(`(?m)iota\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
+	require.Len(t, r, 2)
+	bal, err := strconv.ParseInt(r[1], 10, 64)
+	require.NoError(t, err)
+	require.Positive(t, bal)
 
 	// same test, this time calling the view function manually
 	out = w.Run("chain", "call-view", "accounts", "balance", "string", "a", "agentid", agentID)
-	out = w.Pipe(out, "decode", "color", "int")
-	require.Regexp(t, `(?m)IOTA:\s+1$`, out[0])
+	out = w.Pipe(out, "decode", "bytes", "bigint")
+
+	r = regexp.MustCompile(`(?m):\s+(\d+)$`).FindStringSubmatch(out[0])
+	bal2, err := strconv.ParseInt(r[1], 10, 64)
+	require.NoError(t, err)
+	require.EqualValues(t, bal, bal2)
 
 	// test the chainlog
 	out = w.Run("chain", "events", "root")
@@ -92,8 +89,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 func TestWaspCLIContract(t *testing.T) {
 	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
+
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
@@ -155,8 +151,7 @@ func findRequestIDInOutput(out []string) string {
 
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
+
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
@@ -181,7 +176,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	out = w.Run("chain", "request", reqID)
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error: (empty)") {
+		if strings.Contains(line, "error: (empty)") {
 			found = true
 			break
 		}
@@ -197,7 +192,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error: ") {
+		if strings.Contains(line, "error: ") {
 			found = true
 			require.Regexp(t, `cannot decode`, line)
 			break
@@ -218,8 +213,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
+
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
@@ -256,65 +250,59 @@ func TestWaspCLIBlobContract(t *testing.T) {
 }
 
 func TestWaspCLIMint(t *testing.T) {
-	w := newWaspCLITest(t)
+	newWaspCLITest(t)
+	panic("TODO implement")
 
-	w.Run("init")
-	w.Run("request-funds")
+	// out := w.Run("mint", "1000")
+	// colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
+	// color, err := ledgerstate.ColorFromBase58EncodedString(colorb58)
+	// require.NoError(t, err)
 
-	out := w.Run("mint", "1000")
-	colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
-	color, err := ledgerstate.ColorFromBase58EncodedString(colorb58)
-	require.NoError(t, err)
-
-	outs, err := w.Cluster.GoshimmerClient().GetConfirmedOutputs(w.Address())
-	require.NoError(t, err)
-	found := false
-	for _, out := range outs {
-		if v, ok := out.Balances().Get(color); ok {
-			require.EqualValues(t, 1000, v)
-			found = true
-			break
-		}
-	}
-	require.True(t, found)
+	// outs, err := w.Cluster.GetOutputs(w.Address())
+	// require.NoError(t, err)
+	// found := false
+	// for _, out := range outs {
+	// 	if v, ok := out.Balances().Get(color); ok {
+	// 		require.EqualValues(t, 1000, v)
+	// 		found = true
+	// 		break
+	// 	}
+	// }
+	// require.True(t, found)
 }
 
 func TestWaspCLIBalance(t *testing.T) {
-	w := newWaspCLITest(t)
-	w.Run("init")
-	w.Run("request-funds")
-	w.Run("mint", "1000")
+	newWaspCLITest(t)
+	panic("TODO implement")
+	// w.Run("mint", "1000")
 
-	out := w.Run("balance")
+	// out := w.Run("balance")
 
-	bals := map[string]uint64{}
-	var mintedColor string
-	for _, line := range out {
-		m := regexp.MustCompile(`(?m)(\w+):\s+(\d+)$`).FindStringSubmatch(line)
-		if len(m) == 0 {
-			continue
-		}
-		if m[1] == "Total" {
-			continue
-		}
-		v, err := strconv.Atoi(m[2])
-		require.NoError(t, err)
-		bals[m[1]] = uint64(v)
-		if m[1] != "IOTA" {
-			mintedColor = m[1]
-		}
-	}
-	t.Logf("%+v", bals)
-	require.Equal(t, 2, len(bals))
-	require.EqualValues(t, utxodb.RequestFundsAmount-1000, bals["IOTA"])
-	require.EqualValues(t, 1000, bals[mintedColor])
+	// bals := map[string]uint64{}
+	// var mintedColor string
+	// for _, line := range out {
+	// 	m := regexp.MustCompile(`(?m)(\w+):\s+(\d+)$`).FindStringSubmatch(line)
+	// 	if len(m) == 0 {
+	// 		continue
+	// 	}
+	// 	if m[1] == "Total" {
+	// 		continue
+	// 	}
+	// 	v, err := strconv.Atoi(m[2])
+	// 	require.NoError(t, err)
+	// 	bals[m[1]] = uint64(v)
+	// 	if m[1] != "IOTA" {
+	// 		mintedColor = m[1]
+	// 	}
+	// }
+	// t.Logf("%+v", bals)
+	// require.Equal(t, 2, len(bals))
+	// require.EqualValues(t, utxodb.RequestFundsAmount-1000, bals["IOTA"])
+	// require.EqualValues(t, 1000, bals[mintedColor])
 }
 
 func TestWaspCLIRejoinChain(t *testing.T) {
 	w := newWaspCLITest(t)
-
-	w.Run("init")
-	w.Run("request-funds")
 
 	alias := "chain1"
 

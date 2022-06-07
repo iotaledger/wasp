@@ -17,10 +17,12 @@ pub struct ImmutableMintSupplyParams {
 }
 
 impl ImmutableMintSupplyParams {
+    // description what minted token represents
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
+    // any user defined text
     pub fn user_defined(&self) -> ScImmutableString {
 		ScImmutableString::new(self.proxy.root(PARAM_USER_DEFINED))
 	}
@@ -32,10 +34,12 @@ pub struct MutableMintSupplyParams {
 }
 
 impl MutableMintSupplyParams {
+    // description what minted token represents
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
+    // any user defined text
     pub fn user_defined(&self) -> ScMutableString {
 		ScMutableString::new(self.proxy.root(PARAM_USER_DEFINED))
 	}
@@ -47,8 +51,9 @@ pub struct ImmutableTransferOwnershipParams {
 }
 
 impl ImmutableTransferOwnershipParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token of token to transfer ownership of
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -58,8 +63,9 @@ pub struct MutableTransferOwnershipParams {
 }
 
 impl MutableTransferOwnershipParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token of token to transfer ownership of
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -69,8 +75,9 @@ pub struct ImmutableUpdateMetadataParams {
 }
 
 impl ImmutableUpdateMetadataParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token of token to update metadata for
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -80,8 +87,9 @@ pub struct MutableUpdateMetadataParams {
 }
 
 impl MutableUpdateMetadataParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token of token to update metadata for
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -91,8 +99,9 @@ pub struct ImmutableGetInfoParams {
 }
 
 impl ImmutableGetInfoParams {
-    pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token of token to view registry info of
+    pub fn token(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }
 
@@ -102,7 +111,8 @@ pub struct MutableGetInfoParams {
 }
 
 impl MutableGetInfoParams {
-    pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_COLOR))
+    // token of token to view registry info of
+    pub fn token(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN))
 	}
 }

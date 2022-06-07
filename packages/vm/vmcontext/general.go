@@ -1,28 +1,44 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/goshimmer/client/wallet/packages/sendoptions"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	return vmctx.chainID
+	var ret iscp.ChainID
+	if vmctx.task.AnchorOutput.StateIndex == 0 {
+		// origin
+		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
+	} else {
+		ret = iscp.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
+	}
+	return &ret
 }
 
-func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
+func (vmctx *VMContext) ChainOwnerID() iscp.AgentID {
 	return vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
-	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
-	if !ok {
-		vmctx.log.Panicf("can't find current contract")
+func (vmctx *VMContext) ContractAgentID() iscp.AgentID {
+	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
+}
+
+func (vmctx *VMContext) ContractCreator() iscp.AgentID {
+	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
+	if rec == nil {
+		panic("can't find current contract")
 	}
 	return rec.Creator
 }
@@ -31,103 +47,162 @@ func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
-	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+func (vmctx *VMContext) Params() *iscp.Params {
+	return &vmctx.getCallContext().params
 }
 
-func (vmctx *VMContext) Minted() colored.Balances {
-	if req, ok := vmctx.req.(*request.OnLedger); ok {
-		return req.MintedAmounts()
-	}
-	return nil
+func (vmctx *VMContext) MyAgentID() iscp.AgentID {
+	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) IsRequestContext() bool {
-	return vmctx.getCallContext().isRequestContext
-}
-
-func (vmctx *VMContext) Caller() *iscp.AgentID {
+func (vmctx *VMContext) Caller() iscp.AgentID {
 	return vmctx.getCallContext().caller
 }
 
-func (vmctx *VMContext) Timestamp() int64 {
-	return vmctx.virtualState.Timestamp().UnixNano()
+func (vmctx *VMContext) Timestamp() time.Time {
+	return vmctx.virtualState.Timestamp()
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-func (vmctx *VMContext) Request() iscp.Request {
+func (vmctx *VMContext) Request() iscp.Calldata {
 	return vmctx.req
 }
 
-const maxParamSize = 512
-
-func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
-	if vmctx.requestOutputCount >= MaxBlockOutputCount {
-		vmctx.log.Panicf("request with ID %s exceeded max number of allowed outputs (%d)", vmctx.req.ID().Base58(), MaxBlockOutputCount)
+func (vmctx *VMContext) AccountID() iscp.AgentID {
+	hname := vmctx.CurrentContractHname()
+	if corecontracts.IsCoreHname(hname) {
+		return vmctx.ChainID().CommonAccount()
 	}
+	return iscp.NewContractAgentID(vmctx.ChainID(), hname)
+}
 
-	if tokens == nil || len(tokens) == 0 {
-		vmctx.log.Errorf("Send: transfer can't be empty")
+func (vmctx *VMContext) AllowanceAvailable() *iscp.Allowance {
+	allowance := vmctx.getCallContext().allowanceAvailable
+	if allowance == nil {
+		return iscp.NewEmptyAllowance()
+	}
+	return allowance.Clone()
+}
+
+func (vmctx *VMContext) isOnChainAccount(agentID iscp.AgentID) bool {
+	return vmctx.ChainID().IsSameChain(agentID)
+}
+
+func (vmctx *VMContext) isCoreAccount(agentID iscp.AgentID) bool {
+	contract, ok := agentID.(*iscp.ContractAgentID)
+	if !ok {
 		return false
 	}
-	data := request.NewMetadata().
-		WithRequestNonce(vmctx.blockOutputCount).
-		WithSender(vmctx.CurrentContractHname())
-	if metadata != nil {
-		var args requestargs.RequestArgs
-		if metadata.Args != nil && len(metadata.Args) > 0 {
-			var opt map[kv.Key][]byte
-			args, opt = requestargs.NewOptimizedRequestArgs(metadata.Args, maxParamSize)
-			if len(opt) > 0 {
-				// some parameters  too big
-				vmctx.log.Errorf("Send: too big data in parameters")
-				return false
-			}
+	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
+}
+
+// targetAccountExists check if there's an account with non-zero balance,
+// or it is an existing smart contract
+func (vmctx *VMContext) targetAccountExists(agentID iscp.AgentID) bool {
+	if agentID.Equals(vmctx.ChainID().CommonAccount()) {
+		return true
+	}
+	accountExists := false
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accountExists = accounts.AccountExists(s, agentID)
+	})
+	if accountExists {
+		return true
+	}
+	// it may be a smart contract with 0 balance
+	if !vmctx.isOnChainAccount(agentID) {
+		return false
+	}
+	hname, _ := iscp.HnameFromAgentID(agentID)
+	vmctx.callCore(root.Contract, func(s kv.KVStore) {
+		accountExists = root.ContractExists(s, hname)
+	})
+	return accountExists
+}
+
+func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
+	if !vmctx.getCallContext().allowanceAvailable.SpendFromBudget(toSpend) {
+		panic(accounts.ErrNotEnoughAllowance)
+	}
+}
+
+// TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
+func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
+	if vmctx.isCoreAccount(target) {
+		// if the target is one of core contracts, assume target is the common account
+		target = vmctx.ChainID().CommonAccount()
+	} else {
+		// check if target exists, if it is not forced
+		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
+		if !forceOpenAccount && !vmctx.targetAccountExists(target) {
+			panic(vm.ErrTransferTargetAccountDoesNotExists)
 		}
-		data.WithTarget(metadata.TargetContract).
-			WithEntryPoint(metadata.EntryPoint).
-			WithArgs(args)
 	}
-	sourceAccount := vmctx.adjustAccount(vmctx.MyAgentID())
-	if !vmctx.debitFromAccount(sourceAccount, tokens) {
-		return false
+
+	var toMove *iscp.Allowance
+	if len(transfer) == 0 {
+		toMove = vmctx.AllowanceAvailable()
+	} else {
+		toMove = transfer[0]
 	}
-	var opts *sendoptions.SendFundsOptions
-	if len(options) == 1 {
-		opts = options[0].ToGoshimmerSendOptions()
+
+	vmctx.spendAllowedBudget(toMove) // panics if not enough
+
+	caller := vmctx.Caller() // have to take it here because callCore changes that
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs)
+	})
+	return vmctx.AllowanceAvailable()
+}
+
+func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
+	var nilAliasID iotago.AliasID
+	blockset := vmctx.task.AnchorOutput.FeatureSet()
+	senderBlock := blockset.SenderFeature()
+	var sender iotago.Address
+	if senderBlock != nil {
+		sender = senderBlock.Address
 	}
-	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToL1Map(tokens), opts)
-	if err != nil {
-		vmctx.log.Errorf("Send: %v", err)
-		return false
+	return &iscp.StateAnchor{
+		ChainID:              *vmctx.ChainID(),
+		Sender:               sender,
+		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
+		StateController:      vmctx.task.AnchorOutput.StateController(),
+		GovernanceController: vmctx.task.AnchorOutput.GovernorAddress(),
+		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
+		OutputID:             vmctx.task.AnchorOutputID,
+		StateData:            vmctx.task.AnchorOutput.StateMetadata,
+		Deposit:              vmctx.task.AnchorOutput.Amount,
+		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
 	}
-	vmctx.requestOutputCount++
-	vmctx.blockOutputCount++
-	return true
 }
 
-// - anchor properties
-func (vmctx *VMContext) StateAddress() ledgerstate.Address {
-	return vmctx.chainInput.GetStateAddress()
+// DeployContract deploys contract by its program hash with the name and description specific to the instance
+func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
+	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s, dscr: '%s'", programHash.String(), name, description)
+
+	// calling root contract from another contract to install contract
+	// adding parameters specific to deployment
+	par := initParams.Clone()
+	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
+	par.Set(root.ParamName, codec.EncodeString(name))
+	par.Set(root.ParamDescription, codec.EncodeString(description))
+	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 
-func (vmctx *VMContext) GoverningAddress() ledgerstate.Address {
-	return vmctx.chainInput.GetGoverningAddress()
-}
+func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
+	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
-func (vmctx *VMContext) StateIndex() uint32 {
-	return vmctx.chainInput.GetStateIndex()
-}
+	params := dict.New()
+	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
 
-func (vmctx *VMContext) StateHash() hashing.HashValue {
-	var h hashing.HashValue
-	h, _ = hashing.HashValueFromBytes(vmctx.chainInput.GetStateData())
-	return h
-}
+	result := vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	errorCode := codec.MustDecodeVMErrorCode(result.MustGet(errors.ParamErrorCode))
 
-func (vmctx *VMContext) OutputID() ledgerstate.OutputID {
-	return vmctx.chainInput.ID()
+	vmctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
+
+	return iscp.NewVMErrorTemplate(errorCode, messageFormat)
 }

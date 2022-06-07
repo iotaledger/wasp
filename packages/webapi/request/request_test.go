@@ -5,18 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/kvstore"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -26,17 +27,15 @@ type mockedChain struct {
 	*testchain.MockedChainCore
 }
 
-var (
-	_ chain.Chain         = &mockedChain{}
-	_ chain.ChainCore     = &mockedChain{} // from testchain.MockedChainCore
-	_ chain.ChainEntry    = &mockedChain{}
-	_ chain.ChainRequests = &mockedChain{}
-	_ chain.ChainMetrics  = &mockedChain{}
-)
+var _ chain.Chain = &mockedChain{}
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) GetRequestProcessingStatus(_ iscp.RequestID) chain.RequestProcessingStatus {
+func (m *mockedChain) TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+	panic("implement me")
+}
+
+func (m *mockedChain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
 	panic("implement me")
 }
 
@@ -50,11 +49,11 @@ func (m *mockedChain) DetachFromRequestProcessed(attachID *events.Closure) {
 
 // chain.ChainEntry implementation
 
-func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
+func (m *mockedChain) ReceiveTransaction(_ *iotago.Transaction) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
+func (m *mockedChain) ReceiveState(_ *iotago.AliasOutput, _ time.Time) {
 	panic("implement me")
 }
 
@@ -80,6 +79,16 @@ func (m *mockedChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("implement me")
 }
 
+// chain.ChainRunner implementation
+
+func (*mockedChain) GetDB() kvstore.KVStore {
+	panic("unimplemented")
+}
+
+func (*mockedChain) GetTimeData() iscp.TimeData {
+	panic("unimplemented")
+}
+
 // private methods
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
@@ -92,21 +101,26 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(_ chain.Chain, _ *iscp.AgentID) (colored.Balances, error) {
-	return colored.NewBalancesForIotas(100), nil
+func getAccountBalanceMocked(_ chain.ChainCore, _ iscp.AgentID) (*iscp.FungibleTokens, error) {
+	return iscp.NewTokensIotas(100), nil
 }
 
 func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
-	return func(_ chain.Chain, _ iscp.RequestID) (bool, error) {
+	return func(_ chain.ChainCore, _ iscp.RequestID) (bool, error) {
 		return ret, nil
 	}
+}
+
+func checkNonceMocked(ch chain.ChainCore, req iscp.OffLedgerRequest) error {
+	return nil
 }
 
 func newMockedAPI(t *testing.T) *offLedgerReqAPI {
 	return &offLedgerReqAPI{
 		getChain:                createMockedGetChain(t),
-		getAccountBalance:       getAccountBalanceMocked,
+		getAccountAssets:        getAccountBalanceMocked,
 		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
+		checkNonce:              checkNonceMocked,
 		requestsCache:           expiringcache.New(10 * time.Second),
 	}
 }
@@ -117,7 +131,7 @@ func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID,
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": chainID.Base58()},
+		map[string]string{"chainID": chainID.String()},
 		body,
 		nil,
 		expectedStatus,

@@ -15,8 +15,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -43,19 +44,35 @@ const (
 	initiatorMsgFree         byte = initiatorMsgBase + 5         // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol.
-	rabinMsgBase                   byte = peering.FirstUserMsgCode + 34
-	rabinDealMsgType               byte = rabinMsgBase + 1
-	rabinResponseMsgType           byte = rabinMsgBase + 2
-	rabinJustificationMsgType      byte = rabinMsgBase + 3
-	rabinSecretCommitsMsgType      byte = rabinMsgBase + 4
-	rabinComplaintCommitsMsgType   byte = rabinMsgBase + 5
-	rabinReconstructCommitsMsgType byte = rabinMsgBase + 6
-	rabinMsgFree                   byte = rabinMsgBase + 7 // Just a placeholder for first unallocated message type.
+	rabinMsgFrom                   byte = initiatorMsgFree
+	rabinDealMsgType               byte = rabinMsgFrom + 0
+	rabinResponseMsgType           byte = rabinMsgFrom + 1
+	rabinJustificationMsgType      byte = rabinMsgFrom + 2
+	rabinSecretCommitsMsgType      byte = rabinMsgFrom + 3
+	rabinComplaintCommitsMsgType   byte = rabinMsgFrom + 4
+	rabinReconstructCommitsMsgType byte = rabinMsgFrom + 5
+	rabinMsgTill                   byte = rabinMsgFrom + 6 // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol, messages repeatedly sent
 	// in response to duplicated messages from other peers. They should be treated
 	// in a special way to avoid infinite message loops.
-	rabinEcho byte = peering.FirstUserMsgCode + 44
+	rabinEchoFrom byte = rabinMsgTill
+	rabinEchoTill byte = rabinEchoFrom + (rabinMsgTill - rabinMsgFrom)
+	//
+	// The Peer<->Peer communication includes a corresponding KeySetType.
+	// We encode it to the MsgType. Messages are recognized as follows:
+	//  [rabinMsgFrom,        rabinEchoTill)       --> KeySetType = Ed25519
+	//  [rabinKeySetTypeFrom, rabinKeySetTypeTill) --> KeySetType = BLS
+	// NOTE: There is not enough bits to encode KeySetType and Echo flags as bits.
+	rabinKeySetTypeFrom byte = rabinEchoTill
+	rabinKeySetTypeTill byte = rabinKeySetTypeFrom + (rabinEchoTill - rabinMsgFrom)
+)
+
+type keySetType byte
+
+const (
+	keySetTypeEd25519 keySetType = iota // Used to produce L1 signatures.
+	keySetTypeBLS                       // Used internally only (randomness).
 )
 
 var initPeeringID peering.PeeringID
@@ -75,35 +92,65 @@ func isDkgInitProcRecvMsg(msgType byte) bool {
 	return msgType == initiatorStepMsgType || msgType == initiatorDoneMsgType
 }
 
-// Checks if that's a PeerProc <-> PeerProc message.
-func isDkgRabinRoundMsg(msgType byte) bool {
-	return rabinMsgBase <= msgType && msgType < rabinMsgFree
+// isDkgRabinRoundMsg detects, if the received MsgType is RabinDKG Peer <-> Peer message type and splits it into components.
+func isDkgRabinRoundMsg(msgType byte) (bool, keySetType, bool, byte) {
+	if msgType < rabinMsgFrom || msgType >= rabinKeySetTypeTill {
+		return false, keySetTypeEd25519, false, 0
+	}
+	kst := keySetTypeEd25519
+	if msgType >= rabinKeySetTypeFrom {
+		kst = keySetTypeBLS
+		msgType -= rabinKeySetTypeFrom
+	}
+	echo := false
+	if msgType >= rabinEchoFrom {
+		echo = true
+		msgType -= rabinEchoFrom
+	}
+	return true, kst, echo, msgType
 }
+
+// makeDkgRabinMsgType creates a peeringMsgType out of components composing it for the Rabin DKG Peer <-> Peer messages.
+func makeDkgRabinMsgType(rabinMsgType byte, kst keySetType, echo bool) byte {
+	msgType := rabinMsgType
+	if echo {
+		msgType = msgType - rabinMsgFrom + rabinEchoFrom
+	}
+	if kst == keySetTypeBLS {
+		msgType = msgType - rabinMsgType + rabinKeySetTypeFrom
+	}
+	return msgType
+}
+
+// Checks if that's a PeerProc <-> PeerProc message.
+// func isDkgRabinRoundMsg(msgType byte) bool {
+// 	return rabinMsgBase <= msgType && msgType < rabinMsgFree
+// }
 
 // Checks if that's a PeerProc <-> PeerProc echoed / repeated message.
-func isDkgRabinEchoMsg(msgType byte) bool {
-	return rabinEcho <= msgType && msgType < rabinMsgFree-rabinMsgBase+rabinEcho
-}
+// func isDkgRabinEchoMsg(msgType byte) bool {
+// 	return rabinEcho <= msgType && msgType < rabinMsgFree-rabinMsgBase+rabinEcho
+// }
 
-func makeDkgRoundEchoMsg(msgType byte) (byte, error) {
-	if isDkgRabinRoundMsg(msgType) {
-		return msgType - rabinMsgBase + rabinEcho, nil
-	}
-	if isDkgRabinEchoMsg(msgType) {
-		return msgType, nil
-	}
-	return msgType, errors.New("round_msg_type_expected")
-}
+// func makeDkgRoundEchoMsg(msgType byte) (byte, error) {
+// 	if isDkgRabinRoundMsg(msgType) {
+// 		return msgType - rabinMsgBase + rabinEcho, nil
+// 	}
+// 	if isDkgRabinEchoMsg(msgType) {
+// 		return msgType, nil
+// 	}
+// 	return msgType, errors.New("round_msg_type_expected")
+// }
 
-func makeDkgRoundMsg(msgType byte) (byte, error) { //nolint:unused,deadcode
-	if isDkgRabinRoundMsg(msgType) {
-		return msgType, nil
-	}
-	if isDkgRabinEchoMsg(msgType) {
-		return msgType - rabinEcho + rabinMsgBase, nil
-	}
-	return msgType, errors.New("round_or_echo_msg_type_expected")
-}
+// func makeDkgRoundMsg(msgType byte) (byte, error) { //nolint:unused,deadcode
+// 	if isDkgRabinRoundMsg(msgType) {
+// 		return msgType, nil
+// 	}
+// 	if isDkgRabinEchoMsg(msgType) {
+// 		return msgType - rabinEcho + rabinMsgBase, nil
+// 	}
+// 	return msgType, errors.New("round_or_echo_msg_type_expected")
+// }
 
 // All the messages exchanged via the Peering subsystem will implement this.
 type msgByteCoder interface {
@@ -136,7 +183,7 @@ type initiatorMsg interface {
 	IsResponse() bool
 }
 
-func readInitiatorMsg(peerMessage *peering.PeerMessageData, blsSuite kyber.Group) (bool, initiatorMsg, error) {
+func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite kyber.Group) (bool, initiatorMsg, error) {
 	switch peerMessage.MsgType {
 	case initiatorInitMsgType:
 		msg := initiatorInitMsg{}
@@ -152,13 +199,13 @@ func readInitiatorMsg(peerMessage *peering.PeerMessageData, blsSuite kyber.Group
 		return true, &msg, nil
 	case initiatorDoneMsgType:
 		msg := initiatorDoneMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, blsSuite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData, edSuite, blsSuite); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
 	case initiatorPubShareMsgType:
 		msg := initiatorPubShareMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, blsSuite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData, edSuite, blsSuite); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
@@ -183,8 +230,8 @@ type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peeringID    peering.PeeringID
-	peerPubs     []*ed25519.PublicKey
-	initiatorPub *ed25519.PublicKey
+	peerPubs     []*cryptolib.PublicKey
+	initiatorPub *cryptolib.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
@@ -192,7 +239,7 @@ type initiatorInitMsg struct {
 
 type initiatorInitMsgIn struct {
 	initiatorInitMsg
-	SenderPubKey *ed25519.PublicKey
+	SenderPubKey *cryptolib.PublicKey
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
@@ -223,11 +270,11 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 		return err
 	}
 	for i := range m.peerPubs {
-		if err = util.WriteBytes16(w, m.peerPubs[i].Bytes()); err != nil {
+		if err = util.WriteBytes16(w, m.peerPubs[i].AsBytes()); err != nil {
 			return err
 		}
 	}
-	if err = util.WriteBytes16(w, m.initiatorPub.Bytes()); err != nil {
+	if err = util.WriteBytes16(w, m.initiatorPub.AsBytes()); err != nil {
 		return err
 	}
 	if err = util.WriteUint16(w, m.threshold); err != nil {
@@ -252,35 +299,35 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if n, err = r.Read(m.peeringID[:]); err != nil {
 		return err
 	}
-	if n != ledgerstate.AddressLength {
+	if n != iotago.Ed25519AddressBytesLength {
 		return fmt.Errorf("error while reading peering ID: read %v bytes, expected %v bytes",
-			n, ledgerstate.AddressLength)
+			n, iotago.Ed25519AddressBytesLength)
 	}
 	var arrLen uint16
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.peerPubs = make([]*ed25519.PublicKey, arrLen)
+	m.peerPubs = make([]*cryptolib.PublicKey, arrLen)
 	for i := range m.peerPubs {
 		var peerPubBytes []byte
 		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		peerPubKey, _, err := ed25519.PublicKeyFromBytes(peerPubBytes)
+		peerPubKey, err := cryptolib.NewPublicKeyFromBytes(peerPubBytes)
 		if err != nil {
 			return err
 		}
-		m.peerPubs[i] = &peerPubKey
+		m.peerPubs[i] = peerPubKey
 	}
 	var initiatorPubBytes []byte
 	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	initiatorPub, _, err := ed25519.PublicKeyFromBytes(initiatorPubBytes)
+	initiatorPub, err := cryptolib.NewPublicKeyFromBytes(initiatorPubBytes)
 	if err != nil {
 		return err
 	}
-	m.initiatorPub = &initiatorPub
+	m.initiatorPub = initiatorPub
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
 		return err
 	}
@@ -362,9 +409,11 @@ func (m *initiatorStepMsg) IsResponse() bool {
 // initiatorDoneMsg
 //
 type initiatorDoneMsg struct {
-	step      byte
-	pubShares []kyber.Point
-	blsSuite  kyber.Group // Transient, for un-marshaling only.
+	step         byte
+	edPubShares  []kyber.Point
+	edSuite      kyber.Group // Transient, for un-marshaling only.
+	blsPubShares []kyber.Point
+	blsSuite     kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorDoneMsg) MsgType() byte {
@@ -385,11 +434,19 @@ func (m *initiatorDoneMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteUint16(w, uint16(len(m.pubShares))); err != nil {
+	if err = util.WriteUint16(w, uint16(len(m.edPubShares))); err != nil {
 		return err
 	}
-	for i := range m.pubShares {
-		if err = util.WriteMarshaled(w, m.pubShares[i]); err != nil {
+	for i := range m.edPubShares {
+		if err = util.WriteMarshaled(w, m.edPubShares[i]); err != nil {
+			return err
+		}
+	}
+	if err = util.WriteUint16(w, uint16(len(m.blsPubShares))); err != nil {
+		return err
+	}
+	for i := range m.blsPubShares {
+		if err = util.WriteMarshaled(w, m.blsPubShares[i]); err != nil {
 			return err
 		}
 	}
@@ -402,22 +459,37 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
+	//
+	// edPubShares
 	var arrLen uint16
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.pubShares = make([]kyber.Point, arrLen)
-	for i := range m.pubShares {
-		m.pubShares[i] = m.blsSuite.Point()
-		if err = util.ReadMarshaled(r, m.pubShares[i]); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.pubShares: %w", err)
+	m.edPubShares = make([]kyber.Point, arrLen)
+	for i := range m.edPubShares {
+		m.edPubShares[i] = m.edSuite.Point()
+		if err = util.ReadMarshaled(r, m.edPubShares[i]); err != nil {
+			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.edPubShares: %w", err)
+		}
+	}
+	//
+	// blsPubShares
+	if err = util.ReadUint16(r, &arrLen); err != nil {
+		return err
+	}
+	m.blsPubShares = make([]kyber.Point, arrLen)
+	for i := range m.blsPubShares {
+		m.blsPubShares[i] = m.blsSuite.Point()
+		if err = util.ReadMarshaled(r, m.blsPubShares[i]); err != nil {
+			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.blsPubShares: %w", err)
 		}
 	}
 	return nil
 }
 
-func (m *initiatorDoneMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+func (m *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
+	m.edSuite = edSuite
 	m.blsSuite = blsSuite
 	return m.Read(r)
 }
@@ -438,12 +510,16 @@ func (m *initiatorDoneMsg) IsResponse() bool {
 // All the nodes must return the same public key.
 //
 type initiatorPubShareMsg struct {
-	step          byte
-	sharedAddress ledgerstate.Address
-	sharedPublic  kyber.Point
-	publicShare   kyber.Point
-	signature     []byte
-	blsSuite      kyber.Group // Transient, for un-marshaling only.
+	step            byte
+	sharedAddress   iotago.Address
+	edSharedPublic  kyber.Point
+	edPublicShare   kyber.Point
+	edSignature     []byte
+	edSuite         kyber.Group // Transient, for un-marshaling only.
+	blsSharedPublic kyber.Point
+	blsPublicShare  kyber.Point
+	blsSignature    []byte
+	blsSuite        kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorPubShareMsg) MsgType() byte {
@@ -464,16 +540,32 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, m.sharedAddress.Bytes()); err != nil {
+	if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
 		return err
 	}
-	if err = util.WriteMarshaled(w, m.sharedPublic); err != nil {
-		return err
+	{ // Ed25519 part.
+		if err = util.WriteMarshaled(w, m.edSharedPublic); err != nil {
+			return err
+		}
+		if err = util.WriteMarshaled(w, m.edPublicShare); err != nil {
+			return err
+		}
+		if err = util.WriteBytes16(w, m.edSignature); err != nil {
+			return err
+		}
 	}
-	if err = util.WriteMarshaled(w, m.publicShare); err != nil {
-		return err
+	{ // BLS part.
+		if err = util.WriteMarshaled(w, m.blsSharedPublic); err != nil {
+			return err
+		}
+		if err = util.WriteMarshaled(w, m.blsPublicShare); err != nil {
+			return err
+		}
+		if err = util.WriteBytes16(w, m.blsSignature); err != nil {
+			return err
+		}
 	}
-	return util.WriteBytes16(w, m.signature)
+	return nil
 }
 
 func (m *initiatorPubShareMsg) Read(r io.Reader) error {
@@ -481,31 +573,49 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
+	//
+	// SharedAddress.
 	var sharedAddressBin []byte
-	var sharedAddress ledgerstate.Address
+	var sharedAddress iotago.Address
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = ledgerstate.AddressFromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
 	m.sharedAddress = sharedAddress
-	m.sharedPublic = m.blsSuite.Point()
-	if err = util.ReadMarshaled(r, m.sharedPublic); err != nil {
-		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.sharedPublic: %w", err)
+	//
+	// Ed25519 part.
+	m.edSharedPublic = m.edSuite.Point()
+	if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
 	}
-	m.publicShare = m.blsSuite.Point()
-	if err = util.ReadMarshaled(r, m.publicShare); err != nil {
-		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.publicShare: %w", err)
+	m.edPublicShare = m.edSuite.Point()
+	if err = util.ReadMarshaled(r, m.edPublicShare); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edPublicShare: %w", err)
 	}
-	if m.signature, err = util.ReadBytes16(r); err != nil {
+	if m.edSignature, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	//
+	// BLS part.
+	m.blsSharedPublic = m.blsSuite.Point()
+	if err = util.ReadMarshaled(r, m.blsSharedPublic); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsSharedPublic: %w", err)
+	}
+	m.blsPublicShare = m.blsSuite.Point()
+	if err = util.ReadMarshaled(r, m.blsPublicShare); err != nil {
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsPublicShare: %w", err)
+	}
+	if m.blsSignature, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *initiatorPubShareMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+func (m *initiatorPubShareMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
+	m.edSuite = edSuite
 	m.blsSuite = blsSuite
 	return m.Read(r)
 }
@@ -1096,6 +1206,134 @@ func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
+}
+
+// multiKeySetMsg wraps messages of different protocol instances (for different key set types).
+// It is needed to cope with the round synchronization.
+type multiKeySetMsg struct {
+	step      byte
+	edMsg     *peering.PeerMessageData
+	blsMsg    *peering.PeerMessageData
+	peeringID peering.PeeringID // Transient.
+	receiver  byte              // Transient.
+	msgType   byte              // Transient.
+}
+
+func (m *multiKeySetMsg) MsgType() byte {
+	return m.msgType
+}
+
+func (m *multiKeySetMsg) Step() byte {
+	return m.step
+}
+
+func (m *multiKeySetMsg) SetStep(step byte) {
+	m.step = step
+}
+
+func (m *multiKeySetMsg) Write(w io.Writer) error {
+	if err := util.WriteByte(w, m.step); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, m.edMsg.MsgData); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, m.blsMsg.MsgData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *multiKeySetMsg) Read(r io.Reader) error {
+	var err error
+	if m.step, err = util.ReadByte(r); err != nil {
+		return err
+	}
+	m.edMsg = &peering.PeerMessageData{
+		PeeringID:   m.peeringID,
+		MsgReceiver: m.receiver,
+		MsgType:     m.msgType,
+		MsgData:     nil, // Assigned below.
+	}
+	if m.edMsg.MsgData, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	m.blsMsg = &peering.PeerMessageData{
+		PeeringID:   m.peeringID,
+		MsgReceiver: m.receiver,
+		MsgType:     m.msgType,
+		MsgData:     nil, // Assigned below.
+	}
+	if m.blsMsg.MsgData, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, receiver, msgType byte) error {
+	rdr := bytes.NewReader(buf)
+	m.peeringID = peeringID
+	m.receiver = receiver
+	m.msgType = msgType
+	return m.Read(rdr)
+}
+
+func (m *multiKeySetMsg) mustDataBytes() []byte {
+	buf := bytes.Buffer{}
+	if err := m.Write(&buf); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
+}
+
+type multiKeySetMsgs map[uint16]*multiKeySetMsg
+
+func (m multiKeySetMsgs) GetEdMsgs() map[uint16]*peering.PeerMessageData {
+	res := make(map[uint16]*peering.PeerMessageData)
+	for i := range m {
+		res[i] = m[i].edMsg
+	}
+	return res
+}
+
+func (m multiKeySetMsgs) GetBLSMsgs() map[uint16]*peering.PeerMessageData {
+	res := make(map[uint16]*peering.PeerMessageData)
+	for i := range m {
+		res[i] = m[i].blsMsg
+	}
+	return res
+}
+
+func (m multiKeySetMsgs) AddDSSMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
+	for i := range msgs {
+		if msg, ok := m[i]; ok {
+			msg.edMsg = msgs[i]
+		} else {
+			m[i] = &multiKeySetMsg{
+				step:      step,
+				peeringID: msgs[i].PeeringID,
+				receiver:  msgs[i].MsgReceiver,
+				msgType:   msgs[i].MsgType,
+				edMsg:     msgs[i],
+			}
+		}
+	}
+}
+
+func (m multiKeySetMsgs) AddBLSMsgs(msgs map[uint16]*peering.PeerMessageData, step byte) {
+	for i := range msgs {
+		if msg, ok := m[i]; ok {
+			msg.blsMsg = msgs[i]
+		} else {
+			m[i] = &multiKeySetMsg{
+				step:      step,
+				peeringID: msgs[i].PeeringID,
+				receiver:  msgs[i].MsgReceiver,
+				msgType:   msgs[i].MsgType,
+				blsMsg:    msgs[i],
+			}
+		}
+	}
 }
 
 //

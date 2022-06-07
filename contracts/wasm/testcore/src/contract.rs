@@ -21,16 +21,23 @@ pub struct CheckContextFromFullEPCall {
 	pub params: MutableCheckContextFromFullEPParams,
 }
 
+pub struct ClaimAllowanceCall {
+	pub func: ScFunc,
+}
+
 pub struct DoNothingCall {
 	pub func: ScFunc,
 }
 
-pub struct GetMintedSupplyCall {
+pub struct EstimateMinDustCall {
 	pub func: ScFunc,
-	pub results: ImmutableGetMintedSupplyResults,
 }
 
 pub struct IncCounterCall {
+	pub func: ScFunc,
+}
+
+pub struct InfiniteLoopCall {
 	pub func: ScFunc,
 }
 
@@ -44,15 +51,26 @@ pub struct PassTypesFullCall {
 	pub params: MutablePassTypesFullParams,
 }
 
+pub struct PingAllowanceBackCall {
+	pub func: ScFunc,
+}
+
 pub struct RunRecursionCall {
 	pub func: ScFunc,
 	pub params: MutableRunRecursionParams,
 	pub results: ImmutableRunRecursionResults,
 }
 
+pub struct SendLargeRequestCall {
+	pub func: ScFunc,
+}
+
+pub struct SendNFTsBackCall {
+	pub func: ScFunc,
+}
+
 pub struct SendToAddressCall {
 	pub func: ScFunc,
-	pub params: MutableSendToAddressParams,
 }
 
 pub struct SetIntCall {
@@ -63,6 +81,14 @@ pub struct SetIntCall {
 pub struct SpawnCall {
 	pub func: ScFunc,
 	pub params: MutableSpawnParams,
+}
+
+pub struct SplitFundsCall {
+	pub func: ScFunc,
+}
+
+pub struct SplitFundsNativeTokensCall {
+	pub func: ScFunc,
 }
 
 pub struct TestBlockContext1Call {
@@ -103,9 +129,9 @@ pub struct TestPanicFullEPCall {
 	pub func: ScFunc,
 }
 
-pub struct WithdrawToChainCall {
+pub struct WithdrawFromChainCall {
 	pub func: ScFunc,
-	pub params: MutableWithdrawToChainParams,
+	pub params: MutableWithdrawFromChainParams,
 }
 
 pub struct CheckContextFromViewEPCall {
@@ -117,6 +143,12 @@ pub struct FibonacciCall {
 	pub func: ScView,
 	pub params: MutableFibonacciParams,
 	pub results: ImmutableFibonacciResults,
+}
+
+pub struct FibonacciIndirectCall {
+	pub func: ScView,
+	pub params: MutableFibonacciIndirectParams,
+	pub results: ImmutableFibonacciIndirectResults,
 }
 
 pub struct GetCounterCall {
@@ -134,6 +166,10 @@ pub struct GetStringValueCall {
 	pub func: ScView,
 	pub params: MutableGetStringValueParams,
 	pub results: ImmutableGetStringValueResults,
+}
+
+pub struct InfiniteLoopViewCall {
+	pub func: ScView,
 }
 
 pub struct JustViewCall {
@@ -187,24 +223,33 @@ impl ScFuncs {
         f
     }
 
+    pub fn claim_allowance(_ctx: &dyn ScFuncCallContext) -> ClaimAllowanceCall {
+        ClaimAllowanceCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_CLAIM_ALLOWANCE),
+        }
+    }
+
     pub fn do_nothing(_ctx: &dyn ScFuncCallContext) -> DoNothingCall {
         DoNothingCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DO_NOTHING),
         }
     }
 
-    pub fn get_minted_supply(_ctx: &dyn ScFuncCallContext) -> GetMintedSupplyCall {
-        let mut f = GetMintedSupplyCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_GET_MINTED_SUPPLY),
-            results: ImmutableGetMintedSupplyResults { proxy: Proxy::nil() },
-        };
-        ScFunc::link_results(&mut f.results.proxy, &f.func);
-        f
+    pub fn estimate_min_dust(_ctx: &dyn ScFuncCallContext) -> EstimateMinDustCall {
+        EstimateMinDustCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ESTIMATE_MIN_DUST),
+        }
     }
 
     pub fn inc_counter(_ctx: &dyn ScFuncCallContext) -> IncCounterCall {
         IncCounterCall {
             func: ScFunc::new(HSC_NAME, HFUNC_INC_COUNTER),
+        }
+    }
+
+    pub fn infinite_loop(_ctx: &dyn ScFuncCallContext) -> InfiniteLoopCall {
+        InfiniteLoopCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_INFINITE_LOOP),
         }
     }
 
@@ -226,6 +271,12 @@ impl ScFuncs {
         f
     }
 
+    pub fn ping_allowance_back(_ctx: &dyn ScFuncCallContext) -> PingAllowanceBackCall {
+        PingAllowanceBackCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_PING_ALLOWANCE_BACK),
+        }
+    }
+
     pub fn run_recursion(_ctx: &dyn ScFuncCallContext) -> RunRecursionCall {
         let mut f = RunRecursionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RUN_RECURSION),
@@ -237,13 +288,22 @@ impl ScFuncs {
         f
     }
 
+    pub fn send_large_request(_ctx: &dyn ScFuncCallContext) -> SendLargeRequestCall {
+        SendLargeRequestCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SEND_LARGE_REQUEST),
+        }
+    }
+
+    pub fn send_nf_ts_back(_ctx: &dyn ScFuncCallContext) -> SendNFTsBackCall {
+        SendNFTsBackCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SEND_NF_TS_BACK),
+        }
+    }
+
     pub fn send_to_address(_ctx: &dyn ScFuncCallContext) -> SendToAddressCall {
-        let mut f = SendToAddressCall {
+        SendToAddressCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SEND_TO_ADDRESS),
-            params: MutableSendToAddressParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
+        }
     }
 
     pub fn set_int(_ctx: &dyn ScFuncCallContext) -> SetIntCall {
@@ -262,6 +322,18 @@ impl ScFuncs {
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
+    }
+
+    pub fn split_funds(_ctx: &dyn ScFuncCallContext) -> SplitFundsCall {
+        SplitFundsCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SPLIT_FUNDS),
+        }
+    }
+
+    pub fn split_funds_native_tokens(_ctx: &dyn ScFuncCallContext) -> SplitFundsNativeTokensCall {
+        SplitFundsNativeTokensCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SPLIT_FUNDS_NATIVE_TOKENS),
+        }
     }
 
     pub fn test_block_context1(_ctx: &dyn ScFuncCallContext) -> TestBlockContext1Call {
@@ -324,10 +396,10 @@ impl ScFuncs {
         }
     }
 
-    pub fn withdraw_to_chain(_ctx: &dyn ScFuncCallContext) -> WithdrawToChainCall {
-        let mut f = WithdrawToChainCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW_TO_CHAIN),
-            params: MutableWithdrawToChainParams { proxy: Proxy::nil() },
+    pub fn withdraw_from_chain(_ctx: &dyn ScFuncCallContext) -> WithdrawFromChainCall {
+        let mut f = WithdrawFromChainCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW_FROM_CHAIN),
+            params: MutableWithdrawFromChainParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
@@ -347,6 +419,17 @@ impl ScFuncs {
             func: ScView::new(HSC_NAME, HVIEW_FIBONACCI),
             params: MutableFibonacciParams { proxy: Proxy::nil() },
             results: ImmutableFibonacciResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn fibonacci_indirect(_ctx: &dyn ScViewCallContext) -> FibonacciIndirectCall {
+        let mut f = FibonacciIndirectCall {
+            func: ScView::new(HSC_NAME, HVIEW_FIBONACCI_INDIRECT),
+            params: MutableFibonacciIndirectParams { proxy: Proxy::nil() },
+            results: ImmutableFibonacciIndirectResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
@@ -382,6 +465,12 @@ impl ScFuncs {
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
+    }
+
+    pub fn infinite_loop_view(_ctx: &dyn ScViewCallContext) -> InfiniteLoopViewCall {
+        InfiniteLoopViewCall {
+            func: ScView::new(HSC_NAME, HVIEW_INFINITE_LOOP_VIEW),
+        }
     }
 
     pub fn just_view(_ctx: &dyn ScViewCallContext) -> JustViewCall {

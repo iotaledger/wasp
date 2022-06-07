@@ -7,17 +7,17 @@ import (
 	"crypto/rand"
 	"sync"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type DomainImpl struct {
 	netProvider peering.NetworkProvider
-	nodes       map[ed25519.PublicKey]peering.PeerSender
+	nodes       map[cryptolib.PublicKeyKey]peering.PeerSender
 	permutation *util.Permutation16
-	permPubKeys []*ed25519.PublicKey
+	permPubKeys []*cryptolib.PublicKey
 	peeringID   peering.PeeringID
 	attachIDs   []interface{}
 	log         *logger.Logger
@@ -30,7 +30,7 @@ var _ peering.PeerDomainProvider = &DomainImpl{}
 func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
 	ret := &DomainImpl{
 		netProvider: netProvider,
-		nodes:       make(map[ed25519.PublicKey]peering.PeerSender),
+		nodes:       make(map[cryptolib.PublicKeyKey]peering.PeerSender),
 		permutation: nil, // Will be set in ret.reshufflePeers().
 		permPubKeys: nil, // Will be set in ret.reshufflePeers().
 		peeringID:   peeringID,
@@ -39,18 +39,18 @@ func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.Peerin
 		mutex:       &sync.RWMutex{},
 	}
 	for _, sender := range initialNodes {
-		ret.nodes[*sender.PubKey()] = sender
+		ret.nodes[sender.PubKey().AsKey()] = sender
 	}
 	ret.reshufflePeers()
 	return ret
 }
 
-func (d *DomainImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msgType byte, msgData []byte) {
+func (d *DomainImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver, msgType byte, msgData []byte) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	peer, ok := d.nodes[*pubKey]
+	peer, ok := d.nodes[pubKey.AsKey()]
 	if !ok {
-		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.String())
+		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.AsString())
 		return
 	}
 	peer.SendMsg(&peering.PeerMessageData{
@@ -61,55 +61,55 @@ func (d *DomainImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msg
 	})
 }
 
-func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey {
+func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	if upToNumPeers > len(d.permPubKeys) {
 		upToNumPeers = len(d.permPubKeys)
 	}
-	ret := make([]*ed25519.PublicKey, upToNumPeers)
+	ret := make([]*cryptolib.PublicKey, upToNumPeers)
 	for i := range ret {
-		ret[i] = d.permPubKeys[d.permutation.Next()]
+		ret[i] = d.permPubKeys[d.permutation.NextNoCycles()]
 	}
 	return ret
 }
 
-func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
+func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 	d.mutex.RLock()
-	oldPeers := make(map[ed25519.PublicKey]peering.PeerSender) // A copy, to avoid keeping the lock.
+	oldPeers := make(map[cryptolib.PublicKeyKey]peering.PeerSender) // A copy, to avoid keeping the lock.
 	for k, v := range d.nodes {
 		oldPeers[k] = v
 	}
 	d.mutex.RUnlock()
-	nodes := make(map[ed25519.PublicKey]peering.PeerSender) // Will collect the new set of nodes.
+	nodes := make(map[cryptolib.PublicKeyKey]peering.PeerSender) // Will collect the new set of nodes.
 	changed := false
 	//
 	// Add new peers.
 	for _, newPeerPubKey := range newPeerPubKeys {
-		if _, isOldPeer := oldPeers[*newPeerPubKey]; isOldPeer {
+		if _, isOldPeer := oldPeers[newPeerPubKey.AsKey()]; isOldPeer {
 			continue // Old peers will be retained bellow.
 		}
 		newPeerSender, err := d.netProvider.PeerByPubKey(newPeerPubKey)
 		if err != nil {
-			d.log.Warnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey.String(), err)
+			d.log.Warnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey.AsString(), err)
 			continue
 		}
 		changed = true
-		nodes[*newPeerSender.PubKey()] = newPeerSender
-		d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
+		nodes[newPeerSender.PubKey().AsKey()] = newPeerSender
+		d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().AsString(), newPeerSender.NetID())
 	}
 	//
 	// Remove peers that are not needed anymore and retain others.
 	for _, oldPeer := range oldPeers {
 		oldPeerDropped := true
-		if *oldPeer.PubKey() == *d.netProvider.Self().PubKey() {
+		if oldPeer.PubKey().Equals(d.netProvider.Self().PubKey()) {
 			// We retain the current node in the domain all the time.
-			nodes[*oldPeer.PubKey()] = oldPeer
+			nodes[oldPeer.PubKey().AsKey()] = oldPeer
 			oldPeerDropped = false
 		} else {
 			for _, newPeerPubKey := range newPeerPubKeys {
-				if *oldPeer.PubKey() == *newPeerPubKey {
-					nodes[*oldPeer.PubKey()] = oldPeer
+				if oldPeer.PubKey().Equals(newPeerPubKey) {
+					nodes[oldPeer.PubKey().AsKey()] = oldPeer
 					oldPeerDropped = false
 					break
 				}
@@ -117,7 +117,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 		}
 		if oldPeerDropped {
 			changed = true
-			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
+			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().AsString(), oldPeer.NetID())
 		}
 	}
 	if changed {
@@ -135,11 +135,10 @@ func (d *DomainImpl) ReshufflePeers(seedBytes ...[]byte) {
 }
 
 func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
-	d.permPubKeys = make([]*ed25519.PublicKey, 0, len(d.nodes))
-	for pubKey := range d.nodes {
-		peerPubKey := pubKey
-		if peerPubKey != *d.netProvider.Self().PubKey() { // Do not include self to the permutation.
-			d.permPubKeys = append(d.permPubKeys, &peerPubKey)
+	d.permPubKeys = make([]*cryptolib.PublicKey, 0, len(d.nodes))
+	for _, sender := range d.nodes {
+		if !sender.PubKey().Equals(d.netProvider.Self().PubKey()) { // Do not include self to the permutation.
+			d.permPubKeys = append(d.permPubKeys, sender.PubKey())
 		}
 	}
 	var seedB []byte
@@ -155,15 +154,15 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
 	attachID := d.netProvider.Attach(&d.peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		if *recv.SenderPubKey == *d.netProvider.Self().PubKey() {
-			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
+		if recv.SenderPubKey.Equals(d.netProvider.Self().PubKey()) {
+			d.log.Debugf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.AsString())
 			return
 		}
-		_, ok := d.nodes[*recv.SenderPubKey]
+		_, ok := d.nodes[recv.SenderPubKey.AsKey()]
 		if !ok {
 			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: it does not belong to the peer domain.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.AsString())
 			return
 		}
 		callback(recv)

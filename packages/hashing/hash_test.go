@@ -23,7 +23,7 @@ func (s *SampleSource) Seed(seed int64) {
 
 func TestHashValueFromString(t *testing.T) {
 	h1 := HashStrings("test string")
-	h2, e := HashValueFromBase58(h1.String())
+	h2, e := HashValueFromHex(h1.String())
 	if e != nil {
 		t.Fatalf("error occurs")
 	}

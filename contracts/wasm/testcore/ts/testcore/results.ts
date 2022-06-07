@@ -9,46 +9,26 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableCallOnChainResults extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultN));
 	}
 }
 
 export class MutableCallOnChainResults extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultIntValue));
-	}
-}
-
-export class ImmutableGetMintedSupplyResults extends wasmtypes.ScProxy {
-	mintedColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultMintedColor));
-	}
-
-	mintedSupply(): wasmtypes.ScImmutableUint64 {
-		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultMintedSupply));
-	}
-}
-
-export class MutableGetMintedSupplyResults extends wasmtypes.ScProxy {
-	mintedColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultMintedColor));
-	}
-
-	mintedSupply(): wasmtypes.ScMutableUint64 {
-		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultMintedSupply));
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultN));
 	}
 }
 
 export class ImmutableRunRecursionResults extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultN));
 	}
 }
 
 export class MutableRunRecursionResults extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultIntValue));
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultN));
 	}
 }
 
@@ -65,26 +45,38 @@ export class MutableTestChainOwnerIDFullResults extends wasmtypes.ScProxy {
 }
 
 export class ImmutableFibonacciResults extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultIntValue));
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultN));
 	}
 }
 
 export class MutableFibonacciResults extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultIntValue));
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultN));
+	}
+}
+
+export class ImmutableFibonacciIndirectResults extends wasmtypes.ScProxy {
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultN));
+	}
+}
+
+export class MutableFibonacciIndirectResults extends wasmtypes.ScProxy {
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultN));
 	}
 }
 
 export class ImmutableGetCounterResults extends wasmtypes.ScProxy {
-	counter(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultCounter));
+	counter(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultCounter));
 	}
 }
 
 export class MutableGetCounterResults extends wasmtypes.ScProxy {
-	counter(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultCounter));
+	counter(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultCounter));
 	}
 }
 

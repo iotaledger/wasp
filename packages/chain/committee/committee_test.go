@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -15,20 +15,19 @@ import (
 )
 
 func TestCommitteeBasic(t *testing.T) {
-	suite := tcrypto.DefaultSuite()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	nodeCount := 4
 	netIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
-	stateAddr, dksRegistries := testpeers.SetupDkgPregenerated(t, uint16((len(netIDs)*2)/3+1), identities, suite)
+	stateAddr, dksRegistries := testpeers.SetupDkgPregenerated(t, uint16((len(netIDs)*2)/3+1), identities)
 	nodes, netCloser := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(log), log)
 	net0 := nodes[0]
 	dks0, err := dksRegistries[0].LoadDKShare(stateAddr)
 	require.NoError(t, err)
 
-	c, _, err := New(dks0, nil, net0, log)
+	c, _, err := New(dks0, iscp.RandomChainID(), net0, log)
 	require.NoError(t, err)
-	require.True(t, c.Address().Equals(stateAddr))
+	require.True(t, c.Address().Equal(stateAddr))
 	require.EqualValues(t, 4, c.Size())
 	require.EqualValues(t, 3, c.Quorum())
 

@@ -4,77 +4,68 @@
 package iscp
 
 import (
-	"encoding/json"
-	"io"
-	"strings"
+	"fmt"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-	"gopkg.in/yaml.v2"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
+const ChainIDLength = iotago.AliasIDLength
+
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
-type ChainID struct {
-	*ledgerstate.AliasAddress
-}
+type ChainID iotago.AliasID
 
-var (
-	_ json.Marshaler   = &ChainID{}
-	_ json.Unmarshaler = &ChainID{}
-	_ yaml.Marshaler   = &ChainID{}
-	_ yaml.Unmarshaler = &ChainID{}
-)
-
-// NewChainID creates new chain ID from alias address
-func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
-	return &ChainID{addr}
-}
-
-// ChainIDFromAddress creates a chain ID from alias address. Returns and error if not an alias address type
-func ChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
-	alias, ok := addr.(*ledgerstate.AliasAddress)
-	if !ok {
-		return nil, xerrors.New("chain id must be an alias address")
-	}
-	return &ChainID{alias}, nil
-}
-
-// ChainIDFromBase58 constructor decodes base58 string to the ChainID
-func ChainIDFromBase58(b58 string) (*ChainID, error) {
-	alias, err := ledgerstate.AliasAddressFromBase58EncodedString(b58)
-	if err != nil {
-		return nil, err
-	}
-	return &ChainID{alias}, nil
-}
-
-func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
-	aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-	return &ChainID{aliasAddr}, nil
+// ChainIDFromAliasID creates new chain ID from alias address
+func ChainIDFromAliasID(addr iotago.AliasID) ChainID {
+	return ChainID(addr)
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
 func ChainIDFromBytes(data []byte) (*ChainID, error) {
-	alias, _, err := ledgerstate.AliasAddressFromBytes(data)
+	var ret ChainID
+	if len(ret) != len(data) {
+		return &ChainID{}, xerrors.New("cannot decode ChainID: wrong data length")
+	}
+	copy(ret[:], data)
+	return &ret, nil
+}
+
+func ChainIDFromString(s string) (*ChainID, error) {
+	prefix, addr, err := iotago.ParseBech32(s)
 	if err != nil {
 		return nil, err
 	}
-	return &ChainID{alias}, nil
+	if prefix != parameters.L1.Protocol.Bech32HRP {
+		return nil, fmt.Errorf("prefix doesn't match expected protocol prefix")
+	}
+	aliasAddr, ok := addr.(*iotago.AliasAddress)
+	if !ok {
+		return nil, fmt.Errorf("chainID must be an alias address")
+	}
+	cid := ChainIDFromAddress(aliasAddr)
+	return &cid, nil
 }
 
-// ChainIDFromString reconstructs a ChainID from its string representation.
-func ChainIDFromString(s string) (*ChainID, error) {
-	return ChainIDFromBase58(strings.TrimPrefix(s, "$/"))
+// ChainIDFromMarshalUtil reads from Marshalutil
+func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
+	bin, err := mu.ReadBytes(ChainIDLength)
+	if err != nil {
+		return &ChainID{}, err
+	}
+	return ChainIDFromBytes(bin)
 }
 
-// RandomChainID creates a random chain ID.
+func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
+	var alias iotago.AliasID
+	copy(alias[:], addr[:])
+	return ChainIDFromAliasID(alias)
+}
+
+// RandomChainID creates a random chain ID. Used for testing only
 func RandomChainID(seed ...[]byte) *ChainID {
 	var h hashing.HashValue
 	if len(seed) > 0 {
@@ -82,76 +73,56 @@ func RandomChainID(seed ...[]byte) *ChainID {
 	} else {
 		h = hashing.RandomHash(nil)
 	}
-	return &ChainID{ledgerstate.NewAliasAddress(h[:])}
+	ret, _ := ChainIDFromBytes(h[:ChainIDLength])
+	return ret
 }
 
+func (chid *ChainID) AsAliasID() *iotago.AliasID {
+	return (*iotago.AliasID)(chid)
+}
+
+func (chid *ChainID) Bytes() []byte {
+	return chid[:]
+}
+
+func (chid *ChainID) Key() string {
+	return chid.AsAliasID().String()
+}
+
+// Equals for using
 func (chid *ChainID) Equals(chid1 *ChainID) bool {
-	return chid.AliasAddress.Equals(chid1.AliasAddress)
+	if chid == chid1 {
+		return true
+	}
+	if chid == nil || chid1 == nil {
+		return false
+	}
+	return *chid == *chid1
 }
 
-func (chid *ChainID) Clone() (ret *ChainID) {
-	return &ChainID{chid.AliasAddress.Clone().(*ledgerstate.AliasAddress)}
-}
-
-func (chid *ChainID) Base58() string {
-	return chid.AliasAddress.Base58()
-}
-
-// String human readable form (base58 encoding)
+// String human readable form (bech32)
 func (chid *ChainID) String() string {
-	return "$/" + chid.Base58()
+	return chid.AsAddress().Bech32(parameters.L1.Protocol.Bech32HRP)
 }
 
-func (chid *ChainID) AsAddress() ledgerstate.Address {
-	return chid.AliasAddress
+func (chid *ChainID) AsAddress() iotago.Address {
+	ret := iotago.AliasAddress(*chid)
+	return &ret
 }
 
-func (chid *ChainID) AsAliasAddress() *ledgerstate.AliasAddress {
-	return chid.AliasAddress
+func (chid *ChainID) AsAliasAddress() *iotago.AliasAddress {
+	ret := iotago.AliasAddress(*chid)
+	return &ret
 }
 
-func (chid *ChainID) Read(r io.Reader) error {
-	var buf [ledgerstate.AddressLength]byte
-	if n, err := r.Read(buf[:]); err != nil || n != ledgerstate.AddressLength {
-		return xerrors.Errorf("error while parsing address (err=%v)", err)
+func (chid *ChainID) CommonAccount() AgentID {
+	return NewContractAgentID(chid, 0)
+}
+
+func (chid *ChainID) IsSameChain(aid AgentID) bool {
+	contract, ok := aid.(*ContractAgentID)
+	if !ok {
+		return false
 	}
-	alias, _, err := ledgerstate.AliasAddressFromBytes(buf[:])
-	if err != nil {
-		return err
-	}
-	chid.AliasAddress = alias
-	return nil
-}
-
-func (chid *ChainID) Write(w io.Writer) error {
-	_, err := w.Write(chid.AliasAddress.Bytes())
-	return err
-}
-
-func (chid *ChainID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(chid.Base58())
-}
-
-func (chid *ChainID) UnmarshalJSON(in []byte) error {
-	var base58 string
-	err := json.Unmarshal(in, &base58)
-	if err != nil {
-		return err
-	}
-	chid.AliasAddress, err = ledgerstate.AliasAddressFromBase58EncodedString(base58)
-	return err
-}
-
-func (chid *ChainID) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(chid.Base58())
-}
-
-func (chid *ChainID) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var base58 string
-	err := unmarshal(&base58)
-	if err != nil {
-		return err
-	}
-	chid.AliasAddress, err = ledgerstate.AliasAddressFromBase58EncodedString(base58)
-	return err
+	return chid.Equals(contract.ChainID())
 }

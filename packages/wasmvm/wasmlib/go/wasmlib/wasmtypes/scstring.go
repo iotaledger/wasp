@@ -21,6 +21,10 @@ func StringToBytes(value string) []byte {
 	return []byte(value)
 }
 
+func StringFromString(value string) string {
+	return value
+}
+
 func StringToString(value string) string {
 	return value
 }

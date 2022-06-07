@@ -8,9 +8,9 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
@@ -20,9 +20,9 @@ var dbKeysNames = map[byte]string{
 	dbkeys.ObjectTypeChainRecord:        "Chain Record",
 	dbkeys.ObjectTypeCommitteeRecord:    "Committee Record",
 	dbkeys.ObjectTypeDistributedKeyData: "Distributed Key Data",
-	dbkeys.ObjectTypeStateHash:          "State Hash",
+	dbkeys.ObjectTypeTrie:               "State Hash",
 	dbkeys.ObjectTypeBlock:              "Block",
-	dbkeys.ObjectTypeStateVariable:      "State Variable",
+	dbkeys.ObjectTypeState:              "State Variable",
 	dbkeys.ObjectTypeNodeIdentity:       "Node Identity",
 	dbkeys.ObjectTypeBlobCache:          "BlobCache",
 	dbkeys.ObjectTypeBlobCacheTTL:       "BlobCacheTTL",
@@ -36,7 +36,7 @@ func printDbEntries(dbDir fs.DirEntry, dbpath string) {
 		fmt.Printf("Not a directory, skipping %s\n", dbDir.Name())
 		return
 	}
-	db, err := database.NewDB(fmt.Sprintf("%s/%s", dbpath, dbDir.Name()))
+	db, err := dbmanager.NewDB(fmt.Sprintf("%s/%s", dbpath, dbDir.Name()))
 	if err != nil {
 		panic(err)
 	}

@@ -3,7 +3,6 @@
 
 import * as wasmlib from "wasmlib"
 import * as wasmtypes from "wasmlib/wasmtypes";
-import * as coreaccounts from "wasmlib/coreaccounts"
 import * as coregovernance from "wasmlib/coregovernance"
 import * as sc from "./index";
 
@@ -13,7 +12,7 @@ const MSG_FULL_PANIC = "========== panic FULL ENTRY POINT =========";
 const MSG_VIEW_PANIC = "========== panic VIEW =========";
 
 export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainContext): void {
-    let paramInt = f.params.intValue().value();
+    let paramInt = f.params.n().value();
 
     let hnameContract = ctx.contract();
     if (f.params.hnameContract().exists()) {
@@ -26,7 +25,7 @@ export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainCon
     }
 
     let counter = f.state.counter();
-    ctx.log("call depth = " + f.params.intValue().toString() +
+    ctx.log("call depth = " + f.params.n().toString() +
         ", hnameContract = " + hnameContract.toString() +
         ", hnameEP = " + hnameEP.toString() +
         ", counter = " + counter.toString())
@@ -34,38 +33,47 @@ export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainCon
     counter.setValue(counter.value() + 1);
 
     let params = new wasmlib.ScDict([]);
-    const key = wasmtypes.stringToBytes(sc.ParamIntValue);
-    params.set(key, wasmtypes.int64ToBytes(paramInt))
+    const key = wasmtypes.stringToBytes(sc.ParamN);
+    params.set(key, wasmtypes.uint64ToBytes(paramInt))
     let ret = ctx.call(hnameContract, hnameEP, params, null);
-    let retVal = wasmtypes.int64FromBytes(ret.get(key));
-    f.results.intValue().setValue(retVal);
+    let retVal = wasmtypes.uint64FromBytes(ret.get(key));
+    f.results.n().setValue(retVal);
 }
 
 export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.CheckContextFromFullEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
     ctx.require(f.params.caller().value().equals(ctx.caller()), "fail: caller");
-    ctx.require(f.params.chainID().value().equals(ctx.chainID()), "fail: chainID");
+    ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
     ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
+}
+
+export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
+    let allowance = ctx.allowance();
+    let transfer = wasmlib.ScTransfer.fromBalances(allowance);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
 }
 
 export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext): void {
     ctx.log("doing nothing...");
 }
 
-export function funcGetMintedSupply(ctx: wasmlib.ScFuncContext, f: sc.GetMintedSupplyContext): void {
-    let minted = ctx.minted();
-    let mintedColors = minted.colors();
-    ctx.require(mintedColors.length == 1, "test only supports one minted color");
-    let color = mintedColors[0];
-    let amount = minted.balance(color);
-    f.results.mintedSupply().setValue(amount);
-    f.results.mintedColor().setValue(color);
+export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
+    const provided = ctx.allowance().iotas();
+    let dummy = sc.ScFuncs.estimateMinDust(ctx);
+    const required = ctx.estimateDust(dummy.func);
+    ctx.require(provided >= required, "not enough funds");
 }
 
 export function funcIncCounter(ctx: wasmlib.ScFuncContext, f: sc.IncCounterContext): void {
     let counter = f.state.counter();
     counter.setValue(counter.value() + 1);
+}
+
+export function funcInfiniteLoop(ctx: wasmlib.ScFuncContext, f: sc.InfiniteLoopContext): void {
+    for (; ;) {
+        // do nothing, just waste gas
+    }
 }
 
 export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
@@ -85,23 +93,46 @@ export function funcPassTypesFull(ctx: wasmlib.ScFuncContext, f: sc.PassTypesFul
     ctx.require(f.params.hnameZero().value().equals(new wasmtypes.ScHname(0)), "Hname-0 wrong");
 }
 
+export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllowanceBackContext): void {
+    const caller = ctx.caller();
+    ctx.require(caller.isAddress(), "pingAllowanceBack: caller expected to be a L1 address");
+    const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance());
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.send(caller.address(), transfer);
+}
+
 export function funcRunRecursion(ctx: wasmlib.ScFuncContext, f: sc.RunRecursionContext): void {
-    let depth = f.params.intValue().value();
+    let depth = f.params.n().value();
     if (depth <= 0) {
         return;
     }
 
     let callOnChain = sc.ScFuncs.callOnChain(ctx);
-    callOnChain.params.intValue().setValue(depth - 1);
+    callOnChain.params.n().setValue(depth - 1);
     callOnChain.params.hnameEP().setValue(sc.HFuncRunRecursion);
     callOnChain.func.call();
-    let retVal = callOnChain.results.intValue().value();
-    f.results.intValue().setValue(retVal);
+    let retVal = callOnChain.results.n().value();
+    f.results.n().setValue(retVal);
+}
+
+export function funcSendLargeRequest(ctx: wasmlib.ScFuncContext, f: sc.SendLargeRequestContext): void {
+}
+
+export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackContext): void {
+    let address = ctx.caller().address();
+    let allowance = ctx.allowance();
+    let transfer = wasmlib.ScTransfer.fromBalances(allowance);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    const nftIDs = allowance.nftIDs();
+    for (let i = 0; i < nftIDs.length; i++) {
+        let transfer = wasmlib.ScTransfer.nft(nftIDs[i]);
+        ctx.send(address, transfer);
+    }
 }
 
 export function funcSendToAddress(ctx: wasmlib.ScFuncContext, f: sc.SendToAddressContext): void {
-    let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
-    ctx.transferToAddress(f.params.address().value(), transfer);
+    // let transfer = wasmlib.ScTransfers.fromBalances(ctx.balances());
+    // ctx.send(f.params.address().value(), transfer);
 }
 
 export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): void {
@@ -109,13 +140,43 @@ export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): voi
 }
 
 export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void {
+    let programHash = f.params.progHash().value();
     let spawnName = sc.ScName + "_spawned";
     let spawnDescr = "spawned contract description";
-    ctx.deployContract(f.params.progHash().value(), spawnName, spawnDescr, null);
+    ctx.deployContract(programHash, spawnName, spawnDescr, null);
 
     let spawnHname = ctx.utility().hname(spawnName);
     for (let i = 0; i < 5; i++) {
         ctx.call(spawnHname, sc.HFuncIncCounter, null, null);
+    }
+}
+
+export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
+    let iotas = ctx.allowance().iotas();
+    const address = ctx.caller().address();
+    let iotasToTransfer: u64 = 1_000_000;
+    const transfer = wasmlib.ScTransfer.iotas(iotasToTransfer);
+    for (; iotas >= iotasToTransfer; iotas -= iotasToTransfer) {
+        ctx.transferAllowed(ctx.accountID(), transfer, false);
+        ctx.send(address, transfer);
+    }
+}
+
+export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
+    let iotas = ctx.allowance().iotas();
+    const address = ctx.caller().address();
+    let transfer = wasmlib.ScTransfer.iotas(iotas);
+    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    const tokenIDs = ctx.allowance().tokenIDs();
+    const one = wasmtypes.ScBigInt.fromUint64(1);
+    for (let i = 0; i < tokenIDs.length; i++) {
+        const token = tokenIDs[i];
+        transfer = wasmlib.ScTransfer.tokens(token, one);
+        let tokens = ctx.allowance().balance(token);
+        for (; tokens.cmp(one) >= 0; tokens = tokens.sub(one)) {
+            ctx.transferAllowed(ctx.accountID(), transfer, false);
+            ctx.send(address, transfer);
+        }
     }
 }
 
@@ -158,35 +219,46 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
     ctx.panic(MSG_FULL_PANIC);
 }
 
-export function funcWithdrawToChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawToChainContext): void {
-    let xx = coreaccounts.ScFuncs.withdraw(ctx);
-    xx.func.postToChain(f.params.chainID().value());
+export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
 }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
-    ctx.require(f.params.chainID().value().equals(ctx.chainID()), "fail: chainID");
+    ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
     ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
 
+function fibonacci(n: u64): u64 {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
 export function viewFibonacci(ctx: wasmlib.ScViewContext, f: sc.FibonacciContext): void {
-    let n = f.params.intValue().value();
-    if (n == 0 || n == 1) {
-        f.results.intValue().setValue(n);
+    const n = f.params.n().value();
+    const result = fibonacci(n);
+    f.results.n().setValue(result);
+}
+
+export function viewFibonacciIndirect(ctx: wasmlib.ScViewContext, f: sc.FibonacciIndirectContext): void {
+    const n = f.params.n().value();
+    if (n <= 1) {
+        f.results.n().setValue(n);
         return;
     }
 
-    let fib = sc.ScFuncs.fibonacci(ctx);
-    fib.params.intValue().setValue(n - 1);
+    const fib = sc.ScFuncs.fibonacciIndirect(ctx);
+    fib.params.n().setValue(n - 1);
     fib.func.call();
-    let n1 = fib.results.intValue().value();
+    const n1 = fib.results.n().value();
 
-    fib.params.intValue().setValue(n - 2);
+    fib.params.n().setValue(n - 2);
     fib.func.call();
-    let n2 = fib.results.intValue().value();
+    const n2 = fib.results.n().value();
 
-    f.results.intValue().setValue(n1 + n2);
+    f.results.n().setValue(n1 + n2);
 }
 
 export function viewGetCounter(ctx: wasmlib.ScViewContext, f: sc.GetCounterContext): void {
@@ -202,6 +274,12 @@ export function viewGetInt(ctx: wasmlib.ScViewContext, f: sc.GetIntContext): voi
 
 export function viewGetStringValue(ctx: wasmlib.ScViewContext, f: sc.GetStringValueContext): void {
     ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
+export function viewInfiniteLoopView(ctx: wasmlib.ScViewContext, f: sc.InfiniteLoopViewContext): void {
+    for (; ;) {
+        // do nothing, just waste gas
+    }
 }
 
 export function viewJustView(ctx: wasmlib.ScViewContext, f: sc.JustViewContext): void {

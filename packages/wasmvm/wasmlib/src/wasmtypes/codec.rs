@@ -208,6 +208,52 @@ impl WasmEncoder {
     }
 }
 
+pub fn base58_decode(value: &str) -> Vec<u8> {
+    let utils = ScSandboxUtils{};
+    utils.base58_decode(value)
+}
+
 pub fn base58_encode(buf: &[u8]) -> String {
-    string_from_bytes(&host::sandbox(FN_UTILS_BASE58_ENCODE, buf))
+    let utils = ScSandboxUtils{};
+    utils.base58_encode(buf)
+}
+
+static HEX_DIGITS: &'static [u8] = b"0123456789abcdef";
+
+fn hexer(hex_digit: u8) -> u8 {
+    match hex_digit {
+        b'0'..=b'9' => return hex_digit - b'0',
+        b'a'..=b'f' => return hex_digit - b'a' + 10,
+        b'A'..=b'F' => return hex_digit - b'A' + 10,
+        _ => panic("invalid hex digit"),
+    }
+    0
+}
+
+pub fn hex_decode(value: &str) -> Vec<u8> {
+    let hex = value.as_bytes();
+    let digits = hex.len();
+    if (digits & 1) != 0 {
+        panic("odd hex string length");
+    }
+    let mut buf: Vec<u8> = vec![0; digits / 2];
+    for i in 0..buf.len() {
+        buf[i] = (hexer(hex[i * 2]) << 4) | hexer(hex[i * 2 + 1]);
+    }
+    buf
+}
+
+pub fn hex_encode(buf: &[u8]) -> String {
+    let bytes = buf.len();
+    let mut hex: Vec<u8> = vec![0; bytes * 2];
+    for i in 0..bytes {
+        let b = buf[i] as usize;
+        hex[i * 2] = HEX_DIGITS[b >> 4];
+        hex[i * 2 + 1] = HEX_DIGITS[b & 0xf];
+    }
+
+    unsafe {
+        // hex digit chars are always safe
+        String::from_utf8_unchecked(hex)
+    }
 }

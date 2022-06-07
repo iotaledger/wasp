@@ -13,7 +13,7 @@ $#if events exportEvents
 $#if core else exportLib
 $#if params exportParams
 $#if results exportResults
-$#if core else exportState
+$#if state exportState
 $#if structs exportStructs
 $#if typedefs exportTypedefs
 `,

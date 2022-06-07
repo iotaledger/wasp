@@ -299,78 +299,6 @@ impl MapChainIDToMutableChainID {
 pub type MutableChainIDMap = MapChainIDToMutableChainID;
 
 #[derive(Clone)]
-pub struct ArrayOfImmutableColor {
-	pub(crate) proxy: Proxy,
-}
-
-impl ArrayOfImmutableColor {
-    pub fn length(&self) -> u32 {
-        self.proxy.length()
-    }
-
-    pub fn get_color(&self, index: u32) -> ScImmutableColor {
-        ScImmutableColor::new(self.proxy.index(index))
-    }
-}
-
-pub type ImmutableColorArray = ArrayOfImmutableColor;
-
-#[derive(Clone)]
-pub struct ArrayOfMutableColor {
-	pub(crate) proxy: Proxy,
-}
-
-impl ArrayOfMutableColor {
-	pub fn append_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.append())
-	}
-
-	pub fn clear(&self) {
-        self.proxy.clear_array();
-    }
-
-    pub fn length(&self) -> u32 {
-        self.proxy.length()
-    }
-
-    pub fn get_color(&self, index: u32) -> ScMutableColor {
-        ScMutableColor::new(self.proxy.index(index))
-    }
-}
-
-pub type MutableColorArray = ArrayOfMutableColor;
-
-#[derive(Clone)]
-pub struct MapColorToImmutableColor {
-	pub(crate) proxy: Proxy,
-}
-
-impl MapColorToImmutableColor {
-    pub fn get_color(&self, key: &ScColor) -> ScImmutableColor {
-        ScImmutableColor::new(self.proxy.key(&color_to_bytes(key)))
-    }
-}
-
-pub type ImmutableColorMap = MapColorToImmutableColor;
-
-#[derive(Clone)]
-pub struct MapColorToMutableColor {
-	pub(crate) proxy: Proxy,
-}
-
-impl MapColorToMutableColor {
-    pub fn clear(&self) {
-        self.proxy.clear_map();
-    }
-
-    pub fn get_color(&self, key: &ScColor) -> ScMutableColor {
-        ScMutableColor::new(self.proxy.key(&color_to_bytes(key)))
-    }
-}
-
-pub type MutableColorMap = MapColorToMutableColor;
-
-#[derive(Clone)]
 pub struct ArrayOfImmutableHash {
 	pub(crate) proxy: Proxy,
 }
@@ -775,6 +703,7 @@ impl ArrayOfImmutableString {
     }
 }
 
+//## Array
 pub type ImmutableStringArray = ArrayOfImmutableString;
 
 #[derive(Clone)]
@@ -800,6 +729,7 @@ impl ArrayOfMutableString {
     }
 }
 
+//## Array
 pub type MutableStringArray = ArrayOfMutableString;
 
 #[derive(Clone)]
@@ -813,6 +743,7 @@ impl MapStringToImmutableString {
     }
 }
 
+//## Map
 pub type ImmutableStringMap = MapStringToImmutableString;
 
 #[derive(Clone)]
@@ -830,7 +761,80 @@ impl MapStringToMutableString {
     }
 }
 
+//## Map
 pub type MutableStringMap = MapStringToMutableString;
+
+#[derive(Clone)]
+pub struct ArrayOfImmutableTokenID {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfImmutableTokenID {
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_token_id(&self, index: u32) -> ScImmutableTokenID {
+        ScImmutableTokenID::new(self.proxy.index(index))
+    }
+}
+
+pub type ImmutableTokenIDArray = ArrayOfImmutableTokenID;
+
+#[derive(Clone)]
+pub struct ArrayOfMutableTokenID {
+	pub(crate) proxy: Proxy,
+}
+
+impl ArrayOfMutableTokenID {
+	pub fn append_token_id(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
+    }
+
+    pub fn length(&self) -> u32 {
+        self.proxy.length()
+    }
+
+    pub fn get_token_id(&self, index: u32) -> ScMutableTokenID {
+        ScMutableTokenID::new(self.proxy.index(index))
+    }
+}
+
+pub type MutableTokenIDArray = ArrayOfMutableTokenID;
+
+#[derive(Clone)]
+pub struct MapTokenIDToImmutableTokenID {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapTokenIDToImmutableTokenID {
+    pub fn get_token_id(&self, key: &ScTokenID) -> ScImmutableTokenID {
+        ScImmutableTokenID::new(self.proxy.key(&token_id_to_bytes(key)))
+    }
+}
+
+pub type ImmutableTokenIDMap = MapTokenIDToImmutableTokenID;
+
+#[derive(Clone)]
+pub struct MapTokenIDToMutableTokenID {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapTokenIDToMutableTokenID {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_token_id(&self, key: &ScTokenID) -> ScMutableTokenID {
+        ScMutableTokenID::new(self.proxy.key(&token_id_to_bytes(key)))
+    }
+}
+
+pub type MutableTokenIDMap = MapTokenIDToMutableTokenID;
 
 #[derive(Clone)]
 pub struct ArrayOfImmutableUint64 {

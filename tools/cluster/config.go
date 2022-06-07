@@ -6,17 +6,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
-
-type GoshimmerConfig struct {
-	TxStreamPort    int
-	APIPort         int
-	UseProvidedNode bool
-	FaucetPoWTarget int
-	Hostname        string
-}
 
 type WaspConfig struct {
 	NumNodes int
@@ -31,35 +25,31 @@ type WaspConfig struct {
 }
 
 type ClusterConfig struct {
-	Wasp                  WaspConfig
-	Goshimmer             GoshimmerConfig
-	BlockedGoshimmerNodes map[int]bool
+	Wasp WaspConfig
+	L1   nodeconn.L1Config
 }
 
-func DefaultConfig() *ClusterConfig {
-	return &ClusterConfig{
-		Wasp: WaspConfig{
-			NumNodes:           4,
-			FirstAPIPort:       9090,
-			FirstPeeringPort:   4000,
-			FirstNanomsgPort:   5550,
-			FirstDashboardPort: 7000,
-			FirstProfilingPort: 6060,
-			FirstMetricsPort:   2112,
-		},
-		Goshimmer: GoshimmerConfig{
-			TxStreamPort:    5000,
-			APIPort:         8080,
-			UseProvidedNode: false,
-			FaucetPoWTarget: 0,
-			Hostname:        "127.0.0.1",
-		},
-		BlockedGoshimmerNodes: make(map[int]bool),
+func DefaultWaspConfig() WaspConfig {
+	return WaspConfig{
+		NumNodes:           4,
+		FirstAPIPort:       9090,
+		FirstPeeringPort:   4000,
+		FirstNanomsgPort:   5550,
+		FirstDashboardPort: 7000,
+		FirstProfilingPort: 6060,
+		FirstMetricsPort:   2112,
 	}
 }
 
 func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
+}
+
+func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config) *ClusterConfig {
+	return &ClusterConfig{
+		Wasp: waspConfig,
+		L1:   l1Config,
+	}
 }
 
 func LoadConfig(dataPath string) (*ClusterConfig, error) {
@@ -82,10 +72,6 @@ func (c *ClusterConfig) Save(dataPath string) error {
 
 func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
-}
-
-func (c *ClusterConfig) goshimmerAPIHost() string {
-	return fmt.Sprintf("%s:%d", c.Goshimmer.Hostname, c.Goshimmer.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
@@ -159,18 +145,8 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
-	if c.BlockedGoshimmerNodes[nodeIndex] {
-		return 0
-	}
-	return c.Goshimmer.TxStreamPort
-}
-
-func (c *ClusterConfig) TxStreamHost(nodeIndex int) string {
-	if c.BlockedGoshimmerNodes[nodeIndex] {
-		return ""
-	}
-	return c.Goshimmer.Hostname
+func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
+	return c.L1.APIAddress
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
@@ -181,17 +157,17 @@ func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
 	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
-func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress ledgerstate.Address) *templates.WaspConfigParams {
+func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
 		DashboardPort:                c.DashboardPort(i),
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
-		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
-		TxStreamHost:                 c.TxStreamHost(i),
+		L1APIAddress:                 c.L1APIAddress(i),
+		L1UseRemotePow:               c.L1.UseRemotePoW,
 		MetricsPort:                  c.PrometheusPort(i),
-		OwnerAddress:                 ownerAddress.Base58(),
+		OwnerAddress:                 ownerAddress.Bech32(parameters.L1.Protocol.Bech32HRP),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

@@ -1,51 +1,70 @@
 package tests
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
-const incCounterSCName = "inccounter1"
+const nativeIncCounterSCName = "NativeIncCounter"
 
-var incCounterSCHname = iscp.Hn(incCounterSCName)
+var nativeIncCounterSCHname = iscp.Hn(nativeIncCounterSCName)
 
-func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *ledgerstate.Transaction {
+func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transaction {
+	counterStartValue := 42
+	if len(initCounter) > 0 {
+		counterStartValue = initCounter[0]
+	}
 	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Contract.ProgramHash
 
-	tx, err := e.chain.DeployContract(incCounterSCName, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        incCounterSCName,
+	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, map[string]interface{}{
+		inccounter.VarCounter: 0,
+		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(e.t, err)
 
-	if counter != nil && !counter.WaitUntilExpectationsMet() {
-		e.t.Fail()
+	blockIndex, err := e.Chain.BlockIndex(counterStartValue)
+	require.NoError(e.t, err)
+	require.Greater(e.t, blockIndex, uint32(1))
+
+	// wait until all nodes (including access nodes) are at least at block `blockIndex`
+	retries := 0
+	for i := 1; i < len(e.Chain.AllPeers); i++ {
+		peerIdx := e.Chain.AllPeers[i]
+		b, err := e.Chain.BlockIndex(peerIdx)
+		if err != nil || b < blockIndex {
+			if retries >= 5 {
+				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 5 retries")
+			}
+			// retry (access nodes might take slightly more time to sync)
+			retries++
+			i--
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
 	}
 
 	e.checkCoreContracts()
 
-	for i := range e.chain.CommitteeNodes {
-		blockIndex, err := e.chain.BlockIndex(i)
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, 2, blockIndex)
-
-		contractRegistry, err := e.chain.ContractRegistry(i)
+	for i := range e.Chain.AllPeers {
+		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
 
-		cr := contractRegistry[incCounterSCHname]
+		cr := contractRegistry[nativeIncCounterSCHname]
+		require.NotNil(e.t, cr)
 
 		require.EqualValues(e.t, programHash, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, cr.Name, incCounterSCName)
+		require.EqualValues(e.t, cr.Name, nativeIncCounterSCName)
 
-		counterValue, err := e.chain.GetCounterValue(incCounterSCHname, i)
+		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, 42, counterValue)
+		require.EqualValues(e.t, counterStartValue, counterValue)
 	}
 
 	return tx

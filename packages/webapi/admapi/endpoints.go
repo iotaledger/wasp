@@ -46,7 +46,13 @@ func AddEndpoints(
 	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
-	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics, w)
+	addChainEndpoints(adm, &chainWebAPI{
+		registry:   registryProvider,
+		chains:     chainsProvider,
+		network:    network,
+		allMetrics: metrics,
+		w:          w,
+	})
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }

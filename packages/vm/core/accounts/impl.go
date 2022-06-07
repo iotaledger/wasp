@@ -1,162 +1,277 @@
 package accounts
 
 import (
-	"fmt"
+	"math"
+	"math/big"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 var Processor = Contract.Processor(initialize,
-	FuncViewBalance.WithHandler(viewBalance),
-	FuncViewTotalAssets.WithHandler(viewTotalAssets),
-	FuncViewAccounts.WithHandler(viewAccounts),
+	// funcs
 	FuncDeposit.WithHandler(deposit),
-	FuncWithdraw.WithHandler(withdraw),
+	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
+	FuncFoundryDestroy.WithHandler(foundryDestroy),
+	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
 	FuncHarvest.WithHandler(harvest),
-	FuncGetAccountNonce.WithHandler(getAccountNonce),
+	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
+	FuncWithdraw.WithHandler(withdraw),
+
+	// views
+	ViewAccountNFTs.WithHandler(viewAccountNFTs),
+	ViewAccounts.WithHandler(viewAccounts),
+	ViewBalance.WithHandler(viewBalance),
+	ViewFoundryOutput.WithHandler(viewFoundryOutput),
+	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
+	ViewGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
+	ViewNFTData.WithHandler(viewNFTData),
+	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 
-// initialize the init call
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.initialize.success hname = %s", Contract.Hname().String())
-	return nil, nil
+func initialize(ctx iscp.Sandbox) dict.Dict {
+	// validating and storing dust deposit assumption constants
+	iotasOnAnchor := ctx.StateAnchor().Deposit
+	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
+	dustDepositAssumptions, err := transaction.StorageDepositAssumptionFromBytes(dustAssumptionsBin)
+	// checking if assumptions are consistent
+	ctx.Requiref(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
+		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
+	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+
+	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
+	initialLoadIotas := iscp.NewFungibleTokens(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
+	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadIotas)
+	return nil
 }
 
-// viewBalance returns colored balances of the account belonging to the AgentID
+// deposit is a function to deposit attached assets to the sender's chain account
+// It does nothing because assets are already on the sender's account
+// Allowance is ignored
+func deposit(ctx iscp.Sandbox) dict.Dict {
+	ctx.Log().Debugf("accounts.deposit")
+	return nil
+}
+
+// transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
+// Can be sent as a request (sender is the caller) or can be called
 // Params:
-// - ParamAgentID
-func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.viewBalance")
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	aid, err := params.GetAgentID(ParamAgentID)
-	if err != nil {
-		return nil, err
+// - ParamAgentID. AgentID. Required
+// - ParamForceOpenAccount Bool. Optional, default: false
+func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
+	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
+
+	targetAccount := ctx.Params().MustGetAgentID(ParamAgentID)
+	forceOpenAccount := ctx.Params().MustGetBool(ParamForceOpenAccount, false)
+
+	if forceOpenAccount {
+		ctx.TransferAllowedFundsForceCreateTarget(targetAccount)
+	} else {
+		ctx.TransferAllowedFunds(targetAccount)
 	}
-	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("viewBalance for %s", aid)), nil
+
+	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
+	return nil
 }
 
-// viewTotalAssets returns total colored balances controlled by the chain
-func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(ctx, getTotalAssetsAccountR(ctx.State()), "viewTotalAssets"), nil
-}
+// TODO this is just a temporary value, we need to make deposits fee constant across chains.
+const ConstDepositFeeTmp = 1 * iscp.Mi
 
-// viewAccounts returns list of all accounts as keys of the ImmutableCodec
-func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
-	return getAccountsIntern(ctx.State()), nil
-}
-
-// deposit moves transfer to the specified account on the chain. Can be send as request or can be called
-// If the target account is a core contract on the same chain, it is adjusted to the common account
-// (controlled by the chain owner)
-// Params:
-// - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
-//   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
-func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
-
-	mustCheckLedger(ctx.State(), "accounts.deposit.begin")
-
-	caller := ctx.Caller()
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
-	targetAccount = commonaccount.AdjustIfNeeded(targetAccount, ctx.ChainID())
-
-	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
-	succ := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", targetAccount.String())
-
-	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s",
-		targetAccount, ctx.IncomingTransfer().String())
-
-	mustCheckLedger(ctx.State(), "accounts.deposit.exit")
-	return nil, nil
-}
-
-// withdraw sends caller's funds to the caller
-func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
+// withdraw sends caller's funds to the caller on-ledger (cross chain)
+// The caller explicitly specify the funds to withdraw via the allowance in the request
+// Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
+func withdraw(ctx iscp.Sandbox) dict.Dict {
 	state := ctx.State()
-	mustCheckLedger(state, "accounts.withdraw.begin")
+	checkLedger(state, "accounts.withdraw.begin")
 
-	if ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()) {
+	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
+
+	callerAddress, ok := iscp.AddressFromAgentID(ctx.Caller())
+	ctx.Requiref(ok, "caller must have L1 address")
+
+	callerContract, _ := ctx.Caller().(*iscp.ContractAgentID)
+	if callerContract != nil && callerContract.ChainID().Equals(ctx.ChainID()) {
 		// if the caller is on the same chain, do nothing
-		return nil, nil
+		return nil
 	}
-	tokensToWithdraw, ok := GetAccountBalances(state, ctx.Caller())
-	if !ok {
-		// empty balance, nothing to withdraw
-		return nil, nil
+
+	// move all allowed funds to the account of the current contract context
+	// before saving the allowance budget because after the transfer it is mutated
+	allowance := ctx.AllowanceAvailable()
+	fundsToWithdraw := allowance.Assets
+	var nftID *iotago.NFTID
+	if len(allowance.NFTs) > 0 {
+		if len(allowance.NFTs) > 1 {
+			panic(ErrTooManyNFTsInAllowance)
+		}
+		nftID = &allowance.NFTs[0]
 	}
-	// will be sending back to default entry point
-	a := assert.NewAssert(ctx.Log())
-	// bring balances to the current account (owner's account). It is needed for subsequent Send call
-	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToWithdraw),
-		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
+	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
-	// add incoming tokens (after fees) to the balances to be withdrawn. Otherwise they would end up in the common account
-	tokensToWithdraw.AddAll(ctx.IncomingTransfer())
-	// Send call assumes tokens are in the current account
-	a.Require(ctx.Send(ctx.Caller().Address(), tokensToWithdraw, &iscp.SendMetadata{
-		TargetContract: ctx.Caller().Hname(),
-	}), "accounts.withdraw.inconsistency: failed sending tokens ")
+	// por las dudas
+	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
+	if callerContract != nil && callerContract.Hname() != 0 {
+		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
+		allowance := iscp.NewAllowanceFungibleTokens(
+			iscp.NewTokensIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+		)
+		// send funds to a contract on another chain
+		tx := iscp.RequestParameters{
+			TargetAddress:  callerAddress,
+			FungibleTokens: fundsToWithdraw,
+			Metadata: &iscp.SendMetadata{
+				TargetContract: Contract.Hname(),
+				EntryPoint:     FuncTransferAllowanceTo.Hname(),
+				Allowance:      allowance,
+				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
+				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
+			},
+		}
 
-	mustCheckLedger(state, "accounts.withdraw.exit")
-	return nil, nil
+		if nftID != nil {
+			ctx.SendAsNFT(tx, *nftID)
+		} else {
+			ctx.Send(tx)
+		}
+		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
+		return nil
+	}
+	tx := iscp.RequestParameters{
+		TargetAddress:  callerAddress,
+		FungibleTokens: fundsToWithdraw,
+	}
+	if nftID != nil {
+		ctx.SendAsNFT(tx, *nftID)
+	} else {
+		ctx.Send(tx)
+	}
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
+	return nil
 }
 
-// owner of the chain moves all tokens from the common account to its own account
+// harvest moves all the L2 balances of chain commmon account to chain owner's account
 // Params:
-//   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawColor color to withdraw if amount is specified. Defaults to colored.IOTA
-func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "harvest")
+//   ParamForceMinimumIotas: specify the number of IOTAs left on the common account will be not less than MinimumIotasOnCommonAccount constant
+// TODO refactor owner of the chain moves all tokens balance the common account to its own account
+func harvest(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
 
 	state := ctx.State()
-	mustCheckLedger(state, "accounts.withdraw.begin")
-	defer mustCheckLedger(state, "accounts.withdraw.exit")
+	checkLedger(state, "accounts.harvest.begin")
+	defer checkLedger(state, "accounts.harvest.exit")
 
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw
-	// otherwise assume harvest all
-	amount, err := par.GetUint64(ParamWithdrawAmount)
-	harvestAll := true
-	if err == nil && amount > 0 {
-		harvestAll = false
+	bottomIotas := ctx.Params().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
+	if bottomIotas > MinimumIotasOnCommonAccount {
+		bottomIotas = MinimumIotasOnCommonAccount
 	}
-	// if dummyColor not specified and amount is specified, default is harvest specified amount of iotas
-	col := par.MustGetColor(ParamWithdrawColor, colored.IOTA)
-
-	sourceAccount := commonaccount.Get(ctx.ChainID())
-	bals, ok := GetAccountBalances(state, sourceAccount)
-	if !ok {
-		// empty balance, nothing to withdraw
-		return nil, nil
+	commonAccount := ctx.ChainID().CommonAccount()
+	toWithdraw := GetAccountAssets(state, commonAccount)
+	if toWithdraw.Iotas <= bottomIotas {
+		// below minimum, nothing to withdraw
+		return nil
 	}
-	tokensToSend := bals
-	if !harvestAll {
-		balCol := bals[col]
-		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
-		tokensToSend = colored.NewBalancesForColor(col, amount)
-	}
-	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
-		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
-	return nil, nil
+	ctx.Requiref(toWithdraw.Iotas > bottomIotas, "assertion failed: toWithdraw.Iotas > bottomIotas")
+	toWithdraw.Iotas -= bottomIotas
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
+	return nil
 }
 
-func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	account := par.MustGetAgentID(ParamAgentID)
-	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
+// Params:
+// - token scheme
+// - token tag
+// - max supply big integer
+// - must be enough allowance for the dust deposit
+func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
+	ctx.Log().Debugf("accounts.foundryCreateNew")
+
+	tokenScheme := ctx.Params().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
+	ts := util.MustTokenScheme(tokenScheme)
+	ts.MeltedTokens = util.Big0
+	ts.MintedTokens = util.Big0
+
+	// create UTXO
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
+	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
+	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
+	debitIotasFromAllowance(ctx, dustConsumed)
+
+	// add to the ownership list of the account
+	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
+
 	ret := dict.New()
-	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
-	return ret, nil
+	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
+	return ret
+}
+
+// foundryDestroy destroys foundry if that is possible
+func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
+	ctx.Log().Debugf("accounts.foundryDestroy")
+	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
+	// check if foundry is controlled by the caller
+	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+
+	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
+	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)), "can't destroy foundry with positive circulating supply")
+
+	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
+
+	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
+	DeleteFoundryOutput(ctx.State(), sn)
+	// the dust deposit goes to the caller's account
+	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.FungibleTokens{
+		Iotas: dustDepositReleased,
+	})
+	return nil
+}
+
+// foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
+// Params:
+// - ParamFoundrySN serial number of the foundry
+// - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
+// - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
+func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
+	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
+	delta := ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs)
+	if util.IsZeroBigInt(delta) {
+		return nil
+	}
+	destroy := ctx.Params().MustGetBool(ParamDestroyTokens, false)
+	// check if foundry is controlled by the caller
+	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+
+	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	tokenID, err := out.NativeTokenID()
+	ctx.RequireNoError(err, "internal")
+
+	// accrue change on the caller's account
+	// update native tokens on L2 ledger and transit foundry UTXO
+	var dustAdjustment int64
+	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
+		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
+	} else {
+		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
+	}
+
+	// adjust iotas on L2 due to the possible change in dust deposit
+	switch {
+	case dustAdjustment < 0:
+		// dust deposit is taken from the allowance of the caller
+		debitIotasFromAllowance(ctx, uint64(-dustAdjustment))
+	case dustAdjustment > 0:
+		// dust deposit is returned to the caller account
+		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewTokensIotas(uint64(dustAdjustment)))
+	}
+	return nil
 }

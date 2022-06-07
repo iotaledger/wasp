@@ -9,24 +9,16 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableTestCoreState extends wasmtypes.ScProxy {
-	counter(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.StateCounter));
-	}
-
-	hnameEP(): wasmtypes.ScImmutableHname {
-		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.StateHnameEP));
+	counter(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateCounter));
 	}
 
 	ints(): sc.MapStringToImmutableInt64 {
 		return new sc.MapStringToImmutableInt64(this.proxy.root(sc.StateInts));
 	}
 
-	mintedColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.StateMintedColor));
-	}
-
-	mintedSupply(): wasmtypes.ScImmutableUint64 {
-		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateMintedSupply));
+	strings(): sc.MapStringToImmutableString {
+		return new sc.MapStringToImmutableString(this.proxy.root(sc.StateStrings));
 	}
 }
 
@@ -35,23 +27,15 @@ export class MutableTestCoreState extends wasmtypes.ScProxy {
 		return new sc.ImmutableTestCoreState(this.proxy);
 	}
 
-	counter(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.StateCounter));
-	}
-
-	hnameEP(): wasmtypes.ScMutableHname {
-		return new wasmtypes.ScMutableHname(this.proxy.root(sc.StateHnameEP));
+	counter(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateCounter));
 	}
 
 	ints(): sc.MapStringToMutableInt64 {
 		return new sc.MapStringToMutableInt64(this.proxy.root(sc.StateInts));
 	}
 
-	mintedColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.StateMintedColor));
-	}
-
-	mintedSupply(): wasmtypes.ScMutableUint64 {
-		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateMintedSupply));
+	strings(): sc.MapStringToMutableString {
+		return new sc.MapStringToMutableString(this.proxy.root(sc.StateStrings));
 	}
 }

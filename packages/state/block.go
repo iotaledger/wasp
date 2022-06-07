@@ -6,18 +6,21 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
 type blockImpl struct {
-	stateOutputID ledgerstate.OutputID
+	stateOutputID *iotago.UTXOInput
 	stateUpdate   *stateUpdateImpl
 	blockIndex    uint32 // not persistent
 }
+
+var _ Block = &blockImpl{}
 
 // validates, enumerates and creates a block from array of state updates
 func newBlock(muts *buffered.Mutations) (Block, error) {
@@ -43,31 +46,20 @@ func BlockFromBytes(data []byte) (Block, error) {
 	return ret, nil
 }
 
-// block with empty state update and nil state hash
-func newOriginBlock() Block {
-	ret, err := newBlock(NewStateUpdateWithBlocklogValues(0, time.Time{}, hashing.NilHash).Mutations())
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
 func (b *blockImpl) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = b.Write(&buf)
-	return buf.Bytes()
+	return util.MustBytes(b)
 }
 
 func (b *blockImpl) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
+	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(b.ApprovingOutputID()))
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret
 }
 
-func (b *blockImpl) ApprovingOutputID() ledgerstate.OutputID {
+func (b *blockImpl) ApprovingOutputID() *iotago.UTXOInput {
 	return b.stateOutputID
 }
 
@@ -85,19 +77,18 @@ func (b *blockImpl) Timestamp() time.Time {
 }
 
 // PreviousStateHash of the last state update
-func (b *blockImpl) PreviousStateHash() hashing.HashValue {
-	ph, err := findPrevStateHashMutation(b.stateUpdate)
+func (b *blockImpl) PreviousL1Commitment() *L1Commitment {
+	ph, err := findPrevStateCommitmentMutation(b.stateUpdate)
 	if err != nil {
 		panic(err)
 	}
 	return ph
 }
 
-func (b *blockImpl) SetApprovingOutputID(oid ledgerstate.OutputID) {
+func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
 	b.stateOutputID = oid
 }
 
-// hash of all data except state transaction hash
 func (b *blockImpl) EssenceBytes() []byte {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
@@ -110,7 +101,7 @@ func (b *blockImpl) Write(w io.Writer) error {
 	if err := b.writeEssence(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(b.stateOutputID.Bytes()); err != nil {
+	if err := b.writeOutputID(w); err != nil {
 		return err
 	}
 	return nil
@@ -120,11 +111,26 @@ func (b *blockImpl) writeEssence(w io.Writer) error {
 	return b.stateUpdate.Write(w)
 }
 
+func (b *blockImpl) writeOutputID(w io.Writer) error {
+	if err := util.WriteBoolByte(w, b.stateOutputID != nil); err != nil {
+		return err
+	}
+	if b.stateOutputID == nil {
+		return nil
+	}
+	serialized, err := b.stateOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(serialized)
+	return err
+}
+
 func (b *blockImpl) Read(r io.Reader) error {
 	if err := b.readEssence(r); err != nil {
 		return err
 	}
-	if _, err := r.Read(b.stateOutputID[:]); err != nil {
+	if err := b.readOutputID(r); err != nil {
 		return err
 	}
 	return nil
@@ -137,4 +143,21 @@ func (b *blockImpl) readEssence(r io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func (b *blockImpl) readOutputID(r io.Reader) error {
+	var oidPresent bool
+	if err := util.ReadBoolByte(r, &oidPresent); err != nil {
+		return err
+	}
+	if !oidPresent {
+		return nil
+	}
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(r); err != nil {
+		return err
+	}
+	b.stateOutputID = &iotago.UTXOInput{}
+	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
+	return err
 }

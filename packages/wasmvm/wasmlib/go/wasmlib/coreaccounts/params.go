@@ -9,44 +9,124 @@ package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ImmutableDepositParams struct {
+type ImmutableFoundryCreateNewParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDepositParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+func (s ImmutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamTokenScheme))
 }
 
-type MutableDepositParams struct {
+type MutableFoundryCreateNewParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableDepositParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+func (s MutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamTokenScheme))
+}
+
+type ImmutableFoundryDestroyParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFoundryDestroyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+}
+
+type MutableFoundryDestroyParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFoundryDestroyParams) FoundrySN() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+}
+
+type ImmutableFoundryModifySupplyParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFoundryModifySupplyParams) DestroyTokens() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamDestroyTokens))
+}
+
+func (s ImmutableFoundryModifySupplyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+}
+
+func (s ImmutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamSupplyDeltaAbs))
+}
+
+type MutableFoundryModifySupplyParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFoundryModifySupplyParams) DestroyTokens() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamDestroyTokens))
+}
+
+func (s MutableFoundryModifySupplyParams) FoundrySN() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+}
+
+func (s MutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamSupplyDeltaAbs))
 }
 
 type ImmutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableHarvestParams) WithdrawAmount() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamWithdrawAmount))
-}
-
-func (s ImmutableHarvestParams) WithdrawColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamWithdrawColor))
+func (s ImmutableHarvestParams) ForceMinimumIotas() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamForceMinimumIotas))
 }
 
 type MutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableHarvestParams) WithdrawAmount() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamWithdrawAmount))
+func (s MutableHarvestParams) ForceMinimumIotas() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamForceMinimumIotas))
 }
 
-func (s MutableHarvestParams) WithdrawColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamWithdrawColor))
+type ImmutableTransferAllowanceToParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableTransferAllowanceToParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+func (s ImmutableTransferAllowanceToParams) ForceOpenAccount() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamForceOpenAccount))
+}
+
+type MutableTransferAllowanceToParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableTransferAllowanceToParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+func (s MutableTransferAllowanceToParams) ForceOpenAccount() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamForceOpenAccount))
+}
+
+type ImmutableAccountNFTsParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableAccountNFTsParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+type MutableAccountNFTsParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableAccountNFTsParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type ImmutableBalanceParams struct {
@@ -65,6 +145,22 @@ func (s MutableBalanceParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
+type ImmutableFoundryOutputParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFoundryOutputParams) FoundrySN() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+}
+
+type MutableFoundryOutputParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFoundryOutputParams) FoundrySN() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+}
+
 type ImmutableGetAccountNonceParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -79,4 +175,20 @@ type MutableGetAccountNonceParams struct {
 
 func (s MutableGetAccountNonceParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+type ImmutableNftDataParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableNftDataParams) NftID() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNftID))
+}
+
+type MutableNftDataParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableNftDataParams) NftID() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNftID))
 }

@@ -45,7 +45,7 @@ func TestTutorial8(t *testing.T) {
  userAgentID := iscp.NewAgentID(userAddress, 0)
  t.Logf("userAgentID: %s", userAgentID)
 
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0) // empty on-chain
 
  // the chain owner (default) send a request to the root contract to grant right to deploy
@@ -66,7 +66,7 @@ func TestTutorial8(t *testing.T) {
  // - to deploy contract from the blob
  // Two tokens were taken from the user account to form requests and then were
  // deposited to the user's account on the chain
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-2)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-2)
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty on-chain
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
 
@@ -80,7 +80,7 @@ func TestTutorial8(t *testing.T) {
 
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 42)
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-44)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-44)
 
  // user withdraws all iotas from the smart contract back
  // Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
@@ -92,6 +92,6 @@ func TestTutorial8(t *testing.T) {
 
  chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0)
  chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
- env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-44+42)
+ env.AssertAddressBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount-44+42)
 }
 ```

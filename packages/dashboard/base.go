@@ -5,6 +5,7 @@ package dashboard
 
 import (
 	_ "embed"
+	"encoding/hex"
 	"html/template"
 	"strings"
 
@@ -116,17 +117,22 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
 		"formatTimestampOrNever": formatTimestampOrNever,
-		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL()),
+		"exploreAddressUrl":      d.exploreAddressURL,
 		"args":                   args,
 		"hashref":                hashref,
-		"colorref":               colorref,
+		"chainidref":             chainIDref,
+		"assedID":                assetID,
 		"trim":                   trim,
 		"incUint32":              incUint32,
 		"decUint32":              decUint32,
 		"bytesToString":          bytesToString,
+		"addressToString":        d.addressToString,
+		"agentIDToString":        d.agentIDToString,
+		"addressFromAgentID":     d.addressFromAgentID,
 		"keyToString":            keyToString,
 		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,
+		"hex":                    hex.EncodeToString,
 		"replace":                strings.Replace,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 	})

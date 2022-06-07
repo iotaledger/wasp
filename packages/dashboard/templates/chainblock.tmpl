@@ -6,7 +6,17 @@
 		<h2 class="section">Block #{{ .Index }}</h2>
 		<dl>
 			<dt>Timestamp</dt><dd><code>{{ formatTimestamp .Block.Timestamp }}</code></dd>
-			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousStateHash.Base58 }}</code></dd>
+			{{ if .Block.L1Commitment }}
+				<dt>State commitment</dt><dd><code>{{ .Block.L1Commitment.StateCommitment }}</code></dd>
+				<dt>Block hash</dt><dd><code>{{ .Block.L1Commitment.BlockHash }}</code></dd>
+			{{ end }}
+			<dt>Previous state commitment</dt><dd><code>{{ .Block.PreviousL1Commitment.StateCommitment }}</code></dd>
+			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousL1Commitment.BlockHash }}</code></dd>
+			<dt>Anchor transaction ID</dt><dd><code>{{ (hex .Block.AnchorTransactionID) }}</code></dd>
+			<dt>Total iotas in L2 accounts</dt><dd><code>{{ .Block.TotalIotasInL2Accounts }}</code></dd>
+			<dt>Total dust deposit</dt><dd><code>{{ .Block.TotalDustDeposit }}</code></dd>
+			<dt>Gas burned</dt><dd><code>{{ .Block.GasBurned }}</code></dd>
+			<dt>Gas fee charged</dt><dd><code>{{ .Block.GasFeeCharged }}</code></dd>
 		</dl>
 	</div>
 
@@ -17,29 +27,66 @@
 			<div class="section">
 			<h4>Request #{{$i}}</h4>
 			<dl>
-				<dt>ID</dt><dd><code>{{ $req.ID.Base58 }}</code></dd>
+				<dt>ID</dt><dd><code>{{ $req.ID }}</code></dd>
 				<dt>Type</dt><dd>{{ if $req.IsOffLedger -}} off-ledger {{- else -}} on-ledger {{- end }}</dd>
-				<dt>Fee prepaid</dt><dd>{{ if $req.IsFeePrepaid -}} yes {{- else -}} no {{- end }}</dd>
 				{{ if $r.Error }}
 					<dt>Error</dt><dd><code>{{ $r.Error }}</code></dd>
 				{{ end }}
 				<dt>Sender</dt><dd>{{template "agentid" (args $chainid $req.SenderAccount)}}</dd>
-				<dt>Contract Hname</dt><dd><code>{{$req.Target.Contract}}</code></dd>
-				<dt>Entry point</dt><dd><code>{{$req.Target.EntryPoint}}</code></dd>
-				{{ if not $req.IsOffLedger }}
-					<dt>Transaction timestamp</dt><dd><code>{{ formatTimestamp $req.Timestamp }}</code></dd>
-				{{ end }}
+				<dt>Contract Hname</dt><dd><code>{{$req.CallTarget.Contract}}</code></dd>
+				<dt>Entry point</dt><dd><code>{{$req.CallTarget.EntryPoint}}</code></dd>
+				<dt>Gas budget</dt><dd><code>{{$req.GasBudget}}</code></dd>
 			</dl>
-			<h5>Arguments</h5>
-			{{if gt (len $req.Args) 0}}
+
+			<h5>Parameters</h5>
+			{{if gt (len $req.Params) 0}}
 				<dl>
-					{{range $k, $v := $req.Args}}
+					{{range $k, $v := $req.Params}}
 						<dt><code>{{ $k | keyToString | trim 30 }}</code></dt>
 						<dd><pre style="white-space: pre-wrap">{{ $v | bytesToString | trim 100 }}</pre></dd>
 					{{end}}
 				</dl>
 			{{else}}
 				<p>(empty)</p>
+			{{end}}
+
+			{{if (not $req.IsOffLedger)}}
+			<h5>Attached tokens</h5>
+				{{$tokens := $req.FungibleTokens}}
+				<dl>
+					<dt>Iotas</dt><dd><code>{{$tokens.Iotas}}</code></dd>
+					{{range $_, $t := $tokens.Tokens}}
+						<dt><code>{{ $t.ID }}</code></dt><dd><code>{{ $t.Amount }}</code></dd>
+					{{end}}
+				</dl>
+			{{end}}
+
+			{{$nft := $req.NFT}}
+			{{if $nft}}
+			<h5>NFT</h5>
+				<dl>
+					<dt>ID</dt><dd><code>{{$nft.ID}}</code></dd>
+					<dt>Issuer</dt><dd>{{template "address" (args $chainid $nft.Issuer)}}</dd>
+					<dt>Metadata</dt>
+					<dd><pre style="white-space: pre-wrap">{{ $nft.Metadata | bytesToString | trim 100 }}</pre></dd>
+				</dl>
+			{{end}}
+
+			{{$allowance := $req.Allowance}}
+			{{if $allowance}}
+			<h5>Allowance</h5>
+				<dl>
+					{{$tokens := $allowance.Assets}}
+					{{if $tokens}}
+						<dt>Iotas</dt><dd><code>{{$tokens.Iotas}}</code></dd>
+						{{range $_, $t := $tokens.Tokens}}
+							<dt><code>{{ $t.ID }}</code></dt><dd><code>{{ $t.Amount }}</code></dd>
+						{{end}}
+					{{end}}
+					{{range $_, $nftID := $allowance.NFTs}}
+						<dt>NFT</dt><dd><code>{{ $nftID }}</code></dd>
+					{{end}}
+				</dl>
 			{{end}}
 			</div>
 		{{end}}
@@ -66,20 +113,20 @@
 	<div class="card fluid">
 		<div style="display: flex">
 			<div style="flex: 1; text-align: center">
-				<a href="{{ uri "chainBlock" $chainid.Base58 0 }}">⏮ First</a>
+				<a href="{{ uri "chainBlock" $chainid 0 }}">⏮ First</a>
 			</div>
 			<div style="flex: 1; text-align: center">
 				{{ if gt .Index 0 }}
-					<a href="{{ uri "chainBlock" $chainid.Base58 (decUint32 .Index) }}">◄ Previous</a>
+					<a href="{{ uri "chainBlock" $chainid (decUint32 .Index) }}">◄ Previous</a>
 				{{ end }}
 			</div>
 			<div style="flex: 1; text-align: center">
 				{{ if lt .Index .LatestBlockIndex }}
-					<a href="{{ uri "chainBlock" $chainid.Base58 (incUint32 .Index) }}">Next ►</a>
+					<a href="{{ uri "chainBlock" $chainid (incUint32 .Index) }}">Next ►</a>
 				{{ end }}
 			</div>
 			<div style="flex: 1; text-align: center">
-				<a href="{{ uri "chainBlock" $chainid.Base58 .LatestBlockIndex }}">Latest ⏭</a>
+				<a href="{{ uri "chainBlock" $chainid .LatestBlockIndex }}">Latest ⏭</a>
 			</div>
 		</div>
 	</div>

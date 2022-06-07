@@ -20,10 +20,12 @@ export class ImmutableErc20State extends wasmtypes.ScProxy {
 		return new sc.MapAgentIDToImmutableAllowancesForAgent(this.proxy.root(sc.StateAllAllowances));
 	}
 
+	// balances per account
 	balances(): sc.MapAgentIDToImmutableUint64 {
 		return new sc.MapAgentIDToImmutableUint64(this.proxy.root(sc.StateBalances));
 	}
 
+	// total supply of the token
 	supply(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateSupply));
 	}
@@ -49,10 +51,12 @@ export class MutableErc20State extends wasmtypes.ScProxy {
 		return new sc.MapAgentIDToMutableAllowancesForAgent(this.proxy.root(sc.StateAllAllowances));
 	}
 
+	// balances per account
 	balances(): sc.MapAgentIDToMutableUint64 {
 		return new sc.MapAgentIDToMutableUint64(this.proxy.root(sc.StateBalances));
 	}
 
+	// total supply of the token
 	supply(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateSupply));
 	}

@@ -1,3 +1,7 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+#copyright: ""
+
 name: TestWasmLib
 description: Exercise several aspects of WasmLib
 
@@ -27,7 +31,7 @@ typedefs:
   AddressArray: Address[]
   AgentIDArray: AgentID[]
   ChainIDArray: ChainID[]
-  ColorArray: Color[]
+  TokenIDArray: TokenID[]
   HashArray: Hash[]
   HnameArray: Hname[]
   RequestIDArray: RequestID[]
@@ -40,7 +44,7 @@ typedefs:
   AddressMap: map[Address]Address
   AgentIDMap: map[AgentID]AgentID
   ChainIDMap: map[ChainID]ChainID
-  ColorMap: map[Color]Color
+  TokenIDMap: map[TokenID]TokenID
   HashMap: map[Hash]Hash
   HnameMap: map[Hname]Hname
   RequestIDMap: map[RequestID]RequestID
@@ -49,71 +53,116 @@ typedefs:
 # ##################################
 
 state:
-  # basic value datatypes
-  stringMapOfArrays: map[String]StringArray
-  stringMapOfMaps: map[String]StringMap
-  stringArrayOfMaps: StringMap[]
-  stringArrayOfArrays: StringArray[]
-  # contracts-specific value datatypes
-  AddressArrays: map[Address]AddressArray
-  AddressMaps: map[Address]AddressMap
-  AddressMapArrays: AddressMap[]
-  AddressArrayArrays: AddressArray[]
+  # basic datatypes, using String
+  arrayOfStringArray: StringArray[]
+  arrayOfStringMap: StringMap[]
+  stringMapOfStringArray: map[String]StringArray
+  stringMapOfStringMap: map[String]StringMap
+  # ISCP-specific datatypes, using Address
+  arrayOfAddressArray: AddressArray[]
+  arrayOfAddressMap: AddressMap[]
+  addressMapOfAddressArray: map[Address]AddressArray
+  addressMapOfAddressMap: map[Address]AddressMap
   # Other
   random: Uint64
   latLong: map[Int32]Longitude
-  # LongID: map[Longitude]Int32 # FIXME Map with struct key would cause error
   
 
 # ##################################
 
 funcs:
-  mapOfArraysAppend:
+  stringMapOfStringArrayAppend:
     params:
       name: String
       value: String
 
-  arrayOfArraysAppend:
+  addressMapOfAddressArrayAppend:
+    params:
+      nameAddr: Address
+      valueAddr: Address
+
+  stringMapOfStringArrayClear:
+    params:
+      name: String
+
+  addressMapOfAddressArrayClear:
+    params:
+      nameAddr: Address
+
+  stringMapOfStringArraySet:
+    params:
+      index: Uint32
+      name: String
+      value: String
+
+  addressMapOfAddressArraySet:
+    params:
+      index: Uint32
+      nameAddr: Address
+      valueAddr: Address
+
+  stringMapOfStringMapClear:
+    params:
+      name: String
+
+  addressMapOfAddressMapClear:
+    params:
+      nameAddr: Address
+
+  stringMapOfStringMapSet:
+    params:
+      name: String
+      key: String
+      value: String
+
+  addressMapOfAddressMapSet:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+      valueAddr: Address
+
+  arrayOfStringArrayAppend:
     params:
       index: Uint32
       value: String[]
 
-  mapOfArraysClear:
-    params:
-      name: String
-  
-  # Clear all the arrays of the array
-  arrayOfArraysClear:
-
-  mapOfArraysSet:
+  arrayOfAddressArrayAppend:
     params:
       index: Uint32
-      name: String
-      value: String
+      valueAddr: Address[]
 
-  arrayOfArraysSet:
+  arrayOfStringArraySet:
     params:
       index0: Uint32
       index1: Uint32
       value: String
 
-  mapOfMapsClear:
+  arrayOfAddressArraySet:
     params:
-      name: String
+      index0: Uint32
+      index1: Uint32
+      valueAddr: Address
 
-  mapOfMapsSet:
-    params:
-      name: String
-      key: String
-      value: String
+  # Clear all the arrays of the array
+  arrayOfStringArrayClear:
+  # Clear all the arrays of the array
+  arrayOfAddressArrayClear:
 
-  arrayOfMapsClear:
+  arrayOfStringMapClear:
 
-  arrayOfMapsSet:
+  arrayOfAddressMapClear:
+
+  arrayOfStringMapSet:
     params:
       index: Uint32
       key: String
       value: String
+
+  arrayOfAddressMapSet:
+    params:
+      index: Uint32
+      keyAddr: Address
+      valueAddr: Address
 
   paramTypes:
     params:
@@ -122,22 +171,29 @@ funcs:
       bool: Bool?
       bytes: Bytes?
       chainID: ChainID?
-      color: Color?
       hash: Hash?
       hname: Hname?
       int8: Int8?
       int16: Int16?
       int32: Int32?
       int64: Int64?
-      param=this: map[String]Bytes? // special hook to be able to pass key/values as raw bytes
+      nftID: NftID?
+      param=this: map[String]Bytes? # special hook to be able to pass key/values as raw bytes
       requestID: RequestID?
       string: String?
+      tokenID: TokenID?
       uint8: Uint8?
       uint16: Uint16?
       uint32: Uint32?
       uint64: Uint64?
 
   random:
+
+  takeAllowance:
+
+  takeBalance:
+    results:
+      iotas: Uint64
 
   triggerEvent:
     params:
@@ -147,43 +203,130 @@ funcs:
 # ##################################
 
 views:
-  mapOfArraysLength:
+  stringMapOfStringArrayLength:
     params:
       name: String
     results:
       length: Uint32
 
-  arrayOfArraysLength:
+  addressMapOfAddressArrayLength:
+    params:
+      nameAddr: Address
     results:
       length: Uint32
 
-  mapOfArraysValue:
+  stringMapOfStringArrayValue:
     params:
       index: Uint32
       name: String
     results:
       value: String
+
+  addressMapOfAddressArrayValue:
+    params:
+      index: Uint32
+      nameAddr: Address
+    results:
+      valueAddr: Address
+
+  stringMapOfStringMapValue:
+    params:
+      name: String
+      key: String
+    results:
+      value: String
   
-  arrayOfArraysValue:
+  addressMapOfAddressMapValue:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+    results:
+      valueAddr: Address
+
+  arrayOfStringArrayLength:
+    results:
+      length: Uint32
+
+  arrayOfStringArrayValue:
     params:
       index0: Uint32
       index1: Uint32
     results:
       value: String
 
-  mapOfMapsValue:
-    params:
-      name: String
-      key: String
+  arrayOfAddressArrayLength:
     results:
-      value: String
+      length: Uint32
 
-  arrayOfMapsValue:
+  arrayOfAddressArrayValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      valueAddr: Address
+
+  arrayOfStringMapValue:
     params:
       index: Uint32
       key: String
     results:
       value: String
+
+  arrayOfAddressMapValue:
+    params:
+      index: Uint32
+      keyAddr: Address
+    results:
+      valueAddr: Address
+
+  bigIntAdd:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntDiv:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntMod:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntMul:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntShl:
+    params:
+      lhs: BigInt
+      shift: Uint32
+    results:
+      res: BigInt
+
+  bigIntShr:
+    params:
+      lhs: BigInt
+      shift: Uint32
+    results:
+      res: BigInt
+
+  bigIntSub:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
 
   blockRecord:
     params:

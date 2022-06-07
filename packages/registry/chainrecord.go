@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
@@ -15,18 +14,17 @@ import (
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID *iscp.ChainID
+	ChainID iscp.ChainID
 	Active  bool
 }
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	ret := &ChainRecord{}
-	aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
+	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainID = iscp.NewChainID(aliasAddr)
-
+	ret.ChainID = *chainID
 	ret.Active, err = mu.ReadBool()
 	if err != nil {
 		return nil, err

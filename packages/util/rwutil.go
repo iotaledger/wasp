@@ -5,9 +5,11 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 )
@@ -223,7 +225,38 @@ func WriteUint64(w io.Writer, val uint64) error {
 
 //////////////////// bytes, uint16 length \\\\\\\\\\\\\\\\\\\\
 
-const MaxUint16 = int(^uint16(0))
+func ReadBytes8(r io.Reader) ([]byte, error) {
+	var length uint8
+	length, err := ReadByte(r)
+	if err != nil {
+		return nil, err
+	}
+	if length == 0 {
+		return []byte{}, nil
+	}
+	ret := make([]byte, length)
+	_, err = r.Read(ret)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func WriteBytes8(w io.Writer, data []byte) error {
+	if len(data) > 256 {
+		panic(fmt.Sprintf("WriteBytes8: too long data (%d)", len(data)))
+	}
+	err := WriteByte(w, byte(len(data)))
+	if err != nil {
+		return err
+	}
+	if len(data) != 0 {
+		_, err = w.Write(data)
+	}
+	return err
+}
+
+//////////////////// bytes, uint16 length \\\\\\\\\\\\\\\\\\\\
 
 func ReadBytes16(r io.Reader) ([]byte, error) {
 	var length uint16
@@ -243,7 +276,7 @@ func ReadBytes16(r io.Reader) ([]byte, error) {
 }
 
 func WriteBytes16(w io.Writer, data []byte) error {
-	if len(data) > MaxUint16 {
+	if len(data) > math.MaxUint16 {
 		panic(fmt.Sprintf("WriteBytes16: too long data (%v)", len(data)))
 	}
 	err := WriteUint16(w, uint16(len(data)))
@@ -257,8 +290,6 @@ func WriteBytes16(w io.Writer, data []byte) error {
 }
 
 //////////////////// bytes, uint32 length \\\\\\\\\\\\\\\\\\\\
-
-const MaxUint32 = int(^uint32(0))
 
 func ReadBytes32(r io.Reader) ([]byte, error) {
 	var length uint32
@@ -278,7 +309,7 @@ func ReadBytes32(r io.Reader) ([]byte, error) {
 }
 
 func WriteBytes32(w io.Writer, data []byte) error {
-	if len(data) > MaxUint32 {
+	if len(data) > math.MaxUint32 {
 		panic(fmt.Sprintf("WriteBytes32: too long data (%v)", len(data)))
 	}
 	err := WriteUint32(w, uint32(len(data)))
@@ -361,7 +392,7 @@ func ReadStrings16(r io.Reader) ([]string, error) {
 }
 
 func WriteStrings16(w io.Writer, strs []string) error {
-	if len(strs) > MaxUint16 {
+	if len(strs) > math.MaxUint16 {
 		panic(fmt.Sprintf("WriteStrings16: too long array (%v)", len(strs)))
 	}
 	if err := WriteUint16(w, uint16(len(strs))); err != nil {
@@ -410,14 +441,76 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	return WriteBytes16(w, bin)
 }
 
-func ReadOutputID(r io.Reader, oid *ledgerstate.OutputID) error {
-	n, err := r.Read(oid[:])
+func ReadOutputID(r io.Reader) (*iotago.UTXOInput, error) {
+	var realOid iotago.OutputID
+	n, err := r.Read(realOid[:])
+	if err != nil {
+		return nil, err
+	}
+	if n != iotago.OutputIDLength {
+		return nil, fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
+			n, iotago.OutputIDLength)
+	}
+	return realOid.UTXOInput(), nil
+}
+
+func WriteOutputID(w io.Writer, oid *iotago.UTXOInput) error {
+	realOid := oid.ID()
+	n, err := w.Write(realOid[:])
+	if n != iotago.OutputIDLength {
+		return fmt.Errorf("error while writing output ID: written %v bytes, expected %v bytes",
+			n, iotago.OutputIDLength)
+	}
+	return err
+}
+
+func ReadTransactionID(r io.Reader, txid *iotago.TransactionID) error {
+	n, err := r.Read(txid[:])
 	if err != nil {
 		return err
 	}
-	if n != ledgerstate.OutputIDLength {
-		return fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
-			n, ledgerstate.OutputIDLength)
+
+	if n != iotago.TransactionIDLength {
+		return fmt.Errorf("error while reading transaction ID: read %v bytes, expected %v bytes",
+			n, iotago.TransactionIDLength)
 	}
 	return nil
+}
+
+func WriteBytes8ToMarshalUtil(data []byte, mu *marshalutil.MarshalUtil) {
+	if len(data) > 256 {
+		panic("WriteBytes8ToMarshalUtil: len(data) > 256")
+	}
+	mu.WriteUint8(uint8(len(data))).WriteBytes(data)
+}
+
+func ReadBytes8FromMarshalUtil(mu *marshalutil.MarshalUtil) ([]byte, error) {
+	l, err := mu.ReadUint8()
+	if err != nil {
+		return nil, err
+	}
+	ret, err := mu.ReadBytes(int(l))
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func WriteBytes16ToMarshalUtil(data []byte, mu *marshalutil.MarshalUtil) {
+	if len(data) > math.MaxUint16 {
+		panic("WriteBytes16ToMarshalUtil: len(data) > math.MaxUint16")
+	}
+	mu.WriteUint16(uint16(len(data))).WriteBytes(data)
+}
+
+func ReadBytes16FromMarshalUtil(mu *marshalutil.MarshalUtil) ([]byte, error) {
+	l, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	ret, err := mu.ReadBytes(int(l))
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

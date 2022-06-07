@@ -1,4 +1,4 @@
-import type { IResponse } from '../../api_common/response_models';
+import type {IResponse} from '../../api_common/response_models';
 
 export interface IAllowedManaPledgeResponse extends IResponse {
     accessMana: {

@@ -2,11 +2,10 @@ package config
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/goshimmer"
+	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,7 +26,7 @@ var configSetCmd = &cobra.Command{
 		case "true":
 			Set(args[0], true)
 		case "false":
-			Set(args[0], true)
+			Set(args[0], false)
 		default:
 			Set(args[0], v)
 		}
@@ -53,29 +52,40 @@ func Read() {
 	_ = viper.ReadInConfig()
 }
 
-func GoshimmerAPIConfigVar() string {
-	return "goshimmer." + HostKindAPI
-}
-
-func GoshimmerAPI() string {
-	r := viper.GetString(GoshimmerAPIConfigVar())
-	if r != "" {
-		return r
+func L1APIAddress() string {
+	host := viper.GetString("l1.apiAddress")
+	if host != "" {
+		return host
 	}
-	return "127.0.0.1:8080"
+	return fmt.Sprintf(
+		"%s,%d",
+		privtangledefaults.Host,
+		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetRestAPI,
+	)
 }
 
-func GoshimmerFaucetPoWTarget() int {
-	key := "goshimmer.faucetPoWTarget"
-	if !viper.IsSet(key) {
-		return -1
+func L1FaucetAddress() string {
+	address := viper.GetString("l1.faucetAddress")
+	if address != "" {
+		return address
 	}
-	return viper.GetInt(key)
+	return fmt.Sprintf(
+		"%s,%d",
+		privtangledefaults.Host,
+		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetFaucet,
+	)
 }
 
-func GoshimmerClient() *goshimmer.Client {
-	log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerAPI(), GoshimmerFaucetPoWTarget())
-	return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
+func L1Client() nodeconn.L1Client {
+	log.Verbosef("using L1 API %s\n", L1APIAddress())
+
+	return nodeconn.NewL1Client(
+		nodeconn.L1Config{
+			APIAddress:    L1APIAddress(),
+			FaucetAddress: L1FaucetAddress(),
+		},
+		log.HiveLogger(),
+	)
 }
 
 func GetToken() string {
@@ -89,6 +99,7 @@ func SetToken(token string) {
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())
+	L1Client() // this will fill parameters.L1 with data from the L1 node
 	return client.NewWaspClient(WaspAPI()).WithToken(GetToken())
 }
 
@@ -182,22 +193,4 @@ func defaultWaspPort(kind string, i int) int {
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
 	log.Check(viper.WriteConfig())
-}
-
-func TrySCAddress(scAlias string) ledgerstate.Address {
-	b58 := viper.GetString("sc." + scAlias + ".address")
-	if b58 == "" {
-		return nil
-	}
-	address, err := ledgerstate.AddressFromBase58EncodedString(b58)
-	log.Check(err)
-	return address
-}
-
-func GetSCAddress(scAlias string) ledgerstate.Address {
-	address := TrySCAddress(scAlias)
-	if address == nil {
-		log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
-	}
-	return address
 }

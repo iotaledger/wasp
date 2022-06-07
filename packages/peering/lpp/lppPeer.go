@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	libp2ppeer "github.com/libp2p/go-libp2p-core/peer"
@@ -24,7 +24,7 @@ const (
 
 type peer struct {
 	remoteNetID  string
-	remotePubKey *ed25519.PublicKey
+	remotePubKey *cryptolib.PublicKey
 	remoteLppID  libp2ppeer.ID
 	accessLock   *sync.RWMutex
 	sendPipe     pipe.Pipe
@@ -39,7 +39,7 @@ type peer struct {
 
 var _ peering.PeerSender = &peer{}
 
-func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
+func newPeer(remoteNetID string, remotePubKey *cryptolib.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
 	log := n.log.Named("peer:" + remoteNetID)
 	messagePriorityFun := func(msg interface{}) bool {
 		// TODO: decide if prioritetisation is needed and implement it then.
@@ -106,7 +106,7 @@ func (p *peer) NetID() string {
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 // This function tries to await for the public key to be resolves for some time, but with no guarantees.
-func (p *peer) PubKey() *ed25519.PublicKey {
+func (p *peer) PubKey() *cryptolib.PublicKey {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
 	return p.remotePubKey

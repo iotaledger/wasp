@@ -13,60 +13,79 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"testing"
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
 )
 
 type Cluster struct {
-	Name          string
-	Config        *ClusterConfig
-	Started       bool
-	DataPath      string
-	ValidatorSeed *seed.Seed // Default identity for validators, chain owners, etc.
-
-	goshimmer *mocknode.MockNode
-	waspCmds  []*exec.Cmd
+	Name             string
+	Config           *ClusterConfig
+	Started          bool
+	DataPath         string
+	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
+	l1               nodeconn.L1Client
+	waspCmds         []*exec.Cmd
+	t                *testing.T
 }
 
-func New(name string, config *ClusterConfig) *Cluster {
+func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
+	var lg *logger.Logger
+	if t != nil {
+		lg = testlogger.NewLogger(t)
+	} else {
+		// when cluster tool is being used outside tests
+		if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+			panic(err)
+		}
+		lg = logger.NewLogger(name)
+	}
 	return &Cluster{
-		Name:          name,
-		Config:        config,
-		ValidatorSeed: seed.NewSeed(),
-		waspCmds:      make([]*exec.Cmd, config.Wasp.NumNodes),
+		Name:             name,
+		Config:           config,
+		ValidatorKeyPair: cryptolib.NewKeyPair(),
+		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
+		t:                t,
+		l1:               nodeconn.NewL1Client(config.L1, lg),
 	}
 }
 
-func (clu *Cluster) ValidatorAddress() ledgerstate.Address {
-	return clu.ValidatorSeed.Address(0).Address()
+func (clu *Cluster) ValidatorAddress() iotago.Address {
+	return clu.ValidatorKeyPair.Address()
 }
 
-func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address, error) {
+func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, error) {
 	key, addr := testkey.GenKeyAddr()
-	err := clu.GoshimmerClient().RequestFunds(addr)
+	err := clu.RequestFunds(addr)
 	return key, addr, err
 }
 
-func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
-	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.Goshimmer.FaucetPoWTarget)
+func (clu *Cluster) RequestFunds(addr iotago.Address) error {
+	return clu.l1.RequestFunds(addr)
+}
+
+func (clu *Cluster) L1Client() nodeconn.L1Client {
+	return clu.l1
 }
 
 func (clu *Cluster) TrustAll() error {
@@ -99,7 +118,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
 }
 
-func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, ledgerstate.Address, error) {
+func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
 	cmt := util.MakeRange(0, committeeNodeCount)
 	quorum := uint16((2*len(cmt))/3 + 1)
 
@@ -108,7 +127,7 @@ func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, ledgerstate.Address,
 	return cmt, address, err
 }
 
-func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (iotago.Address, error) {
 	if threshold == 0 {
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
@@ -135,43 +154,43 @@ func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNo
 	return clu.DeployChain(description, allPeers, committeeNodes, quorum, stateAddr)
 }
 
-func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr ledgerstate.Address) (*Chain, error) {
+func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
 
 	chain := &Chain{
-		Description:    description,
-		OriginatorSeed: clu.ValidatorSeed,
-		AllPeers:       allPeers,
-		CommitteeNodes: committeeNodes,
-		Quorum:         quorum,
-		Cluster:        clu,
+		Description:       description,
+		OriginatorKeyPair: clu.ValidatorKeyPair,
+		AllPeers:          allPeers,
+		CommitteeNodes:    committeeNodes,
+		Quorum:            quorum,
+		Cluster:           clu,
 	}
 
 	address := chain.OriginatorAddress()
 
-	err := clu.GoshimmerClient().RequestFunds(address)
+	err := clu.RequestFunds(address)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	committeePubKeys := make([]string, 0)
-	for _, i := range chain.CommitteeNodes {
-		peeringNode, err := clu.WaspClient(i).GetPeeringSelf()
+	committeePubKeys := make([]string, len(chain.CommitteeNodes))
+	for i, nodeIndex := range chain.CommitteeNodes {
+		peeringNode, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
 		if err != nil {
 			return nil, err
 		}
-		committeePubKeys = append(committeePubKeys, peeringNode.PubKey)
+		committeePubKeys[i] = peeringNode.PubKey
 	}
 
 	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:              clu.GoshimmerClient(),
+		Layer1Client:      clu.L1Client(),
 		CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 		CommitteePubKeys:  committeePubKeys,
 		N:                 uint16(len(committeeNodes)),
 		T:                 quorum,
-		OriginatorKeyPair: chain.OriginatorKeyPair(),
+		OriginatorKeyPair: chain.OriginatorKeyPair,
 		Description:       description,
 		Textout:           os.Stdout,
 		Prefix:            "[cluster] ",
@@ -183,56 +202,74 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	chain.StateAddress = stateAddr
 	chain.ChainID = chainID
 
+	return chain, clu.addAllAccessNodes(chain, allPeers)
+}
+
+func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	//
-	// Register all non-committee nodes as access nodes.
-	for _, a := range allPeers {
-		if err := clu.AddAccessNode(a, chain); err != nil {
-			return nil, err
+	// Register all nodes as access nodes.
+	// TODO make this configurable (so that only selected nodes are access nodes)
+	addAccessNodesRequests := make([]*iotago.Transaction, len(nodes))
+	for i, a := range nodes {
+		tx, err := clu.AddAccessNode(a, chain)
+		if err != nil {
+			return err
 		}
+		addAccessNodesRequests[i] = tx
 	}
 
-	return chain, nil
+	peers := multiclient.New(chain.CommitteeAPIHosts())
+
+	for _, tx := range addAccessNodesRequests {
+		// ---------- wait until the requests are processed in all committee nodes
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second); err != nil {
+			return xerrors.Errorf("WaitAddAccessNode: %w", err)
+		}
+	}
+	return nil
 }
 
 // AddAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
+func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnAccessNodes(clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
-		return err
+		return nil, err
 	}
 	accessNodePeering, err := waspClient.GetPeeringSelf()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	accessNodePubKey, err := ed25519.PublicKeyFromString(accessNodePeering.PubKey)
+	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	scArgs := governance.AccessNodeInfo{
-		NodePubKey:    accessNodePubKey.Bytes(),
-		ValidatorAddr: chain.OriginatorAddress().Bytes(),
+		NodePubKey:    accessNodePubKey.AsBytes(),
+		ValidatorAddr: iscp.BytesFromAddress(chain.OriginatorAddress()),
 		Certificate:   cert.Bytes(),
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
-	scParams := chainclient.NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).WithIotas(1)
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair())
+	scParams := chainclient.
+		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
+		WithIotas(1000)
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", tx.ID(), scArgs)
-	return nil
-}
-
-func (clu *Cluster) IsGoshimmerUp() bool {
-	return clu.goshimmer != nil
+	txID, err := tx.ID()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
+	return tx, nil
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
@@ -361,14 +398,6 @@ func (clu *Cluster) Start(dataPath string) error {
 func (clu *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
 
-	if !clu.Config.Goshimmer.UseProvidedNode {
-		clu.goshimmer = mocknode.Start(
-			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
-			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
-		)
-		fmt.Printf("[cluster] started goshimmer node\n")
-	}
-
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
@@ -436,6 +465,12 @@ func (clu *Cluster) RestartNode(nodeIndex int) error {
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command(command)
+
+	// force the wasp processes to close if the cluster tests time out
+	if clu.t != nil {
+		util.TerminateCmdWhenTestStops(cmd)
+	}
+
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -464,7 +499,7 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 
 const pollAPIInterval = 500 * time.Millisecond
 
-// waits until API for a given node is ready
+// waits until API for a given WASP node is ready
 func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 	infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
 
@@ -499,14 +534,6 @@ func scanLog(reader io.Reader, hooks ...func(string)) {
 	}
 }
 
-func (clu *Cluster) stopGoshimmer() {
-	if !clu.IsGoshimmerUp() {
-		return
-	}
-	fmt.Printf("[cluster] Stopping Goshimmer MockNode\n")
-	clu.goshimmer.Stop()
-}
-
 func (clu *Cluster) stopNode(nodeIndex int) {
 	if !clu.IsNodeUp(nodeIndex) {
 		return
@@ -526,7 +553,6 @@ func (clu *Cluster) StopNode(nodeIndex int) {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (clu *Cluster) Stop() {
-	clu.stopGoshimmer()
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
 		clu.stopNode(i)
 	}
@@ -565,80 +591,43 @@ func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCo
 	return NewMessageCounter(clu, clu.Config.AllNodes(), expectations)
 }
 
-func (clu *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
-	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
-	err := clu.GoshimmerClient().PostTransaction(tx)
-	if err != nil {
-		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.String(), err)
-		return err
-	}
-	if err = clu.GoshimmerClient().WaitForConfirmation(tx.ID()); err != nil {
-		fmt.Printf("[cluster] posting tx: %v\n", err)
-		return err
-	}
-	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
-	return nil
+func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
+	return clu.l1.PostTx(tx)
 }
 
-func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect colored.Balances, comment ...string) bool {
-	allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
+func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+	// get funds controlled by addr
+	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
-		return false
+		return nil
 	}
-	byColor, total := colored.OutputBalancesByColor(allOuts)
-	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
+	balance := iscp.NewEmptyAssets()
+	for _, out := range outputMap {
+		balance.Add(transaction.AssetsFromOutput(out))
+	}
 
-	var totalExpectedStr string
-	if totalExpected == total {
-		totalExpectedStr = fmt.Sprintf("(%d) OK", totalExpected)
-	} else {
-		totalExpectedStr = fmt.Sprintf("(%d) FAIL", totalExpected)
-		assertionOk = false
+	// if the address is an alias output, we also need to fetch the output itself and add that balance
+	if aliasAddr, ok := addr.(*iotago.AliasAddress); ok {
+		aliasOutput, err := clu.l1.GetAliasOutput(aliasAddr.AliasID())
+		if err != nil {
+			fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
+			return nil
+		}
+		balance.Add(transaction.AssetsFromOutput(aliasOutput))
 	}
-	cmt := ""
-	if len(comment) > 0 {
-		cmt = " (" + comment[0] + ")"
-	}
-	fmt.Printf("[cluster] Inputs of the address %s%s\n      Total tokens: %d %s\n%s\n",
-		addr.Base58(), cmt, total, totalExpectedStr, dumpStr)
-
-	if !assertionOk {
-		fmt.Printf("[cluster] assertion on balances failed\n")
-	}
-	return assertionOk
+	return balance
 }
 
-func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
-	assertionOk := true
-	lst := make([]colored.Color, 0, len(expect))
-	for col := range expect {
-		lst = append(lst, col)
-	}
-	colored.Sort(lst)
-	ret := ""
-	for _, col := range lst {
-		act := actual[col]
-		isOk := "OK"
-		if act != expect[col] {
-			assertionOk = false
-			isOk = "FAIL"
-		}
-		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
-	}
-	lst = lst[:0]
-	for col := range actual {
-		if _, ok := expect[col]; !ok {
-			lst = append(lst, col)
-		}
-	}
-	if len(lst) == 0 {
-		return ret, assertionOk
-	}
-	colored.Sort(lst)
-	ret += "      Unexpected colors in actual outputs:\n"
-	for _, col := range lst {
-		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
-	}
-	return ret, assertionOk
+func (clu *Cluster) L1Iotas(addr iotago.Address) uint64 {
+	tokens := clu.AddressBalances(addr)
+	return tokens.Iotas
+}
+
+func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.FungibleTokens) bool {
+	return clu.AddressBalances(addr).Equals(expected)
+}
+
+func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
+	return clu.l1.OutputMap(addr)
 }

@@ -16,7 +16,9 @@ import (
 )
 
 func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
-	cms := &chainMetricsService{chainsProvider}
+	cms := &chainMetricsService{
+		chainsProvider,
+	}
 	addChainNodeConnMetricsEndpoints(adm, cms)
 	addChainConsensusMetricsEndpoints(adm, cms)
 	addChainConcensusPipeMetricsEndpoints(adm, cms)
@@ -24,53 +26,63 @@ func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Pr
 
 func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
 	chainExample := &model.NodeConnectionMessagesMetrics{
-		OutPullState: &model.NodeConnectionMessageMetrics{
-			Total:       15,
-			LastEvent:   time.Now().Add(-10 * time.Second),
-			LastMessage: "Last sent PullState message structure",
-		},
-		OutPullTransactionInclusionState: &model.NodeConnectionMessageMetrics{
-			Total:       28,
-			LastEvent:   time.Now().Add(-5 * time.Second),
-			LastMessage: "Last sent PullTransactionInclusionState message structure",
-		},
-		OutPullConfirmedOutput: &model.NodeConnectionMessageMetrics{
-			Total:       132,
-			LastEvent:   time.Now().Add(100 * time.Second),
-			LastMessage: "Last sent PullConfirmedOutput message structure",
-		},
-		OutPostTransaction: &model.NodeConnectionMessageMetrics{
+		OutPublishTransaction: &model.NodeConnectionMessageMetrics{
 			Total:       3,
 			LastEvent:   time.Now().Add(-2 * time.Millisecond),
-			LastMessage: "Last sent PostTransaction message structure",
+			LastMessage: "Last sent PublishTransaction message structure",
 		},
-		InTransaction: &model.NodeConnectionMessageMetrics{
+		OutPullLatestOutput: &model.NodeConnectionMessageMetrics{
+			Total:       15,
+			LastEvent:   time.Now().Add(-10 * time.Second),
+			LastMessage: "Last sent PullLatestOutput message structure",
+		},
+		OutPullTxInclusionState: &model.NodeConnectionMessageMetrics{
+			Total:       28,
+			LastEvent:   time.Now().Add(-5 * time.Second),
+			LastMessage: "Last sent PullTxInclusionState message structure",
+		},
+		OutPullOutputByID: &model.NodeConnectionMessageMetrics{
+			Total:       132,
+			LastEvent:   time.Now().Add(100 * time.Second),
+			LastMessage: "Last sent PullOutputByID message structure",
+		},
+		InStateOutput: &model.NodeConnectionMessageMetrics{
 			Total:       101,
 			LastEvent:   time.Now().Add(-8 * time.Second),
-			LastMessage: "Last received Transaction message structure",
+			LastMessage: "Last received State output message structure",
 		},
-		InInclusionState: &model.NodeConnectionMessageMetrics{
+		InAliasOutput: &model.NodeConnectionMessageMetrics{
 			Total:       203,
 			LastEvent:   time.Now().Add(-123 * time.Millisecond),
-			LastMessage: "Last received InclusionState message structure",
+			LastMessage: "Last received AliasOutput message structure",
 		},
 		InOutput: &model.NodeConnectionMessageMetrics{
-			Total:       85,
-			LastEvent:   time.Now().Add(-2 * time.Second),
+			Total:       101,
+			LastEvent:   time.Now().Add(-8 * time.Second),
 			LastMessage: "Last received Output message structure",
 		},
-		InUnspentAliasOutput: &model.NodeConnectionMessageMetrics{
+		InOnLedgerRequest: &model.NodeConnectionMessageMetrics{
+			Total:       85,
+			LastEvent:   time.Now().Add(-2 * time.Second),
+			LastMessage: "Last received OnLedgerRequest message structure",
+		},
+		InTxInclusionState: &model.NodeConnectionMessageMetrics{
 			Total:       999,
 			LastEvent:   time.Now().Add(-1 * time.Second),
-			LastMessage: "Last received UnspentAliasOutput message structure",
+			LastMessage: "Last received TxInclusionState message structure",
 		},
 	}
 
 	example := &model.NodeConnectionMetrics{
 		NodeConnectionMessagesMetrics: *chainExample,
-		Subscribed: []model.Address{
-			model.NewAddress(iscp.RandomChainID().AsAddress()),
-			model.NewAddress(iscp.RandomChainID().AsAddress()),
+		InMilestone: &model.NodeConnectionMessageMetrics{
+			Total:       1234,
+			LastEvent:   time.Now().Add(1 * time.Second),
+			LastMessage: "Last received Milestone message structure",
+		},
+		Registered: []model.ChainID{
+			model.NewChainID(iscp.RandomChainID()),
+			model.NewChainID(iscp.RandomChainID()),
 		},
 	}
 
@@ -80,7 +92,7 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 
 	adm.GET(routes.GetChainNodeConnectionMetrics(":chainID"), cms.handleGetChainNodeConnMetrics).
 		SetSummary("Get chain node connection metrics for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain metrics", chainExample, nil)
 }
 
@@ -110,7 +122,7 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 
 	adm.GET(routes.GetChainConsensusWorkflowStatus(":chainID"), cms.handleGetChainConsensusWorkflowStatus).
 		SetSummary("Get chain state statistics for the given chain ID").
-		AddParamPath("", "chainID", "ChainID (base58)").
+		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain consensus stats", example, nil).
 		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
 }
@@ -145,7 +157,7 @@ func (cssT *chainMetricsService) handleGetChainsNodeConnMetrics(c echo.Context) 
 }
 
 func (cssT *chainMetricsService) handleGetChainNodeConnMetrics(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -187,7 +199,7 @@ func (cssT *chainMetricsService) handleGetChainConsensusPipeMetrics(c echo.Conte
 }
 
 func (cssT *chainMetricsService) getChain(c echo.Context) (chain.Chain, error) {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, httperrors.BadRequest(err.Error())
 	}

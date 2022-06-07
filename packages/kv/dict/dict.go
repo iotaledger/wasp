@@ -9,9 +9,7 @@ import (
 	"sort"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-
 	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/mr-tron/base58"
 )
@@ -86,8 +84,8 @@ func (d Dict) String() string {
 			slice(hex.EncodeToString([]byte(key))),
 			slice(hex.EncodeToString(val)),
 			slice(base58.Encode(val)),
-			string(key),
-			string(val),
+			printable([]byte(key)),
+			printable(val),
 		)
 	}
 	return ret
@@ -98,6 +96,15 @@ func slice(s string) string {
 		return s[:10] + "[...]" + s[len(s)-10:]
 	}
 	return s
+}
+
+func printable(s []byte) string {
+	for _, c := range s {
+		if c < 0x20 || c > 0x7e {
+			return "??? binary data ???"
+		}
+	}
+	return string(s)
 }
 
 // ForEach iterates non-deterministic!

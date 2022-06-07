@@ -7,7 +7,7 @@ use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub const SC_CHAIN_ID_LENGTH: usize = 33;
+pub const SC_CHAIN_ID_LENGTH: usize = 32;
 
 #[derive(PartialEq, Clone)]
 pub struct ScChainID {
@@ -16,7 +16,8 @@ pub struct ScChainID {
 
 impl ScChainID {
     pub fn address(&self) -> ScAddress {
-        address_from_bytes(&self.id)
+        let buf = [SC_ADDRESS_ALIAS];
+        address_from_bytes(&[&buf[..], &self.id[..]].concat())
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -35,20 +36,15 @@ pub fn chain_id_decode(dec: &mut WasmDecoder) -> ScChainID {
 }
 
 pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID) {
-    enc.fixed_bytes(&value.to_bytes(), SC_CHAIN_ID_LENGTH);
+    enc.fixed_bytes(&value.id, SC_CHAIN_ID_LENGTH);
 }
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
     if buf.len() == 0 {
-        let mut chain_id = ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
-        chain_id.id[0] = SC_ADDRESS_ALIAS;
-        return chain_id;
+        return ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
     }
     if buf.len() != SC_CHAIN_ID_LENGTH {
         panic("invalid ChainID length");
-    }
-    if buf[0] != SC_ADDRESS_ALIAS {
-        panic("invalid ChainID: not an alias address");
     }
     ScChainID { id: buf.try_into().expect("WTF?") }
 }
@@ -57,9 +53,16 @@ pub fn chain_id_to_bytes(value: &ScChainID) -> Vec<u8> {
     value.id.to_vec()
 }
 
+pub fn chain_id_from_string(value: &str) -> ScChainID {
+    let addr = address_from_string(value);
+    if addr.id[0] != SC_ADDRESS_ALIAS {
+        panic("invalid ChainID address type");
+    }
+    chain_id_from_bytes(&addr.id[1..])
+}
+
 pub fn chain_id_to_string(value: &ScChainID) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    address_to_string(&value.address())
 }
 
 fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainID {

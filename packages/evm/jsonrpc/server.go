@@ -14,7 +14,7 @@ func NewServer(evmChain *EVMChain, accountManager *AccountManager) *rpc.Server {
 		service   interface{}
 	}{
 		{"web3", NewWeb3Service()},
-		{"net", NewNetService(evmChain.chainID)},
+		{"net", NewNetService(int(evmChain.chainID))},
 		{"eth", NewEthService(evmChain, accountManager)},
 		{"txpool", NewTxPoolService()},
 	} {

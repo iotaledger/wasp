@@ -13,6 +13,7 @@ type ImmutableStoreBlobResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// calculated hash of blob set
 func (s ImmutableStoreBlobResults) Hash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ResultHash))
 }
@@ -21,6 +22,7 @@ type MutableStoreBlobResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// calculated hash of blob set
 func (s MutableStoreBlobResults) Hash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ResultHash))
 }
@@ -29,6 +31,7 @@ type ImmutableGetBlobFieldResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// blob data
 func (s ImmutableGetBlobFieldResults) Bytes() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBytes))
 }
@@ -37,6 +40,7 @@ type MutableGetBlobFieldResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// blob data
 func (s MutableGetBlobFieldResults) Bytes() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBytes))
 }
@@ -53,8 +57,8 @@ type ImmutableGetBlobInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// size for each named blob
 func (s ImmutableGetBlobInfoResults) BlobSizes() MapStringToImmutableInt32 {
-	//nolint:gosimple
 	return MapStringToImmutableInt32{proxy: s.proxy}
 }
 
@@ -74,8 +78,8 @@ type MutableGetBlobInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// size for each named blob
 func (s MutableGetBlobInfoResults) BlobSizes() MapStringToMutableInt32 {
-	//nolint:gosimple
 	return MapStringToMutableInt32{proxy: s.proxy}
 }
 
@@ -91,8 +95,8 @@ type ImmutableListBlobsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// total size for each blob set
 func (s ImmutableListBlobsResults) BlobSizes() MapHashToImmutableInt32 {
-	//nolint:gosimple
 	return MapHashToImmutableInt32{proxy: s.proxy}
 }
 
@@ -112,7 +116,7 @@ type MutableListBlobsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// total size for each blob set
 func (s MutableListBlobsResults) BlobSizes() MapHashToMutableInt32 {
-	//nolint:gosimple
 	return MapHashToMutableInt32{proxy: s.proxy}
 }

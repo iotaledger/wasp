@@ -4,9 +4,12 @@
 package wasmhost
 
 import (
+	"errors"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -21,13 +24,17 @@ type ISandbox interface {
 }
 
 type WasmContext struct {
-	funcName  string
-	funcTable *WasmFuncTable
-	id        int32
-	proc      *WasmProcessor
-	results   dict.Dict
-	sandbox   ISandbox
-	wcSandbox *WasmContextSandbox
+	funcName    string
+	funcTable   *WasmFuncTable
+	gasBudget   uint64
+	gasBurned   uint64
+	gasDisabled bool
+	id          int32
+	proc        *WasmProcessor
+	results     dict.Dict
+	sandbox     ISandbox
+	vm          WasmVM
+	wcSandbox   *WasmContextSandbox
 }
 
 var (
@@ -35,12 +42,19 @@ var (
 	_ wasmlib.ScHost             = &WasmContext{}
 )
 
-func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
-	return &WasmContext{
+func NewWasmContext(proc *WasmProcessor, function string) *WasmContext {
+	wc := &WasmContext{
 		funcName:  function,
-		proc:      proc,
 		funcTable: proc.funcTable,
+		proc:      proc,
+		vm:        proc.vm,
 	}
+	newInstance := proc.vm.NewInstance(wc)
+	if newInstance != nil {
+		wc.vm = newInstance
+	}
+	proc.RegisterContext(wc)
+	return wc
 }
 
 func NewWasmContextForSoloContext(function string, sandbox ISandbox) *WasmContext {
@@ -51,11 +65,7 @@ func NewWasmContextForSoloContext(function string, sandbox ISandbox) *WasmContex
 	}
 }
 
-func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
-	if wc.id == 0 {
-		panic("Context id is zero")
-	}
-
+func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 	wc.wcSandbox = NewWasmContextSandbox(wc, ctx)
 	wc.sandbox = wc.wcSandbox
 
@@ -63,37 +73,51 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 	defer func() {
 		Connect(wcSaved)
 		// clean up context after use
-		wc.proc.KillContext(wc.id)
+		wc.proc.UnregisterContext(wc)
 	}()
 
 	if wc.funcName == "" {
 		// init function was missing, do nothing
-		return nil, nil
+		return nil
 	}
 
 	if wc.funcName == FuncDefault {
 		// TODO default function, do nothing for now
-		return nil, nil
+		return nil
 	}
 
-	wc.tracef("Calling " + wc.funcName)
+	wc.log().Debugf("Calling " + wc.funcName)
 	wc.results = nil
 	err := wc.callFunction()
 	if err != nil {
-		wc.log().Infof("VM call %s(): error %v", wc.funcName, err)
-		return nil, err
+		wc.log().Panicf("VM call %s(): error %v", wc.funcName, err)
 	}
-	return wc.results, nil
+	return wc.results
 }
 
 func (wc *WasmContext) callFunction() error {
-	wc.proc.instanceLock.Lock()
-	defer wc.proc.instanceLock.Unlock()
+	index, ok := wc.funcTable.funcToIndex[wc.funcName]
+	if !ok {
+		return errors.New("unknown SC function name: " + wc.funcName)
+	}
 
-	saveID := wc.proc.currentContextID
-	wc.proc.currentContextID = wc.id
-	err := wc.proc.RunScFunction(wc.funcName)
-	wc.proc.currentContextID = saveID
+	proc := wc.proc
+
+	// TODO is this really necessary? We should not be able to call in parallel
+	proc.instanceLock.Lock()
+	defer proc.instanceLock.Unlock()
+
+	saveID := proc.currentContextID
+	proc.currentContextID = wc.id
+	wc.gasBudget = wc.GasBudget()
+	wc.vm.GasBudget(wc.gasBudget * proc.gasFactor())
+	err := wc.vm.RunScFunction(index)
+	// if err == nil {
+	wc.GasBurned(wc.vm.GasBurned() / proc.gasFactor())
+	//}
+	wc.gasBurned = wc.gasBudget - wc.GasBudget()
+	proc.currentContextID = saveID
+	wc.log().Debugf("WC ID %2d, GAS BUDGET %10d, BURNED %10d\n", wc.id, wc.gasBudget, wc.gasBurned)
 	return err
 }
 
@@ -121,6 +145,29 @@ func (wc *WasmContext) FunctionFromCode(code uint32) string {
 	return wc.funcTable.FunctionFromCode(code)
 }
 
+// GasBudget is a callback from the VM that asks for the remaining gas budget of the
+// Wasp sandbox. The VM will update the gas budget for the Wasm code with this value
+// just before returning to the Wasm code.
+func (wc *WasmContext) GasBudget() uint64 {
+	if wc.wcSandbox != nil {
+		return wc.wcSandbox.common.Gas().Budget()
+	}
+	return 0
+}
+
+// GasBurned is a callback from the VM that sets the remaining gas budget.
+// It will update the gas budget for the Wasp sandbox with the amount of gas
+// burned by the Wasm code thus far just before calling sandbox.
+func (wc *WasmContext) GasBurned(burned uint64) {
+	if wc.wcSandbox != nil {
+		wc.wcSandbox.common.Gas().Burn(gas.BurnCodeWasm1P, burned)
+	}
+}
+
+func (wc *WasmContext) GasDisable(disable bool) {
+	wc.gasDisabled = disable
+}
+
 func (wc *WasmContext) IsView() bool {
 	return wc.proc.IsView(wc.funcName)
 }
@@ -132,12 +179,24 @@ func (wc *WasmContext) log() iscp.LogInterface {
 	return wc.proc.log
 }
 
+func (wc *WasmContext) RunScFunction(functionName string) (err error) {
+	index, ok := wc.funcTable.funcToIndex[functionName]
+	if !ok {
+		return errors.New("unknown SC function name: " + functionName)
+	}
+	return wc.vm.RunScFunction(index)
+}
+
 func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
 	if !HostTracing || funcNr == wasmlib.FnLog || funcNr == wasmlib.FnTrace {
 		return wc.sandbox.Call(funcNr, params)
 	}
 
 	wc.tracef("Sandbox(%s)", traceSandbox(funcNr, params))
+	// TODO fix this. Probably need to connect proper context or smth
+	if wc.sandbox == nil {
+		panic("nil sandbox")
+	}
 	res := wc.sandbox.Call(funcNr, params)
 	wc.tracef("  => %s", hex(res))
 	return res

@@ -6,11 +6,15 @@ package wasmtypes
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
-	ScAddressAlias   byte = 2
+	ScAddressAlias   byte = 8
 	ScAddressEd25519 byte = 0
-	ScAddressNFT     byte = 1
+	ScAddressNFT     byte = 16
 
-	ScAddressLength = 33
+	ScLengthAlias   = 33
+	ScLengthEd25519 = 33
+	ScLengthNFT     = 33
+
+	ScAddressLength = ScLengthEd25519
 )
 
 type ScAddress struct {
@@ -18,8 +22,7 @@ type ScAddress struct {
 }
 
 func (o ScAddress) AsAgentID() ScAgentID {
-	// agentID for address has Hname zero
-	return NewScAgentID(o, 0)
+	return NewScAgentIDFromAddress(o)
 }
 
 func (o ScAddress) Bytes() []byte {
@@ -48,10 +51,20 @@ func AddressFromBytes(buf []byte) ScAddress {
 	if len(buf) == 0 {
 		return addr
 	}
-	if len(buf) != ScAddressLength {
-		panic("invalid Address length")
-	}
-	if buf[0] > ScAddressAlias {
+	switch buf[0] {
+	case ScAddressAlias:
+		if len(buf) != ScLengthAlias {
+			panic("invalid Address length: Alias")
+		}
+	case ScAddressEd25519:
+		if len(buf) != ScLengthEd25519 {
+			panic("invalid Address length: Ed25519")
+		}
+	case ScAddressNFT:
+		if len(buf) != ScLengthNFT {
+			panic("invalid Address length: NFT")
+		}
+	default:
 		panic("invalid Address type")
 	}
 	copy(addr.id[:], buf)
@@ -59,12 +72,24 @@ func AddressFromBytes(buf []byte) ScAddress {
 }
 
 func AddressToBytes(value ScAddress) []byte {
-	return value.id[:]
+	switch value.id[0] {
+	case ScAddressAlias:
+		return value.id[:ScLengthAlias]
+	case ScAddressEd25519:
+		return value.id[:ScLengthEd25519]
+	case ScAddressNFT:
+		return value.id[:ScLengthNFT]
+	default:
+		panic("unexpected Address type")
+	}
+}
+
+func AddressFromString(value string) ScAddress {
+	return Bech32Decode(value)
 }
 
 func AddressToString(value ScAddress) string {
-	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	return Bech32Encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

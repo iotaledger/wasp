@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -31,10 +33,10 @@ type stateManager struct {
 	nodeConn                    chain.ChainNodeConnection
 	pullStateRetryTime          time.Time
 	solidState                  state.VirtualStateAccess
-	stateOutput                 *ledgerstate.AliasOutput
+	stateOutput                 *iscp.AliasOutputWithID
 	stateOutputTimestamp        time.Time
 	currentSyncData             atomic.Value
-	notifiedAnchorOutputID      ledgerstate.OutputID
+	notifiedAnchorOutputID      *iotago.UTXOInput
 	syncingBlocks               *syncingBlocks
 	receivePeerMessagesAttachID interface{}
 	timers                      StateManagerTimers
@@ -43,8 +45,7 @@ type stateManager struct {
 	// Channels for accepting external events.
 	eventGetBlockMsgPipe       pipe.Pipe
 	eventBlockMsgPipe          pipe.Pipe
-	eventStateOutputMsgPipe    pipe.Pipe
-	eventOutputMsgPipe         pipe.Pipe
+	eventAliasOutputPipe       pipe.Pipe
 	eventStateCandidateMsgPipe pipe.Pipe
 	eventTimerMsgPipe          pipe.Pipe
 	stateManagerMetrics        metrics.StateManagerMetrics
@@ -77,27 +78,26 @@ func New(
 	} else {
 		timers = NewStateManagerTimers()
 	}
+	log := c.Log().Named("sm")
 	ret := &stateManager{
-		ready:                      ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
+		ready:                      ready.New(fmt.Sprintf("state manager %s", c.ID().String()[:6]+"..")),
 		store:                      store,
 		chain:                      c,
 		nodeConn:                   nodeconn,
 		domain:                     domain,
-		syncingBlocks:              newSyncingBlocks(c.Log(), timers.GetBlockRetry),
+		syncingBlocks:              newSyncingBlocks(log, wal),
 		timers:                     timers,
-		log:                        c.Log().Named("s"),
+		log:                        log,
 		pullStateRetryTime:         time.Now(),
 		eventGetBlockMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventBlockMsgPipe:          pipe.NewLimitInfinitePipe(maxMsgBuffer),
-		eventStateOutputMsgPipe:    pipe.NewLimitInfinitePipe(maxMsgBuffer),
-		eventOutputMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventAliasOutputPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventStateCandidateMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventTimerMsgPipe:          pipe.NewLimitInfinitePipe(1),
 		stateManagerMetrics:        stateManagerMetrics,
 		wal:                        wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.domain.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
-	ret.nodeConn.AttachToOutputReceived(ret.EnqueueOutputMsg)
 	go ret.initLoadState()
 
 	return ret
@@ -130,19 +130,17 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 	}
 }
 
-func (sm *stateManager) SetChainPeers(peers []*ed25519.PublicKey) {
+func (sm *stateManager) SetChainPeers(peers []*cryptolib.PublicKey) {
 	sm.domain.SetMainPeers(peers)
 }
 
 func (sm *stateManager) Close() {
-	sm.nodeConn.DetachFromOutputReceived()
 	sm.domain.Detach(sm.receivePeerMessagesAttachID)
 	sm.domain.Close()
 
 	sm.eventGetBlockMsgPipe.Close()
 	sm.eventBlockMsgPipe.Close()
-	sm.eventStateOutputMsgPipe.Close()
-	sm.eventOutputMsgPipe.Close()
+	sm.eventAliasOutputPipe.Close()
 	sm.eventStateCandidateMsgPipe.Close()
 	sm.eventTimerMsgPipe.Close()
 }
@@ -157,13 +155,14 @@ func (sm *stateManager) initLoadState() {
 	if stateExists {
 		sm.solidState = solidState
 		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
-		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			solidState.BlockIndex(), solidState.StateCommitment().String())
+		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State commitment: %s",
+			solidState.BlockIndex(), trie.RootCommitment(solidState.TrieNodeStore()))
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
 		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return
 	}
+	sm.setRawBlocksOptions()
 	sm.recvLoop() // Check to process external events.
 }
 
@@ -198,8 +197,7 @@ func (sm *stateManager) recvLoop() {
 	sm.ready.SetReady()
 	eventGetBlockMsgCh := sm.eventGetBlockMsgPipe.Out()
 	eventBlockMsgCh := sm.eventBlockMsgPipe.Out()
-	eventStateOutputMsgCh := sm.eventStateOutputMsgPipe.Out()
-	eventOutputMsgCh := sm.eventOutputMsgPipe.Out()
+	eventAliasOutputCh := sm.eventAliasOutputPipe.Out()
 	eventStateCandidateMsgCh := sm.eventStateCandidateMsgPipe.Out()
 	eventTimerMsgCh := sm.eventTimerMsgPipe.Out()
 	for {
@@ -216,17 +214,11 @@ func (sm *stateManager) recvLoop() {
 			} else {
 				eventBlockMsgCh = nil
 			}
-		case msg, ok := <-eventStateOutputMsgCh:
+		case msg, ok := <-eventAliasOutputCh:
 			if ok {
-				sm.handleStateMsg(msg.(*messages.StateMsg))
+				sm.handleAliasOutput(msg.(*iscp.AliasOutputWithID))
 			} else {
-				eventStateOutputMsgCh = nil
-			}
-		case msg, ok := <-eventOutputMsgCh:
-			if ok {
-				sm.handleOutputMsg(msg.(ledgerstate.Output))
-			} else {
-				eventOutputMsgCh = nil
+				eventAliasOutputCh = nil
 			}
 		case msg, ok := <-eventStateCandidateMsgCh:
 			if ok {
@@ -243,8 +235,7 @@ func (sm *stateManager) recvLoop() {
 		}
 		if eventGetBlockMsgCh == nil &&
 			eventBlockMsgCh == nil &&
-			eventStateOutputMsgCh == nil &&
-			eventOutputMsgCh == nil &&
+			eventAliasOutputCh == nil &&
 			eventStateCandidateMsgCh == nil &&
 			eventTimerMsgCh == nil {
 			return

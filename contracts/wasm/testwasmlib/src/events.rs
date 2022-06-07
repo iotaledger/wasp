@@ -15,7 +15,10 @@ pub struct TestWasmLibEvents {
 
 impl TestWasmLibEvents {
 
-	pub fn test(&self, address: &ScAddress, name: &str) {
+	pub fn test(&self,
+        address: &ScAddress,
+        name: &str,
+    ) {
 		let mut evt = EventEncoder::new("testwasmlib.test");
 		evt.encode(&address_to_string(&address));
 		evt.encode(&string_to_string(&name));

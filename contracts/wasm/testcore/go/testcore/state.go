@@ -13,24 +13,16 @@ type ImmutableTestCoreState struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestCoreState) Counter() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(StateCounter))
-}
-
-func (s ImmutableTestCoreState) HnameEP() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.proxy.Root(StateHnameEP))
+func (s ImmutableTestCoreState) Counter() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateCounter))
 }
 
 func (s ImmutableTestCoreState) Ints() MapStringToImmutableInt64 {
 	return MapStringToImmutableInt64{proxy: s.proxy.Root(StateInts)}
 }
 
-func (s ImmutableTestCoreState) MintedColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(StateMintedColor))
-}
-
-func (s ImmutableTestCoreState) MintedSupply() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateMintedSupply))
+func (s ImmutableTestCoreState) Strings() MapStringToImmutableString {
+	return MapStringToImmutableString{proxy: s.proxy.Root(StateStrings)}
 }
 
 type MutableTestCoreState struct {
@@ -41,22 +33,14 @@ func (s MutableTestCoreState) AsImmutable() ImmutableTestCoreState {
 	return ImmutableTestCoreState(s)
 }
 
-func (s MutableTestCoreState) Counter() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(StateCounter))
-}
-
-func (s MutableTestCoreState) HnameEP() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.proxy.Root(StateHnameEP))
+func (s MutableTestCoreState) Counter() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateCounter))
 }
 
 func (s MutableTestCoreState) Ints() MapStringToMutableInt64 {
 	return MapStringToMutableInt64{proxy: s.proxy.Root(StateInts)}
 }
 
-func (s MutableTestCoreState) MintedColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(StateMintedColor))
-}
-
-func (s MutableTestCoreState) MintedSupply() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateMintedSupply))
+func (s MutableTestCoreState) Strings() MapStringToMutableString {
+	return MapStringToMutableString{proxy: s.proxy.Root(StateStrings)}
 }

@@ -4,21 +4,23 @@
 // - maintaining (setting, delegating) chain owner ID
 // - maintaining (granting, revoking) smart contract deployment rights
 // - deployment of smart contracts on the chain and maintenance of contract registry
+
 package rootimpl
 
 import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -26,10 +28,10 @@ import (
 var Processor = root.Contract.Processor(initialize,
 	root.FuncDeployContract.WithHandler(deployContract),
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
-	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
-	root.FuncFindContract.WithHandler(findContract),
-	root.FuncGetContractRecords.WithHandler(getContractRecords),
 	root.FuncRequireDeployPermissions.WithHandler(requireDeployPermissions),
+	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
+	root.ViewFindContract.WithHandler(findContract),
+	root.ViewGetContractRecords.WithHandler(getContractRecords),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -40,34 +42,69 @@ var Processor = root.Contract.Processor(initialize,
 // - deploys other core contracts: 'accounts', 'blob', 'blocklog' by creating records in the registry and calling constructors
 // Input:
 // - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
-// - ParamChainColor ledgerstate.Color
 // - ParamDescription string defaults to "N/A"
-// - ParamFeeColor ledgerstate.Color fee color code. Defaults to IOTA color. It cannot be changed
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+// - ParamDustDepositAssumptionsBin encoded assumptions about minimum dust deposit for internal outputs
+func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.initialize.begin")
+
 	state := ctx.State()
-	a := assert.NewAssert(ctx.Log())
+	stateAnchor := ctx.StateAnchor()
+	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
+	creator := stateAnchor.Sender
 
-	a.Require(state.MustGet(root.VarStateInitialized) == nil, "root.initialize.fail: already initialized")
-	a.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
+	callerHname, _ := iscp.HnameFromAgentID(ctx.Caller())
+	callerAddress, _ := iscp.AddressFromAgentID(ctx.Caller())
+	initConditionsCorrect := stateAnchor.IsOrigin &&
+		state.MustGet(root.StateVarStateInitialized) == nil &&
+		callerHname == 0 &&
+		creator != nil &&
+		creator.Equal(callerAddress) &&
+		contractRegistry.MustLen() == 0
+	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
-	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
-	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
+	assetsOnStateAnchor := iscp.NewFungibleTokens(stateAnchor.Deposit, nil)
+	ctx.Requiref(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
-	mustStoreContract(ctx, _default.Contract, a)
-	mustStoreContract(ctx, root.Contract, a)
-	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
-	mustStoreAndInitCoreContract(ctx, accounts.Contract, a)
-	mustStoreAndInitCoreContract(ctx, blocklog.Contract, a)
-	govParams := ctx.Params().Clone()
-	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes()) // chain owner is whoever sends init request
-	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
+	// store 'root' into the registry
+	storeCoreContract(ctx, root.Contract)
 
-	state.Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(true))
-	state.Set(root.VarStateInitialized, []byte{0xFF})
+	// store 'blob' into the registry and run init
+	storeAndInitCoreContract(ctx, blob.Contract, nil)
+
+	// store 'accounts' into the registry and run init
+	storeAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
+		accounts.ParamDustDepositAssumptionsBin: ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin),
+	})
+
+	// store 'blocklog' into the registry and run init
+	storeAndInitCoreContract(ctx, blocklog.Contract, nil)
+
+	// store 'errors' into the registry and run init
+	storeAndInitCoreContract(ctx, errors.Contract, nil)
+
+	// store 'governance' into the registry and run init
+	storeAndInitCoreContract(ctx, governance.Contract, dict.Dict{
+		governance.ParamChainID: codec.EncodeChainID(ctx.ChainID()),
+		// chain owner is whoever creates origin and sends the 'init' request
+		governance.ParamChainOwner:     ctx.Caller().Bytes(),
+		governance.ParamDescription:    ctx.Params().MustGet(governance.ParamDescription),
+		governance.ParamFeePolicyBytes: ctx.Params().MustGet(governance.ParamFeePolicyBytes),
+	})
+
+	// store 'evm' into the registry and run init
+	// filter all params that have ParamEVM prefix, and remove the prefix
+	evmParams, err := dict.FromKVStore(subrealm.New(ctx.Params().Dict, root.ParamEVM("")))
+	ctx.RequireNoError(err)
+	storeAndInitCoreContract(ctx, evm.Contract, evmParams)
+
+	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
+	state.Set(root.StateVarStateInitialized, []byte{0xFF})
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
 
 	ctx.Log().Debugf("root.initialize.success")
-	return nil, nil
+	return nil
 }
 
 // deployContract deploys contract and calls its 'init' constructor.
@@ -78,43 +115,73 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
-func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
+func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
-	if !isAuthorizedToDeploy(ctx) {
-		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
-	}
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert.NewAssert(ctx.Log())
+	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String())
 
-	progHash := params.MustGetHashValue(root.ParamProgramHash)
-	description := params.MustGetString(root.ParamDescription, "N/A")
-	name := params.MustGetString(root.ParamName)
-	a.Require(name != "", "wrong name")
+	progHash := ctx.Params().MustGetHashValue(root.ParamProgramHash)
+	description := ctx.Params().MustGetString(root.ParamDescription, "N/A")
+	name := ctx.Params().MustGetString(root.ParamName)
+	ctx.Requiref(name != "", "wrong name")
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
-	for key, value := range ctx.Params() {
+	err := ctx.Params().Dict.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != root.ParamProgramHash && key != root.ParamName && key != root.ParamDescription {
 			initParams.Set(key, value)
 		}
-	}
+		return true
+	})
+	ctx.RequireNoError(err)
 	// call to load VM from binary to check if it loads successfully
-	err := ctx.DeployContract(progHash, "", "", nil)
-	a.Require(err == nil, "root.deployContract.fail 1: %v", err)
+	err = ctx.Privileged().TryLoadContract(progHash)
+	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
-	mustStoreContractRecord(ctx, &root.ContractRecord{
+	storeContractRecord(ctx, &root.ContractRecord{
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
 		Creator:     ctx.Caller(),
-	}, a)
-	_, err = ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
-	a.RequireNoError(err)
-
+	})
+	ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, iscp.Hn(name), progHash.String(), description))
-	return nil, nil
+	return nil
+}
+
+// grantDeployPermission grants permission to deploy contracts
+// Input:
+//  - ParamDeployer iscp.AgentID
+func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+
+	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
+	ctx.Requiref(deployer.Kind() != iscp.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
+
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String()))
+	return nil
+}
+
+// revokeDeployPermission revokes permission to deploy contracts
+// Input:
+//  - ParamDeployer iscp.AgentID
+func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+
+	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
+
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
+	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %v", deployer))
+	return nil
+}
+
+func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
+	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
+	return nil
 }
 
 // findContract view finds and returns encoded record of the contract
@@ -122,72 +189,27 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamHname
 // Output:
 // - ParamData
-func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	hname, err := params.GetHname(root.ParamHname)
-	if err != nil {
-		return nil, err
-	}
-	rec, found := root.FindContract(ctx.State(), hname)
+func findContract(ctx iscp.SandboxView) dict.Dict {
+	hname := ctx.Params().MustGetHname(root.ParamHname)
+	rec := root.FindContract(ctx.State(), hname)
 	ret := dict.New()
-	ret.Set(root.ParamContractRecData, rec.Bytes())
-	var foundByte [1]byte
+	found := rec != nil
+	ret.Set(root.ParamContractFound, codec.EncodeBool(found))
 	if found {
-		foundByte[0] = 0xFF
+		ret.Set(root.ParamContractRecData, rec.Bytes())
 	}
-	ret.Set(root.ParamContractFound, foundByte[:])
-	return ret, nil
+	return ret
 }
 
-// grantDeployPermission grants permission to deploy contracts
-// Input:
-//  - ParamDeployer iscp.AgentID
-func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(isChainOwner(a, ctx), "root.grantDeployPermissions: not authorized")
-
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	deployer := params.MustGetAgentID(root.ParamDeployer)
-
-	collections.NewMap(ctx.State(), root.VarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
-	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
-	return nil, nil
-}
-
-// revokeDeployPermission revokes permission to deploy contracts
-// Input:
-//  - ParamDeployer iscp.AgentID
-func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
-
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	deployer := params.MustGetAgentID(root.ParamDeployer)
-
-	collections.NewMap(ctx.State(), root.VarDeployPermissions).MustDelAt(deployer.Bytes())
-	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
-	return nil, nil
-}
-
-func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
-	src := collections.NewMapReadOnly(ctx.State(), root.VarContractRegistry)
+func getContractRecords(ctx iscp.SandboxView) dict.Dict {
+	src := root.GetContractRegistryR(ctx.State())
 
 	ret := dict.New()
-	dst := collections.NewMap(ret, root.VarContractRegistry)
+	dst := collections.NewMap(ret, root.StateVarContractRegistry)
 	src.MustIterate(func(elemKey []byte, value []byte) bool {
 		dst.MustSetAt(elemKey, value)
 		return true
 	})
 
-	return ret, nil
-}
-
-func requireDeployPermissions(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
-	params := kvdecoder.New(ctx.Params())
-	a.Require(ctx.Params().MustHas(root.ParamDeployPermissionsEnabled), "root.revokeDeployPermissions: ParamDeployPermissionsEnabled missing")
-	permissionsEnabled := params.MustGetBool(root.ParamDeployPermissionsEnabled)
-	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
-	return nil, nil
+	return ret
 }

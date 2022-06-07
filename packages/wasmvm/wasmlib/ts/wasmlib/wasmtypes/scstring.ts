@@ -20,11 +20,15 @@ export function stringFromBytes(buf: u8[]): string {
 export function stringToBytes(value: string): u8[] {
     let arrayBuffer = String.UTF8.encode(value);
     let u8Array = Uint8Array.wrap(arrayBuffer)
-    let ret: u8[] = new Array(u8Array.length);
+    let ret = new Array<u8>(u8Array.length);
     for (let i = 0; i < ret.length; i++) {
         ret[i] = u8Array[i];
     }
     return ret;
+}
+
+export function stringFromString(value: string): string {
+    return value;
 }
 
 export function stringToString(value: string): string {

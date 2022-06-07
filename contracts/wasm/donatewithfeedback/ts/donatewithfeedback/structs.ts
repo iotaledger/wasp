@@ -8,11 +8,16 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Donation {
-	amount    : u64 = 0;  // amount donated
-	donator   : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // who donated
-	error     : string = "";  // error to be reported to donator if anything goes wrong
-	feedback  : string = "";  // the feedback for the person donated to
-	timestamp : u64 = 0;  // when the donation took place
+	// amount donated
+	amount    : u64 = 0;
+	// who donated
+	donator   : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);
+	// error to be reported to donator if anything goes wrong
+	error     : string = "";
+	// the feedback for the person donated to
+	feedback  : string = "";
+	// when the donation took place
+	timestamp : u64 = 0;
 
 	static fromBytes(buf: u8[]): Donation {
 		const dec = new wasmtypes.WasmDecoder(buf);

@@ -4,7 +4,6 @@
 package dkg
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
@@ -25,12 +24,8 @@ func Init() *hive_node.Plugin {
 		registry := registry.DefaultRegistry()
 		peeringProvider := peering.DefaultNetworkProvider()
 		var err error
-		var nodeIdentity *ed25519.KeyPair
-		if nodeIdentity, err = registry.GetNodeIdentity(); err != nil {
-			panic("cannot get the node key")
-		}
 		defaultNode, err = dkg_pkg.NewNode(
-			nodeIdentity,
+			registry.GetNodeIdentity(),
 			peeringProvider,
 			registry,
 			log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
@@ -42,7 +37,7 @@ func Init() *hive_node.Plugin {
 	run := func(_ *hive_node.Plugin) {
 		// Nothing to run here.
 	}
-	return hive_node.NewPlugin(pluginName, hive_node.Enabled, configure, run)
+	return hive_node.NewPlugin(pluginName, nil, hive_node.Enabled, configure, run)
 }
 
 // DefaultNode returns the default instance of the DKG Node Provider.

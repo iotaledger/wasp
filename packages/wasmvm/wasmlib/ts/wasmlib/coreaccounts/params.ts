@@ -8,35 +8,99 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableDepositParams extends wasmtypes.ScProxy {
+export class ImmutableFoundryCreateNewParams extends wasmtypes.ScProxy {
+	tokenScheme(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamTokenScheme));
+	}
+}
+
+export class MutableFoundryCreateNewParams extends wasmtypes.ScProxy {
+	tokenScheme(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamTokenScheme));
+	}
+}
+
+export class ImmutableFoundryDestroyParams extends wasmtypes.ScProxy {
+	foundrySN(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	}
+}
+
+export class MutableFoundryDestroyParams extends wasmtypes.ScProxy {
+	foundrySN(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	}
+}
+
+export class ImmutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
+	destroyTokens(): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamDestroyTokens));
+	}
+
+	foundrySN(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	}
+
+	supplyDeltaAbs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamSupplyDeltaAbs));
+	}
+}
+
+export class MutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
+	destroyTokens(): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamDestroyTokens));
+	}
+
+	foundrySN(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	}
+
+	supplyDeltaAbs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamSupplyDeltaAbs));
+	}
+}
+
+export class ImmutableHarvestParams extends wasmtypes.ScProxy {
+	forceMinimumIotas(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamForceMinimumIotas));
+	}
+}
+
+export class MutableHarvestParams extends wasmtypes.ScProxy {
+	forceMinimumIotas(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamForceMinimumIotas));
+	}
+}
+
+export class ImmutableTransferAllowanceToParams extends wasmtypes.ScProxy {
+	agentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
+	}
+
+	forceOpenAccount(): wasmtypes.ScImmutableBool {
+		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamForceOpenAccount));
+	}
+}
+
+export class MutableTransferAllowanceToParams extends wasmtypes.ScProxy {
+	agentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+	}
+
+	forceOpenAccount(): wasmtypes.ScMutableBool {
+		return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamForceOpenAccount));
+	}
+}
+
+export class ImmutableAccountNFTsParams extends wasmtypes.ScProxy {
 	agentID(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
-export class MutableDepositParams extends wasmtypes.ScProxy {
+export class MutableAccountNFTsParams extends wasmtypes.ScProxy {
 	agentID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
-	}
-}
-
-export class ImmutableHarvestParams extends wasmtypes.ScProxy {
-	withdrawAmount(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamWithdrawAmount));
-	}
-
-	withdrawColor(): wasmtypes.ScImmutableColor {
-		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamWithdrawColor));
-	}
-}
-
-export class MutableHarvestParams extends wasmtypes.ScProxy {
-	withdrawAmount(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamWithdrawAmount));
-	}
-
-	withdrawColor(): wasmtypes.ScMutableColor {
-		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamWithdrawColor));
 	}
 }
 
@@ -52,6 +116,18 @@ export class MutableBalanceParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableFoundryOutputParams extends wasmtypes.ScProxy {
+	foundrySN(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	}
+}
+
+export class MutableFoundryOutputParams extends wasmtypes.ScProxy {
+	foundrySN(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
+	}
+}
+
 export class ImmutableGetAccountNonceParams extends wasmtypes.ScProxy {
 	agentID(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
@@ -61,5 +137,17 @@ export class ImmutableGetAccountNonceParams extends wasmtypes.ScProxy {
 export class MutableGetAccountNonceParams extends wasmtypes.ScProxy {
 	agentID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+	}
+}
+
+export class ImmutableNftDataParams extends wasmtypes.ScProxy {
+	nftID(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamNftID));
+	}
+}
+
+export class MutableNftDataParams extends wasmtypes.ScProxy {
+	nftID(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamNftID));
 	}
 }

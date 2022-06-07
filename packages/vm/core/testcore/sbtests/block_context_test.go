@@ -9,23 +9,29 @@ import (
 )
 
 func TestBasicBlockContext1(t *testing.T) {
-	_, chain := setupChain(t, nil)
-	_, _ = setupTestSandboxSC(t, chain, nil, false)
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, false)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext1.Name)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	ch.MustDepositIotasToL2(10_000, nil)
+
+	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext1.Name).
+		WithGasBudget(100_000)
+	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
 
 func TestBasicBlockContext2(t *testing.T) {
-	_, chain := setupChain(t, nil)
-	_, _ = setupTestSandboxSC(t, chain, nil, false)
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, false)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext2.Name)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	ch.MustDepositIotasToL2(10_000, nil)
+
+	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext2.Name).
+		WithGasBudget(100_000)
+	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	res, err := chain.CallView(ScName, sbtestsc.FuncGetStringValue.Name,
+	res, err := ch.CallView(ScName, sbtestsc.FuncGetStringValue.Name,
 		sbtestsc.ParamVarName, "atTheEndKey")
 	require.NoError(t, err)
 	b, err := res.Get("atTheEndKey")

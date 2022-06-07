@@ -4,11 +4,12 @@
 package testutil
 
 import (
+	"context"
 	"errors"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
@@ -29,7 +30,7 @@ type PeeringNetwork struct {
 // NewPeeringNetwork creates new test network, it can then be used to create network nodes.
 func NewPeeringNetwork(
 	netIDs []string,
-	nodeIdentities []*ed25519.KeyPair,
+	nodeIdentities []*cryptolib.KeyPair,
 	bufSize int,
 	behavior PeeringNetBehavior,
 	log *logger.Logger,
@@ -61,9 +62,9 @@ func (p *PeeringNetwork) NetworkProviders() []peering.NetworkProvider {
 	return cp
 }
 
-func (p *PeeringNetwork) nodeByPubKey(nodePubKey *ed25519.PublicKey) *peeringNode {
+func (p *PeeringNetwork) nodeByPubKey(nodePubKey *cryptolib.PublicKey) *peeringNode {
 	for i := range p.nodes {
-		if p.nodes[i].identity.PublicKey == *nodePubKey {
+		if p.nodes[i].identity.GetPublicKey().Equals(nodePubKey) {
 			return p.nodes[i]
 		}
 	}
@@ -88,7 +89,7 @@ func (p *PeeringNetwork) Close() error {
 //
 type peeringNode struct {
 	netID    string
-	identity *ed25519.KeyPair
+	identity *cryptolib.KeyPair
 	sendCh   chan *peeringMsg
 	recvCh   chan *peeringMsg
 	recvCbs  []*peeringCb
@@ -97,7 +98,7 @@ type peeringNode struct {
 }
 
 type peeringMsg struct {
-	from      *ed25519.PublicKey
+	from      *cryptolib.PublicKey
 	msg       peering.PeerMessageData
 	timestamp int64
 }
@@ -109,7 +110,7 @@ type peeringCb struct {
 	receiver  byte
 }
 
-func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNetwork) *peeringNode {
+func newPeeringNode(netID string, identity *cryptolib.KeyPair, network *PeeringNetwork) *peeringNode {
 	sendCh := make(chan *peeringMsg, network.bufSize)
 	recvCh := make(chan *peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
@@ -122,7 +123,7 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 		network:  network,
 		log:      network.log.With("loc", netID),
 	}
-	network.behavior.AddLink(sendCh, recvCh, &identity.PublicKey)
+	network.behavior.AddLink(sendCh, recvCh, identity.GetPublicKey())
 	go n.recvLoop()
 	return &n
 }
@@ -141,7 +142,7 @@ func (n *peeringNode) recvLoop() {
 	}
 }
 
-func (n *peeringNode) sendMsg(from *ed25519.PublicKey, msg *peering.PeerMessageData) {
+func (n *peeringNode) sendMsg(from *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	n.sendCh <- &peeringMsg{
 		from: from,
 		msg:  *msg,
@@ -160,6 +161,7 @@ type peeringNetworkProvider struct {
 	self    *peeringNode
 	network *PeeringNetwork
 	senders []*peeringSender // Senders for all the nodes.
+	log     *logger.Logger
 }
 
 var _ peering.NetworkProvider = &peeringNetworkProvider{}
@@ -171,6 +173,7 @@ func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peer
 		self:    self,
 		network: network,
 		senders: senders,
+		log:     network.log.Named(self.netID),
 	}
 	for i := range network.nodes {
 		senders[i] = newPeeringSender(network.nodes[i], &netProvider)
@@ -179,8 +182,8 @@ func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peer
 }
 
 // Run implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) Run(stopCh <-chan struct{}) {
-	<-stopCh
+func (p *peeringNetworkProvider) Run(ctx context.Context) {
+	<-ctx.Done()
 }
 
 // Self implements peering.NetworkProvider.
@@ -189,7 +192,7 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 }
 
 // PeerGroup implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) PeerGroup(peeringID peering.PeeringID, peerPubKeys []*ed25519.PublicKey) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(peeringID peering.PeeringID, peerPubKeys []*cryptolib.PublicKey) (peering.GroupProvider, error) {
 	peers := make([]peering.PeerSender, len(peerPubKeys))
 	for i := range peerPubKeys {
 		n := p.network.nodeByPubKey(peerPubKeys[i])
@@ -198,11 +201,11 @@ func (p *peeringNetworkProvider) PeerGroup(peeringID peering.PeeringID, peerPubK
 		}
 		peers[i] = p.senders[i]
 	}
-	return group.NewPeeringGroupProvider(p, peeringID, peers, p.network.log)
+	return group.NewPeeringGroupProvider(p, peeringID, peers, p.log)
 }
 
 // PeerDomain creates peering.PeerDomainProvider.
-func (p *peeringNetworkProvider) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*ed25519.PublicKey) (peering.PeerDomainProvider, error) {
+func (p *peeringNetworkProvider) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*cryptolib.PublicKey) (peering.PeerDomainProvider, error) {
 	peers := make([]peering.PeerSender, len(peerPubKeys))
 	for i := range peerPubKeys {
 		n := p.network.nodeByPubKey(peerPubKeys[i])
@@ -211,7 +214,7 @@ func (p *peeringNetworkProvider) PeerDomain(peeringID peering.PeeringID, peerPub
 		}
 		peers[i] = p.senders[i]
 	}
-	return domain.NewPeerDomain(p, peeringID, peers, p.network.log), nil
+	return domain.NewPeerDomain(p, peeringID, peers, p.log), nil
 }
 
 // Attach implements peering.NetworkProvider.
@@ -234,7 +237,7 @@ func (p *peeringNetworkProvider) Detach(attachID interface{}) {
 	// Detach is not important in tests.
 }
 
-func (p *peeringNetworkProvider) SendMsgByPubKey(peerPubKey *ed25519.PublicKey, msg *peering.PeerMessageData) {
+func (p *peeringNetworkProvider) SendMsgByPubKey(peerPubKey *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	s, err := p.PeerByPubKey(peerPubKey)
 	if err == nil {
 		s.SendMsg(msg)
@@ -250,9 +253,9 @@ func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSend
 }
 
 // PeerByNetID implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
+func (p *peeringNetworkProvider) PeerByPubKey(peerPub *cryptolib.PublicKey) (peering.PeerSender, error) {
 	for i := range p.senders {
-		if p.senders[i].node.identity.PublicKey == *peerPub {
+		if p.senders[i].node.identity.GetPublicKey().Equals(peerPub) {
 			return p.senders[i], nil
 		}
 	}
@@ -301,13 +304,13 @@ func (p *peeringSender) NetID() string {
 }
 
 // PubKey implements peering.PeerSender.
-func (p *peeringSender) PubKey() *ed25519.PublicKey {
-	return &p.node.identity.PublicKey
+func (p *peeringSender) PubKey() *cryptolib.PublicKey {
+	return p.node.identity.GetPublicKey()
 }
 
 // Send implements peering.PeerSender.
 func (p *peeringSender) SendMsg(msg *peering.PeerMessageData) {
-	p.node.sendMsg(&p.netProvider.self.identity.PublicKey, msg)
+	p.node.sendMsg(p.netProvider.self.identity.GetPublicKey(), msg)
 }
 
 // IsAlive implements peering.PeerSender.

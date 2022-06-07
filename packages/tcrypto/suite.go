@@ -6,6 +6,7 @@ package tcrypto
 import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
+	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 )
 
@@ -15,6 +16,10 @@ type Suite interface {
 	key.Suite
 }
 
-func DefaultSuite() Suite {
+func DefaultEd25519Suite() suites.Suite {
+	return suites.MustFind("Ed25519")
+}
+
+func DefaultBLSSuite() Suite {
 	return pairing.NewSuiteBn256()
 }

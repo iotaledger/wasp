@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +16,7 @@ import (
 func TestDeployChain(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter1, err := e.clu.StartMessageCounter(map[string]int{
+	counter1, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
 		"request_out":     1,
@@ -24,17 +24,17 @@ func TestDeployChain(t *testing.T) {
 	require.NoError(t, err)
 	defer counter1.Close()
 
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
 	if !counter1.WaitUntilExpectationsMet() {
-		t.Fail()
+		t.Fatal()
 	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)
-	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress(), 0))
+	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
@@ -43,37 +43,29 @@ func TestDeployChain(t *testing.T) {
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 1, blockIndex)
+		require.Greater(t, blockIndex, uint32(1))
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
-		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
+		require.EqualValues(t, len(corecontracts.All), len(contractRegistry))
 	}
 }
 
 func TestDeployContractOnly(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_out":         1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
-	tx := chEnv.deployIncCounterSC(counter)
+	tx := chEnv.deployNativeIncCounterSC()
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
-			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
+			root.ParamHname: iscp.Hn(nativeIncCounterSCName).Bytes(),
 		})
 	require.NoError(t, err)
 	recb, err := ret.Get(root.ParamContractRecData)
@@ -83,31 +75,25 @@ func TestDeployContractOnly(t *testing.T) {
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(tx.ID(), 0))
+		txID, err := tx.ID()
 		require.NoError(t, err)
-		require.Empty(t, rec.Error)
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(txID, 0))
+		require.NoError(t, err)
+		require.Nil(t, rec.Error)
 	}
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.clu.StartMessageCounter(map[string]int{
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_out":         1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
-	chain, err := e.clu.DeployDefaultChain()
+	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chEnv := newChainEnv(t, e.clu, chain)
+	chEnv := newChainEnv(t, e.Clu, chain)
 
-	chEnv.deployIncCounterSC(counter)
+	chEnv.deployNativeIncCounterSC()
 
-	hname := iscp.Hn(incCounterSCName)
+	hname := iscp.Hn(nativeIncCounterSCName)
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
@@ -116,22 +102,23 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
-	).WithIotas(1)
+	).WithIotas(100)
 	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
+	require.Len(t, receipts, 1)
 
 	chEnv.checkCoreContracts()
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, blockIndex)
+		require.Greater(t, blockIndex, uint32(2))
 
 		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
-		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contractRegistry))
+		require.EqualValues(t, len(corecontracts.All)+2, len(contractRegistry))
 
 		cr := contractRegistry[hnameNew]
 		require.EqualValues(t, dscrNew, cr.Description)

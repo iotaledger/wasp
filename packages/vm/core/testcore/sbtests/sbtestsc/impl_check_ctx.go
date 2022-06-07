@@ -9,32 +9,31 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-func testCheckContextFromFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
+func testCheckContextFromFullEP(ctx iscp.Sandbox) dict.Dict {
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	ctx.Requiref(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	ctx.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	ctx.Requiref(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
+	myAgentID := iscp.NewContractAgentID(ctx.ChainID(), ctx.Contract())
+	ctx.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	ctx.Requiref(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
+	return nil
+}
+
+func testCheckContextFromViewEP(ctx iscp.SandboxView) dict.Dict {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	a.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
-	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
-	return nil, nil
+	a.Requiref(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	a.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	myAgentID := iscp.NewContractAgentID(ctx.ChainID(), ctx.Contract())
+	a.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	a.Requiref(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
+	return nil
 }
 
-func testCheckContextFromViewEP(ctx iscp.SandboxView) (dict.Dict, error) {
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert.NewAssert(ctx.Log())
-
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
-	return nil, nil
-}
-
-func passTypesFull(ctx iscp.Sandbox) (dict.Dict, error) {
+func passTypesFull(ctx iscp.Sandbox) dict.Dict {
 	ret := dict.New()
 	s, err := codec.DecodeString(ctx.Params().MustGet("string"))
 	checkFull(ctx, err)
@@ -83,10 +82,10 @@ func passTypesFull(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
 	checkFull(ctx, err)
-	return nil, nil
+	return nil
 }
 
-func passTypesView(ctx iscp.SandboxView) (dict.Dict, error) {
+func passTypesView(ctx iscp.SandboxView) dict.Dict {
 	s, err := codec.DecodeString(ctx.Params().MustGet("string"))
 	checkView(ctx, err)
 	if s != "string" {
@@ -128,7 +127,7 @@ func passTypesView(ctx iscp.SandboxView) (dict.Dict, error) {
 
 	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
 	checkView(ctx, err)
-	return nil, nil
+	return nil
 }
 
 func checkFull(ctx iscp.Sandbox, err error) {

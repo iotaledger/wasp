@@ -11,9 +11,7 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
 )
 
@@ -70,7 +68,7 @@ func (hn Hname) String() string {
 func HnameFromString(s string) (Hname, error) {
 	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
-		return 0, errors.Wrap(err, "cannot parse hname")
+		return 0, fmt.Errorf("cannot parse hname: %w", err)
 	}
 	return Hname(n), nil
 }

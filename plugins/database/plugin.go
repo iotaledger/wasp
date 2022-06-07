@@ -2,6 +2,8 @@
 package database
 
 import (
+	"context"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
@@ -20,7 +22,7 @@ var dbm *dbmanager.DBManager
 
 // Init is an entry point for the plugin.
 func Init() *node.Plugin {
-	return node.NewPlugin(pluginName, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -28,8 +30,8 @@ func configure(_ *node.Plugin) {
 	dbm = dbmanager.NewDBManager(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory), registryConfig())
 
 	// we open the database in the configure, so we must also make sure it's closed here
-	err := daemon.BackgroundWorker(pluginName, func(shutdownSignal <-chan struct{}) {
-		<-shutdownSignal
+	err := daemon.BackgroundWorker(pluginName, func(ctx context.Context) {
+		<-ctx.Done()
 		log.Infof("syncing database to disk...")
 		dbm.Close()
 		log.Infof("syncing database to disk... done")

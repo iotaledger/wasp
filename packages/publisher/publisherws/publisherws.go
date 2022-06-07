@@ -53,7 +53,7 @@ func (p *PublisherWebSocket) ServeHTTP(chainID *iscp.ChainID, w http.ResponseWri
 		if len(parts) < 1 {
 			return
 		}
-		if parts[0] != chainID.Base58() {
+		if parts[0] != chainID.String() {
 			return
 		}
 

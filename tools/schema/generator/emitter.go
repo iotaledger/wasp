@@ -81,9 +81,9 @@ func (g *GenBase) emit(template string) {
 			if ok {
 				return text
 			}
-			return "???:" + key
+			return "key???:" + key
 		})
-
+		line = strings.ReplaceAll(line, "\r", "\n")
 		// remove concatenation markers
 		line = strings.ReplaceAll(line, "$+", "")
 
@@ -154,14 +154,27 @@ func (g *GenBase) emitEach(line string) {
 	case KeyTypeDef:
 		g.emitEachField(g.s.Typedefs, template)
 	default:
-		g.error(line)
+		// emit multi-line text
+		text, ok := g.keys[parts[1]]
+		if !ok {
+			g.error(line)
+			return
+		}
+		if text != "" {
+			lines := strings.Split(text, "\n")
+			for _, nextLine := range lines {
+				g.keys["nextLine"] = nextLine
+				g.emit(template)
+			}
+		}
 	}
 }
 
 func (g *GenBase) emitEachEvent(events []*model.Struct, template string) {
 	for _, g.currentEvent = range events {
-		g.log("currentEvent: " + g.currentEvent.Name)
-		g.setMultiKeyValues("evtName", g.currentEvent.Name)
+		g.log("currentEvent: " + g.currentEvent.Name.Val)
+		g.setMultiKeyValues("evtName", g.currentEvent.Name.Val)
+		g.keys["eventComment"] = g.currentEvent.Name.Comment
 		g.emit(template)
 	}
 }
@@ -221,8 +234,9 @@ func (g *GenBase) emitEachMandatoryField(template string) {
 
 func (g *GenBase) emitEachStruct(structs []*model.Struct, template string) {
 	for _, g.currentStruct = range structs {
-		g.log("currentStruct: " + g.currentStruct.Name)
-		g.setMultiKeyValues("strName", g.currentStruct.Name)
+		g.log("currentStruct: " + g.currentStruct.Name.Val)
+		g.setMultiKeyValues("strName", g.currentStruct.Name.Val)
+		g.keys["structComment"] = g.currentStruct.Name.Comment
 		g.emit(template)
 	}
 }
@@ -384,6 +398,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["scName"] = scName
 	g.keys["hscName"] = iscp.Hn(scName).String()
 	g.keys["scDesc"] = g.s.Description
+	g.keys["copyrightMessage"] = g.s.Copyright
 }
 
 func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
@@ -400,6 +415,7 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 
 	g.keys["fldAlias"] = g.currentField.Alias
 	g.keys["fldComment"] = g.currentField.Comment
+	g.keys["eventFldComment"] = g.currentField.Comment
 
 	if pad {
 		g.keys["fldPad"] = spaces[:maxCamelLength-len(g.keys["fldName"])]
@@ -432,16 +448,14 @@ func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	g.setMultiKeyValues("funcName", g.currentFunc.Name)
 	g.setMultiKeyValues("kind", g.currentFunc.Kind)
 	g.keys["hFuncName"] = iscp.Hn(g.keys["funcName"]).String()
-	grant := g.currentFunc.Access
-	comment := ""
+	grant := g.currentFunc.Access.Val
 	index := strings.Index(grant, "//")
 	if index >= 0 {
-		comment = grant[index:]
 		grant = strings.TrimSpace(grant[:index])
 	}
 	g.setMultiKeyValues("funcAccess", grant)
-	g.keys["funcAccessComment"] = comment
-
+	g.keys["funcAccessComment"] = g.currentFunc.Access.Comment
+	g.keys["funcComment"] = g.currentFunc.Comment
 	if pad {
 		g.keys["funcPad"] = spaces[:maxCamelLength-len(g.keys["funcName"])]
 		g.keys["func_pad"] = spaces[:maxSnakeLength-len(g.keys["func_name"])]

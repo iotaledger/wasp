@@ -8,38 +8,33 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/wasm/fairauction/go/fairauction"
-	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	auctioneer *wasmsolo.SoloAgent
-	tokenColor wasmtypes.ScColor
+const (
+	description = "Cool NFTs for sale!"
+	deposit     = uint64(1000)
+	minBid      = uint64(500)
 )
 
-func startAuction(t *testing.T) *wasmsolo.SoloContext {
+func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, wasmtypes.ScNftID) {
 	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
-
-	// set up auctioneer account and mint some tokens to auction off
-	auctioneer = ctx.NewSoloAgent()
-	tokenColor, ctx.Err = auctioneer.Mint(10)
-	require.NoError(t, ctx.Err)
-	require.EqualValues(t, solo.Saldo-10, auctioneer.Balance())
-	require.EqualValues(t, 10, auctioneer.Balance(tokenColor))
+	auctioneer := ctx.NewSoloAgent()
+	nftID := ctx.MintNFT(auctioneer, []byte("NFT metadata"))
 
 	// start the auction
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
-	sa.Params.Color().SetValue(tokenColor)
-	sa.Params.MinimumBid().SetValue(500)
-	sa.Params.Description().SetValue("Cool tokens for sale!")
-	transfer := ctx.Transfer()
-	transfer.Set(wasmtypes.IOTA, 25) // deposit, must be >=minimum*margin
-	transfer.Set(tokenColor, 10)     // the tokens to auction
+	sa.Params.MinimumBid().SetValue(minBid)
+	sa.Params.Description().SetValue(description)
+	transfer := wasmlib.NewScTransferIotas(deposit) // deposit, must be >=minimum*margin
+	transfer.AddNFT(&nftID)
 	sa.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
-	return ctx
+
+	return ctx, auctioneer, nftID
 }
 
 func TestDeploy(t *testing.T) {
@@ -47,60 +42,70 @@ func TestDeploy(t *testing.T) {
 	require.NoError(t, ctx.ContractExists(fairauction.ScName))
 }
 
-func TestFaStartAuction(t *testing.T) {
-	ctx := startAuction(t)
+func TestStartAuction(t *testing.T) {
+	ctx, auctioneer, nftID := startAuction(t)
 
-	// note 1 iota should be stuck in the delayed finalize_auction
-	require.EqualValues(t, 25-1, ctx.Balance(ctx.Account()))
-	require.EqualValues(t, 10, ctx.Balance(ctx.Account(), tokenColor))
-
-	// auctioneer sent 25 deposit + 10 tokenColor
-	require.EqualValues(t, solo.Saldo-25-10, auctioneer.Balance())
-	require.EqualValues(t, 0, auctioneer.Balance(tokenColor))
-	require.EqualValues(t, 0, ctx.Balance(auctioneer))
+	nfts := ctx.Chain.L2NFTs(auctioneer.AgentID())
+	require.Len(t, nfts, 0)
+	nfts = ctx.Chain.L2NFTs(ctx.Account().AgentID())
+	require.Len(t, nfts, 1)
+	require.Equal(t, nftID, ctx.Cvt.ScNftID(&nfts[0]))
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 }
 
-func TestFaAuctionInfo(t *testing.T) {
-	ctx := startAuction(t)
+func TestGetAuctionInfo(t *testing.T) {
+	ctx, auctioneer, nftID := startAuction(t)
 
-	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
-	getInfo.Func.Call()
-
+	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
+	info.Params.Nft().SetValue(nftID)
+	info.Func.Call()
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, auctioneer.ScAgentID(), getInfo.Results.Creator().Value())
-	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
+
+	// no bidder since auction just started
+	require.EqualValues(t, 0, info.Results.Bidders().Value())
+	require.EqualValues(t, nftID, info.Results.Nft().Value())
+	require.EqualValues(t, auctioneer.ScAgentID(), info.Results.Creator().Value())
+	require.Equal(t, deposit, info.Results.Deposit().Value())
+	require.EqualValues(t, description, info.Results.Description().Value())
+	require.EqualValues(t, fairauction.DurationDefault, info.Results.Duration().Value())
+	// initial highest bid is 0
+	require.EqualValues(t, 0, info.Results.HighestBid().Value())
+	// initial highest bidder is set to auctioneer itself
+	require.EqualValues(t, auctioneer.ScAgentID(), info.Results.HighestBidder().Value())
+	require.EqualValues(t, minBid, info.Results.MinimumBid().Value())
+	require.EqualValues(t, fairauction.OwnerMarginDefault, info.Results.OwnerMargin().Value())
+	// expect timestamp should has difference less than 1 second to the `auction.WhenStarted`
+	require.InDelta(t, uint64(ctx.Chain.State.Timestamp().UnixNano()), info.Results.WhenStarted().Value(), float64(1*time.Second.Nanoseconds()))
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 }
 
-func TestFaNoBids(t *testing.T) {
-	ctx := startAuction(t)
+func TestFinalizedNoBids(t *testing.T) {
+	ctx, _, nftID := startAuction(t)
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
-	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
-	getInfo.Func.Call()
+	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
+	info.Params.Nft().SetValue(nftID)
+	info.Func.Call()
 
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
+	require.EqualValues(t, 0, info.Results.Bidders().Value())
 }
 
-func TestFaOneBidTooLow(t *testing.T) {
-	ctx := startAuction(t)
+func TestFinalizedOneBidTooLow(t *testing.T) {
+	ctx, _, nftID := startAuction(t)
 
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
-	placeBid.Params.Color().SetValue(tokenColor)
+	placeBid.Params.Nft().SetValue(nftID)
 	placeBid.Func.TransferIotas(100).Post()
 	require.Error(t, ctx.Err)
 
@@ -108,34 +113,40 @@ func TestFaOneBidTooLow(t *testing.T) {
 	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
-	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
-	getInfo.Func.Call()
+	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
+	info.Params.Nft().SetValue(nftID)
+	info.Func.Call()
 
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
-	require.EqualValues(t, 0, getInfo.Results.HighestBid().Value())
+	require.EqualValues(t, 0, info.Results.Bidders().Value())
+	require.EqualValues(t, 0, info.Results.HighestBid().Value())
 }
 
-func TestFaOneBid(t *testing.T) {
-	ctx := startAuction(t)
+func TestFinalizedOneBid(t *testing.T) {
+	ctx, _, nftID := startAuction(t)
 
-	bidder := ctx.NewSoloAgent()
-	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
-	placeBid.Params.Color().SetValue(tokenColor)
+	bidder0 := ctx.NewSoloAgent()
+	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder0))
+	placeBid.Params.Nft().SetValue(nftID)
 	placeBid.Func.TransferIotas(5000).Post()
+	require.NoError(t, ctx.Err)
+
+	bidder1 := ctx.NewSoloAgent()
+	placeBid = fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder1))
+	placeBid.Params.Nft().SetValue(nftID)
+	placeBid.Func.TransferIotas(5001).Post()
 	require.NoError(t, ctx.Err)
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
 	require.True(t, ctx.WaitForPendingRequests(1))
 
-	getInfo := fairauction.ScFuncs.GetInfo(ctx)
-	getInfo.Params.Color().SetValue(tokenColor)
-	getInfo.Func.Call()
+	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
+	info.Params.Nft().SetValue(nftID)
+	info.Func.Call()
 
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 1, getInfo.Results.Bidders().Value())
-	require.EqualValues(t, 5000, getInfo.Results.HighestBid().Value())
-	require.Equal(t, bidder.ScAddress().AsAgentID(), getInfo.Results.HighestBidder().Value())
+	require.EqualValues(t, 2, info.Results.Bidders().Value())
+	require.EqualValues(t, 5001, info.Results.HighestBid().Value())
+	require.Equal(t, bidder1.ScAgentID(), info.Results.HighestBidder().Value())
 }

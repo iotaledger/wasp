@@ -16,7 +16,7 @@ var config *configuration.Configuration
 
 func Init(_config *configuration.Configuration) *node.Plugin {
 	config = _config
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func run(_ *node.Plugin) {

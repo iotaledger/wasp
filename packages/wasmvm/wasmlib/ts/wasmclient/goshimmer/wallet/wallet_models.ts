@@ -1,4 +1,4 @@
-import { ColorCollection } from "../../colors";
+import {ColorCollection} from "../../colors";
 
 export interface IWalletOutputInclusionState {
     solid?: boolean;

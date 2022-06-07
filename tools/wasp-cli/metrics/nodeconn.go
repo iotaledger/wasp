@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -22,31 +22,39 @@ var nodeconnMetricsCmd = &cobra.Command{
 		if chainAlias == "" {
 			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 			log.Check(err)
-			log.Printf("Following chains subscribed to L1 events:\n")
-			for _, s := range nodeconnMetrics.Subscribed {
+			log.Printf("Following chains are registered for L1 events:\n")
+			for _, s := range nodeconnMetrics.Registered {
 				log.Printf("\t%s\n", s)
 			}
-			printMessagesMetrics(&nodeconnMetrics.NodeConnectionMessagesMetrics)
+			printMessagesMetrics(
+				&nodeconnMetrics.NodeConnectionMessagesMetrics,
+				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
+			)
 		} else {
-			chid := chain.GetChainFromAlias(chainAlias)
+			chid, err := iscp.ChainIDFromString(chainAlias)
+			log.Check(err)
 			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
 			log.Check(err)
-			printMessagesMetrics(msgsMetrics)
+			printMessagesMetrics(msgsMetrics, [][]string{})
 		}
 	},
 }
 
-func printMessagesMetrics(msgsMetrics *model.NodeConnectionMessagesMetrics) {
+func printMessagesMetrics(msgsMetrics *model.NodeConnectionMessagesMetrics, additionalRows [][]string) {
 	header := []string{"Message name", "", "Total", "Last time", "Last message"}
-	table := make([][]string, 8)
-	table[0] = makeMessagesMetricsTableRow("Pull state", false, msgsMetrics.OutPullState)
-	table[1] = makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTransactionInclusionState)
-	table[2] = makeMessagesMetricsTableRow("Pull confirmed output", false, msgsMetrics.OutPullConfirmedOutput)
-	table[3] = makeMessagesMetricsTableRow("Post transaction", false, msgsMetrics.OutPostTransaction)
-	table[4] = makeMessagesMetricsTableRow("Transaction", true, msgsMetrics.InTransaction)
-	table[5] = makeMessagesMetricsTableRow("Inclusion state", true, msgsMetrics.InInclusionState)
+	table := make([][]string, 9+len(additionalRows))
+	table[0] = makeMessagesMetricsTableRow("Publish transaction", false, msgsMetrics.OutPublishTransaction)
+	table[1] = makeMessagesMetricsTableRow("Pull latest output", false, msgsMetrics.OutPullLatestOutput)
+	table[2] = makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTxInclusionState)
+	table[3] = makeMessagesMetricsTableRow("Pull output by ID", false, msgsMetrics.OutPullOutputByID)
+	table[4] = makeMessagesMetricsTableRow("State output", true, msgsMetrics.InStateOutput)
+	table[5] = makeMessagesMetricsTableRow("Alias output", true, msgsMetrics.InAliasOutput)
 	table[6] = makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput)
-	table[7] = makeMessagesMetricsTableRow("Unspent alias output", true, msgsMetrics.InUnspentAliasOutput)
+	table[7] = makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest)
+	table[8] = makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState)
+	for i := range additionalRows {
+		table[9+i] = additionalRows[i]
+	}
 	log.PrintTable(header, table)
 }
 

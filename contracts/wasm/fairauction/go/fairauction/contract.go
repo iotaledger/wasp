@@ -29,10 +29,10 @@ type StartAuctionCall struct {
 	Params MutableStartAuctionParams
 }
 
-type GetInfoCall struct {
+type GetAuctionInfoCall struct {
 	Func    *wasmlib.ScView
-	Params  MutableGetInfoParams
-	Results ImmutableGetInfoResults
+	Params  MutableGetAuctionInfoParams
+	Results ImmutableGetAuctionInfoResults
 }
 
 type Funcs struct{}
@@ -63,8 +63,8 @@ func (sc Funcs) StartAuction(ctx wasmlib.ScFuncCallContext) *StartAuctionCall {
 	return f
 }
 
-func (sc Funcs) GetInfo(ctx wasmlib.ScViewCallContext) *GetInfoCall {
-	f := &GetInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetInfo)}
+func (sc Funcs) GetAuctionInfo(ctx wasmlib.ScViewCallContext) *GetAuctionInfoCall {
+	f := &GetAuctionInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAuctionInfo)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

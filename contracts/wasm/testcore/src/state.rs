@@ -18,24 +18,16 @@ pub struct ImmutableTestCoreState {
 }
 
 impl ImmutableTestCoreState {
-    pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(STATE_COUNTER))
-	}
-
-    pub fn hname_ep(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.proxy.root(STATE_HNAME_EP))
+    pub fn counter(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn ints(&self) -> MapStringToImmutableInt64 {
 		MapStringToImmutableInt64 { proxy: self.proxy.root(STATE_INTS) }
 	}
 
-    pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(STATE_MINTED_COLOR))
-	}
-
-    pub fn minted_supply(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(STATE_MINTED_SUPPLY))
+    pub fn strings(&self) -> MapStringToImmutableString {
+		MapStringToImmutableString { proxy: self.proxy.root(STATE_STRINGS) }
 	}
 }
 
@@ -49,23 +41,15 @@ impl MutableTestCoreState {
 		ImmutableTestCoreState { proxy: self.proxy.root("") }
 	}
 
-    pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(STATE_COUNTER))
-	}
-
-    pub fn hname_ep(&self) -> ScMutableHname {
-		ScMutableHname::new(self.proxy.root(STATE_HNAME_EP))
+    pub fn counter(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(STATE_COUNTER))
 	}
 
     pub fn ints(&self) -> MapStringToMutableInt64 {
 		MapStringToMutableInt64 { proxy: self.proxy.root(STATE_INTS) }
 	}
 
-    pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(STATE_MINTED_COLOR))
-	}
-
-    pub fn minted_supply(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(STATE_MINTED_SUPPLY))
+    pub fn strings(&self) -> MapStringToMutableString {
+		MapStringToMutableString { proxy: self.proxy.root(STATE_STRINGS) }
 	}
 }

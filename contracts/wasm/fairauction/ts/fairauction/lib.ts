@@ -14,7 +14,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.FuncPlaceBid,
 		sc.FuncSetOwnerMargin,
 		sc.FuncStartAuction,
-		sc.ViewGetInfo,
+		sc.ViewGetAuctionInfo,
 	],
 	funcs: [
 		funcFinalizeAuctionThunk,
@@ -23,15 +23,17 @@ const exportMap: wasmlib.ScExportMap = {
 		funcStartAuctionThunk,
 	],
 	views: [
-		viewGetInfoThunk,
+		viewGetAuctionInfoThunk,
 	],
 };
 
 export function on_call(index: i32): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
+	wasmlib.WasmVMHost.connect();
 	wasmlib.ScExports.export(exportMap);
 }
 
@@ -42,7 +44,7 @@ function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 	// only SC itself can invoke this function
 	ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.nft().exists(), "missing mandatory nft");
 	sc.funcFinalizeAuction(ctx, f);
 	ctx.log("fairauction.funcFinalizeAuction ok");
 }
@@ -50,7 +52,7 @@ function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 function funcPlaceBidThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcPlaceBid");
 	let f = new sc.PlaceBidContext();
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.nft().exists(), "missing mandatory nft");
 	sc.funcPlaceBid(ctx, f);
 	ctx.log("fairauction.funcPlaceBid ok");
 }
@@ -70,19 +72,18 @@ function funcSetOwnerMarginThunk(ctx: wasmlib.ScFuncContext): void {
 function funcStartAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcStartAuction");
 	let f = new sc.StartAuctionContext();
-	ctx.require(f.params.color().exists(), "missing mandatory color");
 	ctx.require(f.params.minimumBid().exists(), "missing mandatory minimumBid");
 	sc.funcStartAuction(ctx, f);
 	ctx.log("fairauction.funcStartAuction ok");
 }
 
-function viewGetInfoThunk(ctx: wasmlib.ScViewContext): void {
-	ctx.log("fairauction.viewGetInfo");
-	let f = new sc.GetInfoContext();
+function viewGetAuctionInfoThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("fairauction.viewGetAuctionInfo");
+	let f = new sc.GetAuctionInfoContext();
 	const results = new wasmlib.ScDict([]);
-	f.results = new sc.MutableGetInfoResults(results.asProxy());
-	ctx.require(f.params.color().exists(), "missing mandatory color");
-	sc.viewGetInfo(ctx, f);
+	f.results = new sc.MutableGetAuctionInfoResults(results.asProxy());
+	ctx.require(f.params.nft().exists(), "missing mandatory nft");
+	sc.viewGetAuctionInfo(ctx, f);
 	ctx.results(results);
-	ctx.log("fairauction.viewGetInfo ok");
+	ctx.log("fairauction.viewGetAuctionInfo ok");
 }

@@ -80,11 +80,6 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Default',
-                            id: 'guide/core_concepts/core_contracts/default',
-                        },
-                        {
-                            type: 'doc',
                             label: 'Accounts',
                             id: 'guide/core_concepts/core_contracts/accounts',
                         },
@@ -259,12 +254,12 @@ module.exports = {
                             id: 'guide/wasm_vm/context',
                         },
                     ]
-                 },
+                },
                 {
                     type: 'category',
                     label: 'Schema tool',
                     items: [
-                       {
+                        {
                             type: 'doc',
                             label: 'Smart Contract Schema Tool',
                             id: 'guide/schema/schema',

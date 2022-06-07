@@ -1,16 +1,14 @@
 package chain
 
 import (
-	"strconv"
+	"encoding/hex"
+	"math/big"
 	"strings"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -28,26 +26,26 @@ func postRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			fname := args[1]
 			params := chainclient.PostRequestParams{
-				Args:     requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
-				Transfer: parseColoredBalances(transfer),
+				Args:     util.EncodeParams(args[2:]),
+				Transfer: parseAssets(transfer),
 			}
 
 			scClient := SCClient(iscp.Hn(args[0]))
 
 			if offLedger {
 				params.Nonce = uint64(time.Now().UnixNano())
-				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.OffLedger, error) {
+				util.WithOffLedgerRequest(GetCurrentChainID(), func() (iscp.OffLedgerRequest, error) {
 					return scClient.PostOffLedgerRequest(fname, params)
 				})
 			} else {
-				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 					return scClient.PostRequest(fname, params)
 				})
 			}
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{"IOTA:1"},
+	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{},
 		"include a funds transfer as part of the transaction. Format: <color>:<amount>,<color>:amount...",
 	)
 	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
@@ -57,26 +55,41 @@ func postRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func colorFromString(s string) colored.Color {
-	if s == colored.IOTA.String() {
-		return colored.IOTA
-	}
-	c, err := colored.ColorFromBase58EncodedString(s)
+func assetIDFromString(s string) []byte {
+	ret, err := hex.DecodeString(s)
 	log.Check(err)
-	return c
+	return ret
 }
 
-func parseColoredBalances(args []string) colored.Balances {
-	cb := colored.NewBalances()
+func parseAssets(args []string) *iscp.FungibleTokens {
+	assets := iscp.NewEmptyAssets()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
 			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
 		}
-		col := colorFromString(parts[0])
-		amount, err := strconv.Atoi(parts[1])
+		// In the past we would indicate iotas as 'IOTA:nnn'
+		// Now we can simply use ':nnn', but let's keep it
+		// backward compatible for now and allow both
+		if strings.ToLower(parts[0]) == "iota" {
+			parts[0] = ""
+		}
+		assetIDBytes := assetIDFromString(parts[0])
+
+		amount, ok := new(big.Int).SetString(parts[1], 10)
+		if !ok {
+			log.Fatalf("error parsing token amount")
+		}
+
+		if iscp.IsIota(assetIDBytes) {
+			assets.AddIotas(amount.Uint64())
+			continue
+		}
+
+		assetID, err := iscp.NativeTokenIDFromBytes(assetIDBytes)
 		log.Check(err)
-		cb.Set(col, uint64(amount))
+
+		assets.AddNativeTokens(assetID, amount)
 	}
-	return cb
+	return assets
 }

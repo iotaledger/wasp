@@ -81,7 +81,7 @@ fn func_transfer_ownership_thunk(ctx: &ScFuncContext) {
 	// TODO the one who can transfer token ownership
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_transfer_ownership(ctx, &f);
 	ctx.log("tokenregistry.funcTransferOwnership ok");
 }
@@ -101,7 +101,7 @@ fn func_update_metadata_thunk(ctx: &ScFuncContext) {
 	// TODO the one who can change the token info
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_update_metadata(ctx, &f);
 	ctx.log("tokenregistry.funcUpdateMetadata ok");
 }
@@ -117,7 +117,7 @@ fn view_get_info_thunk(ctx: &ScViewContext) {
 		params: ImmutableGetInfoParams { proxy: params_proxy() },
 		state: ImmutableTokenRegistryState { proxy: state_proxy() },
 	};
-	ctx.require(f.params.color().exists(), "missing mandatory color");
+	ctx.require(f.params.token().exists(), "missing mandatory token");
 	view_get_info(ctx, &f);
 	ctx.log("tokenregistry.viewGetInfo ok");
 }

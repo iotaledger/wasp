@@ -16,8 +16,8 @@ var tplMetricsChainNodeconn string
 func metricsChainNodeconnBreadcrumb(e *echo.Echo, chainID *iscp.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChainNodeconn"),
-		Title: fmt.Sprintf("Metrics: %.8s: Connection to L1", chainID.Base58()),
-		Href:  e.Reverse("metricsChainNodeconn", chainID.Base58()),
+		Title: fmt.Sprintf("Metrics: %.8s: Connection to L1", chainID.String()),
+		Href:  e.Reverse("metricsChainNodeconn", chainID.String()),
 	}
 }
 
@@ -28,7 +28,7 @@ func (d *Dashboard) initMetricsChainNodeconn(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleMetricsChainNodeconn(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -39,7 +39,7 @@ func (d *Dashboard) handleMetricsChainNodeconn(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, c.Path(), &MetricsChainNodeconnTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, metricsChainBreadcrumb(c.Echo(), chainID), tab),
-		ChainID:            chainID.Base58(),
+		ChainID:            chainID.String(),
 		Metrics:            metrics,
 	})
 }

@@ -1,22 +1,20 @@
 package blocklog
 
 import (
-	"math/rand"
 	"testing"
+	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSerdeRequestLogRecord(t *testing.T) {
-	var txid ledgerstate.TransactionID
-	rand.Read(txid[:])
-	req := request.NewOffLedger(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil)
+func TestSerdeRequestReceipt(t *testing.T) {
+	nonce := uint64(time.Now().UnixNano())
+	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce)
+	signedReq := req.Sign(cryptolib.NewKeyPair())
 	rec := &RequestReceipt{
-		Request: req,
-		Error:   "some log data",
+		Request: signedReq,
 	}
 	forward := rec.Bytes()
 	back, err := RequestReceiptFromBytes(forward)

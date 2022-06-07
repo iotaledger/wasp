@@ -2,16 +2,16 @@ package codec
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
-func Encode(v interface{}) []byte { //nolint:funlen
+func Encode(v interface{}) []byte {
 	switch vt := v.(type) {
 	case bool:
 		return EncodeBool(vt)
@@ -35,34 +35,36 @@ func Encode(v interface{}) []byte { //nolint:funlen
 		return EncodeUint64(vt)
 	case string:
 		return EncodeString(vt)
+	case *big.Int:
+		return EncodeBigIntAbs(vt)
 	case []byte:
 		return vt
 	case *hashing.HashValue:
 		return EncodeHashValue(*vt)
 	case hashing.HashValue:
 		return EncodeHashValue(vt)
-	case ledgerstate.Address:
+	case iotago.Address:
 		return EncodeAddress(vt)
-	case *colored.Color:
-		return EncodeColor(*vt)
-	case colored.Color:
-		return EncodeColor(vt)
 	case *iscp.ChainID:
 		return EncodeChainID(vt)
 	case iscp.ChainID:
 		return EncodeChainID(&vt)
-	case *iscp.AgentID:
-		return EncodeAgentID(vt)
 	case iscp.AgentID:
-		return EncodeAgentID(&vt)
+		return EncodeAgentID(vt)
 	case iscp.RequestID:
 		return EncodeRequestID(vt)
 	case *iscp.RequestID:
 		return EncodeRequestID(*vt)
 	case iscp.Hname:
 		return vt.Bytes()
+	case iscp.VMErrorCode:
+		return vt.Bytes()
 	case time.Time:
 		return EncodeTime(vt)
+	case util.Ratio32:
+		return EncodeRatio32(vt)
+	case *util.Ratio32:
+		return EncodeRatio32(*vt)
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))
 	}

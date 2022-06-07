@@ -17,8 +17,8 @@ export class ImmutableCallOnChainParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHnameEP));
 	}
 
-	intValue(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamIntValue));
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamN));
 	}
 }
 
@@ -31,8 +31,8 @@ export class MutableCallOnChainParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamHnameEP));
 	}
 
-	intValue(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamIntValue));
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamN));
 	}
 }
 
@@ -185,26 +185,14 @@ export class MutablePassTypesFullParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableRunRecursionParams extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamIntValue));
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamN));
 	}
 }
 
 export class MutableRunRecursionParams extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamIntValue));
-	}
-}
-
-export class ImmutableSendToAddressParams extends wasmtypes.ScProxy {
-	address(): wasmtypes.ScImmutableAddress {
-		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
-	}
-}
-
-export class MutableSendToAddressParams extends wasmtypes.ScProxy {
-	address(): wasmtypes.ScMutableAddress {
-		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamN));
 	}
 }
 
@@ -241,26 +229,42 @@ export class MutableSpawnParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableTestEventLogGenericDataParams extends wasmtypes.ScProxy {
-	counter(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamCounter));
+	counter(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamCounter));
 	}
 }
 
 export class MutableTestEventLogGenericDataParams extends wasmtypes.ScProxy {
-	counter(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamCounter));
+	counter(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamCounter));
 	}
 }
 
-export class ImmutableWithdrawToChainParams extends wasmtypes.ScProxy {
+export class ImmutableWithdrawFromChainParams extends wasmtypes.ScProxy {
 	chainID(): wasmtypes.ScImmutableChainID {
 		return new wasmtypes.ScImmutableChainID(this.proxy.root(sc.ParamChainID));
 	}
+
+	gasBudget(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamGasBudget));
+	}
+
+	iotasWithdrawal(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamIotasWithdrawal));
+	}
 }
 
-export class MutableWithdrawToChainParams extends wasmtypes.ScProxy {
+export class MutableWithdrawFromChainParams extends wasmtypes.ScProxy {
 	chainID(): wasmtypes.ScMutableChainID {
 		return new wasmtypes.ScMutableChainID(this.proxy.root(sc.ParamChainID));
+	}
+
+	gasBudget(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamGasBudget));
+	}
+
+	iotasWithdrawal(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamIotasWithdrawal));
 	}
 }
 
@@ -301,14 +305,26 @@ export class MutableCheckContextFromViewEPParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableFibonacciParams extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamIntValue));
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamN));
 	}
 }
 
 export class MutableFibonacciParams extends wasmtypes.ScProxy {
-	intValue(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamIntValue));
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamN));
+	}
+}
+
+export class ImmutableFibonacciIndirectParams extends wasmtypes.ScProxy {
+	n(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamN));
+	}
+}
+
+export class MutableFibonacciIndirectParams extends wasmtypes.ScProxy {
+	n(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamN));
 	}
 }
 

@@ -1,34 +1,32 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//go:build !noevm
-// +build !noevm
-
 package tests
 
 import (
+	"crypto/ecdsa"
+	"math"
 	"testing"
+	"time"
 
-	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/packages/evm/evmflavors"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
-
-func withEVMFlavors(t *testing.T, f func(*testing.T, *coreutil.ContractInfo)) {
-	for _, evmFlavor := range evmflavors.All {
-		t.Run(evmFlavor.Name, func(t *testing.T) { f(t, evmFlavor) })
-	}
-}
 
 type clusterTestEnv struct {
 	jsonrpctest.Env
@@ -36,7 +34,7 @@ type clusterTestEnv struct {
 	chain   *cluster.Chain
 }
 
-func newClusterTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *clusterTestEnv {
+func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
 	clu := newCluster(t)
@@ -44,63 +42,94 @@ func newClusterTestEnv(t *testing.T, evmFlavor *coreutil.ContractInfo) *clusterT
 	chain, err := clu.DeployDefaultChain()
 	require.NoError(t, err)
 
-	chainID := evm.DefaultChainID
+	jsonRPCEndpoint := "http://" + clu.Config.APIHost(0) + routes.EVMJSONRPC(chain.ChainID.String())
 
-	_, err = chain.DeployContract(
-		evmFlavor.Name,
-		evmFlavor.ProgramHash.String(),
-		"EVM chain on top of ISCP",
-		map[string]interface{}{
-			evm.FieldChainID: codec.EncodeUint16(uint16(chainID)),
-			evm.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
-				evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
-			}),
-		},
-	)
+	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
-
-	signer, _, err := clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-
-	backend := jsonrpc.NewWaspClientBackend(chain.Client(signer))
-	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmFlavor.Name)
-
-	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
-
-	rpcsrv := jsonrpc.NewServer(evmChain, accountManager)
-	t.Cleanup(rpcsrv.Stop)
-
-	rawClient := rpc.DialInProc(rpcsrv)
 	client := ethclient.NewClient(rawClient)
 	t.Cleanup(client.Close)
 
+	waitTxConfirmed := func(txHash common.Hash) error {
+		c := chain.Client(nil)
+		reqID, err := c.EVMRequestIDByTransactionHash(txHash)
+		if err != nil {
+			return err
+		}
+		receipt, err := c.WaspClient.WaitUntilRequestProcessed(chain.ChainID, reqID, 1*time.Minute)
+		if err != nil {
+			return err
+		}
+		if receipt.Error != nil {
+			resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+				return c.CallView(iscp.Hn(contractName), funcName, params)
+			})
+			if err != nil {
+				return err
+			}
+			return resolved
+		}
+		return nil
+	}
+
 	return &clusterTestEnv{
 		Env: jsonrpctest.Env{
-			T:         t,
-			Server:    rpcsrv,
-			Client:    client,
-			RawClient: rawClient,
-			ChainID:   chainID,
+			T:               t,
+			Client:          client,
+			RawClient:       rawClient,
+			ChainID:         evm.DefaultChainID,
+			WaitTxConfirmed: waitTxConfirmed,
 		},
 		cluster: clu,
 		chain:   chain,
 	}
 }
 
-func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		newClusterTestEnv(t, evmFlavor).TestRPCGetLogs()
+func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+	return key, crypto.PubkeyToAddress(key.PublicKey)
+}
+
+const transferAllowanceToGasBudgetIotas = 1 * iscp.Mi
+
+func (e *clusterTestEnv) newEthereumAccountWithL2Funds(iotas ...uint64) (*ecdsa.PrivateKey, common.Address) {
+	ethKey, ethAddr := newEthereumAccount()
+	iotaKey, iotaAddr, err := e.cluster.NewKeyPairWithFunds()
+	require.NoError(e.T, err)
+
+	var amount uint64
+	if len(iotas) > 0 {
+		amount = iotas[0]
+	} else {
+		amount = e.cluster.L1Iotas(iotaAddr) - transferAllowanceToGasBudgetIotas
+	}
+	gasBudget := uint64(math.MaxUint64)
+	_, err = e.chain.Client(iotaKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+		Transfer: iscp.NewFungibleTokens(amount+transferAllowanceToGasBudgetIotas, nil),
+		Args: map[kv.Key][]byte{
+			accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewEthereumAddressAgentID(ethAddr)),
+			accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+		},
+		Allowance: iscp.NewAllowanceIotas(amount),
+		GasBudget: &gasBudget,
 	})
+	require.NoError(e.T, err)
+	return ethKey, ethAddr
+}
+
+func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
+	e := newClusterTestEnv(t)
+	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }
 
 func TestEVMJsonRPCClusterGasLimit(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		newClusterTestEnv(t, evmFlavor).TestRPCGasLimit()
-	})
+	e := newClusterTestEnv(t)
+	e.TestRPCGasLimit(e.newEthereumAccountWithL2Funds)
 }
 
 func TestEVMJsonRPCClusterInvalidNonce(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		newClusterTestEnv(t, evmFlavor).TestRPCInvalidNonce()
-	})
+	e := newClusterTestEnv(t)
+	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
 }

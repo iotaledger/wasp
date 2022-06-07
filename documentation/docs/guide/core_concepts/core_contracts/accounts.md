@@ -23,9 +23,13 @@ The `accounts` contract provides functions to deposit and withdraw tokens, and a
 
 Note that the ledger of accounts on the chain is consistently maintained behind scenes by the VM.
 
+### sendTo
+
+Moves tokens from the sender account to a target account on the chain, specified with the agent ID parameter `a`.
+
 ### deposit
 
-Moves tokens attached as a transfer to a target account on the chain. By default, the funds are deposited to the caller account. Optionally, a different target account can be specified with the agent ID parameter `a`.
+Credits any transfered tokens to the sender's account.
 
 ### withdraw
 

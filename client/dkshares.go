@@ -9,7 +9,7 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
@@ -22,9 +22,8 @@ func (c *WaspClient) DKSharesPost(request *model.DKSharesPostRequest) (*model.DK
 }
 
 // DKSharesGet retrieves the representation of an existing DKShare.
-func (c *WaspClient) DKSharesGet(addr ledgerstate.Address) (*model.DKSharesInfo, error) {
-	addrStr := addr.Base58()
+func (c *WaspClient) DKSharesGet(addr iotago.Address) (*model.DKSharesInfo, error) {
 	var response model.DKSharesInfo
-	err := c.do(http.MethodGet, routes.DKSharesGet(addrStr), nil, &response)
+	err := c.do(http.MethodGet, routes.DKSharesGet(addr.String()), nil, &response)
 	return &response, err
 }

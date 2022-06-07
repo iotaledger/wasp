@@ -11,13 +11,13 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 // An interface for all the network behaviors.
 type PeeringNetBehavior interface {
-	AddLink(inCh, outCh chan *peeringMsg, dstPubKey *ed25519.PublicKey)
+	AddLink(inCh, outCh chan *peeringMsg, dstPubKey *cryptolib.PublicKey)
 	Close()
 }
 
@@ -37,7 +37,7 @@ func NewPeeringNetReliable(log *logger.Logger) PeeringNetBehavior {
 }
 
 // Run implements PeeringNetBehavior.
-func (n *peeringNetReliable) AddLink(inCh, outCh chan *peeringMsg, dstPubKey *ed25519.PublicKey) {
+func (n *peeringNetReliable) AddLink(inCh, outCh chan *peeringMsg, dstPubKey *cryptolib.PublicKey) {
 	closeCh := make(chan bool)
 	n.closeChs = append(n.closeChs, closeCh)
 	go n.recvLoop(inCh, outCh, closeCh)
@@ -84,7 +84,7 @@ func NewPeeringNetUnreliable(deliverPct, repeatPct int, delayFrom, delayTill tim
 }
 
 // Run implements PeeringNetBehavior.
-func (n *peeringNetUnreliable) AddLink(inCh, outCh chan *peeringMsg, dstPubKey *ed25519.PublicKey) {
+func (n *peeringNetUnreliable) AddLink(inCh, outCh chan *peeringMsg, dstPubKey *cryptolib.PublicKey) {
 	closeCh := make(chan bool)
 	n.closeChs = append(n.closeChs, closeCh)
 	go n.recvLoop(inCh, outCh, closeCh, dstPubKey)
@@ -97,7 +97,7 @@ func (n *peeringNetUnreliable) Close() {
 	}
 }
 
-func (n *peeringNetUnreliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan bool, dstPubKey *ed25519.PublicKey) {
+func (n *peeringNetUnreliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan bool, dstPubKey *cryptolib.PublicKey) {
 	for {
 		select {
 		case <-closeCh:
@@ -107,7 +107,7 @@ func (n *peeringNetUnreliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 				return
 			}
 			if rand.Intn(100) > n.deliverPct {
-				n.log.Debugf("Network dropped message %v -%v-> %v", recv.from.String(), recv.msg.MsgType, dstPubKey.String())
+				n.log.Debugf("Network dropped message %v -%v-> %v", recv.from.AsString(), recv.msg.MsgType, dstPubKey.AsString())
 				continue // Drop the message.
 			}
 			//
@@ -124,7 +124,7 @@ func (n *peeringNetUnreliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 	}
 }
 
-func (n *peeringNetUnreliable) sendDelayed(recv *peeringMsg, outCh chan *peeringMsg, dstPubKey *ed25519.PublicKey, dupNum, dupCount int) {
+func (n *peeringNetUnreliable) sendDelayed(recv *peeringMsg, outCh chan *peeringMsg, dstPubKey *cryptolib.PublicKey, dupNum, dupCount int) {
 	fromMS := int(n.delayFrom.Milliseconds())
 	tillMS := int(n.delayTill.Milliseconds())
 	var delay time.Duration
@@ -138,7 +138,7 @@ func (n *peeringNetUnreliable) sendDelayed(recv *peeringMsg, outCh chan *peering
 	}
 	n.log.Debugf(
 		"Network delivers message %v -%v-> %v (duplicate %v/%v, delay=%vms)",
-		recv.from.String(), recv.msg.MsgType, dstPubKey.String(), dupNum, dupCount, delay.Milliseconds(),
+		recv.from.AsString(), recv.msg.MsgType, dstPubKey.AsString(), dupNum, dupCount, delay.Milliseconds(),
 	)
 	safeSendPeeringMsg(outCh, recv, n.log)
 }

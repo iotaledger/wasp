@@ -5,11 +5,10 @@ package testchain
 
 import (
 	"testing"
-	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -17,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -25,7 +25,6 @@ type MockedChainCore struct {
 	T                       *testing.T
 	chainID                 *iscp.ChainID
 	processors              *processors.Cache
-	peeringID               peering.PeeringID
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	getNetIDsFun            func() []string
@@ -34,15 +33,15 @@ type MockedChainCore struct {
 	onEventStateTransition  func(data *chain.ChainTransitionEventData)
 	onEventRequestProcessed func(id iscp.RequestID)
 	onSendPeerMsg           func(netID string, msgReceiver byte, msgType byte, msgData []byte)
-	onStateCandidate        func(state state.VirtualStateAccess, outputID ledgerstate.OutputID)
+	onStateCandidate        func(state state.VirtualStateAccess, outputID *iotago.UTXOInput)
 	onDismissChain          func(reason string)
-	onLedgerState           func(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
+	onAliasOutput           func(chainOutput *iscp.AliasOutputWithID)
 	onOffLedgerRequest      func(msg *messages.OffLedgerRequestMsgIn)
 	onRequestAck            func(msg *messages.RequestAckMsgIn)
 	onMissingRequestIDs     func(msg *messages.MissingRequestIDsMsgIn)
 	onMissingRequest        func(msg *messages.MissingRequestMsg)
 	onTimerTick             func(tick int)
-	onSync                  func(out ledgerstate.OutputID, blockIndex uint32) //nolint:structcheck,unused
+	onSync                  func(out iotago.OutputID, blockIndex uint32) //nolint:structcheck,unused
 	log                     *logger.Logger
 }
 
@@ -55,9 +54,8 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
-		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
-		peeringID:  chainID.Array(),
-		log:        log,
+		processors: processors.MustNew(coreprocessors.Config().WithNativeContracts(inccounter.Processor)),
+		log:        log.Named("mc-" + chainID.AsAddress().String()[2:8]),
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
 			return []string{}
@@ -74,12 +72,12 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		onSendPeerMsg: func(netID string, msgReceiver byte, msgType byte, msgData []byte) {
 			t.Fatalf("Sending to peer msg not implemented, netID=%v, receiver=%v, msgType=%v", netID, msgReceiver, msgType)
 		},
-		onStateCandidate: func(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
-			t.Fatalf("Receiving state candidate not implemented, outputID=%v", outputID)
+		onStateCandidate: func(state state.VirtualStateAccess, outputID *iotago.UTXOInput) {
+			t.Fatalf("Receiving state candidate not implemented, outputID=%v", iscp.OID(outputID))
 		},
 		onDismissChain: func(reason string) { t.Fatalf("Dismissing chain not implemented, reason=%v", reason) },
-		onLedgerState: func(chainOutput *ledgerstate.AliasOutput, timestamp time.Time) {
-			t.Fatalf("Receiving ledger state not implemented, chain output=%v", chainOutput)
+		onAliasOutput: func(chainOutput *iscp.AliasOutputWithID) {
+			t.Fatalf("Receiving alias output not implemented, chain output ID=%v", iscp.OID(chainOutput.ID()))
 		},
 		onOffLedgerRequest:  func(msg *messages.OffLedgerRequestMsgIn) { receiveFailFun("*messages.OffLedgerRequestMsgIn", msg) },
 		onRequestAck:        func(msg *messages.RequestAckMsgIn) { receiveFailFun("*messages.RequestAckMsgIn", msg) },
@@ -119,7 +117,7 @@ func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("implement me")
 }
 
-func (m *MockedChainCore) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (m *MockedChainCore) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID *iotago.UTXOInput) {
 	m.onStateCandidate(virtualState, outputID)
 }
 
@@ -127,8 +125,8 @@ func (m *MockedChainCore) EnqueueDismissChain(reason string) {
 	m.onDismissChain(reason)
 }
 
-func (m *MockedChainCore) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time) {
-	m.onLedgerState(chainOutput, timestamp)
+func (m *MockedChainCore) EnqueueAliasOutput(chainOutput *iscp.AliasOutputWithID) {
+	m.onAliasOutput(chainOutput)
 }
 
 func (m *MockedChainCore) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
@@ -179,7 +177,7 @@ func (m *MockedChainCore) OnSendPeerMsg(fun func(netID string, msgReceiver byte,
 	m.onSendPeerMsg = fun
 }
 
-func (m *MockedChainCore) OnStateCandidate(fun func(state state.VirtualStateAccess, outputID ledgerstate.OutputID)) {
+func (m *MockedChainCore) OnStateCandidate(fun func(state state.VirtualStateAccess, outputID *iotago.UTXOInput)) {
 	m.onStateCandidate = fun
 }
 
@@ -187,8 +185,8 @@ func (m *MockedChainCore) OnDismissChain(fun func(reason string)) {
 	m.onDismissChain = fun
 }
 
-func (m *MockedChainCore) OnLedgerState(fun func(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)) {
-	m.onLedgerState = fun
+func (m *MockedChainCore) OnAliasOutput(fun func(chainOutput *iscp.AliasOutputWithID)) {
+	m.onAliasOutput = fun
 }
 
 func (m *MockedChainCore) OnOffLedgerRequest(fun func(msg *messages.OffLedgerRequestMsgIn)) {
@@ -217,4 +215,12 @@ func (m *MockedChainCore) GetChainNodes() []peering.PeerStatusProvider {
 
 func (m *MockedChainCore) GetCandidateNodes() []*governance.AccessNodeInfo {
 	panic("not implemented MockedChainCore::GetCandidateNodes")
+}
+
+func (m *MockedChainCore) VirtualStateAccess() state.VirtualStateAccess {
+	panic("not implemented MockedChainCore::VirtualStateAccess")
+}
+
+func (m *MockedChainCore) GetAnchorOutput() *iscp.AliasOutputWithID {
+	panic("not implemented MockedChainCore::GetAnchorOutput")
 }

@@ -14,15 +14,22 @@ var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncCallOnChain,
 		FuncCheckContextFromFullEP,
+		FuncClaimAllowance,
 		FuncDoNothing,
-		FuncGetMintedSupply,
+		FuncEstimateMinDust,
 		FuncIncCounter,
+		FuncInfiniteLoop,
 		FuncInit,
 		FuncPassTypesFull,
+		FuncPingAllowanceBack,
 		FuncRunRecursion,
+		FuncSendLargeRequest,
+		FuncSendNFTsBack,
 		FuncSendToAddress,
 		FuncSetInt,
 		FuncSpawn,
+		FuncSplitFunds,
+		FuncSplitFundsNativeTokens,
 		FuncTestBlockContext1,
 		FuncTestBlockContext2,
 		FuncTestCallPanicFullEP,
@@ -32,12 +39,14 @@ var exportMap = wasmlib.ScExportMap{
 		FuncTestEventLogEventData,
 		FuncTestEventLogGenericData,
 		FuncTestPanicFullEP,
-		FuncWithdrawToChain,
+		FuncWithdrawFromChain,
 		ViewCheckContextFromViewEP,
 		ViewFibonacci,
+		ViewFibonacciIndirect,
 		ViewGetCounter,
 		ViewGetInt,
 		ViewGetStringValue,
+		ViewInfiniteLoopView,
 		ViewJustView,
 		ViewPassTypesView,
 		ViewTestCallPanicViewEPFromView,
@@ -48,15 +57,22 @@ var exportMap = wasmlib.ScExportMap{
 	Funcs: []wasmlib.ScFuncContextFunction{
 		funcCallOnChainThunk,
 		funcCheckContextFromFullEPThunk,
+		funcClaimAllowanceThunk,
 		funcDoNothingThunk,
-		funcGetMintedSupplyThunk,
+		funcEstimateMinDustThunk,
 		funcIncCounterThunk,
+		funcInfiniteLoopThunk,
 		funcInitThunk,
 		funcPassTypesFullThunk,
+		funcPingAllowanceBackThunk,
 		funcRunRecursionThunk,
+		funcSendLargeRequestThunk,
+		funcSendNFTsBackThunk,
 		funcSendToAddressThunk,
 		funcSetIntThunk,
 		funcSpawnThunk,
+		funcSplitFundsThunk,
+		funcSplitFundsNativeTokensThunk,
 		funcTestBlockContext1Thunk,
 		funcTestBlockContext2Thunk,
 		funcTestCallPanicFullEPThunk,
@@ -66,14 +82,16 @@ var exportMap = wasmlib.ScExportMap{
 		funcTestEventLogEventDataThunk,
 		funcTestEventLogGenericDataThunk,
 		funcTestPanicFullEPThunk,
-		funcWithdrawToChainThunk,
+		funcWithdrawFromChainThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
 		viewCheckContextFromViewEPThunk,
 		viewFibonacciThunk,
+		viewFibonacciIndirectThunk,
 		viewGetCounterThunk,
 		viewGetIntThunk,
 		viewGetStringValueThunk,
+		viewInfiniteLoopViewThunk,
 		viewJustViewThunk,
 		viewPassTypesViewThunk,
 		viewTestCallPanicViewEPFromViewThunk,
@@ -112,7 +130,7 @@ func funcCallOnChainThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
 	funcCallOnChain(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.funcCallOnChain ok")
@@ -142,6 +160,21 @@ func funcCheckContextFromFullEPThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcCheckContextFromFullEP ok")
 }
 
+type ClaimAllowanceContext struct {
+	State MutableTestCoreState
+}
+
+func funcClaimAllowanceThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcClaimAllowance")
+	f := &ClaimAllowanceContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcClaimAllowance(ctx, f)
+	ctx.Log("testcore.funcClaimAllowance ok")
+}
+
 type DoNothingContext struct {
 	State MutableTestCoreState
 }
@@ -157,25 +190,19 @@ func funcDoNothingThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcDoNothing ok")
 }
 
-type GetMintedSupplyContext struct {
-	Results MutableGetMintedSupplyResults
-	State   MutableTestCoreState
+type EstimateMinDustContext struct {
+	State MutableTestCoreState
 }
 
-func funcGetMintedSupplyThunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("testcore.funcGetMintedSupply")
-	results := wasmlib.NewScDict()
-	f := &GetMintedSupplyContext{
-		Results: MutableGetMintedSupplyResults{
-			proxy: results.AsProxy(),
-		},
+func funcEstimateMinDustThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcEstimateMinDust")
+	f := &EstimateMinDustContext{
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	funcGetMintedSupply(ctx, f)
-	ctx.Results(results)
-	ctx.Log("testcore.funcGetMintedSupply ok")
+	funcEstimateMinDust(ctx, f)
+	ctx.Log("testcore.funcEstimateMinDust ok")
 }
 
 type IncCounterContext struct {
@@ -191,6 +218,21 @@ func funcIncCounterThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcIncCounter(ctx, f)
 	ctx.Log("testcore.funcIncCounter ok")
+}
+
+type InfiniteLoopContext struct {
+	State MutableTestCoreState
+}
+
+func funcInfiniteLoopThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcInfiniteLoop")
+	f := &InfiniteLoopContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcInfiniteLoop(ctx, f)
+	ctx.Log("testcore.funcInfiniteLoop ok")
 }
 
 type InitContext struct {
@@ -242,6 +284,21 @@ func funcPassTypesFullThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcPassTypesFull ok")
 }
 
+type PingAllowanceBackContext struct {
+	State MutableTestCoreState
+}
+
+func funcPingAllowanceBackThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcPingAllowanceBack")
+	f := &PingAllowanceBackContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcPingAllowanceBack(ctx, f)
+	ctx.Log("testcore.funcPingAllowanceBack ok")
+}
+
 type RunRecursionContext struct {
 	Params  ImmutableRunRecursionParams
 	Results MutableRunRecursionResults
@@ -262,30 +319,53 @@ func funcRunRecursionThunk(ctx wasmlib.ScFuncContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
 	funcRunRecursion(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.funcRunRecursion ok")
 }
 
+type SendLargeRequestContext struct {
+	State MutableTestCoreState
+}
+
+func funcSendLargeRequestThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcSendLargeRequest")
+	f := &SendLargeRequestContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcSendLargeRequest(ctx, f)
+	ctx.Log("testcore.funcSendLargeRequest ok")
+}
+
+type SendNFTsBackContext struct {
+	State MutableTestCoreState
+}
+
+func funcSendNFTsBackThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcSendNFTsBack")
+	f := &SendNFTsBackContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcSendNFTsBack(ctx, f)
+	ctx.Log("testcore.funcSendNFTsBack ok")
+}
+
 type SendToAddressContext struct {
-	Params ImmutableSendToAddressParams
-	State  MutableTestCoreState
+	State MutableTestCoreState
 }
 
 func funcSendToAddressThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcSendToAddress")
 	f := &SendToAddressContext{
-		Params: ImmutableSendToAddressParams{
-			proxy: wasmlib.NewParamsProxy(),
-		},
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
-
-	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
 	funcSendToAddress(ctx, f)
 	ctx.Log("testcore.funcSendToAddress ok")
 }
@@ -329,6 +409,36 @@ func funcSpawnThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.ProgHash().Exists(), "missing mandatory progHash")
 	funcSpawn(ctx, f)
 	ctx.Log("testcore.funcSpawn ok")
+}
+
+type SplitFundsContext struct {
+	State MutableTestCoreState
+}
+
+func funcSplitFundsThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcSplitFunds")
+	f := &SplitFundsContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcSplitFunds(ctx, f)
+	ctx.Log("testcore.funcSplitFunds ok")
+}
+
+type SplitFundsNativeTokensContext struct {
+	State MutableTestCoreState
+}
+
+func funcSplitFundsNativeTokensThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcSplitFundsNativeTokens")
+	f := &SplitFundsNativeTokensContext{
+		State: MutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcSplitFundsNativeTokens(ctx, f)
+	ctx.Log("testcore.funcSplitFundsNativeTokens ok")
 }
 
 type TestBlockContext1Context struct {
@@ -477,15 +587,15 @@ func funcTestPanicFullEPThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestPanicFullEP ok")
 }
 
-type WithdrawToChainContext struct {
-	Params ImmutableWithdrawToChainParams
+type WithdrawFromChainContext struct {
+	Params ImmutableWithdrawFromChainParams
 	State  MutableTestCoreState
 }
 
-func funcWithdrawToChainThunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("testcore.funcWithdrawToChain")
-	f := &WithdrawToChainContext{
-		Params: ImmutableWithdrawToChainParams{
+func funcWithdrawFromChainThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcWithdrawFromChain")
+	f := &WithdrawFromChainContext{
+		Params: ImmutableWithdrawFromChainParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
@@ -493,8 +603,10 @@ func funcWithdrawToChainThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 	ctx.Require(f.Params.ChainID().Exists(), "missing mandatory chainID")
-	funcWithdrawToChain(ctx, f)
-	ctx.Log("testcore.funcWithdrawToChain ok")
+	ctx.Require(f.Params.GasBudget().Exists(), "missing mandatory gasBudget")
+	ctx.Require(f.Params.IotasWithdrawal().Exists(), "missing mandatory iotasWithdrawal")
+	funcWithdrawFromChain(ctx, f)
+	ctx.Log("testcore.funcWithdrawFromChain ok")
 }
 
 type CheckContextFromViewEPContext struct {
@@ -540,10 +652,36 @@ func viewFibonacciThunk(ctx wasmlib.ScViewContext) {
 			proxy: wasmlib.NewStateProxy(),
 		},
 	}
-	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
 	viewFibonacci(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.viewFibonacci ok")
+}
+
+type FibonacciIndirectContext struct {
+	Params  ImmutableFibonacciIndirectParams
+	Results MutableFibonacciIndirectResults
+	State   ImmutableTestCoreState
+}
+
+func viewFibonacciIndirectThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testcore.viewFibonacciIndirect")
+	results := wasmlib.NewScDict()
+	f := &FibonacciIndirectContext{
+		Params: ImmutableFibonacciIndirectParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableFibonacciIndirectResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
+	viewFibonacciIndirect(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testcore.viewFibonacciIndirect ok")
 }
 
 type GetCounterContext struct {
@@ -617,6 +755,21 @@ func viewGetStringValueThunk(ctx wasmlib.ScViewContext) {
 	viewGetStringValue(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testcore.viewGetStringValue ok")
+}
+
+type InfiniteLoopViewContext struct {
+	State ImmutableTestCoreState
+}
+
+func viewInfiniteLoopViewThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testcore.viewInfiniteLoopView")
+	f := &InfiniteLoopViewContext{
+		State: ImmutableTestCoreState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	viewInfiniteLoopView(ctx, f)
+	ctx.Log("testcore.viewInfiniteLoopView ok")
 }
 
 type JustViewContext struct {

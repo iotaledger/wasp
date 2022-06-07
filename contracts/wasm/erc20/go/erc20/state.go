@@ -25,10 +25,12 @@ func (s ImmutableErc20State) AllAllowances() MapAgentIDToImmutableAllowancesForA
 	return MapAgentIDToImmutableAllowancesForAgent{proxy: s.proxy.Root(StateAllAllowances)}
 }
 
+// balances per account
 func (s ImmutableErc20State) Balances() MapAgentIDToImmutableUint64 {
 	return MapAgentIDToImmutableUint64{proxy: s.proxy.Root(StateBalances)}
 }
 
+// total supply of the token
 func (s ImmutableErc20State) Supply() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateSupply))
 }
@@ -57,10 +59,12 @@ func (s MutableErc20State) AllAllowances() MapAgentIDToMutableAllowancesForAgent
 	return MapAgentIDToMutableAllowancesForAgent{proxy: s.proxy.Root(StateAllAllowances)}
 }
 
+// balances per account
 func (s MutableErc20State) Balances() MapAgentIDToMutableUint64 {
 	return MapAgentIDToMutableUint64{proxy: s.proxy.Root(StateBalances)}
 }
 
+// total supply of the token
 func (s MutableErc20State) Supply() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateSupply))
 }

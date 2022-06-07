@@ -44,18 +44,22 @@ pub struct ImmutableDividendState {
 }
 
 impl ImmutableDividendState {
+    // array with all the recipients of this dividend
     pub fn member_list(&self) -> ArrayOfImmutableAddress {
 		ArrayOfImmutableAddress { proxy: self.proxy.root(STATE_MEMBER_LIST) }
 	}
 
+    // map with all the recipient factors of this dividend
     pub fn members(&self) -> MapAddressToImmutableUint64 {
 		MapAddressToImmutableUint64 { proxy: self.proxy.root(STATE_MEMBERS) }
 	}
 
+    // owner of contract, the only one who can call 'member' func
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
+    // sum of all recipient factors
     pub fn total_factor(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(STATE_TOTAL_FACTOR))
 	}
@@ -109,18 +113,22 @@ impl MutableDividendState {
 		ImmutableDividendState { proxy: self.proxy.root("") }
 	}
 
+    // array with all the recipients of this dividend
     pub fn member_list(&self) -> ArrayOfMutableAddress {
 		ArrayOfMutableAddress { proxy: self.proxy.root(STATE_MEMBER_LIST) }
 	}
 
+    // map with all the recipient factors of this dividend
     pub fn members(&self) -> MapAddressToMutableUint64 {
 		MapAddressToMutableUint64 { proxy: self.proxy.root(STATE_MEMBERS) }
 	}
 
+    // owner of contract, the only one who can call 'member' func
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
+    // sum of all recipient factors
     pub fn total_factor(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(STATE_TOTAL_FACTOR))
 	}

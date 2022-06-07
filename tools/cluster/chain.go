@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -28,19 +26,19 @@ import (
 type Chain struct {
 	Description string
 
-	OriginatorSeed *seed.Seed
+	OriginatorKeyPair *cryptolib.KeyPair
 
 	AllPeers       []int
 	CommitteeNodes []int
 	Quorum         uint16
-	StateAddress   ledgerstate.Address
+	StateAddress   iotago.Address
 
 	ChainID *iscp.ChainID
 
 	Cluster *Cluster
 }
 
-func (ch *Chain) ChainAddress() ledgerstate.Address {
+func (ch *Chain) ChainAddress() iotago.Address {
 	return ch.ChainID.AsAddress()
 }
 
@@ -60,38 +58,34 @@ func (ch *Chain) AllAPIHosts() []string {
 	return ch.Cluster.Config.APIHosts(ch.AllPeers)
 }
 
-func (ch *Chain) OriginatorAddress() ledgerstate.Address {
-	addr := ch.OriginatorSeed.Address(0).Address()
+func (ch *Chain) OriginatorAddress() iotago.Address {
+	addr := ch.OriginatorKeyPair.Address()
 	return addr
 }
 
-func (ch *Chain) OriginatorID() *iscp.AgentID {
-	ret := iscp.NewAgentID(ch.OriginatorAddress(), 0)
+func (ch *Chain) OriginatorID() iscp.AgentID {
+	ret := iscp.NewAgentID(ch.OriginatorAddress())
 	return ret
 }
 
-func (ch *Chain) OriginatorKeyPair() *ed25519.KeyPair {
-	return ch.OriginatorSeed.KeyPair(0)
-}
-
 func (ch *Chain) OriginatorClient() *chainclient.Client {
-	return ch.Client(ch.OriginatorKeyPair())
+	return ch.Client(ch.OriginatorKeyPair)
 }
 
-func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclient.Client {
+func (ch *Chain) Client(sigScheme *cryptolib.KeyPair, nodeIndex ...int) *chainclient.Client {
 	idx := 0
 	if len(nodeIndex) == 1 {
 		idx = nodeIndex[0]
 	}
 	return chainclient.New(
-		ch.Cluster.GoshimmerClient(),
+		ch.Cluster.L1Client(),
 		ch.Cluster.WaspClient(idx),
 		ch.ChainID,
 		sigScheme,
 	)
 }
 
-func (ch *Chain) SCClient(contractHname iscp.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
+func (ch *Chain) SCClient(contractHname iscp.Hname, sigScheme *cryptolib.KeyPair, nodeIndex ...int) *scclient.SCClient {
 	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 
@@ -99,8 +93,8 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeAPIHosts())
 }
 
-func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
-	programHash, err := hashing.HashValueFromBase58(progHashStr)
+func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
+	programHash, err := hashing.HashValueFromHex(progHashStr)
 	if err != nil {
 		return nil, err
 	}
@@ -117,13 +111,13 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
-			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
+			Args: codec.MakeDict(params),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
+	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +131,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		blob.VarFieldProgramDescription: description,
 	})
 
-	programHash, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
+	programHash, _, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
 	if err != nil {
 		return hashing.NilHash, err
 	}
@@ -159,7 +153,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	params[root.ParamProgramHash] = programHash
 	params[root.ParamDescription] = description
 
-	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
+	args := codec.MakeDict(params)
 	tx, err := ch.OriginatorClient().Post1Request(
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
@@ -170,7 +164,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
+	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return hashing.NilHash, err
 	}
@@ -180,7 +174,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
 	v, err := ch.Cluster.WaspClient(0).CallView(
-		ch.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+		ch.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
@@ -204,7 +198,7 @@ func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCount
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
+	ret, err := cl.CallView(blocklog.ViewGetLatestBlockInfo.Name, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -219,7 +213,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
-		res, err := cl.CallView(blocklog.FuncGetBlockInfo.Name, dict.Dict{
+		res, err := cl.CallView(blocklog.ViewGetBlockInfo.Name, dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
 		})
 		if err != nil {
@@ -236,11 +230,11 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.FuncGetContractRecords.Name, nil)
+	ret, err := cl.CallView(root.ViewGetContractRecords.Name, nil)
 	if err != nil {
 		return nil, err
 	}
-	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.StateVarContractRegistry))
 }
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
@@ -259,7 +253,7 @@ func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeInde
 
 func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestReceipt, uint32, uint16, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
+	ret, err := cl.CallView(blocklog.ViewGetRequestReceipt.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -279,7 +273,7 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blo
 
 func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	res, err := cl.CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
+	res, err := cl.CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
 	})
 	if err != nil {

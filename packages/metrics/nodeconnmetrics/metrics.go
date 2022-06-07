@@ -1,7 +1,6 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,70 +11,69 @@ type nodeConnectionMetricsImpl struct {
 	log                 *logger.Logger
 	messageTotalCounter *prometheus.CounterVec
 	lastEventTimeGauge  *prometheus.GaugeVec
-	subscribed          []ledgerstate.Address
+	registered          []*iscp.ChainID
+	inMilestoneMetrics  NodeConnectionMessageMetrics
 }
 
 var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 
-const (
-	chainLabelName   = "chain"
-	msgTypeLabelName = "message_type"
-)
-
 func New(log *logger.Logger) NodeConnectionMetrics {
-	ret := &nodeConnectionMetricsImpl{log: log.Named("nodeconn")}
+	ret := &nodeConnectionMetricsImpl{
+		log:        log.Named("nodeconn"),
+		registered: make([]*iscp.ChainID, 0),
+	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
+	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics(ret, nil, "in_milestone")
 	return ret
 }
 
-func (ncmi *nodeConnectionMetricsImpl) RegisterMetrics() {
-	ncmi.log.Debug("Registering nodeconnection metrics to prometheus...")
-	ncmi.messageTotalCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+func (ncmiT *nodeConnectionMetricsImpl) RegisterMetrics() {
+	ncmiT.log.Debug("Registering nodeconnection metrics to prometheus...")
+	ncmiT.messageTotalCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_nodeconn_message_total_counter",
 		Help: "Number of messages send/received by node connection of the chain",
-	}, []string{chainLabelName, msgTypeLabelName})
-	prometheus.MustRegister(ncmi.messageTotalCounter)
-	ncmi.lastEventTimeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	}, []string{chainLabelNameConst, msgTypeLabelNameConst})
+	prometheus.MustRegister(ncmiT.messageTotalCounter)
+	ncmiT.lastEventTimeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "wasp_nodeconn_last_event_time_gauge",
 		Help: "Last time when the message was sent/received by node connection of the chain",
-	}, []string{chainLabelName, msgTypeLabelName})
-	prometheus.MustRegister(ncmi.lastEventTimeGauge)
-	ncmi.log.Info("Registering nodeconnection metrics to prometheus... Done")
+	}, []string{chainLabelNameConst, msgTypeLabelNameConst})
+	prometheus.MustRegister(ncmiT.lastEventTimeGauge)
+	ncmiT.log.Info("Registering nodeconnection metrics to prometheus... Done")
 }
 
-func (ncmi *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
-	return newNodeConnectionMessagesMetrics(ncmi, chainID)
+func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+	return newNodeConnectionMessagesMetrics(ncmiT, chainID)
 }
 
-func (ncmi *nodeConnectionMetricsImpl) getMetricsLabel(chainID *iscp.ChainID, msgType string) prometheus.Labels {
-	var chainIDStr string
-	if chainID == nil {
-		chainIDStr = ""
-	} else {
-		chainIDStr = chainID.String()
-	}
-	return prometheus.Labels{
-		chainLabelName:   chainIDStr,
-		msgTypeLabelName: msgType,
-	}
+// TODO: connect registered to Prometheus
+func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID *iscp.ChainID) {
+	ncmiT.registered = append(ncmiT.registered, chainID)
 }
 
-// TODO: connect subscribed to Prometheus
-func (ncmi *nodeConnectionMetricsImpl) SetSubscribed(address ledgerstate.Address) {
-	ncmi.subscribed = append(ncmi.subscribed, address)
-}
-
-// TODO: connect subscribed to Prometheus
-func (ncmi *nodeConnectionMetricsImpl) SetUnsubscribed(address ledgerstate.Address) {
+// TODO: connect registered to Prometheus
+func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *iscp.ChainID) {
 	var i int
-	for i = 0; i < len(ncmi.subscribed); i++ {
-		if ncmi.subscribed[i] == address {
-			ncmi.subscribed = append(ncmi.subscribed[:i], ncmi.subscribed[i+1:]...)
+	for i = 0; i < len(ncmiT.registered); i++ {
+		if ncmiT.registered[i] == chainID {
+			ncmiT.registered = append(ncmiT.registered[:i], ncmiT.registered[i+1:]...)
 			return
 		}
 	}
 }
 
-func (ncmi *nodeConnectionMetricsImpl) GetSubscribed() []ledgerstate.Address {
-	return ncmi.subscribed
+func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []*iscp.ChainID {
+	return ncmiT.registered
+}
+
+func (ncmiT *nodeConnectionMetricsImpl) GetInMilestone() NodeConnectionMessageMetrics {
+	return ncmiT.inMilestoneMetrics
+}
+
+func (ncmiT *nodeConnectionMetricsImpl) incTotalPrometheusCounter(label prometheus.Labels) {
+	ncmiT.messageTotalCounter.With(label).Inc()
+}
+
+func (ncmiT *nodeConnectionMetricsImpl) setLastEventPrometheusGaugeToNow(label prometheus.Labels) {
+	ncmiT.lastEventTimeGauge.With(label).SetToCurrentTime()
 }

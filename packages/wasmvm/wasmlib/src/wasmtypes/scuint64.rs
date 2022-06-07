@@ -33,6 +33,10 @@ pub fn uint64_to_bytes(value: u64) -> Vec<u8> {
     value.to_le_bytes().to_vec()
 }
 
+pub fn uint64_from_string(value: &str) -> u64 {
+    value.parse::<u64>().unwrap()
+}
+
 pub fn uint64_to_string(value: u64) -> String {
     value.to_string()
 }

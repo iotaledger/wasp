@@ -2,31 +2,31 @@ name: TokenRegistry
 description: ""
 structs:
   Token:
-    created: Uint64 // creation timestamp
-    description: String // description what minted token represents
-    mintedBy: AgentID // original minter
-    owner: AgentID // current owner
-    supply: Uint64 // amount of tokens originally minted
-    updated: Uint64 // last update timestamp
-    userDefined: String // any user defined text
+    created: Uint64 # creation timestamp
+    description: String # description what minted token represents
+    mintedBy: AgentID # original minter
+    owner: AgentID # current owner
+    supply: Uint64 # amount of tokens originally minted
+    updated: Uint64 # last update timestamp
+    userDefined: String # any user defined text
 typedefs: {}
 state:
-  colorList: Color[]
-  registry: map[Color]Token
+  tokenList: TokenID[]
+  registry: map[TokenID]Token
 funcs:
   mintSupply:
     params:
-      description: String? // description what minted token represents
-      userDefined: String? // any user defined text
+      description: String? # description what minted token represents
+      userDefined: String? # any user defined text
   transferOwnership:
-    access: creator // TODO the one who can transfer token ownership
+    access: creator # TODO the one who can transfer token ownership
     params:
-      color: Color // color of token to transfer ownership of
+      token: TokenID # token of token to transfer ownership of
   updateMetadata:
-    access: creator // TODO the one who can change the token info
+    access: creator # TODO the one who can change the token info
     params:
-      color: Color // color of token to update metadata for
+      token: TokenID # token of token to update metadata for
 views:
   getInfo:
     params:
-      color: Color // color of token to view registry info of
+      token: TokenID # token of token to view registry info of

@@ -13,56 +13,32 @@ type ImmutableCallOnChainResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableCallOnChainResults) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
+func (s ImmutableCallOnChainResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
 }
 
 type MutableCallOnChainResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableCallOnChainResults) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
-}
-
-type ImmutableGetMintedSupplyResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableGetMintedSupplyResults) MintedColor() wasmtypes.ScImmutableColor {
-	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultMintedColor))
-}
-
-func (s ImmutableGetMintedSupplyResults) MintedSupply() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultMintedSupply))
-}
-
-type MutableGetMintedSupplyResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableGetMintedSupplyResults) MintedColor() wasmtypes.ScMutableColor {
-	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultMintedColor))
-}
-
-func (s MutableGetMintedSupplyResults) MintedSupply() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultMintedSupply))
+func (s MutableCallOnChainResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
 }
 
 type ImmutableRunRecursionResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRunRecursionResults) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
+func (s ImmutableRunRecursionResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
 }
 
 type MutableRunRecursionResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableRunRecursionResults) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
+func (s MutableRunRecursionResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
 }
 
 type ImmutableTestChainOwnerIDFullResults struct {
@@ -85,32 +61,48 @@ type ImmutableFibonacciResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFibonacciResults) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
+func (s ImmutableFibonacciResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
 }
 
 type MutableFibonacciResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableFibonacciResults) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
+func (s MutableFibonacciResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
+}
+
+type ImmutableFibonacciIndirectResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFibonacciIndirectResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
+}
+
+type MutableFibonacciIndirectResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFibonacciIndirectResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
 }
 
 type ImmutableGetCounterResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultCounter))
+func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultCounter))
+func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultCounter))
 }
 
 type MapStringToImmutableInt64 struct {
@@ -126,7 +118,6 @@ type ImmutableGetIntResults struct {
 }
 
 func (s ImmutableGetIntResults) Values() MapStringToImmutableInt64 {
-	//nolint:gosimple
 	return MapStringToImmutableInt64{proxy: s.proxy}
 }
 
@@ -147,7 +138,6 @@ type MutableGetIntResults struct {
 }
 
 func (s MutableGetIntResults) Values() MapStringToMutableInt64 {
-	//nolint:gosimple
 	return MapStringToMutableInt64{proxy: s.proxy}
 }
 
@@ -164,7 +154,6 @@ type ImmutableGetStringValueResults struct {
 }
 
 func (s ImmutableGetStringValueResults) Vars() MapStringToImmutableString {
-	//nolint:gosimple
 	return MapStringToImmutableString{proxy: s.proxy}
 }
 
@@ -185,7 +174,6 @@ type MutableGetStringValueResults struct {
 }
 
 func (s MutableGetStringValueResults) Vars() MapStringToMutableString {
-	//nolint:gosimple
 	return MapStringToMutableString{proxy: s.proxy}
 }
 

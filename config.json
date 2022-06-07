@@ -1,4 +1,8 @@
 {
+  "l1": {
+    "apiAddress": "http://localhost:14265",
+    "faucetAddress": "http://localhost:8191"
+  },
   "database": {
     "directory": "waspdb"
   },
@@ -24,7 +28,12 @@
   "users": {
     "wasp": {
       "password": "wasp",
-      "permissions": ["dashboard", "api", "chain.read", "chain.write"]
+      "permissions": [
+        "dashboard",
+        "api",
+        "chain.read",
+        "chain.write"
+      ]
     }
   },
   "webapi": {
@@ -36,7 +45,9 @@
         "username": "wasp"
       },
       "ip": {
-        "whitelist": ["127.0.0.1"]
+        "whitelist": [
+          "127.0.0.1"
+        ]
       },
       "scheme": "ip"
     },
@@ -51,23 +62,22 @@
         "username": "wasp"
       },
       "ip": {
-        "whitelist": ["127.0.0.1"]
+        "whitelist": [
+          "127.0.0.1"
+        ]
       },
       "scheme": "basic"
     },
     "bindAddress": "0.0.0.0:7000"
   },
-  "peering":{
+  "peering": {
     "port": 4000,
     "netid": "127.0.0.1:4000"
   },
-  "nodeconn": {
-    "address": "127.0.0.1:5000"
-  },
-  "nanomsg":{
+  "nanomsg": {
     "port": 5550
   },
-  "metrics":{
+  "metrics": {
     "bindAddress": "127.0.0.1:2112",
     "enabled": true
   }
