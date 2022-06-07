@@ -40,6 +40,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.FuncWithdrawFromChain,
 		sc.ViewCheckContextFromViewEP,
 		sc.ViewFibonacci,
+		sc.ViewFibonacciIndirect,
 		sc.ViewGetCounter,
 		sc.ViewGetInt,
 		sc.ViewGetStringValue,
@@ -84,6 +85,7 @@ const exportMap: wasmlib.ScExportMap = {
 	views: [
 		viewCheckContextFromViewEPThunk,
 		viewFibonacciThunk,
+		viewFibonacciIndirectThunk,
 		viewGetCounterThunk,
 		viewGetIntThunk,
 		viewGetStringValueThunk,
@@ -112,7 +114,7 @@ function funcCallOnChainThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.CallOnChainContext();
 	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableCallOnChainResults(results.asProxy());
-	ctx.require(f.params.intValue().exists(), "missing mandatory intValue");
+	ctx.require(f.params.n().exists(), "missing mandatory n");
 	sc.funcCallOnChain(ctx, f);
 	ctx.results(results);
 	ctx.log("testcore.funcCallOnChain ok");
@@ -202,7 +204,7 @@ function funcRunRecursionThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.RunRecursionContext();
 	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableRunRecursionResults(results.asProxy());
-	ctx.require(f.params.intValue().exists(), "missing mandatory intValue");
+	ctx.require(f.params.n().exists(), "missing mandatory n");
 	sc.funcRunRecursion(ctx, f);
 	ctx.results(results);
 	ctx.log("testcore.funcRunRecursion ok");
@@ -353,10 +355,21 @@ function viewFibonacciThunk(ctx: wasmlib.ScViewContext): void {
 	let f = new sc.FibonacciContext();
 	const results = new wasmlib.ScDict([]);
 	f.results = new sc.MutableFibonacciResults(results.asProxy());
-	ctx.require(f.params.intValue().exists(), "missing mandatory intValue");
+	ctx.require(f.params.n().exists(), "missing mandatory n");
 	sc.viewFibonacci(ctx, f);
 	ctx.results(results);
 	ctx.log("testcore.viewFibonacci ok");
+}
+
+function viewFibonacciIndirectThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testcore.viewFibonacciIndirect");
+	let f = new sc.FibonacciIndirectContext();
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableFibonacciIndirectResults(results.asProxy());
+	ctx.require(f.params.n().exists(), "missing mandatory n");
+	sc.viewFibonacciIndirect(ctx, f);
+	ctx.results(results);
+	ctx.log("testcore.viewFibonacciIndirect ok");
 }
 
 function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {

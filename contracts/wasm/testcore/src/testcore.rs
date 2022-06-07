@@ -12,7 +12,7 @@ const MSG_FULL_PANIC: &str = "========== panic FULL ENTRY POINT =========";
 const MSG_VIEW_PANIC: &str = "========== panic VIEW =========";
 
 pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
-    let param_int = f.params.int_value().value();
+    let param_int = f.params.n().value();
 
     let mut hname_contract = ctx.contract();
     if f.params.hname_contract().exists() {
@@ -26,7 +26,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
 
     let counter = f.state.counter();
     ctx.log(&format!("call depth = {}, hnameContract = {}, hnameEP = {}, counter = {}",
-                     &f.params.int_value().to_string(),
+                     &f.params.n().to_string(),
                      &hname_contract.to_string(),
                      &hname_ep.to_string(),
                      &counter.to_string()));
@@ -34,11 +34,11 @@ pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
     counter.set_value(counter.value() + 1);
 
     let parms = ScDict::new(&[]);
-    let key = string_to_bytes(PARAM_INT_VALUE);
-    parms.set(&key, &int64_to_bytes(param_int));
+    let key = string_to_bytes(PARAM_N);
+    parms.set(&key, &uint64_to_bytes(param_int));
     let ret = ctx.call(hname_contract, hname_ep, Some(parms), None);
-    let ret_val = int64_from_bytes(&ret.get(&key));
-    f.results.int_value().set_value(ret_val);
+    let ret_val = uint64_from_bytes(&ret.get(&key));
+    f.results.n().set_value(ret_val);
 }
 
 pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFromFullEPContext) {
@@ -49,23 +49,32 @@ pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFrom
     ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
 
+pub fn func_claim_allowance(ctx: &ScFuncContext, _f: &ClaimAllowanceContext) {
+    let allowance = ctx.allowance();
+    let transfer = wasmlib::ScTransfer::from_balances(&allowance);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+}
+
 pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
     ctx.log("doing nothing...");
 }
 
-// pub fn func_get_minted_supply(ctx: &ScFuncContext, f: &GetMintedSupplyContext) {
-//     let minted = ctx.minted();
-//     let minted_colors = minted.colors();
-//     ctx.require(minted_colors.len() == 1, "test only supports one minted color");
-//     let color = minted_colors.get(0).unwrap();
-//     let amount = minted.balance(&color);
-//     f.results.minted_supply().set_value(amount);
-//     f.results.minted_color().set_value(&color);
-// }
+pub fn func_estimate_min_dust(ctx: &ScFuncContext, _f: &EstimateMinDustContext) {
+    let provided = ctx.allowance().iotas();
+    let dummy = ScFuncs::estimate_min_dust(ctx);
+    let required = ctx.estimate_dust(&dummy.func);
+    ctx.require(provided >= required, "not enough funds");
+}
 
 pub fn func_inc_counter(_ctx: &ScFuncContext, f: &IncCounterContext) {
     let counter = f.state.counter();
     counter.set_value(counter.value() + 1);
+}
+
+pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
+    loop {
+        // do nothing, just waste gas
+    }
 }
 
 pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
@@ -85,18 +94,40 @@ pub fn func_pass_types_full(ctx: &ScFuncContext, f: &PassTypesFullContext) {
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
+pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackContext) {
+    let caller = ctx.caller();
+    ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
+    let transfer = wasmlib::ScTransfer::from_balances(&ctx.allowance());
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.send(&caller.address(), &transfer);
+}
+
 pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
-    let depth = f.params.int_value().value();
+    let depth = f.params.n().value();
     if depth <= 0 {
         return;
     }
 
     let call_on_chain = ScFuncs::call_on_chain(ctx);
-    call_on_chain.params.int_value().set_value(depth - 1);
+    call_on_chain.params.n().set_value(depth - 1);
     call_on_chain.params.hname_ep().set_value(HFUNC_RUN_RECURSION);
     call_on_chain.func.call();
-    let ret_val = call_on_chain.results.int_value().value();
-    f.results.int_value().set_value(ret_val);
+    let ret_val = call_on_chain.results.n().value();
+    f.results.n().set_value(ret_val);
+}
+
+pub fn func_send_large_request(_ctx: &ScFuncContext, _f: &SendLargeRequestContext) {
+}
+
+pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
+    let address = ctx.caller().address();
+    let allowance = ctx.allowance();
+    let transfer = wasmlib::ScTransfer::from_balances(&allowance);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    for nft_id in allowance.nft_ids() {
+        let transfer = ScTransfer::nft(nft_id);
+        ctx.send(&address, &transfer);
+    }
 }
 
 pub fn func_send_to_address(_ctx: &ScFuncContext, _f: &SendToAddressContext) {
@@ -117,6 +148,35 @@ pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
     let spawn_hname = ctx.utility().hash_name(&spawn_name);
     for _i in 0..5 {
         ctx.call(spawn_hname, HFUNC_INC_COUNTER, None, None);
+    }
+}
+
+pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
+    let mut iotas = ctx.allowance().iotas();
+    let address = ctx.caller().address();
+    let iotas_to_transfer : u64 = 1_000_000;
+    let transfer = wasmlib::ScTransfer::iotas(iotas_to_transfer);
+    while iotas >= iotas_to_transfer {
+        ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+        ctx.send(&address, &transfer);
+        iotas -= iotas_to_transfer;
+    }
+}
+
+pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNativeTokensContext) {
+    let iotas = ctx.allowance().iotas();
+    let address = ctx.caller().address();
+    let transfer = wasmlib::ScTransfer::iotas(iotas);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    for token in ctx.allowance().token_ids() {
+        let one = ScBigInt::from_uint64(1);
+        let transfer = wasmlib::ScTransfer::tokens(&token, &one);
+        let mut tokens = ctx.allowance().balance(&token);
+        while tokens.cmp(&one) >= 0 {
+            ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+            ctx.send(&address, &transfer);
+            tokens = tokens.sub(&one);
+        }
     }
 }
 
@@ -159,6 +219,9 @@ pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext)
     ctx.panic(MSG_FULL_PANIC);
 }
 
+pub fn func_withdraw_from_chain(_ctx: &ScFuncContext, _f: &WithdrawFromChainContext) {
+}
+
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {
     ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
     ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
@@ -166,23 +229,36 @@ pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFrom
     ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
 
-pub fn view_fibonacci(ctx: &ScViewContext, f: &FibonacciContext) {
-    let n = f.params.int_value().value();
+fn fibonacci(n: u64) -> u64 {
+    if n <= 1 {
+        return n;
+    }
+    fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+pub fn view_fibonacci(_ctx: &ScViewContext, f: &FibonacciContext) {
+    let n = f.params.n().value();
+    let result = fibonacci(n);
+    f.results.n().set_value(result);
+}
+
+pub fn view_fibonacci_indirect(ctx: &ScViewContext, f: &FibonacciIndirectContext) {
+    let n = f.params.n().value();
     if n == 0 || n == 1 {
-        f.results.int_value().set_value(n);
+        f.results.n().set_value(n);
         return;
     }
 
-    let fib = ScFuncs::fibonacci(ctx);
-    fib.params.int_value().set_value(n - 1);
+    let fib = ScFuncs::fibonacci_indirect(ctx);
+    fib.params.n().set_value(n - 1);
     fib.func.call();
-    let n1 = fib.results.int_value().value();
+    let n1 = fib.results.n().value();
 
-    fib.params.int_value().set_value(n - 2);
+    fib.params.n().set_value(n - 2);
     fib.func.call();
-    let n2 = fib.results.int_value().value();
+    let n2 = fib.results.n().value();
 
-    f.results.int_value().set_value(n1 + n2);
+    f.results.n().set_value(n1 + n2);
 }
 
 pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
@@ -198,6 +274,12 @@ pub fn view_get_int(ctx: &ScViewContext, f: &GetIntContext) {
 
 pub fn view_get_string_value(ctx: &ScViewContext, _f: &GetStringValueContext) {
     ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
+pub fn view_infinite_loop_view(_ctx: &ScViewContext, _f: &InfiniteLoopViewContext) {
+    loop {
+        // do nothing, just waste gas
+    }
 }
 
 pub fn view_just_view(ctx: &ScViewContext, _f: &JustViewContext) {
@@ -231,83 +313,4 @@ pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
     let get_chain_info = coregovernance::ScFuncs::get_chain_info(ctx);
     get_chain_info.func.call();
     f.results.sandbox_call().set_value(&get_chain_info.results.description().value());
-}
-
-pub fn func_claim_allowance(ctx: &ScFuncContext, _f: &ClaimAllowanceContext) {
-    let allowance = ctx.allowance();
-    let transfer = wasmlib::ScTransfer::from_balances(&allowance);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-}
-
-pub fn func_estimate_min_dust(ctx: &ScFuncContext, _f: &EstimateMinDustContext) {
-    let provided = ctx.allowance().iotas();
-    let dummy = ScFuncs::estimate_min_dust(ctx);
-    let required = ctx.estimate_dust(&dummy.func);
-    ctx.require(provided >= required, "not enough funds");
-}
-
-pub fn func_infinite_loop(_ctx: &ScFuncContext, _f: &InfiniteLoopContext) {
-    loop {
-        // do nothing, just waste gas
-    }
-}
-
-pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackContext) {
-    let caller = ctx.caller();
-    ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
-    let transfer = wasmlib::ScTransfer::from_balances(&ctx.allowance());
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-    ctx.send(&caller.address(), &transfer);
-}
-
-pub fn func_send_large_request(_ctx: &ScFuncContext, _f: &SendLargeRequestContext) {
-}
-
-pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
-    let address = ctx.caller().address();
-    let allowance = ctx.allowance();
-    let transfer = wasmlib::ScTransfer::from_balances(&allowance);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-    for nft_id in allowance.nft_ids() {
-        let transfer = ScTransfer::nft(nft_id);
-        ctx.send(&address, &transfer);
-    }
-}
-
-pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
-    let mut iotas = ctx.allowance().iotas();
-    let address = ctx.caller().address();
-    let iotas_to_transfer : u64 = 1_000_000;
-    let transfer = wasmlib::ScTransfer::iotas(iotas_to_transfer);
-    while iotas >= iotas_to_transfer {
-        ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-        ctx.send(&address, &transfer);
-        iotas -= iotas_to_transfer;
-    }
-}
-
-pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNativeTokensContext) {
-    let iotas = ctx.allowance().iotas();
-    let address = ctx.caller().address();
-    let transfer = wasmlib::ScTransfer::iotas(iotas);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-    for token in ctx.allowance().token_ids() {
-        let one = ScBigInt::from_uint64(1);
-        let transfer = wasmlib::ScTransfer::tokens(&token, &one);
-        let mut tokens = ctx.allowance().balance(&token);
-        while tokens.cmp(&one) >= 0 {
-            ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
-            ctx.send(&address, &transfer);
-            tokens = tokens.sub(&one);
-        }
-    }
-}
-
-pub fn func_withdraw_from_chain(_ctx: &ScFuncContext, _f: &WithdrawFromChainContext) {
-}
-
-pub fn view_infinite_loop_view(_ctx: &ScViewContext, _f: &InfiniteLoopViewContext) {
-    loop {
-        // do nothing, just waste gas
-    }
 }

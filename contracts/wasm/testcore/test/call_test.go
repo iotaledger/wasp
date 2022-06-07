@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -28,9 +29,9 @@ import (
 // We have a hard-coded budget of 5M gas for a call
 
 // Turns out N=8 stays just within budget for Rust and Go
-const fiboN = int64(8)
+const fiboN = uint64(8)
 
-func fibo(n int64) int64 {
+func fibo(n uint64) uint64 {
 	if n == 0 || n == 1 {
 		return n
 	}
@@ -48,10 +49,10 @@ func TestCallFibonacci(t *testing.T) {
 		}
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
-		f.Params.IntValue().SetValue(n)
+		f.Params.N().SetValue(n)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
-		result := f.Results.IntValue()
+		result := f.Results.N()
 		require.True(t, result.Exists())
 		require.EqualValues(t, fibo(n), result.Value())
 	})
@@ -63,25 +64,55 @@ func TestCallFibonacciIndirect(t *testing.T) {
 
 		n := fiboN
 		if *wasmsolo.TsWasm {
+			// Typescript burns 600K gas per call
 			n = 7
 		}
 
-		f := testcore.ScFuncs.CallOnChain(ctx)
-		f.Params.IntValue().SetValue(n)
-		f.Params.HnameContract().SetValue(testcore.HScName)
-		f.Params.HnameEP().SetValue(testcore.HViewFibonacci)
-		f.Func.Post()
+		f := testcore.ScFuncs.FibonacciIndirect(ctx)
+		f.Params.N().SetValue(n)
+		f.Func.Call()
 		require.NoError(t, ctx.Err)
-		result := f.Results.IntValue()
+		result := f.Results.N()
 		require.True(t, result.Exists())
 		require.EqualValues(t, fibo(n), result.Value())
+	})
+}
 
-		v := testcore.ScFuncs.GetCounter(ctx)
-		v.Func.Call()
-		require.NoError(t, ctx.Err)
-		counter := v.Results.Counter()
-		require.True(t, counter.Exists())
-		require.EqualValues(t, 1, counter.Value())
+func testIndirectCall(t *testing.T, w bool, hScName wasmtypes.ScHname) {
+	ctx := deployTestCore(t, w)
+
+	n := fiboN
+	if *wasmsolo.TsWasm {
+		n = 7
+	}
+
+	f := testcore.ScFuncs.CallOnChain(ctx)
+	f.Params.N().SetValue(n)
+	f.Params.HnameContract().SetValue(testcore.HScName)
+	f.Params.HnameEP().SetValue(hScName)
+	f.Func.Post()
+	require.NoError(t, ctx.Err)
+	result := f.Results.N()
+	require.True(t, result.Exists())
+	require.EqualValues(t, fibo(n), result.Value())
+
+	v := testcore.ScFuncs.GetCounter(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	counter := v.Results.Counter()
+	require.True(t, counter.Exists())
+	require.EqualValues(t, 1, counter.Value())
+}
+
+func TestIndirectCallFibonacci(t *testing.T) {
+	run2(t, func(t *testing.T, w bool) {
+		testIndirectCall(t, w, testcore.HViewFibonacci)
+	})
+}
+
+func TestIndirectCallFibonacciIndirect(t *testing.T) {
+	run2(t, func(t *testing.T, w bool) {
+		testIndirectCall(t, w, testcore.HViewFibonacciIndirect)
 	})
 }
 
@@ -89,10 +120,10 @@ func TestCallRecursive(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		depth := int64(27)
+		depth := uint64(27)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
-		f.Params.IntValue().SetValue(depth)
+		f.Params.N().SetValue(depth)
 		f.Params.HnameContract().SetValue(testcore.HScName)
 		f.Params.HnameEP().SetValue(testcore.HFuncRunRecursion)
 		f.Func.Post()

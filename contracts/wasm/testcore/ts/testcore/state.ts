@@ -9,8 +9,8 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableTestCoreState extends wasmtypes.ScProxy {
-	counter(): wasmtypes.ScImmutableInt64 {
-		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.StateCounter));
+	counter(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateCounter));
 	}
 
 	ints(): sc.MapStringToImmutableInt64 {
@@ -27,8 +27,8 @@ export class MutableTestCoreState extends wasmtypes.ScProxy {
 		return new sc.ImmutableTestCoreState(this.proxy);
 	}
 
-	counter(): wasmtypes.ScMutableInt64 {
-		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.StateCounter));
+	counter(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateCounter));
 	}
 
 	ints(): sc.MapStringToMutableInt64 {
