@@ -205,22 +205,9 @@ func testIncrement(t *testing.T, numRequests int) {
 
 func TestIncrementWithTransfer(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
-	t.Fail() // TODO refactor
 
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
-
-	// if !e.clu.AssertAddressBalances(scOwnerAddr,
-	// 	iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-42)) {
-	// 	t.Fatal()
-	// }
-	// agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	// actual := e.getBalanceOnChain(agentID, iscp.IotaTokenID)
-	// require.EqualValues(t, 42, actual)
-
-	// agentID = iscp.NewAgentID(scOwnerAddr, 0)
-	// actual = e.getBalanceOnChain(agentID, iscp.IotaTokenID)
-	// require.EqualValues(t, 0, actual)
 
 	e.checkCounter(1)
 }
