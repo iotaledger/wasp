@@ -77,6 +77,7 @@ func (w *chainWAL) Write(bytes []byte) error {
 	index := block.BlockIndex()
 	segName := segmentName(w.dir, index)
 	f, err := os.OpenFile(segName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
+	defer f.Close()
 	if err != nil {
 		return fmt.Errorf("could not create segment: %w", err)
 	}
@@ -92,7 +93,7 @@ func (w *chainWAL) Write(bytes []byte) error {
 		return fmt.Errorf("Error writing log: %w", err)
 	}
 	w.metrics.segments.Inc()
-	return f.Close()
+	return nil
 }
 
 func segmentName(dir string, index uint32) string {
