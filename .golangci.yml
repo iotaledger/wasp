@@ -1,3 +1,5 @@
+run:
+    go: "1.18"
 issues:
     exclude-use-default: false
     max-issues-per-linter: 0
@@ -5,37 +7,37 @@ issues:
     new-from-rev: ""
     exclude:
         - 'Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*print(f|ln)?|os\.(Un)?Setenv). is not checked' # errcheck
-        - 'err113: do not define dynamic errors, use wrapped static errors instead:' # goerr113
-        - 'type name will be used as [0-9A-Za-z_.]+ by other packages, and that stutters; consider calling this' # golint
-        - 'Potential file inclusion via variable' # gosec
+        - "err113: do not define dynamic errors, use wrapped static errors instead:" # goerr113
+        - "type name will be used as [0-9A-Za-z_.]+ by other packages, and that stutters; consider calling this" # golint
+        - "Potential file inclusion via variable" # gosec
         - "G404: Use of weak random number generator" # gosec
-        - 'Subprocess launch(ed with variable|ing should be audited)' # gosec
-        - 'Use of unsafe calls should be audited' # gosec
-        - 'G108: Profiling endpoint is automatically exposed on /debug/pprof' # gosec
-        - '(Expect directory permissions to be 0750 or less|Expect file permissions to be 0600 or less)' # gosec
-        - 'G101: Potential hardcoded credentials' # gosec
-        - '(G104|G307)' # gosec Duplicated errcheck checks.
-        - '`[0-9A-Za-z_.]+` - `[0-9A-Za-z_.]+` always receives `[0-9A-Za-z_.]+`' # unparam
-        - 'should have comment .*or be unexported' # revive
-        - 'exported: comment on exported' # revive
-        - 'package-comments: package comment should be of the form' # revive
-        - 'blank-imports' # revive
+        - "Subprocess launch(ed with variable|ing should be audited)" # gosec
+        - "Use of unsafe calls should be audited" # gosec
+        - "G108: Profiling endpoint is automatically exposed on /debug/pprof" # gosec
+        - "(Expect directory permissions to be 0750 or less|Expect file permissions to be 0600 or less)" # gosec
+        - "G101: Potential hardcoded credentials" # gosec
+        - "(G104|G307)" # gosec Duplicated errcheck checks.
+        - "`[0-9A-Za-z_.]+` - `[0-9A-Za-z_.]+` always receives `[0-9A-Za-z_.]+`" # unparam
+        - "should have comment .*or be unexported" # revive
+        - "exported: comment on exported" # revive
+        - "package-comments: package comment should be of the form" # revive
+        - "blank-imports" # revive
         - "var-naming: don't use leading k in Go names;" #revive
         - 'shadow: declaration of "err"' # govet
 
     exclude-rules:
-        -   path: (_test\.go|example_test\.go|example_[0-9A-Za-z_-]+_test\.go)
-            linters:
-                - errcheck
-                - bodyclose
-                - noctx
-                - gosec
-                - funlen
-                - gomnd
-        -   path: (_test\.go|example_test\.go|example_[0-9A-Za-z_-]+_test\.go)
-            linters:
-                - gocritic
-            text: "unnecessaryBlock: block doesn't have definitions, can be simply deleted"
+        - path: (_test\.go|example_test\.go|example_[0-9A-Za-z_-]+_test\.go)
+          linters:
+              - errcheck
+              - bodyclose
+              - noctx
+              - gosec
+              - funlen
+              - gomnd
+        - path: (_test\.go|example_test\.go|example_[0-9A-Za-z_-]+_test\.go)
+          linters:
+              - gocritic
+          text: "unnecessaryBlock: block doesn't have definitions, can be simply deleted"
 
 linters-settings:
     funlen:
@@ -61,7 +63,7 @@ linters-settings:
         settings:
             mnd:
                 # don't include the "operation" and "assign"
-                checks: [argument,case,condition,return]
+                checks: [argument, case, condition, return]
     govet:
         check-shadowing: true
     misspell:
@@ -91,21 +93,23 @@ linters:
         - revive # revive is the newer replacement for golint
         - goprintffuncname # Checks that printf-like functions are named with f at the end.
         - gosec # Inspects source code for security problems.
-        - gosimple # Linter for Go source code that specializes in simplifying a code.
+        # - gosimple # Linter for Go source code that specializes in simplifying a code.
         - govet # Vet examines Go source code and reports suspicious constructs.
         - ineffassign # Detects when assignments to existing variables are not used.
         - misspell # Finds commonly misspelled English words in comments.
         - nakedret # Finds naked returns in functions greater than a specified function length.
         - noctx # noctx finds sending http request without context.Context.
         - nolintlint # Reports ill-formed or insufficient nolint directives.
-        - staticcheck # Staticcheck is a go vet on steroids, applying a ton of static analysis checks.
+        # - staticcheck # Staticcheck is a go vet on steroids, applying a ton of static analysis checks.
         - structcheck # Finds unused struct fields.
         - unconvert # Remove unnecessary type conversions.
         - unparam # Reports unused function parameters.
-        - unused # Checks Go code for unused constants, variables, functions and types.
+        # - unused # Checks Go code for unused constants, variables, functions and types.
         - varcheck # Finds unused global variables and constants.
         - whitespace # Tool for detection of leading and trailing whitespace.
 
+
+        ### `gosimple` `staticcheck` and `unused` are disabled because of issues with go 1.18: https://github.com/golangci/golangci-lint/issues/2649
 
     # don't enable:
     # gomnd: An analyzer to detect magic numbers.
