@@ -50,9 +50,10 @@ func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
 	}
 	// read all segments in log
 	f, err := os.Open(w.dir)
-	defer f.Close()
 	if err != nil {
 		return nil, fmt.Errorf("could not open wal: %w", err)
+	} else {
+		defer f.Close()
 	}
 
 	w.segments = make(map[uint32]*segment)
@@ -77,9 +78,10 @@ func (w *chainWAL) Write(bytes []byte) error {
 	index := block.BlockIndex()
 	segName := segmentName(w.dir, index)
 	f, err := os.OpenFile(segName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
-	defer f.Close()
 	if err != nil {
 		return fmt.Errorf("could not create segment: %w", err)
+	} else {
+		defer f.Close()
 	}
 	segment := &segment{index: index, dir: w.dir}
 	w.segments[index] = segment
@@ -111,10 +113,11 @@ func (w *chainWAL) Read(i uint32) ([]byte, error) {
 	}
 	segName := segmentName(segment.dir, segment.index)
 	f, err := os.OpenFile(segName, os.O_RDONLY, 0o666)
-	defer f.Close()
 	if err != nil {
 		w.metrics.failedReads.Inc()
 		return nil, fmt.Errorf("error opening segment: %w", err)
+	} else {
+		defer f.Close()
 	}
 	stat, err := f.Stat()
 	if err != nil {
