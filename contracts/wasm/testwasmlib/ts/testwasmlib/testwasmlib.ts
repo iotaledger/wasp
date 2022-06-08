@@ -450,3 +450,6 @@ export function viewBigIntShr(ctx: wasmlib.ScViewContext, f: sc.BigIntShrContext
     const res = lhs.shr(shift);
     f.results.res().setValue(res);
 }
+
+export function viewCheckAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckAgentIDContext): void {
+}

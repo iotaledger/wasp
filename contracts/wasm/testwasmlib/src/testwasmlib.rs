@@ -440,3 +440,6 @@ pub fn view_big_int_shr(_ctx: &ScViewContext, f: &BigIntShrContext) {
     let res = lhs.shr(shift);
     f.results.res().set_value(&res);
 }
+
+pub fn view_check_agent_id(ctx: &ScViewContext, f: &CheckAgentIDContext) {
+}

@@ -1008,6 +1008,38 @@ func (s MutableBlockRecordsParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
+type ImmutableCheckAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckAgentIDParams) AgentBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAgentBytes))
+}
+
+func (s ImmutableCheckAgentIDParams) AgentString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamAgentString))
+}
+
+func (s ImmutableCheckAgentIDParams) ScAgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamScAgentID))
+}
+
+type MutableCheckAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckAgentIDParams) AgentBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAgentBytes))
+}
+
+func (s MutableCheckAgentIDParams) AgentString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamAgentString))
+}
+
+func (s MutableCheckAgentIDParams) ScAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamScAgentID))
+}
+
 type ImmutableStringMapOfStringArrayLengthParams struct {
 	proxy wasmtypes.Proxy
 }

@@ -348,3 +348,9 @@ views:
   getRandom:
     results:
       random: Uint64
+
+  checkAgentID:
+    params:
+      scAgentID: AgentID
+      agentBytes: Bytes
+      agentString: String

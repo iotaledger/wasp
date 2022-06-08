@@ -395,6 +395,13 @@ func TestWasmTypes(t *testing.T) {
 	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
 	require.EqualValues(t, scAgentID.String(), agentID.String())
 
+	nilScAgentID := wasmtypes.ScAgentID{}
+	nilAgentID := iscp.NilAgentID{}
+	require.EqualValues(t, nilScAgentID, wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(nilScAgentID)))
+	require.EqualValues(t, nilScAgentID, wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(nilScAgentID)))
+	require.EqualValues(t, nilScAgentID.Bytes(), nilAgentID.Bytes())
+	require.EqualValues(t, nilScAgentID.String(), nilAgentID.String())
+
 	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
 	require.Equal(t, goInt8, wasmtypes.Int8FromString(wasmtypes.Int8ToString(goInt8)))

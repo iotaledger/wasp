@@ -18,7 +18,9 @@ const (
 
 const (
 	ParamAddress     = "address"
+	ParamAgentBytes  = "agentBytes"
 	ParamAgentID     = "agentID"
+	ParamAgentString = "agentString"
 	ParamBlockIndex  = "blockIndex"
 	ParamBool        = "bool"
 	ParamBytes       = "bytes"
@@ -42,6 +44,7 @@ const (
 	ParamRecordIndex = "recordIndex"
 	ParamRequestID   = "requestID"
 	ParamRhs         = "rhs"
+	ParamScAgentID   = "scAgentID"
 	ParamShift       = "shift"
 	ParamString      = "string"
 	ParamTokenID     = "tokenID"
@@ -121,6 +124,7 @@ const (
 	ViewBigIntSub                      = "bigIntSub"
 	ViewBlockRecord                    = "blockRecord"
 	ViewBlockRecords                   = "blockRecords"
+	ViewCheckAgentID                   = "checkAgentID"
 	ViewGetRandom                      = "getRandom"
 	ViewIotaBalance                    = "iotaBalance"
 	ViewStringMapOfStringArrayLength   = "stringMapOfStringArrayLength"
@@ -172,6 +176,7 @@ const (
 	HViewBigIntSub                      = wasmtypes.ScHname(0xf3c8cd33)
 	HViewBlockRecord                    = wasmtypes.ScHname(0xad13b2f8)
 	HViewBlockRecords                   = wasmtypes.ScHname(0x16e249ea)
+	HViewCheckAgentID                   = wasmtypes.ScHname(0x27ae5137)
 	HViewGetRandom                      = wasmtypes.ScHname(0x46263045)
 	HViewIotaBalance                    = wasmtypes.ScHname(0x9d3920bd)
 	HViewStringMapOfStringArrayLength   = wasmtypes.ScHname(0x9f433699)
