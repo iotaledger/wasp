@@ -366,34 +366,27 @@ func TestWasmTypes(t *testing.T) {
 	// check agent id of alias address (hname zero)
 	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
 	agentID := iscp.NewAgentID(aliasAddress)
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of ed25519 address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
 	agentID = iscp.NewAgentID(ed25519Address)
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of NFT address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
 	agentID = iscp.NewAgentID(nftAddress)
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of contract (hname non-zero)
 	scAgentID = wasmtypes.NewScAgentID(scAliasAddress, testwasmlib.HScName)
 	agentID = iscp.NewContractAgentID(chainID, iscp.Hname(testwasmlib.HScName))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
+
+	// check nil agent id
+	scAgentID = wasmtypes.ScAgentID{}
+	agentID = &iscp.NilAgentID{}
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
@@ -531,4 +524,21 @@ func TestWasmTypes(t *testing.T) {
 	byteTokenID := []byte{0xc3, 0x77, 0xf3, 0xf1, 0xea, 0x0f, 0x57, 0x13, 0x4d, 0x64, 0x4f, 0x2f, 0x29, 0x1d, 0x49, 0xf4, 0x8b, 0x11, 0x6d, 0x68, 0x17, 0x4f, 0x73, 0xec, 0x13, 0x09, 0xdd, 0x85, 0xb0, 0x09, 0xea, 0x85, 0xdb, 0x80, 0x26, 0x6a, 0x94, 0xea}
 	require.Equal(t, byteTokenID, wasmtypes.TokenIDToBytes(wasmtypes.TokenIDFromBytes(byteTokenID)))
 	require.Equal(t, byteTokenID, wasmtypes.TokenIDFromBytes(byteTokenID).Bytes())
+}
+
+func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.ScAgentID, agentID iscp.AgentID) {
+	agentBytes := agentID.Bytes()
+	agentString := agentID.String()
+
+	require.EqualValues(t, scAgentID.Bytes(), agentBytes)
+	require.EqualValues(t, scAgentID.String(), agentString)
+	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
+	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+
+	checker := testwasmlib.ScFuncs.CheckAgentID(ctx)
+	checker.Params.ScAgentID().SetValue(scAgentID)
+	checker.Params.AgentBytes().SetValue(agentBytes)
+	checker.Params.AgentString().SetValue(agentString)
+	checker.Func.Call()
+	require.NoError(t, ctx.Err)
 }

@@ -440,3 +440,13 @@ pub fn view_big_int_shr(_ctx: &ScViewContext, f: &BigIntShrContext) {
     let res = lhs.shr(shift);
     f.results.res().set_value(&res);
 }
+
+pub fn view_check_agent_id(ctx: &ScViewContext, f: &CheckAgentIDContext) {
+    let sc_agent_id = f.params.sc_agent_id().value();
+    let agent_bytes = f.params.agent_bytes().value();
+    let agent_string = f.params.agent_string().value();
+    ctx.require(sc_agent_id == agent_id_from_bytes(&agent_id_to_bytes(&sc_agent_id)), "bytes conversion failed");
+    ctx.require(sc_agent_id == agent_id_from_string(&agent_id_to_string(&sc_agent_id)), "string conversion failed");
+    ctx.require(sc_agent_id.to_bytes() == agent_bytes, "bytes mismatch");
+    ctx.require(sc_agent_id.to_string() == agent_string, "string mismatch");
+}

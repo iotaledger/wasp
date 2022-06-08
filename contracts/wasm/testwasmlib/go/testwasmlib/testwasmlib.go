@@ -448,3 +448,13 @@ func viewBigIntShr(ctx wasmlib.ScViewContext, f *BigIntShrContext) {
 	res := lhs.Shr(shift)
 	f.Results.Res().SetValue(res)
 }
+
+func viewCheckAgentID(ctx wasmlib.ScViewContext, f *CheckAgentIDContext) {
+	scAgentID := f.Params.ScAgentID().Value()
+	agentBytes := f.Params.AgentBytes().Value()
+	agentString := f.Params.AgentString().Value()
+	ctx.Require(scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)), "bytes conversion failed")
+	ctx.Require(scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)), "string conversion failed")
+	ctx.Require(string(scAgentID.Bytes()) == string(agentBytes), "bytes mismatch")
+	ctx.Require(scAgentID.String() == agentString, "string mismatch")
+}

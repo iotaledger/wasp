@@ -10,6 +10,7 @@ export const ScAgentIDNil: u8 = 0;
 export const ScAgentIDAddress: u8 = 1;
 export const ScAgentIDContract: u8 = 2;
 export const ScAgentIDEthereum: u8 = 3;
+const nilAgentIDString: string = "-";
 
 export class ScAgentID {
     kind: u8;
@@ -122,8 +123,7 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
             panic("AgentIDToBytes: unsupported ScAgentIDEthereum");
             break;
         case ScAgentIDNil:
-            panic("AgentIDToBytes: unsupported ScAgentIDNil");
-            break;
+            return buf;
         default: {
             panic("AgentIDToBytes: invalid AgentID type");
             break;
@@ -133,7 +133,11 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
 }
 
 export function agentIDFromString(value: string): ScAgentID {
-    //TODO ScAgentIDEthereum / ScAgentIDNil
+    //TODO ScAgentIDEthereum
+    if (value == nilAgentIDString) {
+        return agentIDFromBytes([]);
+    }
+
     const parts = value.split("@");
     switch (parts.length) {
         case 1:
@@ -147,11 +151,23 @@ export function agentIDFromString(value: string): ScAgentID {
 }
 
 export function agentIDToString(value: ScAgentID): string {
-    //TODO ScAgentIDEthereum / ScAgentIDNil
-    if (value.kind == ScAgentIDContract) {
-        return wasmtypes.hnameToString(value.hname()) + "@" + wasmtypes.addressToString(value.address())
+    //TODO ScAgentIDEthereum
+    switch (value.kind) {
+        case wasmtypes.ScAgentIDAddress:
+            return wasmtypes.addressToString(value.address())
+        case wasmtypes.ScAgentIDContract: {
+            return wasmtypes.hnameToString(value.hname()) + "@" + wasmtypes.addressToString(value.address())
+        }
+        case ScAgentIDEthereum:
+            panic("AgentIDToString: unsupported ScAgentIDEthereum");
+            return "";
+        case ScAgentIDNil:
+            return nilAgentIDString;
+        default: {
+            panic("AgentIDToString: invalid AgentID type");
+            return "";
+        }
     }
-    return wasmtypes.addressToString(value.address())
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

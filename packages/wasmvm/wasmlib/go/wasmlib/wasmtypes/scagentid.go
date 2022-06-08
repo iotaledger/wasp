@@ -20,6 +20,8 @@ type ScAgentID struct {
 	hname   ScHname
 }
 
+const nilAgentIDString = "-"
+
 func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
 	return ScAgentID{kind: ScAgentIDContract, address: address, hname: hname}
 }
@@ -104,14 +106,18 @@ func AgentIDToBytes(value ScAgentID) []byte {
 	case ScAgentIDEthereum:
 		panic("AgentIDToBytes: unsupported ScAgentIDEthereum")
 	case ScAgentIDNil:
-		panic("AgentIDToBytes: unsupported ScAgentIDNil")
+		return buf
 	default:
 		panic("AgentIDToBytes: invalid AgentID type")
 	}
 }
 
 func AgentIDFromString(value string) ScAgentID {
-	// TODO ScAgentIDEthereum / ScAgentIDNil
+	// TODO ScAgentIDEthereum
+	if value == nilAgentIDString {
+		return ScAgentID{}
+	}
+
 	parts := strings.Split(value, "@")
 	switch len(parts) {
 	case 1:
@@ -124,11 +130,18 @@ func AgentIDFromString(value string) ScAgentID {
 }
 
 func AgentIDToString(value ScAgentID) string {
-	// TODO ScAgentIDEthereum / ScAgentIDNil
-	if value.kind == ScAgentIDContract {
+	// TODO ScAgentIDEthereum
+	switch value.kind {
+	case ScAgentIDAddress:
+		return AddressToString(value.Address())
+	case ScAgentIDContract:
 		return HnameToString(value.Hname()) + "@" + AddressToString(value.Address())
+	case ScAgentIDNil:
+		// iscp.NilAgentID.String() returns "-" which means NilAgentID is "-"
+		return nilAgentIDString
+	default:
+		panic("AgentIDToString: invalid AgentID type")
 	}
-	return AddressToString(value.Address())
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

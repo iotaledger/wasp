@@ -54,6 +54,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBigIntSub,
 		ViewBlockRecord,
 		ViewBlockRecords,
+		ViewCheckAgentID,
 		ViewGetRandom,
 		ViewIotaBalance,
 		ViewStringMapOfStringArrayLength,
@@ -106,6 +107,7 @@ var exportMap = wasmlib.ScExportMap{
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
+		viewCheckAgentIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
 		viewStringMapOfStringArrayLengthThunk,
@@ -1107,6 +1109,28 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	viewBlockRecords(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewBlockRecords ok")
+}
+
+type CheckAgentIDContext struct {
+	Params ImmutableCheckAgentIDParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckAgentIDThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckAgentID")
+	f := &CheckAgentIDContext{
+		Params: ImmutableCheckAgentIDParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.AgentBytes().Exists(), "missing mandatory agentBytes")
+	ctx.Require(f.Params.AgentString().Exists(), "missing mandatory agentString")
+	ctx.Require(f.Params.ScAgentID().Exists(), "missing mandatory scAgentID")
+	viewCheckAgentID(ctx, f)
+	ctx.Log("testwasmlib.viewCheckAgentID ok")
 }
 
 type GetRandomContext struct {

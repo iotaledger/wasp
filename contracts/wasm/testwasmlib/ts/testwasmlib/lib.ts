@@ -53,6 +53,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewBigIntSub,
 		sc.ViewBlockRecord,
 		sc.ViewBlockRecords,
+		sc.ViewCheckAgentID,
 		sc.ViewGetRandom,
 		sc.ViewIotaBalance,
 		sc.ViewStringMapOfStringArrayLength,
@@ -105,6 +106,7 @@ const exportMap: wasmlib.ScExportMap = {
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
+		viewCheckAgentIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
 		viewStringMapOfStringArrayLengthThunk,
@@ -545,6 +547,16 @@ function viewBlockRecordsThunk(ctx: wasmlib.ScViewContext): void {
 	sc.viewBlockRecords(ctx, f);
 	ctx.results(results);
 	ctx.log("testwasmlib.viewBlockRecords ok");
+}
+
+function viewCheckAgentIDThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckAgentID");
+	let f = new sc.CheckAgentIDContext();
+	ctx.require(f.params.agentBytes().exists(), "missing mandatory agentBytes");
+	ctx.require(f.params.agentString().exists(), "missing mandatory agentString");
+	ctx.require(f.params.scAgentID().exists(), "missing mandatory scAgentID");
+	sc.viewCheckAgentID(ctx, f);
+	ctx.log("testwasmlib.viewCheckAgentID ok");
 }
 
 function viewGetRandomThunk(ctx: wasmlib.ScViewContext): void {
