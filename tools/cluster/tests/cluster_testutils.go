@@ -23,12 +23,12 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transact
 	programHash := inccounter.Contract.ProgramHash
 
 	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 0,
+		inccounter.VarCounter: counterStartValue,
 		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(e.t, err)
 
-	blockIndex, err := e.Chain.BlockIndex(counterStartValue)
+	blockIndex, err := e.Chain.BlockIndex()
 	require.NoError(e.t, err)
 	require.Greater(e.t, blockIndex, uint32(1))
 
