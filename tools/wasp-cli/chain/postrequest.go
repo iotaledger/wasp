@@ -27,7 +27,7 @@ func postRequestCmd() *cobra.Command {
 			fname := args[1]
 			params := chainclient.PostRequestParams{
 				Args:     util.EncodeParams(args[2:]),
-				Transfer: parseAssets(transfer),
+				Transfer: parseFungibleTokens(transfer),
 			}
 
 			scClient := SCClient(iscp.Hn(args[0]))
@@ -46,7 +46,7 @@ func postRequestCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{},
-		"include a funds transfer as part of the transaction. Format: <color>:<amount>,<color>:amount...",
+		"include a funds transfer as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...",
 	)
 	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
 		"post an off-ledger request",
@@ -55,18 +55,18 @@ func postRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func assetIDFromString(s string) []byte {
+func tokenIDFromString(s string) []byte {
 	ret, err := hex.DecodeString(s)
 	log.Check(err)
 	return ret
 }
 
-func parseAssets(args []string) *iscp.FungibleTokens {
-	assets := iscp.NewEmptyAssets()
+func parseFungibleTokens(args []string) *iscp.FungibleTokens {
+	tokens := iscp.NewEmptyAssets()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
-			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
+			log.Fatalf("fungible tokens syntax: <token-id>:<amount>,<token-id:amount>... -- Example: iota:100")
 		}
 		// In the past we would indicate iotas as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
@@ -74,22 +74,22 @@ func parseAssets(args []string) *iscp.FungibleTokens {
 		if strings.ToLower(parts[0]) == iotaTokenStr {
 			parts[0] = ""
 		}
-		assetIDBytes := assetIDFromString(parts[0])
+		tokenIDBytes := tokenIDFromString(parts[0])
 
 		amount, ok := new(big.Int).SetString(parts[1], 10)
 		if !ok {
 			log.Fatalf("error parsing token amount")
 		}
 
-		if iscp.IsIota(assetIDBytes) {
-			assets.AddIotas(amount.Uint64())
+		if iscp.IsIota(tokenIDBytes) {
+			tokens.AddIotas(amount.Uint64())
 			continue
 		}
 
-		assetID, err := iscp.NativeTokenIDFromBytes(assetIDBytes)
+		tokenID, err := iscp.NativeTokenIDFromBytes(tokenIDBytes)
 		log.Check(err)
 
-		assets.AddNativeTokens(assetID, amount)
+		tokens.AddNativeTokens(tokenID, amount)
 	}
-	return assets
+	return tokens
 }

@@ -35,6 +35,10 @@ func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	}
 }
 
+func (*waspServicesMock) WebAPIPort() string {
+	return "8080"
+}
+
 func (w *waspServicesMock) ExploreAddressBaseURL() string {
 	return "http://127.0.0.1:8081/explorer/address"
 }

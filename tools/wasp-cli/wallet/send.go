@@ -5,8 +5,8 @@ import (
 )
 
 var sendFundsCmd = &cobra.Command{
-	Use:   "send-funds <target-address> <color> <amount>",
-	Short: "Allowance tokens",
+	Use:   "send-funds <target-address> <token-id> <amount>",
+	Short: "Transfer L1 tokens",
 	Args:  cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		panic("TODO implement")
@@ -15,7 +15,7 @@ var sendFundsCmd = &cobra.Command{
 		// _, targetAddress, err := iotago.ParseBech32(args[0])
 		// log.Check(err)
 
-		// color := decodeColor(args[1])
+		// tokenID := decodeTokenID(args[1])
 
 		// amount, err := strconv.Atoi(args[2])
 		// log.Check(err)
@@ -25,7 +25,7 @@ var sendFundsCmd = &cobra.Command{
 
 		// tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
 		// 	txb := utxoutil.NewBuilder(outs...)
-		// 	bals := colored.ToL1Map(colored.NewBalancesForColor(color, uint64(amount)))
+		// 	bals := colored.ToL1Map(colored.NewBalancesForColor(tokenID, uint64(amount)))
 		// 	err := txb.AddSigLockedColoredOutput(targetAddress, bals)
 		// 	log.Check(err)
 		// 	err = txb.AddRemainderOutputIfNeeded(sourceAddress, nil, true)

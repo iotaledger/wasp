@@ -28,7 +28,6 @@ func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction) (OffLedgerR
 	if err != nil {
 		return nil, err
 	}
-	// TODO: verify tx.ChainId()?
 	return &evmOffLedgerRequest{
 		chainID: chainID,
 		tx:      tx,
