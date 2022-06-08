@@ -452,4 +452,11 @@ export function viewBigIntShr(ctx: wasmlib.ScViewContext, f: sc.BigIntShrContext
 }
 
 export function viewCheckAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckAgentIDContext): void {
+    const scAgentID = f.params.scAgentID().value();
+    const agentBytes = f.params.agentBytes().value();
+    const agentString = f.params.agentString().value();
+    ctx.require(scAgentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(scAgentID))), "bytes conversion failed");
+    ctx.require(scAgentID.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(scAgentID))), "string conversion failed");
+    ctx.require(wasmtypes.bytesCompare(scAgentID.toBytes(), agentBytes) == 0, "bytes mismatch");
+    ctx.require(scAgentID.toString() == agentString, "string mismatch");
 }

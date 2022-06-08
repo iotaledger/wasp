@@ -162,9 +162,12 @@ pub fn agent_id_to_string(value: &ScAgentID) -> String {
             return value.hname().to_string() + "@" + &value.address().to_string();
         }
         SC_AGENT_ID_ETHEREUM => panic("AgentIDToString: unsupported ScAgentIDEthereum"),
-        SC_AGENT_ID_NIL => (),
+        SC_AGENT_ID_NIL => {
+            return NIL_AGENT_ID_STRING.to_string();
+        },
         _ => panic("AgentIDToString: invalid AgentID type"),
     }
+    "".to_string()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

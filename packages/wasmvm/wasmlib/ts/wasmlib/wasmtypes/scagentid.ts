@@ -160,7 +160,7 @@ export function agentIDToString(value: ScAgentID): string {
         }
         case ScAgentIDEthereum:
             panic("AgentIDToString: unsupported ScAgentIDEthereum");
-            break;
+            return "";
         case ScAgentIDNil:
             return nilAgentIDString;
         default: {
