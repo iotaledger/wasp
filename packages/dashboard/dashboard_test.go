@@ -81,8 +81,6 @@ func TestDashboardChainBlob(t *testing.T) {
 }
 
 func TestDashboardChainBlock(t *testing.T) {
-	t.SkipNow()
-
 	env := initDashboardTest(t)
 	ch := env.newChain()
 
