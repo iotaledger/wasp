@@ -210,7 +210,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 		inputOutputID = oid
 	}
 
-	fundsAmount := uint64(FundsFromFaucetAmount)
+	fundsAmount := FundsFromFaucetAmount
 	if len(amount) > 0 {
 		fundsAmount = amount[0]
 	}

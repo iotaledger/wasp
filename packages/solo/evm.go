@@ -17,26 +17,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type jsonRPCSoloBackend struct {
+type JSONRPCSoloBackend struct {
 	Chain *Chain
 }
 
-var _ jsonrpc.ChainBackend = &jsonRPCSoloBackend{}
+var _ jsonrpc.ChainBackend = &JSONRPCSoloBackend{}
 
-func NewEVMBackend(chain *Chain) *jsonRPCSoloBackend {
-	return &jsonRPCSoloBackend{Chain: chain}
+func NewEVMBackend(chain *Chain) *JSONRPCSoloBackend {
+	return &JSONRPCSoloBackend{Chain: chain}
 }
 
-func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
+func (b *JSONRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	_, err := b.Chain.PostEthereumTransaction(tx)
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+func (b *JSONRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	return b.Chain.EstimateGasEthereum(callMsg)
 }
 
-func (b *jsonRPCSoloBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
+func (b *JSONRPCSoloBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
 	return b.Chain.CallView(scName, funName, args)
 }
 

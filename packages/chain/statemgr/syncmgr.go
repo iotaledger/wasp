@@ -39,7 +39,7 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 			sm.log.Debugf("aliasOutputReceived: output index %v, id %v is already a state output; ignored", aliasOutputIndex, aliasOutputIDStr)
 			return false
 		}
-		// TODO
+		// TODO implement
 		/*if !output.GetIsGovernanceUpdated() {
 			sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
 		}*/

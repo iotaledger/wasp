@@ -129,18 +129,18 @@ func TestRnd(t *testing.T) {
 				// t.Logf("           commit at block: #%d", bn)
 				err = vs.Save()
 				require.NoError(t, err)
-				c1 := trie.RootCommitment(vs.TrieNodeStore())
+				cc1 := trie.RootCommitment(vs.TrieNodeStore())
 				vs, exists, err = LoadSolidState(store[round], chainID)
 				require.NoError(t, err)
 				require.True(t, exists)
-				c2 := trie.RootCommitment(vs.TrieNodeStore())
+				cc2 := trie.RootCommitment(vs.TrieNodeStore())
 
 				diff := vs.ReconcileTrie()
 				if len(diff) > 0 {
 					t.Logf("============== reconcile failed: %v", diff)
 				}
 
-				require.True(t, trie.EqualCommitments(c1, c2))
+				require.True(t, trie.EqualCommitments(cc1, cc2))
 			}
 		}
 		vs.Commit()

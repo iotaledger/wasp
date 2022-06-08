@@ -147,7 +147,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 }
 
 // UploadBlobFromFile uploads blob from file data in the specified blob field plus optional other fields
-func (ch *Chain) UploadBlobFromFile(keyPair *cryptolib.KeyPair, fileName string, fieldName string, params ...interface{}) (hashing.HashValue, error) {
+func (ch *Chain) UploadBlobFromFile(keyPair *cryptolib.KeyPair, fileName, fieldName string, params ...interface{}) (hashing.HashValue, error) {
 	fileBinary, err := os.ReadFile(fileName)
 	if err != nil {
 		return hashing.HashValue{}, err

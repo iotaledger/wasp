@@ -56,7 +56,7 @@ func deployCmd() *cobra.Command {
 				Description:       description,
 				Textout:           os.Stdout,
 				InitParams: dict.Dict{
-					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(uint16(evmParams.ChainID)),
+					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
 					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.GetGenesis(nil)),
 					root.ParamEVM(evm.FieldBlockGasLimit):   codec.EncodeUint64(evmParams.BlockGasLimit),
 					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),

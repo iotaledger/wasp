@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -20,7 +19,7 @@ type kvdecoder struct {
 	log iscp.LogInterface
 }
 
-func New(kvReader kv.KVStoreReader, log ...iscp.LogInterface) *kvdecoder {
+func New(kvReader kv.KVStoreReader, log ...iscp.LogInterface) *kvdecoder { //nolint:revive
 	var l iscp.LogInterface
 	if len(log) > 0 {
 		l = log[0]

@@ -172,7 +172,7 @@ func TestWaspCLIContract(t *testing.T) {
 
 func findRequestIDInOutput(out []string) string {
 	for _, line := range out {
-		m := regexp.MustCompile(`(?m)#\d+ \(check result with: wasp-cli chain request ([-\d\w]+)\)$`).FindStringSubmatch(line)
+		m := regexp.MustCompile(`(?m)#\d+ \(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
 		if len(m) == 0 {
 			continue
 		}

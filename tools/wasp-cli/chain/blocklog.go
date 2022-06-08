@@ -79,7 +79,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	args := req.Params()
 	var argsTree interface{} = "(empty)"
 	if len(args) > 0 {
-		argsTree = dict.Dict(args)
+		argsTree = args
 	}
 
 	errMsg := "(empty)"

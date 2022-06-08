@@ -15,8 +15,6 @@ import (
 
 // taken from https://github.com/iotaledger/inx-spammer/blob/develop/pkg/pow/pow.go
 
-const nonceBytes = 8 // len(uint64)
-
 var ErrOperationAborted = errors.New("operation was aborted")
 
 // RefreshTipsFunc refreshes tips of the block if PoW takes longer than a configured duration.

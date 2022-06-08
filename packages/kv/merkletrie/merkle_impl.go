@@ -1,5 +1,5 @@
-// Package trie_merkle implements trie.CommitmentModel based on the Merkle tree
-package trie_merkle
+// Package merkletrie implements trie.CommitmentModel based on the Merkle tree
+package merkletrie
 
 import (
 	"bytes"
@@ -55,7 +55,7 @@ func (m *commitmentModel) CommitToNode(n *trie.Node) trie.VCommitment {
 	}
 	tmp := commitToData(n.PathFragment)
 	hashes[257] = &tmp
-	ret := (vectorCommitment)(hashVector(&hashes))
+	ret := vectorCommitment(hashVector(&hashes))
 	return &ret
 }
 
@@ -175,7 +175,7 @@ func hashVector(hashes *[258]*[32]byte) [32]byte {
 		if h == nil {
 			continue
 		}
-		pos := 32 * int(i)
+		pos := 32 * i
 		copy(buf[pos:pos+32], h[:])
 	}
 	return blake2b.Sum256(buf[:])

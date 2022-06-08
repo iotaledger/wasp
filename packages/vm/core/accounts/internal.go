@@ -755,7 +755,7 @@ func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex
 	getNativeTokenOutputMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 }
 
-func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
+func DeleteNativeTokenOutput(state kv.KVStore, tokenID iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 

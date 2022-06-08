@@ -19,7 +19,7 @@ type stateUpdateImpl struct {
 }
 
 // NewStateUpdate creates a state update with timestamp mutation, if provided
-func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
+func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint:revive
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}

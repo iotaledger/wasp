@@ -125,12 +125,12 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "sendAsNFT":
 		var callArgs struct {
 			isccontract.ISCRequestParameters
-			Id isccontract.IotaNFTID
+			ID isccontract.IotaNFTID
 		}
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
 		c.ctx.TransferAllowedFunds(c.ctx.AccountID())
-		c.ctx.SendAsNFT(callArgs.Unwrap(), callArgs.Id.Unwrap())
+		c.ctx.SendAsNFT(callArgs.Unwrap(), callArgs.ID.Unwrap())
 
 	case "call":
 		var callArgs struct {
@@ -223,7 +223,7 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 }
 
 // TODO evm param is not used, can it be removed?
-//nolint:unparam
+
 func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)

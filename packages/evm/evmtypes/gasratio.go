@@ -2,10 +2,8 @@ package evmtypes
 
 import "github.com/iotaledger/wasp/packages/util"
 
-var (
-	// <ISC gas> = <EVM Gas> * <A> / <B>
-	DefaultGasRatio = util.Ratio32{A: 1, B: 1}
-)
+// <ISC gas> = <EVM Gas> * <A> / <B>
+var DefaultGasRatio = util.Ratio32{A: 1, B: 1}
 
 func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio *util.Ratio32) uint64 {
 	// EVM gas budget = floor(ISC gas budget * B / A)

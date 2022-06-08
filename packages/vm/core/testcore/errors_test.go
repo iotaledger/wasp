@@ -220,7 +220,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	require.True(t, strings.HasSuffix(err.Error(), "%!v(MISSING)"))
 }
 
-func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testing.T) {
+func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testing.T) { //nolint:dupl
 	_, chain := setupErrorsTest(t)
 
 	// Register error
@@ -253,7 +253,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.EqualValues(t, receipt.Error.Params, typedError.Params())
 }
 
-func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) {
+func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) { //nolint:dupl
 	_, chain := setupErrorsTest(t)
 
 	// Register error

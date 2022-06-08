@@ -4,8 +4,8 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/merkletrie"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 )
 
 func RandChainID() *iscp.ChainID {
@@ -15,7 +15,7 @@ func RandChainID() *iscp.ChainID {
 
 func RandVectorCommitment() trie.VCommitment {
 	h := hashing.RandomHash(nil)
-	ret, err := trie_merkle.Model.VectorCommitmentFromBytes(h[:])
+	ret, err := merkletrie.Model.VectorCommitmentFromBytes(h[:])
 	if err != nil {
 		panic(err)
 	}

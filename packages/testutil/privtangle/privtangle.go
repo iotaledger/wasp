@@ -377,7 +377,7 @@ type FaucetInfoResponse struct {
 
 func (pt *PrivTangle) queryFaucetInfo() error {
 	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
+	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, http.NoBody)
 	if err != nil {
 		return xerrors.Errorf("unable to create request: %w", err)
 	}
@@ -387,12 +387,18 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
 	}
 	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
 	res.Body.Close()
 	if res.StatusCode != 200 {
 		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
 	}
 	var parsedResp FaucetInfoResponse
-	json.Unmarshal(resBody, &parsedResp)
+	err = json.Unmarshal(resBody, &parsedResp)
+	if err != nil {
+		return err
+	}
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}

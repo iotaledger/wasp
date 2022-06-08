@@ -24,7 +24,6 @@ func chainIDref(chID iscp.ChainID) *iscp.ChainID {
 }
 
 func assetID(aID []byte) []byte {
-	panic("TODO")
 	return aID
 }
 

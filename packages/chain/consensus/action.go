@@ -286,7 +286,7 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 // Then it deterministically calculates a priority sequence among contributing nodes for posting
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
-func (c *consensus) checkQuorum() {
+func (c *consensus) checkQuorum() { //nolint:funlen
 	if c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
@@ -419,7 +419,7 @@ func (c *consensus) postTransactionIfNeeded() {
 		return
 	}
 	stateIndex := c.resultState.BlockIndex()
-	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx)
+	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx) //nolint:errcheck
 
 	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	txID, err := c.finalTx.ID()

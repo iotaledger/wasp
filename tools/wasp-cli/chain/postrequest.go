@@ -71,7 +71,7 @@ func parseFungibleTokens(args []string) *iscp.FungibleTokens {
 		// In the past we would indicate iotas as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
 		// backward compatible for now and allow both
-		if strings.ToLower(parts[0]) == "iota" {
+		if strings.ToLower(parts[0]) == iotaTokenStr {
 			parts[0] = ""
 		}
 		tokenIDBytes := tokenIDFromString(parts[0])

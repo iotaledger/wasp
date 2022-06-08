@@ -94,13 +94,13 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 	return ret, nil
 }
 
-func (g *GasFeePolicy) Bytes() []byte {
+func (p *GasFeePolicy) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(g.GasFeeTokenID != nil)
-	if g.GasFeeTokenID != nil {
-		mu.WriteBytes(g.GasFeeTokenID[:])
+	mu.WriteBool(p.GasFeeTokenID != nil)
+	if p.GasFeeTokenID != nil {
+		mu.WriteBytes(p.GasFeeTokenID[:])
 	}
-	mu.WriteUint64(g.GasPerToken)
-	mu.WriteUint8(g.ValidatorFeeShare)
+	mu.WriteUint64(p.GasPerToken)
+	mu.WriteUint8(p.ValidatorFeeShare)
 	return mu.Bytes()
 }

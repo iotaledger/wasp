@@ -115,6 +115,5 @@ func (j *jsonRPCService) handleRequestID(c echo.Context) error {
 	if !ok {
 		return httperrors.NotFound("not found")
 	}
-	c.JSON(http.StatusOK, model.NewRequestID(reqID))
-	return nil
+	return c.JSON(http.StatusOK, model.NewRequestID(reqID))
 }

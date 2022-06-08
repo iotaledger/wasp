@@ -42,7 +42,7 @@ func TestDoNothingUser(t *testing.T) {
 }
 
 func TestWithdrawToAddress(t *testing.T) {
-	// TODO
+	// TODO implement
 	t.SkipNow()
 	//	run2(t, func(t *testing.T, w bool) {
 	//		ctx := deployTestCore(t, w)
@@ -58,7 +58,7 @@ func TestWithdrawToAddress(t *testing.T) {
 	//		bal.Add(user, 1*iscp.Mi-ctx.GasFee)
 	//		bal.VerifyBalances(t)
 	//
-	//		// TODO
+	//		// TODO implement
 	//		// send entire contract balance back to user
 	//		xfer := testcore.ScFuncs.SendToAddress(ctx.Sign(ctx.Originator()))
 	//		xfer.Params.Address().SetValue(user.ScAddress())
@@ -95,7 +95,7 @@ func TestDoPanicUser(t *testing.T) {
 }
 
 func TestDoPanicUserFeeless(t *testing.T) {
-	// TODO
+	// TODO implement
 	t.SkipNow()
 	//run2(t, func(t *testing.T, w bool) {
 	//	ctx := deployTestCore(t, w)
@@ -134,7 +134,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 }
 
 func TestDoPanicUserFee(t *testing.T) {
-	// TODO
+	// TODO implement
 	t.SkipNow()
 	//run2(t, func(t *testing.T, w bool) {
 	//	ctx := deployTestCore(t, w)

@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	DEBUG           = false
-	FORCE_SKIP_WASM = false
-	FORCE_RUST_WASM = true
+	debug         = false
+	forceSkipWasm = false
+	forceRustWasm = true
 )
 
 const (
@@ -39,7 +39,7 @@ func init() {
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	// corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{
-		Debug:                 DEBUG,
+		Debug:                 debug,
 		AutoAdjustDustDeposit: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
@@ -67,7 +67,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
 		test(t, false)
 	})
-	if FORCE_SKIP_WASM || (len(skipWasm) > 0 && skipWasm[0]) {
+	if forceSkipWasm || (len(skipWasm) > 0 && skipWasm[0]) {
 		t.Logf("skipped Wasm version of '%s'", t.Name())
 		return
 	}
@@ -77,12 +77,12 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 }
 
 func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
-	if FORCE_SKIP_WASM || !runWasm {
+	if forceSkipWasm || !runWasm {
 		// run core version of testcore
 		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 	}
 
-	if FORCE_RUST_WASM {
+	if forceRustWasm {
 		// run Rust Wasm version of testcore
 		return chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 	}

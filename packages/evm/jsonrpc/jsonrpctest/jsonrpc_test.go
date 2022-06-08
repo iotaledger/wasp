@@ -36,9 +36,11 @@ type soloTestEnv struct {
 	soloChain *solo.Chain
 }
 
-var faucet *ecdsa.PrivateKey
-var faucetAddress common.Address
-var faucetSupply = big.NewInt(42)
+var (
+	faucet        *ecdsa.PrivateKey
+	faucetAddress common.Address
+	faucetSupply  = big.NewInt(42)
+)
 
 func init() {
 	faucet, faucetAddress = solo.NewEthereumAccount()

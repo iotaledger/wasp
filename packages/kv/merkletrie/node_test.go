@@ -1,4 +1,4 @@
-package trie_merkle
+package merkletrie
 
 import (
 	"testing"

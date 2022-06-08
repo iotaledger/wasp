@@ -93,7 +93,7 @@ func main() {
 		if flags.NArg() > 1 {
 			fmt.Printf("Usage: %s start [path] [options]\n", os.Args[0])
 			flags.PrintDefaults()
-			os.Exit(1)
+			os.Exit(1) // nolint:gocritic
 		}
 
 		var err error

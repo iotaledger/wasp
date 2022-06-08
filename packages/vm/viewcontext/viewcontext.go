@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/merkletrie"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -218,7 +218,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 }
 
 // GetMerkleProof returns proof for the key. It may also contain proof of absence of the key
-func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
+func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *merkletrie.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
@@ -233,9 +233,9 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err 
 // - blockInfo record in serialized form
 // - proof that the blockInfo is stored under the respective key.
 // Useful for proving commitment to the past state, because blockInfo contains commitment to that block
-func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.Proof, error) {
+func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *merkletrie.Proof, error) {
 	var retBlockInfoBin []byte
-	var retProof *trie_merkle.Proof
+	var retProof *merkletrie.Proof
 
 	err := panicutil.CatchAllButDBError(func() {
 		// retrieve serialized block info record

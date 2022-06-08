@@ -119,15 +119,14 @@ func TestUploadWasm(t *testing.T) {
 		require.EqualValues(t, binary, binBack)
 	})
 	t.Run("upload wasm from file", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 		ch.MustDepositIotasToL2(100_000, nil)
-		_, err := ch.UploadWasmFromFile(nil, wasmFile)
+		progHash, err := ch.UploadWasmFromFile(nil, wasmFile)
 		require.NoError(t, err)
 
-		// TODO
-		// err = ch.DeployContract(nil, "testCore", hwasm)
-		// require.NoError(t, err)
+		err = ch.DeployContract(nil, "testCore", progHash)
+		require.NoError(t, err)
 	})
 	t.Run("list blobs", func(t *testing.T) {
 		env := solo.New(t)

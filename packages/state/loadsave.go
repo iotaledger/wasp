@@ -3,7 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -143,7 +143,7 @@ func SaveRawBlockClosure(dir string, log *logger.Logger) OnBlockSaveClosure {
 		data := block.Bytes()
 		h := hashing.HashData(data)
 		fname := fmt.Sprintf("%d.%s.%s.mut", block.BlockIndex(), stateCommitment.String(), h.String())
-		err := ioutil.WriteFile(path.Join(dir, fname), data, 0o666)
+		err := os.WriteFile(path.Join(dir, fname), data, 0o600)
 		if err != nil {
 			log.Warnf("failed to save raw block #%d to dir %s as '%s': %v", block.BlockIndex(), dir, fname, err)
 		} else {

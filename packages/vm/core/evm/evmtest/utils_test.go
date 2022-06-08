@@ -228,7 +228,7 @@ func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTest
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
-func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
+func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance {
 	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, n)}
 }
 

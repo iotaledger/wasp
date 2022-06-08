@@ -1,4 +1,5 @@
-package trie_merkle
+//nolint:dupl // dupl detects a ton of duplicated code in this file
+package merkletrie
 
 import (
 	"bytes"
