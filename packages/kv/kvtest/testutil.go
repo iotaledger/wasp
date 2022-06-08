@@ -102,7 +102,7 @@ type RandStreamParams struct {
 	MaxValue   int // max length of value
 }
 
-func NewRandStreamIterator(p ...RandStreamParams) *randStreamIterator {
+func NewRandStreamIterator(p ...RandStreamParams) *randStreamIterator { //nolint:revive
 	ret := &randStreamIterator{
 		par: RandStreamParams{
 			Seed:       time.Now().UnixNano(),

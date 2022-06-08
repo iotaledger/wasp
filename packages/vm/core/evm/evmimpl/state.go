@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	keyGasRatio  = "g"
-	keyBlockTime = "b"
+	keyGasRatio = "g"
 
 	// keyEVMState is the subrealm prefix for the EVM state, used by the emulator
 	keyEVMState = "s"

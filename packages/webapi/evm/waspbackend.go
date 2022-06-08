@@ -30,9 +30,9 @@ type jsonRPCWaspBackend struct {
 
 var _ jsonrpc.ChainBackend = &jsonRPCWaspBackend{}
 
-func newWaspBackend(chain chain.Chain, nodePubKey *cryptolib.PublicKey) *jsonRPCWaspBackend {
+func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey) *jsonRPCWaspBackend {
 	return &jsonRPCWaspBackend{
-		chain:      chain,
+		chain:      ch,
 		nodePubKey: nodePubKey,
 	}
 }
@@ -96,6 +96,6 @@ func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, e
 	return codec.DecodeUint64(res.Return.MustGet(evm.FieldResult))
 }
 
-func (w *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(w.chain, iscp.Hn(scName), iscp.Hn(funName), args)
+func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
+	return chainutil.CallView(b.chain, iscp.Hn(scName), iscp.Hn(funName), args)
 }

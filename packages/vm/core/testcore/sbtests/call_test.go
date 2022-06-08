@@ -92,7 +92,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 }
 
 func TestIndirectCallFibonacci(t *testing.T) { run2(t, testIndirectCallFibonacci) }
-func testIndirectCallFibonacci(t *testing.T, w bool) {
+func testIndirectCallFibonacci(t *testing.T, w bool) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
@@ -116,7 +116,7 @@ func testIndirectCallFibonacci(t *testing.T, w bool) {
 }
 
 func TestIndirectCallFibonacciIndirect(t *testing.T) { run2(t, testIndirectCallFibonacciIndirect) }
-func testIndirectCallFibonacciIndirect(t *testing.T, w bool) {
+func testIndirectCallFibonacciIndirect(t *testing.T, w bool) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 

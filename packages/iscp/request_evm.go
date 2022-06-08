@@ -52,11 +52,11 @@ func (r *evmOffLedgerRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) e
 	if r.tx, err = evmtypes.DecodeTransaction(txBytes); err != nil {
 		return err
 	}
-	if sender, err := evmutil.GetSender(r.tx); err != nil {
+	sender, err := evmutil.GetSender(r.tx)
+	if err != nil {
 		return err
-	} else {
-		r.sender = NewEthereumAddressAgentID(sender)
 	}
+	r.sender = NewEthereumAddressAgentID(sender)
 	return nil
 }
 

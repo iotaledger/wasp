@@ -175,7 +175,7 @@ const (
 	TransferAllowanceToGasBudgetIotas = 1 * iscp.Mi
 )
 
-func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
+func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams { // nolint:revive
 	ret := &foundryParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{

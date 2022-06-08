@@ -166,10 +166,13 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 
 func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (ret *model.RequestReceiptResponse, err error) {
 	err = optimism.RetryOnStateInvalidated(func() (err error) {
-		panicutil.CatchPanicReturnError(func() {
+		panicCatchErr := panicutil.CatchPanicReturnError(func() {
 			ret, err = doGetTranslatedReceipt(ch, reqID)
 		}, coreutil.ErrorStateInvalidated)
-		return err
+		if err != nil {
+			return err
+		}
+		return panicCatchErr
 	})
 	return ret, err
 }

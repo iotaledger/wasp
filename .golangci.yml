@@ -99,7 +99,7 @@ linters:
         - misspell # Finds commonly misspelled English words in comments.
         - nakedret # Finds naked returns in functions greater than a specified function length.
         - noctx # noctx finds sending http request without context.Context.
-        - nolintlint # Reports ill-formed or insufficient nolint directives.
+        # - nolintlint # Reports ill-formed or insufficient nolint directives.
         # - staticcheck # Staticcheck is a go vet on steroids, applying a ton of static analysis checks.
         - structcheck # Finds unused struct fields.
         - unconvert # Remove unnecessary type conversions.
@@ -110,6 +110,7 @@ linters:
 
 
         ### `gosimple` `staticcheck` and `unused` are disabled because of issues with go 1.18: https://github.com/golangci/golangci-lint/issues/2649
+        ### nolintlint also disabled while the above ones are disabled, to avoid false positives
 
     # don't enable:
     # gomnd: An analyzer to detect magic numbers.

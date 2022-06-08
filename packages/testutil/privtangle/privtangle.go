@@ -387,12 +387,18 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
 	}
 	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
 	res.Body.Close()
 	if res.StatusCode != 200 {
 		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
 	}
 	var parsedResp FaucetInfoResponse
-	json.Unmarshal(resBody, &parsedResp)
+	err = json.Unmarshal(resBody, &parsedResp)
+	if err != nil {
+		return err
+	}
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}

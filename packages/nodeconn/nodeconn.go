@@ -232,7 +232,10 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
-	nc.doPoW(ctx, block)
+	err = nc.doPoW(ctx, block)
+	if err != nil {
+		return nil, xerrors.Errorf("failed duing PoW: %w", err)
+	}
 	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1.Protocol)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)

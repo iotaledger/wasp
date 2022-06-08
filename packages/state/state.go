@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/merkletrie"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"golang.org/x/xerrors"
 )
 
@@ -31,12 +31,12 @@ type virtualStateAccess struct {
 }
 
 var (
-	CommitmentModel                    = trie_merkle.Model
+	CommitmentModel                    = merkletrie.Model
 	_               VirtualStateAccess = &virtualStateAccess{}
 )
 
 // NewVirtualState creates VirtualStateAccess interface with the partition of KVStore
-func NewVirtualState(db kvstore.KVStore) *virtualStateAccess {
+func NewVirtualState(db kvstore.KVStore) *virtualStateAccess { //nolint:revive
 	subState := subRealm(db, []byte{dbkeys.ObjectTypeState})
 	subTrie := subRealm(db, []byte{dbkeys.ObjectTypeTrie})
 	ret := &virtualStateAccess{
@@ -50,9 +50,9 @@ func NewVirtualState(db kvstore.KVStore) *virtualStateAccess {
 // CreateOriginState origin state and saves it. It assumes store is empty
 func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 	ret := NewVirtualState(store)
-	nilChainId := iscp.ChainID{}
+	nilChainID := iscp.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
-	ret.KVStore().Set("", nilChainId.Bytes())
+	ret.KVStore().Set("", nilChainID.Bytes())
 	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
 	ret.KVStore().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
 	ret.Commit()

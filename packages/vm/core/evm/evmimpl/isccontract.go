@@ -125,12 +125,12 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "sendAsNFT":
 		var callArgs struct {
 			isccontract.ISCRequestParameters
-			Id isccontract.IotaNFTID
+			ID isccontract.IotaNFTID
 		}
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
 		c.ctx.TransferAllowedFunds(c.ctx.AccountID())
-		c.ctx.SendAsNFT(callArgs.Unwrap(), callArgs.Id.Unwrap())
+		c.ctx.SendAsNFT(callArgs.Unwrap(), callArgs.ID.Unwrap())
 
 	case "call":
 		var callArgs struct {

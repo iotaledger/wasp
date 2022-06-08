@@ -151,7 +151,7 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 		return nil
 	}
 	c.log.Debugf("rotateCommitteeIfNeeded rotation is needed: committee address is changed %s -> %s", currentCmtAddress, anchorOutputAddress)
-	// TODO
+	// TODO implement
 	// if !anchorOutput.GetIsGovernanceUpdated() {
 	// 	return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
 	// }

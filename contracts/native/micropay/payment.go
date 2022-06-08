@@ -39,6 +39,7 @@ func NewPayment(ord uint32, amount uint64, targetAddr iotago.Address, payerKeyPa
 	// }
 }
 
+//nolint:deadcode
 func paymentEssence(ord uint32, amount uint64, payerAddr, targetAddr iotago.Address) []byte {
 	var buf bytes.Buffer
 	buf.Write(util.Uint32To4Bytes(ord))

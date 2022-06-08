@@ -43,7 +43,7 @@ func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 	default:
 		panic(fmt.Sprintf("no handler for request kind %d", kind))
 	}
-	if err = r.readFromMarshalUtil(mu); err != nil {
+	if err := r.readFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -83,11 +83,11 @@ func (s *offLedgerSignatureScheme) readEssence(mu *marshalutil.MarshalUtil) erro
 	if err != nil {
 		return err
 	}
-	if publicKey, err := mu.ReadBytes(int(pkLen)); err != nil {
+	publicKey, err := mu.ReadBytes(int(pkLen))
+	if err != nil {
 		return err
-	} else {
-		s.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey)
 	}
+	s.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey)
 	return err
 }
 
@@ -152,14 +152,6 @@ func (r *offLedgerRequestData) Bytes() []byte {
 	return mu.Bytes()
 }
 
-func newOffLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (OffLedgerRequest, error) {
-	ret := &offLedgerRequestData{}
-	if err := ret.readFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
 func (r *offLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	r.writeEssenceToMarshalUtil(mu)
 	r.signatureScheme.writeSignature(mu)
@@ -216,7 +208,7 @@ func (r *offLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 		return err
 	}
 	r.signatureScheme = &offLedgerSignatureScheme{}
-	if err = r.signatureScheme.readEssence(mu); err != nil {
+	if err := r.signatureScheme.readEssence(mu); err != nil {
 		return err
 	}
 	if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
@@ -309,7 +301,7 @@ func (r *offLedgerRequestData) Timestamp() time.Time {
 	return time.Time{}
 }
 
-func (r *offLedgerRequestData) GasBudget() (gas uint64, isEVM bool) {
+func (r *offLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 	return r.gasBudget, false
 }
 
@@ -508,7 +500,7 @@ func (r *onLedgerRequestData) FungibleTokens() *FungibleTokens {
 	return NewFungibleTokens(amount, tokens)
 }
 
-func (r *onLedgerRequestData) GasBudget() (gas uint64, isEVM bool) {
+func (r *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 	return r.requestMetadata.GasBudget, false
 }
 

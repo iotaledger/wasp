@@ -25,7 +25,7 @@ func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
 	if w {
-		// TODO
+		// TODO wasm version is being skipped
 		t.SkipNow()
 	}
 	corecontracts.PrintWellKnownHnames()

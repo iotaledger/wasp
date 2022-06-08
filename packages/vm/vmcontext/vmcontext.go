@@ -3,13 +3,12 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/trie"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -278,7 +277,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
-			accounts.DeleteNativeTokenOutput(s, &id)
+			accounts.DeleteNativeTokenOutput(s, id)
 		}
 
 		// update foundry UTXOs

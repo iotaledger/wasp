@@ -173,7 +173,7 @@ func (tr *Trie) UpdateNodeCommitment(key kv.Key) VCommitment {
 }
 
 // Update updates Trie with the key/value. Reorganizes and re-calculates trie, keeps cache consistent
-func (tr *Trie) Update(key []byte, value []byte) {
+func (tr *Trie) Update(key, value []byte) {
 	c := tr.nodeStore.model.CommitToData(value)
 	if c == nil {
 		// nil value means deletion
@@ -363,7 +363,7 @@ func (tr *Trie) checkReorg(key kv.Key, n *Node) (reorgStatus, byte) {
 }
 
 // UpdateStr updates key/value pair in the trie
-func (tr *Trie) UpdateStr(key interface{}, value interface{}) {
+func (tr *Trie) UpdateStr(key, value interface{}) {
 	var k, v []byte
 	if key != nil {
 		switch kt := key.(type) {
@@ -424,10 +424,8 @@ func (tr *Trie) Reconcile(store kv.KVMustIterator) []kv.Key {
 			n, ok := tr.GetNode(kv.Key(lastKey))
 			if !ok {
 				ret = append(ret, k)
-			} else {
-				if !EqualCommitments(tr.nodeStore.model.CommitToData(v), n.Terminal) {
-					ret = append(ret, k)
-				}
+			} else if !EqualCommitments(tr.nodeStore.model.CommitToData(v), n.Terminal) {
+				ret = append(ret, k)
 			}
 		} else {
 			ret = append(ret, k)

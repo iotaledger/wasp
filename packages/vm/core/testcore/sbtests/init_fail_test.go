@@ -37,7 +37,7 @@ func TestInitFailRepeat(t *testing.T) {
 }
 
 func TestInitFailRepeatWasm(t *testing.T) {
-	if FORCE_SKIP_WASM {
+	if forceSkipWasm {
 		t.SkipNow()
 	}
 	_, chain := setupChain(t, nil)

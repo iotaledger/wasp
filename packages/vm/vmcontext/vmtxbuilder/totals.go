@@ -107,13 +107,14 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		return nil
 	})
 	for _, f := range txb.invokedFoundries {
-		if f.producesOutput() {
-			ret.TotalIotasInDustDeposit += f.out.Amount
-			id := f.out.MustNativeTokenID()
-			ret.TokenCirculatingSupplies[id] = big.NewInt(0)
-			simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
-			ret.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
+		if !f.producesOutput() {
+			continue
 		}
+		ret.TotalIotasInDustDeposit += f.out.Amount
+		id := f.out.MustNativeTokenID()
+		ret.TokenCirculatingSupplies[id] = big.NewInt(0)
+		simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
+		ret.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 	}
 	for _, o := range txb.postedOutputs {
 		assets := transaction.AssetsFromOutput(o)

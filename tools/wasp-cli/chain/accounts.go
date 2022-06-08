@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const iotaTokenStr = "iota"
+
 var listAccountsCmd = &cobra.Command{
 	Use:   "list-accounts",
 	Short: "List accounts in chain",
@@ -57,7 +59,7 @@ var balanceCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k, v := range ret {
-			tokenStr := "iota"
+			tokenStr := iotaTokenStr
 			if !iscp.IsIota([]byte(k)) {
 				tokenStr = codec.MustDecodeNativeTokenID([]byte(k)).String()
 			}

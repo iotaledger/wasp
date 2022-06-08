@@ -17,7 +17,7 @@ import (
 
 const inccounterName = "inc"
 
-func (e *ChainEnv) deployInccounter42(counter int64) *iscp.ContractAgentID { //nolint:unparam
+func (e *ChainEnv) deployInccounter42(counter int64) *iscp.ContractAgentID {
 	hname := iscp.Hn(inccounterName)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Contract.ProgramHash

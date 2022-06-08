@@ -106,7 +106,6 @@ func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 }
 
 func (mncT *MockedNodeConn) Close() {
-	// TODO
 }
 
 func (mncT *MockedNodeConn) SetPublishTransactionAllowed(flag bool) {

@@ -464,7 +464,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	return ret
 }
 
-func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
+func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		i, err := e.callGetBlockIndex(nodeIndex)
 		return err == nil && i >= blockIndex

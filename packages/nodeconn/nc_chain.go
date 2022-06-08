@@ -13,7 +13,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
@@ -23,7 +22,6 @@ import (
 type ncChain struct {
 	nc                 *nodeConn
 	chainID            *iscp.ChainID
-	msgs               map[hashing.HashValue]*ncTransaction
 	outputHandler      func(iotago.OutputID, iotago.Output)
 	stateOutputHandler func(iotago.OutputID, iotago.Output)
 	inclusionStates    *events.Event
@@ -42,7 +40,6 @@ func newNCChain(
 	ncc := ncChain{
 		nc:                 nc,
 		chainID:            chainID,
-		msgs:               make(map[hashing.HashValue]*ncTransaction),
 		outputHandler:      outputHandler,
 		stateOutputHandler: stateOutputHandler,
 		inclusionStates:    inclusionStates,
@@ -79,8 +76,6 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	if err != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", iscp.TxID(txID), err)
 	}
-	//
-	// TODO: Move it to `nc_transaction.go`
 	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
 	if subInfo.Error() != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", iscp.TxID(txID), subInfo.Error())
