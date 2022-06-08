@@ -6,7 +6,7 @@ import (
 
 var mintCmd = &cobra.Command{
 	Use:   "mint <amount>",
-	Short: "Mint some colored tokens",
+	Short: "Mint L1 native tokens",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		panic("TODO implement")
@@ -31,8 +31,8 @@ var mintCmd = &cobra.Command{
 		// if len(minted) == 0 {
 		// 	panic("transaction does not contain minted tokens")
 		// }
-		// for color := range minted {
-		// 	log.Printf("Minted %d tokens of color %s\n", amount, color.Base58())
+		// for tokenID := range minted {
+		// 	log.Printf("Minted %d tokens of tokenID %s\n", amount, tokenID.Base58())
 		// }
 		// log.Printf("Transaction ID: %s\n", tx.ID().Base58())
 	},

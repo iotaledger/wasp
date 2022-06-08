@@ -40,20 +40,23 @@ var showBlobCmd = &cobra.Command{
 	Short: "Show a blob in chain",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		hash := util.ValueFromString("base58", args[0])
-		fields, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewGetBlobInfo.Name,
-			dict.Dict{
-				blob.ParamHash: hash,
-			})
+		hash, err := hashing.HashValueFromHex(args[0])
+		log.Check(err)
+		fields, err := SCClient(blob.Contract.Hname()).CallView(
+			blob.ViewGetBlobInfo.Name,
+			dict.Dict{blob.ParamHash: hash.Bytes()},
+		)
 		log.Check(err)
 
 		values := dict.New()
 		for field := range fields {
-			value, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewGetBlobField.Name,
+			value, err := SCClient(blob.Contract.Hname()).CallView(
+				blob.ViewGetBlobField.Name,
 				dict.Dict{
-					blob.ParamHash:  hash,
+					blob.ParamHash:  hash.Bytes(),
 					blob.ParamField: []byte(field),
-				})
+				},
+			)
 			log.Check(err)
 			values.Set(field, value[blob.ParamBytes])
 		}

@@ -42,12 +42,12 @@ var balanceCmd = &cobra.Command{
 		if log.VerboseFlag {
 			printOutputsByOutputID(outs)
 		} else {
-			printOutputsByAsset(outs)
+			printOutputsByTokenID(outs)
 		}
 	},
 }
 
-func printOutputsByAsset(outs map[iotago.OutputID]iotago.Output) {
+func printOutputsByTokenID(outs map[iotago.OutputID]iotago.Output) {
 	balance := iscp.FungibleTokensFromOutputMap(outs)
 	log.Printf("    iota: %d\n", balance.Iotas)
 	for _, nt := range balance.Tokens {
@@ -58,7 +58,7 @@ func printOutputsByAsset(outs map[iotago.OutputID]iotago.Output) {
 func printOutputsByOutputID(outs map[iotago.OutputID]iotago.Output) {
 	for i, out := range outs {
 		log.Printf("    output index %d:\n", i)
-		assets := iscp.FungibleTokensFromOutput(out)
-		log.Printf("%s\n", assets.String())
+		tokens := iscp.FungibleTokensFromOutput(out)
+		log.Printf("%s\n", tokens.String())
 	}
 }
