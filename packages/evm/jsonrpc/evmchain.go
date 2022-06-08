@@ -4,6 +4,7 @@
 package jsonrpc
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -71,6 +72,9 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
+	if tx.ChainId().Uint64() != uint64(e.chainID) {
+		return fmt.Errorf("Chain ID mismatch")
+	}
 	return e.backend.EVMSendTransaction(tx)
 }
 

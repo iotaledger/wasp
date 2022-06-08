@@ -53,6 +53,15 @@ func (w *waspServices) ConfigDump() map[string]interface{} {
 	return parameters.Dump()
 }
 
+func (*waspServices) WebAPIPort() string {
+	port := "80"
+	parts := strings.Split(parameters.GetString(parameters.WebAPIBindAddress), ":")
+	if len(parts) == 2 {
+		port = parts[1]
+	}
+	return port
+}
+
 func (w *waspServices) ExploreAddressBaseURL() string {
 	baseURL := parameters.GetString(parameters.DashboardExploreAddressURL)
 	if baseURL != "" {

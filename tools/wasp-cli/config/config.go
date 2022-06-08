@@ -58,7 +58,7 @@ func L1APIAddress() string {
 		return host
 	}
 	return fmt.Sprintf(
-		"%s,%d",
+		"%s:%d",
 		privtangledefaults.Host,
 		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetRestAPI,
 	)
@@ -70,7 +70,7 @@ func L1FaucetAddress() string {
 		return address
 	}
 	return fmt.Sprintf(
-		"%s,%d",
+		"%s:%d",
 		privtangledefaults.Host,
 		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetFaucet,
 	)

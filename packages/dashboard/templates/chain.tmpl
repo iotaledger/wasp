@@ -114,6 +114,23 @@
 				</table>
 			</div>
 		{{end}}
+
+		<div class="card fluid">
+			<h3 class="section">EVM</h3>
+			<dl>
+				<dt>Chain ID</dt><dd><code>{{.EVMChainID}}</code></dd>
+				<dt>JSON-RPC URL</dt><dd><code id="jsonrpc-url">{scheme}://{address}:{{(webapiPort)}}{{(evmJSONRPCEndpoint $chainid.String)}}</code></dd>
+				<script>
+					window.addEventListener("load", function setJsonRPCUrl() {
+						let s = document.getElementById('jsonrpc-url').innerText;
+						s = s.replace("{scheme}:", window.location.protocol);
+						s = s.replace("{address}", window.location.hostname);
+						document.getElementById('jsonrpc-url').innerText = s;
+					}, true);
+				</script>
+			</dl>
+		</div>
+
 	{{end}}
 	{{ template "ws" .ChainID }}
 {{end}}
