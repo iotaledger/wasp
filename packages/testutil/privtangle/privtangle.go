@@ -29,7 +29,7 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (7767580)
+// https://github.com/gohornet/hornet (761f1ff)
 // https://github.com/gohornet/inx-mqtt (bd0f837)
 // https://github.com/gohornet/inx-indexer (58f9a3b)
 // https://github.com/gohornet/inx-coordinator (bd76ece)

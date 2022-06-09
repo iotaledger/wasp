@@ -16,7 +16,7 @@ func (nc *nodeConn) run() {
 	}
 	milestones, subInfo := nc.mqttClient.ConfirmedMilestones()
 	if subInfo.Error() != nil {
-		nc.log.Panicf("Error subscribing: %w", subInfo.Error())
+		nc.log.Panicf("Error subscribing: %v", subInfo.Error())
 	}
 	for {
 		select {
