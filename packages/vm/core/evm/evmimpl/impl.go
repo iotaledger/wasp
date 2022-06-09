@@ -90,11 +90,11 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCaller(iscp.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
 
 	// next block will be minted when the ISC block is closed
-	emu := getEmulatorInBlockContext(ctx)
+	bctx := getBlockContext(ctx)
 
-	ctx.Requiref(tx.ChainId().Uint64() == uint64(emu.BlockchainDB().GetChainID()), "chainId mismatch")
+	ctx.Requiref(tx.ChainId().Uint64() == uint64(bctx.emu.BlockchainDB().GetChainID()), "chainId mismatch")
 
-	receipt, result, err := emu.SendTransaction(tx, ctx.Privileged().GasBurnEnable)
+	receipt, result, err := bctx.emu.SendTransaction(tx, ctx.Privileged().GasBurnEnable)
 
 	// burn EVM gas as ISC gas
 	if result != nil {
@@ -106,7 +106,10 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 
 	ctx.RequireNoError(err)
 
-	// if EVM execution was reverted we must revert the ISC request as well
+	// If EVM execution was reverted we must revert the ISC request as well.
+	// Failed txs will be stored when closing the block context.
+	bctx.txs = append(bctx.txs, tx)
+	bctx.receipts = append(bctx.receipts, receipt)
 	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, GetRevertErrorMessage(result, ctx.Contract()))
 
 	return nil

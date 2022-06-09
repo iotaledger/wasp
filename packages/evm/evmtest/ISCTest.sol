@@ -6,7 +6,7 @@ pragma solidity >=0.8.5;
 import "@isccontract/ISC.sol";
 
 contract ISCTest {
-	ISCError test = isc.registerError("TestError");
+	ISCError TestError = isc.registerError("TestError");
 
 	function getChainID() public view returns (ISCChainID) {
 		return isc.getChainID();
@@ -67,8 +67,8 @@ contract ISCTest {
 		isc.send(receiver, fungibleTokens, true, metadata, options);
 	}
 
-	function emitRevertVMError() public view {
-		revert VMError(test);
+	function revertWithVMError() public view {
+		revert VMError(TestError);
 	}
 
 	event AllowanceIotasEvent(uint64 iotas);
