@@ -53,6 +53,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewBigIntSub,
 		sc.ViewBlockRecord,
 		sc.ViewBlockRecords,
+		sc.ViewCheckAddress,
 		sc.ViewCheckAgentID,
 		sc.ViewGetRandom,
 		sc.ViewIotaBalance,
@@ -106,6 +107,7 @@ const exportMap: wasmlib.ScExportMap = {
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
+		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
@@ -547,6 +549,16 @@ function viewBlockRecordsThunk(ctx: wasmlib.ScViewContext): void {
 	sc.viewBlockRecords(ctx, f);
 	ctx.results(results);
 	ctx.log("testwasmlib.viewBlockRecords ok");
+}
+
+function viewCheckAddressThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckAddress");
+	let f = new sc.CheckAddressContext();
+	ctx.require(f.params.addressBytes().exists(), "missing mandatory addressBytes");
+	ctx.require(f.params.addressString().exists(), "missing mandatory addressString");
+	ctx.require(f.params.scAddress().exists(), "missing mandatory scAddress");
+	sc.viewCheckAddress(ctx, f);
+	ctx.log("testwasmlib.viewCheckAddress ok");
 }
 
 function viewCheckAgentIDThunk(ctx: wasmlib.ScViewContext): void {

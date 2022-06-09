@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -54,6 +55,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBigIntSub,
 		ViewBlockRecord,
 		ViewBlockRecords,
+		ViewCheckAddress,
 		ViewCheckAgentID,
 		ViewGetRandom,
 		ViewIotaBalance,
@@ -107,6 +109,7 @@ var exportMap = wasmlib.ScExportMap{
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
+		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
@@ -126,9 +129,9 @@ func OnLoad(index int32) {
 }
 
 type AddressMapOfAddressArrayAppendContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableAddressMapOfAddressArrayAppendParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableAddressMapOfAddressArrayAppendParams
+	State   MutableTestWasmLibState
 }
 
 func funcAddressMapOfAddressArrayAppendThunk(ctx wasmlib.ScFuncContext) {
@@ -148,9 +151,9 @@ func funcAddressMapOfAddressArrayAppendThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type AddressMapOfAddressArrayClearContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableAddressMapOfAddressArrayClearParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableAddressMapOfAddressArrayClearParams
+	State   MutableTestWasmLibState
 }
 
 func funcAddressMapOfAddressArrayClearThunk(ctx wasmlib.ScFuncContext) {
@@ -169,9 +172,9 @@ func funcAddressMapOfAddressArrayClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type AddressMapOfAddressArraySetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableAddressMapOfAddressArraySetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableAddressMapOfAddressArraySetParams
+	State   MutableTestWasmLibState
 }
 
 func funcAddressMapOfAddressArraySetThunk(ctx wasmlib.ScFuncContext) {
@@ -192,9 +195,9 @@ func funcAddressMapOfAddressArraySetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type AddressMapOfAddressMapClearContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableAddressMapOfAddressMapClearParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableAddressMapOfAddressMapClearParams
+	State   MutableTestWasmLibState
 }
 
 func funcAddressMapOfAddressMapClearThunk(ctx wasmlib.ScFuncContext) {
@@ -213,9 +216,9 @@ func funcAddressMapOfAddressMapClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type AddressMapOfAddressMapSetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableAddressMapOfAddressMapSetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableAddressMapOfAddressMapSetParams
+	State   MutableTestWasmLibState
 }
 
 func funcAddressMapOfAddressMapSetThunk(ctx wasmlib.ScFuncContext) {
@@ -236,9 +239,9 @@ func funcAddressMapOfAddressMapSetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfAddressArrayAppendContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayOfAddressArrayAppendParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfAddressArrayAppendParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfAddressArrayAppendThunk(ctx wasmlib.ScFuncContext) {
@@ -257,8 +260,8 @@ func funcArrayOfAddressArrayAppendThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfAddressArrayClearContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfAddressArrayClearThunk(ctx wasmlib.ScFuncContext) {
@@ -273,9 +276,9 @@ func funcArrayOfAddressArrayClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfAddressArraySetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayOfAddressArraySetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfAddressArraySetParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfAddressArraySetThunk(ctx wasmlib.ScFuncContext) {
@@ -296,8 +299,8 @@ func funcArrayOfAddressArraySetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfAddressMapClearContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfAddressMapClearThunk(ctx wasmlib.ScFuncContext) {
@@ -312,9 +315,9 @@ func funcArrayOfAddressMapClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfAddressMapSetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayOfAddressMapSetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfAddressMapSetParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfAddressMapSetThunk(ctx wasmlib.ScFuncContext) {
@@ -335,9 +338,9 @@ func funcArrayOfAddressMapSetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfStringArrayAppendContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayOfStringArrayAppendParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfStringArrayAppendParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfStringArrayAppendThunk(ctx wasmlib.ScFuncContext) {
@@ -356,8 +359,8 @@ func funcArrayOfStringArrayAppendThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfStringArrayClearContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfStringArrayClearThunk(ctx wasmlib.ScFuncContext) {
@@ -372,9 +375,9 @@ func funcArrayOfStringArrayClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfStringArraySetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayOfStringArraySetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfStringArraySetParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfStringArraySetThunk(ctx wasmlib.ScFuncContext) {
@@ -395,8 +398,8 @@ func funcArrayOfStringArraySetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfStringMapClearContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfStringMapClearThunk(ctx wasmlib.ScFuncContext) {
@@ -411,9 +414,9 @@ func funcArrayOfStringMapClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayOfStringMapSetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayOfStringMapSetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableArrayOfStringMapSetParams
+	State   MutableTestWasmLibState
 }
 
 func funcArrayOfStringMapSetThunk(ctx wasmlib.ScFuncContext) {
@@ -434,9 +437,9 @@ func funcArrayOfStringMapSetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ParamTypesContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableParamTypesParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableParamTypesParams
+	State   MutableTestWasmLibState
 }
 
 func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
@@ -454,8 +457,8 @@ func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type RandomContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcRandomThunk(ctx wasmlib.ScFuncContext) {
@@ -470,9 +473,9 @@ func funcRandomThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StringMapOfStringArrayAppendContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableStringMapOfStringArrayAppendParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableStringMapOfStringArrayAppendParams
+	State   MutableTestWasmLibState
 }
 
 func funcStringMapOfStringArrayAppendThunk(ctx wasmlib.ScFuncContext) {
@@ -492,9 +495,9 @@ func funcStringMapOfStringArrayAppendThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StringMapOfStringArrayClearContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableStringMapOfStringArrayClearParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableStringMapOfStringArrayClearParams
+	State   MutableTestWasmLibState
 }
 
 func funcStringMapOfStringArrayClearThunk(ctx wasmlib.ScFuncContext) {
@@ -513,9 +516,9 @@ func funcStringMapOfStringArrayClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StringMapOfStringArraySetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableStringMapOfStringArraySetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableStringMapOfStringArraySetParams
+	State   MutableTestWasmLibState
 }
 
 func funcStringMapOfStringArraySetThunk(ctx wasmlib.ScFuncContext) {
@@ -536,9 +539,9 @@ func funcStringMapOfStringArraySetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StringMapOfStringMapClearContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableStringMapOfStringMapClearParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableStringMapOfStringMapClearParams
+	State   MutableTestWasmLibState
 }
 
 func funcStringMapOfStringMapClearThunk(ctx wasmlib.ScFuncContext) {
@@ -557,9 +560,9 @@ func funcStringMapOfStringMapClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StringMapOfStringMapSetContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableStringMapOfStringMapSetParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableStringMapOfStringMapSetParams
+	State   MutableTestWasmLibState
 }
 
 func funcStringMapOfStringMapSetThunk(ctx wasmlib.ScFuncContext) {
@@ -580,8 +583,8 @@ func funcStringMapOfStringMapSetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TakeAllowanceContext struct {
-	Events TestWasmLibEvents
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	State   MutableTestWasmLibState
 }
 
 func funcTakeAllowanceThunk(ctx wasmlib.ScFuncContext) {
@@ -618,9 +621,9 @@ func funcTakeBalanceThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TriggerEventContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableTriggerEventParams
-	State  MutableTestWasmLibState
+	Events  TestWasmLibEvents
+	Params  ImmutableTriggerEventParams
+	State   MutableTestWasmLibState
 }
 
 func funcTriggerEventThunk(ctx wasmlib.ScFuncContext) {
@@ -1111,9 +1114,31 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewBlockRecords ok")
 }
 
+type CheckAddressContext struct {
+	Params  ImmutableCheckAddressParams
+	State   ImmutableTestWasmLibState
+}
+
+func viewCheckAddressThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckAddress")
+	f := &CheckAddressContext{
+		Params: ImmutableCheckAddressParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.AddressBytes().Exists(), "missing mandatory addressBytes")
+	ctx.Require(f.Params.AddressString().Exists(), "missing mandatory addressString")
+	ctx.Require(f.Params.ScAddress().Exists(), "missing mandatory scAddress")
+	viewCheckAddress(ctx, f)
+	ctx.Log("testwasmlib.viewCheckAddress ok")
+}
+
 type CheckAgentIDContext struct {
-	Params ImmutableCheckAgentIDParams
-	State  ImmutableTestWasmLibState
+	Params  ImmutableCheckAgentIDParams
+	State   ImmutableTestWasmLibState
 }
 
 func viewCheckAgentIDThunk(ctx wasmlib.ScViewContext) {
