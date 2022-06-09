@@ -38,13 +38,13 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transact
 		peerIdx := e.Chain.AllPeers[i]
 		b, err := e.Chain.BlockIndex(peerIdx)
 		if err != nil || b < blockIndex {
-			if retries >= 5 {
-				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 5 retries")
+			if retries >= 10 {
+				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 5 retries. Peer index: %d", peerIdx)
 			}
 			// retry (access nodes might take slightly more time to sync)
 			retries++
 			i--
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 	}
