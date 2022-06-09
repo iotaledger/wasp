@@ -31,7 +31,7 @@ var loginCmd = &cobra.Command{
 			username = scanner.Text()
 
 			log.Printf("Password: ")
-			passwordBytes, err := term.ReadPassword(syscall.Stdin)
+			passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert // int cast is needed for windows
 			if err != nil {
 				panic(err)
 			}
