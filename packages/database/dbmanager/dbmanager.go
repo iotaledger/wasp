@@ -81,7 +81,7 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) DB {
 	}
 
 	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDStr)
-	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+	if _, err := os.Stat(instanceDir); os.IsNotExist(err) {
 		m.log.Infof("creating new database for: %s.", chainIDStr)
 	} else {
 		m.log.Infof("using existing database for: %s.", chainIDStr)
