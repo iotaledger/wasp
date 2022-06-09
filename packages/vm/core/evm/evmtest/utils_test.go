@@ -343,22 +343,20 @@ type callFnResult struct {
 	iscpReceipt *blocklog.RequestReceipt
 }
 
-func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (res callFnResult, err error) {
+func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
-	res.tx = e.buildEthTx(opts, fnName, args...)
+	res := callFnResult{tx: e.buildEthTx(opts, fnName, args...)}
 
-	err = e.chain.evmChain.SendTransaction(res.tx)
-	if err != nil {
-		return
-	}
+	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
 
 	res.iscpReceipt = e.chain.soloChain.LastReceipt()
 
+	var err error
 	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 	require.NoError(e.chain.t, err)
 
-	return
+	return res, sendTxErr
 }
 
 func (e *evmContractInstance) callFnExpectError(opts []ethCallOptions, fnName string, args ...interface{}) error {
