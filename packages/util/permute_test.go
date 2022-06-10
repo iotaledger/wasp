@@ -56,12 +56,12 @@ func TestNextNoCycles(t *testing.T) {
 	// There are 10! = 3628800 permutations of 10 length array.
 	// There is p = 1 - 3628800!/(3628795!*3628800^5) ~ 0.00028% probability of obtaining at least two equal permutations while picking 5 random ones.
 	// There is q = 1 - (1-p)^10 ~ 0.0028% probability of obtaining at least two equal permutations while picking 5 random ones if you have 10 tries to do that.
-	// q is a probability of test returning false positive on initial permutation length of 10. ~ 1 false positive in 36k runs.
-	// For 9 q ~ 0.028% ~ 1 false positive in 3.6k runs.
-	// For 8 q ~ 0.25% ~ 1 false positive in 400 runs.
-	// For 7 q ~ 2.0% ~ 1 false positive in 50 runs.
-	// For 6 q ~ 13.0% ~ 1 false positive in 8 runs.
-	// For 5 q ~ 57.0% ~  false positive every second run.
+	// q is a probability of test failing, when it is supposed to pass (returning false negative) on initial permutation length of 10. ~ 1 false negative in 36k runs.
+	// For 9 q ~ 0.028% ~ 1 false negative in 3.6k runs.
+	// For 8 q ~ 0.25% ~ 1 false negative in 400 runs.
+	// For 7 q ~ 2.0% ~ 1 false negative in 50 runs.
+	// For 6 q ~ 13.0% ~ 1 false negative in 8 runs.
+	// For 5 q ~ 57.0% ~  false negative every second run.
 	// That is why `n` starts at 10.
 	// NOTE: the exact values might be a little bit of due to accuracy of float arythmetics in LibreOffice Calc. They are provided just to get an impression.
 	for n := uint16(10); n < 100; n += 3 {
