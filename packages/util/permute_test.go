@@ -3,7 +3,6 @@ package util
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,8 +21,8 @@ func TestValidPermutation(t *testing.T) {
 func TestPermute(t *testing.T) {
 	for n := uint16(1); n < 1000; n += 3 {
 		for k := 0; k < 10; k++ {
-			seed := hashing.RandomHash(nil)
-			perm := NewPermutation16(n, seed[:])
+			perm, err := NewPermutation16(n, 15)
+			require.NoError(t, err, "error creating permutation")
 			require.Truef(t, ValidPermutation(perm.GetArray()), "invalid permutation %+v", perm)
 		}
 	}
@@ -32,8 +31,8 @@ func TestPermute(t *testing.T) {
 func TestNext(t *testing.T) {
 	for n := uint16(1); n < 100; n += 3 {
 		for k := 0; k < 10; k++ {
-			seed := hashing.RandomHash(nil)
-			perm := NewPermutation16(n, seed[:])
+			perm, err := NewPermutation16(n, -1)
+			require.NoError(t, err, "error creating permutation")
 			arr := make([]uint16, n*5)
 			for i := range arr {
 				arr[i] = perm.Next()
@@ -66,8 +65,8 @@ func TestNextNoCycles(t *testing.T) {
 	// NOTE: the exact values might be a little bit of due to accuracy of float arythmetics in LibreOffice Calc. They are provided just to get an impression.
 	for n := uint16(10); n < 100; n += 3 {
 		for k := 0; k < 10; k++ {
-			seed := hashing.RandomHash(nil)
-			perm := NewPermutation16(n, seed[:])
+			perm, err := NewPermutation16(n, 9223372016854775807)
+			require.NoError(t, err, "error creating permutation")
 			arr := make([]uint16, n*5)
 			for i := range arr {
 				arr[i] = perm.NextNoCycles()
