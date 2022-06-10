@@ -143,7 +143,7 @@ func (d *DomainImpl) initPermPubKeys() {
 	var err error
 	d.permutation, err = util.NewPermutation16(uint16(len(d.permPubKeys)))
 	if err != nil {
-		d.log.Warnf("Error generating permutation: %v", err)
+		d.log.Warnf("Error generating cryptographically secure random domains permutation: %v", err)
 	}
 }
 

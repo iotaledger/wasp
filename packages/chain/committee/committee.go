@@ -4,7 +4,6 @@
 package committee
 
 import (
-	"crypto/rand"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -198,11 +197,10 @@ func (c *committee) GetRandomValidators(upToN int) []*cryptolib.PublicKey {
 		i++
 	}
 
-	var b [8]byte
-	seed := b[:]
-	_, _ = rand.Read(seed)
-	permutation := util.NewPermutation16(uint16(len(validators)), seed)
-	permutation.Shuffle(seed)
+	permutation, err := util.NewPermutation16(uint16(len(validators)))
+	if err != nil {
+		c.log.Warnf("Error generating cryptographically secure random potential validators permutation: %v", err)
+	}
 	ret := make([]*cryptolib.PublicKey, 0)
 	for len(ret) < upToN {
 		i := validatorIndexes[permutation.Next()]
