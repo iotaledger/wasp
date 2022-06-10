@@ -3,7 +3,9 @@
 
 package wasmtypes
 
-import "strings"
+import (
+	"strings"
+)
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -30,7 +32,14 @@ func NewScAgentIDFromAddress(address ScAddress) ScAgentID {
 	if address.id[0] == ScAddressAlias {
 		return NewScAgentID(address, 0)
 	}
-	return ScAgentID{kind: ScAgentIDAddress, address: address, hname: 0}
+	switch address.id[0] {
+	case ScAddressAlias:
+		return NewScAgentID(address, 0)
+	case ScAddressEth:
+		return ScAgentID{kind: ScAgentIDEthereum, address: address, hname: 0}
+	default:
+		return ScAgentID{kind: ScAgentIDAddress, address: address, hname: 0}
+	}
 }
 
 func (o ScAgentID) Address() ScAddress {
@@ -86,7 +95,10 @@ func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
 		a.hname = HnameFromBytes(buf[ScChainIDLength:])
 	case ScAgentIDEthereum:
-		panic("AgentIDFromBytes: unsupported ScAgentIDEthereum")
+		if len(buf) != ScLengthETH {
+			panic("invalid AgentID length: eth agentID")
+		}
+		a.address = AddressFromBytes(buf)
 	case ScAgentIDNil:
 		break
 	default:
@@ -104,7 +116,7 @@ func AgentIDToBytes(value ScAgentID) []byte {
 		buf = append(buf, AddressToBytes(value.address)[1:]...)
 		return append(buf, HnameToBytes(value.hname)...)
 	case ScAgentIDEthereum:
-		panic("AgentIDToBytes: unsupported ScAgentIDEthereum")
+		return append(buf, AddressToBytes(value.address)...)
 	case ScAgentIDNil:
 		return buf
 	default:
@@ -113,7 +125,6 @@ func AgentIDToBytes(value ScAgentID) []byte {
 }
 
 func AgentIDFromString(value string) ScAgentID {
-	// TODO ScAgentIDEthereum
 	if value == nilAgentIDString {
 		return ScAgentID{}
 	}
@@ -130,12 +141,13 @@ func AgentIDFromString(value string) ScAgentID {
 }
 
 func AgentIDToString(value ScAgentID) string {
-	// TODO ScAgentIDEthereum
 	switch value.kind {
 	case ScAgentIDAddress:
 		return AddressToString(value.Address())
 	case ScAgentIDContract:
 		return HnameToString(value.Hname()) + "@" + AddressToString(value.Address())
+	case ScAgentIDEthereum:
+		return AddressToString(value.Address())
 	case ScAgentIDNil:
 		// iscp.NilAgentID.String() returns "-" which means NilAgentID is "-"
 		return nilAgentIDString
