@@ -89,7 +89,7 @@ type GroupProvider interface {
 // PeerDomainProvider implements unordered set of peers which can dynamically change
 // All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
 type PeerDomainProvider interface {
-	ReshufflePeers(seedBytes ...[]byte)
+	ReshufflePeers()
 	GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey
 	UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey)
 	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
