@@ -29,12 +29,9 @@ func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
 }
 
 func NewScAgentIDFromAddress(address ScAddress) ScAgentID {
-	if address.id[0] == ScAddressAlias {
-		return NewScAgentID(address, 0)
-	}
 	switch address.id[0] {
 	case ScAddressAlias:
-		return NewScAgentID(address, 0)
+		return ScAgentID{kind: ScAgentIDContract, address: address, hname: 0}
 	case ScAddressEth:
 		return ScAgentID{kind: ScAgentIDEthereum, address: address, hname: 0}
 	default:
@@ -95,7 +92,7 @@ func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
 		a.hname = HnameFromBytes(buf[ScChainIDLength:])
 	case ScAgentIDEthereum:
-		if len(buf) != ScLengthETH {
+		if len(buf) != ScAddressEthLength {
 			panic("invalid AgentID length: eth agentID")
 		}
 		a.address = AddressFromBytes(buf)

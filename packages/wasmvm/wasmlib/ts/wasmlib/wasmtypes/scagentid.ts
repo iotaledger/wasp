@@ -108,7 +108,7 @@ export function agentIDFromBytes(buf: u8[]): ScAgentID {
         }
         case ScAgentIDEthereum:
             buf = buf.slice(1)
-            if (buf.length != wasmtypes.ScLengthETH) {
+            if (buf.length != wasmtypes.ScAddressEthLength) {
                 panic("invalid AgentID length: Eth agentID");
             }
             return ScAgentID.fromAddress(wasmtypes.addressFromBytes(buf));
