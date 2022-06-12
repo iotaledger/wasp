@@ -924,6 +924,18 @@ export class MutableCheckAgentIDParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableCheckEthAddressAndAgentIDParams extends wasmtypes.ScProxy {
+	ethAddress(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamEthAddress));
+	}
+}
+
+export class MutableCheckEthAddressAndAgentIDParams extends wasmtypes.ScProxy {
+	ethAddress(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamEthAddress));
+	}
+}
+
 export class ImmutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));

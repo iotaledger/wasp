@@ -638,6 +638,19 @@ export class CheckAgentIDContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class CheckEthAddressAndAgentIDCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckEthAddressAndAgentIDParams = new sc.MutableCheckEthAddressAndAgentIDParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckEthAddressAndAgentID);
+	}
+}
+
+export class CheckEthAddressAndAgentIDContext {
+	params: sc.ImmutableCheckEthAddressAndAgentIDParams = new sc.ImmutableCheckEthAddressAndAgentIDParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class GetRandomCall {
 	func: wasmlib.ScView;
 	results: sc.ImmutableGetRandomResults = new sc.ImmutableGetRandomResults(wasmlib.ScView.nilProxy);
@@ -983,6 +996,12 @@ export class ScFuncs {
 	static checkAgentID(ctx: wasmlib.ScViewCallContext): CheckAgentIDCall {
 		const f = new CheckAgentIDCall(ctx);
 		f.params = new sc.MutableCheckAgentIDParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkEthAddressAndAgentID(ctx: wasmlib.ScViewCallContext): CheckEthAddressAndAgentIDCall {
+		const f = new CheckEthAddressAndAgentIDCall(ctx);
+		f.params = new sc.MutableCheckEthAddressAndAgentIDParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 

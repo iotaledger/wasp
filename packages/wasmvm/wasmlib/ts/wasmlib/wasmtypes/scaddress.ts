@@ -10,12 +10,14 @@ import {ScSandboxUtils} from "../sandboxutils";
 export const ScAddressAlias: u8 = 8;
 export const ScAddressEd25519: u8 = 0;
 export const ScAddressNFT: u8 = 16;
+export const ScAddressEth: u8 = 32
 
 export const ScLengthAlias = 33;
 export const ScLengthEd25519 = 33;
 export const ScLengthNFT = 33;
 
 export const ScAddressLength = ScLengthEd25519;
+export const ScLengthETH = 21;
 
 export class ScAddress {
     id: u8[] = wasmtypes.zeroes(ScAddressLength);
@@ -74,6 +76,11 @@ export function addressFromBytes(buf: u8[]): ScAddress {
                 panic("invalid Address length: NFT");
             }
             break;
+        case ScAddressEth:
+            if (buf.length != ScLengthETH) {
+                panic("invalid Address length: Eth");
+            }
+            break;
         default:
             panic("invalid Address type")
     }
@@ -91,6 +98,8 @@ export function addressToBytes(value: ScAddress): u8[] {
             return value.id.slice(0, ScLengthEd25519);
         case ScAddressNFT:
             return value.id.slice(0, ScLengthNFT);
+        case ScAddressEth:
+            return value.id.slice(0, ScLengthETH);
         default:
             panic("unexpected Address type")
     }
@@ -98,11 +107,19 @@ export function addressToBytes(value: ScAddress): u8[] {
 }
 
 export function addressFromString(value: string): ScAddress {
+    if (value.indexOf("0x") == 0) {
+        let b: u8[] = [ScAddressEth];
+        b = b.concat(wasmtypes.hexDecode(value.slice(2)));
+        return addressFromBytes(b);
+    }
     const utils = new ScSandboxUtils();
     return utils.bech32Decode(value);
 }
 
 export function addressToString(value: ScAddress): string {
+    if (value.id[0] == ScAddressEth) {
+        return "0x" + wasmtypes.hexEncode(value.id.slice(1, ScLengthETH));
+    }
     const utils = new ScSandboxUtils();
     return utils.bech32Encode(value);
 }
