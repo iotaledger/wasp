@@ -15,8 +15,8 @@ const (
 	MinEventSize               = uint16(200)
 	MinEventsPerRequest        = uint16(10)
 	DefaultMaxEventsPerRequest = uint16(50)
-	DefaultMaxEventSize        = uint16(2000)    // 2Kb
-	DefaultMaxBlobSize         = uint32(1000000) // 1Mb
+	DefaultMaxEventSize        = uint16(2000)      // 2Kb
+	DefaultMaxBlobSize         = uint32(2_000_000) // 2Mb
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance, "Governance contract")
