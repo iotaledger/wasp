@@ -31,26 +31,26 @@ func NewPermutation16(size uint16, seedOptional ...int64) (*Permutation16, error
 			return result, err
 		}
 		seed = 0
-		for i:=0; i<8; i++ {
+		for i := 0; i < 8; i++ {
 			seed = seed<<8 | int64(seedArray[i])
 		}
 	} else {
 		seed = seedOptional[0]
 	}
 	ret := &Permutation16{
-		size:   size,
+		size:        size,
 		permutation: make([]uint16, size),
-		random: rand.New(rand.NewSource(seed)),
+		random:      rand.New(rand.NewSource(seed)),
 	}
 	for i := range ret.permutation {
-		ret.permutation[i]= uint16(i)
+		ret.permutation[i] = uint16(i)
 	}
 	return ret.Shuffle(), nil
 }
 
 func (perm *Permutation16) Shuffle() *Permutation16 {
-	rand.Shuffle(len(perm.permutation), func(i, j int){
-		perm.permutation[i], perm.permutation[j] = perm.permutation[j],  perm.permutation[i]
+	rand.Shuffle(len(perm.permutation), func(i, j int) {
+		perm.permutation[i], perm.permutation[j] = perm.permutation[j], perm.permutation[i]
 	})
 	perm.curSeqIndex = 0
 	return perm
