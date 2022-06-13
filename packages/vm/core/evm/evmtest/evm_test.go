@@ -416,13 +416,16 @@ func TestRevert(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	err := iscTest.callFnExpectError([]ethCallOptions{{
+	res, err := iscTest.callFn([]ethCallOptions{{
 		gasLimit: 100_000, // skip estimate gas (which will fail)
-	}}, "emitRevertVMError")
+	}}, "revertWithVMError")
+	require.Error(t, err)
 
 	t.Log(err.Error())
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "execution reverted")
+	require.Regexp(t, `execution reverted: contractId: \w+, errorId: \d+`, err.Error())
+
+	require.Equal(t, types.ReceiptStatusFailed, res.evmReceipt.Status)
 }
 
 func TestSend(t *testing.T) {
