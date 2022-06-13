@@ -97,3 +97,13 @@ func UTXOInputIDFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (*iotago.U
 	copy(oid[:], idBytes)
 	return oid.UTXOInput(), nil
 }
+
+func OutputSetToOutputIDs(outputSet iotago.OutputSet) iotago.OutputIDs {
+	outputIDs := make(iotago.OutputIDs, len(outputSet))
+	i := 0
+	for id := range outputSet {
+		outputIDs[i] = id
+		i++
+	}
+	return outputIDs
+}

@@ -44,9 +44,13 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 		env:   &env{t: t, Clu: clu},
 		Chain: chain,
 	}
-	chEnv.deployNativeIncCounterSC(0)
+	tx := chEnv.deployNativeIncCounterSC(0)
 
 	waitUntil(t, chEnv.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+
+	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
+
 	return chEnv
 }
 
@@ -240,10 +244,8 @@ func TestAccessNodesMany(t *testing.T) {
 	for i := 0; i < iterationCount; i++ {
 		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
 		t.Logf("Running %s", logMsg)
-		for j := 0; j < requestsCount; j++ {
-			_, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
-			require.NoError(t, err)
-		}
+		_, err := myClient.PostRequests(inccounter.FuncIncCounter.Name, requestsCount)
+		require.NoError(t, err)
 		posted += requestsCount
 		requestsCumulative += requestsCount
 		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.Clu.Config.AllNodes(), 60*time.Second, logMsg)

@@ -10,6 +10,10 @@ func (c *SCClient) PostRequest(fname string, params ...chainclient.PostRequestPa
 	return c.ChainClient.Post1Request(c.ContractHname, iscp.Hn(fname), params...)
 }
 
+func (c *SCClient) PostRequests(fname string, n int, params ...chainclient.PostRequestParams) ([]*iotago.Transaction, error) {
+	return c.ChainClient.PostNRequests(c.ContractHname, iscp.Hn(fname), n, params...)
+}
+
 func (c *SCClient) PostOffLedgerRequest(fname string, params ...chainclient.PostRequestParams) (iscp.OffLedgerRequest, error) {
 	return c.ChainClient.PostOffLedgerRequest(c.ContractHname, iscp.Hn(fname), params...)
 }
