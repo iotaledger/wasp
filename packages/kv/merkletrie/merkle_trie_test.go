@@ -444,7 +444,8 @@ func TestTrieRnd(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation, err := util.NewPermutation16(uint16(len(data)), 0)
+		require.NoError(t, err)
 		permutation.ForEach(func(i uint16) bool {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true
@@ -469,7 +470,8 @@ func TestTrieRnd(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation, err := util.NewPermutation16(uint16(len(data)), 1)
+		require.NoError(t, err)
 		permutation.ForEach(func(i uint16) bool {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true
@@ -494,7 +496,8 @@ func TestTrieRnd(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation, err := util.NewPermutation16(uint16(len(data)), 2)
+		require.NoError(t, err)
 		permutation.ForEach(func(i uint16) bool {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true
@@ -519,7 +522,8 @@ func TestTrieRnd(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation, err := util.NewPermutation16(uint16(len(data)), 3)
+		require.NoError(t, err)
 		permutation.ForEach(func(i uint16) bool {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true
@@ -551,7 +555,8 @@ func TestTrieRnd(t *testing.T) {
 		store2 := dict.New()
 		tr2 := trie.New(Model, store2)
 
-		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation, err := util.NewPermutation16(uint16(len(data)), 4)
+		require.NoError(t, err)
 		permutation.ForEach(func(i uint16) bool {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true
@@ -696,7 +701,8 @@ func TestTrieWithDeletion(t *testing.T) {
 		tr1.Commit()
 		c1 := trie.RootCommitment(tr1)
 
-		permutation := util.NewPermutation16(uint16(len(data)), nil)
+		permutation, err := util.NewPermutation16(uint16(len(data)), 5)
+		require.NoError(t, err)
 		permutation.ForEach(func(i uint16) bool {
 			tr2.Update([]byte(data[i]), []byte(data[i]))
 			return true

@@ -382,7 +382,14 @@ func (c *consensus) checkQuorum() { //nolint:funlen
 		return
 	}
 	if c.iAmContributor {
-		permutation = util.NewPermutation16(uint16(len(c.contributors)), txID[:])
+		seed := int64(0)
+		for i := range txID {
+			seed = ((seed << 8) | (seed >> 56 & 0x0FF)) ^ int64(txID[i])
+		}
+		permutation, err = util.NewPermutation16(uint16(len(c.contributors)), seed)
+		if err != nil {
+			c.log.Panicf("This should not happen as the seed is provided: %v", err)
+		}
 		postSeqNumber = permutation.GetArray()[c.myContributionSeqNumber]
 		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber) * c.timers.PostTxSequenceStep)
 

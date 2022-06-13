@@ -4,7 +4,6 @@
 package consensus
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -177,9 +176,8 @@ func (n *mockedNode) getState(index uint32) state.VirtualStateAccess {
 
 func (n *mockedNode) getStateFromNodes(index uint32) state.VirtualStateAccess {
 	n.Log.Debugf("State manager mock: requesting state index %v", index)
-	seed := make([]byte, 16)
-	rand.Read(seed)
-	permutation := util.NewPermutation16(uint16(len(n.Env.Nodes)-1), seed)
+	permutation, err := util.NewPermutation16(uint16(len(n.Env.Nodes) - 1))
+	require.NoError(n.Env.T, err)
 	for _, i := range permutation.GetArray() {
 		var nodeIndex uint16
 		if i < n.NodeIndex {

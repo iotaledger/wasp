@@ -5,6 +5,7 @@ package wasmsolo
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -84,10 +85,11 @@ func (s *SoloSandbox) fnUtilsBech32Encode(args []byte) []byte {
 //func (s *SoloSandbox) fnUtilsHashBlake2b(args []byte) []byte {
 //	return s.utils.Hashing().Blake2b(args).Bytes()
 //}
-//
-//func (s *SoloSandbox) fnUtilsHashName(args []byte) []byte {
-//	return codec.EncodeHname(s.utils.Hashing().Hname(string(args)))
-//}
+
+func (s *SoloSandbox) fnUtilsHashName(args []byte) []byte {
+	return codec.EncodeHname(s.utils.Hashing().Hname(string(args)))
+}
+
 //
 //func (s *SoloSandbox) fnUtilsHashSha3(args []byte) []byte {
 //	return s.utils.Hashing().Sha3(args).Bytes()

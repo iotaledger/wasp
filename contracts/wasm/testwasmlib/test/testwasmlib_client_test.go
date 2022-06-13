@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
-	"github.com/mr-tron/base58/base58"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,20 +25,18 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
 		svcClient := wasmsolo.NewSoloClientService(ctx)
 		chainID := ctx.CurrentChainID()
-		svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
+		svc := wasmclient.NewWasmClientContext(svcClient, chainID, testwasmlib.ScName)
 		require.NoError(t, svc.Err)
 
 		// we'll use the first address in the seed to sign requests
 		svc.SignRequests(ctx.Chain.OriginatorPrivateKey)
 		return svc
 	}
+
 	// use cluster tool
 	e := cluster_tests.SetupWithChain(t)
 
-	// TODO wasmlib shouldn't use base58, just the to/from methods from regular chainID // chainIDStr := e.Chain.ChainID.String()
-	chainIDStr := base58.Encode(e.Chain.ChainID[:])
-
-	chainID := wasmtypes.ChainIDFromBytes(wasmclient.Base58Decode(chainIDStr))
+	chainID := wasmtypes.ChainIDFromBytes(e.Chain.ChainID.Bytes())
 
 	// request funds to the wallet that the wasmclient will use
 	wallet := cryptolib.NewKeyPair()
@@ -63,7 +60,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	svcClient := wasmclient.DefaultWasmClientService()
 
 	// create the service for the testwasmlib smart contract
-	svc := wasmclient.NewWasmClientContext(svcClient, &chainID, testwasmlib.ScName)
+	svc := wasmclient.NewWasmClientContext(svcClient, chainID, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
 
 	// we'll use the first address in the seed to sign requests

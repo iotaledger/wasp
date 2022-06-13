@@ -11,16 +11,20 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type IClientService interface {
-	CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict) (dict.Dict, error)
-	PostRequest(chainID *iscp.ChainID, hContract, hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) (*iscp.RequestID, error)
+	CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
+	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (wasmtypes.ScRequestID, error)
 	SubscribeEvents(msg chan []string, done chan bool) error
-	WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error
+	WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error
 }
 
 type WasmClientService struct {
+	cvt        wasmhost.WasmConvertor
 	waspClient *client.WaspClient
 	eventPort  string
 	nonce      uint64
@@ -36,28 +40,48 @@ func DefaultWasmClientService() *WasmClientService {
 	return NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
 }
 
-func (sc *WasmClientService) CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict) (dict.Dict, error) {
-	return sc.waspClient.CallViewByHname(chainID, hContract, hFunction, args)
-}
-
-func (sc *WasmClientService) PostRequest(chainID *iscp.ChainID, hContract, hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) (*iscp.RequestID, error) {
-	sc.nonce++
-	req := iscp.NewOffLedgerRequest(chainID, hContract, hFuncName, params, sc.nonce)
-	req.WithAllowance(allowance)
-	signed := req.Sign(keyPair)
-	err := sc.waspClient.PostOffLedgerRequest(chainID, signed)
+func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
+	iscpChainID := sc.cvt.IscpChainID(&chainID)
+	iscpContract := sc.cvt.IscpHname(hContract)
+	iscpFunction := sc.cvt.IscpHname(hFunction)
+	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
-	id := signed.ID()
-	return &id, nil
+	res, err := sc.waspClient.CallViewByHname(iscpChainID, iscpContract, iscpFunction, params)
+	if err != nil {
+		return nil, err
+	}
+	return res.Bytes(), nil
+}
+
+func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
+	iscpChainID := sc.cvt.IscpChainID(&chainID)
+	iscpContract := sc.cvt.IscpHname(hContract)
+	iscpFunction := sc.cvt.IscpHname(hFunction)
+	params, err := dict.FromBytes(args)
+	if err != nil {
+		return reqID, err
+	}
+	sc.nonce++
+	req := iscp.NewOffLedgerRequest(iscpChainID, iscpContract, iscpFunction, params, sc.nonce)
+	iscpAllowance := sc.cvt.IscpAllowance(allowance)
+	req.WithAllowance(iscpAllowance)
+	signed := req.Sign(keyPair)
+	err = sc.waspClient.PostOffLedgerRequest(iscpChainID, signed)
+	if err == nil {
+		reqID = sc.cvt.ScRequestID(signed.ID())
+	}
+	return reqID, err
 }
 
 func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) error {
 	return subscribe.Subscribe(sc.eventPort, msg, done, false, "")
 }
 
-func (sc *WasmClientService) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error {
-	_, err := sc.waspClient.WaitUntilRequestProcessed(chainID, reqID, timeout)
+func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
+	iscpChainID := sc.cvt.IscpChainID(&chainID)
+	iscpReqID := sc.cvt.IscpRequestID(&reqID)
+	_, err := sc.waspClient.WaitUntilRequestProcessed(iscpChainID, *iscpReqID, timeout)
 	return err
 }
