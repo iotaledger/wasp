@@ -2,8 +2,10 @@ package wasmclient
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -30,8 +32,10 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 		return s.fnUtilsBech32Decode(args)
 	case wasmlib.FnUtilsBech32Encode:
 		return s.fnUtilsBech32Encode(args)
+	case wasmlib.FnUtilsHashName:
+		return s.fnUtilsHashName(args)
 	}
-	panic("implement me")
+	panic("implement WasmClientContext.Sandbox")
 }
 
 func (s *WasmClientContext) StateDelete(key []byte) {
@@ -54,46 +58,30 @@ func (s *WasmClientContext) StateSet(key, value []byte) {
 
 func (s *WasmClientContext) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	hContract := s.cvt.IscpHname(req.Contract)
-	if hContract != s.scHname {
+	if req.Contract != s.scHname {
 		s.Err = errors.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
-	params, err := dict.FromBytes(req.Params)
+	res, err := s.svcClient.CallViewByHname(s.chainID, req.Contract, req.Function, req.Params)
 	if err != nil {
 		s.Err = err
 		return nil
 	}
-	hFunction := s.cvt.IscpHname(req.Function)
-	res, err := s.svcClient.CallViewByHname(s.chainID, hContract, hFunction, params)
-	if err != nil {
-		s.Err = err
-		return nil
-	}
-	return res.Bytes()
+	return res
 }
 
 func (s *WasmClientContext) fnPost(args []byte) []byte {
 	req := wasmrequests.NewPostRequestFromBytes(args)
-	chainID := s.cvt.IscpChainID(&req.ChainID)
-	if !chainID.Equals(s.chainID) {
+	if req.ChainID != s.chainID {
 		s.Err = errors.Errorf("unknown chain id: %s", req.ChainID.String())
 		return nil
 	}
-	hContract := s.cvt.IscpHname(req.Contract)
-	if hContract != s.scHname {
+	if req.Contract != s.scHname {
 		s.Err = errors.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
-	params, err := dict.FromBytes(req.Params)
-	if err != nil {
-		s.Err = err
-		return nil
-	}
 	scAssets := wasmlib.NewScAssets(req.Transfer)
-	allowance := s.cvt.IscpAllowance(scAssets)
-	hFunction := s.cvt.IscpHname(req.Function)
-	s.ReqID, s.Err = s.svcClient.PostRequest(s.chainID, s.scHname, hFunction, params, allowance, s.keyPair)
+	s.ReqID, s.Err = s.svcClient.PostRequest(s.chainID, req.Contract, req.Function, req.Params, scAssets, s.keyPair)
 	return nil
 }
 
@@ -107,13 +95,20 @@ func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
 		s.Err = errors.Errorf("Invalid protocol prefix: %s", string(hrp))
 		return nil
 	}
-	return s.cvt.ScAddress(addr).Bytes()
+	var cvt wasmhost.WasmConvertor
+	return cvt.ScAddress(addr).Bytes()
 }
 
 func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
+	var cvt wasmhost.WasmConvertor
 	scAddress := wasmtypes.AddressFromBytes(args)
-	addr := s.cvt.IscpAddress(&scAddress)
+	addr := cvt.IscpAddress(&scAddress)
 	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
+}
+
+func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {
+	var utils iscp.Utils
+	return codec.EncodeHname(utils.Hashing().Hname(string(args)))
 }
 
 /////////////////////////////////////////////////////////////////
