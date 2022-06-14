@@ -55,6 +55,11 @@ func (tc *TestContext) WithMessages(msgs []Message) *TestContext {
 	return tc
 }
 
+func (tc *TestContext) WithCall(call func() []Message) *TestContext {
+	msgs := call()
+	return tc.WithMessages(msgs)
+}
+
 func (tc *TestContext) RunUntil(predicate func() bool) {
 	for (len(tc.msgs) > 0 || len(tc.inputs) > 0) && !predicate() {
 		//

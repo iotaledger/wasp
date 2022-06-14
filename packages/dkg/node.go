@@ -109,7 +109,7 @@ func (n *Node) GenerateDistributedKey(
 	var err error
 	peerCount := uint16(len(peerPubs))
 	//
-	// Some validationfor the parameters.
+	// Some validation for the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}

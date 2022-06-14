@@ -6,8 +6,9 @@ package adkg
 import (
 	"testing"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/stretchr/testify/assert"
+	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -15,6 +16,82 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 )
 
+// For tests only.
+func MakeTestDistributedKey(
+	t *testing.T,
+	suite suites.Suite,
+	nodeIDs []gpa.NodeID,
+	nodeSKs map[gpa.NodeID]kyber.Scalar,
+	nodePKs map[gpa.NodeID]kyber.Point,
+	f int,
+	log *logger.Logger,
+) (kyber.Point, map[gpa.NodeID]dss.DistKeyShare) {
+	n := len(nodeIDs)
+	//
+	// Setup nodes.
+	nodes := map[gpa.NodeID]gpa.GPA{}
+	for _, nid := range nodeIDs {
+		nodes[nid] = nonce.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], log)
+	}
+	tc := gpa.NewTestContext(nodes)
+	//
+	// Run the DKG
+	inputs := make(map[gpa.NodeID]gpa.Input)
+	for _, nid := range nodeIDs {
+		inputs[nid] = nil // Input is only a signal here.
+	}
+	tc.WithInputs(inputs).WithInputProbability(0.01)
+	tc.RunUntil(tc.NumberOfOutputsPredicate(n - f))
+	//
+	// Check the INTERMEDIATE result.
+	intermediateOutputs := map[gpa.NodeID]*nonce.Output{}
+	for nid, node := range nodes {
+		nodeOutput := node.Output()
+		if nodeOutput == nil {
+			continue
+		}
+		intermediateOutput := nodeOutput.(*nonce.Output)
+		require.NotNil(t, intermediateOutput)
+		require.NotNil(t, intermediateOutput.Indexes)
+		require.Len(t, intermediateOutput.Indexes, n-f)
+		require.Nil(t, intermediateOutput.PriShare)
+		intermediateOutputs[nid] = intermediateOutput
+	}
+	require.Len(t, intermediateOutputs, n-f)
+	//
+	// Emulate the agreement.
+	decidedProposals := map[gpa.NodeID][]int{}
+	for nid := range intermediateOutputs {
+		decidedProposals[nid] = intermediateOutputs[nid].Indexes
+	}
+	//
+	// Run the ADKG with agreement already decided.
+	agreementMsgs := []gpa.Message{}
+	for _, nid := range nodeIDs {
+		agreementMsgs = append(agreementMsgs, nonce.NewMsgAgreementResult(nid, decidedProposals))
+	}
+	tc.WithMessages(agreementMsgs)
+	tc.WithInputProbability(0.001)
+	tc.RunUntil(tc.OutOfMessagesPredicate())
+	//
+	// Check the FINAL result.
+	var pubKey kyber.Point
+	dkss := map[gpa.NodeID]dss.DistKeyShare{}
+	for nid, n := range nodes {
+		o := n.Output()
+		require.NotNil(t, o)
+		require.NotNil(t, o.(*nonce.Output).PubKey)
+		require.NotNil(t, o.(*nonce.Output).PriShare)
+		require.NotNil(t, o.(*nonce.Output).Commits)
+		dkss[nid] = &dks{share: o.(*nonce.Output).PriShare, commits: o.(*nonce.Output).Commits}
+		if pubKey == nil {
+			pubKey = o.(*nonce.Output).Commits[0]
+		}
+	}
+	return pubKey, dkss
+}
+
+// For tests only.
 func VerifyPriShares(
 	t *testing.T,
 	suite suites.Suite,
@@ -35,7 +112,7 @@ func VerifyPriShares(
 		for j := range nodePKArray {
 			nodePKArray[j] = nodePKs[nodeIDs[j]]
 		}
-		long := &dks{share: priShares[nodeIDs[i]], commits: commits}
+		long := &dks{share: priShares[nodeIDs[i]], commits: commits} // We use long key for nonce as well. Insecure, but OK for this test.
 		signer, err := dss.NewDSS(suite, nodeSKs[nodeIDs[i]], nodePKArray, long, long, messageToSign, f+1)
 		require.NoError(t, err)
 		signers[i] = signer
@@ -53,8 +130,8 @@ func VerifyPriShares(
 		}
 		require.True(t, signers[i].EnoughPartialSig())
 		sig, err := signers[i].Signature()
-		assert.NoError(t, err)
-		assert.NoError(t, dss.Verify(longPubKey, messageToSign, sig))
+		require.NoError(t, err)
+		require.NoError(t, dss.Verify(longPubKey, messageToSign, sig))
 	}
 }
 

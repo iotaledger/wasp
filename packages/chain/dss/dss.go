@@ -1,0 +1,251 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+// Run a NonceDKG and sign the supplied hash.
+//
+// This is a simplified implementation.
+// Later the DKG part can be run in advance, while waiting for transactions.
+//
+// The general workflow is the following:
+//  - Start it upon activation of a step (last stateOutput is approved).
+//  - Exchange the underlying messages until:
+//      - ACSS Intermediate output is received.
+//  - Then wait for the ACS and then the VM to complete:
+//      - pass the ACS result to the nonce-dkg (to complete the nonces).
+//      - pass the VM output as a message to sign (its hash).
+//  - Exchange messages until the signature is produced.
+//  - Output the signature.
+//
+// TODO: Make sure no two signatures are ever produced by the nonce-dkg for the same
+//       base TX. That would reveal the permanent private key of the committee.
+package dss
+
+import (
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/sign/dss"
+	"go.dedis.ch/kyber/v3/suites"
+)
+
+type DSS interface {
+	AsGPA() gpa.GPA
+	DecidedIndexProposals(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) []gpa.Message
+}
+
+type Output struct {
+	ProposedIndexes []int  // Intermediate output.
+	Signature       []byte // Final output.
+}
+
+const (
+	subsystemDKG byte = iota
+)
+
+type dssImpl struct {
+	suite                    suites.Suite
+	withWrappers             gpa.GPA // This instance, with all the wrappers.
+	me                       gpa.NodeID
+	mySK                     kyber.Scalar
+	nodeIDs                  []gpa.NodeID
+	nodePKs                  map[gpa.NodeID]kyber.Point
+	f                        int
+	longTermSecretShare      dss.DistKeyShare
+	dkg                      gpa.GPA
+	dkgOutIndexes            []int                // Intermediate DKG output.
+	dkgDecidedIndexProposals map[gpa.NodeID][]int // ACS decision.
+	dkgOutNonce              dss.DistKeyShare     // Final DKG output.
+	messageToSign            []byte
+	dssPartialSigBuffer      map[gpa.NodeID]*dss.PartialSig // Accumulate early partial signatures
+	dssSigner                *dss.DSS
+	signature                []byte // The output.
+	log                      *logger.Logger
+}
+
+var _ DSS = &dssImpl{}
+
+func New(
+	suite suites.Suite,
+	nodeIDs []gpa.NodeID,
+	nodePKs map[gpa.NodeID]kyber.Point,
+	f int,
+	me gpa.NodeID,
+	mySK kyber.Scalar,
+	longTermSecretShare dss.DistKeyShare,
+	log *logger.Logger,
+) DSS {
+	d := &dssImpl{
+		suite:                    suite,
+		withWrappers:             nil, // Set bellow.
+		me:                       me,
+		mySK:                     mySK,
+		nodeIDs:                  nodeIDs,
+		nodePKs:                  nodePKs,
+		f:                        f,
+		longTermSecretShare:      longTermSecretShare,
+		dkg:                      nonce.New(suite, nodeIDs, nodePKs, f, me, mySK, log),
+		dkgOutIndexes:            nil, // To be decided.
+		dkgDecidedIndexProposals: nil, // To be received.
+		dkgOutNonce:              nil, // To be decided.
+		messageToSign:            nil, // Will be received later.
+		dssPartialSigBuffer:      map[gpa.NodeID]*dss.PartialSig{},
+		dssSigner:                nil, // Will be created when indexProposals and message to sign will be created.
+		log:                      log,
+	}
+	d.withWrappers = gpa.NewOwnHandler(me, d)
+	return d
+}
+
+// DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
+func (d *dssImpl) AsGPA() gpa.GPA {
+	return d.withWrappers
+}
+
+// DSS Specific Interface: Submit the decided (via ACS) indexes for the pri-share aggregation.
+func (d *dssImpl) DecidedIndexProposals(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) []gpa.Message {
+	if d.dkgDecidedIndexProposals != nil {
+		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", decidedIndexProposals)
+		return gpa.NoMessages()
+	}
+	d.dkgDecidedIndexProposals = decidedIndexProposals
+	d.messageToSign = messageToSign
+
+	decisionMsg := nonce.NewMsgAgreementResult(d.me, decidedIndexProposals)
+	msgs := gpa.WrapMessages(subsystemDKG, 0, d.dkg.Message(decisionMsg))
+	return d.tryHandleDkgOutput(msgs)
+}
+
+// Handle the input to the protocol.
+func (d *dssImpl) Input(input gpa.Input) []gpa.Message {
+	if input != nil {
+		panic("nil input is expected")
+	}
+	return gpa.WrapMessages(subsystemDKG, 0, d.dkg.Input(nil))
+}
+
+// Handle the messages.
+func (d *dssImpl) Message(msg gpa.Message) []gpa.Message {
+	switch msgT := msg.(type) {
+	case *msgPartialSig:
+		return d.handlePartialSig(msgT)
+	case *gpa.MsgWrapper:
+		if msgT.Subsystem() == subsystemDKG && msgT.Index() == 0 {
+			msgs := gpa.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
+			return d.tryHandleDkgOutput(msgs)
+		}
+		panic("unknown message")
+	default:
+		panic("unknown message")
+	}
+}
+
+// Provide the output, if any.
+func (d *dssImpl) Output() gpa.Output {
+	if d.dkgOutIndexes == nil && d.signature == nil {
+		return nil
+	}
+	return &Output{
+		ProposedIndexes: d.dkgOutIndexes,
+		Signature:       d.signature,
+	}
+}
+
+func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
+	dkgOut := d.dkg.Output()
+	if d.dkgOutIndexes == nil && dkgOut != nil && dkgOut.(*nonce.Output).Indexes != nil {
+		d.dkgOutIndexes = dkgOut.(*nonce.Output).Indexes
+	}
+	if d.dkgOutNonce == nil && dkgOut != nil && dkgOut.(*nonce.Output).PriShare != nil {
+		d.dkgOutNonce = &SecretShare{
+			share:   dkgOut.(*nonce.Output).PriShare,
+			commits: dkgOut.(*nonce.Output).Commits,
+		}
+		//
+		// Create a partial signature.
+		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, d.f+1)
+		if err != nil {
+			d.log.Error("Failed to create DSS Signer: %v", err)
+			return msgs
+		}
+		d.dssSigner = dssSigner
+		partialSig, err := d.dssSigner.PartialSig()
+		if err != nil {
+			d.log.Errorf("cannot create a partial signature: %v", err)
+			return msgs
+		}
+		//
+		// Process early sent partial signatures, if any.
+		if len(d.dssPartialSigBuffer) > 0 {
+			for nid := range d.dssPartialSigBuffer {
+				err := d.dssSigner.ProcessPartialSig(d.dssPartialSigBuffer[nid])
+				if err != nil {
+					d.log.Warnf("Failed to process a buffered partial signature: %v", err)
+				}
+				delete(d.dssPartialSigBuffer, nid)
+			}
+		}
+		//
+		// Broadcast it (except the current node).
+		for i := range d.nodeIDs {
+			if d.nodeIDs[i] == d.me {
+				continue
+			}
+			msgs = append(msgs, &msgPartialSig{
+				sender:     d.me,
+				recipient:  d.nodeIDs[i],
+				partialSig: partialSig,
+			})
+		}
+		//
+		// Maybe we have everything for the signature already?
+		if d.dssSigner.EnoughPartialSig() {
+			sig, err := d.dssSigner.Signature()
+			if err != nil {
+				d.log.Errorf("Unable to aggregate the signature: %v", err)
+			}
+			d.signature = sig
+		}
+	}
+	return msgs
+}
+
+func (d *dssImpl) handlePartialSig(msg *msgPartialSig) []gpa.Message {
+	if d.signature != nil {
+		// Signature already aggregated, ignore the remaining shares.
+		return gpa.NoMessages()
+	}
+	if d.dssSigner == nil {
+		if _, ok := d.dssPartialSigBuffer[msg.sender]; ok {
+			d.log.Warn("duplicate partial signature from %v", msg.sender)
+			return gpa.NoMessages()
+		}
+		d.dssPartialSigBuffer[msg.sender] = msg.partialSig
+		return gpa.NoMessages()
+	}
+	//
+	// Then process the one received with the current message.
+	err := d.dssSigner.ProcessPartialSig(msg.partialSig)
+	if err != nil {
+		d.log.Warnf("Failed to process a partial signature: %v", err)
+		return gpa.NoMessages()
+	}
+	if !d.dssSigner.EnoughPartialSig() {
+		return gpa.NoMessages()
+	}
+
+	sig, err := d.dssSigner.Signature()
+	if err != nil {
+		d.log.Errorf("Unable to aggregate the signature: %v", err)
+	}
+	d.signature = sig
+	return gpa.NoMessages()
+}
+
+func (d *dssImpl) nodePKArray() []kyber.Point {
+	res := make([]kyber.Point, len(d.nodeIDs))
+	for i := range res {
+		res[i] = d.nodePKs[d.nodeIDs[i]]
+	}
+	return res
+}
