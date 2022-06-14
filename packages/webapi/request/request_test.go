@@ -111,7 +111,7 @@ func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
 	}
 }
 
-func checkNonceMocked(ch chain.ChainCore, req iscp.Request) error {
+func checkNonceMocked(ch chain.ChainCore, req iscp.OffLedgerRequest) error {
 	return nil
 }
 

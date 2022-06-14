@@ -25,7 +25,7 @@ type nodeconnChain struct {
 	aliasOutputCh              chan *iscp.AliasOutputWithID
 	aliasOutputStopCh          chan bool
 	onLedgerRequestIsHandled   bool
-	onLedgerRequestCh          chan *iscp.OnLedgerRequestData
+	onLedgerRequestCh          chan iscp.OnLedgerRequest
 	onLedgerRequestStopCh      chan bool
 	txInclusionStateIsHandled  bool
 	txInclusionStateCh         chan *txInclusionStateMsg
@@ -51,7 +51,7 @@ func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log 
 		log:                    log.Named("ncc-" + chainID.String()[2:8]),
 		aliasOutputCh:          make(chan *iscp.AliasOutputWithID),
 		aliasOutputStopCh:      make(chan bool),
-		onLedgerRequestCh:      make(chan *iscp.OnLedgerRequestData),
+		onLedgerRequestCh:      make(chan iscp.OnLedgerRequest),
 		onLedgerRequestStopCh:  make(chan bool),
 		txInclusionStateCh:     make(chan *txInclusionStateMsg),
 		txInclusionStateStopCh: make(chan bool),

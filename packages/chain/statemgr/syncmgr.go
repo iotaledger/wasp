@@ -39,7 +39,7 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 			sm.log.Debugf("aliasOutputReceived: output index %v, id %v is already a state output; ignored", aliasOutputIndex, aliasOutputIDStr)
 			return false
 		}
-		// TODO
+		// TODO implement
 		/*if !output.GetIsGovernanceUpdated() {
 			sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
 		}*/
@@ -190,7 +190,6 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	for _, block := range blocks {
 		sm.stateManagerMetrics.RecordBlockSize(block.BlockIndex(), float64(len(block.Bytes())))
 	}
-	sm.chain.GlobalStateSync().SetSolidIndex(calculatedState.BlockIndex())
 
 	if err != nil {
 		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %w", err)
@@ -201,6 +200,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 		return
 	}
 	sm.solidState = calculatedState
+	sm.chain.GlobalStateSync().SetSolidIndex(sm.solidState.BlockIndex())
 
 	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }

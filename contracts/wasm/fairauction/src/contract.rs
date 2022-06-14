@@ -30,10 +30,10 @@ pub struct StartAuctionCall {
 	pub params: MutableStartAuctionParams,
 }
 
-pub struct GetInfoCall {
+pub struct GetAuctionInfoCall {
 	pub func: ScView,
-	pub params: MutableGetInfoParams,
-	pub results: ImmutableGetInfoResults,
+	pub params: MutableGetAuctionInfoParams,
+	pub results: ImmutableGetAuctionInfoResults,
 }
 
 pub struct ScFuncs {
@@ -76,11 +76,11 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_info(_ctx: &dyn ScViewCallContext) -> GetInfoCall {
-        let mut f = GetInfoCall {
-            func: ScView::new(HSC_NAME, HVIEW_GET_INFO),
-            params: MutableGetInfoParams { proxy: Proxy::nil() },
-            results: ImmutableGetInfoResults { proxy: Proxy::nil() },
+    pub fn get_auction_info(_ctx: &dyn ScViewCallContext) -> GetAuctionInfoCall {
+        let mut f = GetAuctionInfoCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_AUCTION_INFO),
+            params: MutableGetAuctionInfoParams { proxy: Proxy::nil() },
+            results: ImmutableGetAuctionInfoResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

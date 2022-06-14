@@ -3,7 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 type mustKVStoreBatch struct {
@@ -96,21 +95,21 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 		return nil, false, nil
 	}
 	if err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: %v", err)
+		return nil, false, fmt.Errorf("LoadSolidState: %v", err)
 	}
 	chID, err := iscp.ChainIDFromBytes(v)
 	if err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: %v", err)
+		return nil, false, fmt.Errorf("LoadSolidState: %v", err)
 	}
 	if !chID.Equals(chainID) {
-		return nil, false, xerrors.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
+		return nil, false, fmt.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
 	}
 	ret := NewVirtualState(store)
 
 	// explicit use of merkle trie model. Asserting that the chainID is committed by the root at the key ''
 	merkleProof := CommitmentModel.Proof(nil, ret.trie)
 	if err = merkleProof.Validate(trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
+		return nil, false, fmt.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}
 	ret.kvs.Mutations().ResetModified()
 	return ret, true, nil
@@ -143,7 +142,7 @@ func SaveRawBlockClosure(dir string, log *logger.Logger) OnBlockSaveClosure {
 		data := block.Bytes()
 		h := hashing.HashData(data)
 		fname := fmt.Sprintf("%d.%s.%s.mut", block.BlockIndex(), stateCommitment.String(), h.String())
-		err := ioutil.WriteFile(path.Join(dir, fname), data, 0o666)
+		err := os.WriteFile(path.Join(dir, fname), data, 0o600)
 		if err != nil {
 			log.Warnf("failed to save raw block #%d to dir %s as '%s': %v", block.BlockIndex(), dir, fname, err)
 		} else {

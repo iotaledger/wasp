@@ -612,6 +612,32 @@ export class BlockRecordsContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class CheckAddressCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckAddressParams = new sc.MutableCheckAddressParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckAddress);
+	}
+}
+
+export class CheckAddressContext {
+	params: sc.ImmutableCheckAddressParams = new sc.ImmutableCheckAddressParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
+export class CheckAgentIDCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckAgentIDParams = new sc.MutableCheckAgentIDParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckAgentID);
+	}
+}
+
+export class CheckAgentIDContext {
+	params: sc.ImmutableCheckAgentIDParams = new sc.ImmutableCheckAgentIDParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class GetRandomCall {
 	func: wasmlib.ScView;
 	results: sc.ImmutableGetRandomResults = new sc.ImmutableGetRandomResults(wasmlib.ScView.nilProxy);
@@ -945,6 +971,18 @@ export class ScFuncs {
 		const f = new BlockRecordsCall(ctx);
 		f.params = new sc.MutableBlockRecordsParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBlockRecordsResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static checkAddress(ctx: wasmlib.ScViewCallContext): CheckAddressCall {
+		const f = new CheckAddressCall(ctx);
+		f.params = new sc.MutableCheckAddressParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkAgentID(ctx: wasmlib.ScViewCallContext): CheckAgentIDCall {
+		const f = new CheckAgentIDCall(ctx);
+		f.params = new sc.MutableCheckAgentIDParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 

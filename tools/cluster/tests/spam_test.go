@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -44,7 +46,7 @@ func TestSpamOnledger(t *testing.T) {
 			continue
 		}
 		go func() {
-			chainClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+			chainClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 			retries := 0
 			for i := 0; i < numRequestsPerAccount; i++ {
 				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -113,7 +115,7 @@ func TestSpamOffLedger(t *testing.T) {
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
-	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 
 	durationsMutex := sync.Mutex{}
 	processingDurationsSum := uint64(0)
@@ -179,4 +181,46 @@ func TestSpamOffLedger(t *testing.T) {
 	require.Regexp(t, "counter = 100000", events[len(events)-1])
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
+}
+
+func TestSpamCallViewWasm(t *testing.T) {
+	testutil.RunHeavy(t)
+	env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
+
+	wallet, _, err := env.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+	client := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), wallet)
+	{
+		// increment counter once
+		tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+		require.NoError(t, err)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
+		require.NoError(t, err)
+	}
+
+	const n = 200
+	ch := make(chan error, n)
+
+	for i := 0; i < n; i++ {
+		go func() {
+			r, err := client.CallView("getCounter", nil)
+			if err != nil {
+				ch <- err
+				return
+			}
+
+			v, err := codec.DecodeInt64(r.MustGet(inccounter.VarCounter))
+			if err == nil && v != 1 {
+				err = errors.New("v != 1")
+			}
+			ch <- err
+		}()
+	}
+
+	for i := 0; i < n; i++ {
+		err := <-ch
+		if err != nil {
+			t.Error(err)
+		}
+	}
 }

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -44,6 +45,7 @@ type BaseTemplateParams struct {
 type WaspServices interface {
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
+	WebAPIPort() string
 	PeeringStats() (*PeeringStats, error)
 	MyNetworkID() string
 	GetChainRecords() ([]*registry.ChainRecord, error)
@@ -134,6 +136,8 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"base58":                 base58.Encode,
 		"hex":                    hex.EncodeToString,
 		"replace":                strings.Replace,
+		"webapiPort":             d.wasp.WebAPIPort,
+		"evmJSONRPCEndpoint":     routes.EVMJSONRPC,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 	})
 	t = template.Must(t.Parse(tplBase))

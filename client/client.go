@@ -72,7 +72,7 @@ func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error 
 
 	// construct request
 	url := fmt.Sprintf("%s/%s", strings.TrimRight(c.baseURL, "/"), strings.TrimLeft(route, "/"))
-	req, err := http.NewRequest(method, url, func() io.Reader { //nolint:noctx
+	req, err := http.NewRequest(method, url, func() io.Reader {
 		if data == nil {
 			return nil
 		}

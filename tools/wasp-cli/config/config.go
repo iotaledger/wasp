@@ -53,24 +53,24 @@ func Read() {
 }
 
 func L1APIAddress() string {
-	host := viper.GetString("L1APIAddress")
+	host := viper.GetString("l1.apiAddress")
 	if host != "" {
 		return host
 	}
 	return fmt.Sprintf(
-		"%s,%d",
+		"%s:%d",
 		privtangledefaults.Host,
 		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetRestAPI,
 	)
 }
 
 func L1FaucetAddress() string {
-	address := viper.GetString("L1FaucetAddress")
+	address := viper.GetString("l1.faucetAddress")
 	if address != "" {
 		return address
 	}
 	return fmt.Sprintf(
-		"%s,%d",
+		"%s:%d",
 		privtangledefaults.Host,
 		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetFaucet,
 	)

@@ -286,7 +286,7 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 // Then it deterministically calculates a priority sequence among contributing nodes for posting
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
-func (c *consensus) checkQuorum() {
+func (c *consensus) checkQuorum() { //nolint:funlen
 	if c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
@@ -382,7 +382,14 @@ func (c *consensus) checkQuorum() {
 		return
 	}
 	if c.iAmContributor {
-		permutation = util.NewPermutation16(uint16(len(c.contributors)), txID[:])
+		seed := int64(0)
+		for i := range txID {
+			seed = ((seed << 8) | (seed >> 56 & 0x0FF)) ^ int64(txID[i])
+		}
+		permutation, err = util.NewPermutation16(uint16(len(c.contributors)), seed)
+		if err != nil {
+			c.log.Panicf("This should not happen as the seed is provided: %v", err)
+		}
 		postSeqNumber = permutation.GetArray()[c.myContributionSeqNumber]
 		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber) * c.timers.PostTxSequenceStep)
 
@@ -419,7 +426,7 @@ func (c *consensus) postTransactionIfNeeded() {
 		return
 	}
 	stateIndex := c.resultState.BlockIndex()
-	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx)
+	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx) //nolint:errcheck
 
 	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	txID, err := c.finalTx.ID()
@@ -626,10 +633,12 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 		c.workflow.setCompleted()
 		c.refreshConsensusInfo()
 		c.log.Debugf("processTxInclusionState: transaction id %s is included; workflow finished", finalTxIDStr)
-	case "conflicitng":
+	case "conflicting":
 		c.workflow.setTransactionSeen()
 		c.log.Infof("processTxInclusionState: transaction id %s is conflicting; restarting consensus.", finalTxIDStr)
 		c.resetWorkflow()
+	default:
+		c.log.Warnf("processTxInclusionState: unknown inclusion state %s for transaction id %s; ignoring", msg.State, finalTxIDStr)
 	}
 }
 

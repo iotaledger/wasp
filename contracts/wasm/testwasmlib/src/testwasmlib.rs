@@ -7,10 +7,16 @@ use crate::*;
 
 pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.address().exists() {
-        ctx.require(f.params.address().value() == ctx.account_id().address(), "mismatch: Address");
+        ctx.require(
+            f.params.address().value() == ctx.account_id().address(),
+            "mismatch: Address",
+        );
     }
     if f.params.agent_id().exists() {
-        ctx.require(f.params.agent_id().value() == ctx.account_id(), "mismatch: AgentID");
+        ctx.require(
+            f.params.agent_id().value() == ctx.account_id(),
+            "mismatch: AgentID",
+        );
     }
     if f.params.bool().exists() {
         ctx.require(f.params.bool().value(), "mismatch: Bool");
@@ -20,14 +26,20 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.bytes().value() == byte_data, "mismatch: Bytes");
     }
     if f.params.chain_id().exists() {
-        ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "mismatch: ChainID");
+        ctx.require(
+            f.params.chain_id().value() == ctx.current_chain_id(),
+            "mismatch: ChainID",
+        );
     }
     if f.params.hash().exists() {
         let hash = hash_from_bytes("0123456789abcdeffedcba9876543210".as_bytes());
         ctx.require(f.params.hash().value() == hash, "mismatch: Hash");
     }
     if f.params.hname().exists() {
-        ctx.require(f.params.hname().value() == ctx.account_id().hname(), "mismatch: Hname");
+        ctx.require(
+            f.params.hname().value() == ctx.account_id().hname(),
+            "mismatch: Hname",
+        );
     }
     if f.params.int8().exists() {
         ctx.require(f.params.int8().value() == -123, "mismatch: Int8");
@@ -39,18 +51,28 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.int32().value() == -1234567890, "mismatch: Int32");
     }
     if f.params.int64().exists() {
-        ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
+        ctx.require(
+            f.params.int64().value() == -1234567890123456789,
+            "mismatch: Int64",
+        );
     }
     if f.params.nft_id().exists() {
         let nft_id = nft_id_from_bytes("abcdefghijklmnopqrstuvwxyz123456".as_bytes());
         ctx.require(f.params.nft_id().value() == nft_id, "mismatch: NftID");
     }
     if f.params.request_id().exists() {
-        let request_id = request_id_from_bytes("abcdefghijklmnopqrstuvwxyz123456\x00\x00".as_bytes());
-        ctx.require(f.params.request_id().value() == request_id, "mismatch: RequestID");
+        let request_id =
+            request_id_from_bytes("abcdefghijklmnopqrstuvwxyz123456\x00\x00".as_bytes());
+        ctx.require(
+            f.params.request_id().value() == request_id,
+            "mismatch: RequestID",
+        );
     }
     if f.params.string().exists() {
-        ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
+        ctx.require(
+            f.params.string().value() == "this is a string",
+            "mismatch: String",
+        );
     }
     if f.params.token_id().exists() {
         let token_id = token_id_from_bytes("abcdefghijklmnopqrstuvwxyz1234567890AB".as_bytes());
@@ -66,7 +88,10 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
         ctx.require(f.params.uint32().value() == 1234567890, "mismatch: Uint32");
     }
     if f.params.uint64().exists() {
-        ctx.require(f.params.uint64().value() == 1234567890123456789, "mismatch: Uint64");
+        ctx.require(
+            f.params.uint64().value() == 1234567890123456789,
+            "mismatch: Uint64",
+        );
     }
 }
 
@@ -75,7 +100,11 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
 }
 
 pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
-    ctx.transfer_allowed(&ctx.account_id(), &ScTransfer::from_balances(&ctx.allowance()), false);
+    ctx.transfer_allowed(
+        &ctx.account_id(),
+        &ScTransfer::from_balances(&ctx.allowance()),
+        false,
+    );
 }
 
 pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
@@ -83,23 +112,41 @@ pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
 }
 
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
-    f.events.test(&f.params.address().value(), &f.params.name().value());
+    f.events
+        .test(&f.params.address().value(), &f.params.name().value());
 }
 
 pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {
     let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
-    records.params.block_index().set_value(f.params.block_index().value());
+    records
+        .params
+        .block_index()
+        .set_value(f.params.block_index().value());
     records.func.call();
     let record_index = f.params.record_index().value();
-    ctx.require(record_index < records.results.request_record().length(), "invalid recordIndex");
-    f.results.record().set_value(&records.results.request_record().get_bytes(record_index).value());
+    ctx.require(
+        record_index < records.results.request_record().length(),
+        "invalid recordIndex",
+    );
+    f.results.record().set_value(
+        &records
+            .results
+            .request_record()
+            .get_bytes(record_index)
+            .value(),
+    );
 }
 
 pub fn view_block_records(ctx: &ScViewContext, f: &BlockRecordsContext) {
     let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
-    records.params.block_index().set_value(f.params.block_index().value());
+    records
+        .params
+        .block_index()
+        .set_value(f.params.block_index().value());
     records.func.call();
-    f.results.count().set_value(records.results.request_record().length());
+    f.results
+        .count()
+        .set_value(records.results.request_record().length());
 }
 
 pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
@@ -112,7 +159,10 @@ pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\
 
-pub fn func_array_of_string_array_append(_ctx: &ScFuncContext, f: &ArrayOfStringArrayAppendContext) {
+pub fn func_array_of_string_array_append(
+    _ctx: &ScFuncContext,
+    f: &ArrayOfStringArrayAppendContext,
+) {
     let index = f.params.index().value();
     let val_len = f.params.value().length();
 
@@ -146,7 +196,10 @@ pub fn func_array_of_string_array_set(_ctx: &ScFuncContext, f: &ArrayOfStringArr
     array.get_string(index1).set_value(&value);
 }
 
-pub fn view_array_of_string_array_length(_ctx: &ScViewContext, f: &ArrayOfStringArrayLengthContext) {
+pub fn view_array_of_string_array_length(
+    _ctx: &ScViewContext,
+    f: &ArrayOfStringArrayLengthContext,
+) {
     let length = f.state.array_of_string_array().length();
     f.results.length().set_value(length);
 }
@@ -155,7 +208,12 @@ pub fn view_array_of_string_array_value(_ctx: &ScViewContext, f: &ArrayOfStringA
     let index0 = f.params.index0().value();
     let index1 = f.params.index1().value();
 
-    let elt = f.state.array_of_string_array().get_string_array(index0).get_string(index1).value();
+    let elt = f
+        .state
+        .array_of_string_array()
+        .get_string_array(index0)
+        .get_string(index1)
+        .value();
     f.results.value().set_value(&elt);
 }
 
@@ -192,20 +250,29 @@ pub fn view_array_of_string_map_value(_ctx: &ScViewContext, f: &ArrayOfStringMap
 
 //////////////////// StringMap of StringArray \\\\\\\\\\\\\\\\\\\\
 
-pub fn func_string_map_of_string_array_append(_ctx: &ScFuncContext, f: &StringMapOfStringArrayAppendContext) {
+pub fn func_string_map_of_string_array_append(
+    _ctx: &ScFuncContext,
+    f: &StringMapOfStringArrayAppendContext,
+) {
     let name = f.params.name().value();
     let array = f.state.string_map_of_string_array().get_string_array(&name);
     let value = f.params.value().value();
     array.append_string().set_value(&value);
 }
 
-pub fn func_string_map_of_string_array_clear(_ctx: &ScFuncContext, f: &StringMapOfStringArrayClearContext) {
+pub fn func_string_map_of_string_array_clear(
+    _ctx: &ScFuncContext,
+    f: &StringMapOfStringArrayClearContext,
+) {
     let name = f.params.name().value();
     let array = f.state.string_map_of_string_array().get_string_array(&name);
     array.clear();
 }
 
-pub fn func_string_map_of_string_array_set(_ctx: &ScFuncContext, f: &StringMapOfStringArraySetContext) {
+pub fn func_string_map_of_string_array_set(
+    _ctx: &ScFuncContext,
+    f: &StringMapOfStringArraySetContext,
+) {
     let name = f.params.name().value();
     let array = f.state.string_map_of_string_array().get_string_array(&name);
     let index = f.params.index().value();
@@ -213,14 +280,20 @@ pub fn func_string_map_of_string_array_set(_ctx: &ScFuncContext, f: &StringMapOf
     array.get_string(index).set_value(&value);
 }
 
-pub fn view_string_map_of_string_array_length(_ctx: &ScViewContext, f: &StringMapOfStringArrayLengthContext) {
+pub fn view_string_map_of_string_array_length(
+    _ctx: &ScViewContext,
+    f: &StringMapOfStringArrayLengthContext,
+) {
     let name = f.params.name().value();
     let array = f.state.string_map_of_string_array().get_string_array(&name);
     let length = array.length();
     f.results.length().set_value(length);
 }
 
-pub fn view_string_map_of_string_array_value(_ctx: &ScViewContext, f: &StringMapOfStringArrayValueContext) {
+pub fn view_string_map_of_string_array_value(
+    _ctx: &ScViewContext,
+    f: &StringMapOfStringArrayValueContext,
+) {
     let name = f.params.name().value();
     let array = f.state.string_map_of_string_array().get_string_array(&name);
     let index = f.params.index().value();
@@ -230,7 +303,10 @@ pub fn view_string_map_of_string_array_value(_ctx: &ScViewContext, f: &StringMap
 
 //////////////////// StringMap of StringMap \\\\\\\\\\\\\\\\\\\\
 
-pub fn func_string_map_of_string_map_clear(_ctx: &ScFuncContext, f: &StringMapOfStringMapClearContext) {
+pub fn func_string_map_of_string_map_clear(
+    _ctx: &ScFuncContext,
+    f: &StringMapOfStringMapClearContext,
+) {
     let name = f.params.name().value();
     let mmap = f.state.string_map_of_string_map().get_string_map(&name);
     mmap.clear();
@@ -244,7 +320,10 @@ pub fn func_string_map_of_string_map_set(_ctx: &ScFuncContext, f: &StringMapOfSt
     mmap.get_string(&key).set_value(&value);
 }
 
-pub fn view_string_map_of_string_map_value(_ctx: &ScViewContext, f: &StringMapOfStringMapValueContext) {
+pub fn view_string_map_of_string_map_value(
+    _ctx: &ScViewContext,
+    f: &StringMapOfStringMapValueContext,
+) {
     let name = f.params.name().value();
     let mmap = f.state.string_map_of_string_map().get_string_map(&name);
     let key = f.params.key().value();
@@ -253,7 +332,10 @@ pub fn view_string_map_of_string_map_value(_ctx: &ScViewContext, f: &StringMapOf
 
 //////////////////// array of AddressArray \\\\\\\\\\\\\\\\\\\\
 
-pub fn func_array_of_address_array_append(_ctx: &ScFuncContext, f: &ArrayOfAddressArrayAppendContext) {
+pub fn func_array_of_address_array_append(
+    _ctx: &ScFuncContext,
+    f: &ArrayOfAddressArrayAppendContext,
+) {
     let index = f.params.index().value();
     let val_len = f.params.value_addr().length();
 
@@ -270,7 +352,10 @@ pub fn func_array_of_address_array_append(_ctx: &ScFuncContext, f: &ArrayOfAddre
     }
 }
 
-pub fn func_array_of_address_array_clear(_ctx: &ScFuncContext, f: &ArrayOfAddressArrayClearContext) {
+pub fn func_array_of_address_array_clear(
+    _ctx: &ScFuncContext,
+    f: &ArrayOfAddressArrayClearContext,
+) {
     let length = f.state.array_of_address_array().length();
     for i in 0..length {
         let array = f.state.array_of_address_array().get_address_array(i);
@@ -287,16 +372,27 @@ pub fn func_array_of_address_array_set(_ctx: &ScFuncContext, f: &ArrayOfAddressA
     array.get_address(index1).set_value(&value);
 }
 
-pub fn view_array_of_address_array_length(_ctx: &ScViewContext, f: &ArrayOfAddressArrayLengthContext) {
+pub fn view_array_of_address_array_length(
+    _ctx: &ScViewContext,
+    f: &ArrayOfAddressArrayLengthContext,
+) {
     let length = f.state.array_of_address_array().length();
     f.results.length().set_value(length);
 }
 
-pub fn view_array_of_address_array_value(_ctx: &ScViewContext, f: &ArrayOfAddressArrayValueContext) {
+pub fn view_array_of_address_array_value(
+    _ctx: &ScViewContext,
+    f: &ArrayOfAddressArrayValueContext,
+) {
     let index0 = f.params.index0().value();
     let index1 = f.params.index1().value();
 
-    let elt = f.state.array_of_address_array().get_address_array(index0).get_address(index1).value();
+    let elt = f
+        .state
+        .array_of_address_array()
+        .get_address_array(index0)
+        .get_address(index1)
+        .value();
     f.results.value_addr().set_value(&elt);
 }
 
@@ -328,42 +424,74 @@ pub fn view_array_of_address_map_value(_ctx: &ScViewContext, f: &ArrayOfAddressM
     let index = f.params.index().value();
     let key = f.params.key_addr().value();
     let mmap = f.state.array_of_address_map().get_address_map(index);
-    f.results.value_addr().set_value(&mmap.get_address(&key).value());
+    f.results
+        .value_addr()
+        .set_value(&mmap.get_address(&key).value());
 }
 
 //////////////////// AddressMap of AddressArray \\\\\\\\\\\\\\\\\\\\
 
-pub fn func_address_map_of_address_array_append(_ctx: &ScFuncContext, f: &AddressMapOfAddressArrayAppendContext) {
+pub fn func_address_map_of_address_array_append(
+    _ctx: &ScFuncContext,
+    f: &AddressMapOfAddressArrayAppendContext,
+) {
     let addr = f.params.name_addr().value();
-    let array = f.state.address_map_of_address_array().get_address_array(&addr);
+    let array = f
+        .state
+        .address_map_of_address_array()
+        .get_address_array(&addr);
     let value = f.params.value_addr().value();
     array.append_address().set_value(&value);
 }
 
-pub fn func_address_map_of_address_array_clear(_ctx: &ScFuncContext, f: &AddressMapOfAddressArrayClearContext) {
+pub fn func_address_map_of_address_array_clear(
+    _ctx: &ScFuncContext,
+    f: &AddressMapOfAddressArrayClearContext,
+) {
     let addr = f.params.name_addr().value();
-    let array = f.state.address_map_of_address_array().get_address_array(&addr);
+    let array = f
+        .state
+        .address_map_of_address_array()
+        .get_address_array(&addr);
     array.clear();
 }
 
-pub fn func_address_map_of_address_array_set(_ctx: &ScFuncContext, f: &AddressMapOfAddressArraySetContext) {
+pub fn func_address_map_of_address_array_set(
+    _ctx: &ScFuncContext,
+    f: &AddressMapOfAddressArraySetContext,
+) {
     let addr = f.params.name_addr().value();
-    let array = f.state.address_map_of_address_array().get_address_array(&addr);
+    let array = f
+        .state
+        .address_map_of_address_array()
+        .get_address_array(&addr);
     let index = f.params.index().value();
     let value = f.params.value_addr().value();
     array.get_address(index).set_value(&value);
 }
 
-pub fn view_address_map_of_address_array_length(_ctx: &ScViewContext, f: &AddressMapOfAddressArrayLengthContext) {
+pub fn view_address_map_of_address_array_length(
+    _ctx: &ScViewContext,
+    f: &AddressMapOfAddressArrayLengthContext,
+) {
     let addr = f.params.name_addr().value();
-    let array = f.state.address_map_of_address_array().get_address_array(&addr);
+    let array = f
+        .state
+        .address_map_of_address_array()
+        .get_address_array(&addr);
     let length = array.length();
     f.results.length().set_value(length);
 }
 
-pub fn view_address_map_of_address_array_value(_ctx: &ScViewContext, f: &AddressMapOfAddressArrayValueContext) {
+pub fn view_address_map_of_address_array_value(
+    _ctx: &ScViewContext,
+    f: &AddressMapOfAddressArrayValueContext,
+) {
     let addr = f.params.name_addr().value();
-    let array = f.state.address_map_of_address_array().get_address_array(&addr);
+    let array = f
+        .state
+        .address_map_of_address_array()
+        .get_address_array(&addr);
     let index = f.params.index().value();
     let value = array.get_address(index).value();
     f.results.value_addr().set_value(&value);
@@ -371,13 +499,19 @@ pub fn view_address_map_of_address_array_value(_ctx: &ScViewContext, f: &Address
 
 //////////////////// AddressMap of AddressMap \\\\\\\\\\\\\\\\\\\\
 
-pub fn func_address_map_of_address_map_clear(_ctx: &ScFuncContext, f: &AddressMapOfAddressMapClearContext) {
+pub fn func_address_map_of_address_map_clear(
+    _ctx: &ScFuncContext,
+    f: &AddressMapOfAddressMapClearContext,
+) {
     let name = f.params.name_addr().value();
     let my_map = f.state.address_map_of_address_map().get_address_map(&name);
     my_map.clear();
 }
 
-pub fn func_address_map_of_address_map_set(_ctx: &ScFuncContext, f: &AddressMapOfAddressMapSetContext) {
+pub fn func_address_map_of_address_map_set(
+    _ctx: &ScFuncContext,
+    f: &AddressMapOfAddressMapSetContext,
+) {
     let name = f.params.name_addr().value();
     let my_map = f.state.address_map_of_address_map().get_address_map(&name);
     let key = f.params.key_addr().value();
@@ -385,11 +519,16 @@ pub fn func_address_map_of_address_map_set(_ctx: &ScFuncContext, f: &AddressMapO
     my_map.get_address(&key).set_value(&value);
 }
 
-pub fn view_address_map_of_address_map_value(_ctx: &ScViewContext, f: &AddressMapOfAddressMapValueContext) {
+pub fn view_address_map_of_address_map_value(
+    _ctx: &ScViewContext,
+    f: &AddressMapOfAddressMapValueContext,
+) {
     let name = f.params.name_addr().value();
     let my_map = f.state.address_map_of_address_map().get_address_map(&name);
     let key = f.params.key_addr().value();
-    f.results.value_addr().set_value(&my_map.get_address(&key).value());
+    f.results
+        .value_addr()
+        .set_value(&my_map.get_address(&key).value());
 }
 
 pub fn view_big_int_add(_ctx: &ScViewContext, f: &BigIntAddContext) {
@@ -439,4 +578,36 @@ pub fn view_big_int_shr(_ctx: &ScViewContext, f: &BigIntShrContext) {
     let shift = f.params.shift().value();
     let res = lhs.shr(shift);
     f.results.res().set_value(&res);
+}
+
+pub fn view_check_agent_id(ctx: &ScViewContext, f: &CheckAgentIDContext) {
+    let sc_agent_id = f.params.sc_agent_id().value();
+    let agent_bytes = f.params.agent_bytes().value();
+    let agent_string = f.params.agent_string().value();
+    ctx.require(
+        sc_agent_id == agent_id_from_bytes(&agent_id_to_bytes(&sc_agent_id)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_agent_id == agent_id_from_string(&agent_id_to_string(&sc_agent_id)),
+        "string conversion failed",
+    );
+    ctx.require(sc_agent_id.to_bytes() == agent_bytes, "bytes mismatch");
+    ctx.require(sc_agent_id.to_string() == agent_string, "string mismatch");
+}
+
+pub fn view_check_address(ctx: &ScViewContext, f: &CheckAddressContext) {
+    let sc_address = f.params.sc_address().value();
+    let address_bytes = f.params.address_bytes().value();
+    let address_string = f.params.address_string().value();
+    ctx.require(
+        sc_address == address_from_bytes(&address_to_bytes(&sc_address)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_address == address_from_string(&address_to_string(&sc_address)),
+        "string conversion failed",
+    );
+    ctx.require(sc_address.to_bytes() == address_bytes, "bytes mismatch");
+    ctx.require(sc_address.to_string() == address_string, "string mismatch");
 }

@@ -868,6 +868,62 @@ export class MutableBlockRecordsParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableCheckAddressParams extends wasmtypes.ScProxy {
+	addressBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAddressBytes));
+	}
+
+	addressString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamAddressString));
+	}
+
+	scAddress(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamScAddress));
+	}
+}
+
+export class MutableCheckAddressParams extends wasmtypes.ScProxy {
+	addressBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAddressBytes));
+	}
+
+	addressString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamAddressString));
+	}
+
+	scAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamScAddress));
+	}
+}
+
+export class ImmutableCheckAgentIDParams extends wasmtypes.ScProxy {
+	agentBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAgentBytes));
+	}
+
+	agentString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamAgentString));
+	}
+
+	scAgentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamScAgentID));
+	}
+}
+
+export class MutableCheckAgentIDParams extends wasmtypes.ScProxy {
+	agentBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAgentBytes));
+	}
+
+	agentString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamAgentString));
+	}
+
+	scAgentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamScAgentID));
+	}
+}
+
 export class ImmutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));

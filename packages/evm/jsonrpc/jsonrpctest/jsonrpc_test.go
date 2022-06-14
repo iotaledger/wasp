@@ -36,9 +36,11 @@ type soloTestEnv struct {
 	soloChain *solo.Chain
 }
 
-var faucet *ecdsa.PrivateKey
-var faucetAddress common.Address
-var faucetSupply = big.NewInt(42)
+var (
+	faucet        *ecdsa.PrivateKey
+	faucetAddress common.Address
+	faucetSupply  = big.NewInt(42)
+)
 
 func init() {
 	faucet, faucetAddress = solo.NewEthereumAccount()
@@ -252,13 +254,15 @@ func TestRPCSign(t *testing.T) {
 	require.NotEmpty(t, signed)
 }
 
+const additionalGasBurnedByVM = 10
+
 func TestRPCSignTransaction(t *testing.T) {
 	_, to := solo.NewEthereumAccount()
 	env := newSoloTestEnv(t)
 	env.accountManager.Add(faucet)
 	env.soloChain.GetL2FundsFromFaucet(iscp.NewEthereumAddressAgentID(faucetAddress))
 
-	gas := hexutil.Uint64(params.TxGas)
+	gas := hexutil.Uint64(params.TxGas) + additionalGasBurnedByVM
 	nonce := hexutil.Uint64(env.NonceAt(faucetAddress))
 	signed := env.SignTransaction(&jsonrpc.SendTxArgs{
 		From:     faucetAddress,
@@ -281,7 +285,7 @@ func TestRPCSendTransaction(t *testing.T) {
 	env.accountManager.Add(faucet)
 	env.soloChain.GetL2FundsFromFaucet(iscp.NewEthereumAddressAgentID(faucetAddress))
 
-	gas := hexutil.Uint64(params.TxGas)
+	gas := hexutil.Uint64(params.TxGas) + additionalGasBurnedByVM
 	nonce := hexutil.Uint64(env.NonceAt(faucetAddress))
 	txHash := env.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     faucetAddress,
@@ -300,7 +304,7 @@ func TestRPCGetTxReceiptRegularTx(t *testing.T) {
 	env.accountManager.Add(faucet)
 	env.soloChain.GetL2FundsFromFaucet(iscp.NewEthereumAddressAgentID(faucetAddress))
 
-	gas := hexutil.Uint64(params.TxGas)
+	gas := hexutil.Uint64(params.TxGas) + additionalGasBurnedByVM
 	nonce := hexutil.Uint64(env.NonceAt(faucetAddress))
 	txHash := env.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     faucetAddress,

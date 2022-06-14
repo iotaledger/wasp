@@ -67,7 +67,5 @@ const (
 	BlockKeepAmountDefault = BlockKeepAll
 )
 
-var (
-	// Gas is charged in iotas, not ETH
-	GasPrice = big.NewInt(0)
-)
+// Gas is charged in iotas, not ETH
+var GasPrice = big.NewInt(0)

@@ -368,6 +368,21 @@ export class FibonacciContext {
 	state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState(wasmlib.ScState.proxy());
 }
 
+export class FibonacciIndirectCall {
+	func: wasmlib.ScView;
+	params: sc.MutableFibonacciIndirectParams = new sc.MutableFibonacciIndirectParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableFibonacciIndirectResults = new sc.ImmutableFibonacciIndirectResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewFibonacciIndirect);
+	}
+}
+
+export class FibonacciIndirectContext {
+	params: sc.ImmutableFibonacciIndirectParams = new sc.ImmutableFibonacciIndirectParams(wasmlib.paramsProxy());
+	results: sc.MutableFibonacciIndirectResults = new sc.MutableFibonacciIndirectResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState(wasmlib.ScState.proxy());
+}
+
 export class GetCounterCall {
 	func: wasmlib.ScView;
 	results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults(wasmlib.ScView.nilProxy);
@@ -639,6 +654,13 @@ export class ScFuncs {
 		const f = new FibonacciCall(ctx);
 		f.params = new sc.MutableFibonacciParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableFibonacciResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static fibonacciIndirect(ctx: wasmlib.ScViewCallContext): FibonacciIndirectCall {
+		const f = new FibonacciIndirectCall(ctx);
+		f.params = new sc.MutableFibonacciIndirectParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableFibonacciIndirectResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 

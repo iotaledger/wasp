@@ -3,13 +3,12 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/trie"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -36,7 +35,7 @@ type VMContext struct {
 	finalStateTimestamp  time.Time
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
-	dustAssumptions      *transaction.DustDepositAssumption
+	dustAssumptions      *transaction.StorageDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
@@ -129,7 +128,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
 			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewDepositEstimate()
+		currentDustDepositValues := transaction.NewStorageDepositEstimate()
 		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
 			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
 			panic(vm.ErrInconsistentDustAssumptions)
@@ -144,7 +143,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		ret.dustAssumptions = transaction.NewDepositEstimate()
+		ret.dustAssumptions = transaction.NewStorageDepositEstimate()
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
@@ -171,7 +170,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
-	vmctx.gasBurnEnable(false)
+	vmctx.GasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
@@ -278,7 +277,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
-			accounts.DeleteNativeTokenOutput(s, &id)
+			accounts.DeleteNativeTokenOutput(s, id)
 		}
 
 		// update foundry UTXOs

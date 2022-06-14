@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package testcore
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -13,32 +14,32 @@ type ImmutableCallOnChainResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableCallOnChainResults) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
+func (s ImmutableCallOnChainResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
 }
 
 type MutableCallOnChainResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableCallOnChainResults) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
+func (s MutableCallOnChainResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
 }
 
 type ImmutableRunRecursionResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRunRecursionResults) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
+func (s ImmutableRunRecursionResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
 }
 
 type MutableRunRecursionResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableRunRecursionResults) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
+func (s MutableRunRecursionResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
 }
 
 type ImmutableTestChainOwnerIDFullResults struct {
@@ -61,32 +62,48 @@ type ImmutableFibonacciResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFibonacciResults) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultIntValue))
+func (s ImmutableFibonacciResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
 }
 
 type MutableFibonacciResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableFibonacciResults) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultIntValue))
+func (s MutableFibonacciResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
+}
+
+type ImmutableFibonacciIndirectResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFibonacciIndirectResults) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultN))
+}
+
+type MutableFibonacciIndirectResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFibonacciIndirectResults) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultN))
 }
 
 type ImmutableGetCounterResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultCounter))
+func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultCounter))
+func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultCounter))
 }
 
 type MapStringToImmutableInt64 struct {

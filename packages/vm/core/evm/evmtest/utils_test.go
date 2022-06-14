@@ -81,10 +81,9 @@ type iotaCallOptions struct {
 }
 
 type ethCallOptions struct {
-	sender    *ecdsa.PrivateKey
-	value     *big.Int
-	allowance *iscp.Allowance
-	gasLimit  uint64
+	sender   *ecdsa.PrivateKey
+	value    *big.Int
+	gasLimit uint64
 }
 
 func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *soloChainEnv {
@@ -229,7 +228,7 @@ func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTest
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
-func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
+func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance {
 	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, n)}
 }
 
@@ -270,7 +269,7 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 		GasPrice: evm.GasPrice,
 		Value:    value,
 		Data:     data,
-	}, nil)
+	})
 	require.NoError(e.t, err)
 
 	tx, err := types.SignTx(
@@ -280,7 +279,7 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	)
 	require.NoError(e.t, err)
 
-	err = e.evmChain.SendTransaction(tx, nil)
+	err = e.evmChain.SendTransaction(tx)
 	require.NoError(e.t, err)
 
 	return &evmContractInstance{
@@ -316,13 +315,13 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			GasPrice: evm.GasPrice,
 			Value:    opt.value,
 			Data:     callData,
-		}, opt.allowance)
+		})
 		require.NoError(e.chain.t, err)
 	}
 	return opt
 }
 
-func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, *iscp.Allowance) {
+func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) *types.Transaction {
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
 	opt := e.parseEthCallOptions(opts, callArguments)
@@ -335,7 +334,7 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 
 	tx, err := types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 	require.NoError(e.chain.t, err)
-	return tx, opt.allowance
+	return tx
 }
 
 type callFnResult struct {
@@ -344,23 +343,20 @@ type callFnResult struct {
 	iscpReceipt *blocklog.RequestReceipt
 }
 
-func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (res callFnResult, err error) {
+func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
-	var allowance *iscp.Allowance
-	res.tx, allowance = e.buildEthTx(opts, fnName, args...)
+	res := callFnResult{tx: e.buildEthTx(opts, fnName, args...)}
 
-	err = e.chain.evmChain.SendTransaction(res.tx, allowance)
-	if err != nil {
-		return
-	}
+	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
 
 	res.iscpReceipt = e.chain.soloChain.LastReceipt()
 
+	var err error
 	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 	require.NoError(e.chain.t, err)
 
-	return
+	return res, sendTxErr
 }
 
 func (e *evmContractInstance) callFnExpectError(opts []ethCallOptions, fnName string, args ...interface{}) error {

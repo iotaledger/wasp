@@ -42,24 +42,17 @@ func (e *ChainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnN
 func TestOffledgerRequest(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.Clu.StartMessageCounter(map[string]int{
-		"dismissed_committee": 0,
-		"request_out":         1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-	chEnv.deployIncCounterSC(counter)
+	chEnv.deployNativeIncCounterSC()
 
 	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 1, 2, 3)
 
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 	)
 	require.NoError(t, err)
@@ -68,7 +61,7 @@ func TestOffledgerRequest(t *testing.T) {
 
 	// check off-ledger request was successfully processed
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
+		chain.ChainID, nativeIncCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	require.NoError(t, err)
 	resultint64, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
@@ -142,16 +135,16 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	e := newChainEnv(t, clu, chain)
 
-	e.deployIncCounterSC(nil)
+	e.deployNativeIncCounterSC()
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	// use an access node to create the chainClient
 	chClient := e.newWalletWithFunds(5, 1, 1000*iscp.Mi, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
 	_, err = chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 	)
 	require.NoError(t, err)
@@ -160,7 +153,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu.WaspClient(6).CallView(
-		chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
+		chain.ChainID, nativeIncCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	require.NoError(t, err)
 	resultint64, _ := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
@@ -174,13 +167,13 @@ func TestOffledgerNonce(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-	chEnv.deployIncCounterSC(nil)
+	chEnv.deployNativeIncCounterSC()
 
 	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 1, 2, 3)
 
 	// send off-ledger request with a high nonce
 	offledgerReq, err := chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
 			Nonce: 1_000_000,
@@ -192,7 +185,7 @@ func TestOffledgerNonce(t *testing.T) {
 
 	// send off-ledger request with a high nonce -1
 	offledgerReq, err = chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
 			Nonce: 999_999,
@@ -204,7 +197,7 @@ func TestOffledgerNonce(t *testing.T) {
 
 	// send off-ledger request with a much lower nonce
 	offledgerReq, err = chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
 			Nonce: 1,
@@ -214,7 +207,7 @@ func TestOffledgerNonce(t *testing.T) {
 
 	// try replaying the initial request
 	offledgerReq, err = chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
 			Nonce: 1_000_000,
@@ -224,7 +217,7 @@ func TestOffledgerNonce(t *testing.T) {
 
 	// send a request with a higher nonce
 	offledgerReq, err = chClient.PostOffLedgerRequest(
-		incCounterSCHname,
+		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
 			Nonce: 1_000_001,

@@ -165,6 +165,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Addr
 		NanomsgPort:                  c.NanomsgPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
 		L1APIAddress:                 c.L1APIAddress(i),
+		L1UseRemotePow:               c.L1.UseRemotePoW,
 		MetricsPort:                  c.PrometheusPort(i),
 		OwnerAddress:                 ownerAddress.Bech32(parameters.L1.Protocol.Bech32HRP),
 		OffledgerBroadcastUpToNPeers: 10,

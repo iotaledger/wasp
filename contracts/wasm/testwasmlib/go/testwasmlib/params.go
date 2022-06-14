@@ -1008,6 +1008,70 @@ func (s MutableBlockRecordsParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
+type ImmutableCheckAddressParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckAddressParams) AddressBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAddressBytes))
+}
+
+func (s ImmutableCheckAddressParams) AddressString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamAddressString))
+}
+
+func (s ImmutableCheckAddressParams) ScAddress() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamScAddress))
+}
+
+type MutableCheckAddressParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckAddressParams) AddressBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAddressBytes))
+}
+
+func (s MutableCheckAddressParams) AddressString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamAddressString))
+}
+
+func (s MutableCheckAddressParams) ScAddress() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamScAddress))
+}
+
+type ImmutableCheckAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckAgentIDParams) AgentBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamAgentBytes))
+}
+
+func (s ImmutableCheckAgentIDParams) AgentString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamAgentString))
+}
+
+func (s ImmutableCheckAgentIDParams) ScAgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamScAgentID))
+}
+
+type MutableCheckAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckAgentIDParams) AgentBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamAgentBytes))
+}
+
+func (s MutableCheckAgentIDParams) AgentString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamAgentString))
+}
+
+func (s MutableCheckAgentIDParams) ScAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamScAgentID))
+}
+
 type ImmutableStringMapOfStringArrayLengthParams struct {
 	proxy wasmtypes.Proxy
 }

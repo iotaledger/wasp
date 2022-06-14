@@ -30,9 +30,9 @@ type jsonRPCWaspBackend struct {
 
 var _ jsonrpc.ChainBackend = &jsonRPCWaspBackend{}
 
-func newWaspBackend(chain chain.Chain, nodePubKey *cryptolib.PublicKey) *jsonRPCWaspBackend {
+func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey) *jsonRPCWaspBackend {
 	return &jsonRPCWaspBackend{
-		chain:      chain,
+		chain:      ch,
 		nodePubKey: nodePubKey,
 	}
 }
@@ -55,16 +55,11 @@ func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 	return codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
 }
 
-func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction, allowance *iscp.Allowance) error {
-	gasRatio, err := b.EVMGasRatio()
+func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
+	req, err := iscp.NewEVMOffLedgerRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err
 	}
-	req, err := iscp.NewEVMOffLedgerRequest(b.chain.ID(), tx, &gasRatio)
-	if err != nil {
-		return err
-	}
-	req.WithAllowance(allowance)
 	b.chain.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
 			ChainID: b.chain.ID(),
@@ -87,13 +82,11 @@ func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
 	b.requestIDs.Delete(txHash)
 }
 
-func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg, allowance *iscp.Allowance) (uint64, error) {
-	// TODO: cache the gas ratio?
-	gasRatio, err := b.EVMGasRatio()
-	if err != nil {
-		return 0, err
-	}
-	res, err := chainutil.SimulateCall(b.chain, iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg, &gasRatio).WithAllowance(allowance))
+func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+	res, err := chainutil.SimulateCall(
+		b.chain,
+		iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg),
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -103,6 +96,6 @@ func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg, allowance 
 	return codec.DecodeUint64(res.Return.MustGet(evm.FieldResult))
 }
 
-func (w *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(w.chain, iscp.Hn(scName), iscp.Hn(funName), args)
+func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
+	return chainutil.CallView(b.chain, iscp.Hn(scName), iscp.Hn(funName), args)
 }

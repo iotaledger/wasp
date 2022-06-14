@@ -18,15 +18,42 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 )
 
-// getEmulatorInBlockContext creates a new emulator instance if this is the first call to applyTransaction
+type blockContext struct {
+	emu      *emulator.EVMEmulator
+	txs      []*types.Transaction
+	receipts []*types.Receipt
+}
+
+// getBlockContext creates a new emulator instance if this is the first call to applyTransaction
 // in the ISC block; otherwise it returns the previously created instance. The purpose is to
 // create a single Ethereum block for each ISC block.
-func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
+func getBlockContext(ctx iscp.Sandbox) *blockContext {
 	bctx := ctx.Privileged().BlockContext(
-		func(ctx iscp.Sandbox) interface{} { return createEmulator(ctx) },
-		func(bctx interface{}) { bctx.(*emulator.EVMEmulator).MintBlock() },
+		func(ctx iscp.Sandbox) interface{} { return &blockContext{emu: createEmulator(ctx)} },
+		func(bctx interface{}) { bctx.(*blockContext).close() },
 	)
-	return bctx.(*emulator.EVMEmulator)
+	return bctx.(*blockContext)
+}
+
+func (bctx *blockContext) close() {
+	// count txs where status = success (which are already stored in the pending block)
+	txCount := uint(0)
+	for i := range bctx.txs {
+		if bctx.receipts[i].Status == types.ReceiptStatusSuccessful {
+			txCount++
+		}
+	}
+
+	// failed txs were not stored in the pending block -- store them now
+	for i := range bctx.txs {
+		if bctx.receipts[i].Status != types.ReceiptStatusSuccessful {
+			bctx.receipts[i].TransactionIndex = txCount
+			bctx.emu.BlockchainDB().AddTransaction(bctx.txs[i], bctx.receipts[i])
+			txCount++
+		}
+	}
+
+	bctx.emu.MintBlock()
 }
 
 func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
@@ -153,7 +180,7 @@ func paramBlockNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrev
 	return current
 }
 
-func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 { // nolint:unparam
+func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
 	if ctx.Params().MustHas(evm.FieldBlockHash) {
 		a := assert.NewAssert(ctx.Log())
 		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))

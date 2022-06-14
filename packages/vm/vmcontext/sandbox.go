@@ -88,7 +88,7 @@ func (s *contractSandbox) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFT
 
 func (s *contractSandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateDustCost)
-	return s.Ctx.(*VMContext).EstimateRequiredDustDeposit(par)
+	return s.Ctx.(*VMContext).EstimateRequiredStorageDeposit(par)
 }
 
 func (s *contractSandbox) State() kv.KVStore {
@@ -151,4 +151,8 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 func (s *contractSandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
 	// doesn't have a gas burn, only used for internal (native) contracts
 	return s.Ctx.(*VMContext).BlockContext(s, construct, onClose)
+}
+
+func (s *contractSandbox) GasBurnEnable(enable bool) {
+	s.Ctx.GasBurnEnable(enable)
 }

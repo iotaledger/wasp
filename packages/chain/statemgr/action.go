@@ -41,7 +41,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	sm.notifiedAnchorOutputID = sm.stateOutput.ID()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	//TODO
+	//TODO implement
 	/*gu := ""
 	if sm.stateOutput.GetIsGovernanceUpdated() {
 		gu = " (rotation) "

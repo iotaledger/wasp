@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
@@ -119,6 +119,7 @@ func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64
 
 // originatorBalanceReducedBy checks the balance of the originator address has
 // reduced by the given amount, taking any extra uploadWasm() into account
+//nolint:deadcode
 func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64) {
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
@@ -135,6 +136,7 @@ func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.Sol
 	require.NoError(t, ctxRoot.Err)
 }
 
+//nolint:deadcode
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
 	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))

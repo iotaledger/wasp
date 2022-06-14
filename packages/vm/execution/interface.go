@@ -18,6 +18,7 @@ import (
 type WaspContext interface {
 	LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error)
 	GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord)
+	GasBurnEnable(enable bool)
 	GasBurn(burnCode gas.BurnCode, par ...uint64)
 	Processors() *processors.Cache
 

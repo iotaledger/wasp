@@ -29,11 +29,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (33dca81)
-// https://github.com/gohornet/inx-mqtt (bba54ea)
-// https://github.com/gohornet/inx-indexer (0ad8ea9)
-// https://github.com/gohornet/inx-coordinator (64d4ab1)
-// https://github.com/gohornet/inx-faucet (abb1f8d) (requires `git submodule update --init --recursive` before building )
+// https://github.com/gohornet/hornet (761f1ff)
+// https://github.com/gohornet/inx-mqtt (bd0f837)
+// https://github.com/gohornet/inx-indexer (58f9a3b)
+// https://github.com/gohornet/inx-coordinator (bd76ece)
+// https://github.com/gohornet/inx-faucet (1c6e1ee) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -377,7 +377,7 @@ type FaucetInfoResponse struct {
 
 func (pt *PrivTangle) queryFaucetInfo() error {
 	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, nil)
+	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, http.NoBody)
 	if err != nil {
 		return xerrors.Errorf("unable to create request: %w", err)
 	}
@@ -387,12 +387,18 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
 	}
 	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
 	res.Body.Close()
 	if res.StatusCode != 200 {
 		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
 	}
 	var parsedResp FaucetInfoResponse
-	json.Unmarshal(resBody, &parsedResp)
+	err = json.Unmarshal(resBody, &parsedResp)
+	if err != nil {
+		return err
+	}
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}
@@ -479,6 +485,7 @@ func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
 		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
 		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),
 		FaucetKey:     pt.FaucetKeyPair,
+		UseRemotePoW:  false,
 	}
 }
 

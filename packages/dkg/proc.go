@@ -515,7 +515,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	return sentMsgs, nil
 }
 
-func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
+func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
+	step byte,
+	initRecv *peering.PeerMessageGroupIn,
+	recvMsgs multiKeySetMsgs,
+) (*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
 		// This is the case for N=1, just use simple BLS key pair.
@@ -777,7 +781,7 @@ func (s *procStep) recv(msg *peering.PeerMessageGroupIn) {
 	s.recvCh <- msg
 }
 
-func (s *procStep) run() {
+func (s *procStep) run() { //nolint:funlen, gocyclo
 	var err error
 	for {
 		select {

@@ -35,13 +35,13 @@ func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 }
 
 func funcTransferOwnership(ctx wasmlib.ScFuncContext, f *TransferOwnershipContext) {
-	// TODO
+	// TODO implement
 }
 
 func funcUpdateMetadata(ctx wasmlib.ScFuncContext, f *UpdateMetadataContext) {
-	// TODO
+	// TODO implement
 }
 
 func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
-	// TODO
+	// TODO implement
 }

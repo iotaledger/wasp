@@ -28,7 +28,7 @@ jobs:
         run: make build
 
       - name: Test
-        run: go test -tags rocksdb,builtin_static -v -short -failfast ./...
+        run: make test-short
 
   golangci:
     name: lint

@@ -448,3 +448,23 @@ func viewBigIntShr(ctx wasmlib.ScViewContext, f *BigIntShrContext) {
 	res := lhs.Shr(shift)
 	f.Results.Res().SetValue(res)
 }
+
+func viewCheckAgentID(ctx wasmlib.ScViewContext, f *CheckAgentIDContext) {
+	scAgentID := f.Params.ScAgentID().Value()
+	agentBytes := f.Params.AgentBytes().Value()
+	agentString := f.Params.AgentString().Value()
+	ctx.Require(scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)), "bytes conversion failed")
+	ctx.Require(scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)), "string conversion failed")
+	ctx.Require(string(scAgentID.Bytes()) == string(agentBytes), "bytes mismatch")
+	ctx.Require(scAgentID.String() == agentString, "string mismatch")
+}
+
+func viewCheckAddress(ctx wasmlib.ScViewContext, f *CheckAddressContext) {
+	address := f.Params.ScAddress().Value()
+	addressBytes := f.Params.AddressBytes().Value()
+	addressString := f.Params.AddressString().Value()
+	ctx.Require(address == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(address)), "bytes conversion failed")
+	ctx.Require(address == wasmtypes.AddressFromString(wasmtypes.AddressToString(address)), "string conversion failed")
+	ctx.Require(string(address.Bytes()) == string(addressBytes), "bytes mismatch")
+	ctx.Require(address.String() == addressString, "string mismatch")
+}

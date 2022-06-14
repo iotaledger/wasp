@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/pkg/errors"
 )
 
@@ -37,11 +38,22 @@ func NewSoloClientService(ctx *SoloContext, extra ...bool) *SoloClientService {
 	return s
 }
 
-func (s *SoloClientService) CallViewByHname(chainID *iscp.ChainID, hContract, hFunction iscp.Hname, args dict.Dict) (dict.Dict, error) {
-	if !chainID.Equals(s.ctx.Chain.ChainID) {
+func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
+	iscpChainID := s.ctx.Cvt.IscpChainID(&chainID)
+	iscpContract := s.ctx.Cvt.IscpHname(hContract)
+	iscpFunction := s.ctx.Cvt.IscpHname(hFunction)
+	params, err := dict.FromBytes(args)
+	if err != nil {
+		return nil, err
+	}
+	if !iscpChainID.Equals(s.ctx.Chain.ChainID) {
 		return nil, errors.New("SoloClientService.CallViewByHname chain ID mismatch")
 	}
-	return s.ctx.Chain.CallViewByHname(hContract, hFunction, args)
+	res, err := s.ctx.Chain.CallViewByHname(iscpContract, iscpFunction, params)
+	if err != nil {
+		return nil, err
+	}
+	return res.Bytes(), nil
 }
 
 func (s *SoloClientService) Event(msg string) {
@@ -49,17 +61,25 @@ func (s *SoloClientService) Event(msg string) {
 	s.msg <- strings.Split(msg, " ")
 }
 
-func (s *SoloClientService) PostRequest(chainID *iscp.ChainID, hContract, hFuncName iscp.Hname, params dict.Dict, allowance *iscp.Allowance, keyPair *cryptolib.KeyPair) (*iscp.RequestID, error) {
-	if !chainID.Equals(s.ctx.Chain.ChainID) {
-		return nil, errors.New("SoloClientService.PostRequest chain ID mismatch")
+func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
+	iscpChainID := s.ctx.Cvt.IscpChainID(&chainID)
+	iscpContract := s.ctx.Cvt.IscpHname(hContract)
+	iscpFunction := s.ctx.Cvt.IscpHname(hFunction)
+	params, err := dict.FromBytes(args)
+	if err != nil {
+		return reqID, err
 	}
-	req := solo.NewCallParamsFromDictByHname(hContract, hFuncName, params)
+	if !iscpChainID.Equals(s.ctx.Chain.ChainID) {
+		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
+	}
+	req := solo.NewCallParamsFromDictByHname(iscpContract, iscpFunction, params)
 	s.nonce++
 	req.WithNonce(s.nonce)
-	req.WithAllowance(allowance)
+	iscpAllowance := s.ctx.Cvt.IscpAllowance(allowance)
+	req.WithAllowance(iscpAllowance)
 	req.WithGasBudget(gas.MaxGasPerCall)
-	_, err := s.ctx.Chain.PostRequestOffLedger(req, keyPair)
-	return nil, err
+	_, err = s.ctx.Chain.PostRequestOffLedger(req, keyPair)
+	return reqID, err
 }
 
 func (s *SoloClientService) SubscribeEvents(msg chan []string, done chan bool) error {
@@ -70,6 +90,6 @@ func (s *SoloClientService) SubscribeEvents(msg chan []string, done chan bool) e
 	return nil
 }
 
-func (s *SoloClientService) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error {
+func (s *SoloClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
 	return nil
 }

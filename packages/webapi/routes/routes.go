@@ -31,7 +31,7 @@ func StateGet(chainID, key string) string {
 	return "/chain/" + chainID + "/state/" + key
 }
 
-func EVMRequestIDByTransactionHash(chainID string, txHash string) string {
+func EVMRequestIDByTransactionHash(chainID, txHash string) string {
 	return "/chain/" + chainID + "/evm/reqid/" + txHash
 }
 

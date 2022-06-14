@@ -14,8 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/merkletrie"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -183,12 +183,11 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
+func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) iscp.OffLedgerRequest {
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
 		WithGasBudget(r.gasBudget).
 		WithAllowance(r.allowance)
-	ret.Sign(keyPair)
-	return ret
+	return ret.Sign(keyPair)
 }
 
 func parseParams(params []interface{}) dict.Dict {
@@ -469,7 +468,7 @@ func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...inte
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
-func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
+func (ch *Chain) GetMerkleProofRaw(key []byte) *merkletrie.Proof {
 	ch.Log().Debugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
@@ -483,7 +482,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_merkle.Proof {
 }
 
 // GetBlockProof returns Merkle proof of the key in the state
-func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_merkle.Proof, error) {
+func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *merkletrie.Proof, error) {
 	ch.Log().Debugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
@@ -504,7 +503,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_me
 }
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
-func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_merkle.Proof {
+func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *merkletrie.Proof {
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 

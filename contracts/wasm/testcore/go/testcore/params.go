@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package testcore
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -21,8 +22,8 @@ func (s ImmutableCallOnChainParams) HnameEP() wasmtypes.ScImmutableHname {
 	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHnameEP))
 }
 
-func (s ImmutableCallOnChainParams) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
+func (s ImmutableCallOnChainParams) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamN))
 }
 
 type MutableCallOnChainParams struct {
@@ -37,8 +38,8 @@ func (s MutableCallOnChainParams) HnameEP() wasmtypes.ScMutableHname {
 	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHnameEP))
 }
 
-func (s MutableCallOnChainParams) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
+func (s MutableCallOnChainParams) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamN))
 }
 
 type ImmutableCheckContextFromFullEPParams struct {
@@ -205,16 +206,16 @@ type ImmutableRunRecursionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRunRecursionParams) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
+func (s ImmutableRunRecursionParams) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamN))
 }
 
 type MutableRunRecursionParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableRunRecursionParams) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
+func (s MutableRunRecursionParams) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamN))
 }
 
 type ImmutableSetIntParams struct {
@@ -261,16 +262,16 @@ type ImmutableTestEventLogGenericDataParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTestEventLogGenericDataParams) Counter() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamCounter))
+func (s ImmutableTestEventLogGenericDataParams) Counter() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamCounter))
 }
 
 type MutableTestEventLogGenericDataParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableTestEventLogGenericDataParams) Counter() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamCounter))
+func (s MutableTestEventLogGenericDataParams) Counter() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamCounter))
 }
 
 type ImmutableWithdrawFromChainParams struct {
@@ -349,16 +350,32 @@ type ImmutableFibonacciParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFibonacciParams) IntValue() wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamIntValue))
+func (s ImmutableFibonacciParams) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamN))
 }
 
 type MutableFibonacciParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableFibonacciParams) IntValue() wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamIntValue))
+func (s MutableFibonacciParams) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamN))
+}
+
+type ImmutableFibonacciIndirectParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableFibonacciIndirectParams) N() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamN))
+}
+
+type MutableFibonacciIndirectParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableFibonacciIndirectParams) N() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamN))
 }
 
 type ImmutableGetIntParams struct {

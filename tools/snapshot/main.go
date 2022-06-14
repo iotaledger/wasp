@@ -250,7 +250,8 @@ func createSnapshot(chainID *iscp.ChainID) {
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
+		kvwriter.File.Close()
+		os.Exit(1) //nolint:gocritic
 	}
 	if errW != nil {
 		fmt.Printf("error: %v\n", err)

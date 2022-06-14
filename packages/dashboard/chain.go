@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/labstack/echo/v4"
 )
 
@@ -81,6 +82,11 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+
+		result.EVMChainID, err = d.fetchEVMChainID(chainID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return c.Render(http.StatusOK, c.Path(), result)
@@ -135,6 +141,14 @@ func (d *Dashboard) fetchBlobs(chainID *iscp.ChainID) (map[hashing.HashValue]uin
 	return blob.DecodeDirectory(ret)
 }
 
+func (d *Dashboard) fetchEVMChainID(chainID *iscp.ChainID) (uint16, error) {
+	ret, err := d.wasp.CallView(chainID, evm.Contract.Name, evm.FuncGetChainID.Name, nil)
+	if err != nil {
+		return 0, err
+	}
+	return codec.DecodeUint16(ret.MustGet(evm.FieldResult))
+}
+
 type LatestBlock struct {
 	Index uint32
 	Info  *blocklog.BlockInfo
@@ -145,6 +159,7 @@ type ChainTemplateParams struct {
 
 	ChainID *iscp.ChainID
 
+	EVMChainID  uint16
 	Record      *registry.ChainRecord
 	LatestBlock *LatestBlock
 	ChainInfo   *ChainInfo

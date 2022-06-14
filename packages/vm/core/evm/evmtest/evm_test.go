@@ -166,7 +166,7 @@ func TestLoop(t *testing.T) {
 	gasRatio := env.getGasRatio()
 
 	for _, gasLimit := range []uint64{200000, 400000} {
-		iotasSent := evmtypes.EVMGasToISC(gasLimit, &gasRatio) + iscp.EVMGasBookkeeping
+		iotasSent := evmtypes.EVMGasToISC(gasLimit, &gasRatio)
 		ethKey2, ethAddr2 := env.soloChain.NewEthereumAccountWithL2Funds(iotasSent)
 		require.EqualValues(t,
 			env.soloChain.L2Iotas(iscp.NewEthereumAddressAgentID(ethAddr2)),
@@ -390,10 +390,11 @@ func TestISCGetAllowanceIotas(t *testing.T) {
 
 	var iotas uint64
 	iscTest.callFnExpectEvent([]ethCallOptions{{
-		allowance: iscp.NewAllowanceIotas(42),
+		// TODO: allowance cannot be specified directly in EVM requests
+		// allowance: iscp.NewAllowanceIotas(42),
 	}}, "AllowanceIotasEvent", &iotas, "emitAllowanceIotas")
 
-	require.EqualValues(t, 42, iotas)
+	require.EqualValues(t, 0, iotas)
 }
 
 func TestISCGetAllowanceAvailableIotas(t *testing.T) {
@@ -403,10 +404,11 @@ func TestISCGetAllowanceAvailableIotas(t *testing.T) {
 
 	var iotasAvailable uint64
 	iscTest.callFnExpectEvent([]ethCallOptions{{
-		allowance: iscp.NewAllowanceIotas(42),
+		// TODO: allowance cannot be specified directly in EVM requests
+		// allowance: iscp.NewAllowanceIotas(42),
 	}}, "AllowanceAvailableIotasEvent", &iotasAvailable, "emitAllowanceAvailableIotas")
 
-	require.EqualValues(t, 42, iotasAvailable)
+	require.EqualValues(t, 0, iotasAvailable)
 }
 
 func TestRevert(t *testing.T) {
@@ -414,13 +416,16 @@ func TestRevert(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	err := iscTest.callFnExpectError([]ethCallOptions{{
+	res, err := iscTest.callFn([]ethCallOptions{{
 		gasLimit: 100_000, // skip estimate gas (which will fail)
-	}}, "emitRevertVMError")
+	}}, "revertWithVMError")
+	require.Error(t, err)
 
 	t.Log(err.Error())
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "execution reverted")
+	require.Regexp(t, `execution reverted: contractId: \w+, errorId: \d+`, err.Error())
+
+	require.Equal(t, types.ReceiptStatusFailed, res.evmReceipt.Status)
 }
 
 func TestSend(t *testing.T) {
@@ -473,6 +478,9 @@ func TestSendAsNFT(t *testing.T) {
 }
 
 func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
+	// TODO: allowance cannot be specified directly in EVM requests
+	t.SkipNow()
+
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -488,7 +496,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 
 	nt := new(isccontract.IotaNativeToken)
 	iscTest.callFnExpectEvent([]ethCallOptions{{
-		allowance: iscp.NewAllowanceFungibleTokens(iscp.NewEmptyAssets().AddNativeTokens(tokenID, 42)),
+		// allowance: iscp.NewAllowanceFungibleTokens(iscp.NewEmptyAssets().AddNativeTokens(tokenID, 42)),
 	}}, "AllowanceAvailableNativeTokenEvent", &nt, "emitAllowanceAvailableNativeTokens")
 
 	require.EqualValues(t, tokenID[:], nt.ID.Data)

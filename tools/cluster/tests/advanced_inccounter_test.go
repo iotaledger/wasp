@@ -26,11 +26,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type advancedInccounterEnv struct {
-	*ChainEnv
-}
-
-func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *advancedInccounterEnv {
+func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
 	quorum := uint16((2*len(committee))/3 + 1)
 
 	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
@@ -44,23 +40,14 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID)
 
-	description := "testing with inccounter"
-	progHash := inccounter.Contract.ProgramHash
-
-	params := make(map[string]interface{})
-	params[inccounter.VarCounter] = codec.EncodeInt64(0)
-	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, params)
-	require.NoError(t, err)
-
-	e := &env{t: t, Clu: clu}
 	chEnv := &ChainEnv{
-		env:   e,
+		env:   &env{t: t, Clu: clu},
 		Chain: chain,
 	}
-	waitUntil(t, chEnv.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
-	return &advancedInccounterEnv{
-		ChainEnv: chEnv,
-	}
+	chEnv.deployNativeIncCounterSC(0)
+
+	waitUntil(t, chEnv.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+	return chEnv
 }
 
 func (e *ChainEnv) printBlocks(expected int) {
@@ -119,6 +106,11 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		client := e.createNewClient()
 
 		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+		for i := 0; i < 5 && (err != nil); i++ {
+			fmt.Printf("Error posting request, will retry... %v", err)
+			time.Sleep(100 * time.Millisecond)
+			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
+		}
 		require.NoError(t, err)
 	}
 
@@ -198,20 +190,19 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
-	keyPair, myAddress, err := e.Clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myAgentID := iscp.NewAgentID(myAddress)
-
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(100),
+	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(1_000_000),
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, e.balanceOnChainIotaEquals(myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
-	myClient := e.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := e.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
@@ -241,7 +232,7 @@ func TestAccessNodesMany(t *testing.T) {
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := e.Chain.SCClient(incCounterSCHname, keyPair)
+	myClient := e.Chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	requestsCount := requestsCountInitial
 	requestsCumulative := 0
@@ -290,10 +281,10 @@ func TestRotation(t *testing.T) {
 
 	e := newChainEnv(t, clu, chain)
 
-	_, err = chain.DeployContract(incCounterSCName, programHash.String(), description, nil)
+	_, err = chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second)
 
 	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
 	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
@@ -301,7 +292,7 @@ func TestRotation(t *testing.T) {
 	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(incCounterSCHname, keyPair)
+	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -416,16 +407,16 @@ func TestRotationMany(t *testing.T) {
 
 	e := newChainEnv(t, clu, chain)
 
-	_, err = chain.DeployContract(incCounterSCName, programHash.String(), description, nil)
+	_, err = chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(incCounterSCHname, keyPair)
+	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < numRotations; i++ {
 		require.True(t, e.waitStateController(0, addrs[addrIndex], waitTimeout))
@@ -473,7 +464,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	return ret
 }
 
-func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
+func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		i, err := e.callGetBlockIndex(nodeIndex)
 		return err == nil && i >= blockIndex

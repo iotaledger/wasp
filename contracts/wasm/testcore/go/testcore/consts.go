@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package testcore
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -35,6 +36,7 @@ const (
 	ParamInt64Zero       = "int64-0"
 	ParamIntValue        = "intParamValue"
 	ParamIotasWithdrawal = "iotasWithdrawal"
+	ParamN               = "n"
 	ParamName            = "intParamName"
 	ParamProgHash        = "progHash"
 	ParamString          = "string"
@@ -45,7 +47,7 @@ const (
 const (
 	ResultChainOwnerID = "chainOwnerID"
 	ResultCounter      = "counter"
-	ResultIntValue     = "intParamValue"
+	ResultN            = "n"
 	ResultSandboxCall  = "sandboxCall"
 	ResultValues       = "this"
 	ResultVars         = "this"
@@ -88,6 +90,7 @@ const (
 	FuncWithdrawFromChain           = "withdrawFromChain"
 	ViewCheckContextFromViewEP      = "checkContextFromViewEP"
 	ViewFibonacci                   = "fibonacci"
+	ViewFibonacciIndirect           = "fibonacciIndirect"
 	ViewGetCounter                  = "getCounter"
 	ViewGetInt                      = "getInt"
 	ViewGetStringValue              = "getStringValue"
@@ -131,6 +134,7 @@ const (
 	HFuncWithdrawFromChain           = wasmtypes.ScHname(0x405c0b0a)
 	HViewCheckContextFromViewEP      = wasmtypes.ScHname(0x88ff0167)
 	HViewFibonacci                   = wasmtypes.ScHname(0x7940873c)
+	HViewFibonacciIndirect           = wasmtypes.ScHname(0x6dd98513)
 	HViewGetCounter                  = wasmtypes.ScHname(0xb423e607)
 	HViewGetInt                      = wasmtypes.ScHname(0x1887e5ef)
 	HViewGetStringValue              = wasmtypes.ScHname(0xcf0a4d32)

@@ -145,6 +145,12 @@ pub struct FibonacciCall {
 	pub results: ImmutableFibonacciResults,
 }
 
+pub struct FibonacciIndirectCall {
+	pub func: ScView,
+	pub params: MutableFibonacciIndirectParams,
+	pub results: ImmutableFibonacciIndirectResults,
+}
+
 pub struct GetCounterCall {
 	pub func: ScView,
 	pub results: ImmutableGetCounterResults,
@@ -413,6 +419,17 @@ impl ScFuncs {
             func: ScView::new(HSC_NAME, HVIEW_FIBONACCI),
             params: MutableFibonacciParams { proxy: Proxy::nil() },
             results: ImmutableFibonacciResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn fibonacci_indirect(_ctx: &dyn ScViewCallContext) -> FibonacciIndirectCall {
+        let mut f = FibonacciIndirectCall {
+            func: ScView::new(HSC_NAME, HVIEW_FIBONACCI_INDIRECT),
+            params: MutableFibonacciIndirectParams { proxy: Proxy::nil() },
+            results: ImmutableFibonacciIndirectResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

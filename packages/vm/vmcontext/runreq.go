@@ -8,6 +8,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -21,6 +22,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
@@ -38,7 +41,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
-	vmctx.gasBurnEnable(false)
+	vmctx.GasBurnEnable(false)
 
 	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 	defer func() { vmctx.currentStateUpdate = nil }()
@@ -90,7 +93,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
-	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req)
+	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req.(iscp.OnLedgerRequest))
 	if dustAdjustment > 0 {
 		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
 	}
@@ -124,7 +127,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 	}
 	vmctx.calculateAffordableGasBudget()
 	vmctx.gasSetBudget(vmctx.gasBudgetAdjusted)
-	vmctx.gasBurnEnable(true)
+	vmctx.GasBurnEnable(true)
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
@@ -213,13 +216,28 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 	)
 }
 
+func (vmctx *VMContext) getGasBudget() uint64 {
+	gasBudget, isEVM := vmctx.req.GasBudget()
+	if !isEVM {
+		return gasBudget
+	}
+
+	var gasRatio util.Ratio32
+	vmctx.callCore(evm.Contract, func(s kv.KVStore) {
+		gasRatio = evmimpl.GetGasRatio(s)
+	})
+	return evmtypes.EVMGasToISC(gasBudget, &gasRatio)
+}
+
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
 // how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
 func (vmctx *VMContext) calculateAffordableGasBudget() {
+	gasBudget := vmctx.getGasBudget()
+
 	// when estimating gas, if maxUint64 is provided, use the maximum gas budget possible
-	if vmctx.task.EstimateGasMode && vmctx.req.GasBudget() == math.MaxUint64 {
+	if vmctx.task.EstimateGasMode && gasBudget == math.MaxUint64 {
 		vmctx.gasBudgetAdjusted = gas.MaxGasPerCall
 		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
 		return
@@ -228,12 +246,12 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
 	guaranteedFeeTokens := vmctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget
-	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.req.GasBudget(), guaranteedFeeTokens)
+	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(gasBudget, guaranteedFeeTokens)
 	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
 	// calculate affordable gas budget
 	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
-	affordable = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	affordable = util.MinUint64(gasBudget, affordable)
 	// cap gas to the maximum allowed per tx
 	vmctx.gasBudgetAdjusted = util.MinUint64(affordable, gas.MaxGasPerCall)
 }
@@ -284,7 +302,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
 	// disable gas burn
-	vmctx.gasBurnEnable(false)
+	vmctx.GasBurnEnable(false)
 	if vmctx.req.SenderAccount() == nil {
 		// no charging if sender is unknown
 		return

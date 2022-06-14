@@ -134,12 +134,10 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()
-	} else {
+	} else if !forceOpenAccount && !vmctx.targetAccountExists(target) {
 		// check if target exists, if it is not forced
 		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
-		if !forceOpenAccount && !vmctx.targetAccountExists(target) {
-			panic(vm.ErrTransferTargetAccountDoesNotExists)
-		}
+		panic(vm.ErrTransferTargetAccountDoesNotExists)
 	}
 
 	var toMove *iscp.Allowance
@@ -160,7 +158,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 	var nilAliasID iotago.AliasID
-	blockset := vmctx.task.AnchorOutput.FeaturesSet()
+	blockset := vmctx.task.AnchorOutput.FeatureSet()
 	senderBlock := blockset.SenderFeature()
 	var sender iotago.Address
 	if senderBlock != nil {

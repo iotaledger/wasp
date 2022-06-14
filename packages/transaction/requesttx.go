@@ -60,10 +60,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
 	}
 
-	requiredDustDeposit := parameters.L1.Protocol.RentStructure.VByteCost * out.VBytes(&parameters.L1.Protocol.RentStructure, nil)
-	if out.Deposit() < requiredDustDeposit {
+	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	if out.Deposit() < storageDeposit {
 		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
-			ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
+			ErrNotEnoughIotasForDustDeposit, out.Deposit(), storageDeposit)
 	}
 	outputs = append(outputs, out)
 	sumIotasOut += out.Deposit()

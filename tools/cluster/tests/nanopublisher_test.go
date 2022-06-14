@@ -64,7 +64,7 @@ func TestNanoPublisher(t *testing.T) {
 
 	// send 100 requests
 	numRequests := 100
-	myClient := env.Chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 
 	reqIDs := make([]iscp.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {

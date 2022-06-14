@@ -41,8 +41,8 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 	}
 	w.Run("init")
 
-	w.Run("set", "L1APIAddress", clu.Config.L1.APIAddress)
-	w.Run("set", "L1FaucetAddress", clu.Config.L1.FaucetAddress)
+	w.Run("set", "l1.apiAddress", clu.Config.L1.APIAddress)
+	w.Run("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
 
 	requestFundstext := w.Run("request-funds")
 	// latest line should print something like: "Request funds for address atoi...: success"

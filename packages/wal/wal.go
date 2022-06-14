@@ -3,7 +3,6 @@ package wal
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -22,7 +21,7 @@ type WAL struct {
 	metrics  *walMetrics
 	segments map[uint32]*segment
 	synced   map[uint32]bool
-	mu       sync.RWMutex //nolint
+	mu       sync.RWMutex
 }
 
 type chainWAL struct {
@@ -36,15 +35,7 @@ func New(log *logger.Logger, dir string) *WAL {
 
 var _ chain.WAL = &chainWAL{}
 
-type segmentFile interface {
-	Stat() (os.FileInfo, error)
-	io.Writer
-	io.Closer
-	io.Reader
-}
-
 type segment struct {
-	segmentFile
 	index uint32
 	dir   string
 }
@@ -62,6 +53,7 @@ func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not open wal: %w", err)
 	}
+	defer f.Close()
 
 	w.segments = make(map[uint32]*segment)
 	files, _ := f.ReadDir(-1)
@@ -81,29 +73,27 @@ func (w *chainWAL) Write(bytes []byte) error {
 	if err != nil {
 		return fmt.Errorf("Invalid block: %w", err)
 	}
-	segment, err := w.createSegment(block.BlockIndex())
+
+	index := block.BlockIndex()
+	segName := segmentName(w.dir, index)
+	f, err := os.OpenFile(segName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
+	if err != nil {
+		return fmt.Errorf("could not create segment: %w", err)
+	}
+	defer f.Close()
+	segment := &segment{index: index, dir: w.dir}
+	w.segments[index] = segment
 	if err != nil {
 		w.metrics.failedWrites.Inc()
 		return fmt.Errorf("Error writing log: %w", err)
 	}
-	n, err := segment.Write(bytes)
+	n, err := f.Write(bytes)
 	if err != nil || len(bytes) != n {
 		w.metrics.failedReads.Inc()
 		return fmt.Errorf("Error writing log: %w", err)
 	}
 	w.metrics.segments.Inc()
-	return segment.Close()
-}
-
-func (w *chainWAL) createSegment(i uint32) (*segment, error) {
-	segName := segmentName(w.dir, i)
-	f, err := os.OpenFile(segName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
-	if err != nil {
-		return nil, fmt.Errorf("could not create segment: %w", err)
-	}
-	s := &segment{index: i, segmentFile: f, dir: w.dir}
-	w.segments[i] = s
-	return s, nil
+	return nil
 }
 
 func segmentName(dir string, index uint32) string {
@@ -119,17 +109,20 @@ func (w *chainWAL) Read(i uint32) ([]byte, error) {
 	if segment == nil {
 		return nil, fmt.Errorf("block not found in wal")
 	}
-	if err := segment.load(); err != nil {
+	segName := segmentName(segment.dir, segment.index)
+	f, err := os.OpenFile(segName, os.O_RDONLY, 0o666)
+	if err != nil {
 		w.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("Error opening backup file: %w", err)
+		return nil, fmt.Errorf("error opening segment: %w", err)
 	}
-	stat, err := segment.Stat()
+	defer f.Close()
+	stat, err := f.Stat()
 	if err != nil {
 		w.metrics.failedReads.Inc()
 		return nil, fmt.Errorf("Error reading backup file: %w", err)
 	}
 	blockBytes := make([]byte, stat.Size())
-	bufr := bufio.NewReader(segment)
+	bufr := bufio.NewReader(f)
 	n, err := bufr.Read(blockBytes)
 	if err != nil || int64(n) != stat.Size() {
 		w.metrics.failedReads.Inc()
@@ -143,16 +136,6 @@ func (w *chainWAL) getSegment(i uint32) *segment {
 	if ok {
 		return segment
 	}
-	return nil
-}
-
-func (s *segment) load() error {
-	segName := segmentName(s.dir, s.index)
-	f, err := os.OpenFile(segName, os.O_RDONLY, 0o666)
-	if err != nil {
-		return fmt.Errorf("error opening segment: %w", err)
-	}
-	s.segmentFile = f
 	return nil
 }
 

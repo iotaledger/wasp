@@ -755,7 +755,7 @@ func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex
 	getNativeTokenOutputMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 }
 
-func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
+func DeleteNativeTokenOutput(state kv.KVStore, tokenID iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 
@@ -867,9 +867,9 @@ func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID *iscp.ChainID
 
 // endregion //////////////////////////////////////////
 
-func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumption {
+func GetDustAssumptions(state kv.KVStoreReader) *transaction.StorageDepositAssumption {
 	bin := state.MustGet(kv.Key(stateVarMinimumDustDepositAssumptionsBin))
-	ret, err := transaction.DustDepositAssumptionFromBytes(bin)
+	ret, err := transaction.StorageDepositAssumptionFromBytes(bin)
 	if err != nil {
 		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
 	}

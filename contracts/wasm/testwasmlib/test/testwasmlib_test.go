@@ -338,18 +338,12 @@ func TestWasmTypes(t *testing.T) {
 	// check alias address
 	scAliasAddress := scChainID.Address()
 	aliasAddress := chainID.AsAddress()
-	require.True(t, scAliasAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAliasAddress)))
-	require.True(t, scAliasAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAliasAddress)))
-	require.EqualValues(t, scAliasAddress.Bytes(), iscp.BytesFromAddress(aliasAddress))
-	require.EqualValues(t, scAliasAddress.String(), aliasAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
+	checkAddress(t, ctx, scAliasAddress, aliasAddress)
 
 	// check ed25519 address
 	scEd25519Address := ctx.Originator().ScAgentID().Address()
 	ed25519Address := ctx.Chain.OriginatorAddress
-	require.True(t, scEd25519Address == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scEd25519Address)))
-	require.True(t, scEd25519Address == wasmtypes.AddressFromString(wasmtypes.AddressToString(scEd25519Address)))
-	require.EqualValues(t, scEd25519Address.Bytes(), iscp.BytesFromAddress(ed25519Address))
-	require.EqualValues(t, scEd25519Address.String(), ed25519Address.Bech32(parameters.L1.Protocol.Bech32HRP))
+	checkAddress(t, ctx, scEd25519Address, ed25519Address)
 
 	// check nft address (currently simply use
 	// serialized alias address and overwrite the kind byte)
@@ -358,42 +352,32 @@ func TestWasmTypes(t *testing.T) {
 	scNftAddress := wasmtypes.AddressFromBytes(nftBytes)
 	nftBytes[0] = byte(iotago.AddressNFT)
 	nftAddress, _, _ := iscp.AddressFromBytes(nftBytes)
-	require.True(t, scNftAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scNftAddress)))
-	require.True(t, scNftAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scNftAddress)))
-	require.EqualValues(t, scNftAddress.Bytes(), iscp.BytesFromAddress(nftAddress))
-	require.EqualValues(t, scNftAddress.String(), nftAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
+	checkAddress(t, ctx, scNftAddress, nftAddress)
 
 	// check agent id of alias address (hname zero)
 	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
 	agentID := iscp.NewAgentID(aliasAddress)
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of ed25519 address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
 	agentID = iscp.NewAgentID(ed25519Address)
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of NFT address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
 	agentID = iscp.NewAgentID(nftAddress)
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of contract (hname non-zero)
 	scAgentID = wasmtypes.NewScAgentID(scAliasAddress, testwasmlib.HScName)
 	agentID = iscp.NewContractAgentID(chainID, iscp.Hname(testwasmlib.HScName))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
-	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
-	require.EqualValues(t, scAgentID.Bytes(), agentID.Bytes())
-	require.EqualValues(t, scAgentID.String(), agentID.String())
+	checkAgentID(t, ctx, scAgentID, agentID)
+
+	// check nil agent id
+	scAgentID = wasmtypes.ScAgentID{}
+	agentID = &iscp.NilAgentID{}
+	checkAgentID(t, ctx, scAgentID, agentID)
 
 	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
@@ -531,4 +515,38 @@ func TestWasmTypes(t *testing.T) {
 	byteTokenID := []byte{0xc3, 0x77, 0xf3, 0xf1, 0xea, 0x0f, 0x57, 0x13, 0x4d, 0x64, 0x4f, 0x2f, 0x29, 0x1d, 0x49, 0xf4, 0x8b, 0x11, 0x6d, 0x68, 0x17, 0x4f, 0x73, 0xec, 0x13, 0x09, 0xdd, 0x85, 0xb0, 0x09, 0xea, 0x85, 0xdb, 0x80, 0x26, 0x6a, 0x94, 0xea}
 	require.Equal(t, byteTokenID, wasmtypes.TokenIDToBytes(wasmtypes.TokenIDFromBytes(byteTokenID)))
 	require.Equal(t, byteTokenID, wasmtypes.TokenIDFromBytes(byteTokenID).Bytes())
+}
+
+func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.ScAgentID, agentID iscp.AgentID) {
+	agentBytes := agentID.Bytes()
+	agentString := agentID.String()
+
+	require.EqualValues(t, scAgentID.Bytes(), agentBytes)
+	require.EqualValues(t, scAgentID.String(), agentString)
+	require.True(t, scAgentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentID)))
+	require.True(t, scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)))
+
+	checker := testwasmlib.ScFuncs.CheckAgentID(ctx)
+	checker.Params.ScAgentID().SetValue(scAgentID)
+	checker.Params.AgentBytes().SetValue(agentBytes)
+	checker.Params.AgentString().SetValue(agentString)
+	checker.Func.Call()
+	require.NoError(t, ctx.Err)
+}
+
+func checkAddress(t *testing.T, ctx *wasmsolo.SoloContext, scAddress wasmtypes.ScAddress, address iotago.Address) {
+	addressBytes := iscp.BytesFromAddress(address)
+	addressString := address.Bech32(parameters.L1.Protocol.Bech32HRP)
+
+	require.EqualValues(t, scAddress.Bytes(), addressBytes)
+	require.EqualValues(t, scAddress.String(), addressString)
+	require.True(t, scAddress == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAddress)))
+	require.True(t, scAddress == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAddress)))
+
+	checker := testwasmlib.ScFuncs.CheckAddress(ctx)
+	checker.Params.ScAddress().SetValue(scAddress)
+	checker.Params.AddressBytes().SetValue(addressBytes)
+	checker.Params.AddressString().SetValue(addressString)
+	checker.Func.Call()
+	require.NoError(t, ctx.Err)
 }

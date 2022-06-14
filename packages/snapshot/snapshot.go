@@ -91,7 +91,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	defer fstream.File.Close()
 
 	fmt.Printf("[WriteSnapshot] writing to file ")
-	if err = WriteKVToStream(ordr.KVStoreReader(), fstream, par); err != nil {
+	if err := WriteKVToStream(ordr.KVStoreReader(), fstream, par); err != nil {
 		return err
 	}
 	tKV, tBytes := fstream.Stats()

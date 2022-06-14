@@ -185,7 +185,7 @@ func (c *chainObj) startTimer() {
 	}()
 }
 
-func (c *chainObj) receiveOnLedgerRequest(request *iscp.OnLedgerRequestData) {
+func (c *chainObj) receiveOnLedgerRequest(request iscp.OnLedgerRequest) {
 	c.log.Debugf("receiveOnLedgerRequest: %s", request.ID())
 	c.mempool.ReceiveRequest(request)
 }

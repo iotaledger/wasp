@@ -507,7 +507,7 @@ func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 	go func() {
 		for {
 			<-ticker.C
-			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
+			rsp, err := http.Get(infoEndpointURL) //nolint:gosec
 			if err != nil {
 				fmt.Printf("Error Polling node %d API ready status: %v\n", nodeIndex, err)
 				continue

@@ -1220,6 +1220,82 @@ impl MutableBlockRecordsParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableCheckAddressParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckAddressParams {
+    pub fn address_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ADDRESS_BYTES))
+	}
+
+    pub fn address_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_ADDRESS_STRING))
+	}
+
+    pub fn sc_address(&self) -> ScImmutableAddress {
+		ScImmutableAddress::new(self.proxy.root(PARAM_SC_ADDRESS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckAddressParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckAddressParams {
+    pub fn address_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ADDRESS_BYTES))
+	}
+
+    pub fn address_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_ADDRESS_STRING))
+	}
+
+    pub fn sc_address(&self) -> ScMutableAddress {
+		ScMutableAddress::new(self.proxy.root(PARAM_SC_ADDRESS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableCheckAgentIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckAgentIDParams {
+    pub fn agent_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_AGENT_BYTES))
+	}
+
+    pub fn agent_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_AGENT_STRING))
+	}
+
+    pub fn sc_agent_id(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(PARAM_SC_AGENT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckAgentIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckAgentIDParams {
+    pub fn agent_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_AGENT_BYTES))
+	}
+
+    pub fn agent_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_AGENT_STRING))
+	}
+
+    pub fn sc_agent_id(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(PARAM_SC_AGENT_ID))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableStringMapOfStringArrayLengthParams {
 	pub(crate) proxy: Proxy,
 }

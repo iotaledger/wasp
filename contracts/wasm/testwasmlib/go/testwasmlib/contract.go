@@ -234,6 +234,16 @@ type BlockRecordsCall struct {
 	Results ImmutableBlockRecordsResults
 }
 
+type CheckAddressCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckAddressParams
+}
+
+type CheckAgentIDCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckAgentIDParams
+}
+
 type GetRandomCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetRandomResults
@@ -527,6 +537,18 @@ func (sc Funcs) BlockRecords(ctx wasmlib.ScViewCallContext) *BlockRecordsCall {
 	f := &BlockRecordsCall{Func: wasmlib.NewScView(ctx, HScName, HViewBlockRecords)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) CheckAddress(ctx wasmlib.ScViewCallContext) *CheckAddressCall {
+	f := &CheckAddressCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckAddress)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckAgentID(ctx wasmlib.ScViewCallContext) *CheckAgentIDCall {
+	f := &CheckAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckAgentID)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }
 

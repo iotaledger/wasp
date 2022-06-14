@@ -101,8 +101,16 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 		log:     log.Named("nc"),
 		config:  config,
 	}
+
 	if initMqttClient {
 		go nc.run()
+		for {
+			if nc.mqttClient.MQTTClient.IsConnected() {
+				break
+			}
+			nc.log.Debugf("waiting until mqtt client is connected")
+			time.Sleep(1 * time.Second)
+		}
 	}
 	return &nc
 }
@@ -217,11 +225,18 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
 	// Build a Block and post it.
-	txMsg, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).Payload(tx).Build()
+	block, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).
+		Payload(tx).
+		Tips(ctx, nc.nodeAPIClient).
+		Build()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
-	txMsg, err = nc.nodeAPIClient.SubmitBlock(ctx, txMsg, parameters.L1.Protocol)
+	err = nc.doPoW(ctx, block)
+	if err != nil {
+		return nil, xerrors.Errorf("failed duing PoW: %w", err)
+	}
+	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1.Protocol)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
@@ -231,15 +246,15 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	} else {
 		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
 	}
-	return txMsg, nil
+	return block, nil
 }
 
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
 // waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
-func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Block) error {
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block) error {
 	// wait until tx is confirmed
-	msgID, err := txMsg.ID()
+	msgID, err := block.ID()
 	if err != nil {
 		return xerrors.Errorf("failed to get msg ID: %w", err)
 	}
@@ -287,19 +302,43 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, txMsg *iotago.Block)
 			}
 		}
 		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
-			nc.log.Debugf("reattaching txMsg: %s", txMsg)
-			// remote PoW: Take the Block, clear parents, clear nonce, send to node
-			txMsg.Parents = nil
-			txMsg.Nonce = 0
-			txMsg, err = nc.nodeAPIClient.SubmitBlock(ctx, txMsg, parameters.L1.Protocol)
+			nc.log.Debugf("reattaching block: %s", block)
+			err = nc.doPoW(ctx, block)
 			if err != nil {
-				return xerrors.Errorf("failed to get re-attach msg: %w", err)
+				return err
 			}
 		}
-
 		if err = ctx.Err(); err != nil {
 			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
 		}
 		time.Sleep(pollConfirmedTxInterval)
 	}
+}
+
+const refreshTipsDuringPoWInterval = 5 * time.Second
+
+func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
+	if nc.config.UseRemotePoW {
+		// remote PoW: Take the Block, clear parents, clear nonce, send to node
+		block.Parents = nil
+		block.Nonce = 0
+		_, err := nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1.Protocol)
+		return err
+	}
+	// do the PoW
+	refreshTipsFn := func() (tips iotago.BlockIDs, err error) {
+		// refresh tips if PoW takes longer than a configured duration.
+		resp, err := nc.nodeAPIClient.Tips(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.Tips()
+	}
+
+	return doPoW(
+		ctx,
+		block,
+		refreshTipsDuringPoWInterval,
+		refreshTipsFn,
+	)
 }

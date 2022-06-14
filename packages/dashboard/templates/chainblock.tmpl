@@ -12,7 +12,7 @@
 			{{ end }}
 			<dt>Previous state commitment</dt><dd><code>{{ .Block.PreviousL1Commitment.StateCommitment }}</code></dd>
 			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousL1Commitment.BlockHash }}</code></dd>
-			<dt>Anchor transaction ID</dt><dd><code>{{ (hex .Block.AnchorTransactionID) }}</code></dd>
+			<dt>Anchor transaction ID</dt><dd><code>{{ .Block.AnchorTransactionID.ToHex }}</code></dd>
 			<dt>Total iotas in L2 accounts</dt><dd><code>{{ .Block.TotalIotasInL2Accounts }}</code></dd>
 			<dt>Total dust deposit</dt><dd><code>{{ .Block.TotalDustDeposit }}</code></dd>
 			<dt>Gas burned</dt><dd><code>{{ .Block.GasBurned }}</code></dd>
@@ -22,20 +22,25 @@
 
 	<div class="card fluid">
 		<h3 class="section">Requests</h3>
-		{{range $i, $r := .Receipts}}
-			{{ $req := $r.Request }}
+		{{range $i, $receipt := .Receipts}}
+			{{ $req := $receipt.Request }}
 			<div class="section">
 			<h4>Request #{{$i}}</h4>
 			<dl>
 				<dt>ID</dt><dd><code>{{ $req.ID }}</code></dd>
 				<dt>Type</dt><dd>{{ if $req.IsOffLedger -}} off-ledger {{- else -}} on-ledger {{- end }}</dd>
-				{{ if $r.Error }}
-					<dt>Error</dt><dd><code>{{ $r.Error }}</code></dd>
+				{{ if $receipt.Error }}
+					<dt>Error</dt><dd><code>{{ $receipt.Error }}</code></dd>
 				{{ end }}
 				<dt>Sender</dt><dd>{{template "agentid" (args $chainid $req.SenderAccount)}}</dd>
 				<dt>Contract Hname</dt><dd><code>{{$req.CallTarget.Contract}}</code></dd>
 				<dt>Entry point</dt><dd><code>{{$req.CallTarget.EntryPoint}}</code></dd>
-				<dt>Gas budget</dt><dd><code>{{$req.GasBudget}}</code></dd>
+				<dt>Gas budget</dt><dd><code>{{$receipt.GasBudget}}</code></dd>
+				<dt>Gas burned</dt><dd><code>{{$receipt.GasBurned}}</code></dd>
+				<dt>Gas fee charged</dt><dd><code>{{$receipt.GasFeeCharged}}</code></dd>
+				{{ if $receipt.GasBurnLog }}
+					<dt>Gas burn log</dt><dd><pre>{{$receipt.GasBurnLog.String}}</pre></dd>
+				{{ end }}
 			</dl>
 
 			<h5>Parameters</h5>

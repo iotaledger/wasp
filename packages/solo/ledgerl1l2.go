@@ -175,7 +175,7 @@ const (
 	TransferAllowanceToGasBudgetIotas = 1 * iscp.Mi
 )
 
-func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
+func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams { // nolint:revive
 	ret := &foundryParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{
@@ -337,9 +337,9 @@ func (ch *Chain) MustDepositIotasToL2(amount uint64, user *cryptolib.KeyPair) {
 
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
-func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.FungibleTokens, target iscp.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL1ToL2Account(totalIotas uint64, toSend *iscp.FungibleTokens, target iscp.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
-	sumAssets := toSend.Clone().AddIotas(feeIotas)
+	sumAssets := toSend.Clone().AddIotas(totalIotas)
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
 			AddFungibleTokens(sumAssets).
@@ -350,8 +350,8 @@ func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.FungibleTok
 	return err
 }
 
-func (ch *Chain) SendFromL1ToL2AccountIotas(iotasFee, iotasSend uint64, target iscp.AgentID, user *cryptolib.KeyPair) error {
-	return ch.SendFromL1ToL2Account(iotasFee, iscp.NewTokensIotas(iotasSend), target, user)
+func (ch *Chain) SendFromL1ToL2AccountIotas(totalIotas, iotasSend uint64, target iscp.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendFromL1ToL2Account(totalIotas, iscp.NewTokensIotas(iotasSend), target, user)
 }
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target

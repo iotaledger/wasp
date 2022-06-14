@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -79,12 +79,16 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	args := req.Params()
 	var argsTree interface{} = "(empty)"
 	if len(args) > 0 {
-		argsTree = dict.Dict(args)
+		argsTree = args
 	}
 
 	errMsg := "(empty)"
 	if receipt.Error != nil {
-		errMsg = fmt.Sprintf("%q", receipt.Error)
+		resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+			return SCClient(iscp.Hn(contractName)).CallView(funcName, params)
+		})
+		log.Check(err)
+		errMsg = resolved.Error()
 	}
 
 	tree := []log.TreeItem{

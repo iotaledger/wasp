@@ -115,14 +115,14 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 	}
 }
 
-func (e *EVMEmulator) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+func (e *EVMEmulator) estimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	lo := params.TxGas
 	hi := e.GasLimit()
 	lastOk := uint64(0)
 	var lastErr error
 	for hi >= lo {
 		callMsg.Gas = (lo + hi) / 2
-		res, err := e.CallContract(callMsg)
+		res, err := e.CallContract(callMsg, nil)
 		if err != nil {
 			return 0, err
 		}
@@ -144,7 +144,7 @@ func (e *EVMEmulator) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 }
 
 // CallContract executes a contract call, without committing changes to the state
-func (e *EVMEmulator) CallContract(call ethereum.CallMsg) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
 	if call.GasPrice == nil {
 		call.GasPrice = big.NewInt(0)
@@ -162,19 +162,23 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) (*core.ExecutionResult
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(msg, statedb, pendingHeader)
+	return e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
 }
 
-func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
 	gasPool := core.GasPool(msg.Gas())
 	vmEnv.Reset(txContext, statedb)
+	if gasBurnEnable != nil {
+		gasBurnEnable(true)
+		defer gasBurnEnable(false)
+	}
 	return core.ApplyMessage(vmEnv, msg, &gasPool)
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, *core.ExecutionResult, error) {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(bool)) (*types.Receipt, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
@@ -193,7 +197,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, *c
 		return nil, nil, err
 	}
 
-	result, err := e.applyMessage(msg, statedb, pendingHeader)
+	result, err := e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
 	if err != nil {
 		return nil, result, err
 	}

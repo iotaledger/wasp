@@ -50,6 +50,10 @@ func createChain(t *testing.T) *iscp.ChainID {
 }
 
 func TestNodeConn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping nodeconn test in short mode")
+	}
+
 	l1.StartPrivtangleIfNecessary(t.Logf)
 
 	log := testlogger.NewLogger(t)

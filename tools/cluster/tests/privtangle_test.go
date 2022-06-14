@@ -18,6 +18,9 @@ import (
 )
 
 func TestHornetStartup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping privtangle test in short mode")
+	}
 	l1.StartPrivtangleIfNecessary(t.Logf)
 
 	if l1.Privtangle == nil {

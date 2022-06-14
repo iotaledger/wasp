@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -54,6 +55,8 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBigIntSub,
 		ViewBlockRecord,
 		ViewBlockRecords,
+		ViewCheckAddress,
+		ViewCheckAgentID,
 		ViewGetRandom,
 		ViewIotaBalance,
 		ViewStringMapOfStringArrayLength,
@@ -106,6 +109,8 @@ var exportMap = wasmlib.ScExportMap{
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
+		viewCheckAddressThunk,
+		viewCheckAgentIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
 		viewStringMapOfStringArrayLengthThunk,
@@ -1107,6 +1112,50 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	viewBlockRecords(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewBlockRecords ok")
+}
+
+type CheckAddressContext struct {
+	Params ImmutableCheckAddressParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckAddressThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckAddress")
+	f := &CheckAddressContext{
+		Params: ImmutableCheckAddressParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.AddressBytes().Exists(), "missing mandatory addressBytes")
+	ctx.Require(f.Params.AddressString().Exists(), "missing mandatory addressString")
+	ctx.Require(f.Params.ScAddress().Exists(), "missing mandatory scAddress")
+	viewCheckAddress(ctx, f)
+	ctx.Log("testwasmlib.viewCheckAddress ok")
+}
+
+type CheckAgentIDContext struct {
+	Params ImmutableCheckAgentIDParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckAgentIDThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckAgentID")
+	f := &CheckAgentIDContext{
+		Params: ImmutableCheckAgentIDParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.AgentBytes().Exists(), "missing mandatory agentBytes")
+	ctx.Require(f.Params.AgentString().Exists(), "missing mandatory agentString")
+	ctx.Require(f.Params.ScAgentID().Exists(), "missing mandatory scAgentID")
+	viewCheckAgentID(ctx, f)
+	ctx.Log("testwasmlib.viewCheckAgentID ok")
 }
 
 type GetRandomContext struct {

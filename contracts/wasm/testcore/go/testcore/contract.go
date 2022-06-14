@@ -144,6 +144,12 @@ type FibonacciCall struct {
 	Results ImmutableFibonacciResults
 }
 
+type FibonacciIndirectCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableFibonacciIndirectParams
+	Results ImmutableFibonacciIndirectResults
+}
+
 type GetCounterCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetCounterResults
@@ -338,6 +344,13 @@ func (sc Funcs) CheckContextFromViewEP(ctx wasmlib.ScViewCallContext) *CheckCont
 
 func (sc Funcs) Fibonacci(ctx wasmlib.ScViewCallContext) *FibonacciCall {
 	f := &FibonacciCall{Func: wasmlib.NewScView(ctx, HScName, HViewFibonacci)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) FibonacciIndirect(ctx wasmlib.ScViewCallContext) *FibonacciIndirectCall {
+	f := &FibonacciIndirectCall{Func: wasmlib.NewScView(ctx, HScName, HViewFibonacciIndirect)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

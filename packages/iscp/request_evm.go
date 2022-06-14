@@ -1,112 +1,252 @@
 package iscp
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
-// EVMGasBookkeeping is the exceess iotas needed for gas when sending an EVM transaction
-// TODO: automatically calculate this? Do not charge for blockchain bookkeeping?
-const EVMGasBookkeeping = 100_000
-
-func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction, gasRatio *util.Ratio32) (*OffLedgerRequestData, error) {
-	// TODO: verify tx.ChainId()?
-	signatureScheme, err := newEVMOffLedferSignatureSchemeFromTransaction(tx)
-	if err != nil {
-		return nil, err
-	}
-	return &OffLedgerRequestData{
-		chainID:         chainID,
-		contract:        Hn(evmnames.Contract),
-		entryPoint:      Hn(evmnames.FuncSendTransaction),
-		params:          dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(tx)},
-		signatureScheme: signatureScheme,
-		nonce:           tx.Nonce(),
-		allowance:       NewEmptyAllowance(),
-		gasBudget:       evmtypes.EVMGasToISC(tx.Gas(), gasRatio) + EVMGasBookkeeping,
-	}, nil
+type evmOffLedgerRequest struct {
+	chainID *ChainID
+	tx      *types.Transaction
+	sender  *EthereumAddressAgentID // not serialized
 }
 
-func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMsg, gasRatio *util.Ratio32) *OffLedgerRequestData {
-	return &OffLedgerRequestData{
-		chainID:         chainID,
-		contract:        Hn(evmnames.Contract),
-		entryPoint:      Hn(evmnames.FuncEstimateGas),
-		params:          dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(callMsg)},
-		signatureScheme: newEVMOffLedferSignatureSchemeFromCallMsg(callMsg),
-		nonce:           0,
-		allowance:       NewEmptyAllowance(),
-		gasBudget:       math.MaxUint64,
-	}
-}
+var _ OffLedgerRequest = &evmOffLedgerRequest{}
 
-func (r *OffLedgerRequestData) IsEVM() bool {
-	return r.IsEVMSendTransaction() || r.IsEVMEstimateGas()
-}
-
-func (r *OffLedgerRequestData) IsEVMSendTransaction() bool {
-	return r.contract == Hn(evmnames.Contract) && r.entryPoint == Hn(evmnames.FuncSendTransaction)
-}
-
-func (r *OffLedgerRequestData) IsEVMEstimateGas() bool {
-	return r.contract == Hn(evmnames.Contract) && r.entryPoint == Hn(evmnames.FuncEstimateGas)
-}
-
-type evmOffLedgerSignatureScheme struct {
-	sender *EthereumAddressAgentID
-}
-
-var _ OffLedgerSignatureScheme = &evmOffLedgerSignatureScheme{}
-
-func newEVMOffLedferSignatureSchemeFromTransaction(tx *types.Transaction) (*evmOffLedgerSignatureScheme, error) {
+func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction) (OffLedgerRequest, error) {
 	sender, err := evmutil.GetSender(tx)
 	if err != nil {
 		return nil, err
 	}
-	return &evmOffLedgerSignatureScheme{sender: NewEthereumAddressAgentID(sender)}, nil
+	return &evmOffLedgerRequest{
+		chainID: chainID,
+		tx:      tx,
+		sender:  NewEthereumAddressAgentID(sender),
+	}, nil
 }
 
-func newEVMOffLedferSignatureSchemeFromCallMsg(callMsg ethereum.CallMsg) *evmOffLedgerSignatureScheme {
-	return &evmOffLedgerSignatureScheme{sender: NewEthereumAddressAgentID(callMsg.From)}
-}
-
-func (s *evmOffLedgerSignatureScheme) Sender() AgentID {
-	return s.sender
-}
-
-func (*evmOffLedgerSignatureScheme) readEssence(mu *marshalutil.MarshalUtil) error {
+func (r *evmOffLedgerRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	var err error
+	if r.chainID, err = ChainIDFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	var txLen uint32
+	if txLen, err = mu.ReadUint32(); err != nil {
+		return err
+	}
+	var txBytes []byte
+	if txBytes, err = mu.ReadBytes(int(txLen)); err != nil {
+		return err
+	}
+	if r.tx, err = evmtypes.DecodeTransaction(txBytes); err != nil {
+		return err
+	}
+	sender, err := evmutil.GetSender(r.tx)
+	if err != nil {
+		return err
+	}
+	r.sender = NewEthereumAddressAgentID(sender)
 	return nil
 }
 
-func (*evmOffLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) error {
+func (r *evmOffLedgerRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.
+		WriteByte(requestKindTagOffLedgerEVM).
+		Write(r.chainID)
+	b := evmtypes.EncodeTransaction(r.tx)
+	mu.WriteUint32(uint32(len(b)))
+	mu.WriteBytes(b)
+}
+
+func (r *evmOffLedgerRequest) Allowance() *Allowance {
+	return NewEmptyAllowance()
+}
+
+func (r *evmOffLedgerRequest) CallTarget() CallTarget {
+	return CallTarget{
+		Contract:   Hn(evmnames.Contract),
+		EntryPoint: Hn(evmnames.FuncSendTransaction),
+	}
+}
+
+func (r *evmOffLedgerRequest) Params() dict.Dict {
+	return dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(r.tx)}
+}
+
+func (r *evmOffLedgerRequest) FungibleTokens() *FungibleTokens {
+	return NewEmptyAssets()
+}
+
+func (r *evmOffLedgerRequest) GasBudget() (gas uint64, isEVM bool) {
+	return r.tx.Gas(), true
+}
+
+func (r *evmOffLedgerRequest) ID() RequestID {
+	return NewRequestID(iotago.TransactionID(hashing.HashData(r.Bytes())), 0)
+}
+
+func (r *evmOffLedgerRequest) NFT() *NFT {
 	return nil
 }
 
-func (*evmOffLedgerSignatureScheme) setPublicKey(key *cryptolib.PublicKey) {
-	panic("should not be called")
+func (r *evmOffLedgerRequest) SenderAccount() AgentID {
+	if r.sender == nil {
+		panic("could not determine sender from ethereum tx")
+	}
+	return r.sender
 }
 
-func (*evmOffLedgerSignatureScheme) sign(key *cryptolib.KeyPair, data []byte) {
-	panic("should not be called")
+func (r *evmOffLedgerRequest) TargetAddress() iotago.Address {
+	return r.chainID.AsAddress()
 }
 
-func (*evmOffLedgerSignatureScheme) verify(data []byte) bool {
+func (r *evmOffLedgerRequest) Bytes() []byte {
+	mu := marshalutil.New()
+	r.WriteToMarshalUtil(mu)
+	return mu.Bytes()
+}
+
+func (r *evmOffLedgerRequest) IsOffLedger() bool {
 	return true
 }
 
-func (*evmOffLedgerSignatureScheme) writeEssence(mu *marshalutil.MarshalUtil) {
+func (r *evmOffLedgerRequest) String() string {
+	return fmt.Sprintf("evmOffLedgerRequest(%s)", r.ID())
 }
 
-func (*evmOffLedgerSignatureScheme) writeSignature(mu *marshalutil.MarshalUtil) {
+func (r *evmOffLedgerRequest) ChainID() *ChainID {
+	return r.chainID
 }
 
-var _ OffLedgerSignatureScheme = &evmOffLedgerSignatureScheme{}
+func (r *evmOffLedgerRequest) Nonce() uint64 {
+	return r.tx.Nonce()
+}
+
+func (r *evmOffLedgerRequest) VerifySignature() error {
+	sender, err := evmutil.GetSender(r.tx)
+	if err != nil {
+		return fmt.Errorf("cannot verify Ethereum tx sender: %v", err)
+	}
+	if sender != r.sender.EthAddress() {
+		return fmt.Errorf("sender mismatch in EVM off-ledger request")
+	}
+	return nil
+}
+
+type evmOffLedgerEstimateGasRequest struct {
+	chainID *ChainID
+	callMsg ethereum.CallMsg
+}
+
+var _ OffLedgerRequest = &evmOffLedgerEstimateGasRequest{}
+
+func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
+	return &evmOffLedgerEstimateGasRequest{
+		chainID: chainID,
+		callMsg: callMsg,
+	}
+}
+
+func (r *evmOffLedgerEstimateGasRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	var err error
+	if r.chainID, err = ChainIDFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	var callMsgLen uint32
+	if callMsgLen, err = mu.ReadUint32(); err != nil {
+		return err
+	}
+	var callMsgBytes []byte
+	if callMsgBytes, err = mu.ReadBytes(int(callMsgLen)); err != nil {
+		return err
+	}
+	if r.callMsg, err = evmtypes.DecodeCallMsg(callMsgBytes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *evmOffLedgerEstimateGasRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.
+		WriteByte(requestKindTagOffLedgerEVM).
+		Write(r.chainID)
+	b := evmtypes.EncodeCallMsg(r.callMsg)
+	mu.WriteUint32(uint32(len(b)))
+	mu.WriteBytes(b)
+}
+
+func (r *evmOffLedgerEstimateGasRequest) Allowance() *Allowance {
+	return NewEmptyAllowance()
+}
+
+func (r *evmOffLedgerEstimateGasRequest) CallTarget() CallTarget {
+	return CallTarget{
+		Contract:   Hn(evmnames.Contract),
+		EntryPoint: Hn(evmnames.FuncEstimateGas),
+	}
+}
+
+func (r *evmOffLedgerEstimateGasRequest) Params() dict.Dict {
+	return dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(r.callMsg)}
+}
+
+func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
+	return NewEmptyAssets()
+}
+
+func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
+	// see VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
+	return math.MaxUint64, false
+}
+
+func (r *evmOffLedgerEstimateGasRequest) ID() RequestID {
+	return NewRequestID(iotago.TransactionID(hashing.HashData(r.Bytes())), 0)
+}
+
+func (r *evmOffLedgerEstimateGasRequest) NFT() *NFT {
+	return nil
+}
+
+func (r *evmOffLedgerEstimateGasRequest) SenderAccount() AgentID {
+	return NewEthereumAddressAgentID(r.callMsg.From)
+}
+
+func (r *evmOffLedgerEstimateGasRequest) TargetAddress() iotago.Address {
+	return r.chainID.AsAddress()
+}
+
+func (r *evmOffLedgerEstimateGasRequest) Bytes() []byte {
+	mu := marshalutil.New()
+	r.WriteToMarshalUtil(mu)
+	return mu.Bytes()
+}
+
+func (r *evmOffLedgerEstimateGasRequest) IsOffLedger() bool {
+	return true
+}
+
+func (r *evmOffLedgerEstimateGasRequest) String() string {
+	return fmt.Sprintf("evmOffLedgerEstimateGasRequest(%s)", r.ID())
+}
+
+func (r *evmOffLedgerEstimateGasRequest) ChainID() *ChainID {
+	return r.chainID
+}
+
+func (r *evmOffLedgerEstimateGasRequest) Nonce() uint64 {
+	return 0
+}
+
+func (r *evmOffLedgerEstimateGasRequest) VerifySignature() error {
+	return fmt.Errorf("evmOffLedgerEstimateGasRequest should never be used to send regular requests")
+}

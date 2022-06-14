@@ -235,6 +235,16 @@ pub struct BlockRecordsCall {
 	pub results: ImmutableBlockRecordsResults,
 }
 
+pub struct CheckAddressCall {
+	pub func: ScView,
+	pub params: MutableCheckAddressParams,
+}
+
+pub struct CheckAgentIDCall {
+	pub func: ScView,
+	pub params: MutableCheckAgentIDParams,
+}
+
 pub struct GetRandomCall {
 	pub func: ScView,
 	pub results: ImmutableGetRandomResults,
@@ -667,6 +677,24 @@ impl ScFuncs {
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn check_address(_ctx: &dyn ScViewCallContext) -> CheckAddressCall {
+        let mut f = CheckAddressCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_ADDRESS),
+            params: MutableCheckAddressParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_agent_id(_ctx: &dyn ScViewCallContext) -> CheckAgentIDCall {
+        let mut f = CheckAgentIDCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_AGENT_ID),
+            params: MutableCheckAgentIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
         f
     }
 

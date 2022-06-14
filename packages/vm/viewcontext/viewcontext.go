@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/merkletrie"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/kv/trie_merkle"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -34,25 +34,27 @@ import (
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
 type ViewContext struct {
-	processors  *processors.Cache
-	stateReader state.OptimisticStateReader
-	chainID     *iscp.ChainID
-	log         *logger.Logger
-	chainInfo   *governance.ChainInfo
-	gasBurnLog  *gas.BurnLog
-	gasBudget   uint64
-	callStack   []*callContext
-	l1Params    *parameters.L1Params
+	processors     *processors.Cache
+	stateReader    state.OptimisticStateReader
+	chainID        *iscp.ChainID
+	log            *logger.Logger
+	chainInfo      *governance.ChainInfo
+	gasBurnLog     *gas.BurnLog
+	gasBudget      uint64
+	gasBurnEnabled bool
+	callStack      []*callContext
+	l1Params       *parameters.L1Params
 }
 
 var _ execution.WaspContext = &ViewContext{}
 
 func New(ch chain.ChainCore) *ViewContext {
 	return &ViewContext{
-		processors:  ch.Processors(),
-		stateReader: ch.GetStateReader(),
-		chainID:     ch.ID(),
-		log:         ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		processors:     ch.Processors(),
+		stateReader:    ch.GetStateReader(),
+		chainID:        ch.ID(),
+		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		gasBurnEnabled: true,
 	}
 }
 
@@ -69,6 +71,9 @@ func (ctx *ViewContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 }
 
 func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
+	if !ctx.gasBurnEnabled {
+		return
+	}
 	g := burnCode.Cost(par...)
 	ctx.gasBurnLog.Record(burnCode, g)
 	if g > ctx.gasBudget {
@@ -213,7 +218,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 }
 
 // GetMerkleProof returns proof for the key. It may also contain proof of absence of the key
-func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err error) {
+func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *merkletrie.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
@@ -228,9 +233,9 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_merkle.Proof, err 
 // - blockInfo record in serialized form
 // - proof that the blockInfo is stored under the respective key.
 // Useful for proving commitment to the past state, because blockInfo contains commitment to that block
-func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_merkle.Proof, error) {
+func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *merkletrie.Proof, error) {
 	var retBlockInfoBin []byte
-	var retProof *trie_merkle.Proof
+	var retProof *merkletrie.Proof
 
 	err := panicutil.CatchAllButDBError(func() {
 		// retrieve serialized block info record
@@ -286,4 +291,8 @@ func (ctx *ViewContext) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitm
 		return nil, retErr
 	}
 	return retC, nil
+}
+
+func (ctx *ViewContext) GasBurnEnable(enable bool) {
+	ctx.gasBurnEnabled = enable
 }
