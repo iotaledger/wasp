@@ -8,11 +8,13 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/gpa/adkg"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 )
 
 func TestBasic(t *testing.T) {
@@ -77,11 +79,22 @@ func TestBasic(t *testing.T) {
 		tc.RunUntil(tc.OutOfMessagesPredicate())
 		//
 		// Check the FINAL result.
-		for _, n := range nodes {
+		priShares := map[gpa.NodeID]*share.PriShare{}
+		var pubKey kyber.Point
+		var commits []kyber.Point
+		for nid, n := range nodes {
 			o := n.Output()
 			require.NotNil(tt, o)
+			require.NotNil(tt, o.(*nonce.Output).PubKey)
 			require.NotNil(tt, o.(*nonce.Output).PriShare)
+			require.NotNil(tt, o.(*nonce.Output).Commits)
+			priShares[nid] = o.(*nonce.Output).PriShare
+			if pubKey == nil && commits == nil {
+				pubKey = o.(*nonce.Output).PubKey
+				commits = o.(*nonce.Output).Commits
+			}
 		}
+		adkg.VerifyPriShares(t, suite, nodeIDs, nodePKs, nodeSKs, pubKey, priShares, commits, f)
 	}
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })

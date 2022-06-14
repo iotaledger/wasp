@@ -39,7 +39,7 @@
 // > z := sum(sⱼ for j in T)
 // > output z
 //
-package adkg
+package das
 
 import (
 	"sort"
@@ -56,23 +56,26 @@ import (
 
 type Output struct {
 	Indexes  []int           // Indexes used to construct the final key (exactly f+1 for the intermediate output).
+	PubKey   kyber.Point     // The aggregated/common public key represented by the shared key set.
 	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
+	Commits  []kyber.Point   // Aggregated Feldman commitment.
 }
 
 type adkgImpl struct {
-	suite   suites.Suite
-	n       int
-	f       int
-	me      gpa.NodeID
-	myIdx   int
-	nodeIDs []gpa.NodeID
-	aggrExt bool // Should we delegate the agreement on share set to the user?
-	acss    []gpa.GPA
-	rbcs    []gpa.GPA
-	st      map[int]*share.PriShare // > Let Si = {}; Ti = {}
-	agreedT []int                   // > T = T ∪ Tⱼ
-	output  *Output                 // Output of the ADKG, can be intermediate, if aggrExt==true.
-	log     *logger.Logger
+	suite     suites.Suite
+	n         int
+	f         int
+	me        gpa.NodeID
+	myIdx     int
+	nodeIDs   []gpa.NodeID
+	aggrExt   bool // Should we delegate the agreement on share set to the user?
+	acss      []gpa.GPA
+	rbcs      []gpa.GPA
+	st        map[int]*share.PriShare // > Let Si = {}; Ti = {}
+	stCommits map[int][]kyber.Point   // Commitments for Si/Ti.
+	agreedT   []int                   // > T = T ∪ Tⱼ
+	output    *Output                 // Output of the ADKG, can be intermediate, if aggrExt==true.
+	log       *logger.Logger
 }
 
 var _ gpa.GPA = &adkgImpl{}
@@ -101,18 +104,19 @@ func New(
 		panic("i'm not in the peer list")
 	}
 	a := &adkgImpl{
-		suite:   suite,
-		n:       n,
-		f:       f,
-		me:      me,
-		myIdx:   myIdx,
-		nodeIDs: nodeIDs,
-		aggrExt: aggrExt,
-		acss:    nil,                       // Will be set bellow.
-		rbcs:    nil,                       // Will be set bellow.
-		st:      map[int]*share.PriShare{}, // > Let Si = {}; Ti = {}
-		output:  nil,
-		log:     log,
+		suite:     suite,
+		n:         n,
+		f:         f,
+		me:        me,
+		myIdx:     myIdx,
+		nodeIDs:   nodeIDs,
+		aggrExt:   aggrExt,
+		acss:      nil,                       // Will be set bellow.
+		rbcs:      nil,                       // Will be set bellow.
+		st:        map[int]*share.PriShare{}, // > Let Si = {}; Ti = {}
+		stCommits: map[int][]kyber.Point{},
+		output:    nil,
+		log:       log,
 	}
 	a.acss = make([]gpa.GPA, len(nodeIDs))
 	for i := range a.acss {
@@ -161,11 +165,11 @@ func (a *adkgImpl) handleACSSMessage(msg *msgWrapper) []gpa.Message {
 	msgs := WrapMessages(msgWrapperACSS, msg.index, a.acss[msg.index].Message(msg.wrapped))
 	out := a.acss[msg.index].Output()
 	if out != nil && a.st[msg.index] == nil {
-		priShare, ok := out.(*share.PriShare)
+		acssOutput, ok := out.(*acss.Output)
 		if !ok {
 			panic(xerrors.Errorf("acss output wrong type: %+v", out))
 		}
-		msgs = append(msgs, &msgACSSOutput{me: a.me, index: msg.index, priShare: priShare})
+		msgs = append(msgs, &msgACSSOutput{me: a.me, index: msg.index, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
 	}
 	return msgs
 }
@@ -184,6 +188,7 @@ func (a *adkgImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message {
 		return gpa.NoMessages()
 	}
 	a.st[j] = acssOutput.priShare
+	a.stCommits[j] = acssOutput.commits
 	msgs := []gpa.Message{}
 	if len(a.st) >= a.f+1 {
 		msgs = append(msgs, a.tryInput1ToABA()...)
@@ -270,9 +275,8 @@ func (a *adkgImpl) tryInput1ToABA() []gpa.Message { // TODO: Make the check more
 					// to on the index set to use for the final secret share. I.e.
 					// An external consensus is assumed in this case.
 					//
-					a.output = &Output{
-						Indexes:  rbcPayload.t, // Take first RBC output as a chosen candidate.
-						PriShare: nil,          // That's intermediate result.
+					a.output = &Output{ // That's intermediate result.
+						Indexes: rbcPayload.t, // Take first RBC output as a chosen candidate.
 					}
 				}
 				continue
@@ -296,16 +300,34 @@ func (a *adkgImpl) tryMakeFinalOutput() []gpa.Message {
 	if a.agreedT == nil {
 		return gpa.NoMessages()
 	}
+	var sumCommitPoly *share.PubPoly
 	sum := a.suite.Scalar().Zero()
 	for _, j := range a.agreedT {
 		if _, ok := a.st[j]; !ok {
 			return gpa.NoMessages()
 		}
 		sum.Add(sum.Clone(), a.st[j].V)
+
+		//
+		// Sum the polynomials as well.
+		jCommitPoly := share.NewPubPoly(a.suite, nil, a.stCommits[j])
+		if sumCommitPoly == nil {
+			sumCommitPoly = jCommitPoly
+		} else {
+			var err error
+			sumCommitPoly, err = sumCommitPoly.Add(jCommitPoly)
+			if err != nil {
+				a.log.Error("Unable to sum public commitments: %v", err)
+				return gpa.NoMessages()
+			}
+		}
 	}
+	_, sumCommit := sumCommitPoly.Info()
 	a.output = &Output{
 		Indexes:  a.agreedT,
+		PubKey:   sumCommit[0],
 		PriShare: &share.PriShare{I: a.myIdx, V: sum},
+		Commits:  sumCommit,
 	}
 	return gpa.NoMessages()
 }

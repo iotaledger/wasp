@@ -1,10 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package adkg
+package das
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 )
 
@@ -14,6 +15,7 @@ type msgACSSOutput struct {
 	me       gpa.NodeID
 	index    int
 	priShare *share.PriShare
+	commits  []kyber.Point
 }
 
 var _ gpa.Message = &msgACSSOutput{}

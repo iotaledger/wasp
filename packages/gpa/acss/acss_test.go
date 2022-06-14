@@ -78,15 +78,17 @@ func genericTest(
 		}
 	}
 	gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{dealer: secretToShare}).RunAll()
-	outShares := []*share.PriShare{}
+	outPriShares := []*share.PriShare{}
 	for i, n := range nodes {
 		o := n.Output()
 		if !isNodeInList(i, faulty) {
 			require.NotNil(t, o)
-			outShares = append(outShares, o.(*share.PriShare))
+			require.NotNil(t, o.(*acss.Output).PriShare)
+			require.NotNil(t, o.(*acss.Output).Commits)
+			outPriShares = append(outPriShares, o.(*acss.Output).PriShare)
 		}
 	}
-	outSecret, err := share.RecoverSecret(suite, outShares, f+1, n)
+	outSecret, err := share.RecoverSecret(suite, outPriShares, f+1, n)
 	require.NoError(t, err)
 	require.True(t, outSecret.Equal(secretToShare))
 }

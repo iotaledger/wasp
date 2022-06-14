@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package adkg_test
+package das_test
 
 import (
 	"testing"
@@ -9,10 +9,12 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg"
+	"github.com/iotaledger/wasp/packages/gpa/adkg/das"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 )
 
 func TestBasic(t *testing.T) {
@@ -33,7 +35,7 @@ func TestBasic(t *testing.T) {
 		// Setup nodes.
 		nodes := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
-			nodes[nid] = adkg.New(suite, nodeIDs, nodePKs, true, f, nid, nodeSKs[nid], log)
+			nodes[nid] = das.New(suite, nodeIDs, nodePKs, true, f, nid, nodeSKs[nid], log)
 		}
 		//
 		// Run the DKG
@@ -48,16 +50,16 @@ func TestBasic(t *testing.T) {
 		for _, n := range nodes {
 			o := n.Output()
 			require.NotNil(tt, o)
-			require.NotNil(tt, o.(*adkg.Output).Indexes)
-			require.Len(tt, o.(*adkg.Output).Indexes, f+1)
-			require.Nil(tt, o.(*adkg.Output).PriShare)
+			require.NotNil(tt, o.(*das.Output).Indexes)
+			require.Len(tt, o.(*das.Output).Indexes, f+1)
+			require.Nil(tt, o.(*das.Output).PriShare)
 		}
 		//
 		// Emulate the agreement (union of index sets from f+1 proposals).
 		decidedProposals := gpa.ShuffleNodeIDs(gpa.CopyNodeIDs(nodeIDs))[0 : f+1]
 		decidedIndexMap := map[int]bool{}
 		for _, nid := range decidedProposals {
-			subset := nodes[nid].Output().(*adkg.Output).Indexes
+			subset := nodes[nid].Output().(*das.Output).Indexes
 			for _, subsetElem := range subset {
 				decidedIndexMap[subsetElem] = true
 			}
@@ -70,16 +72,27 @@ func TestBasic(t *testing.T) {
 		// Run the ADKG with agreement already decided.
 		agreementMsgs := []gpa.Message{}
 		for _, nid := range nodeIDs {
-			agreementMsgs = append(agreementMsgs, adkg.NewMsgAgreementResult(nid, decidedIndexes))
+			agreementMsgs = append(agreementMsgs, das.NewMsgAgreementResult(nid, decidedIndexes))
 		}
 		tc.WithMessages(agreementMsgs).RunAll()
 		//
 		// Check the FINAL result.
-		for _, n := range nodes {
+		priShares := map[gpa.NodeID]*share.PriShare{}
+		var pubKey kyber.Point
+		var commits []kyber.Point
+		for nid, n := range nodes {
 			o := n.Output()
 			require.NotNil(tt, o)
-			require.NotNil(tt, o.(*adkg.Output).PriShare)
+			require.NotNil(tt, o.(*das.Output).PubKey)
+			require.NotNil(tt, o.(*das.Output).PriShare)
+			require.NotNil(tt, o.(*das.Output).Commits)
+			priShares[nid] = o.(*das.Output).PriShare
+			if pubKey == nil && commits == nil {
+				pubKey = o.(*das.Output).PubKey
+				commits = o.(*das.Output).Commits
+			}
 		}
+		adkg.VerifyPriShares(t, suite, nodeIDs, nodePKs, nodeSKs, pubKey, priShares, commits, f)
 	}
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })

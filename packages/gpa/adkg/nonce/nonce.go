@@ -46,21 +46,24 @@ import (
 
 type Output struct {
 	Indexes  []int           // Indexes used to construct the final key (exactly f+1 for the intermediate output).
+	PubKey   kyber.Point     // The common/aggregated public key of the key set.
 	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
+	Commits  []kyber.Point   // Commitments for the final key shares.
 }
 
 type nonceDKGImpl struct {
-	suite   suites.Suite
-	n       int
-	f       int
-	me      gpa.NodeID
-	myIdx   int
-	nodeIDs []gpa.NodeID
-	acss    []gpa.GPA
-	st      map[int]*share.PriShare // > Let Si = {}; Ti = {}
-	agreedT []int                   // Output from the external consensus.
-	output  gpa.Output              // Output of the ADKG, can be intermediate (PriShare=nil).
-	log     *logger.Logger
+	suite     suites.Suite
+	n         int
+	f         int
+	me        gpa.NodeID
+	myIdx     int
+	nodeIDs   []gpa.NodeID
+	acss      []gpa.GPA
+	st        map[int]*share.PriShare // > Let Si = {}; Ti = {}
+	stCommits map[int][]kyber.Point   // Commits for Si.
+	agreedT   []int                   // Output from the external consensus.
+	output    gpa.Output              // Output of the ADKG, can be intermediate (PriShare=nil).
+	log       *logger.Logger
 }
 
 var _ gpa.GPA = &nonceDKGImpl{}
@@ -89,17 +92,18 @@ func New(
 		panic("i'm not in the peer list")
 	}
 	a := &nonceDKGImpl{
-		suite:   suite,
-		n:       n,
-		f:       f,
-		me:      me,
-		myIdx:   myIdx,
-		nodeIDs: nodeIDs,
-		acss:    nil,                       // Will be set bellow.
-		st:      map[int]*share.PriShare{}, // > Let Si = {}; Ti = {}
-		agreedT: nil,                       // Will be set, when output from the consensus will be received.
-		output:  nil,                       // Can be intermediate (PriShare == nil) or final (PriShare != nil).
-		log:     log,
+		suite:     suite,
+		n:         n,
+		f:         f,
+		me:        me,
+		myIdx:     myIdx,
+		nodeIDs:   nodeIDs,
+		acss:      nil,                       // Will be set bellow.
+		st:        map[int]*share.PriShare{}, // > Let Si = {}; Ti = {}
+		stCommits: map[int][]kyber.Point{},   // Commits for Si/Ti.
+		agreedT:   nil,                       // Will be set, when output from the consensus will be received.
+		output:    nil,                       // Can be intermediate (PriShare == nil) or final (PriShare != nil).
+		log:       log,
 	}
 	a.acss = make([]gpa.GPA, len(nodeIDs))
 	for i := range a.acss {
@@ -143,11 +147,11 @@ func (n *nonceDKGImpl) handleACSSMessage(msg *gpa.MsgWrapper) []gpa.Message {
 	msgs := gpa.WrapMessages(msgWrapperACSS, msgIndex, n.acss[msgIndex].Message(msg.Wrapped()))
 	out := n.acss[msgIndex].Output()
 	if out != nil && n.st[msgIndex] == nil {
-		priShare, ok := out.(*share.PriShare)
+		acssOutput, ok := out.(*acss.Output)
 		if !ok {
 			panic(xerrors.Errorf("acss output wrong type: %+v", out))
 		}
-		msgs = append(msgs, &msgACSSOutput{me: n.me, index: msgIndex, priShare: priShare})
+		msgs = append(msgs, &msgACSSOutput{me: n.me, index: msgIndex, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
 	}
 	return msgs
 }
@@ -159,13 +163,14 @@ func (n *nonceDKGImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message
 		return gpa.NoMessages()
 	}
 	n.st[j] = acssOutput.priShare
+	n.stCommits[j] = acssOutput.commits
 	if len(n.st) == n.n-n.f && n.output == nil {
 		t := make([]int, 0)
 		for ti := range n.st {
 			t = append(t, ti)
 		}
 		sort.Ints(t)
-		n.output = &Output{Indexes: t, PriShare: nil} // That's intermediate output.
+		n.output = &Output{Indexes: t} // That's intermediate output.
 	}
 	//
 	// It is possible that the indexes are already decided and are waiting for the ACSS only.
@@ -217,16 +222,33 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() []gpa.Message {
 	if n.agreedT == nil {
 		return gpa.NoMessages()
 	}
+	var sumCommitPoly *share.PubPoly
 	sum := n.suite.Scalar().Zero()
 	for _, j := range n.agreedT {
 		if _, ok := n.st[j]; !ok {
 			return gpa.NoMessages()
 		}
 		sum.Add(sum.Clone(), n.st[j].V)
+		//
+		// Sum the polynomials as well.
+		jCommitPoly := share.NewPubPoly(n.suite, nil, n.stCommits[j])
+		if sumCommitPoly == nil {
+			sumCommitPoly = jCommitPoly
+		} else {
+			var err error
+			sumCommitPoly, err = sumCommitPoly.Add(jCommitPoly)
+			if err != nil {
+				n.log.Error("Unable to sum public commitments: %v", err)
+				return gpa.NoMessages()
+			}
+		}
 	}
+	_, sumCommit := sumCommitPoly.Info()
 	n.output = &Output{
 		Indexes:  n.agreedT,
+		PubKey:   sumCommit[0],
 		PriShare: &share.PriShare{I: n.myIdx, V: sum},
+		Commits:  sumCommit,
 	}
 	return gpa.NoMessages()
 }

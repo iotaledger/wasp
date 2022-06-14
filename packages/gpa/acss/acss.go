@@ -96,6 +96,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+type Output struct {
+	PriShare *share.PriShare // Private share, received by this instance.
+	Commits  []kyber.Point   // Feldman's commitment to the shared polynomial.
+}
+
 type acssImpl struct {
 	suite         suites.Suite
 	n             int
@@ -245,8 +250,9 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 // > RBC(C||E)
 //
 func (a *acssImpl) handleRBCMessage(m *msgWrapper) []gpa.Message {
+	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
 	msgs := WrapMessages(msgWrapperRBC, a.rbc.Message(m.wrapped))
-	if out := a.rbc.Output(); out != nil {
+	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}
 		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
@@ -516,7 +522,10 @@ func (a *acssImpl) peerIndex(peer gpa.NodeID) int {
 
 func (a *acssImpl) Output() gpa.Output {
 	if a.output {
-		return a.outS
+		return &Output{
+			PriShare: a.outS,
+			Commits:  a.rbcOut.Commits,
+		}
 	}
 	return nil
 }
