@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -45,14 +44,8 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 			sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
 		}*/
 		// it is a state controller address rotation
-		sm.log.Debugf("aliasOutputReceived: output index %v, id %v is the same index but different ID as current state output (ID %v): it is a governance update output",
+		sm.log.Warnf("aliasOutputReceived: output index %v, id %v is the same index but different ID as current state output (ID %v): it is a governance update output, ignoring",
 			aliasOutputIndex, aliasOutputIDStr, iscp.OID(sm.stateOutput.ID()))
-		sm.chain.TriggerChainTransition(&chain.ChainTransitionEventData{
-			IsGovernance:    true,
-			VirtualState:    sm.solidState.Copy(),
-			ChainOutput:     aliasOutput,
-			OutputTimestamp: time.Now(),
-		})
 		return false
 	}
 	if !sm.syncingBlocks.isSyncing(aliasOutputIndex) {

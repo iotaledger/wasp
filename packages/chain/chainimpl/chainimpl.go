@@ -71,6 +71,7 @@ type chainObj struct {
 	offledgerBroadcastUpToNPeers       int
 	offledgerBroadcastInterval         time.Duration
 	pullMissingRequestsFromCommittee   bool
+	lastSeenVirtualState               state.VirtualStateAccess
 	chainMetrics                       metrics.ChainMetrics
 	dismissChainMsgPipe                pipe.Pipe
 	aliasOutputPipe                    pipe.Pipe
@@ -254,6 +255,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	} else {
 		// normal state update:
 		c.log.Debugf("processChainTransition: processing state %d transition, output %s; state hash %s; last cleaned state is %d", stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
+		c.lastSeenVirtualState = msg.VirtualState
 		c.stateReader.SetBaseline()
 		chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasID())
 		var reqids []iscp.RequestID
