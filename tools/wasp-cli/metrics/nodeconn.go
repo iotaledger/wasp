@@ -43,17 +43,18 @@ var nodeconnMetricsCmd = &cobra.Command{
 func printMessagesMetrics(msgsMetrics *model.NodeConnectionMessagesMetrics, additionalRows [][]string) {
 	header := []string{"Message name", "", "Total", "Last time", "Last message"}
 	table := make([][]string, 9+len(additionalRows))
-	table[0] = makeMessagesMetricsTableRow("Publish transaction", false, msgsMetrics.OutPublishTransaction)
-	table[1] = makeMessagesMetricsTableRow("Pull latest output", false, msgsMetrics.OutPullLatestOutput)
-	table[2] = makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTxInclusionState)
-	table[3] = makeMessagesMetricsTableRow("Pull output by ID", false, msgsMetrics.OutPullOutputByID)
-	table[4] = makeMessagesMetricsTableRow("State output", true, msgsMetrics.InStateOutput)
-	table[5] = makeMessagesMetricsTableRow("Alias output", true, msgsMetrics.InAliasOutput)
-	table[6] = makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput)
-	table[7] = makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest)
-	table[8] = makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState)
+	table[0] = makeMessagesMetricsTableRow("Publish state transaction", false, msgsMetrics.OutPublishStateTransaction)
+	table[1] = makeMessagesMetricsTableRow("Publish governance transaction", false, msgsMetrics.OutPublishGovernanceTransaction)
+	table[2] = makeMessagesMetricsTableRow("Pull latest output", false, msgsMetrics.OutPullLatestOutput)
+	table[3] = makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTxInclusionState)
+	table[4] = makeMessagesMetricsTableRow("Pull output by ID", false, msgsMetrics.OutPullOutputByID)
+	table[5] = makeMessagesMetricsTableRow("State output", true, msgsMetrics.InStateOutput)
+	table[6] = makeMessagesMetricsTableRow("Alias output", true, msgsMetrics.InAliasOutput)
+	table[7] = makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput)
+	table[8] = makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest)
+	table[9] = makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState)
 	for i := range additionalRows {
-		table[9+i] = additionalRows[i]
+		table[10+i] = additionalRows[i]
 	}
 	log.PrintTable(header, table)
 }

@@ -243,15 +243,20 @@ func (nccT *nodeconnChain) detachFromMilestones() {
 	}
 }
 
-func (nccT *nodeconnChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
-	nccT.metrics.GetOutPublishTransaction().CountLastMessage(struct {
+func (nccT *nodeconnChain) PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+	nccT.metrics.GetOutPublishStateTransaction().CountLastMessage(struct {
 		StateIndex  uint32
 		Transaction *iotago.Transaction
 	}{
 		StateIndex:  stateIndex,
 		Transaction: tx,
 	})
-	return nccT.nc.PublishTransaction(nccT.chainID, stateIndex, tx)
+	return nccT.nc.PublishStateTransaction(nccT.chainID, stateIndex, tx)
+}
+
+func (nccT *nodeconnChain) PublishGovernanceTransaction(tx *iotago.Transaction) error {
+	nccT.metrics.GetOutPublishGovernanceTransaction().CountLastMessage(tx)
+	return nccT.nc.PublishGovernanceTransaction(nccT.chainID, tx)
 }
 
 func (nccT *nodeconnChain) PullLatestOutput() {

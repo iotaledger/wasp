@@ -146,8 +146,20 @@ func (nc *nodeConn) UnregisterChain(chainID *iscp.ChainID) {
 	nc.log.Debugf("nodeconn: chain unregistered: %s", chainID)
 }
 
-// PublishTransaction implements chain.NodeConnection.
-func (nc *nodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+// PublishStateTransaction implements chain.NodeConnection.
+func (nc *nodeConn) PublishStateTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+	nc.chainsLock.RLock()
+	ncc, ok := nc.chains[chainID.Key()]
+	nc.chainsLock.RUnlock()
+	if !ok {
+		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	}
+	return ncc.PublishTransaction(tx)
+}
+
+// PublishGovernanceTransaction implements chain.NodeConnection.
+// TODO: identical to PublishStateTransaction; needs to be reviewed
+func (nc *nodeConn) PublishGovernanceTransaction(chainID *iscp.ChainID, tx *iotago.Transaction) error {
 	nc.chainsLock.RLock()
 	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()

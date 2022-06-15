@@ -113,7 +113,7 @@ func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
 		return
 	}
-	ncc.outputHandler(id, out)
+	ncc.stateOutputHandler(id, out)
 }
 
 func (ncc *ncChain) queryChainUTXOs() {

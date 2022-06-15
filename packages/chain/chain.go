@@ -104,7 +104,8 @@ type NodeConnection interface {
 	RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
 	UnregisterChain(chainID *iscp.ChainID)
 
-	PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
+	PublishStateTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
+	PublishGovernanceTransaction(chainID *iscp.ChainID, tx *iotago.Transaction) error
 	PullLatestOutput(chainID *iscp.ChainID)
 	PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID)
 	PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
@@ -130,7 +131,8 @@ type ChainNodeConnection interface {
 	DetachFromMilestones()
 	Close()
 
-	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PublishGovernanceTransaction(tx *iotago.Transaction) error
 	PullLatestOutput()
 	PullTxInclusionState(txid iotago.TransactionID)
 	PullStateOutputByID(*iotago.UTXOInput)

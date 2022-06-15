@@ -349,29 +349,29 @@ func (c *consensus) checkQuorum() { //nolint:funlen
 
 	c.finalTx = tx
 
-	// if !chainOutput.GetIsGovernanceUpdated() {
-	// write block to WAL
-	chainOutputID := chainOutput.ID()
-	block, err := c.resultState.ExtractBlock()
-	if err == nil {
-		block.SetApprovingOutputID(chainOutputID)
-		err = c.wal.Write(block.Bytes())
+	if c.resultState != nil { // if it is not governance transaction (state controller rotation)
+		// write block to WAL
+		chainOutputID := chainOutput.ID()
+		block, err := c.resultState.ExtractBlock()
 		if err == nil {
-			c.log.Debugf("checkQuorum: block index %v written to wal", block.BlockIndex())
+			block.SetApprovingOutputID(chainOutputID)
+			err = c.wal.Write(block.Bytes())
+			if err == nil {
+				c.log.Debugf("checkQuorum: block index %v written to wal", block.BlockIndex())
+			} else {
+				c.log.Warnf("checkQuorum: error writing block to wal: %v", err)
+			}
 		} else {
-			c.log.Warnf("checkQuorum: error writing block to wal: %v", err)
+			c.log.Warnf("checkQuorum: skipping writing block to was: error extracting block from state: %v", err)
 		}
-	} else {
-		c.log.Warnf("checkQuorum: skipping writing block to was: error extracting block from state: %v", err)
-	}
 
-	// if it is not state controller rotation, sending message to state manager
-	// Otherwise state manager is not notified
-	c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
-	c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
-	c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
-		c.resultState.BlockIndex(), iscp.OID(chainOutputID))
-	//}
+		// sending message to state manager
+		// if it is state controller rotation, state manager is not notified
+		c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
+		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
+		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
+			c.resultState.BlockIndex(), iscp.OID(chainOutputID))
+	}
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
 	var postSeqNumber uint16
@@ -418,17 +418,27 @@ func (c *consensus) postTransactionIfNeeded() {
 		c.log.Debugf("postTransaction not needed: delayed till %v", c.postTxDeadline)
 		return
 	}
-	stateIndex := c.resultState.BlockIndex()
-	go c.nodeConn.PublishTransaction(stateIndex, c.finalTx) //nolint:errcheck
+	var logMsgTypeStr string
+	var logMsgStateIndexStr string
+	if c.resultState == nil { // governance transaction
+		go c.nodeConn.PublishGovernanceTransaction(c.finalTx)
+		logMsgTypeStr = "GOVERNANCE"
+		logMsgStateIndexStr = ""
+	} else {
+		stateIndex := c.resultState.BlockIndex()
+		go c.nodeConn.PublishStateTransaction(stateIndex, c.finalTx) //nolint:errcheck
+		logMsgTypeStr = "STATE"
+		logMsgStateIndexStr = fmt.Sprintf(" for state %v", stateIndex)
+	}
 
 	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
+	logMsgStart := fmt.Sprintf("postTransaction: POSTED %s TRANSACTION%s:", logMsgTypeStr, logMsgStateIndexStr)
+	logMsgEnd := fmt.Sprintf("number of inputs: %d, outputs: %d", len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
 	txID, err := c.finalTx.ID()
 	if err == nil {
-		c.log.Infof("postTransaction: POSTED TRANSACTION for state %v: %s, number of inputs: %d, outputs: %d",
-			stateIndex, iscp.TxID(txID), len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
+		c.log.Infof("%s %s, %s", logMsgStart, iscp.TxID(txID), logMsgEnd)
 	} else {
-		c.log.Warnf("postTransaction: POSTED TRANSACTION for state %v: number of inputs: %d, outputs: %d, error calculating id: %v",
-			stateIndex, len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs), err)
+		c.log.Warnf("%s %s", logMsgStart, logMsgEnd)
 	}
 }
 
@@ -785,7 +795,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotag
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(
 		task.RotationAddress,
-		task.AnchorOutput,
+		iscp.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID.UTXOInput()),
 		task.TimeAssumption.Time,
 		identity.ID{},
 		identity.ID{},

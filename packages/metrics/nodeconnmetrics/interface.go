@@ -14,7 +14,8 @@ type NodeConnectionMessageMetrics interface {
 }
 
 type NodeConnectionMessagesMetrics interface {
-	GetOutPublishTransaction() NodeConnectionMessageMetrics
+	GetOutPublishStateTransaction() NodeConnectionMessageMetrics
+	GetOutPublishGovernanceTransaction() NodeConnectionMessageMetrics
 	GetOutPullLatestOutput() NodeConnectionMessageMetrics
 	GetOutPullTxInclusionState() NodeConnectionMessageMetrics
 	GetOutPullOutputByID() NodeConnectionMessageMetrics

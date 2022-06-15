@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // IsRotateStateControllerRequest determines if request may be a committee rotation request
@@ -28,11 +29,27 @@ func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress iotago.Add
 
 func MakeRotateStateControllerTransaction(
 	nextAddr iotago.Address,
-	chainInput *iotago.AliasOutput,
+	chainInput *iscp.AliasOutputWithID,
 	ts time.Time,
 	accessPledge, consensusPledge identity.ID,
 ) (*iotago.TransactionEssence, error) {
-	panic("TODO implement")
+	output := chainInput.GetAliasOutput().Clone().(*iotago.AliasOutput)
+	for i := range output.Conditions {
+		if _, ok := output.Conditions[i].(*iotago.StateControllerAddressUnlockCondition); ok {
+			output.Conditions[i] = &iotago.StateControllerAddressUnlockCondition{Address: nextAddr}
+		}
+	}
+	result := &iotago.TransactionEssence{
+		NetworkID: parameters.L1.Protocol.NetworkID(),
+		Inputs:    iotago.Inputs{chainInput.ID()},
+		Outputs:   iotago.Outputs{output},
+		Payload:   nil,
+	}
+	inputsCommitment := iotago.Outputs{chainInput.GetAliasOutput()}.MustCommitment()
+	copy(result.InputsCommitment[:], inputsCommitment)
+	return result, nil
+
+	//panic("TODO implement")
 	// txb := utxoutil.NewBuilder(chainInput).
 	// 	WithTimestamp(ts).
 	// 	WithAccessPledge(accessPledge).

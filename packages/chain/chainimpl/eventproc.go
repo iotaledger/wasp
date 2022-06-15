@@ -115,11 +115,11 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 	}
 	c.log.Debugf("handleAliasOutput: L1 commitment is %s", commitment)
 
-	if (c.lastSeenOutputStateIndex == nil) || (*c.lastSeenOutputStateIndex < msgStateIndex) {
+	if (c.lastSeenOutputStateIndex == nil) || (*c.lastSeenOutputStateIndex <= msgStateIndex) {
 		if c.lastSeenOutputStateIndex == nil {
 			c.log.Debugf("handleAliasOutput: received initial state output")
 		} else {
-			c.log.Debugf("handleAliasOutput: received newer output than the known one with index %v", *c.lastSeenOutputStateIndex)
+			c.log.Debugf("handleAliasOutput: received output, which is not older than the known one with index %v", *c.lastSeenOutputStateIndex)
 		}
 		cmt := c.getCommittee()
 		if cmt != nil {
@@ -137,7 +137,7 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 		}
 		c.lastSeenOutputStateIndex = &msgStateIndex
 	} else {
-		c.log.Debugf("handleAliasOutput: received output, which is not newer than the known one with index %v; committee rotation/creation will not be performed", *c.lastSeenOutputStateIndex)
+		c.log.Debugf("handleAliasOutput: received output, which is older than the known one with index %v; committee rotation/creation will not be performed", *c.lastSeenOutputStateIndex)
 	}
 	c.stateMgr.EnqueueAliasOutput(msg)
 	c.log.Debugf("handleAliasOutput: output %v passed to state manager", iscp.OID(msg.ID()))

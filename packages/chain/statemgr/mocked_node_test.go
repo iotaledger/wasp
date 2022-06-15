@@ -118,7 +118,7 @@ func (node *MockedNode) MakeNewStateTransition() {
 func (node *MockedNode) NextState(vstate state.VirtualStateAccess, chainOutput *iscp.AliasOutputWithID) {
 	node.Log.Debugf("NextState: from state %d, output ID %v", vstate.BlockIndex(), iscp.OID(chainOutput.ID()))
 	nextState, tx, aliasOutputID := testchain.NextState(node.Env.T, node.Env.StateKeyPair, vstate, chainOutput, time.Now())
-	go node.ChainNodeConn.PublishTransaction(vstate.BlockIndex(), tx)
+	go node.ChainNodeConn.PublishStateTransaction(vstate.BlockIndex(), tx)
 	go node.StateManager.EnqueueStateCandidateMsg(nextState, aliasOutputID)
 	node.Log.Debugf("NextState: result state %d, output ID %v", nextState.BlockIndex(), iscp.OID(aliasOutputID))
 }
