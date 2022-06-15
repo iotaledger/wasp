@@ -470,3 +470,13 @@ export function viewCheckAddress(ctx: wasmlib.ScViewContext, f: sc.CheckAddressC
     ctx.require(wasmtypes.bytesCompare(address.toBytes(), addressBytes) == 0, "bytes mismatch");
     ctx.require(address.toString() == addressString, "string mismatch");
 }
+
+export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckEthAddressAndAgentIDContext): void {
+    const ethAddress = f.params.ethAddress().value();
+    const scAddressEth = wasmtypes.addressFromString(ethAddress);
+    ctx.require(scAddressEth.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(scAddressEth))), "eth address bytes conversion failed");
+    ctx.require(scAddressEth.equals(wasmtypes.addressFromString(wasmtypes.addressToString(scAddressEth))), "eth address string conversion failed");
+    const scAgentIDEth = wasmtypes.ScAgentID.fromAddress(scAddressEth);
+    ctx.require(scAgentIDEth.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(scAgentIDEth))), "eth agentID bytes conversion failed");
+    ctx.require(scAgentIDEth.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(scAgentIDEth))), "eth agentID string conversion failed");
+}

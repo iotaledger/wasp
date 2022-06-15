@@ -1296,6 +1296,28 @@ impl MutableCheckAgentIDParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableCheckEthAddressAndAgentIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckEthAddressAndAgentIDParams {
+    pub fn eth_address(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_ETH_ADDRESS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckEthAddressAndAgentIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckEthAddressAndAgentIDParams {
+    pub fn eth_address(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_ETH_ADDRESS))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableStringMapOfStringArrayLengthParams {
 	pub(crate) proxy: Proxy,
 }

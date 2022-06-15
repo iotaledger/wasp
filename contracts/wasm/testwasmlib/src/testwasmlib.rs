@@ -611,3 +611,28 @@ pub fn view_check_address(ctx: &ScViewContext, f: &CheckAddressContext) {
     ctx.require(sc_address.to_bytes() == address_bytes, "bytes mismatch");
     ctx.require(sc_address.to_string() == address_string, "string mismatch");
 }
+
+pub fn view_check_eth_address_and_agent_id(
+    ctx: &ScViewContext,
+    f: &CheckEthAddressAndAgentIDContext,
+) {
+    let eth_address = f.params.eth_address().value();
+    let sc_address_eth = address_from_string(&eth_address);
+    ctx.require(
+        sc_address_eth == address_from_bytes(&address_to_bytes(&sc_address_eth)),
+        "eth address bytes conversion failed",
+    );
+    ctx.require(
+        sc_address_eth == address_from_string(&address_to_string(&sc_address_eth)),
+        "eth address string conversion failed",
+    );
+    let sc_agent_id_eth = ScAgentID::from_address(&sc_address_eth);
+    ctx.require(
+        sc_agent_id_eth == agent_id_from_bytes(&agent_id_to_bytes(&sc_agent_id_eth)),
+        "eth agent_id bytes conversion failed",
+    );
+    ctx.require(
+        sc_agent_id_eth == agent_id_from_string(&agent_id_to_string(&sc_agent_id_eth)),
+        "eth agent_id string conversion failed",
+    );
+}
