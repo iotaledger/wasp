@@ -151,56 +151,34 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 		return nil
 	}
 	c.log.Debugf("rotateCommitteeIfNeeded rotation is needed: committee address is changed %s -> %s", currentCmtAddress, anchorOutputAddress)
-	// TODO implement
-	// if !anchorOutput.GetIsGovernanceUpdated() {
-	// 	return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
-	// }
-	dkShare, err := c.getChainDKShare(anchorOutputAddress)
-	if err != nil {
-		if !errors.Is(err, registry.ErrDKShareNotFound) {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
-		}
-	}
 
 	// rotation needed
 	// close current in any case
 	currentCmt.Close()
 	c.consensus.Close()
 	c.setCommittee(nil)
-	c.log.Infof("CLOSED COMMITTEE for the state address %s", currentCmtAddress)
+	c.log.Infof("rotateCommitteeIfNeeded: CLOSED COMMITTEE for the state address %s", currentCmtAddress)
 	c.consensus = nil
-	if dkShare != nil {
-		// create new if committee record is available
-		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus failed: %v", err)
-		}
-		c.log.Infof("RECREATED COMMITTEE for the state address %s", anchorOutputAddress)
-	} else {
-		c.log.Warnf("DKShare is nil, committee not created")
-	}
-	return nil
+
+	return c.createCommitteeIfNeeded(anchorOutput)
 }
 
 func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID) error {
 	// check if I am in the committee
-	stateControllerAddress := anchorOutput.GetAliasOutput().StateController()
+	stateControllerAddress := anchorOutput.GetStateAddress()
 	dkShare, err := c.getChainDKShare(stateControllerAddress)
 	if err != nil {
 		if errors.Is(err, registry.ErrDKShareNotFound) {
-			c.log.Warnf("DKShare not found, committee not created, node will not participate in consensus. address: %s", stateControllerAddress)
+			c.log.Warnf("createCommitteeIfNeeded: DKShare not found, committee not created, node will not participate in consensus. Address: %s", stateControllerAddress)
 			return nil
 		}
 		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
 	}
-	if dkShare != nil {
-		// create if record is present
-		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus failed %w", err)
-		}
-		c.log.Infof("CREATED COMMITTEE for the state address %s", stateControllerAddress)
-	} else {
-		c.log.Warnf("DKShare is nil, committee not created")
+	// create new committee
+	if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
+		return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus failed %w", err)
 	}
+	c.log.Infof("createCommitteeIfNeeded: CREATED COMMITTEE for the state address %s", stateControllerAddress)
 	return nil
 }
 
