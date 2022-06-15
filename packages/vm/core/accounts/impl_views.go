@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// viewBalance returns colored balances of the account belonging to the AgentID
+// viewBalance returns the balances of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
 func viewBalance(ctx iscp.SandboxView) dict.Dict {
@@ -18,6 +18,29 @@ func viewBalance(ctx iscp.SandboxView) dict.Dict {
 	aid, err := ctx.Params().GetAgentID(ParamAgentID)
 	ctx.RequireNoError(err)
 	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
+}
+
+// viewBalanceIotas returns the iota balance of the account belonging to the AgentID
+// Params:
+// - ParamAgentID
+// Returns: {ParamBalance: uint64}
+func viewBalanceIotas(ctx iscp.SandboxView) dict.Dict {
+	iotas := getIotaBalance(getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)))
+	return dict.Dict{ParamBalance: codec.EncodeUint64(iotas)}
+}
+
+// viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
+// Params:
+// - ParamAgentID
+// - ParamNativeTokenID
+// Returns: {ParamBalance: big.Int}
+func viewBalanceNativeToken(ctx iscp.SandboxView) dict.Dict {
+	id := ctx.Params().MustGetNativeTokenID(ParamNativeTokenID)
+	bal := getNativeTokenBalance(
+		getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)),
+		&id,
+	)
+	return dict.Dict{ParamBalance: bal.Bytes()}
 }
 
 // viewTotalAssets returns total colored balances controlled by the chain

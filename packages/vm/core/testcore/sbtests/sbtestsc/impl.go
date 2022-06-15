@@ -39,7 +39,7 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) dict.Dict {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) dict.Dict {
-	ret := ctx.Call(governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
+	ret := ctx.CallView(governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
 	desc := ret.MustGet(governance.VarDescription)
 	ret.Set(VarSandboxCall, desc)
 	return ret
@@ -79,7 +79,7 @@ func testCallPanicViewEPFromFull(ctx iscp.Sandbox) dict.Dict {
 
 func testCallPanicViewEPFromView(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
-	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil)
+	return ctx.CallView(Contract.Hname(), FuncPanicViewEP.Hname(), nil)
 }
 
 func doNothing(ctx iscp.Sandbox) dict.Dict {
