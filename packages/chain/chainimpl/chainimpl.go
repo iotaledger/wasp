@@ -70,6 +70,7 @@ type chainObj struct {
 	offLedgerReqsAcks                  map[iscp.RequestID][]*cryptolib.PublicKey
 	offledgerBroadcastUpToNPeers       int
 	offledgerBroadcastInterval         time.Duration
+	lastChainTransitionEvent           *chain.ChainTransitionEventData
 	pullMissingRequestsFromCommittee   bool
 	chainMetrics                       metrics.ChainMetrics
 	dismissChainMsgPipe                pipe.Pipe
@@ -127,6 +128,7 @@ func NewChain(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		lastChainTransitionEvent:         nil,
 		chainMetrics:                     chainMetrics,
 		dismissChainMsgPipe:              pipe.NewLimitInfinitePipe(1),
 		aliasOutputPipe:                  pipe.NewLimitInfinitePipe(maxMsgBuffer),
@@ -243,6 +245,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 // processChainTransition processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
+	c.lastChainTransitionEvent = msg
 	stateIndex := msg.VirtualState.BlockIndex()
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	rootCommitment := trie.RootCommitment(msg.VirtualState.TrieNodeStore())

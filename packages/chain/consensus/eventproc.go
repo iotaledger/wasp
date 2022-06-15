@@ -26,7 +26,7 @@ func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAcc
 func (c *consensus) handleStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	c.log.Debugf("StateTransitionMsg received: state index: %d, state output: %s, timestamp: %v",
 		msg.State.BlockIndex(), iscp.OID(msg.StateOutput.ID()), msg.StateTimestamp)
-	if c.setNewState(msg) {
+	if c.setNewState(msg.State, msg.StateOutput, msg.StateTimestamp) {
 		c.takeAction()
 	}
 }
