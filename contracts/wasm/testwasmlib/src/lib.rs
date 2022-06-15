@@ -77,6 +77,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_BLOCK_RECORDS,
     	VIEW_CHECK_ADDRESS,
     	VIEW_CHECK_AGENT_ID,
+    	VIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID,
     	VIEW_GET_RANDOM,
     	VIEW_IOTA_BALANCE,
     	VIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH,
@@ -131,6 +132,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_block_records_thunk,
     	view_check_address_thunk,
     	view_check_agent_id_thunk,
+    	view_check_eth_address_and_agent_id_thunk,
     	view_get_random_thunk,
     	view_iota_balance_thunk,
     	view_string_map_of_string_array_length_thunk,
@@ -983,6 +985,22 @@ fn view_check_agent_id_thunk(ctx: &ScViewContext) {
 	ctx.require(f.params.sc_agent_id().exists(), "missing mandatory scAgentID");
 	view_check_agent_id(ctx, &f);
 	ctx.log("testwasmlib.viewCheckAgentID ok");
+}
+
+pub struct CheckEthAddressAndAgentIDContext {
+	params: ImmutableCheckEthAddressAndAgentIDParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_eth_address_and_agent_id_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckEthAddressAndAgentID");
+	let f = CheckEthAddressAndAgentIDContext {
+		params: ImmutableCheckEthAddressAndAgentIDParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.eth_address().exists(), "missing mandatory ethAddress");
+	view_check_eth_address_and_agent_id(ctx, &f);
+	ctx.log("testwasmlib.viewCheckEthAddressAndAgentID ok");
 }
 
 pub struct GetRandomContext {

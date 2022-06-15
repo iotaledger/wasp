@@ -245,6 +245,11 @@ pub struct CheckAgentIDCall {
 	pub params: MutableCheckAgentIDParams,
 }
 
+pub struct CheckEthAddressAndAgentIDCall {
+	pub func: ScView,
+	pub params: MutableCheckEthAddressAndAgentIDParams,
+}
+
 pub struct GetRandomCall {
 	pub func: ScView,
 	pub results: ImmutableGetRandomResults,
@@ -693,6 +698,15 @@ impl ScFuncs {
         let mut f = CheckAgentIDCall {
             func: ScView::new(HSC_NAME, HVIEW_CHECK_AGENT_ID),
             params: MutableCheckAgentIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_eth_address_and_agent_id(_ctx: &dyn ScViewCallContext) -> CheckEthAddressAndAgentIDCall {
+        let mut f = CheckEthAddressAndAgentIDCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID),
+            params: MutableCheckEthAddressAndAgentIDParams { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         f

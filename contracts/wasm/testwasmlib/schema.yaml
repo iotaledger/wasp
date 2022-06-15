@@ -360,3 +360,7 @@ views:
       scAddress: Address
       addressBytes: Bytes
       addressString: String
+
+  checkEthAddressAndAgentID:
+    params:
+      ethAddress: String
