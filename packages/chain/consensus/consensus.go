@@ -90,7 +90,6 @@ func New(
 	peerGroup peering.GroupProvider,
 	nodeConn chain.ChainNodeConnection,
 	pullMissingRequestsFromCommittee bool,
-	lastChainTransitionEvent *chain.ChainTransitionEventData,
 	consensusMetrics metrics.ConsensusMetrics,
 	wal chain.WAL,
 	timersOpt ...ConsensusTimers,
@@ -125,9 +124,6 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 		wal:                              wal,
-	}
-	if lastChainTransitionEvent != nil {
-		ret.setNewState(lastChainTransitionEvent.VirtualState, lastChainTransitionEvent.ChainOutput, lastChainTransitionEvent.OutputTimestamp)
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {

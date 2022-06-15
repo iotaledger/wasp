@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -693,8 +692,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 	return tx, chained, nil
 }
 
-func (c *consensus) setNewState(newState state.VirtualStateAccess, stateOutput *iscp.AliasOutputWithID, stateTimestamp time.Time) bool {
-	if newState.BlockIndex() != stateOutput.GetStateIndex() {
+func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
+	if msg.State.BlockIndex() != msg.StateOutput.GetStateIndex() {
 		// NOTE: should be a panic. However this situation may occur (and occurs) in normal circumstations:
 		// 1) State manager synchronizes to state index n and passes state transmission message through event to consensus asynchronously
 		// 2) Consensus is overwhelmed and receives a message after delay
@@ -708,14 +707,14 @@ func (c *consensus) setNewState(newState state.VirtualStateAccess, stateOutput *
 		// all the mutations are written to the DB. However, reading the same DB in step 1 results in index n and in step 4 (after the commit of block
 		// index n+1) -- in index n+1. Thus effectively the virtual state received is different than the virtual state sent.
 		c.log.Errorf("consensus::setNewState: state index is inconsistent: block: #%d != chain output: #%d",
-			newState.BlockIndex(), stateOutput.GetStateIndex())
+			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex())
 		return false
 	}
 
-	c.stateOutput = stateOutput
-	c.currentState = newState
-	c.stateTimestamp = stateTimestamp
-	oid := stateOutput.OutputID()
+	c.stateOutput = msg.StateOutput
+	c.currentState = msg.State
+	c.stateTimestamp = msg.StateTimestamp
+	oid := msg.StateOutput.OutputID()
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
 	r := ""
 	/* TODO
@@ -723,7 +722,7 @@ func (c *consensus) setNewState(newState state.VirtualStateAccess, stateOutput *
 		r = " (rotate) "
 	}*/
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
-		stateOutput.GetStateIndex(), r, iscp.OID(stateOutput.ID()), trie.RootCommitment(newState.TrieNodeStore()))
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), trie.RootCommitment(msg.State.TrieNodeStore()))
 	c.resetWorkflow()
 	return true
 }
