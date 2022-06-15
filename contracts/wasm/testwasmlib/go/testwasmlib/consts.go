@@ -27,6 +27,7 @@ const (
 	ParamBool          = "bool"
 	ParamBytes         = "bytes"
 	ParamChainID       = "chainID"
+	ParamEthAddress    = "ethAddress"
 	ParamHash          = "hash"
 	ParamHname         = "hname"
 	ParamIndex         = "index"
@@ -129,6 +130,7 @@ const (
 	ViewBlockRecords                   = "blockRecords"
 	ViewCheckAddress                   = "checkAddress"
 	ViewCheckAgentID                   = "checkAgentID"
+	ViewCheckEthAddressAndAgentID      = "checkEthAddressAndAgentID"
 	ViewGetRandom                      = "getRandom"
 	ViewIotaBalance                    = "iotaBalance"
 	ViewStringMapOfStringArrayLength   = "stringMapOfStringArrayLength"
@@ -182,6 +184,7 @@ const (
 	HViewBlockRecords                   = wasmtypes.ScHname(0x16e249ea)
 	HViewCheckAddress                   = wasmtypes.ScHname(0x64b8add5)
 	HViewCheckAgentID                   = wasmtypes.ScHname(0x27ae5137)
+	HViewCheckEthAddressAndAgentID      = wasmtypes.ScHname(0xe01ad77e)
 	HViewGetRandom                      = wasmtypes.ScHname(0x46263045)
 	HViewIotaBalance                    = wasmtypes.ScHname(0x9d3920bd)
 	HViewStringMapOfStringArrayLength   = wasmtypes.ScHname(0x9f433699)

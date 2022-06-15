@@ -1072,6 +1072,22 @@ func (s MutableCheckAgentIDParams) ScAgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamScAgentID))
 }
 
+type ImmutableCheckEthAddressAndAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckEthAddressAndAgentIDParams) EthAddress() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamEthAddress))
+}
+
+type MutableCheckEthAddressAndAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckEthAddressAndAgentIDParams) EthAddress() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamEthAddress))
+}
+
 type ImmutableStringMapOfStringArrayLengthParams struct {
 	proxy wasmtypes.Proxy
 }

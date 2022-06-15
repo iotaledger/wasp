@@ -468,3 +468,6 @@ func viewCheckAddress(ctx wasmlib.ScViewContext, f *CheckAddressContext) {
 	ctx.Require(string(address.Bytes()) == string(addressBytes), "bytes mismatch")
 	ctx.Require(address.String() == addressString, "string mismatch")
 }
+
+func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddressAndAgentIDContext) {
+}

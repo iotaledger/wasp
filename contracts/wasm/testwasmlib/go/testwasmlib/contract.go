@@ -244,6 +244,11 @@ type CheckAgentIDCall struct {
 	Params MutableCheckAgentIDParams
 }
 
+type CheckEthAddressAndAgentIDCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckEthAddressAndAgentIDParams
+}
+
 type GetRandomCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetRandomResults
@@ -548,6 +553,12 @@ func (sc Funcs) CheckAddress(ctx wasmlib.ScViewCallContext) *CheckAddressCall {
 
 func (sc Funcs) CheckAgentID(ctx wasmlib.ScViewCallContext) *CheckAgentIDCall {
 	f := &CheckAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckAgentID)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckEthAddressAndAgentID(ctx wasmlib.ScViewCallContext) *CheckEthAddressAndAgentIDCall {
+	f := &CheckEthAddressAndAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckEthAddressAndAgentID)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }
