@@ -204,10 +204,6 @@ func (m *mempool) traceIn(req iscp.Request) {
 	if rotate.IsRotateStateControllerRequest(req) {
 		rotateStr = "(rotate) "
 	}
-	logFn := m.log.Debugf
-	if traceInOut {
-		logFn = m.log.Infof
-	}
 	var timeLockTime time.Time
 	var timeLockMilestone uint32
 
@@ -219,20 +215,25 @@ func (m *mempool) traceIn(req iscp.Request) {
 		}
 	}
 
+	logFun := m.getLogFun()
 	if !timeLockTime.IsZero() || timeLockMilestone > 0 {
-		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v until milestone %d",
+		logFun("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v until milestone %d",
 			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(timeLockTime), timeLockMilestone)
 	} else {
-		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
+		logFun("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	}
 }
 
 func (m *mempool) traceOut(reqid iscp.RequestID) {
+	logFun := m.getLogFun()
+	logFun("OUT MEMPOOL %s (+%d / -%d)", reqid, m.inPoolCounter, m.outPoolCounter)
+}
+
+func (m *mempool) getLogFun() func(string, ...interface{}) {
 	if traceInOut {
-		m.log.Infof("OUT MEMPOOL %s (+%d / -%d)", reqid, m.inPoolCounter, m.outPoolCounter)
-	} else {
-		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", reqid, m.inPoolCounter, m.outPoolCounter)
+		return m.log.Infof
 	}
+	return m.log.Debugf
 }
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
