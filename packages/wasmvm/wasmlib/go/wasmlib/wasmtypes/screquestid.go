@@ -3,9 +3,16 @@
 
 package wasmtypes
 
+import (
+	"strings"
+
+	"github.com/iotaledger/wasp/packages/util"
+)
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const ScRequestIDLength = 34
+const RequestIDSeparator = "-"
 
 type ScRequestID struct {
 	id [ScRequestIDLength]byte
@@ -48,12 +55,18 @@ func RequestIDToBytes(value ScRequestID) []byte {
 }
 
 func RequestIDFromString(value string) ScRequestID {
-	return RequestIDFromBytes(Base58Decode(value))
+	elts := strings.Split(value, RequestIDSeparator)
+	index := util.Uint16To2Bytes(Uint16FromString(elts[0]))
+	buf := HexDecode(elts[1])
+	return RequestIDFromBytes(append(buf, index...))
 }
 
 func RequestIDToString(value ScRequestID) string {
-	// TODO standardize human readable string
-	return Base58Encode(RequestIDToBytes(value))
+	reqID := RequestIDToBytes(value)
+	// the last 2 byte is the TransactionOutputIndex
+	txID := HexEncode(reqID[:ScRequestIDLength-2])
+	index, _ := util.Uint16From2Bytes(reqID[ScRequestIDLength-2:])
+	return Uint16ToString(index) + RequestIDSeparator + txID
 }
 
 func requestIDFromBytesUnchecked(buf []byte) ScRequestID {

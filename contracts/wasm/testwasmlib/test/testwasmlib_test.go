@@ -13,9 +13,11 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -491,36 +493,78 @@ func TestWasmTypes(t *testing.T) {
 	require.Equal(t, goBytes, wasmtypes.BytesFromBytes(wasmtypes.BytesToBytes(goBytes)))
 	require.Equal(t, goBytes, wasmtypes.BytesFromString(wasmtypes.BytesToString(goBytes)))
 
-	base58Hash := "EWwNqZ8At5o9jV2Yqp7ajPxdSjzHVY6MmerKF3Z42rZy"
-	require.Equal(t, base58Hash, wasmtypes.HashToString(wasmtypes.HashFromString(base58Hash)))
-	require.Equal(t, base58Hash, wasmtypes.HashFromString(base58Hash).String())
-	byteHash := []byte{0xc8, 0xd3, 0x41, 0xd8, 0xb5, 0x66, 0x92, 0x1b, 0xb3, 0x0c, 0xf6, 0xbe, 0x4d, 0xd9, 0x41, 0xca, 0x7c, 0xe0, 0x60, 0xff, 0xb6, 0x39, 0x1d, 0x5d, 0x34, 0xd2, 0x61, 0x38, 0xb2, 0xf7, 0x40, 0x34}
-	require.Equal(t, byteHash, wasmtypes.HashToBytes(wasmtypes.HashFromBytes(byteHash)))
-	require.Equal(t, byteHash, wasmtypes.HashFromBytes(byteHash).Bytes())
+	hashString := "7c106d42ca17fdbfb03f6b45b91effcef2cff61215a3552dbc1ab8fd46817719"
+	hashBytes := []byte{124, 16, 109, 66, 202, 23, 253, 191, 176, 63, 107, 69, 185, 30, 255, 206, 242, 207, 246, 18, 21, 163, 85, 45, 188, 26, 184, 253, 70, 129, 119, 25}
+	hash, err := hashing.HashValueFromHex(hashString)
+	require.NoError(t, err)
+	scHash := wasmtypes.HashFromString(hashString)
+	require.Equal(t, hashString, wasmtypes.HashToString(wasmtypes.HashFromString(hashString)))
+	require.Equal(t, hashBytes, wasmtypes.HashToBytes(wasmtypes.HashFromBytes(hashBytes)))
+	require.Equal(t, wasmtypes.HashFromString(hashString), wasmtypes.HashFromBytes(hashBytes))
+	require.Equal(t, scHash.String(), hash.String())
+	require.Equal(t, scHash.Bytes(), hash.Bytes())
 
-	scHname := wasmtypes.ScHname(1231231)
+	scHname := testwasmlib.HScName
 	require.Equal(t, scHname, wasmtypes.HnameFromString(wasmtypes.HnameToString(scHname)))
 	require.Equal(t, scHname.String(), wasmtypes.HnameToString(scHname))
 	require.Equal(t, scHname, wasmtypes.HnameFromBytes(wasmtypes.HnameToBytes(scHname)))
 	require.Equal(t, scHname.Bytes(), wasmtypes.HnameToBytes(scHname))
 
-	base58RequestID := "JPP5jbApWDwvCFBNrVtqSqEPqZRPe9bYPWCKQ8o2HmfiUo"
-	require.Equal(t, base58RequestID, wasmtypes.RequestIDToString(wasmtypes.RequestIDFromString(base58RequestID)))
-	require.Equal(t, base58RequestID, wasmtypes.RequestIDFromString(base58RequestID).String())
-	byteRequestID := []byte{0x0d, 0x42, 0x83, 0x18, 0x0d, 0xb6, 0x11, 0x20, 0xad, 0x43, 0x79, 0xe2, 0xdc, 0x4a, 0x15, 0x6f, 0x0c, 0x7b, 0x24, 0x3b, 0x45, 0x2e, 0x4a, 0xc1, 0xd0, 0x31, 0x6c, 0x33, 0x63, 0xe0, 0x2b, 0x64, 0x12, 0x00}
-	require.Equal(t, byteRequestID, wasmtypes.RequestIDToBytes(wasmtypes.RequestIDFromBytes(byteRequestID)))
-	require.Equal(t, byteRequestID, wasmtypes.RequestIDFromBytes(byteRequestID).Bytes())
+	blockNum := uint32(3)
+	ctx = ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnLoad)
+	require.NoError(t, ctx.Err)
+	fblocklog := coreblocklog.ScFuncs.GetRequestIDsForBlock(ctx)
+	fblocklog.Params.BlockIndex().SetValue(blockNum)
+	fblocklog.Func.Call()
+	scReq := fblocklog.Results.RequestID().GetRequestID(0).Value()
+	req := ctx.Chain.GetRequestIDsForBlock(blockNum)[0]
+	require.Equal(t, scReq, wasmtypes.RequestIDFromBytes(wasmtypes.RequestIDToBytes(scReq)))
+	require.Equal(t, scReq, wasmtypes.RequestIDFromString(wasmtypes.RequestIDToString(scReq)))
+	require.Equal(t, scReq.Bytes(), req.Bytes())
+	require.Equal(t, scReq.String(), req.String())
 
 	goString := "this is a go string example"
 	require.Equal(t, goString, wasmtypes.StringToString(wasmtypes.StringFromString(goString)))
 	require.Equal(t, []byte(goString), wasmtypes.StringToBytes(wasmtypes.StringFromBytes([]byte(goString))))
 
-	base58TokenID := "Vv68WiBtnqeVUZrBd8S7PG5RbwWDVPgGfi47Xnb5bYmNsnGVJw6h"
-	require.Equal(t, base58TokenID, wasmtypes.TokenIDToString(wasmtypes.TokenIDFromString(base58TokenID)))
-	require.Equal(t, base58TokenID, wasmtypes.TokenIDFromString(base58TokenID).String())
-	byteTokenID := []byte{0xc3, 0x77, 0xf3, 0xf1, 0xea, 0x0f, 0x57, 0x13, 0x4d, 0x64, 0x4f, 0x2f, 0x29, 0x1d, 0x49, 0xf4, 0x8b, 0x11, 0x6d, 0x68, 0x17, 0x4f, 0x73, 0xec, 0x13, 0x09, 0xdd, 0x85, 0xb0, 0x09, 0xea, 0x85, 0xdb, 0x80, 0x26, 0x6a, 0x94, 0xea}
-	require.Equal(t, byteTokenID, wasmtypes.TokenIDToBytes(wasmtypes.TokenIDFromBytes(byteTokenID)))
-	require.Equal(t, byteTokenID, wasmtypes.TokenIDFromBytes(byteTokenID).Bytes())
+	tokenID, err := getTokenID(ctx)
+	require.NoError(t, err)
+	scTokenID := ctx.Cvt.ScTokenID(&tokenID)
+	require.Equal(t, scTokenID, wasmtypes.TokenIDFromString(wasmtypes.TokenIDToString(scTokenID)))
+	require.Equal(t, scTokenID, wasmtypes.TokenIDFromBytes(wasmtypes.TokenIDToBytes(scTokenID)))
+	require.Equal(t, scTokenID.String(), tokenID.String())
+	require.Equal(t, scTokenID.Bytes(), tokenID[:])
+
+	nftID, err := getNftID(ctx)
+	require.NoError(t, err)
+	scNftID := ctx.Cvt.ScNftID(&nftID)
+	require.Equal(t, scNftID, wasmtypes.NftIDFromString(wasmtypes.NftIDToString(scNftID)))
+	require.Equal(t, scNftID, wasmtypes.NftIDFromBytes(wasmtypes.NftIDToBytes(scNftID)))
+	require.Equal(t, scNftID.String(), nftID.String())
+	require.Equal(t, scNftID.Bytes(), nftID[:])
+}
+
+func getTokenID(ctx *wasmsolo.SoloContext) (tokenID iotago.NativeTokenID, err error) {
+	maxSupply := 100
+	fp := ctx.Chain.NewFoundryParams(ctx.Cvt.ToBigInt(maxSupply))
+	_, tokenID, err = fp.CreateFoundry()
+	if err != nil {
+		return iotago.NativeTokenID{}, err
+	}
+	return tokenID, nil
+}
+
+func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
+	agent := ctx.NewSoloAgent()
+	addr, ok := iscp.AddressFromAgentID(agent.AgentID())
+	if !ok {
+		return iotago.NFTID{}, fmt.Errorf("can't get address from AgentID")
+	}
+	nftInfo, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, []byte("test data"))
+	if err != nil {
+		return iotago.NFTID{}, err
+	}
+	return nftInfo.NFTID, nil
 }
 
 func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.ScAgentID, agentID iscp.AgentID) {
