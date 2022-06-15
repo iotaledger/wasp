@@ -247,51 +247,50 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.lastChainTransitionEvent = msg
 	stateIndex := msg.VirtualState.BlockIndex()
-	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
+	oidStr := iscp.OID(msg.ChainOutput.ID())
 	rootCommitment := trie.RootCommitment(msg.VirtualState.TrieNodeStore())
-	// if !msg.ChainOutput.GetIsGovernanceUpdated() {	// TODO
-	c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-		stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
-	// normal state update:
-	c.stateReader.SetBaseline()
-	chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasID())
-	var reqids []iscp.RequestID
-	for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
-		c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)
-		var err error
-		reqids, err = blocklog.GetRequestIDsForBlock(c.stateReader, i)
-		if reqids == nil {
-			// The error means a database error. The optimistic state read failure can't occur here
-			// because the state transition message is only sent only after state is committed and before consensus
-			// start new round
-			c.log.Panicf("processChainTransition. unexpected error: %v", err)
-			return // to avoid "possible nil pointer dereference" in later use of `reqids`
-		}
-		// remove processed requests from the mempool
-		c.log.Debugf("processChainTransition state %d cleaning state %d: removing %d requests", stateIndex, i, len(reqids))
-		c.mempool.RemoveRequests(reqids...)
-		chain.PublishRequestsSettled(&chainID, i, reqids)
-		// publish events
-		for _, reqid := range reqids {
-			c.eventRequestProcessed.Trigger(reqid)
-		}
-		c.publishNewBlockEvents(stateIndex)
-
-		c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
-			stateIndex, i, iscp.ShortRequestIDs(reqids))
-	}
-	chain.PublishStateTransition(&chainID, msg.ChainOutput, len(reqids))
-	chain.LogStateTransition(msg, reqids, c.log)
-
-	c.mempoolLastCleanedIndex = stateIndex
-	c.updateChainNodes(stateIndex)
-	c.chainMetrics.CurrentStateIndex(stateIndex)
-	/*} else {	// TODO: governance update
-		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), trie.RootCommitment(msg.VirtualState.TrieAccess()))
+	if msg.IsGovernance {
+		c.log.Debugf("processChainTransition: processing governance transition at state %d, output %s, state hash %s",
+			stateIndex, oidStr, rootCommitment)
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
-	}*/
+	} else {
+		// normal state update:
+		c.log.Debugf("processChainTransition: processing state %d transition, output %s; state hash %s; last cleaned state is %d", stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
+		c.stateReader.SetBaseline()
+		chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasID())
+		var reqids []iscp.RequestID
+		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
+			c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)
+			var err error
+			reqids, err = blocklog.GetRequestIDsForBlock(c.stateReader, i)
+			if reqids == nil {
+				// The error means a database error. The optimistic state read failure can't occur here
+				// because the state transition message is only sent only after state is committed and before consensus
+				// start new round
+				c.log.Panicf("processChainTransition. unexpected error: %v", err)
+				return // to avoid "possible nil pointer dereference" in later use of `reqids`
+			}
+			// remove processed requests from the mempool
+			c.log.Debugf("processChainTransition state %d cleaning state %d: removing %d requests", stateIndex, i, len(reqids))
+			c.mempool.RemoveRequests(reqids...)
+			chain.PublishRequestsSettled(&chainID, i, reqids)
+			// publish events
+			for _, reqid := range reqids {
+				c.eventRequestProcessed.Trigger(reqid)
+			}
+			c.publishNewBlockEvents(stateIndex)
+
+			c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
+				stateIndex, i, iscp.ShortRequestIDs(reqids))
+		}
+		chain.PublishStateTransition(&chainID, msg.ChainOutput, len(reqids))
+		chain.LogStateTransition(msg, reqids, c.log)
+
+		c.mempoolLastCleanedIndex = stateIndex
+		c.updateChainNodes(stateIndex)
+		c.chainMetrics.CurrentStateIndex(stateIndex)
+	}
 	if c.consensus == nil {
 		c.log.Warnf("processChainTransition: skipping notifying consensus as it is not initiated")
 	} else {

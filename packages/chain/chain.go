@@ -248,6 +248,7 @@ type PeerStatus struct {
 }
 
 type ChainTransitionEventData struct {
+	IsGovernance    bool
 	VirtualState    state.VirtualStateAccess
 	ChainOutput     *iscp.AliasOutputWithID
 	OutputTimestamp time.Time
