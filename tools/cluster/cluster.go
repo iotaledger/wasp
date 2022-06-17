@@ -576,9 +576,17 @@ func waitCmd(cmd **exec.Cmd) {
 	}
 }
 
-func (clu *Cluster) ActiveNodes() []int {
+func (clu *Cluster) AllNodes() []int {
 	nodes := make([]int, 0)
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+		nodes = append(nodes, i)
+	}
+	return nodes
+}
+
+func (clu *Cluster) ActiveNodes() []int {
+	nodes := make([]int, 0)
+	for _, i := range clu.AllNodes() {
 		if !clu.IsNodeUp(i) {
 			continue
 		}

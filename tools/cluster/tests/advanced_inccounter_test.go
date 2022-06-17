@@ -279,15 +279,7 @@ func TestRotation(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 
-	//description := "inccounter testing contract"
-	//programHash := inccounter.Contract.ProgramHash
-
 	e := newChainEnv(t, clu, chain)
-
-	/*_, err = chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, nil)
-	require.NoError(t, err)
-
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second) */
 
 	tx := e.deployNativeIncCounterSC(0)
 
@@ -296,8 +288,7 @@ func TestRotation(t *testing.T) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
-	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
-	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
+	require.NoError(t, e.waitStateControllers(addr1, 5*time.Second))
 
 	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -320,42 +311,26 @@ func TestRotation(t *testing.T) {
 	require.True(t, e.waitBlockIndex(0, 4, 15*time.Second))
 	require.True(t, e.waitBlockIndex(6, 4, 15*time.Second))
 
-	txID, err := tx.ID()
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
-	reqid := iscp.NewRequestID(txID, 0)
-
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, reqid, 15*time.Second)
-	require.NoError(t, err)
-	//require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
-	//require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
 
 	require.NoError(t, err)
 	require.True(t, isAllowedStateControllerAddress(t, chain, 0, addr2))
 
-	require.True(t, e.waitStateController(0, addr1, 15*time.Second))
-	require.True(t, e.waitStateController(9, addr1, 15*time.Second))
+	require.NoError(t, e.waitStateControllers(addr1, 15*time.Second))
 
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
-	txID, err = tx.ID()
-	require.NoError(t, err)
-	fmt.Printf("XXX TRANSACTION %s\n", iscp.TxID(txID))
 
-	require.True(t, e.waitStateController(0, addr2, 15*time.Second))
-	require.True(t, e.waitStateController(9, addr2, 15*time.Second))
+	require.NoError(t, e.waitStateControllers(addr2, 15*time.Second))
 
 	require.True(t, e.waitBlockIndex(9, 5, 15*time.Second))
 	require.True(t, e.waitBlockIndex(0, 5, 15*time.Second))
 	require.True(t, e.waitBlockIndex(6, 5, 15*time.Second))
 
-	txID, err = tx.ID()
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
-	reqid = iscp.NewRequestID(txID, 0)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, reqid, 15*time.Second)
-	require.NoError(t, err)
-	//require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
-	//require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
 
 	_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
 	require.NoError(t, err)
@@ -432,9 +407,7 @@ func TestRotationMany(t *testing.T) {
 	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < numRotations; i++ {
-		require.True(t, e.waitStateController(0, addrs[addrIndex], waitTimeout))
-		require.True(t, e.waitStateController(4, addrs[addrIndex], waitTimeout))
-		require.True(t, e.waitStateController(9, addrs[addrIndex], waitTimeout))
+		require.NoError(t, e.waitStateControllers(addrs[addrIndex], waitTimeout))
 
 		for j := 0; j < numRequests; j++ {
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -455,9 +428,7 @@ func TestRotationMany(t *testing.T) {
 		require.EqualValues(t, "", waitRequest(t, chain, 4, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
 
-		require.True(t, e.waitStateController(0, addrs[addrIndex], waitTimeout))
-		require.True(t, e.waitStateController(4, addrs[addrIndex], waitTimeout))
-		require.True(t, e.waitStateController(9, addrs[addrIndex], waitTimeout))
+		require.NoError(t, e.waitStateControllers(addrs[addrIndex], waitTimeout))
 	}
 }
 
@@ -521,12 +492,32 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	return rec, nil
 }
 
-func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) bool {
-	return waitTrue(timeout, func() bool {
-		a, err := e.callGetStateController(nodeIndex)
-		fmt.Printf("XXX STATE CONTROLER NODE %v, address %s, expected %s\n", nodeIndex, a, addr)
-		return err == nil && a.Equal(addr)
+func (e *ChainEnv) waitStateControllers(addr iotago.Address, timeout time.Duration) error {
+	for _, nodeIndex := range e.Clu.AllNodes() {
+		if err := e.waitStateController(nodeIndex, addr, timeout); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) error {
+	var err error
+	result := waitTrue(timeout, func() bool {
+		var a iotago.Address
+		a, err = e.callGetStateController(nodeIndex)
+		if err != nil {
+			return false
+		}
+		return a.Equal(addr)
 	})
+	if err != nil {
+		return err
+	}
+	if !result {
+		return xerrors.New(fmt.Sprintf("Timeout waiting state controler change to %s in node %v", addr, nodeIndex))
+	}
+	return nil
 }
 
 func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
