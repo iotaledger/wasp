@@ -287,7 +287,6 @@ func TestRotation(t *testing.T) {
 
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
-
 	require.NoError(t, e.waitStateControllers(addr1, 5*time.Second))
 
 	keyPair, _, err := clu.NewKeyPairWithFunds()
@@ -304,31 +303,16 @@ func TestRotation(t *testing.T) {
 
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
-
 	require.NoError(t, err)
-
-	require.True(t, e.waitBlockIndex(9, 4, 15*time.Second))
-	require.True(t, e.waitBlockIndex(0, 4, 15*time.Second))
-	require.True(t, e.waitBlockIndex(6, 4, 15*time.Second))
-
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
-
-	require.NoError(t, err)
 	require.True(t, isAllowedStateControllerAddress(t, chain, 0, addr2))
-
 	require.NoError(t, e.waitStateControllers(addr1, 15*time.Second))
 
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
-
 	require.NoError(t, e.waitStateControllers(addr2, 15*time.Second))
-
-	require.True(t, e.waitBlockIndex(9, 5, 15*time.Second))
-	require.True(t, e.waitBlockIndex(0, 5, 15*time.Second))
-	require.True(t, e.waitBlockIndex(6, 5, 15*time.Second))
-
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 
