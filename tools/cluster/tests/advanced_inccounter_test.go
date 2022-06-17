@@ -357,10 +357,8 @@ func TestRotation(t *testing.T) {
 	//require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 15*time.Second))
 	//require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 15*time.Second))
 
-	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
-		require.NoError(t, err)
-	}
+	_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
+	require.NoError(t, err)
 
 	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
 }
