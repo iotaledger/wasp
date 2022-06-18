@@ -364,3 +364,27 @@ views:
   checkEthAddressAndAgentID:
     params:
       ethAddress: String
+
+  checkHash:
+    params:
+      scHash: Hash
+      hashBytes: Bytes
+      hashString: String
+  
+  checkNftID:
+    params:
+      scNftID: NftID
+      nftIDBytes: Bytes
+      nftIDString: String
+
+  checkRequestID:
+    params:
+      scRequestID: RequestID
+      requestIDBytes: Bytes
+      requestIDString: String
+  
+  checkTokenID:
+    params:
+      scTokenID: TokenID
+      tokenIDBytes: Bytes
+      tokenIDString: String

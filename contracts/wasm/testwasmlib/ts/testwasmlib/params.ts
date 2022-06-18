@@ -936,6 +936,118 @@ export class MutableCheckEthAddressAndAgentIDParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableCheckHashParams extends wasmtypes.ScProxy {
+	hashBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamHashBytes));
+	}
+
+	hashString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamHashString));
+	}
+
+	scHash(): wasmtypes.ScImmutableHash {
+		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamScHash));
+	}
+}
+
+export class MutableCheckHashParams extends wasmtypes.ScProxy {
+	hashBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamHashBytes));
+	}
+
+	hashString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamHashString));
+	}
+
+	scHash(): wasmtypes.ScMutableHash {
+		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamScHash));
+	}
+}
+
+export class ImmutableCheckNftIDParams extends wasmtypes.ScProxy {
+	nftIDBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamNftIDBytes));
+	}
+
+	nftIDString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamNftIDString));
+	}
+
+	scNftID(): wasmtypes.ScImmutableNftID {
+		return new wasmtypes.ScImmutableNftID(this.proxy.root(sc.ParamScNftID));
+	}
+}
+
+export class MutableCheckNftIDParams extends wasmtypes.ScProxy {
+	nftIDBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamNftIDBytes));
+	}
+
+	nftIDString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamNftIDString));
+	}
+
+	scNftID(): wasmtypes.ScMutableNftID {
+		return new wasmtypes.ScMutableNftID(this.proxy.root(sc.ParamScNftID));
+	}
+}
+
+export class ImmutableCheckRequestIDParams extends wasmtypes.ScProxy {
+	requestIDBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamRequestIDBytes));
+	}
+
+	requestIDString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamRequestIDString));
+	}
+
+	scRequestID(): wasmtypes.ScImmutableRequestID {
+		return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamScRequestID));
+	}
+}
+
+export class MutableCheckRequestIDParams extends wasmtypes.ScProxy {
+	requestIDBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamRequestIDBytes));
+	}
+
+	requestIDString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamRequestIDString));
+	}
+
+	scRequestID(): wasmtypes.ScMutableRequestID {
+		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamScRequestID));
+	}
+}
+
+export class ImmutableCheckTokenIDParams extends wasmtypes.ScProxy {
+	scTokenID(): wasmtypes.ScImmutableTokenID {
+		return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamScTokenID));
+	}
+
+	tokenIDBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamTokenIDBytes));
+	}
+
+	tokenIDString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamTokenIDString));
+	}
+}
+
+export class MutableCheckTokenIDParams extends wasmtypes.ScProxy {
+	scTokenID(): wasmtypes.ScMutableTokenID {
+		return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamScTokenID));
+	}
+
+	tokenIDBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamTokenIDBytes));
+	}
+
+	tokenIDString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamTokenIDString));
+	}
+}
+
 export class ImmutableStringMapOfStringArrayLengthParams extends wasmtypes.ScProxy {
 	name(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));

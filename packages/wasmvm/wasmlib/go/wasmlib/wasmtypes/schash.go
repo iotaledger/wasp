@@ -49,7 +49,6 @@ func HashFromString(value string) ScHash {
 }
 
 func HashToString(value ScHash) string {
-	// TODO standardize human readable string
 	return HexEncode(HashToBytes(value))
 }
 

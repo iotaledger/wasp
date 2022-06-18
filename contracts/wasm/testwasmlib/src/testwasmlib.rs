@@ -636,3 +636,76 @@ pub fn view_check_eth_address_and_agent_id(
         "eth agent_id string conversion failed",
     );
 }
+
+pub fn view_check_hash(ctx: &ScViewContext, f: &CheckHashContext) {
+    let sc_hash = f.params.sc_hash().value();
+    let hash_bytes = f.params.hash_bytes().value();
+    let hash_string = f.params.hash_string().value();
+    ctx.require(
+        sc_hash == hash_from_bytes(&hash_to_bytes(&sc_hash)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_hash == hash_from_string(&hash_to_string(&sc_hash)),
+        "string conversion failed",
+    );
+    ctx.require(sc_hash.to_bytes() == hash_bytes, "bytes mismatch");
+    ctx.require(sc_hash.to_string() == hash_string, "string mismatch");
+}
+
+pub fn view_check_nft_id(ctx: &ScViewContext, f: &CheckNftIDContext) {
+    let sc_nft_id = f.params.sc_nft_id().value();
+    let nft_id_bytes = f.params.nft_id_bytes().value();
+    let nft_id_string = f.params.nft_id_string().value();
+    ctx.require(
+        sc_nft_id == nft_id_from_bytes(&nft_id_to_bytes(&sc_nft_id)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_nft_id == nft_id_from_string(&nft_id_to_string(&sc_nft_id)),
+        "string conversion failed",
+    );
+    ctx.require(sc_nft_id.to_bytes() == nft_id_bytes, "bytes mismatch");
+    ctx.require(sc_nft_id.to_string() == nft_id_string, "string mismatch");
+}
+
+pub fn view_check_request_id(ctx: &ScViewContext, f: &CheckRequestIDContext) {
+    let sc_request_id = f.params.sc_request_id().value();
+    let request_id_bytes = f.params.request_id_bytes().value();
+    let request_id_string = f.params.request_id_string().value();
+    ctx.require(
+        sc_request_id == request_id_from_bytes(&request_id_to_bytes(&sc_request_id)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_request_id == request_id_from_string(&request_id_to_string(&sc_request_id)),
+        "string conversion failed",
+    );
+    ctx.require(
+        sc_request_id.to_bytes() == request_id_bytes,
+        "bytes mismatch",
+    );
+    ctx.require(
+        sc_request_id.to_string() == request_id_string,
+        "string mismatch",
+    );
+}
+
+pub fn view_check_token_id(ctx: &ScViewContext, f: &CheckTokenIDContext) {
+    let sc_token_id = f.params.sc_token_id().value();
+    let token_id_bytes = f.params.token_id_bytes().value();
+    let token_id_string = f.params.token_id_string().value();
+    ctx.require(
+        sc_token_id == token_id_from_bytes(&token_id_to_bytes(&sc_token_id)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_token_id == token_id_from_string(&token_id_to_string(&sc_token_id)),
+        "string conversion failed",
+    );
+    ctx.require(sc_token_id.to_bytes() == token_id_bytes, "bytes mismatch");
+    ctx.require(
+        sc_token_id.to_string() == token_id_string,
+        "string mismatch",
+    );
+}

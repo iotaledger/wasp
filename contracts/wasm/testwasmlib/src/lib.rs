@@ -78,6 +78,10 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_CHECK_ADDRESS,
     	VIEW_CHECK_AGENT_ID,
     	VIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID,
+    	VIEW_CHECK_HASH,
+    	VIEW_CHECK_NFT_ID,
+    	VIEW_CHECK_REQUEST_ID,
+    	VIEW_CHECK_TOKEN_ID,
     	VIEW_GET_RANDOM,
     	VIEW_IOTA_BALANCE,
     	VIEW_STRING_MAP_OF_STRING_ARRAY_LENGTH,
@@ -133,6 +137,10 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_check_address_thunk,
     	view_check_agent_id_thunk,
     	view_check_eth_address_and_agent_id_thunk,
+    	view_check_hash_thunk,
+    	view_check_nft_id_thunk,
+    	view_check_request_id_thunk,
+    	view_check_token_id_thunk,
     	view_get_random_thunk,
     	view_iota_balance_thunk,
     	view_string_map_of_string_array_length_thunk,
@@ -1001,6 +1009,78 @@ fn view_check_eth_address_and_agent_id_thunk(ctx: &ScViewContext) {
 	ctx.require(f.params.eth_address().exists(), "missing mandatory ethAddress");
 	view_check_eth_address_and_agent_id(ctx, &f);
 	ctx.log("testwasmlib.viewCheckEthAddressAndAgentID ok");
+}
+
+pub struct CheckHashContext {
+	params: ImmutableCheckHashParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_hash_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckHash");
+	let f = CheckHashContext {
+		params: ImmutableCheckHashParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.hash_bytes().exists(), "missing mandatory hashBytes");
+	ctx.require(f.params.hash_string().exists(), "missing mandatory hashString");
+	ctx.require(f.params.sc_hash().exists(), "missing mandatory scHash");
+	view_check_hash(ctx, &f);
+	ctx.log("testwasmlib.viewCheckHash ok");
+}
+
+pub struct CheckNftIDContext {
+	params: ImmutableCheckNftIDParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_nft_id_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckNftID");
+	let f = CheckNftIDContext {
+		params: ImmutableCheckNftIDParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.nft_id_bytes().exists(), "missing mandatory nftIDBytes");
+	ctx.require(f.params.nft_id_string().exists(), "missing mandatory nftIDString");
+	ctx.require(f.params.sc_nft_id().exists(), "missing mandatory scNftID");
+	view_check_nft_id(ctx, &f);
+	ctx.log("testwasmlib.viewCheckNftID ok");
+}
+
+pub struct CheckRequestIDContext {
+	params: ImmutableCheckRequestIDParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_request_id_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckRequestID");
+	let f = CheckRequestIDContext {
+		params: ImmutableCheckRequestIDParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.request_id_bytes().exists(), "missing mandatory requestIDBytes");
+	ctx.require(f.params.request_id_string().exists(), "missing mandatory requestIDString");
+	ctx.require(f.params.sc_request_id().exists(), "missing mandatory scRequestID");
+	view_check_request_id(ctx, &f);
+	ctx.log("testwasmlib.viewCheckRequestID ok");
+}
+
+pub struct CheckTokenIDContext {
+	params: ImmutableCheckTokenIDParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_token_id_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckTokenID");
+	let f = CheckTokenIDContext {
+		params: ImmutableCheckTokenIDParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.sc_token_id().exists(), "missing mandatory scTokenID");
+	ctx.require(f.params.token_id_bytes().exists(), "missing mandatory tokenIDBytes");
+	ctx.require(f.params.token_id_string().exists(), "missing mandatory tokenIDString");
+	view_check_token_id(ctx, &f);
+	ctx.log("testwasmlib.viewCheckTokenID ok");
 }
 
 pub struct GetRandomContext {

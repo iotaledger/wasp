@@ -1318,6 +1318,158 @@ impl MutableCheckEthAddressAndAgentIDParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableCheckHashParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckHashParams {
+    pub fn hash_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_HASH_BYTES))
+	}
+
+    pub fn hash_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_HASH_STRING))
+	}
+
+    pub fn sc_hash(&self) -> ScImmutableHash {
+		ScImmutableHash::new(self.proxy.root(PARAM_SC_HASH))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckHashParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckHashParams {
+    pub fn hash_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_HASH_BYTES))
+	}
+
+    pub fn hash_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_HASH_STRING))
+	}
+
+    pub fn sc_hash(&self) -> ScMutableHash {
+		ScMutableHash::new(self.proxy.root(PARAM_SC_HASH))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableCheckNftIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckNftIDParams {
+    pub fn nft_id_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_NFT_ID_BYTES))
+	}
+
+    pub fn nft_id_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_NFT_ID_STRING))
+	}
+
+    pub fn sc_nft_id(&self) -> ScImmutableNftID {
+		ScImmutableNftID::new(self.proxy.root(PARAM_SC_NFT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckNftIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckNftIDParams {
+    pub fn nft_id_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_NFT_ID_BYTES))
+	}
+
+    pub fn nft_id_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_NFT_ID_STRING))
+	}
+
+    pub fn sc_nft_id(&self) -> ScMutableNftID {
+		ScMutableNftID::new(self.proxy.root(PARAM_SC_NFT_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableCheckRequestIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckRequestIDParams {
+    pub fn request_id_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_REQUEST_ID_BYTES))
+	}
+
+    pub fn request_id_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_REQUEST_ID_STRING))
+	}
+
+    pub fn sc_request_id(&self) -> ScImmutableRequestID {
+		ScImmutableRequestID::new(self.proxy.root(PARAM_SC_REQUEST_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckRequestIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckRequestIDParams {
+    pub fn request_id_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_REQUEST_ID_BYTES))
+	}
+
+    pub fn request_id_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_REQUEST_ID_STRING))
+	}
+
+    pub fn sc_request_id(&self) -> ScMutableRequestID {
+		ScMutableRequestID::new(self.proxy.root(PARAM_SC_REQUEST_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableCheckTokenIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckTokenIDParams {
+    pub fn sc_token_id(&self) -> ScImmutableTokenID {
+		ScImmutableTokenID::new(self.proxy.root(PARAM_SC_TOKEN_ID))
+	}
+
+    pub fn token_id_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_ID_BYTES))
+	}
+
+    pub fn token_id_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_TOKEN_ID_STRING))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckTokenIDParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckTokenIDParams {
+    pub fn sc_token_id(&self) -> ScMutableTokenID {
+		ScMutableTokenID::new(self.proxy.root(PARAM_SC_TOKEN_ID))
+	}
+
+    pub fn token_id_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_ID_BYTES))
+	}
+
+    pub fn token_id_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_TOKEN_ID_STRING))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableStringMapOfStringArrayLengthParams {
 	pub(crate) proxy: Proxy,
 }

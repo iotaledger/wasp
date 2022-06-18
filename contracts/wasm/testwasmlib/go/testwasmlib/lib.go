@@ -58,6 +58,10 @@ var exportMap = wasmlib.ScExportMap{
 		ViewCheckAddress,
 		ViewCheckAgentID,
 		ViewCheckEthAddressAndAgentID,
+		ViewCheckHash,
+		ViewCheckNftID,
+		ViewCheckRequestID,
+		ViewCheckTokenID,
 		ViewGetRandom,
 		ViewIotaBalance,
 		ViewStringMapOfStringArrayLength,
@@ -113,6 +117,10 @@ var exportMap = wasmlib.ScExportMap{
 		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
 		viewCheckEthAddressAndAgentIDThunk,
+		viewCheckHashThunk,
+		viewCheckNftIDThunk,
+		viewCheckRequestIDThunk,
+		viewCheckTokenIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
 		viewStringMapOfStringArrayLengthThunk,
@@ -1178,6 +1186,94 @@ func viewCheckEthAddressAndAgentIDThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.EthAddress().Exists(), "missing mandatory ethAddress")
 	viewCheckEthAddressAndAgentID(ctx, f)
 	ctx.Log("testwasmlib.viewCheckEthAddressAndAgentID ok")
+}
+
+type CheckHashContext struct {
+	Params ImmutableCheckHashParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckHashThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckHash")
+	f := &CheckHashContext{
+		Params: ImmutableCheckHashParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.HashBytes().Exists(), "missing mandatory hashBytes")
+	ctx.Require(f.Params.HashString().Exists(), "missing mandatory hashString")
+	ctx.Require(f.Params.ScHash().Exists(), "missing mandatory scHash")
+	viewCheckHash(ctx, f)
+	ctx.Log("testwasmlib.viewCheckHash ok")
+}
+
+type CheckNftIDContext struct {
+	Params ImmutableCheckNftIDParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckNftIDThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckNftID")
+	f := &CheckNftIDContext{
+		Params: ImmutableCheckNftIDParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.NftIDBytes().Exists(), "missing mandatory nftIDBytes")
+	ctx.Require(f.Params.NftIDString().Exists(), "missing mandatory nftIDString")
+	ctx.Require(f.Params.ScNftID().Exists(), "missing mandatory scNftID")
+	viewCheckNftID(ctx, f)
+	ctx.Log("testwasmlib.viewCheckNftID ok")
+}
+
+type CheckRequestIDContext struct {
+	Params ImmutableCheckRequestIDParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckRequestIDThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckRequestID")
+	f := &CheckRequestIDContext{
+		Params: ImmutableCheckRequestIDParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.RequestIDBytes().Exists(), "missing mandatory requestIDBytes")
+	ctx.Require(f.Params.RequestIDString().Exists(), "missing mandatory requestIDString")
+	ctx.Require(f.Params.ScRequestID().Exists(), "missing mandatory scRequestID")
+	viewCheckRequestID(ctx, f)
+	ctx.Log("testwasmlib.viewCheckRequestID ok")
+}
+
+type CheckTokenIDContext struct {
+	Params ImmutableCheckTokenIDParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckTokenIDThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckTokenID")
+	f := &CheckTokenIDContext{
+		Params: ImmutableCheckTokenIDParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.ScTokenID().Exists(), "missing mandatory scTokenID")
+	ctx.Require(f.Params.TokenIDBytes().Exists(), "missing mandatory tokenIDBytes")
+	ctx.Require(f.Params.TokenIDString().Exists(), "missing mandatory tokenIDString")
+	viewCheckTokenID(ctx, f)
+	ctx.Log("testwasmlib.viewCheckTokenID ok")
 }
 
 type GetRandomContext struct {

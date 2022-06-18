@@ -249,6 +249,26 @@ type CheckEthAddressAndAgentIDCall struct {
 	Params MutableCheckEthAddressAndAgentIDParams
 }
 
+type CheckHashCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckHashParams
+}
+
+type CheckNftIDCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckNftIDParams
+}
+
+type CheckRequestIDCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckRequestIDParams
+}
+
+type CheckTokenIDCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckTokenIDParams
+}
+
 type GetRandomCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetRandomResults
@@ -559,6 +579,30 @@ func (sc Funcs) CheckAgentID(ctx wasmlib.ScViewCallContext) *CheckAgentIDCall {
 
 func (sc Funcs) CheckEthAddressAndAgentID(ctx wasmlib.ScViewCallContext) *CheckEthAddressAndAgentIDCall {
 	f := &CheckEthAddressAndAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckEthAddressAndAgentID)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckHash(ctx wasmlib.ScViewCallContext) *CheckHashCall {
+	f := &CheckHashCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckHash)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckNftID(ctx wasmlib.ScViewCallContext) *CheckNftIDCall {
+	f := &CheckNftIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckNftID)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckRequestID(ctx wasmlib.ScViewCallContext) *CheckRequestIDCall {
+	f := &CheckRequestIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckRequestID)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckTokenID(ctx wasmlib.ScViewCallContext) *CheckTokenIDCall {
+	f := &CheckTokenIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckTokenID)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }

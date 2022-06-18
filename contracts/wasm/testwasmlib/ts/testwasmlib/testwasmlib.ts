@@ -480,3 +480,43 @@ export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.
     ctx.require(scAgentIDEth.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(scAgentIDEth))), "eth agentID bytes conversion failed");
     ctx.require(scAgentIDEth.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(scAgentIDEth))), "eth agentID string conversion failed");
 }
+
+export function viewCheckHash(ctx: wasmlib.ScViewContext, f: sc.CheckHashContext): void {
+    const hash = f.params.scHash().value();
+    const hashBytes = f.params.hashBytes().value();
+    const hashString = f.params.hashString().value();
+    ctx.require(hash.equals(wasmtypes.hashFromBytes(wasmtypes.hashToBytes(hash))), "bytes conversion failed");
+    ctx.require(hash.equals(wasmtypes.hashFromString(wasmtypes.hashToString(hash))), "string conversion failed");
+    ctx.require(wasmtypes.bytesCompare(hash.toBytes(), hashBytes) == 0, "bytes mismatch");
+    ctx.require(hash.toString() == hashString, "string mismatch");
+}
+
+export function viewCheckNftID(ctx: wasmlib.ScViewContext, f: sc.CheckNftIDContext): void {
+    const nftID = f.params.scNftID().value();
+    const nftIDBytes = f.params.nftIDBytes().value();
+    const nftIDString = f.params.nftIDString().value();
+    ctx.require(nftID.equals(wasmtypes.nftIDFromBytes(wasmtypes.nftIDToBytes(nftID))), "bytes conversion failed");
+    ctx.require(nftID.equals(wasmtypes.nftIDFromString(wasmtypes.nftIDToString(nftID))), "string conversion failed");
+    ctx.require(wasmtypes.bytesCompare(nftID.toBytes(), nftIDBytes) == 0, "bytes mismatch");
+    ctx.require(nftID.toString() == nftIDString, "string mismatch");
+}
+
+export function viewCheckRequestID(ctx: wasmlib.ScViewContext, f: sc.CheckRequestIDContext): void {
+    const RequestID = f.params.scRequestID().value();
+    const RequestIDBytes = f.params.requestIDBytes().value();
+    const RequestIDString = f.params.requestIDString().value();
+    ctx.require(RequestID.equals(wasmtypes.requestIDFromBytes(wasmtypes.requestIDToBytes(RequestID))), "bytes conversion failed");
+    ctx.require(RequestID.equals(wasmtypes.requestIDFromString(wasmtypes.requestIDToString(RequestID))), "string conversion failed");
+    ctx.require(wasmtypes.bytesCompare(RequestID.toBytes(), RequestIDBytes) == 0, "bytes mismatch");
+    ctx.require(RequestID.toString() == RequestIDString, "string mismatch");
+}
+
+export function viewCheckTokenID(ctx: wasmlib.ScViewContext, f: sc.CheckTokenIDContext): void {
+    const tokenID = f.params.scTokenID().value();
+    const tokenIDBytes = f.params.tokenIDBytes().value();
+    const tokenIDString = f.params.tokenIDString().value();
+    ctx.require(tokenID.equals(wasmtypes.tokenIDFromBytes(wasmtypes.tokenIDToBytes(tokenID))), "bytes conversion failed");
+    ctx.require(tokenID.equals(wasmtypes.tokenIDFromString(wasmtypes.tokenIDToString(tokenID))), "string conversion failed");
+    ctx.require(wasmtypes.bytesCompare(tokenID.toBytes(), tokenIDBytes) == 0, "bytes mismatch");
+    ctx.require(tokenID.toString() == tokenIDString, "string mismatch");
+}
