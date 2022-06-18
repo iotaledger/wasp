@@ -36,7 +36,7 @@ require (
 	go.uber.org/dig v1.14.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
@@ -87,6 +87,7 @@ require (
 	github.com/huin/goupnp v1.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
+	github.com/iotaledger/trie.go v0.0.0-20220618105057-c678949b2e26 // indirect
 	github.com/ipfs/go-cid v0.0.7 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
 	github.com/ipfs/go-log/v2 v2.5.0 // indirect

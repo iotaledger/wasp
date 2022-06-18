@@ -1,10 +1,9 @@
 package state
 
 import (
+	"github.com/iotaledger/trie.go/trie"
 	"testing"
 	"time"
-
-	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -12,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +35,7 @@ func TestOriginHashes(t *testing.T) {
 		chainID := testmisc.RandChainID()
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
-		require.True(t, trie.EqualCommitments(trie.RootCommitment(vs.TrieNodeStore()), OriginStateCommitment()))
+		require.True(t, EqualCommitments(trie.RootCommitment(vs.TrieNodeStore()), OriginStateCommitment()))
 		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieNodeStore()))
 	})
 }
@@ -53,7 +51,7 @@ func TestStateWithDB(t *testing.T) {
 		err = vs.Save()
 		require.NoError(t, err)
 		cs := trie.RootCommitment(vs.TrieNodeStore())
-		require.True(t, trie.EqualCommitments(cc, cs))
+		require.True(t, EqualCommitments(cc, cs))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.True(t, exists)
@@ -235,7 +233,7 @@ func TestStateBasic(t *testing.T) {
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
 	h1 := trie.RootCommitment(vs1.TrieNodeStore())
-	require.True(t, trie.EqualCommitments(OriginStateCommitment(), h1))
+	require.True(t, EqualCommitments(OriginStateCommitment(), h1))
 
 	vs2 := vs1.Copy()
 	h2 := trie.RootCommitment(vs2.TrieNodeStore())
@@ -277,7 +275,7 @@ func TestStateReader(t *testing.T) {
 		require.False(t, ok)
 
 		c2 := trie.RootCommitment(st.TrieNodeStore())
-		require.True(t, trie.EqualCommitments(c1, c2))
+		require.True(t, EqualCommitments(c1, c2))
 	})
 }
 
@@ -293,7 +291,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
 
 	h1 := trie.RootCommitment(vsOpt.TrieNodeStore())
-	require.True(t, trie.EqualCommitments(OriginStateCommitment(), h1))
+	require.True(t, EqualCommitments(OriginStateCommitment(), h1))
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()
@@ -330,7 +328,7 @@ func TestVirtualStateMustOptimistic2(t *testing.T) {
 	require.EqualValues(t, hash, hashOpt)
 
 	hashPrev := hash
-	prev := NewL1Commitment(trie.RootCommitment(vsOpt.TrieNodeStore()), hashing.RandomHash(nil))
+	prev := NewL1Commitment(trie.RootCommitment(vsOpt.TrieNodeStore()), BlockHash{})
 	upd := NewStateUpdateWithBlockLogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), prev)
 	vsOpt.ApplyStateUpdate(upd)
 	hash = trie.RootCommitment(vs.TrieNodeStore())

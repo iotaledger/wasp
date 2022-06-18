@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +23,7 @@ func TestBlockBasic(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
-		require.True(t, trie.EqualCommitments(l1c.StateCommitment, b1.PreviousL1Commitment().StateCommitment))
+		require.True(t, EqualCommitments(l1c.StateCommitment, b1.PreviousL1Commitment().StateCommitment))
 	})
 	t.Run("with timestamp", func(t *testing.T) {
 		currentTime := time.Now()

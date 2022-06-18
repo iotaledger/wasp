@@ -3,6 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/trie.go/trie"
 	"os"
 	"path"
 
@@ -12,30 +13,48 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type mustKVStoreBatch struct {
-	prefix byte
-	batch  kvstore.BatchedMutations
+// mustValueBatch adaptor for the batch to kv.KVWriter
+type mustValueBatch struct {
+	kvstore.BatchedMutations
 }
 
-func newKVStoreBatch(prefix byte, batch kvstore.BatchedMutations) *mustKVStoreBatch {
-	return &mustKVStoreBatch{
-		prefix: prefix,
-		batch:  batch,
-	}
+var _ kv.KVWriter = mustValueBatch{}
+
+func newValueBatch(batch kvstore.BatchedMutations) mustValueBatch {
+	return mustValueBatch{batch}
 }
 
-func (k *mustKVStoreBatch) Set(key kv.Key, value []byte) {
-	if err := k.batch.Set(dbkeys.MakeKey(k.prefix, []byte(key)), value); err != nil {
+func (b mustValueBatch) Set(key kv.Key, value []byte) {
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
+	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
 }
 
-func (k *mustKVStoreBatch) Del(key kv.Key) {
-	if err := k.batch.Delete(dbkeys.MakeKey(k.prefix, []byte(key))); err != nil {
+func (b mustValueBatch) Del(key kv.Key) {
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
+	if err := b.BatchedMutations.Delete(k); err != nil {
+		panic(err)
+	}
+}
+
+// mustTrieBatch adaptor for the batch to trie.KVWriter
+type mustTrieBatch struct {
+	kvstore.BatchedMutations
+}
+
+var _ trie.KVWriter = mustTrieBatch{}
+
+func newTrieBatch(batch kvstore.BatchedMutations) mustTrieBatch {
+	return mustTrieBatch{batch}
+}
+
+func (b mustTrieBatch) Set(key []byte, value []byte) {
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key)
+	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
 }
@@ -54,8 +73,8 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 		panic(fmt.Errorf("error saving state: %w", err))
 	}
 
-	vs.trie.PersistMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
-	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
+	vs.trie.PersistMutations(newTrieBatch(batch))
+	vs.kvs.Mutations().Apply(newValueBatch(batch))
 	for _, blk := range blocks {
 		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
@@ -107,8 +126,8 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 	ret := NewVirtualState(store)
 
 	// explicit use of merkle trie model. Asserting that the chainID is committed by the root at the key ''
-	merkleProof := CommitmentModel.Proof(nil, ret.trie)
-	if err = merkleProof.Validate(trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
+	merkleProof := GetMerkleProof(nil, ret.trie)
+	if err = ValidateMerkleProof(merkleProof, trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
 		return nil, false, fmt.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}
 	ret.kvs.Mutations().ResetModified()

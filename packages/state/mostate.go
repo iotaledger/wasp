@@ -1,13 +1,13 @@
 package state
 
 import (
+	"github.com/iotaledger/trie.go/trie"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
 // region mustOptimisticVirtualStateAccess ////////////////////////////////

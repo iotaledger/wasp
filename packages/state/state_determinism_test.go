@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/hex"
+	"github.com/iotaledger/trie.go/trie"
 	"math"
 	"math/rand"
 	"os"
@@ -16,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
 )
@@ -120,7 +120,7 @@ func TestRnd(t *testing.T) {
 		err = vs.Save()
 		require.NoError(t, err)
 		c2 := trie.RootCommitment(vs.TrieNodeStore())
-		require.True(t, trie.EqualCommitments(c1, c2))
+		require.True(t, EqualCommitments(c1, c2))
 		for bn, b := range blocks {
 			require.EqualValues(t, vs.BlockIndex()+1, b.BlockIndex())
 			err = vs.ApplyBlock(b)
@@ -140,7 +140,7 @@ func TestRnd(t *testing.T) {
 					t.Logf("============== reconcile failed: %v", diff)
 				}
 
-				require.True(t, trie.EqualCommitments(cc1, cc2))
+				require.True(t, EqualCommitments(cc1, cc2))
 			}
 		}
 		vs.Commit()
@@ -148,7 +148,7 @@ func TestRnd(t *testing.T) {
 		err = vs.Save()
 		require.NoError(t, err)
 		c2 = trie.RootCommitment(vs.TrieNodeStore())
-		require.True(t, trie.EqualCommitments(c1, c2))
+		require.True(t, EqualCommitments(c1, c2))
 
 		vstmp, exists, err := LoadSolidState(store[round], chainID)
 		require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestRnd(t *testing.T) {
 
 		cs = append(cs, trie.RootCommitment(vs.TrieNodeStore()))
 		if round > 0 {
-			require.True(t, trie.EqualCommitments(cs[round-1], cs[round]))
+			require.True(t, EqualCommitments(cs[round-1], cs[round]))
 		}
 	}
 }
@@ -191,7 +191,7 @@ func readBlocks(t *testing.T, dir string) ([]Block, []trie.VCommitment, []hashin
 		require.True(t, n >= 1 && n <= len(retBlocks) && retBlocks[n-1] == nil)
 		vcbin, err := hex.DecodeString(part[1])
 		require.NoError(t, err)
-		stateCommitment, err := CommitmentModel.VectorCommitmentFromBytes(vcbin)
+		stateCommitment, err := VCommitmentFromBytes(vcbin)
 		require.NoError(t, err)
 		retCommitments[n-1] = stateCommitment
 		blockHash, err := hashing.HashValueFromHex(part[2])
@@ -215,12 +215,16 @@ const directory = "testdata/test1"
 
 func TestBlockDeterminism(t *testing.T) {
 	blocks, stateCommitments, _ := readBlocks(t, directory)
+	if len(blocks) == 0 {
+		t.Logf("no test data has been found in %s", directory)
+		return
+	}
 
 	chainID := testmisc.RandChainID()
 	runRound := func(saveYN func(i uint16) bool) {
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
-		require.True(t, trie.EqualCommitments(trie.RootCommitment(vs.TrieNodeStore()), OriginStateCommitment()))
+		require.True(t, EqualCommitments(trie.RootCommitment(vs.TrieNodeStore()), OriginStateCommitment()))
 		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieNodeStore()))
 
 		commits := make([]int, 0)
@@ -235,14 +239,14 @@ func TestBlockDeterminism(t *testing.T) {
 				err = vs.Save(blockToSave...)
 				require.NoError(t, err)
 
-				require.True(t, trie.EqualCommitments(stateCommitments[i], trie.RootCommitment(vs.TrieNodeStore())))
+				require.True(t, EqualCommitments(stateCommitments[i], trie.RootCommitment(vs.TrieNodeStore())))
 				blockToSave = blockToSave[:0]
 			}
 		}
 		err = vs.Save()
 		t.Logf("    committed at %+v", commits)
 		require.NoError(t, err)
-		require.True(t, trie.EqualCommitments(stateCommitments[len(stateCommitments)-1], trie.RootCommitment(vs.TrieNodeStore())))
+		require.True(t, EqualCommitments(stateCommitments[len(stateCommitments)-1], trie.RootCommitment(vs.TrieNodeStore())))
 	}
 	runRound(func(i uint16) bool {
 		return true
