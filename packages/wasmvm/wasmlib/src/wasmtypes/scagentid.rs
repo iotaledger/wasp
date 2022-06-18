@@ -33,6 +33,8 @@ impl ScAgentID {
         let mut kind = SC_AGENT_ID_ADDRESS;
         if address.id[0] == SC_ADDRESS_ALIAS {
             kind = SC_AGENT_ID_CONTRACT;
+        } else if address.id[0] == SC_ADDRESS_ETH {
+            kind = SC_AGENT_ID_ETHEREUM;
         }
         ScAgentID {
             kind: kind,
@@ -88,20 +90,26 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         SC_AGENT_ID_ADDRESS => {
             let buf: &[u8] = &buf[1..];
             if buf.len() != SC_LENGTH_ALIAS && buf.len() != SC_LENGTH_ED25519 {
-                panic("invalid AgentID length: address agendID");
+                panic("invalid AgentID length: address agentID");
             }
             return ScAgentID::from_address(&address_from_bytes(&buf));
         }
         SC_AGENT_ID_CONTRACT => {
             let buf: &[u8] = &buf[1..];
             if buf.len() != SC_CHAIN_ID_LENGTH + SC_HNAME_LENGTH {
-                panic("invalid AgentID length: contract agendID");
+                panic("invalid AgentID length: contract agentID");
             }
             let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
             let hname = hname_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
             return ScAgentID::new(&chain_id.address(), hname);
         }
-        SC_AGENT_ID_ETHEREUM => panic("AgentIDFromBytes: unsupported ScAgentIDEthereum"),
+        SC_AGENT_ID_ETHEREUM => {
+            let buf: &[u8] = &buf[1..];
+            if buf.len() != SC_ADDRESS_ETH_LENGTH {
+                panic("invalid AgentID length: address agentID");
+            }
+            return ScAgentID::from_address(&address_from_bytes(&buf));
+        }
         SC_AGENT_ID_NIL => {}
         _ => panic("AgentIDFromBytes: invalid AgentID type"),
     }
@@ -123,7 +131,9 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
             buf.extend_from_slice(&address_to_bytes(&value.address)[1..]);
             buf.extend_from_slice(&hname_to_bytes(value.hname));
         }
-        SC_AGENT_ID_ETHEREUM => panic("AgentIDToBytes: unsupported ScAgentIDEthereum"),
+        SC_AGENT_ID_ETHEREUM => {
+            buf.extend_from_slice(&address_to_bytes(&value.address));
+        }
         SC_AGENT_ID_NIL => (),
         _ => panic("AgentIDToBytes: invalid AgentID type"),
     }
@@ -131,7 +141,6 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
 }
 
 pub fn agent_id_from_string(value: &str) -> ScAgentID {
-    //TODO ScAgentIDEthereum
     if value.eq(NIL_AGENT_ID_STRING) {
         return agent_id_from_bytes(&[]);
     }
@@ -153,7 +162,6 @@ pub fn agent_id_from_string(value: &str) -> ScAgentID {
 }
 
 pub fn agent_id_to_string(value: &ScAgentID) -> String {
-    //TODO ScAgentIDEthereum
     match value.kind {
         SC_AGENT_ID_ADDRESS => {
             return value.address().to_string();
@@ -161,10 +169,12 @@ pub fn agent_id_to_string(value: &ScAgentID) -> String {
         SC_AGENT_ID_CONTRACT => {
             return value.hname().to_string() + "@" + &value.address().to_string();
         }
-        SC_AGENT_ID_ETHEREUM => panic("AgentIDToString: unsupported ScAgentIDEthereum"),
+        SC_AGENT_ID_ETHEREUM => {
+            return value.address().to_string();
+        }
         SC_AGENT_ID_NIL => {
             return NIL_AGENT_ID_STRING.to_string();
-        },
+        }
         _ => panic("AgentIDToString: invalid AgentID type"),
     }
     "".to_string()

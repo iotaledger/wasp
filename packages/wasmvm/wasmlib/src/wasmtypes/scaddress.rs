@@ -10,12 +10,14 @@ use crate::*;
 pub const SC_ADDRESS_ALIAS: u8 = 8;
 pub const SC_ADDRESS_ED25519: u8 = 0;
 pub const SC_ADDRESS_NFT: u8 = 16;
+pub const SC_ADDRESS_ETH: u8 = 32;
 
 pub const SC_LENGTH_ALIAS: usize = 33;
 pub const SC_LENGTH_ED25519: usize = 33;
 pub const SC_LENGTH_NFT: usize = 33;
 
 pub const SC_ADDRESS_LENGTH: usize = SC_LENGTH_ED25519;
+pub const SC_ADDRESS_ETH_LENGTH: usize = 21;
 
 #[derive(PartialEq, Clone)]
 pub struct ScAddress {
@@ -41,7 +43,9 @@ impl ScAddress {
 //TODO address type-dependent encoding/decoding?
 pub fn address_decode(dec: &mut WasmDecoder) -> ScAddress {
     let buf = dec.fixed_bytes(SC_ADDRESS_LENGTH);
-    ScAddress { id: buf.try_into().expect("WTF?") }
+    ScAddress {
+        id: buf.try_into().expect("WTF?"),
+    }
 }
 
 pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress) {
@@ -49,7 +53,9 @@ pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress) {
 }
 
 pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
-    let mut addr = ScAddress { id: [0; SC_ADDRESS_LENGTH] };
+    let mut addr = ScAddress {
+        id: [0; SC_ADDRESS_LENGTH],
+    };
     if buf.len() == 0 {
         return addr;
     }
@@ -72,8 +78,13 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
             }
             addr.id[..SC_LENGTH_NFT].copy_from_slice(&buf[..SC_LENGTH_NFT]);
         }
-        _ =>
-            panic("invalid Address type"),
+        SC_ADDRESS_ETH => {
+            if buf.len() != SC_ADDRESS_ETH_LENGTH {
+                panic("invalid Address length: Eth");
+            }
+            addr.id[..SC_ADDRESS_ETH_LENGTH].copy_from_slice(&buf[..SC_ADDRESS_ETH_LENGTH]);
+        }
+        _ => panic("invalid Address type"),
     }
     addr
 }
@@ -89,19 +100,29 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
         SC_ADDRESS_NFT => {
             return value.id[..SC_LENGTH_NFT].to_vec();
         }
-        _ =>
-            panic("unexpected Address type"),
+        SC_ADDRESS_ETH => {
+            return value.id[..SC_ADDRESS_ETH_LENGTH].to_vec();
+        }
+        _ => panic("unexpected Address type"),
     }
     Vec::new()
 }
 
 pub fn address_from_string(value: &str) -> ScAddress {
-    let utils = ScSandboxUtils{};
+    if value.find("0x") == Some(0) {
+        let mut b = vec![SC_ADDRESS_ETH];
+        b.append(&mut hex_decode(&value[2..]));
+        return address_from_bytes(&b);
+    }
+    let utils = ScSandboxUtils {};
     utils.bech32_decode(value)
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
-    let utils = ScSandboxUtils{};
+    if value.id[0] == SC_ADDRESS_ETH {
+        return String::from("0x") + &hex_encode(&value.id[1..SC_ADDRESS_ETH_LENGTH]);
+    }
+    let utils = ScSandboxUtils {};
     utils.bech32_encode(value)
 }
 

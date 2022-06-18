@@ -380,12 +380,10 @@ func TestWasmTypes(t *testing.T) {
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// eth
-	scAddressEth := wasmtypes.AddressFromString("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c")
-	require.EqualValues(t, scAddressEth, wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAddressEth)))
-	require.EqualValues(t, scAddressEth, wasmtypes.AddressFromString(wasmtypes.AddressToString(scAddressEth)))
-	scAgentIDEth := wasmtypes.NewScAgentIDFromAddress(scAddressEth)
-	require.EqualValues(t, scAgentIDEth, wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentIDEth)))
-	require.EqualValues(t, scAgentIDEth, wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentIDEth)))
+	checkEthAddressAndAgentID := testwasmlib.ScFuncs.CheckEthAddressAndAgentID(ctx)
+	checkEthAddressAndAgentID.Params.EthAddress().SetValue("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c")
+	checkEthAddressAndAgentID.Func.Call()
+	require.NoError(t, ctx.Err)
 
 	goInt8 := int8(math.MaxInt8)
 	require.Equal(t, goInt8, wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)))
