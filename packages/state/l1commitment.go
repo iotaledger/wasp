@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"golang.org/x/crypto/blake2b"
 	"io"
 	"math/rand"
 
@@ -13,7 +14,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type BlockHash [20]byte
+const BlockHashSize = 20
+
+type BlockHash [BlockHashSize]byte
 
 // L1Commitment represents parsed data stored as a metadata in the anchor output
 type L1Commitment struct {
@@ -28,6 +31,12 @@ const (
 )
 
 var l1CommitmentSize = len(NewL1Commitment(model.NewVectorCommitment(), BlockHash{}).Bytes())
+
+func BlockHashFromData(data []byte) (ret BlockHash) {
+	r := blake2b.Sum256(data)
+	copy(ret[:BlockHashSize], r[:BlockHashSize])
+	return
+}
 
 func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{

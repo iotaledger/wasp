@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -141,9 +140,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	for i, candidate := range candidates {
 		block := candidate.getBlock()
 		blocks[i] = block
-		calculatedStateCommitment := trie.RootCommitment(calculatedState.TrieNodeStore())
+		calculatedStateCommitment := state.RootCommitment(calculatedState.TrieNodeStore())
 		candidatePrevStateCommitment := block.PreviousL1Commitment().StateCommitment
-		if !trie.EqualCommitments(candidatePrevStateCommitment, calculatedStateCommitment) {
+		if !state.EqualCommitments(candidatePrevStateCommitment, calculatedStateCommitment) {
 			sm.log.Errorf("commitCandidates: candidate index %v previous state commitment does not match calculated state commitment: %s != %s",
 				block.BlockIndex(), candidatePrevStateCommitment, calculatedStateCommitment)
 			sm.syncingBlocks.restartSyncing()
@@ -163,9 +162,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	// state commitments must be equal
 	from := blocks[0].BlockIndex()
 	to := blocks[len(blocks)-1].BlockIndex()
-	finalStateCommitment := trie.RootCommitment(calculatedState.TrieNodeStore())
+	finalStateCommitment := state.RootCommitment(calculatedState.TrieNodeStore())
 	finalCandidateCommitment := sm.syncingBlocks.getNextStateCommitment(to)
-	if !trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
+	if !state.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
 		sm.log.Debugf("commitCandidates: tentative state index %v obtained, however its commitment does not match last candidate expected state commitment: %s != %s",
 			to, finalStateCommitment, finalCandidateCommitment)
 		sm.syncingBlocks.restartSyncing()

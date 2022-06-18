@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state"
 	"sort"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -147,7 +147,7 @@ func (c *consensus) runVMIfNeeded() {
 			"validator fee target", vmTask.ValidatorFeeTarget.String(),
 			"num req", len(vmTask.Requests),
 			"estimate gas mode", vmTask.EstimateGasMode,
-			"state commitment", trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
+			"state commitment", state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
 		)
 		c.workflow.setVMStarted()
 		c.consensusMetrics.CountVMRuns()
@@ -158,7 +158,7 @@ func (c *consensus) runVMIfNeeded() {
 				return
 			}
 			c.log.Debugf("runVM result: responding by state index: %d state commitment: %s",
-				vmTask.VirtualStateAccess.BlockIndex(), trie.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()))
+				vmTask.VirtualStateAccess.BlockIndex(), state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()))
 			c.EnqueueVMResultMsg(&messages.VMResultMsg{
 				Task: vmTask,
 			})
@@ -719,7 +719,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		r = " (rotate) "
 	}*/
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), trie.RootCommitment(msg.State.TrieNodeStore()))
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), state.RootCommitment(msg.State.TrieNodeStore()))
 	c.resetWorkflow()
 	return true
 }

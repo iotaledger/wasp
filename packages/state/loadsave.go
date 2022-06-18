@@ -3,17 +3,16 @@ package state
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/trie.go/trie"
-	"os"
-	"path"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
+	"os"
+	"path"
 )
 
 // mustValueBatch adaptor for the batch to kv.KVWriter

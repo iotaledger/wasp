@@ -4,6 +4,8 @@
 package solo
 
 import (
+	"github.com/iotaledger/trie.go/models/trie_blake2b"
+	"github.com/iotaledger/trie.go/trie"
 	"math"
 	"time"
 
@@ -14,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/merkletrie"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -468,7 +468,7 @@ func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...inte
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
-func (ch *Chain) GetMerkleProofRaw(key []byte) *merkletrie.Proof {
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_blake2b.Proof {
 	ch.Log().Debugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
@@ -482,7 +482,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *merkletrie.Proof {
 }
 
 // GetBlockProof returns Merkle proof of the key in the state
-func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *merkletrie.Proof, error) {
+func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_blake2b.Proof, error) {
 	ch.Log().Debugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
@@ -503,7 +503,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *merklet
 }
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
-func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *merkletrie.Proof {
+func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_blake2b.Proof {
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
@@ -525,7 +525,7 @@ func (ch *Chain) GetRootCommitment() trie.VCommitment {
 }
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
-func (ch *Chain) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitment, error) {
+func (ch *Chain) GetContractStateCommitment(hn iscp.Hname) ([]byte, error) {
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.GetContractStateCommitment(hn)

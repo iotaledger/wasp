@@ -37,6 +37,10 @@ func NewTrieReader(trieKV, valueKV trie.KVReader) *trie.TrieReader {
 	return trie.NewTrieReader(model, trieKV, valueKV)
 }
 
+func RootCommitment(tr trie.NodeStore) trie.VCommitment {
+	return trie.RootCommitment(tr)
+}
+
 func EqualCommitments(c1, c2 trie.Serializable) bool {
 	return model.EqualCommitments(c1, c2)
 }

@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/iotaledger/trie.go/trie"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -19,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"

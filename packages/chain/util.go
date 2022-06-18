@@ -1,13 +1,12 @@
 package chain
 
 import (
-	"strconv"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/state"
+	"strconv"
 )
 
 // LogStateTransition also used in testing
@@ -15,10 +14,10 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
 			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("STATE TRANSITION. Root commitment: %s", trie.RootCommitment(msg.VirtualState.TrieNodeStore()))
+		log.Debugf("STATE TRANSITION. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 	} else {
 		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("ORIGIN STATE SAVED. state hash: %s", trie.RootCommitment(msg.VirtualState.TrieNodeStore()))
+		log.Debugf("ORIGIN STATE SAVED. state hash: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 	}
 }
 

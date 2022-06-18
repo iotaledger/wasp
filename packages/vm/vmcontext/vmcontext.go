@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/trie.go/trie"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -8,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -97,9 +97,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieNodeStore())
+	commitmentFromState := state.RootCommitment(optimisticStateAccess.TrieNodeStore())
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if !trie.EqualCommitments(l1Commitment.StateCommitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
+	if !state.EqualCommitments(l1Commitment.StateCommitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
@@ -184,7 +184,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	}
 
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
-	blockHash := hashing.HashData(block.EssenceBytes())
+	blockHash := state.BlockHashFromData(block.EssenceBytes())
 	l1Commitment := state.NewL1Commitment(stateCommitment, blockHash)
 
 	blockIndex := vmctx.virtualState.BlockIndex()
@@ -228,7 +228,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasBurned:              vmctx.gasBurnedTotal,
 		GasFeeCharged:          vmctx.gasFeeChargedTotal,
 	}
-	if !trie.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
+	if !state.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
 		panic("CloseVMContext: inconsistent previous state commitment")
 	}
 

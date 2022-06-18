@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -95,7 +94,7 @@ func (c *consensus) handleVMResultMsg(msg *messages.VMResultMsg) {
 		}
 	}
 	c.log.Debugf("VMResultMsg received: state index: %d state commitment: %s %s",
-		msg.Task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(msg.Task.VirtualStateAccess.TrieNodeStore()), essenceString)
+		msg.Task.VirtualStateAccess.BlockIndex(), state.RootCommitment(msg.Task.VirtualStateAccess.TrieNodeStore()), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }
