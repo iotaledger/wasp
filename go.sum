@@ -530,14 +530,8 @@ github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8G
 github.com/iotaledger/iota.go v1.0.0/go.mod h1:RiKYwDyY7aCD1L0YRzHSjOsJ5mUR9yvQpvhZncNcGQI=
 github.com/iotaledger/iota.go/v3 v3.0.0-20220609111244-f73231b2491a h1:f4bRrV/w5cMFdWXeM/4eh+rBPBtSPTV857wAD7iSqRA=
 github.com/iotaledger/iota.go/v3 v3.0.0-20220609111244-f73231b2491a/go.mod h1:VaVx4OU66ulwgK9N/y0mzaS9dtAW5ESTquSWVAhCbSM=
-github.com/iotaledger/trie.go v0.0.0-20220617122513-df8a591d8325 h1:6GA7LungSKrgom+njSREUSs2x3a5upk/tlwp0vMkDSQ=
-github.com/iotaledger/trie.go v0.0.0-20220617122513-df8a591d8325/go.mod h1:51uMkJe4OWpB91nI8xJMyfLcCcwVN1TBhPuXsqBUh4o=
-github.com/iotaledger/trie.go v0.0.0-20220618105057-c678949b2e26 h1:quz66GBDhAspGHqSMbU/uf1RBS1GPT74TlJTZrhxCXw=
-github.com/iotaledger/trie.go v0.0.0-20220618105057-c678949b2e26/go.mod h1:51uMkJe4OWpB91nI8xJMyfLcCcwVN1TBhPuXsqBUh4o=
-github.com/iotaledger/trie.go v0.0.0-20220618145043-3a1303811cf2 h1:FFPtFxeBQkBVnjVij9JoxR4egsyEYdR08lwajgQWIZY=
-github.com/iotaledger/trie.go v0.0.0-20220618145043-3a1303811cf2/go.mod h1:51uMkJe4OWpB91nI8xJMyfLcCcwVN1TBhPuXsqBUh4o=
-github.com/iotaledger/trie.go v0.0.0-20220618152904-dca9ce1f9937 h1:qsJLtaebD/wW5TLVcCjG/JAeQeALtt3BHsAZ/vVuFkY=
-github.com/iotaledger/trie.go v0.0.0-20220618152904-dca9ce1f9937/go.mod h1:51uMkJe4OWpB91nI8xJMyfLcCcwVN1TBhPuXsqBUh4o=
+github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1 h1:zl4vvWDl3QvYSVAotCvSu+mCWvC9gje68U/5tPrfhIg=
+github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1/go.mod h1:51uMkJe4OWpB91nI8xJMyfLcCcwVN1TBhPuXsqBUh4o=
 github.com/ipfs/go-cid v0.0.2/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
 github.com/ipfs/go-cid v0.0.3/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
 github.com/ipfs/go-cid v0.0.5/go.mod h1:plgt+Y5MnOey4vO4UlUazGqdbEXuFYitED67FexhXog=
@@ -1512,8 +1506,7 @@ golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68 h1:z8Hj/bl9cOV2grsOpEaQFUaly
 golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
-golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 h1:JGgROgKl9N8DuW20oFS5gxc+lE67/N3FcwmBPMe7ArY=
-golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
+golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 h1:EH1Deb8WZJ0xc0WK//leUHXcX9aLE5SymusoTmMZye8=
 golang.org/x/term v0.0.0-20220411215600-e5f449aeb171/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

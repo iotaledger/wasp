@@ -1,17 +1,27 @@
 package vmcontext
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-	"golang.org/x/xerrors"
 )
 
 func (vmctx *VMContext) BuildTransactionEssence(stateData *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
 	return vmctx.txbuilder.BuildTransactionEssence(stateData)
+}
+
+// CalcTransactionSubEssenceHash builds transaction essence from tx builder
+// data assuming all zeroes in the L1 commitment. Returns hash of it.
+// It is needed for fraud proofs
+func (vmctx *VMContext) CalcTransactionSubEssenceHash() blocklog.TransactionEssenceHash {
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
+
+	return blocklog.CalcTransactionEssenceHash(essence)
 }
 
 func (vmctx *VMContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {
@@ -35,7 +45,7 @@ func (vmctx *VMContext) loadNativeTokenOutput(id *iotago.NativeTokenID) (*iotago
 		return nil, nil
 	}
 	if retInp = vmctx.getUTXOInput(blockIndex, outputIndex); retOut == nil {
-		panic(xerrors.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
 	return retOut, retInp
 }
@@ -53,7 +63,7 @@ func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, *iota
 		return nil, nil
 	}
 	if retInp = vmctx.getUTXOInput(blockIndex, outputIndex); retOut == nil {
-		panic(xerrors.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
 	return retOut, retInp
 }
@@ -78,7 +88,7 @@ func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTX
 		return nil, nil
 	}
 	if retInp = vmctx.getUTXOInput(blockIndex, outputIndex); retOut == nil {
-		panic(xerrors.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
 	return retOut, retInp
 }

@@ -12,6 +12,7 @@ require (
 	github.com/iotaledger/hive.go v0.0.0-20220506133510-ef2e113d6665
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220531132324-8347a155e220
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220609111244-f73231b2491a
+	github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1
 	github.com/knadh/koanf v1.4.1
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/libp2p/go-libp2p v0.18.0
@@ -87,7 +88,6 @@ require (
 	github.com/huin/goupnp v1.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
-	github.com/iotaledger/trie.go v0.0.0-20220618152904-dca9ce1f9937 // indirect
 	github.com/ipfs/go-cid v0.0.7 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
 	github.com/ipfs/go-log/v2 v2.5.0 // indirect
