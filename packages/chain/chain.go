@@ -4,7 +4,6 @@ package chain
 
 import (
 	"fmt"
-	"github.com/iotaledger/trie.go/trie"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -12,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
