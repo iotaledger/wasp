@@ -23,9 +23,9 @@ func TestOriginHashes(t *testing.T) {
 		})
 	})
 	t.Run("origin state hash consistency ", func(t *testing.T) {
-		t.Logf("origin state hash calculated: %s", calcOriginStateHash().String())
+		t.Logf("origin state hash calculated: %s", calcOriginStateCommitment().String())
 		require.EqualValues(t, OriginStateCommitmentHex, OriginStateCommitment().String())
-		require.EqualValues(t, OriginStateCommitment().String(), calcOriginStateHash().String())
+		require.EqualValues(t, OriginStateCommitment().String(), calcOriginStateCommitment().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
 		z := NewVirtualState(mapdb.NewMapDB())
@@ -36,7 +36,7 @@ func TestOriginHashes(t *testing.T) {
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
 		require.True(t, EqualCommitments(trie.RootCommitment(vs.TrieNodeStore()), OriginStateCommitment()))
-		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieNodeStore()))
+		require.EqualValues(t, calcOriginStateCommitment(), trie.RootCommitment(vs.TrieNodeStore()))
 	})
 }
 

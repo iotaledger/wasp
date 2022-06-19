@@ -225,7 +225,7 @@ func TestBlockDeterminism(t *testing.T) {
 		vs, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 		require.NoError(t, err)
 		require.True(t, EqualCommitments(trie.RootCommitment(vs.TrieNodeStore()), OriginStateCommitment()))
-		require.EqualValues(t, calcOriginStateHash(), trie.RootCommitment(vs.TrieNodeStore()))
+		require.EqualValues(t, calcOriginStateCommitment(), trie.RootCommitment(vs.TrieNodeStore()))
 
 		commits := make([]int, 0)
 		blockToSave := make([]Block, 0, len(blocks))

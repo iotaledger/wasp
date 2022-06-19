@@ -55,8 +55,8 @@ func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 	return ret
 }
 
-// calcOriginStateHash is independent of db provider nor chainID. Used for testing
-func calcOriginStateHash() trie.VCommitment {
+// calcOriginStateCommitment is independent of db provider nor chainID. Used for testing
+func calcOriginStateCommitment() trie.VCommitment {
 	return trie.RootCommitment(newOriginState(mapdb.NewMapDB()).TrieNodeStore())
 }
 

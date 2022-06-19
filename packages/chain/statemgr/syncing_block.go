@@ -4,18 +4,17 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/trie.go/trie"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type syncingBlock struct {
 	requestBlockRetryTime time.Time
-	blockCandidates       map[hashing.HashValue]*candidateBlock
+	blockCandidates       map[state.BlockHash]*candidateBlock
 	approvalInfo          *approvalInfo
 	receivedFromWAL       bool
 	log                   *logger.Logger
@@ -24,7 +23,7 @@ type syncingBlock struct {
 func newSyncingBlock(log *logger.Logger) *syncingBlock {
 	return &syncingBlock{
 		requestBlockRetryTime: time.Time{},
-		blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
+		blockCandidates:       make(map[state.BlockHash]*candidateBlock),
 		approvalInfo:          nil,
 		receivedFromWAL:       false,
 		log:                   log,
@@ -43,7 +42,7 @@ func (syncT *syncingBlock) getBlockCandidatesCount() int {
 	return len(syncT.blockCandidates)
 }
 
-func (syncT *syncingBlock) getBlockCandidate(hash hashing.HashValue) *candidateBlock {
+func (syncT *syncingBlock) getBlockCandidate(hash state.BlockHash) *candidateBlock {
 	result, ok := syncT.blockCandidates[hash]
 	if !ok {
 		return nil
@@ -58,9 +57,9 @@ func (syncT *syncingBlock) hasApprovedBlockCandidate() bool {
 	return syncT.getBlockCandidate(syncT.approvalInfo.getBlockHash()) != nil
 }
 
-func (syncT *syncingBlock) getApprovedBlockCandidateHash() hashing.HashValue {
+func (syncT *syncingBlock) getApprovedBlockCandidateHash() state.BlockHash {
 	if syncT.approvalInfo == nil {
-		return hashing.NilHash
+		return state.BlockHash{}
 	}
 	return syncT.approvalInfo.getBlockHash()
 }
@@ -72,7 +71,7 @@ func (syncT *syncingBlock) getNextStateCommitment() trie.VCommitment {
 	return syncT.approvalInfo.getNextStateCommitment()
 }
 
-func (syncT *syncingBlock) addBlockCandidate(hash hashing.HashValue, block state.Block, nextState state.VirtualStateAccess) (isBlockNew bool, candidate *candidateBlock) {
+func (syncT *syncingBlock) addBlockCandidate(hash state.BlockHash, block state.Block, nextState state.VirtualStateAccess) (isBlockNew bool, candidate *candidateBlock) {
 	candidateExisting, ok := syncT.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch

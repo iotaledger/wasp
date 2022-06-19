@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -119,7 +118,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32, lastBlockHash hashing.HashValue) ([]*candidateBlock, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32, lastBlockHash state.BlockHash) ([]*candidateBlock, bool) {
 	if fromStateIndex > toStateIndex {
 		sm.log.Debugf("getCandidatesToCommit: all blocks found")
 		return candidateAcc, true

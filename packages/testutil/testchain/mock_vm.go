@@ -1,6 +1,7 @@
 package testchain
 
 import (
+	"github.com/iotaledger/trie.go/trie"
 	"testing"
 	"time"
 
@@ -8,13 +9,11 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -113,7 +112,7 @@ func nextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), hashing.HashData(block.EssenceBytes())).Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), state.BlockHashFromData(block.EssenceBytes())).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Features:       consumedOutput.Features,
