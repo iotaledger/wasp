@@ -1,12 +1,12 @@
 package state
 
 import (
-	"github.com/iotaledger/trie.go/trie"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"

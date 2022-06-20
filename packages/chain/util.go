@@ -1,12 +1,13 @@
 package chain
 
 import (
+	"strconv"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
-	"strconv"
 )
 
 // LogStateTransition also used in testing
@@ -21,7 +22,7 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 	}
 }
 
-// LogGovernanceTransition
+// LogGovernanceTransition LogGovernanceTransition
 func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
 	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.GetStateMetadata())
 	log.Infof("GOVERNANCE TRANSITION state index #%d, anchor output: %s, state hash: %s",

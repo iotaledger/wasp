@@ -2,7 +2,6 @@ package state
 
 import (
 	"encoding/hex"
-	"github.com/iotaledger/trie.go/trie"
 	"math"
 	"math/rand"
 	"os"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
