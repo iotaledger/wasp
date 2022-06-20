@@ -6,11 +6,11 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/trie.go/trie"
 	"math"
 	"os"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 // String is string representation for main parameters of the chain
@@ -135,7 +134,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	}
 	resBin := res.MustGet(blob.ParamHash)
 	if resBin == nil {
-		err = xerrors.Errorf("internal error: no hash returned")
+		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
 	ret, err = codec.DecodeHashValue(resBin)

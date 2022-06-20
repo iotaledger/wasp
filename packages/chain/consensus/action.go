@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
 	"sort"
 	"time"
 
@@ -20,12 +19,12 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 )
 
 // takeAction triggers actions whenever relevant
@@ -645,11 +644,11 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) (*iotago.Transaction, *iscp.AliasOutputWithID, error) {
 	signingBytes, err := c.resultTxEssence.SigningMessage()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("creating signing message failed: %v", err)
+		return nil, nil, fmt.Errorf("creating signing message failed: %v", err)
 	}
 	signature, err := c.committee.DKShare().DSSRecoverMasterSignature(sigSharesToAggregate, signingBytes)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("RecoverMasterSignature fail: %w", err)
+		return nil, nil, fmt.Errorf("RecoverMasterSignature fail: %w", err)
 	}
 
 	// check consistency ---------------- check if chain inputs were consumed

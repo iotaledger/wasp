@@ -4,12 +4,13 @@
 package solo
 
 import (
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/trie.go/trie"
+	"fmt"
 	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/models/trie_blake2b"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -227,7 +228,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	}
 	L1Iotas := ch.Env.L1Iotas(keyPair.Address())
 	if L1Iotas == 0 {
-		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
+		return nil, fmt.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
 	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
@@ -382,7 +383,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 		}
 	}
 	if available < fee {
-		return xerrors.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
+		return fmt.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
 	}
 	return nil
 }

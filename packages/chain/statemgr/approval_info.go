@@ -5,6 +5,7 @@ package statemgr
 
 import (
 	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/iscp"

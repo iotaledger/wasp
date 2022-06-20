@@ -1,14 +1,14 @@
 package viewcontext
 
 import (
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
-	"github.com/iotaledger/trie.go/trie"
 	"math/big"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/models/trie_blake2b"
+	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
