@@ -239,7 +239,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
 	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
-	ret, err := cl.CallView(inccounter.FuncGetCounter.Name, nil)
+	ret, err := cl.CallView(inccounter.ViewGetCounter.Name, nil)
 	if err != nil {
 		return 0, err
 	}

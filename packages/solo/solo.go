@@ -296,7 +296,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
-	results := ret.runRequestsSync(initReq, "new")
+	results := ret.RunRequestsSync(initReq, "new")
 	for _, res := range results {
 		require.NoError(env.T, res.Error)
 	}

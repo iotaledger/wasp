@@ -24,7 +24,7 @@ import (
 
 func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
-	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	results := ch.RunRequestsSync([]iscp.Request{r}, "off-ledger")
 	if len(results) == 0 {
 		return nil, xerrors.Errorf("request was skipped")
 	}
@@ -34,10 +34,10 @@ func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 
 func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {
 	defer ch.logRequestLastBlock()
-	return ch.runRequestsSync(reqs, "off-ledger")
+	return ch.RunRequestsSync(reqs, "off-ledger")
 }
 
-func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+func (ch *Chain) RunRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
