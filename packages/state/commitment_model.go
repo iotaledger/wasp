@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"errors"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/trie.go/hive_adaptor"
 	"github.com/iotaledger/trie.go/models/trie_blake2b"

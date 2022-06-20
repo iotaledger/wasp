@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"io"
 	"math/rand"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 )
 

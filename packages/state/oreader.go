@@ -1,10 +1,10 @@
 package state
 
 import (
-	"github.com/iotaledger/trie.go/trie"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"

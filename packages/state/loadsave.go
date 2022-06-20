@@ -3,6 +3,9 @@ package state
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/trie.go/trie"
@@ -11,8 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"os"
-	"path"
 )
 
 // mustValueBatch adaptor for the batch to kv.KVWriter
@@ -51,7 +52,7 @@ func newTrieBatch(batch kvstore.BatchedMutations) mustTrieBatch {
 	return mustTrieBatch{batch}
 }
 
-func (b mustTrieBatch) Set(key []byte, value []byte) {
+func (b mustTrieBatch) Set(key, value []byte) {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key)
 	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
