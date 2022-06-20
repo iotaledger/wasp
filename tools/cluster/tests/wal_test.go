@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
@@ -46,7 +45,7 @@ func TestWriteToWAL(t *testing.T) {
 
 	require.EqualValues(t, blockInfo.BlockIndex, block.BlockIndex())
 	require.EqualValues(t, blockInfo.Timestamp, block.Timestamp())
-	require.True(t, trie.EqualCommitments(blockInfo.PreviousL1Commitment.StateCommitment, block.PreviousL1Commitment().StateCommitment))
+	require.True(t, state.EqualCommitments(blockInfo.PreviousL1Commitment.StateCommitment, block.PreviousL1Commitment().StateCommitment))
 }
 
 func walDirectoryCreated(walDir string) bool {

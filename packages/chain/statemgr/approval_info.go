@@ -7,16 +7,15 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type approvalInfo struct {
 	outputID            *iotago.UTXOInput
 	nextStateCommitment trie.VCommitment
-	blockHash           hashing.HashValue
+	blockHash           state.BlockHash
 }
 
 func newApprovalInfo(output *iscp.AliasOutputWithID) (*approvalInfo, error) {
@@ -35,7 +34,7 @@ func (aiT *approvalInfo) getNextStateCommitment() trie.VCommitment {
 	return aiT.nextStateCommitment
 }
 
-func (aiT *approvalInfo) getBlockHash() hashing.HashValue {
+func (aiT *approvalInfo) getBlockHash() state.BlockHash {
 	return aiT.blockHash
 }
 

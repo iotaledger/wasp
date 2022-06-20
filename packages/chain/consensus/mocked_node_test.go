@@ -1,6 +1,3 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
 package consensus
 
 import (
@@ -9,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -18,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -121,7 +118,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 			ret.Log.Debugf("State manager mock (OnStateCandidate): approving output %v received", iscp.OID(approvingOutputID))
 			aoCommitment, err := state.L1CommitmentFromAliasOutput(output)
 			require.NoError(env.T, err)
-			require.True(env.T, trie.EqualCommitments(nsCommitment, aoCommitment.StateCommitment))
+			require.True(env.T, state.EqualCommitments(nsCommitment, aoCommitment.StateCommitment))
 
 			if output.StateIndex <= ret.StateOutput.GetStateIndex() {
 				ret.Log.Debugf("State manager mock (OnStateCandidate): state output index %v received, but it is too old: current state output is %v",
@@ -143,7 +140,7 @@ func (n *mockedNode) addNewState(newState state.VirtualStateAccess) bool {
 	oldState, ok := n.SolidStates[newStateIndex]
 	if ok {
 		osCommitment := trie.RootCommitment(oldState.TrieNodeStore())
-		if trie.EqualCommitments(osCommitment, nsCommitment) {
+		if state.EqualCommitments(osCommitment, nsCommitment) {
 			n.Log.Debugf("State manager mock: duplicating state candidate index %v commitment %s received; ignoring", newStateIndex, nsCommitment)
 		} else {
 			n.Log.Errorf("State manager mock: contradicting state candidate index %v received: current commitment %s, new commitment %s; ignoring",
