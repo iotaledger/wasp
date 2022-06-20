@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math"
 	"math/rand"
 	"os"
@@ -169,6 +170,9 @@ func readBlocks(t *testing.T, dir string) ([]Block, []trie.VCommitment, []hashin
 	var files []string
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if info == nil {
+			return fmt.Errorf("no file info")
+		}
 		if info.IsDir() {
 			return nil
 		}
@@ -177,7 +181,7 @@ func readBlocks(t *testing.T, dir string) ([]Block, []trie.VCommitment, []hashin
 		return nil
 	})
 	if err != nil {
-		t.Logf("can't find test data: %v", err)
+		t.Logf("filepath.Walk error: %v", err)
 		return nil, nil, nil
 	}
 	retBlocks := make([]Block, len(files))
