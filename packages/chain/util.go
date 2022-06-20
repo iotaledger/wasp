@@ -22,13 +22,6 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 	}
 }
 
-// LogGovernanceTransition LogGovernanceTransition
-func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
-	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.GetStateMetadata())
-	log.Infof("GOVERNANCE TRANSITION state index #%d, anchor output: %s, state hash: %s",
-		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), stateHash.String())
-}
-
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",

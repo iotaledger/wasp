@@ -16,43 +16,43 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// mustValueBatch adaptor for the batch to kv.KVWriter
-type mustValueBatch struct {
+// valueBatch adaptor for the batch to kv.KVWriter
+type valueBatch struct {
 	kvstore.BatchedMutations
 }
 
-var _ kv.KVWriter = mustValueBatch{}
+var _ kv.KVWriter = valueBatch{}
 
-func newValueBatch(batch kvstore.BatchedMutations) mustValueBatch {
-	return mustValueBatch{batch}
+func newValueBatch(batch kvstore.BatchedMutations) valueBatch {
+	return valueBatch{batch}
 }
 
-func (b mustValueBatch) Set(key kv.Key, value []byte) {
+func (b valueBatch) Set(key kv.Key, value []byte) {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
 	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
 }
 
-func (b mustValueBatch) Del(key kv.Key) {
+func (b valueBatch) Del(key kv.Key) {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
 	if err := b.BatchedMutations.Delete(k); err != nil {
 		panic(err)
 	}
 }
 
-// mustTrieBatch adaptor for the batch to trie.KVWriter
-type mustTrieBatch struct {
+// trieBatch adaptor for the batch to trie.KVWriter
+type trieBatch struct {
 	kvstore.BatchedMutations
 }
 
-var _ trie.KVWriter = mustTrieBatch{}
+var _ trie.KVWriter = trieBatch{}
 
-func newTrieBatch(batch kvstore.BatchedMutations) mustTrieBatch {
-	return mustTrieBatch{batch}
+func newTrieBatch(batch kvstore.BatchedMutations) trieBatch {
+	return trieBatch{batch}
 }
 
-func (b mustTrieBatch) Set(key, value []byte) {
+func (b trieBatch) Set(key, value []byte) {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key)
 	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
