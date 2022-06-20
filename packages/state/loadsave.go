@@ -54,6 +54,11 @@ func newTrieBatch(batch kvstore.BatchedMutations) trieBatch {
 
 func (b trieBatch) Set(key, value []byte) {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key)
+	if len(value) == 0 {
+		if err := b.BatchedMutations.Delete(k); err != nil {
+			panic(err)
+		}
+	}
 	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
