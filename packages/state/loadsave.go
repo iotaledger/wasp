@@ -8,35 +8,58 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
-type mustKVStoreBatch struct {
-	prefix byte
-	batch  kvstore.BatchedMutations
+// valueBatch adaptor for the batch to kv.KVWriter
+type valueBatch struct {
+	kvstore.BatchedMutations
 }
 
-func newKVStoreBatch(prefix byte, batch kvstore.BatchedMutations) *mustKVStoreBatch {
-	return &mustKVStoreBatch{
-		prefix: prefix,
-		batch:  batch,
-	}
+var _ kv.KVWriter = valueBatch{}
+
+func newValueBatch(batch kvstore.BatchedMutations) valueBatch {
+	return valueBatch{batch}
 }
 
-func (k *mustKVStoreBatch) Set(key kv.Key, value []byte) {
-	if err := k.batch.Set(dbkeys.MakeKey(k.prefix, []byte(key)), value); err != nil {
+func (b valueBatch) Set(key kv.Key, value []byte) {
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
+	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
 }
 
-func (k *mustKVStoreBatch) Del(key kv.Key) {
-	if err := k.batch.Delete(dbkeys.MakeKey(k.prefix, []byte(key))); err != nil {
+func (b valueBatch) Del(key kv.Key) {
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
+	if err := b.BatchedMutations.Delete(k); err != nil {
+		panic(err)
+	}
+}
+
+// trieBatch adaptor for the batch to trie.KVWriter
+type trieBatch struct {
+	kvstore.BatchedMutations
+}
+
+var _ trie.KVWriter = trieBatch{}
+
+func newTrieBatch(batch kvstore.BatchedMutations) trieBatch {
+	return trieBatch{batch}
+}
+
+func (b trieBatch) Set(key, value []byte) {
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key)
+	if len(value) == 0 {
+		if err := b.BatchedMutations.Delete(k); err != nil {
+			panic(err)
+		}
+	}
+	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
 }
@@ -55,8 +78,8 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 		panic(fmt.Errorf("error saving state: %w", err))
 	}
 
-	vs.trie.PersistMutations(newKVStoreBatch(dbkeys.ObjectTypeTrie, batch))
-	vs.kvs.Mutations().Apply(newKVStoreBatch(dbkeys.ObjectTypeState, batch))
+	vs.trie.PersistMutations(newTrieBatch(batch))
+	vs.kvs.Mutations().Apply(newValueBatch(batch))
 	for _, blk := range blocks {
 		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
@@ -96,21 +119,21 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 		return nil, false, nil
 	}
 	if err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: %v", err)
+		return nil, false, fmt.Errorf("LoadSolidState: %v", err)
 	}
 	chID, err := iscp.ChainIDFromBytes(v)
 	if err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: %v", err)
+		return nil, false, fmt.Errorf("LoadSolidState: %v", err)
 	}
 	if !chID.Equals(chainID) {
-		return nil, false, xerrors.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
+		return nil, false, fmt.Errorf("LoadSolidState: expected chainID: %s, got: %s", chainID, chID)
 	}
 	ret := NewVirtualState(store)
 
 	// explicit use of merkle trie model. Asserting that the chainID is committed by the root at the key ''
-	merkleProof := CommitmentModel.Proof(nil, ret.trie)
-	if err = merkleProof.Validate(trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
+	merkleProof := GetMerkleProof(nil, ret.trie)
+	if err = ValidateMerkleProof(merkleProof, trie.RootCommitment(ret.trie), chainID.Bytes()); err != nil {
+		return nil, false, fmt.Errorf("LoadSolidState: can't prove inclusion of chain ID %s in the root: %v", chainID, err)
 	}
 	ret.kvs.Mutations().ResetModified()
 	return ret, true, nil

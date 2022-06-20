@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 // LogStateTransition also used in testing
@@ -15,18 +15,11 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
 			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("STATE TRANSITION. Root commitment: %s", trie.RootCommitment(msg.VirtualState.TrieNodeStore()))
+		log.Debugf("STATE TRANSITION. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 	} else {
 		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("ORIGIN STATE SAVED. state hash: %s", trie.RootCommitment(msg.VirtualState.TrieNodeStore()))
+		log.Debugf("ORIGIN STATE SAVED. state hash: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 	}
-}
-
-// LogGovernanceTransition
-func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
-	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.GetStateMetadata())
-	log.Infof("GOVERNANCE TRANSITION state index #%d, anchor output: %s, state hash: %s",
-		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), stateHash.String())
 }
 
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
