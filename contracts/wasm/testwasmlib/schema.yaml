@@ -354,3 +354,9 @@ views:
       scAgentID: AgentID
       agentBytes: Bytes
       agentString: String
+
+  checkAddress:
+    params:
+      scAddress: Address
+      addressBytes: Bytes
+      addressString: String

@@ -4,7 +4,6 @@
 package domain
 
 import (
-	"crypto/rand"
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -41,7 +40,7 @@ func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.Peerin
 	for _, sender := range initialNodes {
 		ret.nodes[sender.PubKey().AsKey()] = sender
 	}
-	ret.reshufflePeers()
+	ret.initPermPubKeys()
 	return ret
 }
 
@@ -123,33 +122,29 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 	if changed {
 		d.mutex.Lock()
 		d.nodes = nodes
-		d.reshufflePeers()
+		d.initPermPubKeys()
 		d.mutex.Unlock()
 	}
 }
 
-func (d *DomainImpl) ReshufflePeers(seedBytes ...[]byte) {
+func (d *DomainImpl) ReshufflePeers() {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	d.reshufflePeers(seedBytes...)
+	d.permutation.Shuffle()
 }
 
-func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
+func (d *DomainImpl) initPermPubKeys() {
 	d.permPubKeys = make([]*cryptolib.PublicKey, 0, len(d.nodes))
 	for _, sender := range d.nodes {
 		if !sender.PubKey().Equals(d.netProvider.Self().PubKey()) { // Do not include self to the permutation.
 			d.permPubKeys = append(d.permPubKeys, sender.PubKey())
 		}
 	}
-	var seedB []byte
-	if len(seedBytes) == 0 {
-		var b [8]byte
-		seedB = b[:]
-		_, _ = rand.Read(seedB)
-	} else {
-		seedB = seedBytes[0]
+	var err error
+	d.permutation, err = util.NewPermutation16(uint16(len(d.permPubKeys)))
+	if err != nil {
+		d.log.Warnf("Error generating cryptographically secure random domains permutation: %v", err)
 	}
-	d.permutation = util.NewPermutation16(uint16(len(d.permPubKeys)), seedB)
 }
 
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {

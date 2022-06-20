@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -20,15 +19,14 @@ type IEventHandler interface {
 }
 
 type WasmClientContext struct {
-	chainID       *iscp.ChainID
-	cvt           wasmhost.WasmConvertor
+	chainID       wasmtypes.ScChainID
 	Err           error
 	eventDone     chan bool
 	eventHandlers []IEventHandler
 	keyPair       *cryptolib.KeyPair
-	ReqID         *iscp.RequestID
+	ReqID         wasmtypes.ScRequestID
 	scName        string
-	scHname       iscp.Hname
+	scHname       wasmtypes.ScHname
 	svcClient     IClientService
 }
 
@@ -38,17 +36,17 @@ var (
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
-func NewWasmClientContext(svcClient IClientService, chainID *wasmtypes.ScChainID, scName string) *WasmClientContext {
+func NewWasmClientContext(svcClient IClientService, chainID wasmtypes.ScChainID, scName string) *WasmClientContext {
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
 	s.scName = scName
-	s.scHname = iscp.Hn(scName)
-	s.chainID, s.Err = iscp.ChainIDFromBytes(chainID.Bytes())
+	s.scHname = wasmtypes.NewScHname(scName)
+	s.chainID = chainID
 	return s
 }
 
 func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
-	return s.cvt.ScChainID(s.chainID)
+	return s.chainID
 }
 
 func (s *WasmClientContext) InitFuncCallContext() {
@@ -57,7 +55,7 @@ func (s *WasmClientContext) InitFuncCallContext() {
 
 func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = wasmhost.Connect(s)
-	return wasmtypes.ScHname(s.scHname)
+	return s.scHname
 }
 
 func (s *WasmClientContext) Register(handler IEventHandler) error {
@@ -75,7 +73,7 @@ func (s *WasmClientContext) Register(handler IEventHandler) error {
 
 // overrides default contract name
 func (s *WasmClientContext) ServiceContractName(contractName string) {
-	s.scHname = iscp.Hn(contractName)
+	s.scHname = wasmtypes.NewScHname(contractName)
 }
 
 func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
@@ -94,15 +92,12 @@ func (s *WasmClientContext) Unregister(handler IEventHandler) {
 	}
 }
 
-func (s *WasmClientContext) WaitRequest(reqID ...*iscp.RequestID) error {
-	id := s.ReqID
+func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) error {
+	requestID := s.ReqID
 	if len(reqID) == 1 {
-		id = reqID[0]
+		requestID = reqID[0]
 	}
-	if id == nil {
-		return nil
-	}
-	return s.svcClient.WaitUntilRequestProcessed(s.chainID, *id, 1*time.Minute)
+	return s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
 }
 
 func (s *WasmClientContext) startEventHandlers() error {

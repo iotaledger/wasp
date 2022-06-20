@@ -50,7 +50,7 @@ func storeBlob(ctx iscp.Sandbox) dict.Dict {
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
 		if size > getMaxBlobSize(ctx) {
-			ctx.Log().Panicf("blob too big. received size: %d", totalSize)
+			ctx.Log().Panicf("blob too big. received size: %d", size)
 		}
 		blbValues.MustSetAt([]byte(k), values[i])
 		blbSizes.MustSetAt([]byte(k), EncodeSize(size))

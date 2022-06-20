@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package timestamp
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"

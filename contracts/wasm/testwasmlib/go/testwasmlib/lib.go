@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:dupl
 package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -54,6 +55,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBigIntSub,
 		ViewBlockRecord,
 		ViewBlockRecords,
+		ViewCheckAddress,
 		ViewCheckAgentID,
 		ViewGetRandom,
 		ViewIotaBalance,
@@ -107,6 +109,7 @@ var exportMap = wasmlib.ScExportMap{
 		viewBigIntSubThunk,
 		viewBlockRecordThunk,
 		viewBlockRecordsThunk,
+		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
@@ -1109,6 +1112,28 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	viewBlockRecords(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewBlockRecords ok")
+}
+
+type CheckAddressContext struct {
+	Params ImmutableCheckAddressParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckAddressThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckAddress")
+	f := &CheckAddressContext{
+		Params: ImmutableCheckAddressParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.AddressBytes().Exists(), "missing mandatory addressBytes")
+	ctx.Require(f.Params.AddressString().Exists(), "missing mandatory addressString")
+	ctx.Require(f.Params.ScAddress().Exists(), "missing mandatory scAddress")
+	viewCheckAddress(ctx, f)
+	ctx.Log("testwasmlib.viewCheckAddress ok")
 }
 
 type CheckAgentIDContext struct {

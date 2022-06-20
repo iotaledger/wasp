@@ -75,6 +75,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_BIG_INT_SUB,
     	VIEW_BLOCK_RECORD,
     	VIEW_BLOCK_RECORDS,
+    	VIEW_CHECK_ADDRESS,
     	VIEW_CHECK_AGENT_ID,
     	VIEW_GET_RANDOM,
     	VIEW_IOTA_BALANCE,
@@ -128,6 +129,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_big_int_sub_thunk,
     	view_block_record_thunk,
     	view_block_records_thunk,
+    	view_check_address_thunk,
     	view_check_agent_id_thunk,
     	view_get_random_thunk,
     	view_iota_balance_thunk,
@@ -945,6 +947,24 @@ fn view_block_records_thunk(ctx: &ScViewContext) {
 	view_block_records(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testwasmlib.viewBlockRecords ok");
+}
+
+pub struct CheckAddressContext {
+	params: ImmutableCheckAddressParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_address_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckAddress");
+	let f = CheckAddressContext {
+		params: ImmutableCheckAddressParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.address_bytes().exists(), "missing mandatory addressBytes");
+	ctx.require(f.params.address_string().exists(), "missing mandatory addressString");
+	ctx.require(f.params.sc_address().exists(), "missing mandatory scAddress");
+	view_check_address(ctx, &f);
+	ctx.log("testwasmlib.viewCheckAddress ok");
 }
 
 pub struct CheckAgentIDContext {
