@@ -38,6 +38,10 @@ func MakeRotateStateControllerTransaction(
 		if _, ok := output.Conditions[i].(*iotago.StateControllerAddressUnlockCondition); ok {
 			output.Conditions[i] = &iotago.StateControllerAddressUnlockCondition{Address: nextAddr}
 		}
+		// TODO: it is probably not the correct way to do the governance transition
+		if _, ok := output.Conditions[i].(*iotago.GovernorAddressUnlockCondition); ok {
+			output.Conditions[i] = &iotago.GovernorAddressUnlockCondition{Address: nextAddr}
+		}
 	}
 	result := &iotago.TransactionEssence{
 		NetworkID: parameters.L1.Protocol.NetworkID(),

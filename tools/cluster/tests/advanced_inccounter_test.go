@@ -329,7 +329,7 @@ func TestRotationMany(t *testing.T) {
 	}
 
 	const numRequests = 2
-	const numCmt = 3
+	const numCmt = 5
 	const numRotations = 5
 	const waitTimeout = 180 * time.Second
 
@@ -357,32 +357,26 @@ func TestRotationMany(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 
+	e := newChainEnv(t, clu, chain)
+
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 
 	for i := range addrs {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
 		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
 		require.NoError(t, err)
-		txID, err := tx.ID()
+		_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 		require.NoError(t, err)
-		reqid := iscp.NewRequestID(txID, 0)
-		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 5, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
 		require.True(t, isAllowedStateControllerAddress(t, chain, 0, addrs[i]))
 		require.True(t, isAllowedStateControllerAddress(t, chain, 5, addrs[i]))
 		require.True(t, isAllowedStateControllerAddress(t, chain, 9, addrs[i]))
 	}
 
-	description := "inccounter testing contract"
-	programHash := inccounter.Contract.ProgramHash
+	tx := e.deployNativeIncCounterSC(0)
 
-	e := newChainEnv(t, clu, chain)
-
-	_, err = chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, nil)
+	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 	require.NoError(t, err)
-
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
@@ -391,12 +385,11 @@ func TestRotationMany(t *testing.T) {
 	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < numRotations; i++ {
+		t.Logf("Rotation number %v to %v...", i, cmt[i])
 		require.NoError(t, e.waitStateControllers(addrs[addrIndex], waitTimeout))
 
-		for j := 0; j < numRequests; j++ {
-			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
-			require.NoError(t, err)
-		}
+		_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
+		require.NoError(t, err)
 
 		waitUntil(t, e.counterEquals(int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 30*time.Second)
 
@@ -405,14 +398,9 @@ func TestRotationMany(t *testing.T) {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[addrIndex]).WithIotas(1)
 		tx, err := govClient.PostRequest(governance.FuncRotateStateController.Name, *par)
 		require.NoError(t, err)
-		txID, err := tx.ID()
-		require.NoError(t, err)
-		reqid := iscp.NewRequestID(txID, 0)
-		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 4, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
-
 		require.NoError(t, e.waitStateControllers(addrs[addrIndex], waitTimeout))
+		_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
+		require.NoError(t, err)
 	}
 }
 

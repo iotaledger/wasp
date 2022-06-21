@@ -226,6 +226,33 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 			return xerrors.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
+
+	scArgs := governance.NewChangeAccessNodesRequest()
+	for _, a := range nodes {
+		waspClient := clu.WaspClient(a)
+		accessNodePeering, err := waspClient.GetPeeringSelf()
+		if err != nil {
+			return err
+		}
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
+		if err != nil {
+			return err
+		}
+		scArgs.Accept(accessNodePubKey)
+	}
+	scParams := chainclient.
+		NewPostRequestParams(scArgs.AsDict()).
+		WithIotas(1000)
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
+	if err != nil {
+		return err
+	}
+	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

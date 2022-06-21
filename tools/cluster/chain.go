@@ -93,6 +93,10 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeAPIHosts())
 }
 
+func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
+	return multiclient.New(ch.AllAPIHosts())
+}
+
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
 	programHash, err := hashing.HashValueFromHex(progHashStr)
 	if err != nil {
