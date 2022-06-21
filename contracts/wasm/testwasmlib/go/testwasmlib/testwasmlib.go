@@ -470,4 +470,54 @@ func viewCheckAddress(ctx wasmlib.ScViewContext, f *CheckAddressContext) {
 }
 
 func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddressAndAgentIDContext) {
+	addressTxt := f.Params.EthAddress().Value()
+	scAddressEth := wasmtypes.AddressFromString(addressTxt)
+	ctx.Require(scAddressEth == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(scAddressEth)), "eth address bytes conversion failed")
+	ctx.Require(scAddressEth == wasmtypes.AddressFromString(wasmtypes.AddressToString(scAddressEth)), "eth address string conversion failed")
+	scAgentIDEth := wasmtypes.NewScAgentIDFromAddress(scAddressEth)
+	ctx.Require(scAgentIDEth == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(scAgentIDEth)), "eth agentID bytes conversion failed")
+	ctx.Require(scAgentIDEth == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentIDEth)), "eth agentID string conversion failed")
+}
+
+func viewCheckHash(ctx wasmlib.ScViewContext, f *CheckHashContext) {
+	scHash := f.Params.ScHash().Value()
+	hashBytes := f.Params.HashBytes().Value()
+	hashString := f.Params.HashString().Value()
+	ctx.Require(scHash == wasmtypes.HashFromBytes(wasmtypes.HashToBytes(scHash)), "bytes conversion failed")
+	ctx.Require(scHash == wasmtypes.HashFromString(wasmtypes.HashToString(scHash)), "string conversion failed")
+	ctx.Require(string(scHash.Bytes()) == string(hashBytes), "bytes mismatch")
+	ctx.Require(scHash.String() == hashString, "string mismatch")
+}
+
+func viewCheckNftID(ctx wasmlib.ScViewContext, f *CheckNftIDContext) {
+	scNftID := f.Params.ScNftID().Value()
+	nftIDBytes := f.Params.NftIDBytes().Value()
+	nftIDString := f.Params.NftIDString().Value()
+
+	ctx.Require(scNftID == wasmtypes.NftIDFromString(wasmtypes.NftIDToString(scNftID)), "bytes conversion failed")
+	ctx.Require(scNftID == wasmtypes.NftIDFromBytes(wasmtypes.NftIDToBytes(scNftID)), "string conversion failed")
+	ctx.Require(string(scNftID.Bytes()) == string(nftIDBytes), "bytes mismatch")
+	ctx.Require(scNftID.String() == nftIDString, "string mismatch")
+}
+
+func viewCheckRequestID(ctx wasmlib.ScViewContext, f *CheckRequestIDContext) {
+	scRequestID := f.Params.ScRequestID().Value()
+	requestIDBytes := f.Params.RequestIDBytes().Value()
+	requestIDString := f.Params.RequestIDString().Value()
+
+	ctx.Require(scRequestID == wasmtypes.RequestIDFromString(wasmtypes.RequestIDToString(scRequestID)), "bytes conversion failed")
+	ctx.Require(scRequestID == wasmtypes.RequestIDFromBytes(wasmtypes.RequestIDToBytes(scRequestID)), "string conversion failed")
+	ctx.Require(string(scRequestID.Bytes()) == string(requestIDBytes), "bytes mismatch")
+	ctx.Require(scRequestID.String() == requestIDString, "string mismatch")
+}
+
+func viewCheckTokenID(ctx wasmlib.ScViewContext, f *CheckTokenIDContext) {
+	scTokenID := f.Params.ScTokenID().Value()
+	tokenIDBytes := f.Params.TokenIDBytes().Value()
+	tokenIDString := f.Params.TokenIDString().Value()
+
+	ctx.Require(scTokenID == wasmtypes.TokenIDFromString(wasmtypes.TokenIDToString(scTokenID)), "bytes conversion failed")
+	ctx.Require(scTokenID == wasmtypes.TokenIDFromBytes(wasmtypes.TokenIDToBytes(scTokenID)), "string conversion failed")
+	ctx.Require(string(scTokenID.Bytes()) == string(tokenIDBytes), "bytes mismatch")
+	ctx.Require(scTokenID.String() == tokenIDString, "string mismatch")
 }

@@ -45,12 +45,11 @@ func HashToBytes(value ScHash) []byte {
 }
 
 func HashFromString(value string) ScHash {
-	return HashFromBytes(Base58Decode(value))
+	return HashFromBytes(HexDecode(value))
 }
 
 func HashToString(value ScHash) string {
-	// TODO standardize human readable string
-	return Base58Encode(HashToBytes(value))
+	return HexEncode(HashToBytes(value))
 }
 
 func hashFromBytesUnchecked(buf []byte) ScHash {

@@ -45,12 +45,11 @@ func NftIDToBytes(value ScNftID) []byte {
 }
 
 func NftIDFromString(value string) ScNftID {
-	return NftIDFromBytes(Base58Decode(value))
+	return NftIDFromBytes(HexDecode(value[2:]))
 }
 
 func NftIDToString(value ScNftID) string {
-	// TODO standardize human readable string
-	return Base58Encode(NftIDToBytes(value))
+	return "0x" + HexEncode(NftIDToBytes(value))
 }
 
 func nftIDFromBytesUnchecked(buf []byte) ScNftID {

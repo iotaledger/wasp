@@ -250,6 +250,26 @@ pub struct CheckEthAddressAndAgentIDCall {
 	pub params: MutableCheckEthAddressAndAgentIDParams,
 }
 
+pub struct CheckHashCall {
+	pub func: ScView,
+	pub params: MutableCheckHashParams,
+}
+
+pub struct CheckNftIDCall {
+	pub func: ScView,
+	pub params: MutableCheckNftIDParams,
+}
+
+pub struct CheckRequestIDCall {
+	pub func: ScView,
+	pub params: MutableCheckRequestIDParams,
+}
+
+pub struct CheckTokenIDCall {
+	pub func: ScView,
+	pub params: MutableCheckTokenIDParams,
+}
+
 pub struct GetRandomCall {
 	pub func: ScView,
 	pub results: ImmutableGetRandomResults,
@@ -707,6 +727,42 @@ impl ScFuncs {
         let mut f = CheckEthAddressAndAgentIDCall {
             func: ScView::new(HSC_NAME, HVIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID),
             params: MutableCheckEthAddressAndAgentIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_hash(_ctx: &dyn ScViewCallContext) -> CheckHashCall {
+        let mut f = CheckHashCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_HASH),
+            params: MutableCheckHashParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_nft_id(_ctx: &dyn ScViewCallContext) -> CheckNftIDCall {
+        let mut f = CheckNftIDCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_NFT_ID),
+            params: MutableCheckNftIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_request_id(_ctx: &dyn ScViewCallContext) -> CheckRequestIDCall {
+        let mut f = CheckRequestIDCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_REQUEST_ID),
+            params: MutableCheckRequestIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_token_id(_ctx: &dyn ScViewCallContext) -> CheckTokenIDCall {
+        let mut f = CheckTokenIDCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_TOKEN_ID),
+            params: MutableCheckTokenIDParams { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         f
