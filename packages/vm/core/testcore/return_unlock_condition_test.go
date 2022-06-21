@@ -54,7 +54,6 @@ func TestSendBack(t *testing.T) {
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),
 				GasBudget:      math.MaxUint64,
 			},
-			Options: iscp.SendOptions{},
 		},
 	})
 	require.NoError(t, err)
@@ -92,7 +91,4 @@ func TestSendBack(t *testing.T) {
 	counter, err = codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
-
-	// request shouldn't be processed
-	// check mempool is EMPTY
 }
