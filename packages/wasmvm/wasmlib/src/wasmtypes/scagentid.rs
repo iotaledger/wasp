@@ -30,12 +30,19 @@ impl ScAgentID {
     }
 
     pub fn from_address(address: &ScAddress) -> ScAgentID {
-        let mut kind = SC_AGENT_ID_ADDRESS;
-        if address.id[0] == SC_ADDRESS_ALIAS {
-            kind = SC_AGENT_ID_CONTRACT;
-        } else if address.id[0] == SC_ADDRESS_ETH {
-            kind = SC_AGENT_ID_ETHEREUM;
+        let kind;
+        match address.id[0] {
+            SC_ADDRESS_ALIAS => {
+                kind = SC_AGENT_ID_CONTRACT;
+            }
+            SC_ADDRESS_ETH => {
+                kind = SC_AGENT_ID_ETHEREUM;
+            }
+            _ => {
+                kind = SC_AGENT_ID_ADDRESS;
+            }
         }
+
         ScAgentID {
             kind: kind,
             address: address.clone(),
