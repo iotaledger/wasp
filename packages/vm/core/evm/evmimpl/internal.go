@@ -204,16 +204,7 @@ func getBalanceFunc(ctx iscp.SandboxBase) emulator.BalanceFunc {
 	)
 	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
 	ctx.RequireNoError(err)
-	if feePolicy.GasFeeTokenID == nil {
-		return func(addr common.Address) *big.Int {
-			res := ctx.CallView(
-				accounts.Contract.Hname(),
-				accounts.ViewBalanceIotas.Hname(),
-				dict.Dict{accounts.ParamAgentID: iscp.NewEthereumAddressAgentID(addr).Bytes()},
-			)
-			return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
-		}
-	} else {
+	if feePolicy.GasFeeTokenID != nil {
 		return func(addr common.Address) *big.Int {
 			res := ctx.CallView(
 				accounts.Contract.Hname(),
@@ -225,5 +216,13 @@ func getBalanceFunc(ctx iscp.SandboxBase) emulator.BalanceFunc {
 			)
 			return new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
 		}
+	}
+	return func(addr common.Address) *big.Int {
+		res := ctx.CallView(
+			accounts.Contract.Hname(),
+			accounts.ViewBalanceIotas.Hname(),
+			dict.Dict{accounts.ParamAgentID: iscp.NewEthereumAddressAgentID(addr).Bytes()},
+		)
+		return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
 	}
 }
